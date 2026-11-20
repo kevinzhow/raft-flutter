@@ -160,6 +160,7 @@ void main() {
     transport.routes['GET /mcp/servers/app/connection-authorization'] = (_) => {
       'app': {'name': 'Fixture notes', 'authKind': 'oauth'},
       'canSetServerDefault': true,
+      'canAuthorizeNew': true,
       'candidates': [
         {
           'connectionId': 'con',
@@ -185,6 +186,14 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Team notes'), findsOneWidget);
+    expect(find.text('Default'), findsOneWidget);
+    expect(find.text('Ready'), findsOneWidget);
+    expect(
+      find.text('Follows future changes to the server default.'),
+      findsOneWidget,
+    );
+    expect(find.text('Server default: Team notes'), findsOneWidget);
+    expect(find.text('Authorize new connection'), findsOneWidget);
     await tester.tap(find.text('Grant access to Agent'));
     await tester.pumpAndSettle();
     expect(

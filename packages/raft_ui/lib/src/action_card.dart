@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:raft_theme/recipes/recipe_runtime.dart';
 
-import 'design_primitives.dart' show RaftTypography;
+import 'design_primitives.dart' show RaftInteractive, RaftTypography;
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'dialog_card.dart' show RaftRecipeButton;
 import 'recipes/button_variants.g.dart';
 import 'recipes/message_action_card.g.dart';
 import 'recipes/message_action_card_content.g.dart';
+import 'recipes/message_card.g.dart';
+import 'panel_layout.dart' show RaftCssText;
+import 'agent_subagents.dart' show RaftDescriptionEntry;
 import 'raft/status.dart';
+import 'raft/ui_tokens.dart';
 import 'raft/button.dart';
 import 'localization.dart';
 import 'space.dart';
@@ -15,7 +19,7 @@ import 'theme.dart';
 import 'icons.dart';
 import 'message_embed_frame.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
-import 'recipe_surface.dart' show RaftRecipeBinding;
+import 'recipe_surface.dart' show RaftRecipeBinding, RaftRecipeBox;
 import 'rich_card_tokens.dart';
 import 'text_measure.dart';
 import 'text_scaling.dart' show RaftScaled;
@@ -27,6 +31,7 @@ class RaftSpecActionCard extends StatelessWidget {
     required this.body,
     this.icon,
     this.description,
+    this.completed = false,
     this.status,
     this.statusVariant = RaftStatusVariant.muted,
     this.expanded = true,
@@ -38,108 +43,416 @@ class RaftSpecActionCard extends StatelessWidget {
   final RaftGlyph? icon;
   final String? description, status;
   final RaftStatusVariant statusVariant;
-  final bool expanded;
+  final bool expanded, completed;
   final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
-    final states = RaftRecipeStates({
-      if (tokens.dark) RaftRecipeStates.dark,
-    }, MediaQuery.sizeOf(context).width);
+    final states = tokens.recipeStates(responsive: true);
     final recipe = RaftMessageActionCardRecipe.resolve(
       states: states,
       tokens: tokens.recipeTokens,
     );
-    final content = RaftMessageActionCardContentRecipe.resolve(
+    final card = RaftMessageCardRecipe.resolve(
       states: states,
       tokens: tokens.recipeTokens,
     );
     final glyph = icon;
     final statusText = status;
     final descriptionText = description;
+    final titleStyle = raftSlotTextStyle(tokens, card.heading);
+    final descriptionStyle = raftSlotTextStyle(
+      tokens,
+      recipe.headerDescription,
+    );
+    final statusStyle = raftSlotTextStyle(tokens, recipe.status);
+    final tile = recipe.headerIcon.width ?? 27;
+    final inset = card.inset.padding;
+    final headerPadding = inset.copyWith(
+      bottom: expanded ? recipe.header.padding.bottom : inset.bottom,
+      right: onToggle == null
+          ? null
+          : inset.right + recipe.collapseTrigger.margin.right,
+    );
+    double centerFirstLine(TextStyle style) {
+      final lines = MediaQuery.textScalerOf(context)
+          .scale(style.fontSize ?? 14);
+      return ((tile - lines * (style.height ?? 1)) / 2).clamp(0.0, tile);
+    }
+
     return Padding(
-      padding: EdgeInsets.only(top: RaftMessageBodyMargin.collapse(context, 4)),
+      padding: EdgeInsets.only(top: RaftMessageBodyMargin.collapse(context, 8)),
       child: RaftMessageEmbedFrame(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: recipe.header.padding,
+              padding: headerPadding,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 8,
+                spacing: recipe.header.columnGap ?? RaftSpace.x2,
                 children: [
                   if (glyph != null)
-                    DecoratedBox(
+                    Container(
+                      width: tile,
+                      height: recipe.headerIcon.height ?? tile,
                       decoration: recipe.headerIcon.decoration(
                         tokens.recipeTokens,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: RaftIcon(glyph, size: 16),
+                      alignment: Alignment.center,
+                      child: RaftIcon(
+                        glyph,
+                        size: 14,
+                        color: recipe.headerIcon.color?.resolve(
+                          tokens.recipeTokens,
+                        ),
                       ),
                     ),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          title,
-                          style: raftSlotTextStyle(tokens, recipe.headerTitle),
-                        ),
-                        if (descriptionText != null)
-                          Text(
-                            descriptionText,
-                            style: raftSlotTextStyle(
-                              tokens,
-                              recipe.headerDescription,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (statusText != null)
-                    Flexible(
-                      child: Row(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: centerFirstLine(titleStyle),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
-                        spacing: 4,
+                        spacing: recipe.headerDescription.margin.top,
                         children: [
-                          RaftStatus(variant: statusVariant),
-                          Flexible(
-                            child: Text(
-                              statusText,
-                              style: raftSlotTextStyle(tokens, recipe.status),
-                            ),
+                          RaftCssText(
+                            title,
+                            style: titleStyle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                          if (descriptionText != null)
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  if (completed)
+                                    WidgetSpan(
+                                      alignment: PlaceholderAlignment.middle,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: RaftSpace.x1_5,
+                                        ),
+                                        child: RaftIcon(
+                                          RaftGlyph.check,
+                                          size: 16,
+                                          color: tokens.ui.foreground,
+                                        ),
+                                      ),
+                                    ),
+                                  TextSpan(text: descriptionText),
+                                ],
+                              ),
+                              style: descriptionStyle,
+                            ),
                         ],
                       ),
                     ),
-                  if (onToggle != null)
-                    Semantics(
-                      expanded: expanded,
-                      child: RaftButton(
-                        key: const ValueKey('action-card-toggle-details'),
-                        glyph: expanded
-                            ? RaftGlyph.chevronUp
-                            : RaftGlyph.chevronDown,
-                        tooltip: raftText(context, 'Show or hide details'),
-                        uiVariant: RaftButtonVariant.ghost,
-                        uiSize: RaftButtonSize.iconXs,
-                        onPressed: onToggle,
+                  ),
+                  if (statusText != null)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: centerFirstLine(statusStyle),
                       ),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 100),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: recipe.status.columnGap ?? RaftSpace.x1_5,
+                          children: [
+                            RaftStatus(variant: statusVariant),
+                            Flexible(
+                              child: RaftCssText(
+                                statusText,
+                                style: statusStyle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (onToggle != null)
+                    _SpecActionCardDisclosure(
+                      expanded: expanded,
+                      onToggle: onToggle!,
                     ),
                 ],
               ),
             ),
-            if (expanded) Padding(padding: content.root.padding, child: body),
+            if (expanded) Padding(padding: inset.copyWith(top: 0), child: body),
           ],
         ),
       ),
     );
   }
+}
+
+class _SpecActionCardDisclosure extends StatelessWidget {
+  const _SpecActionCardDisclosure({
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final label = raftText(context, 'Show or hide details');
+    return Semantics(
+      expanded: expanded,
+      child: RaftInteractive(
+        key: const ValueKey('action-card-toggle-details'),
+        onPressed: onToggle,
+        semanticLabel: label,
+        tooltip: label,
+        builder: (context, state) {
+          final recipe = RaftMessageActionCardRecipe.resolve(
+            states: tokens.recipeStates(
+              responsive: true,
+              hovered: state.hovered,
+              pressed: state.pressed,
+              focusVisible: state.focusVisible,
+            ),
+            tokens: tokens.recipeTokens,
+          ).collapseTrigger;
+          return RaftRecipeBox(
+            style: recipe,
+            tokens: tokens.recipeTokens,
+            alignment: Alignment.center,
+            applyText: false,
+            child: RaftIcon(
+              expanded ? RaftGlyph.chevronUp : RaftGlyph.chevronDown,
+              size: 16,
+              color: recipe.color?.resolve(tokens.recipeTokens),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class RaftSpecActionCardContent {
+  RaftSpecActionCardContent(BuildContext context)
+    : tokens = RaftTokens.of(context),
+      direction = Directionality.of(context),
+      scaler = MediaQuery.textScalerOf(context);
+
+  final RaftTokens tokens;
+  final TextDirection direction;
+  final TextScaler scaler;
+
+  late final slots = RaftMessageActionCardContentRecipe.resolve(
+    states: tokens.recipeStates(),
+    tokens: tokens.recipeTokens,
+  );
+
+  TextStyle text(RaftSlotStyle slot) => raftSlotTextStyle(tokens, slot);
+
+  Widget column(List<Widget> children) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: slots.root.rowGap ?? RaftSpace.x2,
+    children: children,
+  );
+
+  Widget properties(
+    List<RaftDescriptionEntry> entries, {
+    bool fitLabels = false,
+  }) {
+    final labelStyle = text(slots.propertyLabel);
+    final valueStyle = text(slots.propertyValue);
+    final gap = slots.properties.columnGap ?? RaftSpace.x4;
+    final rowGap = slots.properties.rowGap ?? RaftSpace.half;
+    Widget label(RaftDescriptionEntry entry) =>
+        RaftCssText(entry.term, style: labelStyle);
+    Widget value(RaftDescriptionEntry entry) =>
+        entry.detailsChild ?? RaftCssText(entry.details, style: valueStyle);
+    double width(String value, TextStyle style) => raftTextWidth(
+      TextSpan(text: value, style: style),
+      textDirection: direction,
+      textScaler: scaler,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cap = slots.propertyLabel.maxWidth ?? 160;
+        final labelWidth = entries.fold<double>(fitLabels ? 0 : 88, (
+          current,
+          entry,
+        ) {
+          final next = width(entry.term, labelStyle).clamp(0.0, cap);
+          return next > current ? next : current;
+        });
+        final valueWidth = constraints.maxWidth - labelWidth - gap;
+        final stacked =
+            valueWidth < 160 ||
+            entries.any((entry) {
+              final natural = width(entry.details, valueStyle);
+              if (natural <= constraints.maxWidth + .5)
+                return natural > valueWidth + .5;
+              return entry.details.split(RegExp(r'\s+')).any((word) {
+                final piece = width(word, valueStyle);
+                return piece > valueWidth + .5 &&
+                    piece <= constraints.maxWidth + .5;
+              });
+            });
+        if (stacked) {
+          return column([
+            for (final entry in entries)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: rowGap,
+                children: [label(entry), value(entry)],
+              ),
+          ]);
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: rowGap,
+          children: [
+            for (final entry in entries)
+              Row(
+                spacing: gap,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  SizedBox(width: labelWidth, child: label(entry)),
+                  Expanded(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: slots.propertyValue.minHeight ?? 0,
+                      ),
+                      child: Padding(
+                        padding: slots.propertyValue.padding,
+                        child: value(entry),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget hint({String? label, required String body, int? maxLines}) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: RaftSpace.x1,
+    children: [
+      if (label != null) RaftCssText(label, style: text(slots.hintLabel)),
+      Container(
+        decoration: slots.hint.decoration(tokens.recipeTokens),
+        padding: slots.hint.padding,
+        child: RaftCssText(
+          body,
+          style: text(slots.hint),
+          maxLines: maxLines,
+          overflow: maxLines == null ? null : TextOverflow.ellipsis,
+        ),
+      ),
+    ],
+  );
+
+  Widget notice(String copy) {
+    final style = text(slots.notice);
+    return Container(
+      decoration: slots.notice.decoration(tokens.recipeTokens),
+      padding: slots.notice.padding,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: slots.notice.columnGap ?? RaftSpace.x2,
+        children: [
+          RaftIcon(RaftGlyph.info, size: 14, color: style.color),
+          Expanded(child: RaftCssText(copy, style: style)),
+        ],
+      ),
+    );
+  }
+
+  Widget scopes(
+    BuildContext context,
+    List<({String scope, String? copy})> entries,
+  ) {
+    final label = raftFormat(context, 'Permissions ({count})', {
+      'count': entries.length,
+    });
+    final nameStyle = text(slots.scopeName);
+    final descriptionStyle = text(slots.scopeDescription);
+    final gap = slots.scopeListViewportContent.rowGap ?? RaftSpace.x1_5;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: gap,
+      children: [
+        RaftCssText(label, style: text(slots.scopeListLabel)),
+        if (entries.every((entry) => entry.copy == null))
+          RaftCssText(
+            entries.isEmpty
+                ? '-'
+                : entries.map((entry) => entry.scope).join(', '),
+            style: nameStyle,
+          )
+        else
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: slots.scopeListViewport.maxHeight ?? 136,
+            ),
+            child: SingleChildScrollView(
+              padding: slots.scopeListViewportContent.padding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: gap,
+                children: [
+                  for (final entry in entries)
+                    RaftRecipeBox(
+                      style: slots.scope,
+                      tokens: tokens.recipeTokens,
+                      applyText: false,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: slots.scopeDescription.margin.top,
+                        children: [
+                          RaftCssText(entry.scope, style: nameStyle),
+                          RaftCssText(
+                            raftText(
+                              context,
+                              entry.copy ??
+                                  'Raft has no description for this scope.',
+                            ),
+                            style: descriptionStyle,
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget actions(List<Widget> children) => Padding(
+    padding: slots.actions.margin,
+    child: Wrap(
+      alignment: WrapAlignment.end,
+      spacing: RaftSpace.x2,
+      runSpacing: RaftSpace.x2,
+      children: children,
+    ),
+  );
 }
 
 /// A safe presentation of server-owned action metadata. Execution and current

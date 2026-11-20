@@ -211,6 +211,11 @@ class _ActionCardMcpPickerState extends State<ActionCardMcpPicker> {
         'Someone who can manage this Agent needs to connect this App.',
       );
     }
+    final tokens = RaftTokens.of(context);
+    final caption = tokens.scale(
+      RaftTypeScale.caption,
+      color: tokens.ui.foregroundMuted,
+    );
     final candidates = cardList(data['candidates']).map(cardObject).toList();
     final pending = cardObject(data['pendingGrant']);
     final pendingId = cardString(pending['connectionId']);
@@ -277,17 +282,18 @@ class _ActionCardMcpPickerState extends State<ActionCardMcpPicker> {
                   RaftRadioGroupItem(
                     value: id,
                     enabled: candidate['status'] == 'ready',
-                    child: Text(
-                      cardString(candidate['name']) ??
-                          raftText(context, 'Unnamed connection'),
-                    ),
+                    gap: RaftSpace.x2,
+                    markInset: const EdgeInsets.only(top: RaftSpace.half),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    child: _CandidateDetails(candidate),
                   ),
             ],
           ),
         if (canDefault && selected != null)
           if (isDefault)
-            RaftActionNote(
+            RaftCssText(
               raftFormat(context, 'Server default: {name}', {'name': name}),
+              style: caption,
             )
           else
             RaftCheckboxRow(
@@ -311,7 +317,8 @@ class _ActionCardMcpPickerState extends State<ActionCardMcpPicker> {
                 )
               else if (app['authKind'] != 'headers')
                 RaftButton(
-                  label: 'Open in browser',
+                  label: 'Authorize new connection',
+                  tooltip: raftText(context, 'Open in browser'),
                   uiVariant: RaftButtonVariant.outline,
                   uiSize: RaftButtonSize.md,
                   onPressed: _busy ? null : widget.onOpenWeb,
@@ -335,6 +342,74 @@ class _ActionCardMcpPickerState extends State<ActionCardMcpPicker> {
                       ),
               ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CandidateDetails extends StatelessWidget {
+  const _CandidateDetails(this.candidate);
+
+  final CardJson candidate;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final isDefault = candidate['isServerDefault'] == true;
+    final ready = candidate['status'] == 'ready';
+    final name = cardString(candidate['name']?.toString().trim());
+    final caption = tokens.scale(
+      RaftTypeScale.caption,
+      color: ready ? tokens.ui.foregroundMuted : tokens.ui.foregroundDisabled,
+    );
+    final status = switch (candidate['status']) {
+      'ready' => 'Ready',
+      'pending' => 'Signing in',
+      'needs_auth' => 'Needs sign-in',
+      'expired' => 'Authorization expired',
+      'error' => 'Error',
+      _ => null,
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RaftCssText(
+          name ?? raftText(context, 'Unnamed connection'),
+          style: tokens.scale(
+            RaftTypeScale.subhead,
+            weight: FontWeight.w700,
+            color: ready ? tokens.ui.foreground : tokens.ui.foregroundDisabled,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: RaftSpace.half),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: RaftSpace.x1_5,
+            children: [
+              if (isDefault)
+                const RaftBadge(
+                  label: 'Default',
+                  variant: RaftBadgeRecipeVariant.success,
+                ),
+              if (status != null)
+                RaftCssText(raftText(context, status), style: caption),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: RaftSpace.x1),
+          child: RaftCssText(
+            raftText(
+              context,
+              isDefault
+                  ? 'Follows future changes to the server default.'
+                  : 'Keeps this connection when the server default changes.',
+            ),
+            style: caption,
+          ),
         ),
       ],
     );

@@ -11,19 +11,24 @@ Widget actionCardStatesPreview() => Column(
     RaftSpecActionCard(
       title: 'Create Scribe',
       icon: RaftGlyph.bot,
-      body: Column(
-        children: [
-          const RaftActionField(
-            label: 'Description',
-            value: 'Takes meeting notes.',
-          ),
-          RaftButton(
-            label: 'Create Agent',
-            uiVariant: RaftButtonVariant.outline,
-            uiSize: RaftButtonSize.md,
-            onPressed: () {},
-          ),
-        ],
+      body: Builder(
+        builder: (context) {
+          final content = RaftSpecActionCardContent(context);
+          return content.column([
+            content.properties(const [
+              RaftDescriptionEntry('Description', 'Takes meeting notes.'),
+            ]),
+            content.hint(label: 'Reason', body: 'You asked for a note taker.'),
+            content.actions([
+              RaftButton(
+                label: 'Create Agent',
+                uiVariant: RaftButtonVariant.outline,
+                uiSize: RaftButtonSize.md,
+                onPressed: () {},
+              ),
+            ]),
+          ]);
+        },
       ),
     ),
     const RaftSpecActionCard(
@@ -33,6 +38,7 @@ Widget actionCardStatesPreview() => Column(
       statusVariant: RaftStatusVariant.success,
       expanded: false,
       description: 'Committed by Ava',
+      completed: true,
       body: SizedBox.shrink(),
     ),
     const RaftSpecActionCard(

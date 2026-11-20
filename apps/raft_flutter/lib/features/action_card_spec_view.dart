@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'action_card_spec.dart';
+import 'integrations_views.dart' show integrationScopeCopy;
 import 'resource_cards.dart' show resourceRelativeTime;
 
 bool actionCardExpired(CardJson metadata, [DateTime? now]) {
@@ -18,6 +19,8 @@ class ActionCardSpecView extends StatefulWidget {
     required this.spec,
     required this.metadata,
     required this.entityName,
+    required this.hasEntity,
+    required this.formatTimestamp,
     required this.resolvePress,
     required this.onPress,
     this.onEntity,
@@ -27,6 +30,7 @@ class ActionCardSpecView extends StatefulWidget {
     this.inlineForm,
     this.trailing,
     this.hiddenButton,
+    this.inlineQuestionFields = const {},
     this.canOpenFeedbackTicket = false,
     this.completedOnCurrentPlan,
   });
@@ -34,6 +38,8 @@ class ActionCardSpecView extends StatefulWidget {
   final ActionCardSpec spec;
   final CardJson metadata;
   final ActionCardEntityName entityName;
+  final bool Function(CardJson) hasEntity;
+  final String Function(DateTime) formatTimestamp;
   final ActionCardPress Function(ActionCardElement) resolvePress;
   final void Function(ActionCardPress, ActionCardElement)? onPress;
   final ValueChanged<CardJson>? onEntity;
@@ -42,6 +48,7 @@ class ActionCardSpecView extends StatefulWidget {
   final bool canOpenFeedbackTicket;
   final Widget? inlineForm, trailing;
   final String? hiddenButton, completedOnCurrentPlan;
+  final Set<String> inlineQuestionFields;
 
   @override
   State<ActionCardSpecView> createState() => _ActionCardSpecViewState();
@@ -114,6 +121,7 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
         .where((text) => text.isNotEmpty && !title.contains(text))
         .firstOrNull;
     final by = cardString(metadata['executedByUserName']);
+    final question = cardObject(metadata['action'])['type'] == 'question:ask';
     final at = DateTime.tryParse(
       '${metadata['expiresAt'] ?? cardObject(metadata['action'])['expiresAt']}',
     );
@@ -122,18 +130,33 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
         ? widget.completedOnCurrentPlan ??
               [
                 if (by != null)
-                  raftFormat(context, 'Committed by {name}', {'name': by}),
-                if (committedAt != null) _formatDate(context, committedAt),
+                  raftFormat(
+                    context,
+                    question ? 'Answered by {name}' : 'Committed by {name}',
+                    {'name': by},
+                  ),
+                if (by != null && committedAt != null)
+                  '· ${widget.formatTimestamp(committedAt)}',
                 if (!expanded && headline != null) '→ $headline',
               ].join(' ')
         : expired && at != null
         ? raftFormat(
             context,
             'Expired on {date}. Ask the agent to send a new request.',
-            {'date': _formatDate(context, at)},
+            {'date': widget.formatTimestamp(at)},
           )
         : widget.blocked;
+    final content = RaftSpecActionCardContent(context);
     final serverName = cardString(metadata['targetServerName']);
+    final body = ActionCardSpecTree(
+      root: card.body,
+      entityName: widget.entityName,
+      hasEntity: widget.hasEntity,
+      onEntity: widget.onEntity,
+      button: done || ended ? null : _button,
+      hiddenFields: widget.inlineQuestionFields,
+      fitLabels: widget.inlineForm != null,
+    );
     return RaftSpecActionCard(
       title: title,
       icon: const {
@@ -159,37 +182,29 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
           ? null
           : description,
       expanded: expanded,
+      completed: done,
       onToggle: status == null || widget.onPress == null
           ? null
           : () => setState(() => _expanded = !expanded),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        spacing: RaftSpace.x2,
-        children: [
-          if (serverName != null)
-            RaftActionNote(
-              raftFormat(context, 'Runs on {server}', {'server': serverName}),
-            ),
-          ActionCardSpecTree(
-            root: card.body,
-            entityName: widget.entityName,
-            onEntity: widget.onEntity,
-            button: done || ended ? null : _button,
+      body: content.column([
+        if (serverName != null)
+          content.notice(
+            raftFormat(context, 'Runs on {server}', {'server': serverName}),
           ),
-          if (!done && !ended) ?widget.inlineForm,
-          if (done && result != null)
-            ActionCardSpecTree(
-              root: result,
-              entityName: widget.entityName,
-              onEntity: widget.onEntity,
-              button: (context, node) => _button(context, node, result: true),
-            ),
-          ?widget.trailing,
-          if (!done && widget.error != null)
-            RaftErrorBanner(widget.error ?? '', small: true),
-        ],
-      ),
+        ...body.sections(context, content),
+        if (!done && !ended) ?widget.inlineForm,
+        if (done && result != null)
+          ...ActionCardSpecTree(
+            root: result,
+            entityName: widget.entityName,
+            hasEntity: widget.hasEntity,
+            onEntity: widget.onEntity,
+            button: (context, node) => _button(context, node, result: true),
+          ).sections(context, content),
+        ?widget.trailing,
+        if (!done && widget.error != null)
+          RaftErrorBanner(widget.error ?? '', small: true),
+      ]),
     );
   }
 
@@ -244,115 +259,119 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
   }
 }
 
-String _formatDate(BuildContext context, DateTime at) {
-  final local = at.toLocal();
-  final dates = MaterialLocalizations.of(context);
-  return '${dates.formatShortMonthDay(local)} '
-      '${dates.formatTimeOfDay(TimeOfDay.fromDateTime(local))}';
-}
-
 class ActionCardSpecTree extends StatelessWidget {
   const ActionCardSpecTree({
     super.key,
     required this.root,
     required this.entityName,
+    required this.hasEntity,
     this.onEntity,
     this.button,
+    this.hiddenFields = const {},
+    this.fitLabels = false,
   });
 
   final ActionCardElement root;
   final ActionCardEntityName entityName;
+  final bool Function(CardJson) hasEntity;
   final ValueChanged<CardJson>? onEntity;
   final Widget? Function(BuildContext, ActionCardElement)? button;
+  final Set<String> hiddenFields;
+  final bool fitLabels;
 
   @override
   Widget build(BuildContext context) {
+    final content = RaftSpecActionCardContent(context);
+    return content.column(sections(context, content));
+  }
+
+  List<Widget> sections(
+    BuildContext context,
+    RaftSpecActionCardContent content,
+  ) {
     String copy(Object? raw) => actionCardCopy(context, raw, entityName);
-    RaftCardElement? node(ActionCardElement element) {
-      final props = element.props;
-      switch (element.type) {
-        case 'Stack':
-          final row = props['direction'] == 'row';
-          final children = element.children.map(node).nonNulls.toList();
-          if (children.isEmpty) return null;
-          return RaftCardStack(
-            children: children,
-            row: row && props['role'] != 'actions',
-            wrap: props['wrap'] == true,
-            actions: row && props['role'] == 'actions',
-          );
-        case 'Text':
-          return RaftCardText(
-            copy(props['text']),
-            mono: props['mono'] == true,
-            clamp: switch (props['clamp']) {
-              final int value when value >= 1 && value <= 6 => value,
-              _ => null,
-            },
-            tone: switch (props['tone']) {
-              'muted' => RaftCardTextTone.muted,
-              'warning' => RaftCardTextTone.warning,
-              _ => RaftCardTextTone.normal,
-            },
-          );
-        case 'Badge':
-          return RaftCardBadge(copy(props['text']));
-        case 'RelativeTime':
-          final at = DateTime.tryParse('${props['at']}');
-          return at == null ? null : RaftCardRelativeTime(at);
-        case 'Duration':
-          final start = DateTime.tryParse('${props['start']}');
-          final end = DateTime.tryParse('${props['end']}');
-          return start == null ? null : RaftCardDuration(start, end);
-        case 'Field':
-          final value = props['value'];
-          return RaftCardSlot(
-            RaftActionField(
-              label: copy(props['label']),
-              value: value is List
-                  ? value.map((item) => entityName(cardObject(item))).join(', ')
-                  : copy(value),
-            ),
-          );
-        case 'EntityRef':
-          final label = entityName(props);
-          return onEntity == null
-              ? RaftCardText(label)
-              : RaftCardSlot(
-                  RaftButton(
-                    label: label,
-                    uiVariant: RaftButtonVariant.ghost,
-                    uiSize: RaftButtonSize.sm,
-                    onPressed: () => onEntity?.call(props),
-                  ),
-                );
-        case 'Notice':
-          return RaftCardSlot(
-            props['tone'] == 'warning'
-                ? RaftActionWarningBox(copy(props['text']))
-                : RaftActionNote(copy(props['text'])),
-          );
-        case 'ScopeList':
-          return RaftCardSlot(
-            RaftActionScopeList(
-              scopes: [
-                for (final scope in cardList(
-                  props['scopes'],
-                ).whereType<String>())
-                  (scope: scope, copy: ''),
-              ],
-            ),
-          );
-        case 'Button':
-          final control = button?.call(context, element);
-          return control == null ? null : RaftCardSlot(control);
-      }
-      return null;
+    final valueStyle = content.text(content.slots.propertyValue);
+
+    String name(CardJson ref) {
+      final label = entityName(ref);
+      return ref['kind'] == 'channel' &&
+              hasEntity(ref) &&
+              label.isNotEmpty &&
+              !label.startsWith('#')
+          ? '#$label'
+          : label;
     }
 
-    final element = node(root);
-    if (element == null) return const SizedBox.shrink();
-    return RaftMessageCard(
+    InlineSpan reference(CardJson ref) {
+      final label = name(ref);
+      final resolved = hasEntity(ref);
+      if (!resolved) {
+        return TextSpan(
+          text: label,
+          style: ref['kind'] == 'computer'
+              ? null
+              : const TextStyle(fontWeight: FontWeight.w600),
+        );
+      }
+      final kind = switch (ref['kind']) {
+        'channel' => RaftReferenceKind.channel,
+        'computer' => RaftReferenceKind.thread,
+        _ => null,
+      };
+      final press = onEntity;
+      if (kind == null && press == null) {
+        return TextSpan(
+          text: label,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        );
+      }
+      return raftReferenceSpan(
+        context,
+        label: label,
+        href: '',
+        base: valueStyle.copyWith(fontWeight: FontWeight.w600),
+        appearance: kind == null ? null : RaftReferenceAppearance(kind),
+        onTap: press == null ? null : () => press(ref),
+      );
+    }
+
+    RaftDescriptionEntry field(ActionCardElement element) {
+      final props = element.props;
+      final value = props['value'];
+      final refs = value is List ? value.map(cardObject).toList() : null;
+      final plain = refs == null ? copy(value) : refs.map(name).join(', ');
+      final maxLines = _clamp(props['clamp']);
+      final style = valueStyle.copyWith(
+        fontFamily: refs == null && props['mono'] == true
+            ? content.tokens.monoFont
+            : null,
+        color: props['muted'] == true
+            ? content.tokens.ui.foregroundMuted
+            : null,
+      );
+      final span = refs == null
+          ? TextSpan(text: plain)
+          : TextSpan(
+              children: [
+                for (final (index, ref) in refs.indexed) ...[
+                  if (index > 0) const TextSpan(text: ', '),
+                  reference(ref),
+                ],
+              ],
+            );
+      return RaftDescriptionEntry(
+        copy(props['label']),
+        plain,
+        detailsChild: RaftCssText.rich(
+          span,
+          style: style,
+          maxLines: maxLines,
+          overflow: maxLines == null ? null : TextOverflow.ellipsis,
+        ),
+      );
+    }
+
+    Widget generic(RaftCardElement element) => RaftMessageCard(
       root: element,
       relativeTime: (at) => resourceRelativeTime(
         at.toIso8601String(),
@@ -376,5 +395,145 @@ class ActionCardSpecTree extends StatelessWidget {
         });
       },
     ).buildBody(context);
+
+    List<Widget> render(ActionCardElement element, {bool top = false}) {
+      final props = element.props;
+      switch (element.type) {
+        case 'Stack':
+          final children = element.children;
+          final role = props['role'];
+          final row = props['direction'] == 'row';
+          if (role == 'actions' ||
+              (row &&
+                  children.isNotEmpty &&
+                  children.every((child) => child.type == 'Button'))) {
+            final controls = children.expand(render).toList();
+            return controls.isEmpty ? [] : [content.actions(controls)];
+          }
+          if (row) {
+            final controls = children.expand(render).toList();
+            return controls.isEmpty
+                ? []
+                : [
+                    Wrap(
+                      spacing: RaftSpace.x2,
+                      runSpacing: RaftSpace.x1,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: controls,
+                    ),
+                  ];
+          }
+          final reason =
+              role == 'reason' ||
+              (role == null &&
+                  !top &&
+                  children.lastOrNull?.props['tone'] == 'default' &&
+                  (children.length == 1 ||
+                      children.length == 2 &&
+                          children.first.props['tone'] == 'muted'));
+          if (reason &&
+              children.isNotEmpty &&
+              children.length <= 2 &&
+              children.every((child) => child.type == 'Text')) {
+            return [
+              content.hint(
+                label: children.length == 2
+                    ? copy(children.first.props['text'])
+                    : null,
+                body: copy(children.last.props['text']),
+                maxLines: _clamp(children.last.props['clamp']),
+              ),
+            ];
+          }
+          final visible = children
+              .where(
+                (node) =>
+                    node.type != 'Field' || !hiddenFields.contains(node.id),
+              )
+              .toList();
+          final groups = <Widget>[];
+          for (var index = 0; index < visible.length;) {
+            final node = visible[index++];
+            if (node.type == 'Field' || node.type == 'Button') {
+              final run = [node];
+              while (index < visible.length &&
+                  visible[index].type == node.type) {
+                run.add(visible[index++]);
+              }
+              if (node.type == 'Field') {
+                groups.add(
+                  content.properties(
+                    run.map(field).toList(),
+                    fitLabels: fitLabels,
+                  ),
+                );
+              } else {
+                final controls = run.expand(render).toList();
+                if (controls.isNotEmpty) groups.add(content.actions(controls));
+              }
+            } else {
+              groups.addAll(render(node));
+            }
+          }
+          return groups;
+        case 'Text':
+          return [
+            generic(
+              RaftCardText(
+                copy(props['text']),
+                mono: props['mono'] == true,
+                clamp: _clamp(props['clamp']),
+                tone: switch (props['tone']) {
+                  'muted' => RaftCardTextTone.muted,
+                  'warning' => RaftCardTextTone.warning,
+                  _ => RaftCardTextTone.normal,
+                },
+              ),
+            ),
+          ];
+        case 'Badge':
+          return [generic(RaftCardBadge(copy(props['text'])))];
+        case 'RelativeTime':
+          final at = DateTime.tryParse('${props['at']}');
+          return at == null ? [] : [generic(RaftCardRelativeTime(at))];
+        case 'Duration':
+          final start = DateTime.tryParse('${props['start']}');
+          final end = DateTime.tryParse('${props['end']}');
+          return start == null ? [] : [generic(RaftCardDuration(start, end))];
+        case 'Field':
+          return hiddenFields.contains(element.id)
+              ? []
+              : [
+                  content.properties([field(element)], fitLabels: fitLabels),
+                ];
+        case 'EntityRef':
+          return [RaftCssText.rich(reference(props), style: valueStyle)];
+        case 'Notice':
+          return [content.notice(copy(props['text']))];
+        case 'ScopeList':
+          final scopes = cardList(props['scopes'])
+              .whereType<String>()
+              .map((scope) => scope.trim())
+              .where((scope) => scope.isNotEmpty)
+              .toSet();
+          return [
+            content.scopes(context, [
+              for (final scope in scopes)
+                (scope: scope, copy: integrationScopeCopy[scope]),
+            ]),
+          ];
+        case 'Button':
+          final control = button?.call(context, element);
+          return control == null ? [] : [control];
+      }
+      return [];
+    }
+
+    return render(root, top: true);
   }
+
+  static int? _clamp(Object? value) => switch (value) {
+    final int lines when lines >= 1 && lines <= 6 => lines,
+    _ => null,
+  };
 }

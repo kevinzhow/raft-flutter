@@ -1,0 +1,2040 @@
+{
+  "source": "1d689caf34442247cab70580d7feac1b8c302d60",
+  "user": {
+    "id": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+    "name": "ava",
+    "displayName": "Ava",
+    "preferredTimezone": "Asia/Shanghai",
+    "preferredTimeFormat": "24h"
+  },
+  "server": {
+    "id": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+    "slug": "acme",
+    "name": "Acme",
+    "role": "owner",
+    "plan": "pro"
+  },
+  "channel": {
+    "id": "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    "serverId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+    "name": "general",
+    "type": "channel",
+    "joined": true,
+    "archivedAt": null
+  },
+  "agent": {
+    "id": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+    "name": "scout",
+    "displayName": "Scout",
+    "executionMode": "byoc",
+    "machineId": "5a6b7c8d-9e0f-4a1b-8c3d-4e5f60718293"
+  },
+  "members": [
+    {
+      "userId": "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f60",
+      "name": "wendy",
+      "displayName": "Wendy"
+    },
+    {
+      "userId": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+      "name": "ava",
+      "displayName": "Ava"
+    }
+  ],
+  "computer": {
+    "id": "5a6b7c8d-9e0f-4a1b-8c3d-4e5f60718293",
+    "name": "Mac mini",
+    "status": "online",
+    "isComputer": true
+  },
+  "messageId": "visual-action-card",
+  "mcp": {
+    "mcpServerId": "4f5a6b7c-8d9e-4f0a-9b2c-3d4e5f607182",
+    "agentId": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+    "viewerRole": "server_manager",
+    "app": {
+      "name": "Notion",
+      "authKind": "oauth"
+    },
+    "candidates": [
+      {
+        "connectionId": "5a6b7c8d-9e0f-4a1b-8c3d-4e5f60718293",
+        "name": "Team Notion",
+        "isServerDefault": true,
+        "status": "ready"
+      },
+      {
+        "connectionId": "6b7c8d9e-0f1a-4b2c-9d4e-5f6071829304",
+        "name": "Ava's Notion",
+        "isServerDefault": false,
+        "status": "ready"
+      }
+    ],
+    "binding": {
+      "present": false,
+      "visibleToViewer": false,
+      "connectionId": null
+    },
+    "canAuthorizeNew": true,
+    "canSetServerDefault": true,
+    "newConnectionPinnable": true,
+    "pendingGrant": null
+  },
+  "cards": {
+    "expired-agent": {
+      "kind": "action-card",
+      "state": "expired",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "channel:create",
+        "name": "launch-week",
+        "description": "Launch week",
+        "visibility": "private",
+        "initialHumans": [
+          "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f60",
+          "7c8d9e0f-1a2b-4c3d-8e5f-607182930415"
+        ],
+        "initialAgents": [
+          "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071"
+        ],
+        "draftHint": "You asked for a launch room before the release."
+      },
+      "presentation": {
+        "title": "Create channel #launch-week",
+        "confirmLabel": "Create Channel",
+        "genericApprovalAllowed": false,
+        "displayItems": [
+          {
+            "key": "name",
+            "value": "launch-week"
+          },
+          {
+            "key": "description",
+            "value": "Launch week"
+          },
+          {
+            "key": "visibility",
+            "value": "private"
+          },
+          {
+            "key": "initialHumans",
+            "value": "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f60, 7c8d9e0f-1a2b-4c3d-8e5f-607182930415"
+          },
+          {
+            "key": "initialAgents",
+            "value": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071"
+          }
+        ],
+        "riskLevel": "normal",
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "hash",
+          "title": {
+            "key": "actionCard.title.createPrivateChannel",
+            "text": {
+              "en": "Create private channel #{name}",
+              "es": "Crear canal privado #{name}",
+              "pt-br": "Criar canal privado #{name}",
+              "ru": "Создать закрытый канал #{name}",
+              "ko": "비공개 채널 #{name} 만들기",
+              "ja": "非公開チャンネル #{name} を作成",
+              "zh-cn": "创建私密频道 #{name}",
+              "zh-tw": "建立私人頻道 #{name}"
+            },
+            "params": {
+              "name": "launch-week"
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "properties",
+                  "reason",
+                  "actions"
+                ]
+              },
+              "properties": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "description",
+                  "humans",
+                  "agents"
+                ]
+              },
+              "description": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.field.description",
+                    "text": {
+                      "en": "Description",
+                      "es": "Descripción",
+                      "pt-br": "Descrição",
+                      "ru": "Описание",
+                      "ko": "설명",
+                      "ja": "説明",
+                      "zh-cn": "描述",
+                      "zh-tw": "說明"
+                    }
+                  },
+                  "value": "Launch week"
+                }
+              },
+              "humans": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.field.humans",
+                    "text": {
+                      "en": "Humans",
+                      "es": "Personas",
+                      "pt-br": "Pessoas",
+                      "ru": "Люди",
+                      "ko": "사람",
+                      "ja": "人間",
+                      "zh-cn": "人类",
+                      "zh-tw": "真人"
+                    }
+                  },
+                  "value": [
+                    {
+                      "kind": "user",
+                      "id": "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f60",
+                      "fallback": "2d3e4f5a"
+                    },
+                    {
+                      "kind": "user",
+                      "id": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+                      "fallback": "7c8d9e0f"
+                    }
+                  ]
+                }
+              },
+              "agents": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.field.agents",
+                    "text": {
+                      "en": "Agents",
+                      "es": "Agentes",
+                      "pt-br": "Agentes",
+                      "ru": "Агенты",
+                      "ko": "에이전트",
+                      "ja": "エージェント",
+                      "zh-cn": "Agent",
+                      "zh-tw": "Agent"
+                    }
+                  },
+                  "value": [
+                    {
+                      "kind": "agent",
+                      "id": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+                      "fallback": "3e4f5a6b"
+                    }
+                  ]
+                }
+              },
+              "reason": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false,
+                  "role": "reason"
+                },
+                "children": [
+                  "reasonLabel",
+                  "reasonText"
+                ]
+              },
+              "reasonLabel": {
+                "type": "Text",
+                "props": {
+                  "text": {
+                    "key": "actionCard.reason",
+                    "text": {
+                      "en": "Reason",
+                      "es": "Motivo",
+                      "pt-br": "Motivo",
+                      "ru": "Причина",
+                      "ko": "사유",
+                      "ja": "理由",
+                      "zh-cn": "原因",
+                      "zh-tw": "原因"
+                    }
+                  },
+                  "tone": "muted",
+                  "mono": false
+                }
+              },
+              "reasonText": {
+                "type": "Text",
+                "props": {
+                  "text": "You asked for a launch room before the release.",
+                  "tone": "default",
+                  "mono": false
+                }
+              },
+              "actions": {
+                "type": "Stack",
+                "props": {
+                  "direction": "row",
+                  "wrap": true,
+                  "role": "actions"
+                },
+                "children": [
+                  "createChannel"
+                ]
+              },
+              "createChannel": {
+                "type": "Button",
+                "props": {
+                  "label": {
+                    "key": "actionCard.verb.createChannel",
+                    "text": {
+                      "en": "Create channel",
+                      "es": "Crear canal",
+                      "pt-br": "Criar canal",
+                      "ru": "Создать канал",
+                      "ko": "채널 만들기",
+                      "ja": "チャンネルを作成",
+                      "zh-cn": "创建频道",
+                      "zh-tw": "建立頻道"
+                    }
+                  },
+                  "emphasis": "primary",
+                  "action": {
+                    "kind": "open",
+                    "intent": "create_channel"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "expiresAt": "2026-10-06T09:41:00.000Z"
+    },
+    "mcp-connect": {
+      "kind": "action-card",
+      "state": "prepared",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "integration:connect_mcp",
+        "mcpServerId": "4f5a6b7c-8d9e-4f0a-9b2c-3d4e5f607182",
+        "agentId": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+        "reason": "login_required",
+        "revision": 1,
+        "draftHint": "I need Notion for the launch plan."
+      },
+      "presentation": {
+        "title": "Authorize an MCP connection",
+        "confirmLabel": "Authorize",
+        "genericApprovalAllowed": false,
+        "displayItems": [
+          {
+            "key": "mcpServerId",
+            "value": "4f5a6b7c-8d9e-4f0a-9b2c-3d4e5f607182"
+          },
+          {
+            "key": "agentId",
+            "value": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071"
+          },
+          {
+            "key": "reason",
+            "value": "login_required"
+          },
+          {
+            "key": "revision",
+            "value": "1"
+          }
+        ],
+        "warning": "An agent tried to use this MCP server and has no authorized connection. Choose a connection to grant, or authorize a new one.",
+        "riskLevel": "elevated",
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "plug",
+          "title": {
+            "key": "actionCard.title.connectMcp",
+            "text": {
+              "en": "Authorize {app} for {agent}",
+              "es": "Autorizar {app} para {agent}",
+              "pt-br": "Autorizar {app} para {agent}",
+              "ru": "Авторизовать {app} для агента {agent}",
+              "ko": "{agent}의 {app} 연결 승인",
+              "ja": "{agent} の {app} 接続を認可",
+              "zh-cn": "为 {agent} 授权 {app}",
+              "zh-tw": "為 {agent} 授權 {app}"
+            },
+            "params": {
+              "app": "Notion",
+              "agent": {
+                "kind": "agent",
+                "id": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+                "fallback": "Scout"
+              }
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "reason"
+                ]
+              },
+              "reason": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false,
+                  "role": "reason"
+                },
+                "children": [
+                  "reasonLabel",
+                  "reasonText"
+                ]
+              },
+              "reasonLabel": {
+                "type": "Text",
+                "props": {
+                  "text": {
+                    "key": "actionCard.reason",
+                    "text": {
+                      "en": "Reason",
+                      "es": "Motivo",
+                      "pt-br": "Motivo",
+                      "ru": "Причина",
+                      "ko": "사유",
+                      "ja": "理由",
+                      "zh-cn": "原因",
+                      "zh-tw": "原因"
+                    }
+                  },
+                  "tone": "muted",
+                  "mono": false
+                }
+              },
+              "reasonText": {
+                "type": "Text",
+                "props": {
+                  "text": "I need Notion for the launch plan.",
+                  "tone": "default",
+                  "mono": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent-create": {
+      "kind": "action-card",
+      "state": "prepared",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "agent:create",
+        "name": "Scribe",
+        "description": "Takes meeting notes.",
+        "draftHint": "You asked for a note taker."
+      },
+      "presentation": {
+        "title": "Create Agent @Scribe",
+        "confirmLabel": "Create Agent",
+        "genericApprovalAllowed": false,
+        "displayItems": [
+          {
+            "key": "name",
+            "value": "Scribe"
+          },
+          {
+            "key": "description",
+            "value": "Takes meeting notes."
+          }
+        ],
+        "riskLevel": "normal",
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "bot",
+          "title": {
+            "key": "actionCard.title.createAgent",
+            "text": {
+              "en": "Create agent {name}",
+              "es": "Crear agente {name}",
+              "pt-br": "Criar agente {name}",
+              "ru": "Создать агента {name}",
+              "ko": "에이전트 {name} 만들기",
+              "ja": "エージェント {name} を作成",
+              "zh-cn": "创建 Agent {name}",
+              "zh-tw": "建立 Agent {name}"
+            },
+            "params": {
+              "name": "Scribe"
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "properties",
+                  "reason",
+                  "actions"
+                ]
+              },
+              "properties": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "description"
+                ]
+              },
+              "description": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.field.description",
+                    "text": {
+                      "en": "Description",
+                      "es": "Descripción",
+                      "pt-br": "Descrição",
+                      "ru": "Описание",
+                      "ko": "설명",
+                      "ja": "説明",
+                      "zh-cn": "描述",
+                      "zh-tw": "說明"
+                    }
+                  },
+                  "value": "Takes meeting notes."
+                }
+              },
+              "reason": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false,
+                  "role": "reason"
+                },
+                "children": [
+                  "reasonLabel",
+                  "reasonText"
+                ]
+              },
+              "reasonLabel": {
+                "type": "Text",
+                "props": {
+                  "text": {
+                    "key": "actionCard.reason",
+                    "text": {
+                      "en": "Reason",
+                      "es": "Motivo",
+                      "pt-br": "Motivo",
+                      "ru": "Причина",
+                      "ko": "사유",
+                      "ja": "理由",
+                      "zh-cn": "原因",
+                      "zh-tw": "原因"
+                    }
+                  },
+                  "tone": "muted",
+                  "mono": false
+                }
+              },
+              "reasonText": {
+                "type": "Text",
+                "props": {
+                  "text": "You asked for a note taker.",
+                  "tone": "default",
+                  "mono": false
+                }
+              },
+              "actions": {
+                "type": "Stack",
+                "props": {
+                  "direction": "row",
+                  "wrap": true,
+                  "role": "actions"
+                },
+                "children": [
+                  "createAgent"
+                ]
+              },
+              "createAgent": {
+                "type": "Button",
+                "props": {
+                  "label": {
+                    "key": "actionCard.verb.createAgent",
+                    "text": {
+                      "en": "Create agent",
+                      "es": "Crear agente",
+                      "pt-br": "Criar agente",
+                      "ru": "Создать агента",
+                      "ko": "에이전트 만들기",
+                      "ja": "エージェントを作成",
+                      "zh-cn": "创建 Agent",
+                      "zh-tw": "建立 Agent"
+                    }
+                  },
+                  "emphasis": "primary",
+                  "action": {
+                    "kind": "open",
+                    "intent": "create_agent"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent-migrate": {
+      "kind": "action-card",
+      "state": "prepared",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "agent:migrate",
+        "agentId": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+        "suggestedComputer": "5a6b7c8d-9e0f-4a1b-8c3d-4e5f60718293",
+        "draftHint": "My computer has been offline since 07:40, so I can't run tonight's eval. Mac mini is online."
+      },
+      "presentation": {
+        "title": "Move agent to another computer",
+        "confirmLabel": "Move Agent",
+        "genericApprovalAllowed": false,
+        "displayItems": [
+          {
+            "key": "agentId",
+            "value": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071"
+          },
+          {
+            "key": "suggestedComputer",
+            "value": "5a6b7c8d-9e0f-4a1b-8c3d-4e5f60718293"
+          }
+        ],
+        "riskLevel": "normal",
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "bot",
+          "title": {
+            "key": "actionCard.title.migrateAgent",
+            "text": {
+              "en": "Move {agent} to another computer",
+              "zh-cn": "把 {agent} 迁移到另一台电脑"
+            },
+            "params": {
+              "agent": {
+                "kind": "agent",
+                "id": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+                "fallback": "Scout"
+              }
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "properties",
+                  "reason",
+                  "actions"
+                ]
+              },
+              "properties": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "computer"
+                ]
+              },
+              "computer": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.field.suggestedComputer",
+                    "text": {
+                      "en": "Suggested computer",
+                      "es": "Computadora sugerida",
+                      "pt-br": "Computador sugerido",
+                      "ru": "Рекомендуемый компьютер",
+                      "ko": "추천 컴퓨터",
+                      "ja": "推奨のコンピューター",
+                      "zh-cn": "建议的计算机",
+                      "zh-tw": "建議的電腦"
+                    }
+                  },
+                  "value": [
+                    {
+                      "kind": "computer",
+                      "id": "5a6b7c8d-9e0f-4a1b-8c3d-4e5f60718293",
+                      "fallback": "5a6b7c8d"
+                    }
+                  ],
+                  "mono": true
+                }
+              },
+              "reason": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false,
+                  "role": "reason"
+                },
+                "children": [
+                  "reasonLabel",
+                  "reasonText"
+                ]
+              },
+              "reasonLabel": {
+                "type": "Text",
+                "props": {
+                  "text": {
+                    "key": "actionCard.reason",
+                    "text": {
+                      "en": "Reason",
+                      "es": "Motivo",
+                      "pt-br": "Motivo",
+                      "ru": "Причина",
+                      "ko": "사유",
+                      "ja": "理由",
+                      "zh-cn": "原因",
+                      "zh-tw": "原因"
+                    }
+                  },
+                  "tone": "muted",
+                  "mono": false
+                }
+              },
+              "reasonText": {
+                "type": "Text",
+                "props": {
+                  "text": "My computer has been offline since 07:40, so I can't run tonight's eval. Mac mini is online.",
+                  "tone": "default",
+                  "mono": false
+                }
+              },
+              "actions": {
+                "type": "Stack",
+                "props": {
+                  "direction": "row",
+                  "wrap": true,
+                  "role": "actions"
+                },
+                "children": [
+                  "migrateAgent"
+                ]
+              },
+              "migrateAgent": {
+                "type": "Button",
+                "props": {
+                  "label": {
+                    "key": "actionCard.verb.migrateAgent",
+                    "text": {
+                      "en": "Move agent",
+                      "zh-cn": "迁移 Agent"
+                    }
+                  },
+                  "emphasis": "primary",
+                  "action": {
+                    "kind": "open",
+                    "intent": "migrate_agent"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "question-single": {
+      "kind": "action-card",
+      "state": "prepared",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "question:ask",
+        "to": "@ava",
+        "expiresInMinutes": 10080,
+        "questions": [
+          {
+            "id": "choice",
+            "kind": "single",
+            "text": "When should we cut v1.24?",
+            "required": true,
+            "options": [
+              {
+                "value": "choice_0",
+                "label": "Tuesday"
+              },
+              {
+                "value": "choice_1",
+                "label": "Thursday"
+              }
+            ]
+          }
+        ],
+        "addressee": {
+          "kind": "user",
+          "userId": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+          "handle": "ava"
+        },
+        "expiresAt": "2099-10-06T09:41:00.000Z"
+      },
+      "presentation": {
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "message",
+          "title": {
+            "key": "actionCard.question.title.one",
+            "text": {
+              "en": "Answer Question",
+              "es": "Responder pregunta",
+              "pt-br": "Responder pergunta",
+              "ru": "Ответить на вопрос",
+              "ko": "질문에 답하기",
+              "ja": "質問に回答",
+              "zh-cn": "回答问题",
+              "zh-tw": "回答問題"
+            },
+            "params": {
+              "count": 1
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "properties",
+                  "actions"
+                ]
+              },
+              "properties": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "for",
+                  "q_choice"
+                ]
+              },
+              "for": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.for",
+                    "text": {
+                      "en": "For",
+                      "es": "Para",
+                      "pt-br": "Para",
+                      "ru": "Для кого",
+                      "ko": "대상",
+                      "ja": "宛先",
+                      "zh-cn": "问",
+                      "zh-tw": "問"
+                    }
+                  },
+                  "value": [
+                    {
+                      "kind": "user",
+                      "id": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+                      "fallback": "Ava"
+                    }
+                  ]
+                }
+              },
+              "q_choice": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.question",
+                    "text": {
+                      "en": "Question",
+                      "es": "Pregunta",
+                      "pt-br": "Pergunta",
+                      "ru": "Вопрос",
+                      "ko": "질문",
+                      "ja": "質問",
+                      "zh-cn": "问题",
+                      "zh-tw": "問題"
+                    }
+                  },
+                  "value": "When should we cut v1.24?"
+                }
+              },
+              "actions": {
+                "type": "Stack",
+                "props": {
+                  "direction": "row",
+                  "wrap": true,
+                  "role": "actions"
+                },
+                "children": [
+                  "answer"
+                ]
+              },
+              "answer": {
+                "type": "Button",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.answer.one",
+                    "text": {
+                      "en": "Answer Question",
+                      "es": "Responder pregunta",
+                      "pt-br": "Responder pergunta",
+                      "ru": "Ответить на вопрос",
+                      "ko": "질문에 답하기",
+                      "ja": "質問に回答",
+                      "zh-cn": "回答问题",
+                      "zh-tw": "回答問題"
+                    },
+                    "params": {
+                      "count": 1
+                    }
+                  },
+                  "emphasis": "primary",
+                  "action": {
+                    "kind": "open_form",
+                    "form": "answers"
+                  }
+                }
+              }
+            }
+          },
+          "forms": {
+            "answers": {
+              "title": {
+                "key": "actionCard.question.form.title.one",
+                "text": {
+                  "en": "Answer Question",
+                  "es": "Responder pregunta",
+                  "pt-br": "Responder pergunta",
+                  "ru": "Ответить на вопрос",
+                  "ko": "질문에 답하기",
+                  "ja": "質問に回答",
+                  "zh-cn": "回答问题",
+                  "zh-tw": "回答問題"
+                },
+                "params": {
+                  "count": 1
+                }
+              },
+              "submitLabel": {
+                "key": "actionCard.question.form.submit",
+                "text": {
+                  "en": "Answer",
+                  "es": "Responder",
+                  "pt-br": "Responder",
+                  "ru": "Ответить",
+                  "ko": "답하기",
+                  "ja": "回答",
+                  "zh-cn": "回答",
+                  "zh-tw": "回答"
+                }
+              },
+              "description": {
+                "key": "actionCard.question.form.visibility",
+                "text": {
+                  "en": "{agent} and everyone who can read this conversation will see your answers.",
+                  "es": "{agent} y todas las personas que pueden leer esta conversación verán tus respuestas.",
+                  "pt-br": "{agent} e todos que podem ler esta conversa verão suas respostas.",
+                  "ru": "Ваши ответы увидит агент {agent} и все, кто может читать этот чат.",
+                  "ko": "{agent}와(과) 이 대화를 볼 수 있는 모든 사람이 내 답변을 보게 돼요.",
+                  "ja": "{agent} と、この会話を読めるすべての人があなたの回答を見られます。",
+                  "zh-cn": "{agent} 和能看到这段对话的人都会看到你的回答。",
+                  "zh-tw": "{agent} 和能看到這段對話的人都會看到你的回答。"
+                },
+                "params": {
+                  "agent": {
+                    "kind": "agent",
+                    "id": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+                    "fallback": "Scout"
+                  }
+                }
+              },
+              "fields": [
+                {
+                  "type": "Choice",
+                  "name": "choice",
+                  "label": {
+                    "key": "actionCard.text.raw",
+                    "text": {
+                      "en": "{t}"
+                    },
+                    "params": {
+                      "t": "When should we cut v1.24?"
+                    }
+                  },
+                  "required": true,
+                  "multiple": false,
+                  "options": [
+                    {
+                      "value": "choice_0",
+                      "label": {
+                        "key": "actionCard.text.raw",
+                        "text": {
+                          "en": "{t}"
+                        },
+                        "params": {
+                          "t": "Tuesday"
+                        }
+                      },
+                      "description": {
+                        "key": "actionCard.text.raw",
+                        "text": {
+                          "en": "After morning QA"
+                        }
+                      }
+                    },
+                    {
+                      "value": "choice_1",
+                      "label": {
+                        "key": "actionCard.text.raw",
+                        "text": {
+                          "en": "{t}"
+                        },
+                        "params": {
+                          "t": "Thursday"
+                        }
+                      }
+                    }
+                  ],
+                  "other": {
+                    "label": {
+                      "key": "actionCard.question.other",
+                      "text": {
+                        "en": "Other…",
+                        "es": "Otra…",
+                        "pt-br": "Outra…",
+                        "ru": "Другое…",
+                        "ko": "기타…",
+                        "ja": "その他…",
+                        "zh-cn": "其他…",
+                        "zh-tw": "其他…"
+                      }
+                    },
+                    "maxLength": 500
+                  }
+                }
+              ],
+              "placement": "inline"
+            }
+          }
+        }
+      }
+    },
+    "question-multi": {
+      "kind": "action-card",
+      "state": "prepared",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "question:ask",
+        "to": "anyone",
+        "expiresInMinutes": 10080,
+        "questions": [
+          {
+            "id": "choice",
+            "kind": "multiple",
+            "text": "Which clients should we verify?",
+            "required": true,
+            "options": [
+              {
+                "value": "choice_0",
+                "label": "Web"
+              },
+              {
+                "value": "choice_1",
+                "label": "Desktop"
+              },
+              {
+                "value": "choice_2",
+                "label": "Mobile"
+              }
+            ]
+          }
+        ],
+        "addressee": {
+          "kind": "anyone"
+        },
+        "expiresAt": "2099-10-06T09:41:00.000Z"
+      },
+      "presentation": {
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "message",
+          "title": {
+            "key": "actionCard.question.title.one",
+            "text": {
+              "en": "Answer Question",
+              "es": "Responder pregunta",
+              "pt-br": "Responder pergunta",
+              "ru": "Ответить на вопрос",
+              "ko": "질문에 답하기",
+              "ja": "質問に回答",
+              "zh-cn": "回答问题",
+              "zh-tw": "回答問題"
+            },
+            "params": {
+              "count": 1
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "properties",
+                  "actions"
+                ]
+              },
+              "properties": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "for",
+                  "q_choice"
+                ]
+              },
+              "for": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.for",
+                    "text": {
+                      "en": "For",
+                      "es": "Para",
+                      "pt-br": "Para",
+                      "ru": "Для кого",
+                      "ko": "대상",
+                      "ja": "宛先",
+                      "zh-cn": "问",
+                      "zh-tw": "問"
+                    }
+                  },
+                  "value": {
+                    "key": "actionCard.question.anyone",
+                    "text": {
+                      "en": "Anyone in this channel",
+                      "es": "Cualquier persona de este canal",
+                      "pt-br": "Qualquer pessoa neste canal",
+                      "ru": "Любой участник канала",
+                      "ko": "이 채널의 누구나",
+                      "ja": "このチャンネルの誰でも",
+                      "zh-cn": "频道里的任何人",
+                      "zh-tw": "頻道裡的任何人"
+                    }
+                  }
+                }
+              },
+              "q_choice": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.question",
+                    "text": {
+                      "en": "Question",
+                      "es": "Pregunta",
+                      "pt-br": "Pergunta",
+                      "ru": "Вопрос",
+                      "ko": "질문",
+                      "ja": "質問",
+                      "zh-cn": "问题",
+                      "zh-tw": "問題"
+                    }
+                  },
+                  "value": "Which clients should we verify?"
+                }
+              },
+              "actions": {
+                "type": "Stack",
+                "props": {
+                  "direction": "row",
+                  "wrap": true,
+                  "role": "actions"
+                },
+                "children": [
+                  "answer"
+                ]
+              },
+              "answer": {
+                "type": "Button",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.answer.one",
+                    "text": {
+                      "en": "Answer Question",
+                      "es": "Responder pregunta",
+                      "pt-br": "Responder pergunta",
+                      "ru": "Ответить на вопрос",
+                      "ko": "질문에 답하기",
+                      "ja": "質問に回答",
+                      "zh-cn": "回答问题",
+                      "zh-tw": "回答問題"
+                    },
+                    "params": {
+                      "count": 1
+                    }
+                  },
+                  "emphasis": "primary",
+                  "action": {
+                    "kind": "open_form",
+                    "form": "answers"
+                  }
+                }
+              }
+            }
+          },
+          "forms": {
+            "answers": {
+              "title": {
+                "key": "actionCard.question.form.title.one",
+                "text": {
+                  "en": "Answer Question",
+                  "es": "Responder pregunta",
+                  "pt-br": "Responder pergunta",
+                  "ru": "Ответить на вопрос",
+                  "ko": "질문에 답하기",
+                  "ja": "質問に回答",
+                  "zh-cn": "回答问题",
+                  "zh-tw": "回答問題"
+                },
+                "params": {
+                  "count": 1
+                }
+              },
+              "submitLabel": {
+                "key": "actionCard.question.form.submit",
+                "text": {
+                  "en": "Answer",
+                  "es": "Responder",
+                  "pt-br": "Responder",
+                  "ru": "Ответить",
+                  "ko": "답하기",
+                  "ja": "回答",
+                  "zh-cn": "回答",
+                  "zh-tw": "回答"
+                }
+              },
+              "description": {
+                "key": "actionCard.question.form.visibility",
+                "text": {
+                  "en": "{agent} and everyone who can read this conversation will see your answers.",
+                  "es": "{agent} y todas las personas que pueden leer esta conversación verán tus respuestas.",
+                  "pt-br": "{agent} e todos que podem ler esta conversa verão suas respostas.",
+                  "ru": "Ваши ответы увидит агент {agent} и все, кто может читать этот чат.",
+                  "ko": "{agent}와(과) 이 대화를 볼 수 있는 모든 사람이 내 답변을 보게 돼요.",
+                  "ja": "{agent} と、この会話を読めるすべての人があなたの回答を見られます。",
+                  "zh-cn": "{agent} 和能看到这段对话的人都会看到你的回答。",
+                  "zh-tw": "{agent} 和能看到這段對話的人都會看到你的回答。"
+                },
+                "params": {
+                  "agent": {
+                    "kind": "agent",
+                    "id": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+                    "fallback": "Scout"
+                  }
+                }
+              },
+              "fields": [
+                {
+                  "type": "Choice",
+                  "name": "choice",
+                  "label": {
+                    "key": "actionCard.text.raw",
+                    "text": {
+                      "en": "{t}"
+                    },
+                    "params": {
+                      "t": "Which clients should we verify?"
+                    }
+                  },
+                  "required": true,
+                  "multiple": true,
+                  "options": [
+                    {
+                      "value": "choice_0",
+                      "label": {
+                        "key": "actionCard.text.raw",
+                        "text": {
+                          "en": "{t}"
+                        },
+                        "params": {
+                          "t": "Web"
+                        }
+                      }
+                    },
+                    {
+                      "value": "choice_1",
+                      "label": {
+                        "key": "actionCard.text.raw",
+                        "text": {
+                          "en": "{t}"
+                        },
+                        "params": {
+                          "t": "Desktop"
+                        }
+                      }
+                    },
+                    {
+                      "value": "choice_2",
+                      "label": {
+                        "key": "actionCard.text.raw",
+                        "text": {
+                          "en": "{t}"
+                        },
+                        "params": {
+                          "t": "Mobile"
+                        }
+                      }
+                    }
+                  ],
+                  "other": {
+                    "label": {
+                      "key": "actionCard.question.other",
+                      "text": {
+                        "en": "Other…",
+                        "es": "Otra…",
+                        "pt-br": "Outra…",
+                        "ru": "Другое…",
+                        "ko": "기타…",
+                        "ja": "その他…",
+                        "zh-cn": "其他…",
+                        "zh-tw": "其他…"
+                      }
+                    },
+                    "maxLength": 500
+                  }
+                }
+              ],
+              "placement": "inline"
+            }
+          }
+        }
+      }
+    },
+    "question-confirm": {
+      "kind": "action-card",
+      "state": "prepared",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "question:ask",
+        "to": "@ava",
+        "expiresInMinutes": 10080,
+        "questions": [
+          {
+            "id": "choice",
+            "kind": "single",
+            "text": "Ready to push to staging?",
+            "required": true,
+            "options": [
+              {
+                "value": "choice_0",
+                "label": "Deploy to staging"
+              }
+            ]
+          }
+        ],
+        "addressee": {
+          "kind": "user",
+          "userId": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+          "handle": "ava"
+        },
+        "expiresAt": "2099-10-06T09:41:00.000Z"
+      },
+      "presentation": {
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "message",
+          "title": {
+            "key": "actionCard.question.title.one",
+            "text": {
+              "en": "Answer Question",
+              "es": "Responder pregunta",
+              "pt-br": "Responder pergunta",
+              "ru": "Ответить на вопрос",
+              "ko": "질문에 답하기",
+              "ja": "質問に回答",
+              "zh-cn": "回答问题",
+              "zh-tw": "回答問題"
+            },
+            "params": {
+              "count": 1
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "properties",
+                  "actions"
+                ]
+              },
+              "properties": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "for",
+                  "q_choice"
+                ]
+              },
+              "for": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.for",
+                    "text": {
+                      "en": "For",
+                      "es": "Para",
+                      "pt-br": "Para",
+                      "ru": "Для кого",
+                      "ko": "대상",
+                      "ja": "宛先",
+                      "zh-cn": "问",
+                      "zh-tw": "問"
+                    }
+                  },
+                  "value": [
+                    {
+                      "kind": "user",
+                      "id": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+                      "fallback": "Ava"
+                    }
+                  ]
+                }
+              },
+              "q_choice": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.question",
+                    "text": {
+                      "en": "Question",
+                      "es": "Pregunta",
+                      "pt-br": "Pergunta",
+                      "ru": "Вопрос",
+                      "ko": "질문",
+                      "ja": "質問",
+                      "zh-cn": "问题",
+                      "zh-tw": "問題"
+                    }
+                  },
+                  "value": "Ready to push to staging?"
+                }
+              },
+              "actions": {
+                "type": "Stack",
+                "props": {
+                  "direction": "row",
+                  "wrap": true,
+                  "role": "actions"
+                },
+                "children": [
+                  "answer"
+                ]
+              },
+              "answer": {
+                "type": "Button",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.answer.one",
+                    "text": {
+                      "en": "Answer Question",
+                      "es": "Responder pregunta",
+                      "pt-br": "Responder pergunta",
+                      "ru": "Ответить на вопрос",
+                      "ko": "질문에 답하기",
+                      "ja": "質問に回答",
+                      "zh-cn": "回答问题",
+                      "zh-tw": "回答問題"
+                    },
+                    "params": {
+                      "count": 1
+                    }
+                  },
+                  "emphasis": "primary",
+                  "action": {
+                    "kind": "open_form",
+                    "form": "answers"
+                  }
+                }
+              }
+            }
+          },
+          "forms": {
+            "answers": {
+              "title": {
+                "key": "actionCard.question.form.title.one",
+                "text": {
+                  "en": "Answer Question",
+                  "es": "Responder pregunta",
+                  "pt-br": "Responder pergunta",
+                  "ru": "Ответить на вопрос",
+                  "ko": "질문에 답하기",
+                  "ja": "質問に回答",
+                  "zh-cn": "回答问题",
+                  "zh-tw": "回答問題"
+                },
+                "params": {
+                  "count": 1
+                }
+              },
+              "submitLabel": {
+                "key": "actionCard.question.form.submit",
+                "text": {
+                  "en": "Answer",
+                  "es": "Responder",
+                  "pt-br": "Responder",
+                  "ru": "Ответить",
+                  "ko": "답하기",
+                  "ja": "回答",
+                  "zh-cn": "回答",
+                  "zh-tw": "回答"
+                }
+              },
+              "description": {
+                "key": "actionCard.question.form.visibility",
+                "text": {
+                  "en": "{agent} and everyone who can read this conversation will see your answers.",
+                  "es": "{agent} y todas las personas que pueden leer esta conversación verán tus respuestas.",
+                  "pt-br": "{agent} e todos que podem ler esta conversa verão suas respostas.",
+                  "ru": "Ваши ответы увидит агент {agent} и все, кто может читать этот чат.",
+                  "ko": "{agent}와(과) 이 대화를 볼 수 있는 모든 사람이 내 답변을 보게 돼요.",
+                  "ja": "{agent} と、この会話を読めるすべての人があなたの回答を見られます。",
+                  "zh-cn": "{agent} 和能看到这段对话的人都会看到你的回答。",
+                  "zh-tw": "{agent} 和能看到這段對話的人都會看到你的回答。"
+                },
+                "params": {
+                  "agent": {
+                    "kind": "agent",
+                    "id": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+                    "fallback": "Scout"
+                  }
+                }
+              },
+              "fields": [
+                {
+                  "type": "Choice",
+                  "name": "choice",
+                  "label": {
+                    "key": "actionCard.text.raw",
+                    "text": {
+                      "en": "{t}"
+                    },
+                    "params": {
+                      "t": "Ready to push to staging?"
+                    }
+                  },
+                  "required": true,
+                  "multiple": false,
+                  "options": [
+                    {
+                      "value": "choice_0",
+                      "label": {
+                        "key": "actionCard.text.raw",
+                        "text": {
+                          "en": "{t}"
+                        },
+                        "params": {
+                          "t": "Deploy to staging"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "placement": "inline"
+            }
+          }
+        }
+      }
+    },
+    "question-answered": {
+      "kind": "action-card",
+      "state": "executed",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "question:ask",
+        "to": "@ava",
+        "expiresInMinutes": 10080,
+        "questions": [
+          {
+            "id": "choice",
+            "kind": "single",
+            "text": "When should we cut v1.24?",
+            "required": true,
+            "options": [
+              {
+                "value": "choice_0",
+                "label": "Tuesday"
+              },
+              {
+                "value": "choice_1",
+                "label": "Thursday"
+              }
+            ]
+          }
+        ],
+        "addressee": {
+          "kind": "user",
+          "userId": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+          "handle": "ava"
+        },
+        "expiresAt": "2099-10-06T09:41:00.000Z"
+      },
+      "presentation": {
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "message",
+          "title": {
+            "key": "actionCard.question.title.one",
+            "text": {
+              "en": "Answer Question",
+              "es": "Responder pregunta",
+              "pt-br": "Responder pergunta",
+              "ru": "Ответить на вопрос",
+              "ko": "질문에 답하기",
+              "ja": "質問に回答",
+              "zh-cn": "回答问题",
+              "zh-tw": "回答問題"
+            },
+            "params": {
+              "count": 1
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "properties"
+                ]
+              },
+              "properties": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "for"
+                ]
+              },
+              "for": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.for",
+                    "text": {
+                      "en": "For",
+                      "es": "Para",
+                      "pt-br": "Para",
+                      "ru": "Для кого",
+                      "ko": "대상",
+                      "ja": "宛先",
+                      "zh-cn": "问",
+                      "zh-tw": "問"
+                    }
+                  },
+                  "value": [
+                    {
+                      "kind": "user",
+                      "id": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+                      "fallback": "Ava"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "result": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "q_choice",
+                  "a_choice"
+                ]
+              },
+              "q_choice": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.question",
+                    "text": {
+                      "en": "Question",
+                      "es": "Pregunta",
+                      "pt-br": "Pergunta",
+                      "ru": "Вопрос",
+                      "ko": "질문",
+                      "ja": "質問",
+                      "zh-cn": "问题",
+                      "zh-tw": "問題"
+                    }
+                  },
+                  "value": "When should we cut v1.24?"
+                }
+              },
+              "a_choice": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.question.answerLabel",
+                    "text": {
+                      "en": "Answer",
+                      "es": "Respuesta",
+                      "pt-br": "Resposta",
+                      "ru": "Ответ",
+                      "ko": "답변",
+                      "ja": "回答",
+                      "zh-cn": "回答",
+                      "zh-tw": "回答"
+                    }
+                  },
+                  "value": "Tuesday"
+                }
+              }
+            }
+          }
+        }
+      },
+      "executedByUserName": "Ava",
+      "executedAt": "2026-10-06T09:42:00.000Z",
+      "result": {
+        "kind": "question-answers",
+        "ref": null,
+        "answeredBy": {
+          "userId": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+          "handle": "ava"
+        },
+        "answeredAt": "2026-10-06T09:42:00.000Z",
+        "answers": {
+          "choice": {
+            "kind": "choice",
+            "selected": [
+              "choice_0"
+            ]
+          }
+        }
+      }
+    },
+    "channel-done": {
+      "kind": "action-card",
+      "state": "executed",
+      "sourceServerId": "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+      "confirmationVersion": 1,
+      "action": {
+        "type": "channel:create",
+        "name": "launch-week",
+        "description": "Launch week",
+        "visibility": "private",
+        "initialHumans": [
+          "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f60",
+          "7c8d9e0f-1a2b-4c3d-8e5f-607182930415"
+        ],
+        "initialAgents": [
+          "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071"
+        ],
+        "draftHint": "You asked for a launch room before the release."
+      },
+      "presentation": {
+        "title": "Create channel #launch-week",
+        "confirmLabel": "Create Channel",
+        "genericApprovalAllowed": false,
+        "displayItems": [
+          {
+            "key": "name",
+            "value": "launch-week"
+          },
+          {
+            "key": "description",
+            "value": "Launch week"
+          },
+          {
+            "key": "visibility",
+            "value": "private"
+          },
+          {
+            "key": "initialHumans",
+            "value": "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f60, 7c8d9e0f-1a2b-4c3d-8e5f-607182930415"
+          },
+          {
+            "key": "initialAgents",
+            "value": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071"
+          }
+        ],
+        "riskLevel": "normal",
+        "card": {
+          "catalog": "action-card.v1",
+          "icon": "hash",
+          "title": {
+            "key": "actionCard.title.createPrivateChannel",
+            "text": {
+              "en": "Create private channel #{name}",
+              "es": "Crear canal privado #{name}",
+              "pt-br": "Criar canal privado #{name}",
+              "ru": "Создать закрытый канал #{name}",
+              "ko": "비공개 채널 #{name} 만들기",
+              "ja": "非公開チャンネル #{name} を作成",
+              "zh-cn": "创建私密频道 #{name}",
+              "zh-tw": "建立私人頻道 #{name}"
+            },
+            "params": {
+              "name": "launch-week"
+            }
+          },
+          "spec": {
+            "root": "root",
+            "elements": {
+              "root": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "properties",
+                  "reason",
+                  "actions"
+                ]
+              },
+              "properties": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false
+                },
+                "children": [
+                  "description",
+                  "humans",
+                  "agents"
+                ]
+              },
+              "description": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.field.description",
+                    "text": {
+                      "en": "Description",
+                      "es": "Descripción",
+                      "pt-br": "Descrição",
+                      "ru": "Описание",
+                      "ko": "설명",
+                      "ja": "説明",
+                      "zh-cn": "描述",
+                      "zh-tw": "說明"
+                    }
+                  },
+                  "value": "Launch week"
+                }
+              },
+              "humans": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.field.humans",
+                    "text": {
+                      "en": "Humans",
+                      "es": "Personas",
+                      "pt-br": "Pessoas",
+                      "ru": "Люди",
+                      "ko": "사람",
+                      "ja": "人間",
+                      "zh-cn": "人类",
+                      "zh-tw": "真人"
+                    }
+                  },
+                  "value": [
+                    {
+                      "kind": "user",
+                      "id": "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f60",
+                      "fallback": "2d3e4f5a"
+                    },
+                    {
+                      "kind": "user",
+                      "id": "7c8d9e0f-1a2b-4c3d-8e5f-607182930415",
+                      "fallback": "7c8d9e0f"
+                    }
+                  ]
+                }
+              },
+              "agents": {
+                "type": "Field",
+                "props": {
+                  "label": {
+                    "key": "actionCard.field.agents",
+                    "text": {
+                      "en": "Agents",
+                      "es": "Agentes",
+                      "pt-br": "Agentes",
+                      "ru": "Агенты",
+                      "ko": "에이전트",
+                      "ja": "エージェント",
+                      "zh-cn": "Agent",
+                      "zh-tw": "Agent"
+                    }
+                  },
+                  "value": [
+                    {
+                      "kind": "agent",
+                      "id": "3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6071",
+                      "fallback": "3e4f5a6b"
+                    }
+                  ]
+                }
+              },
+              "reason": {
+                "type": "Stack",
+                "props": {
+                  "direction": "column",
+                  "wrap": false,
+                  "role": "reason"
+                },
+                "children": [
+                  "reasonLabel",
+                  "reasonText"
+                ]
+              },
+              "reasonLabel": {
+                "type": "Text",
+                "props": {
+                  "text": {
+                    "key": "actionCard.reason",
+                    "text": {
+                      "en": "Reason",
+                      "es": "Motivo",
+                      "pt-br": "Motivo",
+                      "ru": "Причина",
+                      "ko": "사유",
+                      "ja": "理由",
+                      "zh-cn": "原因",
+                      "zh-tw": "原因"
+                    }
+                  },
+                  "tone": "muted",
+                  "mono": false
+                }
+              },
+              "reasonText": {
+                "type": "Text",
+                "props": {
+                  "text": "You asked for a launch room before the release.",
+                  "tone": "default",
+                  "mono": false
+                }
+              },
+              "actions": {
+                "type": "Stack",
+                "props": {
+                  "direction": "row",
+                  "wrap": true,
+                  "role": "actions"
+                },
+                "children": [
+                  "createChannel"
+                ]
+              },
+              "createChannel": {
+                "type": "Button",
+                "props": {
+                  "label": {
+                    "key": "actionCard.verb.createChannel",
+                    "text": {
+                      "en": "Create channel",
+                      "es": "Crear canal",
+                      "pt-br": "Criar canal",
+                      "ru": "Создать канал",
+                      "ko": "채널 만들기",
+                      "ja": "チャンネルを作成",
+                      "zh-cn": "创建频道",
+                      "zh-tw": "建立頻道"
+                    }
+                  },
+                  "emphasis": "primary",
+                  "action": {
+                    "kind": "open",
+                    "intent": "create_channel"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "executedByUserName": "Ava",
+      "executedAt": "2026-10-06T09:42:00.000Z"
+    }
+  }
+}

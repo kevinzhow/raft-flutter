@@ -11,6 +11,7 @@ import '../data/app_install_expectation.dart' show appPromptTextConsent;
 import '../data/cause_notice.dart';
 import '../data/message_history_events.dart';
 import '../data/raft_location.dart';
+import '../data/source_time_formatter.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
@@ -966,26 +967,33 @@ class _MessageActionCardState extends State<MessageActionCard> {
   static Widget? _note(Object? value) =>
       _nonEmpty(value) ? RaftActionNote(value as String) : null;
 
-  String _entityName(CardJson ref) {
+  CardJson? _cardEntity(CardJson ref) {
     final id = cardString(ref['id']);
-    final fallback = cardString(ref['fallback']) ?? '';
+    final currentServer = w.server?.id;
     if (id == null ||
-        actionCardReadOnlyInServer(metadata, w.server?.id) ||
-        ref['serverId'] != null && ref['serverId'] != w.server?.id) {
-      return fallback;
+        actionCardReadOnlyInServer(metadata, currentServer) ||
+        ref['serverId'] != null && ref['serverId'] != currentServer) {
+      return null;
     }
     final directory = w.services.entityDirectory;
-    final entity = switch (ref['kind']) {
+    return switch (ref['kind']) {
       'user' => directory.member(id),
       'agent' => directory.agent(id),
       'computer' => directory.computer(id),
       'channel' => w.channelById(id)?.json,
       _ => null,
     };
+  }
+
+  String _entityName(CardJson ref) {
+    final entity = _cardEntity(ref);
     return cardString(entity?['displayName']) ??
         cardString(entity?['name']) ??
-        fallback;
+        cardString(ref['fallback']) ??
+        '';
   }
+
+  bool _hasCardEntity(CardJson ref) => _cardEntity(ref) != null;
 
   ActionCardPress _resolvePress(ActionCardSpec card, ActionCardElement node) {
     final press = node.press;
@@ -1348,7 +1356,12 @@ class _MessageActionCardState extends State<MessageActionCard> {
       showRaftToast(context, 'This action is no longer available.');
       return;
     }
-    final source = cardString(agent['machineId']);
+    final machineId = cardString(agent['machineId']);
+    final directory = w.services.entityDirectory;
+    final sourceMachine = machineId == null
+        ? null
+        : directory.computer(machineId);
+    final source = sourceMachine?['isComputer'] == false ? null : machineId;
     final suggested = cardString(action['suggestedComputer']);
     final plan = w.server?.string('plan');
     final placesWithoutSource = agentPlacesWithoutSource(agent);
@@ -1368,19 +1381,14 @@ class _MessageActionCardState extends State<MessageActionCard> {
       (_) => AgentMigrationStartDialog(
         targets: [
           for (final machine in machines)
-            if (machine['id'] != source &&
-                (source != null && !placesWithoutSource ||
-                    machine['isComputer'] == true))
+            if (machine['id'] != source && machine['isComputer'] == true)
               machine,
         ],
         controller: w,
         initialTarget: suggested,
         sourceMachineId: source,
         placesWithoutSource: placesWithoutSource,
-        sourceName: machines
-            .where((machine) => machine['id'] == source)
-            .map((machine) => cardString(machine['name']))
-            .firstOrNull,
+        sourceName: source == null ? null : cardString(sourceMachine?['name']),
         openComputers: (_) => unawaited(_openCardInBrowser()),
         start: (target) async {
           requireCurrent(authority);
@@ -1623,6 +1631,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
                 content: ActionCardSpecTree(
                   root: confirmation.body,
                   entityName: _entityName,
+                  hasEntity: _hasCardEntity,
                 ),
                 onConfirm: execute,
               ),
@@ -1835,6 +1844,18 @@ class _MessageActionCardState extends State<MessageActionCard> {
         spec: card,
         metadata: metadata,
         entityName: _entityName,
+        hasEntity: _hasCardEntity,
+        formatTimestamp: SourceTimeFormatter(
+          locale: Localizations.localeOf(context).toLanguageTag(),
+          preferredTimezone: w.client.user?.string('preferredTimezone'),
+          preferredTimeFormat: sourceTimeFormatPreference(
+            w.client.user?.string('preferredTimeFormat'),
+          ),
+          systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
+              ? SourceTimeFormat.twentyFourHour
+              : null,
+          yesterdayLabel: raftText(context, 'Yesterday'),
+        ).messageTime,
         resolvePress: (element) => _resolvePress(card, element),
         onPress: widget.exportMode
             ? null
@@ -1844,6 +1865,10 @@ class _MessageActionCardState extends State<MessageActionCard> {
             : (entity) => unawaited(_navigateCard(entity)),
         blocked: blocked,
         hiddenButton: question?.button.id,
+        inlineQuestionFields: {
+          if (question != null)
+            for (final field in question.form.fields) 'q_${field.name}',
+        },
         canOpenFeedbackTicket: _feedbackTicketLocation != null,
         inlineForm: question == null
             ? null

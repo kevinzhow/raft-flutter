@@ -45,6 +45,12 @@ class ActionCardField {
   CardJson get other => cardObject(spec['other']);
   List<CardJson> get options =>
       cardList(spec['options']).map(cardObject).toList();
+  bool get isConfirmChoice =>
+      type == ActionCardFieldType.choice &&
+      !multiple &&
+      options.length == 1 &&
+      other.isEmpty;
+
   int get maximum => !multiple
       ? 1
       : (spec['maxItems'] as int?) ??
@@ -452,22 +458,43 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
         cardObject(submitLabels['labels'])[selected] ??
         _form.spec['submitLabel'];
     final interactive = widget.enabled && !_busy && !_succeeded;
+    final pending = _pending != null;
+    final tokens = RaftTokens.of(context);
+    final submittedStyle = tokens.scale(
+      RaftTypeScale.callout,
+      color: tokens.ui.foregroundMuted,
+    );
     final controls = Wrap(
       alignment: WrapAlignment.end,
       spacing: RaftSpace.x2,
       runSpacing: RaftSpace.x2,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        if (_pending != null)
-          Text(
-            raftText(context, 'Submitted'),
-            semanticsLabel: raftText(context, 'Submitted'),
-          ),
-        if (_pending != null)
-          RaftButton(
-            label: 'Undo',
-            uiVariant: RaftButtonVariant.ghost,
-            uiSize: RaftButtonSize.md,
-            onPressed: _cancelPending,
+        if (pending)
+          Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Semantics(
+                liveRegion: true,
+                child: RaftCssText(
+                  raftText(context, 'Submitted'),
+                  style: submittedStyle,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x1),
+                child: ExcludeSemantics(
+                  child: RaftCssText('·', style: submittedStyle),
+                ),
+              ),
+              RaftButton(
+                label: 'Undo',
+                uiVariant: RaftButtonVariant.ghost,
+                uiSize: RaftButtonSize.sm,
+                onPressed: _cancelPending,
+              ),
+            ],
           )
         else ...[
           if (!widget.inline)
@@ -510,7 +537,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
             Text(_copy(_form.spec['description'])),
           if (page.title != null) Text(_copy(page.title)),
           for (final field in page.fields) _field(field, interactive),
-          if (widget.inline) controls,
+          if (widget.inline && (pending || !_tapSubmits)) controls,
         ],
       ),
     );
@@ -660,51 +687,148 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
             : field.multiple && hasOther)
           'other': otherText,
       });
+      if (id == 'other' && !hasOther) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && cardObject(_values[field.name]).containsKey('other')) {
+            _focus[field.name]?.requestFocus();
+          }
+        });
+      }
       if (_tapSubmits) _submit();
     }
 
+    final confirm = widget.question && field.isConfirmChoice
+        ? options.singleOrNull
+        : null;
+    final confirmId = cardString(confirm?['value']);
+    if (confirm != null && confirmId != null) {
+      final id = confirmId;
+      final chosen = checked(id);
+      final button = RaftButton(
+        label: _copy(confirm['label']),
+        glyph: chosen ? RaftGlyph.check : null,
+        uiVariant: RaftButtonVariant.outline,
+        uiSize: RaftButtonSize.md,
+        autoHeight: true,
+        onPressed: enabled
+            ? () {
+                if (chosen && !field.required) {
+                  _edit(field, {'selected': <String>[]});
+                } else {
+                  select(id);
+                }
+              }
+            : null,
+      );
+      final control = Semantics(selected: chosen, child: button);
+      return widget.inline
+          ? RaftSpecActionCardContent(context).actions([control])
+          : Align(alignment: AlignmentDirectional.centerStart, child: control);
+    }
+
+    final tokens = RaftTokens.of(context);
+    final choice = RaftChoiceListRecipe.resolve(
+      states: tokens.recipeStates(
+        responsive: true,
+        pointerCoarse: RaftInteraction.of(context).touch,
+      ),
+      tokens: tokens.recipeTokens,
+    );
+    final content = RaftSpecActionCardContent(context);
+    Widget label(CardJson option, bool enabled) {
+      final disabled = enabled ? null : tokens.ui.foregroundDisabled;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: choice.body.rowGap ?? RaftSpace.half,
+        children: [
+          RaftCssText(
+            _copy(option['label']),
+            style: choice.label
+                .text(tokens.recipeTokens, base: content.text(choice.item))
+                .copyWith(color: disabled),
+          ),
+          if (option['description'] != null)
+            RaftCssText(
+              _copy(option['description']),
+              style: content.text(choice.description).copyWith(color: disabled),
+            ),
+        ],
+      );
+    }
+
+    final rows = [
+      for (final option in options)
+        if (cardString(option['value']) case final String id)
+          if (field.multiple)
+            RaftInteractive(
+              onPressed: enabled && (checked(id) || !full)
+                  ? () => select(id)
+                  : null,
+              button: false,
+              checked: checked(id),
+              builder: (context, state) => RaftRecipeBox(
+                style: choice.item,
+                tokens: tokens.recipeTokens,
+                applyText: false,
+                child: Row(
+                  spacing: choice.item.columnGap ?? RaftSpace.x2,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RaftCheckboxIndicator(
+                      checked: checked(id),
+                      disabled: !state.enabled,
+                    ),
+                    Expanded(child: label(option, state.enabled)),
+                  ],
+                ),
+              ),
+            )
+          else
+            RaftRadioGroupItem(
+              value: id,
+              gap: choice.item.columnGap ?? RaftSpace.x2,
+              padding: choice.item.padding,
+              minHeight: choice.item.minHeight ?? 0,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              child: label(option, enabled),
+            ),
+    ];
+    final spacing = choice.rows.rowGap ?? RaftSpace.half;
+    final list = field.multiple
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: spacing,
+            children: rows,
+          )
+        : RaftRadioGroup<String>(
+            value: hasOther ? 'other' : selected.firstOrNull,
+            onChanged: enabled ? select : null,
+            spacing: spacing,
+            semanticLabel: _copy(field.spec['label']),
+            children: rows,
+          );
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: RaftSpace.x2,
+      spacing: RaftSpace.x1_5,
       children: [
-        if (field.multiple) ...[
-          for (final option in options)
-            if (cardString(option['value']) case final String id)
-              RaftCheckboxRow(
-                title: _copy(option['label']),
-                description: option['description'] == null
-                    ? null
-                    : _copy(option['description']),
-                value: checked(id),
-                onChanged: enabled && (checked(id) || !full)
-                    ? (_) => select(id)
-                    : null,
-              ),
-        ] else
-          RaftRadioGroup<String>(
-            value: hasOther ? 'other' : selected.firstOrNull,
-            onChanged: enabled ? select : null,
-            children: [
-              for (final option in options)
-                if (cardString(option['value']) case final String id)
-                  RaftRadioGroupItem(
-                    value: id,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_copy(option['label'])),
-                        if (option['description'] != null)
-                          Text(_copy(option['description'])),
-                      ],
-                    ),
-                  ),
-            ],
-          ),
+        RaftRecipeBox(
+          style: choice.frame,
+          tokens: tokens.recipeTokens,
+          applyText: false,
+          child: Padding(padding: choice.scroller.padding, child: list),
+        ),
         if (hasOther)
           RaftTextInput(
             initialValue: otherText,
-            hintText: _copy(other['placeholder']),
+            hintText: other['placeholder'] == null
+                ? raftText(context, 'Write your answer')
+                : _copy(other['placeholder']),
+            focusNode: _focus[field.name],
+            maxLength: other['maxLength'] as int?,
+            semanticLabel: _copy(other['label']),
             enabled: enabled,
             onSubmitted: (_) => _submit(),
             onChanged: (text) =>
