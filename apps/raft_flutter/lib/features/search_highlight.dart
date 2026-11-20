@@ -14,16 +14,20 @@ class SearchHighlight extends StatelessWidget {
   final TextStyle style;
   final int maxLines;
 
+  static RegExp? pattern(String query) {
+    final terms = query.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    return terms.isEmpty
+        ? null
+        : RegExp(terms.map(RegExp.escape).join('|'), caseSensitive: false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final recipe = RaftSearchRecipe(RaftTokens.of(context), mobile: false);
-    final terms = query.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
-    final pattern = terms.isEmpty
-        ? null
-        : RegExp(terms.map(RegExp.escape).join('|'), caseSensitive: false);
     final spans = <InlineSpan>[];
     var start = 0;
-    for (final match in pattern?.allMatches(text) ?? const <RegExpMatch>[]) {
+    for (final match
+        in pattern(query)?.allMatches(text) ?? const <RegExpMatch>[]) {
       if (match.start > start) {
         spans.add(TextSpan(text: text.substring(start, match.start)));
       }

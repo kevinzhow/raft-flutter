@@ -6,6 +6,7 @@ import 'icons.dart';
 import 'indicators.dart';
 import 'page_recipes.dart';
 import 'popover_surface.dart';
+import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/search.g.dart' as gen;
 import 'recipes/search_entity.g.dart';
@@ -234,11 +235,13 @@ class RaftQuickSwitcherSection extends StatelessWidget {
     required this.children,
     this.heading,
     this.glyph,
+    this.count,
   });
 
   /// Null leaves the heading out (the card still paints).
   final String? heading;
   final RaftGlyph? glyph;
+  final int? count;
   final List<Widget> children;
   @override
   Widget build(BuildContext context) {
@@ -249,6 +252,24 @@ class RaftQuickSwitcherSection extends StatelessWidget {
       tokens: rt,
     );
     final gap = slots.list.rowGap ?? RaftQuickSwitcherMetrics.rowGap;
+    if (heading != null &&
+        count != null &&
+        t.option('listGroup.frame', or: 'framed') == 'plain') {
+      final recipe = RaftSearchRecipe(t, mobile: false);
+      return Padding(
+        padding: recipe.flatSectionListEndInset,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            recipe.flatSectionHeading(heading!, count),
+            for (final (index, child) in children.indexed) ...[
+              if (index > 0) recipe.resultSeparator(flat: true, framedGap: gap),
+              child,
+            ],
+          ],
+        ),
+      );
+    }
     if (glyph != null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -285,7 +306,7 @@ class RaftQuickSwitcherSection extends StatelessWidget {
               Padding(
                 padding: slots.sectionHeading.padding,
                 child: Text(
-                  heading!,
+                  count == null ? heading! : '$heading   $count',
                   style: slots.sectionHeading
                       .textStyle(rt)
                       .copyWith(fontFamily: t.bodyFont),
@@ -305,18 +326,32 @@ class RaftQuickSwitcherSection extends StatelessWidget {
 
 /// Rounded square carrying a glyph (channels, computers, "Search for").
 class RaftQuickSwitcherIconBox extends StatelessWidget {
-  const RaftQuickSwitcherIconBox(this.glyph, {super.key});
+  const RaftQuickSwitcherIconBox(
+    this.glyph, {
+    super.key,
+    this.searchEntity = false,
+  });
   final RaftGlyph glyph;
+  final bool searchEntity;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
+    final extent = searchEntity ? 27.0 : RaftQuickSwitcherMetrics.leadingExtent;
     return Container(
-      width: RaftQuickSwitcherMetrics.leadingExtent,
-      height: RaftQuickSwitcherMetrics.leadingExtent,
+      width: extent,
+      height: extent,
       alignment: Alignment.center,
-      decoration: RaftSearchEntityRecipe.resolve(tokens: rt).entityIcon
-          .decoration(rt),
-      child: RaftIcon(glyph, size: 14, color: t.colors['foreground-icon']),
+      decoration: searchEntity
+          ? RaftSearchRecipe(t, mobile: false).flatEntityIconSurface
+          : RaftSearchEntityRecipe.resolve(tokens: rt).entityIcon
+                .decoration(rt),
+      child: RaftIcon(
+        glyph,
+        size: 14,
+        color: searchEntity
+            ? t.ui.foregroundMuted
+            : t.colors['foreground-icon'],
+      ),
     );
   }
 }

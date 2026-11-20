@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'raft/ui_tokens.dart';
 import 'raft_underline.dart';
 import 'settings_layout.dart';
 import 'separator.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'tooltip.dart' show RaftTooltip;
 
 /// Component layer, traced to raft-ui 0.5.52 search recipe (dist/index.mjs) and
@@ -15,13 +17,62 @@ class RaftSearchRecipe {
   const RaftSearchRecipe(this.t, {required this.mobile});
   final RaftTokens t;
   final bool mobile;
+  double get pageInset => t.desktop ? 16 : 20;
+  double get backHeaderInset => pageInset - 11;
+  static const _desktopFilterHeight = 44.0;
+  EdgeInsets get filterPadding => EdgeInsets.symmetric(
+    horizontal: pageInset,
+    vertical: t.desktop
+        ? (_desktopFilterHeight -
+                  RaftLayoutMetrics.desktopControl -
+                  pageBorder.bottom.width) /
+              2
+        : RaftSpace.x2,
+  );
+  Border get pageBorder => Border(
+    bottom: BorderSide(color: raftChromeBlend(t.ui.lineSeam, t.canvas)),
+  );
+  BoxDecoration get pageSeam => BoxDecoration(
+    color: t.canvas,
+    border: t.desktop
+        ? pageBorder
+        : Border(bottom: BorderSide(color: t.ui.lineSeam)),
+  );
   // Current search results use flat groups (Web px-4 headings and summary),
   // while the generated framed recipe remains available to the older packs.
   EdgeInsets get flatSectionHeadingInset =>
-      const EdgeInsets.fromLTRB(20, 12, 20, 8);
+      EdgeInsets.fromLTRB(pageInset, 12, pageInset, 8);
   EdgeInsets get flatSectionListEndInset => const EdgeInsets.only(bottom: 8);
+  Widget flatSectionHeading(String title, int? count) => Padding(
+    padding: flatSectionHeadingInset,
+    child: Row(
+      spacing: RaftSpace.x2,
+      children: [
+        Flexible(
+          child: RaftCssText(
+            title,
+            style: t.scale(
+              RaftTypeScale.footnote,
+              color: t.ui.foregroundHint,
+              weight: FontWeight.w700,
+            ),
+          ),
+        ),
+        if (count != null)
+          RaftCssText(
+            '$count',
+            style: t.scale(
+              RaftTypeScale.monoMeta,
+              mono: true,
+              color: t.ui.foregroundHint,
+            ),
+          ),
+      ],
+    ),
+  );
   EdgeInsets get flatResultsInset => const EdgeInsets.only(bottom: 16);
-  EdgeInsets get flatSummaryInset => const EdgeInsets.fromLTRB(20, 8, 20, 0);
+  EdgeInsets get flatSummaryInset =>
+      EdgeInsets.fromLTRB(pageInset, 8, pageInset, 0);
   BoxDecoration get flatEntityIconSurface => BoxDecoration(
     color: t.colors['fill-muted'],
     borderRadius: BorderRadius.circular(t.size('radius.sticker', fallback: 4)),
@@ -29,6 +80,10 @@ class RaftSearchRecipe {
   Widget resultSeparator({required bool flat, required double framedGap}) =>
       SizedBox(height: flat ? 2 : framedGap);
   double entityContentGap({required bool flat}) => flat ? 2 : 0;
+  TextStyle get flatEntityTitle =>
+      t.scale(RaftTypeScale.body, weight: FontWeight.w600);
+  TextStyle get flatEntityDescription =>
+      t.scale(RaftTypeScale.callout, color: t.ui.foregroundMuted);
   EdgeInsets get viewportInset => mobile
       ? const EdgeInsets.fromLTRB(20, 12, 14, 12)
       : const EdgeInsets.all(12);

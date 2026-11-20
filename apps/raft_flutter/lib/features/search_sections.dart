@@ -160,24 +160,24 @@ class SearchEverywhereRow extends StatelessWidget {
     final tokens = RaftTokens.of(context);
     final recipe = RaftSearchRecipe(tokens, mobile: true);
     return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        start: RaftSpace.x4,
-        top: RaftSpace.x2,
-        end: RaftSpace.x4,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: RaftSpace.x2),
       child: RaftSearchResultSurface(
         key: const Key('search-everywhere'),
         entity: true,
         onPressed: onPressed,
         child: Row(
-          spacing: RaftSpace.x2,
+          spacing: RaftSpace.x3,
           children: [
-            const RaftIcon(RaftGlyph.search, size: 14),
+            const RaftQuickSwitcherIconBox(
+              RaftGlyph.search,
+              searchEntity: true,
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: recipe.entityContentGap(flat: true),
                 children: [
-                  Text(
+                  RaftCssText(
                     words.isEmpty
                         ? raftText(context, 'Search everywhere')
                         : raftFormat(
@@ -185,14 +185,14 @@ class SearchEverywhereRow extends StatelessWidget {
                             'Search everywhere for “{query}”',
                             {'query': words},
                           ),
-                    style: recipe.strongEntityTitle,
+                    style: recipe.flatEntityTitle,
                   ),
-                  Text(
+                  RaftCssText(
                     raftText(
                       context,
                       'Opens the Search tab with the same words',
                     ),
-                    style: recipe.metadata,
+                    style: recipe.flatEntityDescription,
                   ),
                 ],
               ),

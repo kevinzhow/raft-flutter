@@ -62,6 +62,7 @@ EXT_SURFACE_LEVEL = {
     'components.members-pages.desktop': PAGE, 'components.members-pages.phone': PAGE,
     'components.list-pages.search': PAGE, 'components.list-pages.activity': PAGE, 'components.list-pages.saved': PAGE,
     'components.list-pages.tasks': PAGE, 'components.list-pages.computers': PAGE, 'components.list-pages.members': PAGE,
+    'components.search-ext.desktop': PAGE, 'components.search-ext.phone': PAGE,
     'components.computers.list': PAGE, 'components.computers.detail': PAGE,
     'components.taskspage.desktop': PAGE, 'components.taskspage.mobile': PAGE,
     'components.taskdetail.desktop': PAGE, 'components.taskdetail.mobile': PAGE,

@@ -277,12 +277,14 @@ class SearchAppGroupSection extends StatelessWidget {
     required this.selectedKey,
     required this.onOpen,
     this.wrapHit,
+    this.now,
   });
 
   final SearchAppResults results;
   final String? selectedKey;
   final ValueChanged<ArtifactCard> onOpen;
   final Widget Function(String key, Widget row)? wrapHit;
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -302,7 +304,8 @@ class SearchAppGroupSection extends StatelessWidget {
     };
     final count = status == SearchAppStatus.ready ? results.hits.length : null;
     return RaftQuickSwitcherSection(
-      heading: grouped ? (count == null ? label : '$label   $count') : null,
+      heading: grouped ? label : null,
+      count: grouped ? count : null,
       children: [
         if (status == SearchAppStatus.loading)
           const RaftQuickSwitcherSkeleton()
@@ -348,7 +351,7 @@ class SearchAppGroupSection extends StatelessWidget {
         serverName: results.serverName,
       ),
       artifactActorName(context, card.author),
-      artifactRelativeTime(context, card.updatedAt),
+      artifactRelativeTime(context, card.updatedAt, now: now),
     ].where((text) => text.isNotEmpty).join(' · ');
     final row = RaftSearchResultSurface(
       key: ValueKey(key),
@@ -358,20 +361,24 @@ class SearchAppGroupSection extends StatelessWidget {
       child: Row(
         spacing: RaftSpace.x3,
         children: [
-          RaftQuickSwitcherIconBox(artifactKindGlyph(card.kind)),
+          RaftQuickSwitcherIconBox(
+            artifactKindGlyph(card.kind),
+            searchEntity: true,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: recipe.entityContentGap(flat: true),
               children: [
                 SearchHighlight(
                   text: card.title,
                   query: results.query,
-                  style: recipe.strongEntityTitle,
+                  style: recipe.flatEntityTitle,
                   maxLines: 1,
                 ),
-                Text(
+                RaftCssText(
                   subtitle,
-                  style: recipe.metadata,
+                  style: recipe.flatEntityDescription,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

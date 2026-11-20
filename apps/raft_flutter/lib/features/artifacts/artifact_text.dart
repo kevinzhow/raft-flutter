@@ -183,6 +183,11 @@ String artifactScopeLabel(
     case 'public':
       return raftText(context, 'Anyone with the link');
     case 'conversation':
+      if (home.conversationType == 'channel' ||
+          home.conversationType == 'private') {
+        final name = home.conversationName;
+        return name.isEmpty ? '' : '#$name';
+      }
       final peer = home.peerDisplayName;
       return peer != null && peer.isNotEmpty ? peer : home.conversationName;
     default:

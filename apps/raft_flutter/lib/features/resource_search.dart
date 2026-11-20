@@ -534,6 +534,7 @@ class ResourceSearchResults extends StatelessWidget {
       }, MediaQuery.sizeOf(context).width),
       tokens: rt,
     );
+    final highlight = SearchHighlight.pattern(query);
     Widget slotText(String text, rui.RaftSlotStyle slot) {
       final base = plain
           ? t.scale(
@@ -569,31 +570,34 @@ class ResourceSearchResults extends StatelessWidget {
             sliver: SliverMainAxisGroup(
               slivers: [
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: plain
-                        ? recipe.flatSectionHeadingInset
-                        : slots.sectionHeading.padding,
-                    child: Row(
-                      spacing: RaftSpace.x2,
-                      children: [
-                        Flexible(
-                          child: slotText(
-                            raftText(context, title),
-                            slots.sectionHeading,
+                  child: plain
+                      ? recipe.flatSectionHeading(
+                          raftText(context, title),
+                          count,
+                        )
+                      : Padding(
+                          padding: slots.sectionHeading.padding,
+                          child: Row(
+                            spacing: RaftSpace.x2,
+                            children: [
+                              Flexible(
+                                child: slotText(
+                                  raftText(context, title),
+                                  slots.sectionHeading,
+                                ),
+                              ),
+                              if (count != null)
+                                RaftCssText(
+                                  '$count',
+                                  style: t.scale(
+                                    RaftTypeScale.monoMeta,
+                                    mono: true,
+                                    color: t.ui.foregroundHint,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        if (count != null)
-                          RaftCssText(
-                            '$count',
-                            style: t.scale(
-                              RaftTypeScale.monoMeta,
-                              mono: true,
-                              color: t.ui.foregroundHint,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
                 ),
                 SliverList.separated(
                   itemCount: children.length,
@@ -789,7 +793,7 @@ class ResourceSearchResults extends StatelessWidget {
                                     ).entityIcon.decoration(rt),
                               child: RaftIcon(
                                 entity.kind == 'channel'
-                                    ? RaftGlyph.hash
+                                    ? searchChannelGlyph(entity.row)
                                     : entity.kind == 'computer'
                                     ? RaftGlyph.monitor
                                     : entity.kind == 'agent'
@@ -813,10 +817,7 @@ class ResourceSearchResults extends StatelessWidget {
                                           query: query,
                                           maxLines: 1,
                                           style: plain
-                                              ? t.scale(
-                                                  RaftTypeScale.body,
-                                                  weight: FontWeight.w600,
-                                                )
+                                              ? recipe.flatEntityTitle
                                               : recipe.entityTitle.copyWith(
                                                   fontWeight: FontWeight.w700,
                                                 ),
@@ -830,19 +831,30 @@ class ResourceSearchResults extends StatelessWidget {
                                       ],
                                     ],
                                   ),
-                                  Text(
-                                    raftText(context, entity.subtitle),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: plain
-                                        ? t.scale(
-                                            RaftTypeScale.callout,
-                                            color: t.colors['foreground-muted'],
-                                          )
-                                        : recipe.metadata.copyWith(
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                  ),
+                                  if (plain &&
+                                      entity.kind == 'channel' &&
+                                      entity.row['description'] is String &&
+                                      (highlight?.hasMatch(
+                                            entity.row['description'] as String,
+                                          ) ??
+                                          false))
+                                    SearchHighlight(
+                                      text: entity.row['description'] as String,
+                                      query: query,
+                                      style: recipe.flatEntityDescription,
+                                      maxLines: 1,
+                                    )
+                                  else
+                                    RaftCssText(
+                                      raftText(context, entity.subtitle),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: plain
+                                          ? recipe.flatEntityDescription
+                                          : recipe.metadata.copyWith(
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -869,6 +881,7 @@ class ResourceSearchResults extends StatelessWidget {
                     selectedKey: selectedKey,
                     onOpen: onArtifact!,
                     wrapHit: wrapResult,
+                    now: now,
                   ),
                 ),
               // `showInitialSkeleton` needs no entity match; with one the

@@ -507,7 +507,7 @@ EdgeInsets raftPanelHeaderEdges(
       : (hasActions ? desktopActionInset : 13.0);
   return EdgeInsets.fromLTRB(
     // ignore: raft_lints/off_grid_spacing -- Web mobile pl-4 plus leading -ml-[13px].
-    narrow && hasBack ? 3 : leftPadding ?? (narrow ? 16 : 20),
+    leftPadding ?? (narrow ? (hasBack ? 3 : 16) : 20),
     0,
     trailingInset,
     0,
@@ -530,6 +530,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.profileBody = false,
     this.leftPadding,
     this.columnMargin,
+    this.rightPadding,
     this.bottomRule = false,
     this.bottomBorder,
     this.titleSuffix,
@@ -574,6 +575,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
 
   /// Overrides the recipe's left inset (ActivityInboxPanel's `pl-3`).
   final double? leftPadding;
+  final double? rightPadding;
 
   /// Content inset of the host column. Frameless edge actions overhang this
   /// margin by the PanelAction recipe's icon inset.
@@ -663,7 +665,11 @@ class RaftPanelHeaderBar extends StatelessWidget {
       child: Container(
         height: grows ? null : height,
         constraints: BoxConstraints(minHeight: height),
-        padding: edges.copyWith(top: grows ? 8 : 0, bottom: grows ? 8 : 0),
+        padding: edges.copyWith(
+          right: rightPadding,
+          top: grows ? 8 : 0,
+          bottom: grows ? 8 : 0,
+        ),
         decoration: BoxDecoration(
           color: fill,
           border:
@@ -777,14 +783,14 @@ class RaftPanelHeaderBar extends StatelessWidget {
     final grows = RaftScaled.grows(context);
     final lines = grows ? null : 1;
     final barPadding = columnMargin == null
-        ? s.header.padding.copyWith(left: leftPadding)
+        ? s.header.padding.copyWith(left: leftPadding, right: rightPadding)
         : raftPanelHeaderEdges(
             context,
             hasBack: onBack != null,
             hasActions: actions.isNotEmpty,
             leftPadding: leftPadding,
             columnMargin: columnMargin,
-          );
+          ).copyWith(right: rightPadding);
     final header = Container(
       height: grows ? null : s.header.height,
       constraints: BoxConstraints(

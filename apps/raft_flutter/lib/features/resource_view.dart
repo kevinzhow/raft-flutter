@@ -8,7 +8,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
+import 'package:raft_ui/recipes.dart'
+    hide RaftPanelHeaderRecipe, RaftSearchRecipe;
 import 'package:raft_ui/recipes.dart'
     as rui
     show
@@ -3496,15 +3497,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   }
 
   Widget searchHeader(String scope) {
+    final shortcuts = RaftInteraction.of(context).shortcutHints;
     final t = RaftTokens.of(context),
         mobile =
             MediaQuery.sizeOf(context).width <
             RaftLayoutMetrics.desktopBreakpoint;
-    final recipe = RaftPanelHeaderRecipe(
-      t,
-      viewportHeight: MediaQuery.sizeOf(context).height,
-      mobile: mobile,
-    );
+    final recipe = RaftSearchRecipe(t, mobile: mobile);
     final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     final conversation = searchScopeConversation;
     final row = Row(
@@ -3515,7 +3513,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             height: RaftLayoutMetrics.panelIcon,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: recipe.iconBackground,
+              color: t.colors['primary-soft'],
               border: Border.all(color: t.line, width: t.border),
             ),
             child: const RaftIcon(RaftGlyph.search, size: 18),
@@ -3530,12 +3528,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                 ? raftFormat(context, 'Search in {conversation}', {
                     'conversation': conversation,
                   })
-                : mobile
+                : !shortcuts
                 ? raftText(context, 'Search channels, DMs, messages…')
                 : '${raftText(context, 'Search channels, DMs, messages…')}   '
                       '${globalSearchShortcutLabel()}',
             clearLabel: raftText(context, 'Clear Search'),
-            showEscape: !mobile,
+            showEscape: shortcuts,
             onClear: () {
               query.clear();
               searchChanged('');
@@ -3546,35 +3544,23 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         ),
       ],
     );
-    return mobile || scopedSearch
-        ? widget.mobileRoot
-              // Web v1.24 TabRootBar `content`: the field in the frame band.
-              ? RaftMobileRootHeader(
-                  key: const Key('search-tab-head'),
-                  title: 'Search',
-                  inset: RaftLayoutMetrics.panelInset,
-                  content: row,
-                )
-              : RaftPanelHeaderBar(
-                  title: raftText(context, 'Search'),
-                  background: plain ? t.canvas : null,
-                  titleSlot: row,
-                  backKey: scopedSearch
-                      ? const Key('scoped-search-back')
-                      : null,
-                  onBack: widget.onBack ?? () {},
-                  backTooltip: raftText(context, 'Back'),
-                )
-        : Container(
-            height: recipe.height,
-            padding: EdgeInsets.symmetric(
-              horizontal: RaftLayoutMetrics.panelInset,
-            ),
-            decoration: BoxDecoration(
-              color: recipe.background,
-              border: Border(bottom: recipe.border),
-            ),
-            child: row,
+    return widget.mobileRoot && (mobile || scopedSearch)
+        ? RaftMobileRootHeader(
+            key: const Key('search-tab-head'),
+            title: 'Search',
+            inset: RaftLayoutMetrics.panelInset,
+            content: row,
+          )
+        : RaftPanelHeaderBar(
+            title: raftText(context, 'Search'),
+            background: plain ? t.canvas : null,
+            bottomBorder: plain ? recipe.pageBorder : null,
+            leftPadding: mobile ? recipe.backHeaderInset : recipe.pageInset,
+            rightPadding: recipe.pageInset,
+            titleSlot: row,
+            backKey: scopedSearch ? const Key('scoped-search-back') : null,
+            onBack: mobile || scopedSearch ? widget.onBack ?? () {} : null,
+            backTooltip: raftText(context, 'Back'),
           );
   }
 
@@ -3594,27 +3580,16 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     // SearchShellFilters (raft-ui search `filtersRow`): brutal `px-4 py-3
     // border-b-2 border-black bg-white`, elegant `border-b bg-layer-panel px-3
     // py-2 max-md:pl-5 max-md:pr-3.5` (transparent in dark).
-    final plain =
-        RaftTokens.of(context).option('listGroup.frame', or: 'framed') ==
-        'plain';
+    final t = RaftTokens.of(context);
+    final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
+    final recipe = RaftSearchRecipe(t, mobile: !t.desktop);
     final row = searchSlots(context).filtersRow;
     final rowDecoration = row.decoration(
       rui.RaftRecipeTokens(RaftTokens.of(context)),
     );
     return Container(
-      padding: plain
-          ? const EdgeInsets.symmetric(horizontal: 20, vertical: 8)
-          : row.padding,
-      decoration: plain
-          ? BoxDecoration(
-              color: RaftTokens.of(context).canvas,
-              border: Border(
-                bottom: BorderSide(
-                  color: RaftTokens.of(context).colors['line-seam']!,
-                ),
-              ),
-            )
-          : rowDecoration,
+      padding: plain ? recipe.filterPadding : row.padding,
+      decoration: plain ? recipe.pageSeam : rowDecoration,
       child: SizedBox(
         width: double.infinity,
         child: SearchFilterBar(

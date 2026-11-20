@@ -49,8 +49,7 @@ class RaftSearchResultSurface extends StatelessWidget {
           ],
         );
         if (t.option('searchResult.selection', or: 'card') == 'flat') {
-          final inset =
-              entity && (RaftInteraction.of(context).touch || t.desktop)
+          final inset = t.desktop || entity && RaftInteraction.of(context).touch
               ? 8.0
               : 12.0;
           final radius = BorderRadius.circular(
@@ -59,11 +58,14 @@ class RaftSearchResultSurface extends StatelessWidget {
           return Container(
             width: double.infinity,
             margin: const EdgeInsets.symmetric(horizontal: 8),
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: inset),
+            padding: EdgeInsets.symmetric(
+              horizontal: RaftSearchRecipe(t, mobile: false).pageInset - 8,
+              vertical: inset,
+            ),
             decoration: BoxDecoration(
               borderRadius: radius,
               color: selected
-                  ? t.ui['brand-soft']
+                  ? raftChromeBlend(t.ui['brand-soft'], t.ui.layerCanvas)
                   : interaction.hovered
                   ? t.ui.fillPressed
                   : null,

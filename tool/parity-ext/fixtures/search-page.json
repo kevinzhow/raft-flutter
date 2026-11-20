@@ -1,0 +1,77 @@
+{
+  "privateChannel": {
+    "id": "channel-android-ops",
+    "name": "android-ops",
+    "description": "Private Android release notes",
+    "type": "private",
+    "joined": true,
+    "createdAt": "2026-06-18T08:00:00.000Z"
+  },
+  "routes": {
+    "POST /feature-flags/evaluate": {
+      "evaluations": [{"key": "workspace_artifacts_v0", "enabled": false}]
+    }
+  },
+  "routeSets": {
+    "scoped": {
+      "GET /messages/search": {
+        "$when": [
+          {
+            "query": {"q": "android", "channelId": "channel-design"},
+            "answer": {
+              "hasMore": false,
+              "results": [
+                {
+                  "id": "msg-scoped-android",
+                  "channelId": "channel-design",
+                  "channelName": "design",
+                  "channelType": "channel",
+                  "senderId": "agent-cindy",
+                  "senderType": "agent",
+                  "senderName": "Cindy",
+                  "content": "Review the Android launch in this channel.",
+                  "snippet": "Review the Android launch in this channel.",
+                  "createdAt": "2026-06-19T10:00:00.000Z"
+                }
+              ]
+            }
+          }
+        ],
+        "$default": {"hasMore": false, "results": []}
+      }
+    },
+    "artifacts": {
+      "POST /feature-flags/evaluate": {
+        "evaluations": [{"key": "workspace_artifacts_v0", "enabled": true}]
+      },
+      "GET /search": {
+        "groups": [
+          {
+            "app": "artifacts",
+            "items": [
+              {
+                "card": {
+                  "id": "pt_00000000-0000-4000-8000-000000000001",
+                  "title": "Android launch notes",
+                  "kind": "markdown",
+                  "home": {
+                    "kind": "conversation",
+                    "conversation": {
+                      "id": "channel-android-ops",
+                      "type": "private",
+                      "name": "android-ops"
+                    }
+                  },
+                  "author": {"type": "agent", "id": "agent-cindy", "name": "Cindy", "displayName": "Cindy"},
+                  "updatedAt": "2026-06-19T10:00:00.000Z"
+                },
+                "matches": []
+              }
+            ],
+            "nextCursor": null
+          }
+        ]
+      }
+    }
+  }
+}
