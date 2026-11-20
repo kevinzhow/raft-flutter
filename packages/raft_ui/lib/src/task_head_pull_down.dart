@@ -368,21 +368,28 @@ Widget raftTaskPullDownDismiss({
   ),
 );
 
-/// Off a phone: the head pinned above the conversation, at most 45% of it.
-Widget raftTaskPinnedHead({required Widget? head, required Widget child}) =>
-    LayoutBuilder(
-      builder: (context, constraints) => Column(
-        children: [
-          if (head != null)
-            ConstrainedBox(
-              key: const ValueKey('task-conversation-head'),
-              constraints: BoxConstraints(
-                maxHeight: constraints.maxHeight * .45,
-              ),
-              child: SingleChildScrollView(child: head),
+/// Off a phone the head is pinned above the conversation. In the Tasks
+/// column the 45% cap resolves against the frame, including its bar.
+Widget raftTaskPinnedHead({
+  required Widget? head,
+  required Widget child,
+  double? frameHeight,
+}) => LayoutBuilder(
+  builder: (context, constraints) => Column(
+    children: [
+      if (head != null)
+        ConstrainedBox(
+          key: const ValueKey('task-conversation-head'),
+          constraints: BoxConstraints(
+            maxHeight: ((frameHeight ?? constraints.maxHeight) * .45).clamp(
+              0.0,
+              constraints.maxHeight,
             ),
+          ),
+          child: SingleChildScrollView(child: head),
+        ),
 
-          Expanded(child: child),
-        ],
-      ),
-    );
+      Expanded(child: child),
+    ],
+  ),
+);

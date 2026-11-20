@@ -13,9 +13,12 @@ import 'mounted_task_chip.dart';
 import 'task_status_badge.dart';
 import 'design_primitives.dart';
 import 'recipe_surface.dart';
+import 'raft/ui_tokens.dart';
 import 'panel_layout.dart' show RaftCssText, raftCssBaseline;
+import 'space.dart';
 import '../recipes.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 /// One option of a [RaftInlineBadgeEditor] menu.
 @immutable
@@ -55,12 +58,16 @@ class RaftInlineBadgeEditor extends StatefulWidget {
     this.panelBuilder,
     this.indicator = RaftGlyph.pencil,
     this.inlineProperty = false,
+    this.personProperty = false,
   });
   final String label, selectedId;
   final RaftGlyph indicator;
 
   /// The inline task properties use the editable StatusChip recipe.
   final bool inlineProperty;
+
+  /// An assigned person reads as a DescriptionList value beside their avatar.
+  final bool personProperty;
 
   /// Replaces the plain option list with a caller panel (Web `searchable`:
   /// the same SelectionPopover as the search filters). It receives a close
@@ -176,16 +183,20 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
     final inherited = DefaultTextStyle.of(context).style
         .merge(badge.textStyle(rt));
     final inlineProperty = widget.inlineProperty;
-    final label = inherited.copyWith(
-      // Badge sets no family: inherit the caller's mounted shell style.
-      fontFamily: inherited.fontFamily,
-      decoration: TextDecoration.none,
-      fontSize: 12, // text-xs
-      height: 16 / 12,
-      fontWeight: inlineProperty ? FontWeight.w600 : FontWeight.w700,
-      color: widget.foreground,
-      letterSpacing: badge.letterSpacing,
-    );
+    final person = widget.personProperty;
+    final borderless = inlineProperty || person;
+    final label = person
+        ? t.scale(RaftTypeScale.callout, color: widget.foreground)
+        : inherited.copyWith(
+            // Badge sets no family: inherit the caller's mounted shell style.
+            fontFamily: inherited.fontFamily,
+            decoration: TextDecoration.none,
+            fontSize: 12, // text-xs
+            height: 16 / 12,
+            fontWeight: inlineProperty ? FontWeight.w600 : FontWeight.w700,
+            color: widget.foreground,
+            letterSpacing: badge.letterSpacing,
+          );
     // `badgeStatus`: raft-ui TaskStatusBadge (the TaskChip look) with the same
     // `mt-0.5`, a hover brightness shift and the 2px line-strong focus ring.
     Widget statusTrigger(
@@ -244,7 +255,7 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
     }
 
     Widget trigger(RaftInteractionState state) => Padding(
-      padding: const EdgeInsets.only(top: 2), // mt-0.5 is outside the button.
+      padding: EdgeInsets.only(top: person ? 0 : 2),
       child: CustomPaint(
         foregroundPainter: state.focusVisible
             ? _BadgeFocusOutline(t.semantic.lineStrong, badgeRadius)
@@ -254,21 +265,23 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
           // The height is a minimum: a taller line box (Android Chinese control
           // profile, larger text) grows the capsule instead of being clipped.
           constraints: BoxConstraints(
-            minHeight: inlineProperty ? 22 : badge.height ?? 0,
+            minHeight: person
+                ? 0
+                : inlineProperty
+                ? 22
+                : badge.height ?? 0,
           ),
           // px-2 py-0.5; with the brutal fixed h-5 the 16px line is centred
           // (items-center) and overflows into the padding, so only elegant keeps
           // the vertical inset in layout.
           padding: EdgeInsets.symmetric(
-            horizontal: inlineProperty ? 6 : 8,
-            vertical: !inlineProperty && badge.height == null ? 2 : 0,
+            horizontal: borderless ? RaftSpace.x1_5 : RaftSpace.x2,
+            vertical: !borderless && badge.height == null ? RaftSpace.half : 0,
           ),
           decoration: BoxDecoration(
             color: widget.background,
             borderRadius: badgeRadius,
-            border: inlineProperty
-                ? null
-                : Border.all(color: Colors.transparent),
+            border: borderless ? null : Border.all(color: Colors.transparent),
           ),
           foregroundDecoration: state.hovered && widget.enabled
               // Product InlineBadgeEditor: hover:brightness-90 in both families.
@@ -281,9 +294,19 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
             mainAxisSize: MainAxisSize.min,
             spacing: 4, // gap-1
             children: [
-              RaftCssText(widget.label, style: label),
+              if (person)
+                Flexible(
+                  child: RaftCssText(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: label,
+                  ),
+                )
+              else
+                RaftCssText(widget.label, style: label),
               Opacity(
-                opacity: inlineProperty ? 1 : .4,
+                opacity: borderless ? 1 : .4,
                 child: RaftIcon(
                   widget.indicator,
                   size: inlineProperty

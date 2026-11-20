@@ -222,7 +222,14 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => widget.tasksPage && widget.inPlace
+      ? LayoutBuilder(
+          builder: (context, constraints) =>
+              buildSurface(context, taskColumnHeight: constraints.maxHeight),
+        )
+      : buildSurface(context);
+
+  Widget buildSurface(BuildContext context, {double? taskColumnHeight}) {
     final t = RaftTokens.of(context), size = MediaQuery.sizeOf(context);
     final mobile = size.width < 768;
     final legacy = widget.legacy;
@@ -236,7 +243,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     final overlay = side || fullscreen;
     final body =
         widget.unresolvedBody ??
-        (legacy ? legacyBody(context) : modernBody(context));
+        (legacy
+            ? legacyBody(context)
+            : modernBody(context, taskColumnHeight: taskColumnHeight));
     // Web: modern modal `rounded-lg border border-line-muted bg-layer-popover
     // shadow-raft-xl` (theme-brutal: square, `border-2 border-black bg-white
     // shadow-brutal`); legacy modal is square with `shadow-raft-md`. CSS
@@ -609,7 +618,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     detailsFocus.requestFocus();
   }
 
-  Widget modernBody(BuildContext context) {
+  Widget modernBody(BuildContext context, {double? taskColumnHeight}) {
     if (widget.error != null && widget.loading == false) {
       // ThreadPanel `resolveFailed`: title, body and an outline Retry; the
       // exception itself is never shown.
@@ -661,6 +670,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           )
         : raftTaskPinnedHead(
             head: head,
+            frameHeight: taskColumnHeight,
             child: buildDiscussion(const SizedBox.shrink()),
           );
   }
@@ -789,18 +799,21 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               description,
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final style = RaftTypography.heading(
-                    t,
-                    size: 14,
-                    line: 20,
-                    weight: FontWeight.w400,
-                  ).copyWith(color: t.muted);
+                  final style = widget.conversation == null
+                      ? RaftTypography.heading(
+                          t,
+                          size: 14,
+                          line: 20,
+                          weight: FontWeight.w400,
+                        ).copyWith(color: t.muted)
+                      : t.scale(RaftTypeScale.subhead, color: t.muted);
                   final measure = TextPainter(
+                    maxLines: 3,
                     text: TextSpan(text: description, style: style),
                     textDirection: Directionality.of(context),
                     textScaler: MediaQuery.textScalerOf(context),
                   )..layout(maxWidth: constraints.maxWidth);
-                  final long = measure.height > 61;
+                  final long = measure.didExceedMaxLines;
                   measure.dispose();
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -816,7 +829,14 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                       ),
                       if (long)
                         Padding(
-                          padding: const EdgeInsets.only(top: RaftSpace.x1),
+                          padding: EdgeInsets.only(
+                            top: RaftSpace.x1,
+                            // The desktop body line extends below the inline
+                            // TextLink's own footnote line.
+                            bottom: t.desktop && widget.conversation != null
+                                ? RaftSpace.half
+                                : 0,
+                          ),
                           child: RaftShowMoreToggle(
                             label: raftText(
                               context,
@@ -1221,6 +1241,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     final editor = RaftInlineBadgeEditor(
       key: const ValueKey('task-properties-assignee'),
       inlineProperty: widget.tasksPage && !assigned,
+      personProperty: widget.tasksPage && assigned,
       label: label,
       selectedId: assigned
           ? '${task['claimedByType']}:${task['claimedById']}'
@@ -1239,7 +1260,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             )
           : null,
       background: widget.tasksPage ? Colors.transparent : t.panel,
-      foreground: t.strong,
+      foreground: widget.tasksPage && assigned ? t.ui.foreground : t.strong,
       indicator: widget.tasksPage ? RaftGlyph.chevronDown : RaftGlyph.pencil,
       onSelect: (_) {},
       onOpenChanged: (open) {

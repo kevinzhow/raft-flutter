@@ -37866,6 +37866,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/task_surface.dart#method:_RaftTaskSurfaceState.buildSurface": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Tasks detail",
+        "reason": "Task conversation frame builder. Canonical family and entry mapping remain unreviewed."
+      },
       "packages/raft_ui/lib/src/task_surface.dart#method:_RaftTaskSurfaceState.didUpdateWidget": {
         "role": "unresolved",
         "familyRefs": [],
@@ -41398,7 +41404,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2964/METHOD:build@4798/FUNCTION:statusTrigger@6321": {
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@3205/METHOD:build@5039/FUNCTION:statusTrigger@6791": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -41414,7 +41420,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2964/METHOD:build@4798/FUNCTION:trigger@8436": {
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@3205/METHOD:build@5039/FUNCTION:trigger@8906": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -55662,7 +55668,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:_historyDetail@54501/FUNCTION:badge@54898": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:_historyDetail@55576/FUNCTION:badge@55973": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -55674,7 +55680,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:assigneePanel@48642/FUNCTION:avatar@49001": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:assigneePanel@49717/FUNCTION:avatar@50076": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

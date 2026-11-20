@@ -66,6 +66,10 @@ Future<WorkspaceController> mountTasks(
     'id': 'task-2',
     'messageId': 'task-2',
     'title': 'Second task title',
+    'description': List.filled(
+      18,
+      'Review open comments before closing.',
+    ).join('\n'),
     'taskNumber': 9,
     'conversationChannelId': 'second-conv',
     'hostMessageId': 'earlier',
@@ -218,6 +222,21 @@ void main() {
       expect(t.widget<Text>(title).data, 'Second task title');
       expect(empty.hitTestable(), findsOneWidget);
       expect(replies, findsNothing);
+
+      final head = find.byKey(const ValueKey('task-conversation-head'));
+      final timeline = find.byKey(const ValueKey('current-timeline'));
+      final composer = find.byType(RaftComposer);
+      final composerTop = t.getTopLeft(composer).dy;
+      final toggle = find.text('Show more').hitTestable();
+      expect(toggle, findsOneWidget);
+      await t.tap(toggle);
+      await settle(t);
+      expect(
+        t.getSize(head).height,
+        closeTo(t.getSize(slot).height * .45, .01),
+      );
+      expect(t.getTopLeft(timeline).dy, t.getBottomLeft(head).dy);
+      expect(t.getTopLeft(composer).dy, composerTop);
 
       await t.tap(find.byKey(const ValueKey('task-modal-close')).hitTestable());
       await settle(t);
