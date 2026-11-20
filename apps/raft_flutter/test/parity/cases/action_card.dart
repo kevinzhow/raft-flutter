@@ -190,5 +190,10 @@ final Map<String, ParityCase> actionCardCases = {
 };
 
 final Map<String, ParityCase> extActionCardCases = {
-  for (final name in _variants) 'action-card-v124.$name': _actionCardCase(name),
+  for (final name in _variants)
+    for (final platform in ['desktop', 'phone'])
+      for (final theme in ['brutal', 'elegant-dark'])
+        'components.action-card-v124.$name.$platform.$theme': _actionCardCase(
+          name,
+        ),
 };

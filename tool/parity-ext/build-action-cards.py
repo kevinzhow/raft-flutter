@@ -57,7 +57,7 @@ for platform, width in [('desktop', 640), ('phone', 390)]:
                     ],
                 },
                 'reactPathHint': 'packages/web/src/components/actions/ActionCard.tsx',
-                'androidCaseHint': f"apps/raft_flutter/test/parity/cases/action_card.dart 'action-card-v124.{name}'",
+                'androidCaseHint': f"apps/raft_flutter/test/parity/cases/action_card.dart '{case_id}'",
                 'tolerance': {'pixelRatio': 0.02, 'layoutDp': 1, 'ignoreAntialiasing': True},
             })
 manifest['cases'] = cases

@@ -465,14 +465,15 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
       color: tokens.ui.foregroundMuted,
     );
     final controls = Wrap(
-      alignment: WrapAlignment.end,
+      alignment: widget.inline && pending
+          ? WrapAlignment.start
+          : WrapAlignment.end,
       spacing: RaftSpace.x2,
       runSpacing: RaftSpace.x2,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (pending)
           Wrap(
-            alignment: WrapAlignment.end,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Semantics(
@@ -529,7 +530,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
-        spacing: RaftSpace.x3,
+        spacing: widget.inline ? RaftSpace.x4 : RaftSpace.x3,
         children: [
           if (_notice.message case final String error)
             RaftErrorBanner(error, small: true),
@@ -537,7 +538,12 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
             Text(_copy(_form.spec['description'])),
           if (page.title != null) Text(_copy(page.title)),
           for (final field in page.fields) _field(field, interactive),
-          if (widget.inline && (pending || !_tapSubmits)) controls,
+          if (widget.inline && pending) controls,
+          if (widget.inline && !pending && !_tapSubmits)
+            Padding(
+              padding: RaftSpecActionCardContent(context).slots.actions.margin,
+              child: controls,
+            ),
         ],
       ),
     );
