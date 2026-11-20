@@ -268,6 +268,7 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
       builder: (context, _) {
         final items = outline.items;
         final currentId = outline.currentId;
+        final inDrawer = widget.onClose != null;
         Widget row(ThreadOutlineItem item) => _OutlineRow(
           key: ValueKey('thread-outline-row-${item.id}'),
           item: item,
@@ -275,6 +276,7 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
           own: item.senderId == outline.userId,
           current: item.id == currentId,
           compact: compact,
+          inDrawer: inDrawer,
           focusNode: compact
               ? rowFocus.putIfAbsent(
                   item.id,
@@ -291,9 +293,13 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
                 constraints: const BoxConstraints(
                   minHeight: RaftThreadOutlineMetrics.headerHeight,
                 ),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: t.ui.lineSeam)),
-                ),
+                decoration: inDrawer
+                    ? null
+                    : BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: t.ui.lineSeam),
+                        ),
+                      ),
                 child: Row(
                   children: [
                     Expanded(
@@ -301,12 +307,17 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
                         header: true,
                         child: Text(
                           raftText(context, 'Timeline'),
-                          style: RaftTypography.inherited(
-                            t,
-                            size: 16,
-                            weight: FontWeight.w600,
-                            color: t.ink,
-                          ),
+                          style: inDrawer
+                              ? t.scale(
+                                  t.typeSlot('headline'),
+                                  weight: FontWeight.w700,
+                                )
+                              : RaftTypography.inherited(
+                                  t,
+                                  size: 16,
+                                  weight: FontWeight.w600,
+                                  color: t.ink,
+                                ),
                         ),
                       ),
                     ),
@@ -411,13 +422,14 @@ class _OutlineRow extends StatelessWidget {
     required this.own,
     required this.current,
     required this.compact,
+    required this.inDrawer,
     this.focusNode,
     required this.onTap,
   });
 
   final ThreadOutlineItem item;
   final String time;
-  final bool own, current, compact;
+  final bool own, current, compact, inDrawer;
   final FocusNode? focusNode;
   final VoidCallback onTap;
 
@@ -442,7 +454,11 @@ class _OutlineRow extends StatelessWidget {
         ),
         padding: RaftThreadOutlineMetrics.rowPadding(compact),
         decoration: BoxDecoration(
-          color: current || state.hovered || state.focusVisible || state.pressed
+          color:
+              (current && !inDrawer) ||
+                  state.hovered ||
+                  state.focusVisible ||
+                  state.pressed
               ? t.colors['brand-soft']
               : null,
           borderRadius: RaftThreadOutlineMetrics.rowCorners(t),

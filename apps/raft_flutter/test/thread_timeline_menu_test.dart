@@ -79,6 +79,7 @@ void main() {
           matching: find.byType(RaftInteractive),
         );
         expect(t.widget<RaftInteractive>(row).selected, isTrue);
+        final touch = platform == TargetPlatform.android;
         final fill = RaftTokens.of(t.element(row)).colors['brand-soft'];
         expect(
           find.descendant(
@@ -89,9 +90,8 @@ void main() {
                   (widget.decoration as BoxDecoration?)?.color == fill,
             ),
           ),
-          findsOneWidget,
+          touch ? findsNothing : findsOneWidget,
         );
-        final touch = platform == TargetPlatform.android;
         expect(find.byType(RaftSheet), touch ? findsOneWidget : findsNothing);
         await t.tap(find.text('Outline reply 4'));
         await t.pumpAndSettle();
