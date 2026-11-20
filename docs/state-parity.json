@@ -57749,7 +57749,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23965": {
+      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23555/FUNCTION:update@24149": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-LINK",
@@ -57964,7 +57964,7 @@
         "declarationRefs": [
           "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkMessageView",
           "apps/raft_flutter/lib/features/app_link_view.dart#function:showAppLinkConfirmation",
-          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23965",
+          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23555/FUNCTION:update@24149",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkPrompt._choose",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState._showNotice"
         ],

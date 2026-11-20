@@ -662,10 +662,13 @@ class _LinkCard extends StatelessWidget {
                           ? 'In progress'
                           : 'Working…',
                     ),
-                    style: tokens.scale(
-                      RaftTypeScale.callout,
-                      color: tokens.ui.foregroundMuted,
-                    ),
+                    // Web Text.Sans size="small" keeps text-sm leading-5.
+                    style: tokens
+                        .scale(
+                          RaftTypeScale.callout,
+                          color: tokens.ui.foregroundMuted,
+                        )
+                        .copyWith(height: RaftTypeScale.callout.height),
                   ),
                 ),
               ],
