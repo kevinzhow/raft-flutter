@@ -20,17 +20,19 @@ import 'support/history_paywall_fixture.dart';
 
 /// Flutter renders for the Web | Flutter comparison (desktop width).
 final _shot = GlobalKey();
-const _captures = '/mnt/data/tmp/cindy/w24-bill/paywall';
 
 Future<void> _capture(WidgetTester t, String name) async {
+  final captureDir = Platform.environment['RAFT_BILLING_CAPTURE_DIR'];
+  if (captureDir == null || captureDir.isEmpty) return;
   await t.runAsync(() async {
     final boundary =
         _shot.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     final image = await boundary.toImage(pixelRatio: 1);
     final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
     image.dispose();
-    await Directory(_captures).create(recursive: true);
-    await File('$_captures/$name.png').writeAsBytes(bytes.buffer.asUint8List());
+    await Directory(captureDir).create(recursive: true);
+    await File('$captureDir/$name.png')
+        .writeAsBytes(bytes.buffer.asUint8List());
   });
 }
 
