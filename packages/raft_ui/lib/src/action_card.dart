@@ -81,9 +81,8 @@ class RaftSpecActionCard extends StatelessWidget {
           : inset.right + recipe.collapseTrigger.margin.right,
     );
     double centerFirstLine(TextStyle style) {
-      final lines = MediaQuery.textScalerOf(
-        context,
-      ).scale(style.fontSize ?? 14);
+      final lines = MediaQuery.textScalerOf(context)
+          .scale(style.fontSize ?? 14);
       return ((tile - lines * (style.height ?? 1)) / 2).clamp(0.0, tile);
     }
 

@@ -54701,6 +54701,12 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/form_controls.dart#method:_RaftTextInputState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Input",
+        "reason": "Updates the input modality observer when a mounted recipe field changes its opt-in."
+      },
       "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView._anchored": {
         "role": "unresolved",
         "familyRefs": [],
@@ -55893,14 +55899,14 @@
           "button"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8897/METHOD:properties@10994/FUNCTION:label@11316": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8891/METHOD:properties@10988/FUNCTION:label@11310": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
           "card"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8897/METHOD:properties@10994/FUNCTION:value@11416": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8891/METHOD:properties@10988/FUNCTION:value@11410": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -56318,7 +56324,7 @@
           "button"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17830/METHOD:_titleLine@19227/FUNCTION:item@19419": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17824/METHOD:_titleLine@19221/FUNCTION:item@19413": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -56326,7 +56332,7 @@
           "button"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17830/METHOD:_titleLine@19227/FUNCTION:items@19675": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17824/METHOD:_titleLine@19221/FUNCTION:items@19669": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
