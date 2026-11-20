@@ -741,14 +741,16 @@ class Run:
         if done['timed_out'] or not summary.is_file():
             self.data['visual'] = {'error': f"未完成：退出码 {done['code']}" + ('，超时' if done['timed_out'] else '') + '（见 visual.log）'}
             return
+        reference = nightly_visual.reference_identity(self.worktree)
         previous = pick_previous(self.args.out_dir, self.date)
         before = None
         if previous:
             try:
-                before = (json.loads(previous.read_text()).get('visual') or {}).get('scores')
+                previous_visual = json.loads(previous.read_text()).get('visual') or {}
+                before = nightly_visual.previous_scores(previous_visual, reference)
             except (OSError, ValueError):
                 before = None
-        self.data['visual'] = nightly_visual.summarize(summary, before)
+        self.data['visual'] = {**nightly_visual.summarize(summary, before), 'reference': reference}
 
     def cleanup(self):
         shutil.rmtree(self.tmp, ignore_errors=True)

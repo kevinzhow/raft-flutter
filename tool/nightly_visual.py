@@ -20,7 +20,9 @@ PASS_LINE = 0.96
 def source_problem(worktree, home=None):
     """None when the worktree's pinned Web source checkout is usable, else why not (the resolver's message)."""
     try:
-        raft_source.require(root=worktree, home=home)
+        source = raft_source.require(root=worktree, home=home)
+        if raft_source.head_commit(source) != raft_source.pinned_commit(worktree):
+            return 'PARITY_RAFT_SOURCE must match the Web revision pinned for this nightly run.'
     except raft_source.RaftSourceError as error:
         return str(error)
     return None
@@ -29,6 +31,17 @@ def source_problem(worktree, home=None):
 def command(worktree, out):
     return [sys.executable, str(pathlib.Path(worktree) / 'tool/parity-ext/run'), 'regress', '--fast',
             '--out', str(out)]
+
+
+def reference_identity(worktree):
+    pin = json.loads((pathlib.Path(worktree) / raft_source.PIN_FILE).read_text())
+    return {'commit': pin['commit'], 'version': pin['webVersion']}
+
+
+def previous_scores(previous_visual, reference):
+    if previous_visual.get('reference') == reference:
+        return previous_visual.get('scores')
+    return None
 
 
 def summarize(summary_file, previous_scores=None):
@@ -69,7 +82,9 @@ def render(visual, add):
         add(f"- {visual['error']}")
         return
     add(f"- {visual['cases']} 个用例（L1 框架 + 关键 L2 页面，手机/桌面，浅色），96% 线以下 {visual['belowCount']} 个，无分数 {visual['unscored']} 个")
-    add('- 单元格 = 过线数/总数（平均分）；Raft 对照 Web v1.21.23')
+    reference = visual.get('reference')
+    label = f"Web v{reference['version']}（{reference['commit'][:9]}）" if reference else '固定的 Web 基准'
+    add(f'- 单元格 = 过线数/总数（平均分）。Raft 对照 {label}')
     add('')
     add('| 层级 | 主题 | 过线/总数 | 平均分 | 无分数 |')
     add('| --- | --- | --- | --- | --- |')

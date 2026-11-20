@@ -315,6 +315,16 @@ class NightlyVisualTests(unittest.TestCase):
             nightly_visual.render(out, lines.append)
             self.assertTrue(any('90.0% → 80.0%' in line for line in lines))
 
+    def test_previous_scores_must_use_same_web_reference(self):
+        ref = {'commit': 'next', 'version': '1.24.0'}
+        scores = {'raft/light/components.frame.desktop.home.brutal': 0.90}
+        previous = {'scores': scores}
+        self.assertIsNone(nightly_visual.previous_scores(previous, ref))
+        previous['reference'] = {'commit': 'old', 'version': '1.21.23'}
+        self.assertIsNone(nightly_visual.previous_scores(previous, ref))
+        previous['reference'] = ref
+        self.assertEqual(nightly_visual.previous_scores(previous, ref), scores)
+
     def test_first_night_has_no_comparison(self):
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / 's.json'

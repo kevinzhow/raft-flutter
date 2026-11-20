@@ -274,7 +274,7 @@ def summarize(a, ext_cases, jobs=None):
     keys = sorted({(r['look'], r['mode']) for r in rows}, key=lambda k: (LOOKS.index(k[0]), MODES.index(k[1])))
     lines = [f'# Visual regression: levels x looks ({dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%MZ")})', '',
              'Cell = cases above the 96% line / cases in the cell (mean exact score of the captured pairs). '
-             'raft = vs Web v1.21.23.', '',
+             'Raft is compared with the selected pinned Web reference.', '',
              f'Execution scope: {len(rows)} selected case(s); {len(outside)} full-manifest row(s) outside this plan. '
              'Outside-plan rows are not execution failures or passes. The official full-manifest reports remain unchanged.', '',
              '| level | ' + ' | '.join(f'{l} {m}' for l, m in keys) + ' |', '| --- | ' + ' | '.join('---' for _ in keys) + ' |']
