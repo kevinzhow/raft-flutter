@@ -824,6 +824,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
           style: choice.frame,
           tokens: tokens.recipeTokens,
           applyText: false,
+          declareSurface: true,
           child: Padding(padding: choice.scroller.padding, child: list),
         ),
         if (hasOther)

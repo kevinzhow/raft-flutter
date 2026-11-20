@@ -10,6 +10,7 @@ import 'design_primitives.dart' show RaftInteractive, RaftInteractionState;
 import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'recipe_surface.dart';
 import 'recipes/message_embed.g.dart' as embed;
+import 'surface_background_scope.dart';
 import 'theme.dart';
 
 /// The `size` axis of `messageEmbed`: `item` is 400 wide (the whole width
@@ -134,7 +135,10 @@ class RaftMessageEmbedFrame extends StatelessWidget {
     final frame = Container(
       decoration: decoration,
       clipBehavior: Clip.antiAlias,
-      child: child,
+      child: RaftSurfaceBackgroundScope(
+        color: fill?.a == 1 ? fill : null,
+        child: child,
+      ),
     );
     // `width: 100%; max-width: ...`, left-aligned in its row.
     return Align(
