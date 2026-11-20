@@ -146,6 +146,11 @@ void main() {
     try {
       expect(tile, findsOneWidget);
       expect(t.widget<RaftIconTile>(tile).glyph, RaftGlyph.lock);
+      final peer = find.descendant(
+        of: find.byKey(const ValueKey('forward-target-d1')),
+        matching: find.byType(RaftAvatar),
+      );
+      expect(t.getSize(peer), const Size.square(27));
       expect(t.getSize(row).height, 44);
       expect(
         t

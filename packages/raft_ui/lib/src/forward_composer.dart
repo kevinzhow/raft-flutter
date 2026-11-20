@@ -373,15 +373,16 @@ Widget raftForwardTargetIcon({
   String? pixelKey,
   String? uploadedUrl,
   String? gravatarUrl,
+  RaftMountedAvatarContext avatarContext = RaftMountedAvatarContext.compactList,
 }) {
   if (type == 'dm' || type == 'human' || type == 'agent') {
     final isAgent = agent || type == 'agent';
     return RaftAvatar(
       name: name,
-      size: 20,
+      size: avatarContext == RaftMountedAvatarContext.compactRow ? 27 : 20,
       kind: isAgent ? RaftAvatarKind.agent : RaftAvatarKind.human,
-      mountedContext: RaftMountedAvatarContext.compactList,
-      // AvatarSlot compact-list: the peer's pixel / uploaded / Gravatar
+      mountedContext: avatarContext,
+      // The mounted avatar slot paints the peer's pixel / uploaded / Gravatar
       // artwork; an agent without one wears the default robot.
       content: RaftAvatarContent(
         name: name,
@@ -392,7 +393,7 @@ Widget raftForwardTargetIcon({
         uploadedUrl: uploadedUrl,
         gravatarUrl: gravatarUrl,
         fallback: RaftMountedAvatarFallback(
-          avatarContext: RaftMountedAvatarContext.compactList,
+          avatarContext: avatarContext,
           identity: isAgent
               ? RaftMountedAvatarIdentity.agent
               : RaftMountedAvatarIdentity.human,

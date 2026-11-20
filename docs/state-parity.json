@@ -24355,7 +24355,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/composer_pending_mentions.dart#local-function:CLASS:RaftPendingMentionActionStrip@1940/METHOD:_row@4605/FUNCTION:done@5485": {
+      "packages/raft_ui/lib/src/composer_pending_mentions.dart#local-function:CLASS:RaftPendingMentionActionStrip@1910/METHOD:_row@4575/FUNCTION:done@5455": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -56671,25 +56671,25 @@
         "owner": "WP-COMPOSE",
         "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@36960/METHOD:build@37334/FUNCTION:bar@38443": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@37061/METHOD:build@37435/FUNCTION:bar@38544": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@36960/METHOD:build@37334/FUNCTION:text@38613": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@37061/METHOD:build@37435/FUNCTION:text@38714": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27259/METHOD:build@27437/FUNCTION:bar@28372": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27360/METHOD:build@27538/FUNCTION:bar@28473": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27259/METHOD:build@27437/FUNCTION:line@27635": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27360/METHOD:build@27538/FUNCTION:line@27736": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",

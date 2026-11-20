@@ -14,7 +14,6 @@ import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
-import 'recipe_surface.dart';
 import 'theme.dart';
 import 'raft/ui_tokens.dart';
 import 'raft/css_box.dart';
