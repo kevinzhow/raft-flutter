@@ -2,6 +2,7 @@
 // (packages/web/src/components/message/ForwardComposerMobile.tsx,
 // ForwardComposerTargetList.tsx). The app owns targets, search and sending.
 import 'raft/checkbox.dart' show RaftCheckbox;
+import 'raft/ui_tokens.dart';
 import 'text_selection_toolbar.dart';
 import 'hover_region.dart';
 
@@ -683,16 +684,23 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
                         widget.label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: t.headingFont,
-                          fontSize: 14,
-                          height: 20 / 14,
-                          fontWeight: widget.pickerLayout && !widget.selected
-                              ? FontWeight.w500
-                              : FontWeight.w700,
-                          color: t.strong,
-                          leadingDistribution: TextLeadingDistribution.even,
-                        ),
+                        style: widget.pickerLayout
+                            ? t.scale(
+                                t.typeSlot('subhead'),
+                                weight: widget.selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: t.ui.foreground,
+                              )
+                            : TextStyle(
+                                fontFamily: t.headingFont,
+                                fontSize: 14,
+                                height: 20 / 14,
+                                fontWeight: FontWeight.w700,
+                                color: t.strong,
+                                leadingDistribution:
+                                    TextLeadingDistribution.even,
+                              ),
                       ),
                     ),
                     if (widget.trailing != null) ...[

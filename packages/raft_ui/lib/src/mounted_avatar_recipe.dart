@@ -155,10 +155,13 @@ class RaftMountedAvatarFallback extends StatelessWidget {
       identity,
     );
     if (identity == RaftMountedAvatarIdentity.human &&
-        avatarContext == RaftMountedAvatarContext.sidebarList &&
-        RaftTokens.of(context)
-                .option('avatar.sidebarHumanFallback', or: 'identity') ==
-            'user') {
+        (r.messageRow ||
+            (r.sidebarList &&
+                r.tokens.option(
+                      'avatar.sidebarHumanFallback',
+                      or: 'identity',
+                    ) ==
+                    'user'))) {
       return Center(
         child: RaftIcon(
           RaftGlyph.user,

@@ -1650,6 +1650,7 @@ class RaftMessageTile extends StatelessWidget {
     this.body,
     this.hoverToolbar,
     this.selectionLeading,
+    this.checked = false,
     this.onAuthor,
     this.onAuthorMenu,
     this.onTap,
@@ -1745,6 +1746,7 @@ class RaftMessageTile extends StatelessWidget {
 
   /// Multi-select checkbox shown while the app is in select mode.
   final Widget? selectionLeading;
+  final bool checked;
   final VoidCallback? onAuthor, onTap;
 
   /// See [RaftMessageRow.onAuthorMenu].
@@ -1831,6 +1833,7 @@ class RaftMessageTile extends StatelessWidget {
       highlighted: highlighted,
       toolbar: hoverToolbar,
       selectionLeading: selectionLeading,
+      checked: checked,
       subtitle: subtitle,
       metadata:
           modelLabel == null &&
@@ -2971,72 +2974,72 @@ class _RaftComposerState extends State<RaftComposer> {
                   constraints: BoxConstraints(
                     maxHeight: recipe.suggestionMaximum,
                   ),
-                  child: DecoratedBox(
-                    decoration: recipe.suggestionDecoration,
-                    child: Padding(
-                      padding: recipe.suggestionInset,
-                      child: ListView.builder(
-                        controller: suggestionScroll,
-                        primary: false,
-                        shrinkWrap: true,
-                        // A null padding would add the screen's safe-area
-                        // insets (the status bar on edge-to-edge phones) as
-                        // blank space above the first row.
-                        padding: EdgeInsets.zero,
-                        itemCount: options.length,
-                        itemBuilder: (context, index) {
-                          final s = options[index];
-                          final group = suggestionGroup(s);
-                          final startGroup =
-                              index == 0 ||
-                              (suggestionGroup(options[index - 1]) == 1
-                                      ? 0
-                                      : suggestionGroup(options[index - 1])) !=
-                                  (group == 1 ? 0 : group);
-                          final label = group == 2
-                              ? 'Not in this channel'
-                              : group == 3
-                              ? 'Computers'
-                              : group == 4
-                              ? 'Apps'
-                              : showChannelHeading
-                              ? 'In this channel'
-                              : null;
-                          final row = _RaftComposerSuggestionRow(
-                            key: ValueKey(
-                              'composer-suggestion-${s.type}-${s.id}',
-                            ),
-                            anchorKey: suggestionKeys.putIfAbsent(
-                              '${s.type}:${s.id}',
-                              () => GlobalKey(),
-                            ),
-                            suggestion: s,
-                            highlighted: index == suggestionIndex,
-                            recipe: recipe,
-                            onPressed: () => insert(s),
-                          );
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (startGroup && group > 1)
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 4),
-                                  child: RaftSeparator(),
+                  child: RaftRecipeBox(
+                    style: recipe.suggestionSurface,
+                    tokens: recipe.tokens.recipeTokens,
+                    applyText: false,
+                    padding: recipe.suggestionInset,
+                    child: ListView.builder(
+                      controller: suggestionScroll,
+                      primary: false,
+                      shrinkWrap: true,
+                      // A null padding would add the screen's safe-area
+                      // insets (the status bar on edge-to-edge phones) as
+                      // blank space above the first row.
+                      padding: EdgeInsets.zero,
+                      itemCount: options.length,
+                      itemBuilder: (context, index) {
+                        final s = options[index];
+                        final group = suggestionGroup(s);
+                        final startGroup =
+                            index == 0 ||
+                            (suggestionGroup(options[index - 1]) == 1
+                                    ? 0
+                                    : suggestionGroup(options[index - 1])) !=
+                                (group == 1 ? 0 : group);
+                        final label = group == 2
+                            ? 'Not in this channel'
+                            : group == 3
+                            ? 'Computers'
+                            : group == 4
+                            ? 'Apps'
+                            : showChannelHeading
+                            ? 'In this channel'
+                            : null;
+                        final row = _RaftComposerSuggestionRow(
+                          key: ValueKey(
+                            'composer-suggestion-${s.type}-${s.id}',
+                          ),
+                          anchorKey: suggestionKeys.putIfAbsent(
+                            '${s.type}:${s.id}',
+                            () => GlobalKey(),
+                          ),
+                          suggestion: s,
+                          highlighted: index == suggestionIndex,
+                          recipe: recipe,
+                          onPressed: () => insert(s),
+                        );
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (startGroup && group > 1)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4),
+                                child: RaftSeparator(),
+                              ),
+                            if (startGroup && label != null)
+                              Padding(
+                                padding: recipe.suggestionGroupInset,
+                                child: RaftCssText(
+                                  raftText(context, label),
+                                  style: recipe.suggestionGroupLabel,
                                 ),
-                              if (startGroup && label != null)
-                                Padding(
-                                  padding: recipe.suggestionGroupInset,
-                                  child: RaftCssText(
-                                    raftText(context, label),
-                                    style: recipe.suggestionGroupLabel,
-                                  ),
-                                ),
-                              row,
-                            ],
-                          );
-                        },
-                      ),
+                              ),
+                            row,
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -3534,15 +3537,15 @@ class _RaftComposerSuggestionRowState
                   children: [
                     if (s.isMention && s.avatar != null) ...[
                       SizedBox.square(
-                        dimension: 20,
+                        dimension: RaftAvatarSize.xs.extent,
                         child: s.inChannel
                             ? s.avatar
                             : (s.mutedAvatar ?? s.avatar),
                       ),
                       if (!s.inChannel) ...[
                         // `ComposerSuggestionIcon variant="auxiliary"`:
-                        // UserX 12, `-ml-1 text-black/40`.
-                        const SizedBox(width: 4),
+                        // UserX 12, `gap-2.5 -ml-1`.
+                        const SizedBox(width: 6),
                         RaftIcon(
                           RaftGlyph.userX,
                           size: 12,
@@ -3552,7 +3555,7 @@ class _RaftComposerSuggestionRowState
                       if (s.type == 'external') ...[
                         // `ComposerSuggestionIcon variant="auxiliary"`: the
                         // Slack-side participant tag, ArrowLeftRight 10 / 2.5.
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         RaftIcon(
                           RaftGlyph.arrowLeftRight,
                           size: 10,

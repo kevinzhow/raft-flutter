@@ -83,21 +83,32 @@ class RaftTimelineCompositionRecipe {
       : math.max(0, viewportExtent - precedingExtent - tailExtent);
 }
 
-/// Natural source footer: optional loading-newer block, h-3 tail and pb-3.
-/// The composer/OS inset live outside the scroller and must not be added again.
+/// Timeline footer plus optional loading-newer content. When the channel
+/// composer follows, its top inset completes the Web timeline section gap.
 class RaftTimelineFooter extends StatelessWidget {
-  const RaftTimelineFooter({super.key, this.loadingNewer});
+  const RaftTimelineFooter({
+    super.key,
+    this.loadingNewer,
+    this.aboveComposer = false,
+  });
   final Widget? loadingNewer;
+  final bool aboveComposer;
   @override
   Widget build(BuildContext context) {
     const recipe = RaftTimelineCompositionRecipe();
     return Padding(
-      padding: recipe.footerInset,
+      // The trailing scroll sentinel already occupies one pixel of the
+      // measured 12px Web end space above the composer.
+      padding: aboveComposer
+          ? recipe.footerInset.copyWith(
+              bottom: recipe.footerInset.bottom - recipe.sentinelExtent,
+            )
+          : recipe.footerInset,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (loadingNewer != null) loadingNewer!,
-          SizedBox(height: recipe.footerTailExtent),
+          if (!aboveComposer) SizedBox(height: recipe.footerTailExtent),
         ],
       ),
     );

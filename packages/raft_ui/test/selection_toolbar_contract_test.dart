@@ -263,6 +263,8 @@ void main() {
         for (final label in ['Forward', 'Copy link', 'More']) {
           expect(t.getRect(button(label)).top, closeTo(top, .01));
         }
+        expect(t.widget<RaftButton>(button('Copy link')).label, isEmpty);
+        expect(t.widget<RaftButton>(button('Forward')).label, 'Forward');
 
         expect(t.getRect(find.byType(RaftSelectionToolbar)).height, 48);
         expect(t.takeException(), isNull);

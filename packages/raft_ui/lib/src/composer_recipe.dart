@@ -157,7 +157,8 @@ class RaftComposerRecipe {
   );
   double get toolbarGap => 6;
   double get actionGap => 6;
-  double get metaGap => 6;
+  // MessageInput uses gap-2 for the controls next to Send.
+  double get metaGap => 8;
   double get _barButton => tokens.desktop ? 28 : 32;
   double get actionFace => _barButton;
   double get submitFace => _barButton;
@@ -167,16 +168,13 @@ class RaftComposerRecipe {
   double get suggestionMaximum => 240;
   double get suggestionBottomGap => 8;
   EdgeInsets get suggestionInset => EdgeInsets.all(4);
-  BoxDecoration get suggestionDecoration => BoxDecoration(
-    color: tokens.popover,
-    borderRadius: tokens.corner('radius.container', fallback: 10),
-    // `ring-1 ring-line-seam shadow-float`; CSS lists the ring first.
-    boxShadow: [
-      for (final layer in tokens.shadowLayers('shadow.float').reversed)
-        if (!layer.inset) layer.toBoxShadow(),
-      BoxShadow(color: tokens.colors['line-seam']!, spreadRadius: 1),
-    ],
-  );
+  RaftSlotStyle get suggestionSurface =>
+      RaftComposerSuggestionListRecipe.resolve(
+        states: tokens.recipeStates(),
+        tokens: tokens.recipeTokens,
+      ).root;
+  BoxDecoration get suggestionDecoration =>
+      suggestionSurface.decoration(tokens.recipeTokens);
   EdgeInsets get suggestionGroupInset =>
       const EdgeInsets.fromLTRB(10, 8, 10, 4);
   // `text-caption font-bold text-foreground-hint`.

@@ -2644,6 +2644,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     bool parent = false,
     bool dmRead = false,
     Widget? selectionLeading,
+    bool checked = false,
     bool continuation = false,
     RaftMessageFollowedBy? followedBy,
     bool followsSystem = false,
@@ -2693,6 +2694,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       author: messageSenderName(context, m),
       avatar: senderAvatar(m),
       selectionLeading: selectionLeading,
+      checked: checked,
       content: translation.translatedContent ?? m.content,
       body: translatedBody(m, translation, fontSize),
       bodyFontSize: fontSize,
@@ -3107,6 +3109,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       continuation: continuation,
       followedBy: followedBy,
       followsSystem: followsSystem,
+      checked: checked,
       selectionLeading: selectable
           ? RaftCheckbox(
               value: checked,
@@ -3132,14 +3135,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         : body;
     if (!selectable) return child;
     return raftSelectableMessage(
-      context,
       selected: checked,
       onTap: capturingSelection ? null : () => selection.toggle(m.id),
       child: child,
     );
   }
 
-  Widget buildTimeline() {
+  Widget buildTimeline({required bool aboveChannelComposer}) {
     final timelineAdapter = adapter;
     final messages = timelineAdapter.messages;
     timelineKeys.progress
@@ -3310,6 +3312,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 footer: AgentTypingListEnd(
                   controller: w,
                   thread: widget.thread,
+                  aboveComposer: aboveChannelComposer,
                 ),
               ),
               hasOlder: widget.thread ? w.threadHasMore : activity.hasMore,
@@ -3426,11 +3429,16 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           ? null
           : tile(w.presentedThreadParent!, parent: true),
     );
+    final (channelFooter, channelGraceBanner) = widget.thread
+        ? (threadFooterWidget(), null)
+        : channelFooterWidgets();
+    final aboveChannelComposer =
+        !widget.thread && channelFooter == null && !selection.active;
     final currentTimeline = widget.thread && _messages.state.threadLoading
         ? widget.threadParentSlot == null
               ? loadingBody
               : taskLoadingBody(loadingBody)
-        : buildTimeline();
+        : buildTimeline(aboveChannelComposer: aboveChannelComposer);
     final historyWindow = widget.thread
         ? _messages.threadWindow?.hasNewer == true
         : _messages.state.hasNewer;
@@ -3494,9 +3502,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         ),
       );
     }
-    final (channelFooter, channelGraceBanner) = thread
-        ? (threadFooterWidget(), null)
-        : channelFooterWidgets();
     // Rows read breakpoint bands, not the raw window width, so a resize
     // within a band does not rebuild every mounted message.
     return RaftViewportBreakpointScope(
@@ -3520,7 +3525,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   ),
                 ),
                 MessageHistoryGapMonitor(controller: w, thread: widget.thread),
-                AgentTypingLineHost(controller: w, thread: thread),
+                AgentTypingLineHost(
+                  controller: w,
+                  thread: thread,
+                  fadeAboveComposer: aboveChannelComposer,
+                ),
                 AgentTypingInset(
                   controller: w,
                   thread: thread,

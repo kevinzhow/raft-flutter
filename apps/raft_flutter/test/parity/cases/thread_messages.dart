@@ -361,7 +361,13 @@ final ParityCase _shareSelection = ParityCase(
     }
     // Selection changes row height; update the visible window before tapping.
     await stage.alignRow(t);
-    await t.tap(find.byType(RaftMessageRow).at(1));
+    final unselected = find.byWidgetPredicate(
+      (widget) => widget is RaftCheckbox && !widget.value,
+    );
+    expect(unselected, findsOneWidget);
+    // The row owns pointer input while selecting. Aim at the unchecked
+    // indicator inside that row, which is intentionally inert by itself.
+    await t.tapAt(t.getCenter(unselected));
     for (var i = 0; i < 6; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
