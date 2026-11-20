@@ -30648,7 +30648,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/mounted_avatar_recipe.dart#local-function:CLASS:RaftMountedAvatarFrame@7543/METHOD:build@8369/FUNCTION:badge@8743": {
+      "packages/raft_ui/lib/src/mounted_avatar_recipe.dart#local-function:CLASS:RaftMountedAvatarFrame@7587/METHOD:build@8413/FUNCTION:badge@8787": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
