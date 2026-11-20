@@ -18272,6 +18272,36 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/notification_previews.dart#class:_NotificationTriggerPreview": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Notification center",
+        "reason": "Hosts the notification trigger and center in an interactive SDK preview."
+      },
+      "packages/raft_ui/lib/notification_previews.dart#class:_NotificationTriggerPreviewState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Notification center",
+        "reason": "Owns the preview’s open state and dismissal."
+      },
+      "packages/raft_ui/lib/notification_previews.dart#function:notificationTriggerPreview": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Notification center",
+        "reason": "Registers the interactive notification trigger in SDK Widget Preview."
+      },
+      "packages/raft_ui/lib/notification_previews.dart#method:_NotificationTriggerPreview.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Notification center",
+        "reason": "Creates the preview state for opening and dismissing the trigger."
+      },
+      "packages/raft_ui/lib/notification_previews.dart#method:_NotificationTriggerPreviewState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Notification center",
+        "reason": "Mounts the frame trigger and the notification center with their production controls."
+      },
       "packages/raft_ui/lib/notification_previews.dart#method:_NotificationAttentionPreview.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -30436,13 +30466,13 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7712/METHOD:_bar@9667/FUNCTION:badged@10011": {
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7742/METHOD:_bar@9697/FUNCTION:badged@10041": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7712/METHOD:_bar@9667/FUNCTION:item@10730": {
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7742/METHOD:_bar@9697/FUNCTION:item@10760": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -36241,7 +36271,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@7515/METHOD:_build@9329/FUNCTION:chatContent@10267": {
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@7557/METHOD:_build@9426/FUNCTION:chatContent@11036": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace side panels",
@@ -47979,7 +48009,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@28494/METHOD:build@28818/FUNCTION:<anonymous>@29461/FUNCTION:text@29741": {
+      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@33041/METHOD:build@33365/FUNCTION:<anonymous>@34008/FUNCTION:text@34288": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

@@ -19,8 +19,7 @@ class _ChannelHeaderPreviewState extends State<_ChannelHeaderPreview> {
     children: [
       RaftChannelHeader(
         name: 'Public channel',
-        description:
-            'A public description can wrap without hiding the channel identity.',
+        description: 'A public description can wrap without hiding the channel identity.',
         onBack: () => setState(() => result = 'Back'),
         onSearch: () => setState(() => result = 'Search Channel'),
         onSettings: () => setState(() => result = 'Channel Settings'),
@@ -43,6 +42,7 @@ class _DesktopPanelHeaderPreview extends StatefulWidget {
 class _DesktopPanelHeaderPreviewState
     extends State<_DesktopPanelHeaderPreview> {
   String result = 'Ready';
+  bool expanded = false;
   @override
   Widget build(BuildContext context) => Column(
     children: [
@@ -56,6 +56,12 @@ class _DesktopPanelHeaderPreviewState
         title: 'Designer',
         subtitle: '@designer',
         actions: [
+          raftConversationHeaderToggle(
+            glyph: expanded ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
+            label: expanded ? 'Restore' : 'Expand',
+            pressed: expanded,
+            onPressed: () => setState(() => expanded = !expanded),
+          ),
           RaftPanelIconButton(
             glyph: RaftGlyph.x,
             tooltip: 'Close Profile',

@@ -68,6 +68,7 @@ def build_fixture():
         f"GET /tasks/channel/{screens['scenes']['channel']['selected']}": {'tasks': []},
     }
     route_sets['fr-activity'] = {**route_sets['fr-mobile'], **screens['routeSets']['scr-activity']}
+    route_sets['fr-bell'] = {'GET /servers/visual-server/machines': {'machines': []}}
     doc = {'name': 'frame cases', 'scope': 'tool/parity-ext/build-frame-cases.py (generated; derived from shell.json and screens.json)',
            'routes': shell['routes'], 'routeSets': route_sets}
     (FIXTURES / 'frame.json').write_text(json.dumps(doc, indent=1) + '\n')
@@ -84,6 +85,18 @@ def part(platform, key, title, scene, route, preset, hint, rect, props=None):
 
 
 LAYOUT = SRC + 'layout/MainLayout.tsx'
+DS4 = [
+    ('phone', 'bell-open', 'notification-trigger-mobile', 'mobile-home-notifications', []),
+    ('desktop', 'bell-open', 'notification-trigger-top-bar', 'topbar-notifications', []),
+    ('desktop', 'tasks-header', 'channel-tasks-panel-header', 'channel-side-card-tasks-header',
+     [('channel-tasks-toggle', 'channel-tasks-toggle'), ('channel-files-toggle', 'channel-files-toggle')]),
+    ('desktop', 'files-folded-header', 'channel-files-card-header', 'channel-side-card-files-header',
+     [('channel-tasks-toggle', 'channel-tasks-toggle'), ('channel-files-toggle', 'channel-files-toggle'),
+      ('channel-files-card-collapse', 'channel-side-card-files-collapse')]),
+    ('desktop', 'tasks-expanded-header', 'channel-tasks-panel-header', 'channel-side-card-tasks-header',
+     [('channel-tasks-toggle', 'channel-tasks-toggle'), ('channel-files-toggle', 'channel-files-toggle'),
+      ('channel-tasks-panel-expand', 'channel-side-card-tasks-expand')]),
+]
 SPECS = [
     # phone: Home tab = the sidebar as the home list + the in-flow tab bar
     whole('phone', 'home', 'Phone Home tab (sidebar list + tab bar)', 'home', '', 'mobile', LAYOUT + ' (mobileShowSidebarInline)'),
@@ -104,6 +117,13 @@ SPECS = [
          (0, TOP_H, RAIL_W, DESKTOP['height'] - TOP_H)),
     part('desktop', 'sidebar', 'Desktop sidebar column', 'home', '', 'mobile', SRC + 'layout/Sidebar.tsx',
          (RAIL_W, TOP_H, SIDEBAR_W, DESKTOP['height'] - TOP_H)),
+    *[
+        whole(platform, key, f'{platform} {key}', 'channel' if clicks else 'home',
+              '/channel/shell-design' if clicks else '', 'default' if clicks else 'mobile',
+              SRC + ('task/ChannelSideCard.tsx' if clicks else 'layout/NotificationTrigger.tsx'),
+              {'routeSet': 'fr-channel', 'sidePanels': True} if clicks else {'routeSet': 'fr-bell'})
+        for platform, key, _, _, clicks in DS4
+    ],
 ]
 
 
@@ -122,6 +142,35 @@ def build_cases():
                 capture = {'selector': '[data-testid="frame-crop"]', 'crop': 'element', 'contract': 'component-bounds',
                            'androidKey': 'frame-crop'}
             capture['interactions'] = [{'type': 'wait', 'ms': 1200}]
+            ds4 = next((item for item in DS4 if item[:2] == (s['platform'], s['key'])), None)
+            if ds4:
+                _, key, web, flutter, clicks = ds4
+                bell = key == 'bell-open'
+                if bell:
+                    clicks = [(web, flutter)]
+                selector = lambda test_id: f'[data-testid="{test_id}"]'
+                capture['interactions'] += [
+                    step for web_key, _ in clicks
+                    for step in [{'type': 'click', 'target': selector(web_key)}, {'type': 'wait', 'ms': 200}]
+                ]
+                capture['androidInteractions'] = [
+                    step for _, flutter_key in clicks
+                    for step in [{'type': 'tap', 'key': flutter_key, 'mouse': s['platform'] == 'desktop', 'scroll': False},
+                                 {'type': 'wait', 'ms': 200}]
+                ]
+                if bell:
+                    capture['interactions'].append(
+                        {'type': 'reveal', 'target': selector(web) + '[data-state="open"][data-has-unread="false"]'})
+                else:
+                    if key == 'files-folded-header':
+                        capture['interactions'].append(
+                            {'type': 'reveal', 'target': selector('channel-files-card') + '[data-collapsed="true"]'})
+                    capture['interactions'].append(
+                        {'type': 'reveal', 'target': selector(web.removesuffix('-header') + '-expand')
+                         + ('[aria-pressed="true"]' if key == 'tasks-expanded-header' else '')})
+                    capture['interactions'].append({'type': 'hover', 'target': selector(web)})
+                    capture['androidInteractions'].append({'type': 'hover', 'key': flutter})
+                capture.update({'selector': selector(web), 'androidKey': flutter})
             cases.append({
                 'id': f'{PREFIX}{s["platform"]}.{s["key"]}.{suffix}',
                 'title': f'{s["title"]} ({theme})',

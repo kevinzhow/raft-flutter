@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'previews.dart';
 import 'src/design_primitives.dart';
 import 'src/icons.dart';
+import 'src/mobile_navigation.dart';
 import 'src/notification_center.dart';
 import 'src/theme.dart';
 
@@ -37,6 +38,46 @@ Widget notificationCenterLongPreview() => const _NotificationInteractionPreview(
 @RaftPreviews('Source notification attention', size: Size(640, 480))
 Widget notificationAttentionPreview() => const _NotificationAttentionPreview();
 
+@RaftPreviews('Notification trigger', size: Size(390, 400))
+Widget notificationTriggerPreview() => const _NotificationTriggerPreview();
+
+class _NotificationTriggerPreview extends StatefulWidget {
+  const _NotificationTriggerPreview();
+
+  @override
+  State<_NotificationTriggerPreview> createState() =>
+      _NotificationTriggerPreviewState();
+}
+
+class _NotificationTriggerPreviewState
+    extends State<_NotificationTriggerPreview> {
+  bool open = false;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      ColoredBox(
+        color: RaftTokens.of(context).colors['layer-frame']!,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            RaftMobileNotificationButton(
+              mobileHeader: true,
+              open: open,
+              onPressed: () => setState(() => open = !open),
+            ),
+          ],
+        ),
+      ),
+      if (open)
+        RaftNotificationCenter(
+          entries: const [],
+          onDismiss: () => setState(() => open = false),
+        ),
+    ],
+  );
+}
+
 class _NotificationInteractionPreview extends StatefulWidget {
   const _NotificationInteractionPreview({
     this.density = RaftDensity.desktop,
@@ -58,9 +99,8 @@ class _NotificationInteractionPreviewState
   void record(String action) => setState(() => lastAction = action);
   @override
   Widget build(BuildContext context) => MediaQuery(
-    data: MediaQuery.of(
-      context,
-    ).copyWith(textScaler: TextScaler.linear(widget.textScale)),
+    data: MediaQuery.of(context)
+        .copyWith(textScaler: TextScaler.linear(widget.textScale)),
     child: RaftDensityScope(
       density: widget.density,
       child: Center(
@@ -225,9 +265,8 @@ class _NotificationComputerPreviewState
               if (!dismissed)
                 RaftNotificationEntry(
                   id: 'computers',
-                  iconForeground: RaftTokens.of(
-                    context,
-                  ).colors['foreground-strong'],
+                  iconForeground: RaftTokens.of(context)
+                      .colors['foreground-strong'],
                   kind: RaftNotificationKind.warning,
                   glyph: RaftGlyph.monitor,
                   title: 'Computers need attention',

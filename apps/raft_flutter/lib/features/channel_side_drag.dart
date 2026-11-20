@@ -525,26 +525,37 @@ class _ChannelSideHeadState extends State<ChannelSideHead> {
   Widget build(BuildContext context) => MouseRegion(
     onEnter: (_) => setState(() => hovered = true),
     onExit: (_) => setState(() => hovered = false),
-    child: Stack(
-      fit: StackFit.passthrough,
-      clipBehavior: Clip.none,
-      children: [
-        widget.child,
-        if (widget.enabled)
-          Positioned(
-            top: _gripTop,
-            left: 0,
-            right: 0,
-            height: _gripHeight,
-            child: Center(
-              child: SizedBox(
-                width: _gripWidth,
-                height: _gripHeight,
-                child: _grip(context),
+    child: LayoutBuilder(
+      builder: (context, box) {
+        // In compact card headers, the buttons reach under the middle of
+        // the bar. Keep the grip above their pointer targets.
+        final compact =
+            (section == ChannelSideSection.tasks ||
+                section == ChannelSideSection.files) &&
+            box.maxWidth < channelSideCompactHeaderWidth;
+        final height = compact ? RaftSpace.x3 : _gripHeight;
+        return Stack(
+          fit: StackFit.passthrough,
+          clipBehavior: Clip.none,
+          children: [
+            widget.child,
+            if (widget.enabled)
+              Positioned(
+                top: _gripTop,
+                left: 0,
+                right: 0,
+                height: height,
+                child: Center(
+                  child: SizedBox(
+                    width: _gripWidth,
+                    height: height,
+                    child: _grip(context),
+                  ),
+                ),
               ),
-            ),
-          ),
-      ],
+          ],
+        );
+      },
     ),
   );
 

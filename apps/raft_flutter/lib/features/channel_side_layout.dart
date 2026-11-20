@@ -10,6 +10,9 @@
 // render time; it never rewrites what is saved. Pure Dart, no I/O.
 import 'package:flutter/foundation.dart';
 
+/// Below this width the Tasks and Files headers compact their controls.
+const channelSideCompactHeaderWidth = 240.0;
+
 enum ChannelSideSection {
   thread,
   tasks,

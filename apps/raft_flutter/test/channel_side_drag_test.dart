@@ -193,6 +193,88 @@ void main() {
   const files = ChannelSideSection.files;
   const tasks = ChannelSideSection.tasks;
 
+  testWidgets('Expand and Restore preserve folds and the draggable dock', (
+    t,
+  ) async {
+    final rig = await pump(t);
+    final expandTasks = find.byKey(const Key('channel-side-card-tasks-expand'));
+    final expandFiles = find.byKey(const Key('channel-side-card-files-expand'));
+    final foldFiles = find.byKey(const Key('channel-side-card-files-collapse'));
+    final bodyFiles = find.byKey(const Key('body-files'));
+    await t.tap(foldFiles);
+    await t.pump();
+    expect(bodyFiles, findsNothing);
+    final taskHead = rect(t, 'channel-side-card-tasks-header');
+    final fileHead = rect(t, 'channel-side-card-files-header');
+
+    expect(expandTasks.hitTestable(), findsOne);
+    await t.tap(expandTasks);
+    await t.pump();
+    expect(rect(t, 'chat').width, 360);
+    expect(rect(t, 'channel-side-conversation').width, 160);
+    expect(rect(t, 'channel-side-card-tasks-header').width, 1040);
+    expect(foldFiles, findsNothing);
+
+    await t.tap(expandFiles.hitTestable());
+    await t.pump();
+    expect(bodyFiles, findsOne);
+    expect(find.byKey(const Key('body-tasks')), findsNothing);
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await t.pump();
+    expect(rect(t, 'channel-side-card-tasks-header'), taskHead);
+    expect(rect(t, 'channel-side-card-files-header'), fileHead);
+    expect(bodyFiles, findsNothing);
+    expect(rig.store.collapsed(ChannelSideCard.files), isTrue);
+    expect(rig.saves, isEmpty);
+
+    await t.tap(expandTasks);
+    await t.pump();
+    await t.tap(expandTasks);
+    await t.pump();
+    expect(rect(t, 'channel-side-card-tasks-header'), taskHead);
+
+    final g = await pickUp(t, files, Offset(taskHead.right - 6, 300));
+    await g.up();
+    await settle(t);
+    expect(columnsOf(rig.store.layout), 'tasks | files');
+    expect(rig.saves, hasLength(1));
+    expect(inits[tasks], 1);
+    expect(inits[files], 1);
+    await t.pumpWidget(const SizedBox.shrink());
+  });
+
+  for (final size in [const Size(856, 944), const Size(944, 856)]) {
+    testWidgets('foldable $size expands by touch without a drag grip', (
+      t,
+    ) async {
+      final rig = await pump(t, size: size, platform: TargetPlatform.android);
+      final expand = find.byKey(const Key('channel-side-card-tasks-expand'));
+      final original = rect(t, 'channel-side-card-tasks-header');
+      expect(grip(tasks), findsNothing);
+      await t.tap(expand.hitTestable());
+      await t.pump();
+      expect(rect(t, 'channel-side-card-tasks-header').width, size.width - 160);
+      await t.tap(expand.hitTestable());
+      await t.pump();
+      expect(rect(t, 'channel-side-card-tasks-header'), original);
+      expect(rig.saves, isEmpty);
+      await t.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  testWidgets('More actions moves Files into a new docked column', (t) async {
+    final rig = await pump(t);
+    final more = find.byKey(const Key('channel-side-card-files-overflow'));
+    await t.tap(more.hitTestable());
+    await t.pumpAndSettle();
+    await t.tap(find.text('Move right').hitTestable());
+    await settle(t);
+    expect(columnsOf(rig.store.layout), 'tasks | files');
+    expect(rig.saves, hasLength(1));
+    expect(inits[files], 1);
+    await t.pumpWidget(const SizedBox.shrink());
+  });
+
   group('a mouse drag', () {
     testWidgets('Files to a new column right of Tasks: saved once', (t) async {
       final rig = await pump(t);
@@ -342,6 +424,12 @@ void main() {
       );
       await t.pump();
       final column = rect(t, 'channel-side-column-1');
+      final expand = find.byKey(const Key('channel-side-card-tasks-expand'));
+      final overflow = find.byKey(
+        const Key('channel-side-card-tasks-overflow'),
+      );
+      expect(expand.hitTestable(), findsOne);
+      expect(overflow.hitTestable(), findsOne);
       final g = await pickUp(t, files, Offset(column.left + 6, 300));
       expect(
         find.text('The window is too narrow for another column.'),
@@ -537,6 +625,14 @@ void main() {
       await pump(t, size: const Size(390, 844));
       expect(find.byKey(const Key('channel-side-overlay')), findsOne);
       expect(grip(files), findsNothing);
+      expect(
+        find.byKey(const Key('channel-side-card-files-expand')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('channel-side-card-files-overflow')),
+        findsNothing,
+      );
     });
 
     testWidgets('a wide compact window: covering, no grip', (t) async {

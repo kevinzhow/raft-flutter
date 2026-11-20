@@ -35,8 +35,11 @@ class ChannelSideCardView extends StatelessWidget {
     required this.mode,
     required this.phone,
     required this.child,
-    this.actions = const [],
+    this.onCreateTask,
+    this.moves = const [],
     this.onCollapsedChanged,
+    this.onExpand,
+    this.expanded = false,
     this.collapsed = false,
     this.stackEnd = false,
     this.headWrapper,
@@ -54,11 +57,14 @@ class ChannelSideCardView extends StatelessWidget {
   /// draws no Back and no X of its own.
   final bool phone;
 
-  /// Its own buttons, before the X (Tasks: "+ New task").
-  final List<Widget> actions;
+  /// The Tasks header’s own action, also reachable from its overflow menu.
+  final VoidCallback? onCreateTask;
+  final List<RaftMenuEntry> moves;
 
   /// Set where the card shares its column and may fold.
   final ValueChanged<bool>? onCollapsedChanged;
+  final VoidCallback? onExpand;
+  final bool expanded;
   final bool collapsed, stackEnd;
   final ChannelSideHeadWrapper? headWrapper;
   final Widget child;
@@ -69,49 +75,126 @@ class ChannelSideCardView extends StatelessWidget {
     final covering = mode == ChannelSideMode.overlay;
     final id = 'channel-side-card-${section.name}';
     final foldable = onCollapsedChanged != null;
+    final moreActions = raftText(context, 'More actions');
     final collapseLabel = raftFormat(
       context,
       collapsed ? 'Expand {title}' : 'Collapse {title}',
       {'title': title},
     );
-    Widget head = RaftPanelHeaderBar(
-      key: Key('$id-header'),
-      title: title,
-      background: t.colors['layer-canvas'],
-      bottomRule: true,
-      bottomBorder: stackEnd
-          ? const Border()
-          : RaftSidePanelFrame.headerRule(t),
-      onBack: covering && !phone ? onClose : null,
-      backKey: Key('$id-back'),
-      backTooltip: closeLabel,
-      leading: foldable
-          ? Semantics(
-              expanded: !collapsed,
-              child: RaftPanelAction(
-                key: Key('$id-collapse'),
-                glyph: collapsed
-                    ? RaftGlyph.chevronRight
-                    : RaftGlyph.chevronDown,
-                tooltip: collapseLabel,
-                onPressed: () => onCollapsedChanged!(!collapsed),
+    final newTask = raftText(context, 'New task');
+    final head = LayoutBuilder(
+      builder: (context, box) {
+        final leadingInset = foldable && !phone ? RaftSpace.x3 : null;
+        // Web headFit reserves room for the title and surface controls before
+        // adding the card's own action. A clipped column uses the small icons
+        // so its essential actions stay operable at the 160px column floor.
+        final leadingWidth = foldable ? 40.0 : 0.0;
+        final controls = (onExpand == null ? 0 : 1) + (covering ? 0 : 1);
+        final actions = controls + (moves.isEmpty ? 0 : 1) + 1;
+        final showCreate = !collapsed && onCreateTask != null;
+        final createInline =
+            showCreate &&
+            (covering ||
+                box.maxWidth >=
+                    (foldable ? 13 : 20) +
+                        13 +
+                        leadingWidth +
+                        56 +
+                        actions * RaftMetrics.buttonMd +
+                        (actions - 1) * RaftSpace.x1);
+        final menu = [
+          if (showCreate && !createInline)
+            RaftMenuEntry(
+              label: newTask,
+              glyph: RaftGlyph.plus,
+              onPressed: onCreateTask,
+            ),
+          ...moves,
+        ];
+        final compactActions =
+            !covering && box.maxWidth < channelSideCompactHeaderWidth;
+        final actionSize = compactActions
+            ? RaftButtonSize.iconXs
+            : RaftButtonSize.iconSm;
+        final bar = RaftPanelHeaderBar(
+          key: Key('$id-header'),
+          title: title,
+          leftPadding: leadingInset,
+          background: t.colors['layer-canvas'],
+          bottomRule: true,
+          bottomBorder: stackEnd
+              ? const Border()
+              : RaftSidePanelFrame.headerRule(t),
+          onBack: covering && !phone ? onClose : null,
+          backKey: Key('$id-back'),
+          backTooltip: closeLabel,
+          leading: foldable
+              ? Semantics(
+                  expanded: !collapsed,
+                  child: RaftPanelAction(
+                    key: Key('$id-collapse'),
+                    glyph: collapsed
+                        ? RaftGlyph.chevronRight
+                        : RaftGlyph.chevronDown,
+                    tooltip: collapseLabel,
+                    ghostSize: covering ? null : actionSize,
+                    onPressed: () => onCollapsedChanged!(!collapsed),
+                    minHitExtent: RaftMetrics.touchTarget,
+                  ),
+                )
+              : null,
+          actions: [
+            if (createInline)
+              RaftPanelAction(
+                key: const Key('channel-tasks-panel-new'),
+                glyph: RaftGlyph.plus,
+                tooltip: newTask,
+                ghostSize: covering ? null : actionSize,
+                minHitExtent: RaftMetrics.touchTarget,
+                onPressed: onCreateTask,
+              ),
+            if (menu.isNotEmpty)
+              RaftDropdownMenu(
+                key: Key('$id-overflow'),
+                label: moreActions,
+                kind: RaftMenuKind.dropdownMenu,
+                align: RaftDropdownAlign.end,
+                sideOffset: RaftSpace.x1,
+                entries: menu,
+                triggerBuilder: (context, focus, onPressed) => RaftButton(
+                  label: '',
+                  semanticLabel: moreActions,
+                  tooltip: moreActions,
+                  glyph: RaftGlyph.ellipsisVertical,
+                  uiVariant: RaftButtonVariant.ghost,
+                  uiSize: actionSize,
+                  focusNode: focus,
+                  onPressed: onPressed,
+                ),
+              ),
+            if (onExpand != null)
+              raftConversationHeaderToggle(
+                key: Key('$id-expand'),
+                glyph: expanded ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
+                label: raftText(context, expanded ? 'Restore' : 'Expand'),
+                pressed: expanded,
+                size: actionSize,
+                onPressed: onExpand,
+              ),
+            if (!covering)
+              RaftPanelAction(
+                key: Key('$id-close'),
+                glyph: RaftGlyph.x,
+                tooltip: closeLabel,
+                ghostSize: actionSize,
+                onPressed: onClose,
                 minHitExtent: RaftMetrics.touchTarget,
               ),
-            )
-          : null,
-      actions: [
-        if (!collapsed) ...actions,
-        if (!covering)
-          RaftPanelAction(
-            key: Key('$id-close'),
-            glyph: RaftGlyph.x,
-            tooltip: closeLabel,
-            onPressed: onClose,
-            minHitExtent: RaftMetrics.touchTarget,
-          ),
-      ],
+          ],
+        );
+        return headWrapper?.call(context, section, bar) ?? bar;
+      },
     );
-    head = headWrapper?.call(context, section, head) ?? head;
     return Semantics(
       container: true,
       explicitChildNodes: true,

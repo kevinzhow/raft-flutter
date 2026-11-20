@@ -18,6 +18,7 @@ import 'primitive_tokens.dart';
 import 'public_page_mark.dart';
 import 'workspace_button.dart';
 import 'workspace_shell.dart' show RaftWorkspaceRailAction;
+import 'rail_attention.dart';
 import 'recipe_surface.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
@@ -900,22 +901,41 @@ class RaftMobileNotificationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (mobileHeader && _stickerWorkspace(t)) {
-      final extent = t.size('size.mobileHeaderAction', fallback: 44);
-      final control = RaftControl(
-        onPressed: onPressed,
-        semanticLabel: raftText(context, semanticLabel),
-        minimumTargetSize: extent,
-        visualHeight: extent,
-        visualWidth: extent,
-        recipe: _MobileHeaderBellRecipe(
-          t,
-          selected: open,
-          borderWidth: raftControlBorderPx(context, 1.5),
-        ),
-        child: RaftIcon(
-          RaftGlyph.bell,
-          size: t.size('size.mobileHeaderActionGlyph', fallback: 22),
+    if (onFrame || (mobileHeader && _stickerWorkspace(t))) {
+      final extent = onFrame
+          ? t.size('css.frame-item-height', fallback: 36)
+          : t.size('size.mobileHeaderAction', fallback: 44);
+      final icon = RaftIcon(
+        RaftGlyph.bell,
+        size: onFrame
+            ? RaftRailRecipe(
+                t,
+                viewportHeight: MediaQuery.sizeOf(context).height,
+              ).glyphSize
+            : t.size('size.mobileHeaderActionGlyph', fallback: 22),
+      );
+      final control = Semantics(
+        expanded: open,
+        child: RaftControl(
+          onPressed: onPressed,
+          semanticLabel: raftText(context, semanticLabel),
+          tooltip: onFrame ? raftText(context, semanticLabel) : null,
+          minimumTargetSize: extent,
+          visualHeight: extent,
+          visualWidth: extent,
+          recipe: _FrameBellRecipe(
+            t,
+            selected: open,
+            borderWidth: raftControlBorderPx(context, 1.5),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              icon,
+              if (attention)
+                Positioned.fill(child: RaftRailAttention(child: icon)),
+            ],
+          ),
         ),
       );
       return RaftDensityScope.of(context) == RaftDensity.touch
@@ -925,9 +945,8 @@ class RaftMobileNotificationButton extends StatelessWidget {
             )
           : control;
     }
-    if (rail || onFrame) {
+    if (rail) {
       return RaftWorkspaceRailAction(
-        extent: onFrame ? 36 : null,
         label: raftText(context, semanticLabel),
         glyph: RaftGlyph.bell,
         selected: open,

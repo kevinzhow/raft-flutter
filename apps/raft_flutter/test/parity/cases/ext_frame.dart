@@ -13,10 +13,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart'
-    show addTearDown, expect, find, isTrue;
+    show addTearDown, expect, find, findsOneWidget, isTrue;
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/message_task_actions.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -49,12 +50,17 @@ WorkspaceController _workspace(ParityContext ctx) {
   final selected = _selected(ctx);
   final ids = ParityIdentities(ctx);
   final scenes = (ctx.fixtures['ext:screens'] as Map)['scenes'] as Map;
+  final frame = ctx.fixtures['ext:frame'] as Map;
   return shellWorkspace(
     ctx,
     selected: selected,
     routes: {
       'GET /agents': ids.agents,
       'GET /servers/visual-server/members': ids.members,
+      if (ctx.props['routeSet'] == 'fr-bell')
+        ...Map<String, dynamic>.from(
+          (frame['routeSets'] as Map)['fr-bell'] as Map,
+        ),
       if (selected != null)
         'GET /tasks/channel/$selected': {'tasks': <dynamic>[]},
       if (selected != null)
@@ -104,7 +110,15 @@ class _HostState extends State<_Host> {
     final id = _selected(widget.ctx);
     if (id == null) return;
     final channel = [...w.channels, ...w.dms].firstWhere((c) => c.id == id);
+    if (widget.ctx.props['sidePanels'] == true) {
+      TaskV2ConversationsFlag.of(w).markEnabled();
+    }
     await w.selectChannel(channel);
+    if (mounted && widget.ctx.props['sidePanels'] == true) {
+      // The fixture owns this session. Retire its cached Files notifier with
+      // the test instead of leaving it to app-lifetime cache eviction.
+      w.services.disposeWithSession(w.channelFilesStore(id).dispose);
+    }
   }
 
   @override
@@ -156,6 +170,28 @@ final ParityCase _case = ParityCase(
   settle: const Duration(milliseconds: 1200),
   build: _build,
   interact: (t, ctx) async {
+    if ((ctx.props['extCase'] as String?)?.endsWith('.bell-open') == true) {
+      expect(find.byType(RaftNotificationCenter), findsOneWidget);
+      expect(
+        t
+            .widget<RaftMobileNotificationButton>(
+              find.byType(RaftMobileNotificationButton),
+            )
+            .semanticLabel,
+        'Notification Center',
+      );
+    }
+    if (ctx.props['extCase'] == 'desktop.tasks-expanded-header') {
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftInteractive &&
+              widget.semanticLabel == 'Restore' &&
+              widget.toggled == true,
+        ),
+        findsOneWidget,
+      );
+    }
     if (ctx.props['state'] != 'focus') return;
     final key = const {
       'topbar-search': 'topbar-search',
@@ -201,6 +237,11 @@ const _keys = [
   'desktop.topbar',
   'desktop.rail',
   'desktop.sidebar',
+  'phone.bell-open',
+  'desktop.bell-open',
+  'desktop.tasks-header',
+  'desktop.files-folded-header',
+  'desktop.tasks-expanded-header',
 ];
 
 /// Every extension frame case, keyed by id (3 themes each).

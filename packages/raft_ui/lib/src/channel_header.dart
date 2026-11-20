@@ -358,12 +358,14 @@ Widget raftConversationHeaderToggle({
   required RaftGlyph glyph,
   required String label,
   required bool pressed,
+  RaftButtonSize size = RaftButtonSize.iconSm,
   VoidCallback? onPressed,
 }) => _ConversationHeaderToggle(
   key: key,
   glyph: glyph,
   label: label,
   pressed: pressed,
+  size: size,
   onPressed: onPressed,
 );
 
@@ -373,11 +375,13 @@ class _ConversationHeaderToggle extends StatelessWidget {
     required this.glyph,
     required this.label,
     required this.pressed,
+    required this.size,
     this.onPressed,
   });
   final RaftGlyph glyph;
   final String label;
   final bool pressed;
+  final RaftButtonSize size;
   final VoidCallback? onPressed;
 
   @override
@@ -405,11 +409,7 @@ class _ConversationHeaderToggle extends StatelessWidget {
         ).base;
         // The head's Search and Settings are ghost icon-sm buttons
         // (_ConversationHeaderAction): the toggle takes their square.
-        final source = RaftButtonMetrics.of(
-          RaftButtonSize.iconSm,
-          RaftButtonVariant.ghost,
-          t,
-        );
+        final source = RaftButtonMetrics.of(size, RaftButtonVariant.ghost, t);
         final extent = source.height;
         final glyphSize = source.icon;
         return CustomPaint(
