@@ -1534,6 +1534,7 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
     required this.style,
     required this.textScaler,
     this.hasInlineWidgets = false,
+    this.physicalBaseline = false,
     required super.child,
   });
   final TextStyle style;
@@ -1541,6 +1542,10 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
 
   /// Widget spans retain the paragraph's fractional layout baseline.
   final bool hasInlineWidgets;
+
+  final bool physicalBaseline;
+  double _baselineScale(BuildContext context) =>
+      physicalBaseline ? MediaQuery.devicePixelRatioOf(context) : 1;
   bool _windowsChinese(BuildContext context) =>
       Theme.of(context).platform == TargetPlatform.windows &&
       RaftControlTypography.appliesIn(context);
@@ -1550,6 +1555,7 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
     textScaler,
     _windowsChinese(context),
     hasInlineWidgets,
+    _baselineScale(context),
   );
   @override
   void updateRenderObject(BuildContext context, _RenderCssLineBox r) {
@@ -1557,7 +1563,8 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
       ..style = style
       ..textScaler = textScaler
       ..windowsChinese = _windowsChinese(context)
-      ..hasInlineWidgets = hasInlineWidgets;
+      ..hasInlineWidgets = hasInlineWidgets
+      ..baselineScale = _baselineScale(context);
   }
 }
 
@@ -1565,9 +1572,9 @@ class _BlinkMetrics {
   const _BlinkMetrics(this.lineHeight, this.baseline);
   final double lineHeight, baseline;
   static final _cache =
-      raftTextMetricsCache<(TextStyle, TextScaler), _BlinkMetrics>();
-  static _BlinkMetrics of(TextStyle style, TextScaler scaler) =>
-      _cache.putIfAbsent((style, scaler), () {
+      raftTextMetricsCache<(TextStyle, TextScaler, double), _BlinkMetrics>();
+  static _BlinkMetrics of(TextStyle style, TextScaler scaler, double scale) =>
+      _cache.putIfAbsent((style, scaler, scale), () {
         final size = scaler.scale(style.fontSize ?? 14);
         final probe = TextPainter(
           text: TextSpan(
@@ -1582,8 +1589,10 @@ class _BlinkMetrics {
         final line = style.height == null
             ? m.ascent + m.descent
             : style.height! * size;
-        final a = m.ascent.roundToDouble(), d = m.descent.roundToDouble();
-        return _BlinkMetrics(line, a + ((line - (a + d)) / 2).floorToDouble());
+        final ascent = (m.ascent * scale).roundToDouble();
+        final descent = (m.descent * scale).roundToDouble();
+        final leading = ((line * scale - ascent - descent) / 2).floorToDouble();
+        return _BlinkMetrics(line, (ascent + leading) / scale);
       });
 }
 
@@ -1606,15 +1615,23 @@ class _RenderCssLineBox extends RenderProxyBox {
     this._textScaler,
     this._windowsChinese,
     this._hasInlineWidgets,
+    this._baselineScale,
   );
   TextStyle _style;
   TextScaler _textScaler;
   bool _windowsChinese;
   bool _hasInlineWidgets;
+  double _baselineScale;
 
   set hasInlineWidgets(bool value) {
     if (value == _hasInlineWidgets) return;
     _hasInlineWidgets = value;
+    markNeedsLayout();
+  }
+
+  set baselineScale(double value) {
+    if (value == _baselineScale) return;
+    _baselineScale = value;
     markNeedsLayout();
   }
 
@@ -1637,7 +1654,8 @@ class _RenderCssLineBox extends RenderProxyBox {
     markNeedsLayout();
   }
 
-  _BlinkMetrics get _metrics => _BlinkMetrics.of(_style, _textScaler);
+  _BlinkMetrics get _metrics =>
+      _BlinkMetrics.of(_style, _textScaler, _baselineScale);
 
   /// A control label on a Chinese platform profile keeps Flutter's own
   /// proportional baseline: the Blink even-leading baseline (and its snap)
@@ -1697,7 +1715,9 @@ class _RenderCssLineBox extends RenderProxyBox {
     // Kept-alive sliver children can paint their own repaint boundary while
     // their ancestor has no screen transform. Align locally until attached.
     if (!top.isFinite) return _metrics.baseline - flutter;
-    final chrome = (top + _metrics.baseline + 0.5).floorToDouble();
+    final chrome =
+        ((top + _metrics.baseline) * _baselineScale + .5).floorToDouble() /
+        _baselineScale;
     return chrome - (top + flutter);
   }
 

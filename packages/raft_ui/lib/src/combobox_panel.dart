@@ -5,6 +5,7 @@ import 'dart:ui' show SemanticsRole;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'css_pixel_snap.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
@@ -41,6 +42,7 @@ class RaftComboboxItem {
     this.leadingGap,
     this.keywords,
     this.group,
+    this.glyph,
     this.enabled = true,
     this.wrapDescription = false,
   });
@@ -66,6 +68,7 @@ class RaftComboboxItem {
 
   /// Heading above the first row of each run of equal groups.
   final String? group;
+  final RaftGlyph? glyph;
   final bool enabled;
 
   /// Opt in: the [description] wraps instead of ending in an ellipsis. For a
@@ -114,6 +117,7 @@ class RaftComboboxPanel extends StatefulWidget {
     required this.onDismiss,
     this.glyph,
     this.enabled = true,
+    this.snapToDevicePixels = false,
   }) : items = null,
        emptyLabel = 'No results',
        customLabel = null,
@@ -145,6 +149,7 @@ class RaftComboboxPanel extends StatefulWidget {
     this.enabled = true,
     this.controller,
     this.emptyLabel = 'No results',
+    this.snapToDevicePixels = false,
   }) : options = const {},
        glyph = null;
 
@@ -158,6 +163,7 @@ class RaftComboboxPanel extends StatefulWidget {
   final VoidCallback onDismiss;
   final RaftGlyph? glyph;
   final bool enabled;
+  final bool snapToDevicePixels;
 
   /// With [onCustom]: a typed text that matches no row is offered as one more
   /// row labelled `customLabel(typed)`; choosing it calls `onCustom(typed)`.
@@ -337,13 +343,14 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
     final choices = _rows;
     final active = activeIndex(choices);
     final emptyLabel = widget.emptyLabel;
-    return DefaultTextStyle(
+    final panel = DefaultTextStyle(
       style: base,
       child: Focus(
         canRequestFocus: false,
         onKeyEvent: navigate,
         child: RaftPopoverSurface(
           surfaceStyle: r.content,
+          snapShadowToDevicePixels: widget.snapToDevicePixels,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -463,6 +470,8 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                   tokens: tokens,
                                 );
                                 final item = recipe.item;
+                                final choice = choices[i];
+                                final glyph = choice.glyph ?? widget.glyph;
                                 final second =
                                     choices[i].description ??
                                     (choices[i].hint != choices[i].label
@@ -473,35 +482,49 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                   tokens: tokens,
                                   child: Row(
                                     children: [
-                                      if (choices[i].leading
+                                      if (choice.leading
                                           case final leading?) ...[
                                         leading,
                                         SizedBox(
                                           width:
-                                              choices[i].leadingGap ??
+                                              choice.leadingGap ??
                                               item.columnGap ??
                                               8,
                                         ),
                                       ],
-                                      if (widget.glyph != null)
+                                      if (glyph != null)
                                         SizedBox.square(
                                           dimension: 20,
                                           child: Center(
                                             child: RaftIcon(
-                                              widget.glyph!,
-                                              size: 12,
+                                              glyph,
+                                              size: choice.glyph == null
+                                                  ? 12
+                                                  : 14,
                                             ),
                                           ),
                                         ),
-                                      if (widget.glyph != null)
-                                        SizedBox(width: item.columnGap ?? 8),
+                                      if (glyph != null)
+                                        SizedBox(
+                                          width: choice.glyph != null
+                                              ? 8
+                                              : item.columnGap ?? 8,
+                                        ),
                                       Expanded(
                                         child: second == null
                                             ? Text(
                                                 choices[i].label,
-                                                textAlign: widget.glyph == null
-                                                    ? TextAlign.start
-                                                    : TextAlign.end,
+                                                maxLines: choice.glyph != null
+                                                    ? 1
+                                                    : null,
+                                                overflow: choice.glyph != null
+                                                    ? TextOverflow.ellipsis
+                                                    : null,
+                                                textAlign:
+                                                    widget.glyph != null &&
+                                                        choice.glyph == null
+                                                    ? TextAlign.end
+                                                    : TextAlign.start,
                                               )
                                             : Column(
                                                 crossAxisAlignment:
@@ -586,6 +609,7 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
         ),
       ),
     );
+    return widget.snapToDevicePixels ? RaftCssPixelSnap(child: panel) : panel;
   }
 }
 

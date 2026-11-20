@@ -578,17 +578,19 @@ class _DirectMessageIconPainter extends CustomPainter {
   bool shouldRepaint(_DirectMessageIconPainter old) => old.color != color;
 }
 
-/// raft-ui 0.5.52 ThreadIcon (dist/index.mjs).
-/// The product uses this 18-unit two-bubble SVG for search thread metadata.
 class RaftThreadIcon extends StatelessWidget {
   const RaftThreadIcon({super.key, this.size = 18, this.color})
-    : outlined = false;
+    : _variant = _ThreadIconVariant.filled;
   const RaftThreadIcon.outline({super.key, this.size = 18, this.color})
-    : outlined = true;
+    : _variant = _ThreadIconVariant.outline;
+  const RaftThreadIcon.search({super.key, this.color})
+    : size = 12,
+      _variant = _ThreadIconVariant.search;
 
   final double size;
   final Color? color;
-  final bool outlined;
+  final _ThreadIconVariant _variant;
+  bool get outlined => _variant != _ThreadIconVariant.filled;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: RaftIconViewport(
@@ -599,29 +601,54 @@ class RaftThreadIcon extends StatelessWidget {
               IconTheme.of(context).color ??
               DefaultTextStyle.of(context).style.color ??
               Colors.black,
-          outlined: outlined,
+          _variant,
         ),
       ),
     ),
   );
 }
 
+enum _ThreadIconVariant {
+  filled(1),
+  outline(1.75),
+  search(1.5);
+
+  const _ThreadIconVariant(this.strokeWidth);
+
+  final double strokeWidth;
+}
+
 class _ThreadIconPainter extends CustomPainter {
-  const _ThreadIconPainter(this.color, {required this.outlined});
+  const _ThreadIconPainter(this.color, this.variant);
   final Color color;
-  final bool outlined;
+  final _ThreadIconVariant variant;
+  static const _searchBubbles = [
+    _LucideNode.path('M3.5 11.5L1.75 13.25V4.25A2 2 0 0 1 3.75 2.25H11.25'),
+    _LucideNode.path(
+      'M8.25 5H14.5C15.6 5 16.5 5.9 16.5 7V11.75C16.5 12.85 15.6 13.75 '
+      '14.5 13.75H13V16.25L9.75 13.75H8.25C7.15 13.75 6.25 12.85 6.25 '
+      '11.75V7C6.25 5.9 7.15 5 8.25 5Z',
+    ),
+  ];
+
   @override
   void paint(Canvas canvas, Size size) {
-    final strokeWidth = outlined ? 1.75 : 1.0;
     final stroke = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
+      ..strokeWidth = variant.strokeWidth
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     canvas.save();
     canvas.scale(size.width / 18, size.height / 18);
-    if (outlined) {
+    if (variant == _ThreadIconVariant.search) {
+      for (final bubble in _searchBubbles) {
+        canvas.drawPath(bubble.path, stroke);
+      }
+      canvas.restore();
+      return;
+    }
+    if (variant == _ThreadIconVariant.outline) {
       // ricons ThreadIcon, with SidebarItemThreadCount's 1.75 stroke.
       final path = Path()
         ..moveTo(3.5, 11.5)
@@ -683,5 +710,5 @@ class _ThreadIconPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ThreadIconPainter old) =>
-      old.color != color || old.outlined != outlined;
+      old.color != color || old.variant != variant;
 }

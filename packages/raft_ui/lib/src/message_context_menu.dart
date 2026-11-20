@@ -25,11 +25,13 @@ class RaftMessageContextMenuItem {
     required this.icon,
     this.onPressed,
     this.key,
+    this.focusNode,
   });
   final String label;
   final Widget icon;
   final VoidCallback? onPressed;
   final Key? key;
+  final FocusNode? focusNode;
 }
 
 /// Web MessageItem.tsx context menu (`ContextMenuPopup role=menu`), shared by
@@ -102,6 +104,7 @@ class RaftMessageContextMenu extends StatelessWidget {
         for (final item in groups[i])
           RaftMenuButtonItem(
             key: item.key,
+            focusNode: item.focusNode,
             label: item.label,
             icon: SizedBox.square(
               // MenuItem.tsx v1.24: the first icon is 16.

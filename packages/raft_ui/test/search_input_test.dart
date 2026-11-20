@@ -34,7 +34,26 @@ void main() {
           ),
         );
         final before = t.state(find.byType(EditableText));
-        await t.showKeyboard(find.byType(TextField));
+        final frame = find
+            .ancestor(
+              of: find.byType(TextField),
+              matching: find.byType(RaftRecipeBox),
+            )
+            .first;
+        List<double> focusSpreads() {
+          final box = t.widget<RaftRecipeBox>(frame);
+          return box.style
+              .decoration(box.tokens)
+              .boxShadow!
+              .where((shadow) => shadow.color.a > 0)
+              .map((shadow) => shadow.spreadRadius)
+              .toList();
+        }
+
+        expect(focusSpreads(), isEmpty);
+        await t.tap(find.byType(TextField));
+        await t.pump();
+        expect(focusSpreads(), unorderedEquals([2, 4]));
         t.testTextInput.updateEditingValue(
           const TextEditingValue(
             text: 'ni',

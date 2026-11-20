@@ -25,6 +25,7 @@ import 'recipes/recipe_router.dart' show resolveAuthoredClasses;
 import 'recipes/textarea.g.dart';
 import 'recipes/textarea_counter.g.dart';
 import 'label.dart';
+import 'panel_layout.dart' show RaftCssLineBox;
 import 'raft/button.dart' show RaftButton, RaftButtonVariant, RaftButtonSize;
 import 'raft/css_box.dart';
 import 'raft/ui_tokens.dart';
@@ -1039,6 +1040,7 @@ class RaftInputGroup extends StatefulWidget {
     this.fieldKey,
     this.clearKey,
     this.size,
+    this.snapBorderToDevicePixels = false,
   });
 
   /// Key of the inline-end clear button (a test's or a focus lookup's handle).
@@ -1046,6 +1048,7 @@ class RaftInputGroup extends StatefulWidget {
 
   /// `InputGroup size`: the recipe default is `lg` (the forms' 44px); FitToolbarSearch is `md` (32px, 34px with a mouse).
   final RaftInputGroupRecipeSize? size;
+  final bool snapBorderToDevicePixels;
   final RaftInputGroupAddon? leading, trailing;
 
   /// `variant="container"` addons are a muted block with a hairline seam (`SlugInput`); the default ones sit on
@@ -1118,7 +1121,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
   }
 
   /// The Raft look: raft-ui `inputGroup` from the generated recipe (`h-11 overflow-hidden rounded-control
-  /// border-[1.5px] border-line-strong bg-layer-card`, `focus-within:shadow-focus`), its `addon` / `text` /
+  /// border-[1.5px] border-line-strong bg-layer-card`, `has-focus-visible:shadow-focus`), its `addon` / `text` /
   /// `control` slots, the default and `container` variants.
   Widget _buildRecipe(BuildContext context, RaftTokens t) {
     final rt = t.recipeTokens;
@@ -1131,6 +1134,8 @@ class _RaftInputGroupState extends State<RaftInputGroup>
         disabled: disabled,
         extra: [
           if (focused) RaftRecipeStates.focusWithin,
+          if (widget.snapBorderToDevicePixels && focused && !disabled)
+            'has:focus-visible',
           if (widget.invalid) 'has:data-slot=input-group-control+data-invalid',
           if (disabled) 'has:data-slot=input-group-control+disabled',
         ],
@@ -1192,10 +1197,22 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       );
     }
 
+    final hasClear = widget.onClear != null && controller.text.isNotEmpty;
+    final embeddedClear = hasClear && widget.snapBorderToDevicePixels;
+    final embeddedButton = embeddedClear
+        ? end.addon.target(':is(& > *)[data-slot="button"]')
+        : null;
+    final clearGlyph = embeddedClear
+        ? end.addon.target("& > [data-slot=button] svg:not([class*='size-'])")
+        : null;
+    final clearMargin = embeddedClear
+        ? end.addon.target('& > [data-slot=button]:last-child')?.margin.right ??
+              0
+        : 0.0;
     final actions = <Widget>[
-      if (widget.onClear != null && controller.text.isNotEmpty)
-        _clearButton(t, rt),
+      if (hasClear && !embeddedClear) _clearButton(null, null),
       if (widget.kbd != null) RaftKbd(widget.kbd!),
+      if (embeddedClear) _clearButton(embeddedButton, clearGlyph),
     ];
     final trailing = widget.trailing;
     final control = start.control;
@@ -1247,7 +1264,11 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       width: double.infinity,
       clip: true,
       decorationOverride: (d) {
-        d = raftSnapBorder(context, d);
+        d = raftSnapBorder(
+          context,
+          d,
+          snapToDevicePixels: widget.snapBorderToDevicePixels,
+        );
         final border = d.border;
         return d.copyWith(
           color: widget.backgroundColor ?? d.color,
@@ -1266,7 +1287,16 @@ class _RaftInputGroupState extends State<RaftInputGroup>
             Expanded(
               child: Padding(
                 padding: padding,
-                child: Align(alignment: Alignment.centerLeft, child: field),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: widget.snapBorderToDevicePixels
+                      ? RaftCssLineBox(
+                          style: style,
+                          textScaler: MediaQuery.textScalerOf(context),
+                          child: field,
+                        )
+                      : field,
+                ),
               ),
             ),
             if (trailing != null || actions.isNotEmpty)
@@ -1277,6 +1307,11 @@ class _RaftInputGroupState extends State<RaftInputGroup>
                   spacing: end.addon.columnGap ?? 0,
                   children: [?trailing?.child, ...actions],
                 ),
+                padding: embeddedClear && !container
+                    ? end.addon.padding.copyWith(
+                        right: end.addon.padding.right + clearMargin,
+                      )
+                    : null,
               ),
           ],
         ),
@@ -1285,14 +1320,27 @@ class _RaftInputGroupState extends State<RaftInputGroup>
     return Semantics(label: widget.semanticLabel, child: hoverRegion(box0));
   }
 
-  /// `Button variant="ghost" size="icon-sm"` with the X: the recipe's square and its `svg` size.
-  Widget _clearButton(RaftTokens t, RaftTokenResolver rt) {
+  Widget _clearButton(RaftSlotStyle? button, RaftSlotStyle? glyph) {
     return RaftButton(
       key: widget.clearKey,
       label: '',
       glyph: RaftGlyph.x,
       uiVariant: RaftButtonVariant.ghost,
-      uiSize: RaftButtonSize.iconSm,
+      uiSize: widget.snapBorderToDevicePixels
+          ? RaftButtonSize.iconMd
+          : RaftButtonSize.iconSm,
+      visualWidth: button?.width,
+      physicalHeight: button?.height,
+      glyphSize: glyph?.width,
+      styleBuilder: button == null
+          ? null
+          : (_, _, style) => style.copyWith(
+              properties: {
+                ...style.properties,
+                for (final entry in button.properties.entries)
+                  if (entry.key.endsWith('-radius')) entry.key: entry.value,
+              },
+            ),
       tooltip: widget.clearLabel,
       semanticLabel: widget.clearLabel,
       onPressed: widget.onClear,

@@ -644,11 +644,13 @@ class RaftMenuButtonItem extends StatelessWidget {
     this.icon,
     this.trailing,
     this.topDivider = false,
+    this.focusNode,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final Widget? icon, trailing;
+  final FocusNode? focusNode;
 
   /// Callsite `border-t border-black/10` separator.
   final bool topDivider;
@@ -659,6 +661,7 @@ class RaftMenuButtonItem extends StatelessWidget {
     role: SemanticsRole.menuItem,
     child: RaftInteractive(
       onPressed: onPressed,
+      focusNode: focusNode,
       button: false,
       builder: (context, st) => RaftMenuActionRow(
         label: raftText(context, label),
@@ -684,6 +687,7 @@ class RaftMenuButtonItem extends StatelessWidget {
       role: SemanticsRole.menuItem,
       child: RaftInteractive(
         onPressed: onPressed,
+        focusNode: focusNode,
         button: false,
         builder: (context, st) {
           final s = RaftButtonRecipe.resolve(
@@ -810,6 +814,7 @@ class RaftSelectionPopover extends StatelessWidget {
     this.emptyLabel = 'No options',
     this.width,
     this.surfaceStyle,
+    this.snapShadowToDevicePixels = false,
   });
 
   final String title;
@@ -832,6 +837,7 @@ class RaftSelectionPopover extends StatelessWidget {
   /// Null uses SelectionPopover's product default. The supplied recipe replaces
   /// that surface only; header, search, options and their interaction stay live.
   final RaftSlotStyle? surfaceStyle;
+  final bool snapShadowToDevicePixels;
 
   /// Current Web `SelectionPopoverSections` inside the caller's surface.
   Widget _buildRaft(BuildContext context, RaftTokens t) {
@@ -950,7 +956,11 @@ class RaftSelectionPopover extends StatelessWidget {
         width: width == null ? null : math.max(width!, minimumWidth),
         child: ConstrainedBox(
           constraints: BoxConstraints(minWidth: minimumWidth),
-          child: RaftPopoverSurface(surfaceStyle: surface, child: body),
+          child: RaftPopoverSurface(
+            surfaceStyle: surface,
+            snapShadowToDevicePixels: snapShadowToDevicePixels,
+            child: body,
+          ),
         ),
       ),
     );

@@ -19,6 +19,7 @@ String mobilePageIdentity(RaftLocation location) {
     location.query('task') ?? '',
     location.query('legacyTask') ?? '',
     location.query('channelPage') ?? '',
+    if (location.searchDeferred) location.query('channelId') ?? '',
   ].join('|');
 }
 

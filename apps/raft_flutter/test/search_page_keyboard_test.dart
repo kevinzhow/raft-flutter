@@ -156,6 +156,42 @@ void main() {
     expect(selected(t, 'm2'), isFalse);
   });
 
+  testWidgets('typing with a date filter keeps the selected message', (
+    t,
+  ) async {
+    await mount(t, query: '');
+    await t.tap(find.text('Any time'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Last 7 days'));
+    await t.pumpAndSettle();
+    expect(find.text('Clear all'), findsOneWidget);
+    expect(selected(t, 'm1'), isTrue);
+    final field = find.byType(TextField).first;
+    expect(t.widget<TextField>(field).focusNode!.hasFocus, isFalse);
+
+    await t.tap(field);
+    await t.enterText(field, 'ops');
+    await t.pump(const Duration(milliseconds: 400));
+    await t.pumpAndSettle();
+    expect(find.text('Server entities'), findsOneWidget);
+    expect(selected(t, 'm1'), isTrue);
+    expect(t.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+    await press(t, LogicalKeyboardKey.arrowUp);
+    expect(selected(t, 'm1'), isFalse);
+  });
+
+  testWidgets('an unfiltered query selects the first visible destination', (
+    t,
+  ) async {
+    await mount(t, query: '');
+    await t.enterText(find.byType(TextField).first, 'ops');
+    await t.pump(const Duration(milliseconds: 400));
+    await t.pumpAndSettle();
+    expect(selected(t, 'm1'), isFalse);
+    await press(t, LogicalKeyboardKey.arrowDown);
+    expect(selected(t, 'm1'), isTrue);
+  });
+
   testWidgets('Up and Down move the cursor and stop at the ends', (t) async {
     await mount(t);
     await press(t, LogicalKeyboardKey.arrowUp);
@@ -265,6 +301,11 @@ void main() {
     expect(find.text('Relevant'), findsNothing);
     expect(find.text('没有找到“自动更新”的结果'), findsOneWidget);
     expect(find.text('试试其他关键词或更短的短语。'), findsOneWidget);
+    await t.tap(find.text('不限时间'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('最近 7 天'));
+    await t.pumpAndSettle();
+    expect(find.text('清除筛选'), findsOneWidget);
   });
 
   testWidgets('the recent sort reads 最新 in zh (Web search.sortRecent)', (

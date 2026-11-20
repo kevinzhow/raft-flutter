@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'raft/ui_tokens.dart';
 
 import 'design_primitives.dart';
+import 'interaction.dart';
+import 'page_recipes.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -47,10 +49,19 @@ class RaftSearchResultSurface extends StatelessWidget {
           ],
         );
         if (t.option('searchResult.selection', or: 'card') == 'flat') {
+          final inset =
+              entity && (RaftInteraction.of(context).touch || t.desktop)
+              ? 8.0
+              : 12.0;
+          final radius = BorderRadius.circular(
+            RaftSearchRecipe(t, mobile: false).cardRadius,
+          );
           return Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: inset),
             decoration: BoxDecoration(
+              borderRadius: radius,
               color: selected
                   ? t.ui['brand-soft']
                   : interaction.hovered
@@ -60,6 +71,7 @@ class RaftSearchResultSurface extends StatelessWidget {
             foregroundDecoration: interaction.focusVisible
                 ? BoxDecoration(
                     border: Border.all(color: t.ui.foreground, width: 2),
+                    borderRadius: radius,
                   )
                 : null,
             child: child,

@@ -9,6 +9,8 @@ import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/search_continuation.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'support/search_text.dart';
+
 typedef _Request = ({Map<String, dynamic> query, Completer<dynamic> response});
 
 class _Workspace extends WorkspaceController {
@@ -122,7 +124,7 @@ void main() {
       'results': [hit('m1', 'the topic is here')],
       'hasMore': false,
     });
-    expect(find.textContaining('the topic is here'), findsWidgets);
+    expect(findSearchText('the topic is here', containing: true), findsWidgets);
     expect(find.text('No matches yet'), findsNothing);
     expect(find.text('Continue searching'), findsNothing);
     expect(find.text('Load more'), findsNothing);
@@ -136,7 +138,7 @@ void main() {
       'incomplete': true,
       'nextCursor': 'cursor-1',
     });
-    expect(find.textContaining('first topic'), findsWidgets);
+    expect(findSearchText('first topic', containing: true), findsWidgets);
     expect(
       find.text('Only part of the messages has been searched so far.'),
       findsOneWidget,
@@ -152,8 +154,8 @@ void main() {
       'nextCursor': 'cursor-2',
       'searchedThrough': '2026-08-01T10:00:00.000Z',
     });
-    expect(find.textContaining('first topic'), findsWidgets);
-    expect(find.textContaining('second topic'), findsWidgets);
+    expect(findSearchText('first topic', containing: true), findsWidgets);
+    expect(findSearchText('second topic', containing: true), findsWidgets);
     expect(find.textContaining('Searched messages back to'), findsOneWidget);
     await tester.tap(find.text('Continue searching'));
     await tester.pump();
@@ -162,7 +164,7 @@ void main() {
       'results': [hit('m3', 'third topic')],
       'hasMore': false,
     });
-    expect(find.textContaining('third topic'), findsWidgets);
+    expect(findSearchText('third topic', containing: true), findsWidgets);
     expect(find.text('Continue searching'), findsNothing);
     expect(find.byKey(const Key('search-incomplete-note')), findsNothing);
   });
@@ -208,7 +210,7 @@ void main() {
     w.requests.last.response.completeError(const RaftApiException('boom'));
     await tester.pumpAndSettle();
     expect(find.text('Could not load more results.'), findsOneWidget);
-    expect(find.textContaining('first topic'), findsWidgets);
+    expect(findSearchText('first topic', containing: true), findsWidgets);
     expect(find.byKey(const Key('search-incomplete-note')), findsNothing);
     expect(find.text('Retry'), findsOneWidget);
 
@@ -220,7 +222,7 @@ void main() {
       'hasMore': false,
     });
     expect(find.text('Could not load more results.'), findsNothing);
-    expect(find.textContaining('second topic'), findsWidgets);
+    expect(findSearchText('second topic', containing: true), findsWidgets);
     expect(find.text('Continue searching'), findsNothing);
   });
 

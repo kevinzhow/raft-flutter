@@ -9,6 +9,7 @@ import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_incremental_refresh_test.dart' show ActivityClient;
+import 'support/search_text.dart';
 
 class _SearchWorkspace extends WorkspaceController {
   _SearchWorkspace(super.client);
@@ -157,7 +158,7 @@ void main() {
     expect(state.rows, hasLength(30));
     expect(state.rows.where((r) => r['channelId'] == 'ch2'), isEmpty);
     expect(identical(state.rows.first, kept), isTrue);
-    expect(find.text('Search body 2'), findsNothing);
+    expect(findSearchText('Search body 2'), findsNothing);
     expect(state.query.text, 'body');
     expect(state.advanced.timeRange, '7d');
     expect(w.searches, hasLength(searches));
@@ -213,7 +214,7 @@ void main() {
     expect(state.query.text, '');
     expect(state.advanced.timeRange, 'any');
     expect(state.rows, isEmpty);
-    expect(find.text('Search body 0'), findsNothing);
+    expect(findSearchText('Search body 0'), findsNothing);
   });
 
   testWidgets('a role change resets the query and results', (tester) async {

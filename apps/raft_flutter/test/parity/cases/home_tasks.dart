@@ -26,6 +26,7 @@ import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_flutter/features/mobile_workspace_navigation.dart';
 import 'package:raft_flutter/features/create_channel_dialog.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/task_selection_filter.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../parity_harness.dart';
@@ -437,6 +438,7 @@ Widget _resource(
   String section, {
   double? width,
   double? height,
+  SearchStateSnapshot? searchState,
 }) {
   final w = parityWorkspace(ctx, section: section);
   final now = parityNow(ctx);
@@ -445,18 +447,25 @@ Widget _resource(
     sourceTimeNow = () => now;
     ctx.onDispose(() => sourceTimeNow = previousClock);
   }
+  final memory = SearchMemoryStore(
+    storage: ParityMemorySearchStorage(),
+    clock: () => now,
+  );
+  if (searchState != null) {
+    memory.saveState(
+      SearchMemoryScope(w.client.origin, w.server!.id, w.client.user!.id),
+      searchState,
+    );
+  }
   final view = Scaffold(
     body: ResourceView(
       controller: w,
       section: section,
+      mobileRoot: section == 'activity' || section == 'search',
       clock: () => now,
-      mobileRoot: section == 'activity',
       onBack: () {},
-      searchMemory: SearchMemoryStore(
-        storage: ParityMemorySearchStorage(),
-        clock: () => now,
-      ),
-      restoreSearchState: false,
+      searchMemory: memory,
+      restoreSearchState: searchState != null,
       onMessage: (_, _) async {},
     ),
   );
@@ -485,26 +494,30 @@ final ParityCase _searchResults = ParityCase(
     'raft_ui:RaftDropdownMenu',
   ],
   notes:
-      'Query "android" typed like the React fill. React applies range=7d and '
-      'sort=recent from the case URL params; Flutter has no URL state, so the '
-      'same values are chosen through the date-range and sort dropdowns. The '
-      'React sender/channel props match no React id and stay unselected, so '
-      'they are not applied here either. Input focus is restored after choosing '
-      'the filters: React seeds them via URL and then fills the focused input. '
-      'Relative times use the fixture clock.',
-  build: (ctx) => _resource(ctx, 'search'),
+      'The Web URL seeds the date and sort before the fill. Flutter restores '
+      'the same filters through Search memory. Both load date-filtered messages '
+      'before typing "android". The input stays focused after the fill.',
+  build: (ctx) => _resource(
+    ctx,
+    'search',
+    searchState: const SearchStateSnapshot(range: '7d', sort: 'recent'),
+  ),
   interact: (t, ctx) async {
+    await t.pumpAndSettle();
+    final range = find.widgetWithText(RaftPickerTriggerButton, 'Last 7 days');
+    final strip = Scrollable.of(t.element(range)).position;
+    expect(strip.pixels, greaterThan(0));
+    expect(strip.pixels, lessThan(strip.maxScrollExtent - 1));
     await _typeSearch(t);
-    await t.tap(find.text('Any time').last);
-    await t.pump(const Duration(milliseconds: 300));
-    await t.tap(find.text('Last 7 days').last);
-    await t.pump(const Duration(milliseconds: 300));
-    await t.tap(find.text('Relevant').last);
-    await t.pump(const Duration(milliseconds: 300));
-    await t.tap(find.text('Recent').last);
-    await t.pump(const Duration(milliseconds: 600));
-    await t.tap(find.byType(TextField).first);
-    await t.pump();
+    final first = find.byType(RaftQuickSwitcherHit).first;
+    expect(t.widget<RaftQuickSwitcherHit>(first).selected, isTrue);
+    expect(
+      t
+          .widget<EditableText>(find.byType(EditableText).first)
+          .focusNode
+          .hasFocus,
+      isTrue,
+    );
   },
 );
 
@@ -518,10 +531,17 @@ final ParityCase _searchChannelDropdown = ParityCase(
       'Query "android" typed, then the Channel filter (TaskSelectionFilter) '
       'opened, mirroring the React click on "Open channel filter".',
   build: (ctx) => _resource(ctx, 'search'),
+  settle: Duration.zero,
   interact: (t, ctx) async {
     await _typeSearch(t);
-    await t.tap(find.text('Channel').first);
+    final channel = find.byWidgetPredicate(
+      (widget) => widget is TaskSelectionFilter && widget.field == 'Channel',
+    );
+    await Scrollable.ensureVisible(t.element(channel), alignment: .5);
+    await t.pump();
+    await t.tap(channel.hitTestable());
     await t.pump(const Duration(milliseconds: 250));
+    expect(find.byType(RaftComboboxPanel), findsOneWidget);
   },
 );
 

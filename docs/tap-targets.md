@@ -117,6 +117,15 @@ can be commented on. It opens the same composer and names the file. Send and
 Save draft apply to that file. Back returns to More. Opening **Comments**
 opens the whole-Artifact composer.
 
+### Search rows
+
+The Search everywhere row sends the current query from scoped Search to the
+workspace's Search tab. The scoped page's Back control restores its source
+conversation. The Artifact result row sends its validated target and summary
+to the existing viewer. The viewer's Close control returns to Search with the
+result still present. Search only renders Artifact rows when the app is
+enabled and the result belongs to the current search authority.
+
 ### Adding a container
 
 1. Build it, passing every handler it has (`null` where it has none).
@@ -232,6 +241,8 @@ chips). The rest are OK or SAME.
 | public-server | `lib/features/public_server_view.dart` | RaftMessageTile, RaftThreadRepliesBadge | public_server_view_test.dart (reply badge opens the thread) |
 | activity-saved-rows | `lib/features/saved_page_rows.dart` | RaftConversationCard | tap_target_matrix_test.dart (Saved rows); saved_page_w24_test.dart |
 | search-rows | `lib/features/resource_search.dart` | RaftSearchResultSurface | desktop_preview_single_location_test.dart |
+| search-everywhere | `lib/features/search_sections.dart` | RaftSearchResultSurface | channel_search_keep_test.dart |
+| search-artifact-rows | `lib/features/search_app_results.dart` | RaftSearchResultSurface | search_app_groups_test.dart |
 | image-export | `lib/features/message_image_export.dart` | RaftMessageTile | inert by design: off-screen render for the exported image |
 | appearance-sample | `lib/features/appearance_section.dart` | RaftMessageTile | inert by design: static sample row in Appearance settings |
 <!-- tap-matrix:end -->

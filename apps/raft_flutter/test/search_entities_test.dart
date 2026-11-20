@@ -114,12 +114,18 @@ void main() {
         ),
       );
       final rich = tester.widget<Text>(find.byType(Text));
-      expect(rich.textSpan!.toPlainText(), 'first [a.*] then [a.*]');
+      expect(
+        rich.textSpan!.toPlainText(includePlaceholders: false),
+        'first [a.*] then [a.*]',
+      );
       final spans = (rich.textSpan as TextSpan).children!
           .whereType<TextSpan>()
-          .where((s) => s.style != null)
+          .whereType<RaftBackgroundSpan>()
           .toList();
-      expect(spans.map((s) => s.text), ['[a.*]', '[a.*]']);
+      expect(spans.map((s) => s.toPlainText(includePlaceholders: false)), [
+        '[a.*]',
+        '[a.*]',
+      ]);
     },
   );
 }

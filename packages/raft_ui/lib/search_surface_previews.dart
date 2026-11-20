@@ -32,7 +32,7 @@ class _SearchSurfacesState extends State<_SearchSurfaces> {
           onPressed: () => setState(() => selected = !selected),
           child: const Row(
             children: [
-              RaftThreadIcon(size: 10),
+              RaftThreadIcon.search(),
               SizedBox(width: 8),
               Expanded(child: Text('A thread message result')),
             ],

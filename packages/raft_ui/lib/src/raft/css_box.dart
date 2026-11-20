@@ -14,9 +14,13 @@ abstract final class RaftBorderSnap {
 
 /// A CSS border width as Blink paints it: floored to whole device pixels (a real browser at 3x draws 1.5px as
 /// 4 device px), or to whole CSS pixels under [RaftBorderSnap.emulatedDeviceScaleFactor]. Never below one device pixel.
-double raftControlBorderPx(BuildContext context, double css) {
+double raftControlBorderPx(
+  BuildContext context,
+  double css, {
+  bool snapToDevicePixels = false,
+}) {
   final dpr = MediaQuery.devicePixelRatioOf(context);
-  if (RaftBorderSnap.emulatedDeviceScaleFactor) {
+  if (RaftBorderSnap.emulatedDeviceScaleFactor && !snapToDevicePixels) {
     return css >= 1 ? css.floorToDouble() : 1 / dpr;
   }
   return math.max(1.0, (css * dpr).floorToDouble()) / dpr;
@@ -24,13 +28,23 @@ double raftControlBorderPx(BuildContext context, double css) {
 
 /// [decoration] with every border side floored the way [raftControlBorderPx] floors a CSS width, for the
 /// generated recipes' `border-[1.5px]` (a recipe box paints the CSS number as it is).
-BoxDecoration raftSnapBorder(BuildContext context, BoxDecoration decoration) {
+BoxDecoration raftSnapBorder(
+  BuildContext context,
+  BoxDecoration decoration, {
+  bool snapToDevicePixels = false,
+}) {
   final border = decoration.border;
   if (border is! Border) return decoration;
   BorderSide snap(BorderSide side) =>
       side.style == BorderStyle.none || side.width == 0
       ? side
-      : side.copyWith(width: raftControlBorderPx(context, side.width));
+      : side.copyWith(
+          width: raftControlBorderPx(
+            context,
+            side.width,
+            snapToDevicePixels: snapToDevicePixels,
+          ),
+        );
   return decoration.copyWith(
     border: Border(
       top: snap(border.top),

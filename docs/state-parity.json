@@ -1696,7 +1696,7 @@
     {
       "id": "search.overlay",
       "title": "Search overlay (desktop quick switcher)",
-      "webEntry": "packages/web/src/components/search/SearchOverlay.tsx",
+      "webEntry": "packages/web/src/features/search/SearchOverlay.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/quick_switcher.dart",
       "states": [
         {
@@ -1735,7 +1735,7 @@
     {
       "id": "search.page",
       "title": "Search results page",
-      "webEntry": "packages/web/src/components/search/MessageSearchPage.tsx",
+      "webEntry": "packages/web/src/features/search/MessageSearchPage.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/resource_view.dart",
       "states": [
         {
@@ -5147,6 +5147,54 @@
           "gapKind": "case-missing",
           "size": "S",
           "justification": "Both confirmations show an inline error and enable retry. Mounted Flutter coverage supplies a server refusal."
+        }
+      ]
+    },
+    {
+      "id": "search.conversation",
+      "title": "Conversation Search",
+      "webEntry": "packages/web/src/components/layout/MainLayout.tsx ConversationSearchRoute and features/search/MessageSearchPage.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/resource_view.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "The scoped route uses the Search page's message skeleton with a fixed conversation badge. A scoped fixture has no official visual case.",
+          "gapKind": "case-missing",
+          "size": "S"
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "The scoped search home names the conversation and shows Search everywhere. The mounted channel search test covers it. A scoped fixture has no official visual case.",
+          "gapKind": "case-missing",
+          "size": "S"
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "The scoped route shares the Search page's retry state and the mounted authority test covers conversation loss. A scoped fixture has no official visual case.",
+          "gapKind": "case-missing",
+          "size": "S"
+        },
+        {
+          "state": "partial",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Scoped messages reuse the cursor and scan-budget guidance. A scoped fixture has no official visual case.",
+          "gapKind": "case-missing",
+          "size": "S"
         }
       ]
     }
@@ -12896,18 +12944,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/quick_switcher.dart#local-function:CLASS:_QuickSwitcherState@5249/METHOD:_body@17331/FUNCTION:entityRow@17511": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/quick_switcher.dart#local-function:CLASS:_QuickSwitcherState@5249/METHOD:_messageGroups@23178/FUNCTION:hit@23725": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/quick_switcher.dart#method:QuickSwitcher.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -13172,36 +13208,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:message@20498": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:messageGroup@22045": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:section@18106": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:slotText@17445": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:surface@19527": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/resource_search.dart#method:ResourceSearchResults._badge": {
         "role": "unresolved",
         "familyRefs": [],
@@ -13237,12 +13243,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:activityList@111979/FUNCTION:bar@112201": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "Activity and Saved",
-        "reason": "Mounts the Activity filter controls in the resource view."
       },
       "apps/raft_flutter/lib/features/resource_view.dart#class:ResourceView": {
         "role": "entry_composition",
@@ -13825,18 +13825,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/search_filter_bar.dart#local-function:CLASS:SearchFilterBar@485/METHOD:build@2084/FUNCTION:dropdown@3319": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/search_filter_bar.dart#local-function:CLASS:SearchFilterBar@485/METHOD:build@2084/FUNCTION:picker@2313": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/search_filter_bar.dart#method:SearchFilterBar.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -13854,12 +13842,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/search_home.dart#local-function:CLASS:_ResourceSearchHomeState@2774/METHOD:build@3039/FUNCTION:heading@4027": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/search_home.dart#method:ResourceSearchHome.createState": {
         "role": "unresolved",
@@ -32513,12 +32495,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/quick_switcher_results.dart#local-function:CLASS:RaftQuickSwitcherSkeleton@1785/METHOD:build@1906/FUNCTION:bar@2056": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/quick_switcher_results.dart#method:RaftQuickSwitcherEmpty.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -41584,14 +41560,6 @@
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
       "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2764/METHOD:build@4598/FUNCTION:trigger@7459": {
-        "role": "unresolved",
-        "familyRefs": [
-          "menu"
-        ],
-        "owner": "task289 whole-source ownership review",
-        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
-      },
-      "packages/raft_ui/lib/src/message_context_menu.dart#local-function:CLASS:RaftMessageContextMenu@1047/METHOD:build@1706/FUNCTION:divider@2017": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -51657,18 +51625,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:scopedDialog@50204/FUNCTION:buildOwned@50431": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:scopedMenu@51252/FUNCTION:buildOwned@51484": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
       "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.persistActivityRead": {
         "role": "unresolved",
         "familyRefs": [],
@@ -53313,12 +53269,6 @@
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:activityList@111791/FUNCTION:bar@112013": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
       "apps/raft_flutter/lib/features/orphaned_joint_channels_section.dart#class:OrphanedJointChannelsSection": {
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -54868,24 +54818,6 @@
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/workspace_settings_shell.dart#function:workspaceSettingsSearchHost": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:addon@38296": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:box@37986": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -56753,30 +56685,6 @@
         "owner": "WP-COMPOSE",
         "reason": "Renders native screenshot bands from the export surface. Device and visual review are pending."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:buildWorkspace@47658/FUNCTION:<anonymous>@47876/FUNCTION:conversation@50990": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-COMPOSE",
-        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:buildWorkspace@47658/FUNCTION:<anonymous>@47876/FUNCTION:workspace@64310": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-COMPOSE",
-        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:desktopContentDetail@101354/FUNCTION:header@103064": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-COMPOSE",
-        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:settingsRailAction@109527/FUNCTION:action@109561": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-COMPOSE",
-        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
-      },
       "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27055/METHOD:_build@34060/FUNCTION:row@40991": {
         "role": "unresolved",
         "familyRefs": [],
@@ -57448,24 +57356,6 @@
         "owner": "WP-SIDEBAR",
         "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:buildWorkspace@47797/FUNCTION:<anonymous>@48015/FUNCTION:conversation@51129": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-SIDEBAR",
-        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:buildWorkspace@47797/FUNCTION:<anonymous>@48015/FUNCTION:workspace@64651": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-SIDEBAR",
-        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:desktopContentDetail@98661/FUNCTION:header@100371": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-SIDEBAR",
-        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
-      },
       "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:settingsRailAction@105878/FUNCTION:action@105912": {
         "role": "unresolved",
         "familyRefs": [],
@@ -57616,14 +57506,6 @@
         "owner": "WP-SIDEBAR",
         "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:settingsRailAction@105773/FUNCTION:action@105807": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "workspace-shell"
-        ],
-        "owner": "Shared desktop chrome",
-        "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
-      },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@46960/METHOD:build@47420/FUNCTION:withoutRailInset@47658": {
         "role": "entry_composition",
         "familyRefs": [
@@ -57726,25 +57608,25 @@
         "owner": "WP-LINK",
         "reason": "Composes the SDK empty state and standard Back action for an unavailable message link."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5921/METHOD:buildWorkspace@47837/FUNCTION:<anonymous>@48055/FUNCTION:conversation@51169": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5921/METHOD:buildWorkspace@47794/FUNCTION:<anonymous>@48012/FUNCTION:conversation@51126": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5921/METHOD:buildWorkspace@47837/FUNCTION:<anonymous>@48055/FUNCTION:workspace@65222": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5921/METHOD:buildWorkspace@47794/FUNCTION:<anonymous>@48012/FUNCTION:workspace@65338": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5921/METHOD:desktopContentDetail@99232/FUNCTION:header@100942": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5921/METHOD:desktopContentDetail@98973/FUNCTION:header@100683": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5921/METHOD:settingsRailAction@106344/FUNCTION:action@106378": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5921/METHOD:settingsRailAction@106085/FUNCTION:action@106119": {
         "role": "entry_composition",
         "familyRefs": [
           "workspace-shell"
@@ -58066,7 +57948,7 @@
         "owner": "DropdownMenu",
         "reason": "Bounds the indicator painter to the resolved DropdownMenu slot and uses the slot foreground."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroup.build": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroupState.build": {
         "role": "entry_composition",
         "familyRefs": [
           "fit_toolbar"
@@ -58353,7 +58235,7 @@
         "owner": "DropdownMenu",
         "reason": "Toggles the canonical anchored menu from its mounted trigger."
       },
-      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71049/METHOD:build@80306/FUNCTION:toggle@80536": {
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71131/METHOD:build@80388/FUNCTION:toggle@80618": {
         "role": "entry_composition",
         "familyRefs": [
           "menu",
@@ -58643,13 +58525,13 @@
         "owner": "Tasks page",
         "reason": "Shares the active Tasks column width mode with its detail controls and restores it when the selected task changes."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitMore@8109/METHOD:buildForm@8299/FUNCTION:trigger@8451": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitMore@8137/METHOD:buildForm@8327/FUNCTION:trigger@8479": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitPicker@5690/METHOD:buildForm@6235/FUNCTION:trigger@6619": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitPicker@5718/METHOD:buildForm@6263/FUNCTION:trigger@6647": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
@@ -58661,19 +58543,19 @@
         "owner": "Tasks page",
         "reason": "Aligns the compact desktop task status pixel with the row metadata baseline."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12035/METHOD:_live@20987/FUNCTION:leafWidget@23719": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12185/METHOD:_live@21137/FUNCTION:leafWidget@23869": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12035/METHOD:_live@20987/FUNCTION:slotWidget@24451": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12185/METHOD:_live@21137/FUNCTION:slotWidget@24601": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12035/METHOD:build@17065/FUNCTION:probe@17236": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12185/METHOD:build@17215/FUNCTION:probe@17386": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
@@ -58744,6 +58626,392 @@
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
+      },
+      "apps/raft_flutter/lib/features/quick_switcher.dart#method:_QuickSwitcherState.initState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/resource_search.dart#method:SearchPageQuery.anchor": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.searchHistoryNotice": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "banner"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.wrapSearchResult": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_app_results.dart#class:SearchAppGroupSection": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "banner",
+          "button"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_app_results.dart#method:SearchAppGroupSection._hit": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_app_results.dart#method:SearchAppGroupSection._more": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_app_results.dart#method:SearchAppGroupSection.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "banner",
+          "button"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_highlight.dart#class:SearchHighlight": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_highlight.dart#method:SearchHighlight.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_home.dart#local-function:CLASS:_ResourceSearchHomeState@2909/METHOD:build@3174/FUNCTION:wrapResult@4379": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#class:SearchEntityToggle": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "button"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#class:SearchEverywhereRow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#class:SearchHistoryWindowBanner": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "banner"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#class:SearchRelevanceFallback": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#function:showSearchChannelMenu": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "menu"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#method:SearchEntityToggle.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "button"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#method:SearchEverywhereRow.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#method:SearchHistoryWindowBanner.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "banner"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/search_sections.dart#method:SearchRelevanceFallback.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/task_selection_filter.dart#method:_TaskSelectionFilterState._channelCombobox": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "search",
+          "picker_trigger",
+          "menu"
+        ],
+        "owner": "WP-SEARCH"
+      },
+      "apps/raft_flutter/lib/features/quick_switcher.dart#local-function:CLASS:_QuickSwitcherState@5942/METHOD:_body@20822/FUNCTION:entityRow@21494": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/quick_switcher.dart#local-function:CLASS:_QuickSwitcherState@5942/METHOD:_messageGroups@28769/FUNCTION:hit@29316": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11966/METHOD:build@17269/FUNCTION:message@21855": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11966/METHOD:build@17269/FUNCTION:messageGroup@23545": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11966/METHOD:build@17269/FUNCTION:section@18644": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11966/METHOD:build@17269/FUNCTION:slotText@17976": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11966/METHOD:build@17269/FUNCTION:surface@20716": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/search_filter_bar.dart#local-function:CLASS:SearchFilterBar@485/METHOD:build@2296/FUNCTION:dropdown@3622": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/search_filter_bar.dart#local-function:CLASS:SearchFilterBar@485/METHOD:build@2296/FUNCTION:picker@2525": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/search_home.dart#local-function:CLASS:_ResourceSearchHomeState@2909/METHOD:build@3174/FUNCTION:heading@4196": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/quick_switcher_results.dart#local-function:CLASS:RaftQuickSwitcherSkeleton@1830/METHOD:build@1951/FUNCTION:bar@2101": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/popover_shadow.dart#class:RaftPopoverShadowPainter": {
+        "role": "unresolved",
+        "familyRefs": [
+          "popover",
+          "menu"
+        ],
+        "owner": "Popover and Dropdown",
+        "reason": "Paints the shared CSS shadow from resolved floating surface slots. Each mounted popup has its own applicable states and evidence."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitMore@8024/METHOD:buildForm@8214/FUNCTION:trigger@8366": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitPicker@5605/METHOD:buildForm@6150/FUNCTION:trigger@6534": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroupState._fade": {
+        "role": "unresolved",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "FitToolbar",
+        "reason": "Resolves the recipe's reveal margin for the horizontal overflow mask. Other mounted consumers have separate visual evidence."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroupState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "FitToolbar",
+        "reason": "Reveals newly activated items in the scroll group. Mounted Search coverage does not establish every toolbar entry."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7712/METHOD:scopedDialog@51257/FUNCTION:buildOwned@51484": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12025/METHOD:_live@20977/FUNCTION:leafWidget@23709": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12025/METHOD:_live@20977/FUNCTION:slotWidget@24441": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@12025/METHOD:build@17055/FUNCTION:probe@17226": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:addon@38535": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:box@38225": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:resolve@36895": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:buildWorkspace@47615/FUNCTION:<anonymous>@47833/FUNCTION:conversation@50947": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:buildWorkspace@47615/FUNCTION:<anonymous>@47833/FUNCTION:workspace@64426": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:desktopContentDetail@101095/FUNCTION:header@102805": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:settingsRailAction@109268/FUNCTION:action@109302": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:buildWorkspace@47754/FUNCTION:<anonymous>@47972/FUNCTION:conversation@51086": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:buildWorkspace@47754/FUNCTION:<anonymous>@47972/FUNCTION:workspace@64767": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:desktopContentDetail@98402/FUNCTION:header@100112": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:settingsRailAction@105514/FUNCTION:action@105548": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7712/METHOD:activityList@114267/FUNCTION:bar@114489": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Mounts the Activity filter controls in the resource view."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7712/METHOD:scopedMenu@52305/FUNCTION:buildOwned@52537": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/message_context_menu.dart#local-function:CLASS:RaftMessageContextMenu@1097/METHOD:build@1756/FUNCTION:divider@2067": {
+        "role": "unresolved",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitScrollGroupState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroup.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -62785,11 +63053,11 @@
         "mountStatus": "source_reviewed",
         "reason": "Toggles the canonical anchored menu from its mounted trigger."
       },
-      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71049/METHOD:build@80306/FUNCTION:toggle@80536": {
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71131/METHOD:build@80388/FUNCTION:toggle@80618": {
         "owner": "DropdownMenu",
         "kind": "surface_factory",
         "declarationRefs": [
-          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71049/METHOD:build@80306/FUNCTION:toggle@80536"
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71131/METHOD:build@80388/FUNCTION:toggle@80618"
         ],
         "mountStatus": "source_reviewed",
         "reason": "Toggles the anchored dropdown or submenu from its mounted trigger and keeps a mouse-opened submenu active on click."
@@ -62810,6 +63078,36 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "The regular compact Viewer Comments action mounts the shared discussion in a drawer."
+      },
+      "screen:search.conversation": {
+        "owner": "WP-SEARCH",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "search.conversation",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/resource_view.dart#class:ResourceView",
+          "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.resourceResults",
+          "apps/raft_flutter/lib/features/search_sections.dart#class:SearchEverywhereRow"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The pushed conversation route mounts Search with its fixed scope and global Search action."
+      },
+      "surface:search.channel-result-menu": {
+        "owner": "WP-SEARCH",
+        "kind": "popup",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/search_sections.dart#function:showSearchChannelMenu"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Search page and overlay open the same channel result menu."
+      },
+      "surface:search.app-group-load-more-error": {
+        "owner": "WP-SEARCH",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/search_app_results.dart#method:SearchAppGroupSection._more"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The app group retains its cursor and renders a toast when another page fails."
       }
     },
     "requirements": {
@@ -68328,36 +68626,6 @@
         "owner": "WP-CHAN",
         "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:focus-within": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:has:data-slot=input-group-control+data-invalid": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:has:data-slot=input-group-control+disabled": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
       "packages/raft_ui/lib/src/settings_layout.dart#method:_RaftSettingsSearchResultRowState.build|state:dark": {
         "applicability": "unknown",
         "owner": "design-system alignment",
@@ -68526,6 +68794,41 @@
         "applicability": "unknown",
         "owner": "Tasks Tab visual parity",
         "reason": "The desktop Tasks assignee control resolves the soft Badge height with responsive recipe states. This registers the source call without marking visual acceptance."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:resolve@36895|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:resolve@36895|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:resolve@36895|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:resolve@36895|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:resolve@36895|state:has:focus-visible": {
+        "applicability": "required",
+        "owner": "WP-SEARCH",
+        "reason": "The generated InputGroup paints its focus shadow when the enabled editor holds focus. Search exercises the recipe in both themes."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:resolve@36895|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35434/METHOD:_buildRecipe@36709/FUNCTION:resolve@36895|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},

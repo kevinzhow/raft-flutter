@@ -673,6 +673,8 @@ void main() {
   // The in-field combobox has its own file (close_combobox_test.dart).
   registerCloseTests([
     for (final surface in popupSurfaces)
-      if (surface.id != 'agent-combobox') surface,
+      if (surface.id != 'agent-combobox' &&
+          surface.id != 'search-channel-result-menu')
+        surface,
   ], harness);
 }

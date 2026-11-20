@@ -15,6 +15,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/app_services_fixture.dart';
+import 'support/search_text.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -311,6 +312,16 @@ void main() {
         );
         await key(t, LogicalKeyboardKey.escape);
         expect(find.byType(QuickSwitcher), findsNothing);
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('topbar-search')),
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Focus && widget.focusNode?.hasPrimaryFocus == true,
+            ),
+          ),
+          findsOneWidget,
+        );
         expect(w.channel!.id, 'c-general');
       },
       variant: TargetPlatformVariant.only(modifier.$3),
@@ -420,7 +431,7 @@ void main() {
       await t.pump(const Duration(milliseconds: 300));
       await t.pump();
       expect(
-        find.textContaining('quarterly plan', findRichText: true),
+        findSearchText('quarterly plan', containing: true),
         findsOneWidget,
       );
       await key(t, LogicalKeyboardKey.arrowDown);
@@ -748,14 +759,17 @@ void main() {
         expect(find.byKey(const Key('quick-switcher-filters')), findsNothing);
         await type(t, 'quarterly');
         expect(find.byKey(const Key('quick-switcher-filters')), findsOneWidget);
-        expect(find.text('Clear All'), findsNothing);
+        expect(find.text('Clear all'), findsNothing);
         // Pick "Last 7 days" in the Time menu.
-        await t.tap(find.text('Any time'));
+        final time = find.text('Any time');
+        await Scrollable.ensureVisible(t.element(time), alignment: 1);
+        await t.pump();
+        await t.tap(time.hitTestable());
         await t.pumpAndSettle();
         await t.tap(find.text('Last 7 days'));
         await t.pumpAndSettle();
         expect(saved().range, '7d');
-        expect(find.text('Clear All'), findsOneWidget);
+        expect(find.text('Clear all'), findsOneWidget);
         await t.pump(const Duration(milliseconds: 300));
         await t.pump();
         // The preview request carries the filter and the query.
@@ -778,7 +792,10 @@ void main() {
         await mount(t);
         await globalSearch(t);
         await type(t, 'quarterly');
-        await t.tap(find.text('Any time'));
+        final time = find.text('Any time');
+        await Scrollable.ensureVisible(t.element(time), alignment: 1);
+        await t.pump();
+        await t.tap(time.hitTestable());
         await t.pumpAndSettle();
         expect(find.text('Last 30 days'), findsOneWidget);
         await key(t, LogicalKeyboardKey.escape);
@@ -839,7 +856,7 @@ void main() {
         await t.pump(const Duration(milliseconds: 300));
         await t.pump();
         expect(
-          find.textContaining('quarterly plan', findRichText: true),
+          findSearchText('quarterly plan', containing: true),
           findsOneWidget,
         );
         await key(t, LogicalKeyboardKey.escape);
@@ -847,7 +864,7 @@ void main() {
         await chord(t, LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyK);
         await t.pump();
         expect(
-          find.textContaining('quarterly plan', findRichText: true),
+          findSearchText('quarterly plan', containing: true),
           findsOneWidget,
         );
         await t.pump(const Duration(milliseconds: 300));
@@ -868,7 +885,12 @@ void main() {
         await type(t, 'quarterly');
         await t.pump(const Duration(milliseconds: 300));
         await t.pump();
-        expect(find.text('#general'), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (widget) => widget is RaftTextButton && widget.label == 'general',
+          ),
+          findsOneWidget,
+        );
         expect(client.searchQueries.last['channelId'], 'c-general');
         expect(w.section, 'chat');
       },

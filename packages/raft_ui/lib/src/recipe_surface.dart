@@ -13,6 +13,7 @@ export 'package:raft_theme/recipes.dart' show RaftOuterShadowPainter;
 
 import 'control_typography.dart';
 import 'css_opacity.dart';
+import 'popover_shadow.dart';
 import 'recipes/recipe_runtime.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'recipes/token_binding.dart';
@@ -340,6 +341,7 @@ class RaftRecipeBox extends StatelessWidget {
     this.controlLabel = false,
     this.declareSurface = false,
     this.compositeSharpStickerEdge = false,
+    this.snapShadowToDevicePixels = false,
   });
 
   /// The box is a single-line control label (badge, chip, button, tab,
@@ -354,6 +356,7 @@ class RaftRecipeBox extends StatelessWidget {
   /// Canonical Button's uncalibrated foundation stickerEdge only. Unknown
   /// surfaces, literal fits and non-sharp/offset shadows keep their raster.
   final bool compositeSharpStickerEdge;
+  final bool snapShadowToDevicePixels;
 
   /// Inline-flex controls with a fixed height (Button): content taller than
   /// the content box overflows centred instead of being squeezed.
@@ -490,6 +493,12 @@ class RaftRecipeBox extends StatelessWidget {
     // CSS outer box-shadows never paint under the border box (a translucent
     // background must not reveal them), unlike Flutter's BoxDecoration.
     final outerShadows = decoration.boxShadow ?? const <BoxShadow>[];
+    final floatingPopover =
+        snapShadowToDevicePixels &&
+        identical(decoration.boxShadow, sourceOuterShadows) &&
+        style.classes.contains('rounded-container') &&
+        style.classes.contains('bg-layer-popover') &&
+        style.classes.contains('shadow-float');
     final preciseStickerEdge =
         compositeSharpStickerEdge &&
         ownedSurface != null &&
@@ -589,34 +598,53 @@ class RaftRecipeBox extends StatelessWidget {
     {
       final paintedChild = box;
       final dpr = MediaQuery.devicePixelRatioOf(context);
+      final shadowRadius =
+          decoration.borderRadius?.resolve(TextDirection.ltr) ??
+          BorderRadius.zero;
+      Offset? origin(BuildContext paintContext) {
+        final render = paintContext.findRenderObject();
+        if (render is! RenderBox || !render.attached) return null;
+        final matrix = render.getTransformTo(null).storage;
+        for (var index = 0; index < 16; index++) {
+          if (index == 12 || index == 13) continue;
+          if (matrix[index] != (index % 5 == 0 ? 1 : 0)) return null;
+        }
+        final offset = Offset(matrix[12], matrix[13]);
+        return offset.isFinite ? offset : null;
+      }
+
       box = Builder(
         builder: (paintContext) => CustomPaint(
-          painter: RaftOuterShadowPainter(
-            outerShadows,
-            decoration.borderRadius?.resolve(TextDirection.ltr) ??
-                BorderRadius.zero,
-            circle: decoration.shape == BoxShape.circle,
-            cssGeometry: true,
-            opaqueBackdrop: preciseStickerEdge ? backdrop : null,
-            compositeOnOpaque: preciseStickerEdge ? raftChromeBlend : null,
-            devicePixelRatio: dpr,
-            pixelAligned: () {
-              final render = paintContext.findRenderObject();
-              if (render is! RenderBox || !render.attached) return false;
-              final matrix = render.getTransformTo(null).storage;
-              for (var i = 0; i < 16; i++) {
-                if (i == 12 || i == 13) continue;
-                final expected = i % 5 == 0 ? 1 : 0;
-                if (matrix[i] != expected) return false;
-              }
-              return [
-                matrix[12] * dpr,
-                matrix[13] * dpr,
-                render.size.width * dpr,
-                render.size.height * dpr,
-              ].every((v) => (v - v.round()).abs() < 1e-7);
-            },
-          ),
+          painter: floatingPopover
+              ? RaftPopoverShadowPainter(
+                  outerShadows,
+                  shadowRadius,
+                  devicePixelRatio: dpr,
+                  origin: () => origin(paintContext),
+                )
+              : RaftOuterShadowPainter(
+                  outerShadows,
+                  shadowRadius,
+                  circle: decoration.shape == BoxShape.circle,
+                  cssGeometry: true,
+                  opaqueBackdrop: preciseStickerEdge ? backdrop : null,
+                  compositeOnOpaque: preciseStickerEdge
+                      ? raftChromeBlend
+                      : null,
+                  devicePixelRatio: dpr,
+                  pixelAligned: () {
+                    final offset = origin(paintContext);
+                    if (offset == null) return false;
+                    final render =
+                        paintContext.findRenderObject()! as RenderBox;
+                    return [
+                      offset.dx * dpr,
+                      offset.dy * dpr,
+                      render.size.width * dpr,
+                      render.size.height * dpr,
+                    ].every((v) => (v - v.round()).abs() < 1e-7);
+                  },
+                ),
           child: paintedChild,
         ),
       );

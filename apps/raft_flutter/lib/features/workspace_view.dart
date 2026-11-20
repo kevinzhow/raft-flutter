@@ -314,17 +314,16 @@ class _WorkspaceViewState extends State<WorkspaceView>
   int channelAuthorityRevision = 0;
   int searchEntryRevision = 0;
 
-  /// The Search page opened from the quick switcher restores the query and
-  /// filters the switcher saved.
   int restoreSavedSearchRevision = -1;
   String? channelSearchSeed, channelSearchAuthority;
   bool channelSearchRevoked = false;
 
   void syncChannelSearch() {
     if (skipCoveredPage || channelSearchSeed == null) return;
-    final channel = w.channels
-        .where((c) => c.id == channelSearchSeed)
-        .firstOrNull;
+    final channel = [
+      ...w.channels,
+      ...w.dms,
+    ].where((c) => c.id == channelSearchSeed).firstOrNull;
     if (channelSearchAuthority != channelSearchPageAuthority(w) ||
         channel == null ||
         !w.can('viewChannel', resource: channel)) {
@@ -640,6 +639,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
 
   Widget workspaceTopBar() => WorkspaceBrowserHeader(
     searchKey: quickSwitcher.searchKey,
+    searchFocus: quickSwitcher.searchTriggerFocus,
     workspace: workspaceServerMenu(topBar: true),
     working: workingSummary(onFrame: true),
     controller: w,
@@ -1564,7 +1564,10 @@ class _WorkspaceViewState extends State<WorkspaceView>
           : route == 'chat' || route == 'home'
           ? shownConversation(conversation)
           : route == 'search' && channelSearchRevoked
-          ? Center(child: Text(tr('Channel is no longer available')))
+          ? RaftChannelResolutionBody(
+              label: tr('Channel is no longer available'),
+              onBack: dismissPanel,
+            )
           : route == draftsSection
           ? workspaceDraftsPage(mobileHost?.w ?? w, onBack: dismissPanel)
           : mobileResourceBody(
@@ -1631,24 +1634,26 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 restoreSearchState:
                     searchEntryRevision == 0 ||
                     restoreSavedSearchRevision == searchEntryRevision,
-                initialSearchDeferUntilQuery:
-                    route == 'search' && channelSearchSeed != null,
+                initialSearchDeferUntilQuery: location.searchDeferred,
                 initialSearchChannelId: route == 'search'
                     ? channelSearchSeed
                     : null,
                 onBack: dismissPanel,
-                // Search and activity are not direct. [owner] is this page's
-                // controller, and these openers use that same controller.
                 onSearchEntity: wide ? openDesktopEntity : null,
                 onSearchMessage: openSearchMessage,
                 onSearchQueryCommitted: route == 'search'
-                    ? (query) {
+                    ? (
+                        query, {
+                        destination = SearchQueryDestination.currentPage,
+                      }) {
                         if (!mounted ||
                             navigationScope != mobileAuthority ||
                             !owner.canVisitSection('search')) {
                           return;
                         }
-                        if (owner.navigation.replaceSearchQuery(query)) {
+                        if (destination == SearchQueryDestination.everywhere) {
+                          select('search', searchQuery: query);
+                        } else if (owner.navigation.replaceSearchQuery(query)) {
                           owner.notifyListeners();
                         }
                       }
@@ -2232,8 +2237,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final scope = desktopAuthority;
     desktopNavigation.bind(scope);
     if (desktopNavigation.masterRoute != 'search') return;
-    // Source MessageSearchPage1281–1315 opens the typed hit directly. Its
-    // channelId is the thread itself, never the selected main conversation.
     final ticket = desktopNavigation.selectTarget(
       DesktopContentTarget(
         DesktopContentKind.thread,
@@ -2244,7 +2247,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
       ),
       // Source first publishes the added thread anchor (PUSH), then mirrors
       // the Search slot into that same entry (REPLACE). Retargeting replaces.
-      // MainLayout1453–1501/1594–1618; rightPanelUrlSync515–549.
       kind: w.location.panelNavigationKindTo(
         w.location.withQuery({'thread': '$parentChannelId:$parentMessageId'}),
       ),
@@ -2424,8 +2426,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
     return true;
   }
 
-  /// Cmd/Ctrl+K. A desktop window floats the quick switcher over the current
-  /// page (Source SearchOverlay); a narrow window keeps the full Search page.
   void openSearchShortcut() {
     if (!w.canVisitSection('search')) return;
     // Source routeGlobalSearchShortcut: the Search page is already showing, so

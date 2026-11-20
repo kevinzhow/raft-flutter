@@ -60,6 +60,7 @@ class RaftPopoverSurface extends StatelessWidget {
     this.recipe,
     this.surfaceStyle,
     this.padding,
+    this.snapShadowToDevicePixels = false,
   }) : _item = false,
        assert(recipe == null || surfaceStyle == null);
 
@@ -68,6 +69,7 @@ class RaftPopoverSurface extends StatelessWidget {
     : recipe = null,
       surfaceStyle = null,
       padding = null,
+      snapShadowToDevicePixels = false,
       _item = true;
 
   final Widget child;
@@ -79,6 +81,7 @@ class RaftPopoverSurface extends StatelessWidget {
 
   /// Explicit product inset override for a resolved source surface.
   final EdgeInsets? padding;
+  final bool snapShadowToDevicePixels;
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
@@ -96,6 +99,7 @@ class RaftPopoverSurface extends StatelessWidget {
         tokens: rt,
         clip: true,
         padding: padding,
+        snapShadowToDevicePixels: snapShadowToDevicePixels,
         child: RaftRecipeBackgroundScope(
           style: style,
           tokens: rt,

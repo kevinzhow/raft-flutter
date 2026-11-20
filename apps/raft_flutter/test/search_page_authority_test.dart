@@ -7,6 +7,8 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 
+import 'support/search_text.dart';
+
 class _Workspace extends WorkspaceController {
   _Workspace(super.client);
   final requests =
@@ -184,7 +186,10 @@ void main() {
       'hasMore': false,
     });
     await tester.pumpAndSettle();
-    expect(find.textContaining('Accepted second result'), findsOneWidget);
+    expect(
+      findSearchText('Accepted second result', containing: true),
+      findsOneWidget,
+    );
     expect(find.textContaining('Stale private first result'), findsNothing);
   });
   testWidgets('IME composition waits for commit before querying', (
@@ -223,15 +228,15 @@ void main() {
       final dynamic state = tester.state(find.byType(ResourceView));
       final oldScope = state.authority as String;
       final entity = (state.currentSearchEntities as List).first;
-      expect(find.text('secret-person'), findsOneWidget);
+      expect(findSearchText('secret-person'), findsOneWidget);
       w.server = RaftRecord({'id': 's', 'role': 'guest'});
       w.channels = [];
       w.notifyListeners();
       await tester.pumpAndSettle();
-      expect(find.text('secret-person'), findsNothing);
+      expect(findSearchText('secret-person'), findsNothing);
       expect(find.text('secret-channel'), findsNothing);
       await state.openSearchEntity(entity, oldScope);
-      expect(state.selectedSearchKey, isNull);
+      expect(state.query.selectedKey, isNull);
     },
   );
 }

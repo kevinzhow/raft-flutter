@@ -13,6 +13,7 @@ import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_ui/test_themes.dart';
 
 import 'flutter_test_config.dart' show leakDebt;
+import 'support/search_text.dart';
 
 class _Adapter implements HttpClientAdapter {
   final calls = <RequestOptions>[];
@@ -632,11 +633,12 @@ void main() {
       await tester.enterText(find.byType(TextField), 'private');
       await tester.pump(const Duration(milliseconds: 210));
       await tester.pumpAndSettle();
-      expect(find.text('Private search match'), findsOneWidget);
+      final match = findSearchText('Private search match');
+      expect(match, findsOneWidget);
       await tester.enterText(find.byType(TextField), '');
       await tester.pump(const Duration(milliseconds: 210));
       await tester.pumpAndSettle();
-      expect(find.text('Private search match'), findsNothing);
+      expect(match, findsNothing);
       _taskRoutes(w, a);
       await tester.pumpWidget(_host(w, 'tasks'));
       await tester.pumpAndSettle();

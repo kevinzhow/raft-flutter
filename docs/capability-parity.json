@@ -12319,19 +12319,43 @@
    "size": ""
   },
   {
+   "kind": "endpoint",
+   "id": "GET /search",
+   "area": "search",
+   "capability": "Search across enabled first-party apps, with per-app retry and cursor paging",
+   "background": false,
+   "status": "covered",
+   "webEntry": "features/search/useAppSearchGroups.ts and server routes/search.ts",
+   "gate": "workspace_artifacts_v0, nonempty committed query",
+   "flutterEntry": "search_app_results.dart in the full Search page and quick switcher",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/search_app_results.dart",
+     "needle": "'/search'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
    "kind": "ui",
    "id": "ui:global-ui.shortcut-search-results-nav",
    "area": "search",
    "capability": "Search overlay / Search page keys: Arrow Up/Down moves the selected result, Enter opens it (Shift+Enter ignored), Escape closes the overlay or clears; IME composition is respected",
    "background": false,
    "status": "covered",
-   "webEntry": "components/search/MessageSearchPage.tsx handleRailKeyDown + SearchOverlay.tsx Escape handler",
+   "webEntry": "features/search/useSearchKeyboardSelection.ts handleRailKeyDown + SearchOverlay.tsx Escape handler",
    "gate": "",
-   "flutterEntry": "quick_switcher.dart keyEvent(): arrows, Enter (not Shift), Escape, plus Cmd/Ctrl+K re-focuses and selects the query; IME composing guard",
+   "flutterEntry": "quick_switcher.dart keyEvent() and resource_view.dart searchKeyEvent(): arrows, Enter, Escape and IME composition guards",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/quick_switcher.dart",
      "needle": "KeyEventResult keyEvent(List<_Row> rows, int selected, KeyEvent event)"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "needle": "KeyEventResult searchKeyEvent(FocusNode node, KeyEvent event)"
     }
    ],
    "justification": "",
@@ -12342,16 +12366,16 @@
    "kind": "ui",
    "id": "ui:search.clear-all-filters",
    "area": "search",
-   "capability": "Search: Clear All filters",
+   "capability": "Search: Clear all filters",
    "background": false,
    "status": "covered",
-   "webEntry": "MessageSearchPage 'Clear All'",
+   "webEntry": "SearchFilterBar 'Clear all'",
    "gate": "any filter active",
-   "flutterEntry": "search_filter_bar.dart 'Clear All'",
+   "flutterEntry": "search_filter_bar.dart 'Clear all'",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/search_filter_bar.dart",
-     "needle": "'Clear All'"
+     "needle": "'Clear all'"
     },
     {
      "file": "apps/raft_flutter/lib/features/resource_filters.dart",
@@ -12369,7 +12393,7 @@
    "capability": "Drag a search result (channel, DM, computer, agent, human, message hit) into a workspace-mode panel to open it there",
    "background": false,
    "status": "na",
-   "webEntry": "components/search/MessageSearchPage.tsx handleMessageResultDrag/handleEntityResultDrag -> onDragPanelRef (MainLayout.tsx dragWorkspaceSearchResult)",
+   "webEntry": "features/search/MessageSearchPage.tsx and components/layout/MainLayout.tsx have no workspace grid drag mount",
    "gate": "Workspace mode (grid) enabled",
    "flutterEntry": "",
    "justification": "Web removed the workspace grid in v1.21.x. Flutter removed the mirrored entry, side-by-side view, per-column sessions, and the mode switch.",
@@ -12468,7 +12492,7 @@
    "capability": "Search filters: From (sender incl. Me), Scope (@ Me / Humans / Agents), Channel, Time (Any/Today/7/30 days), Sort (Relevant/Recent), Clear All",
    "background": false,
    "status": "covered",
-   "webEntry": "components/search/MessageSearchPage.tsx filter chips (search.from, search.scope, search.channel, search.time, search.sort, search.clearAll)",
+   "webEntry": "features/search/SearchFilterBar.tsx (search.from, search.scope, search.channel, search.time, search.sort, search.clearAll)",
    "gate": "",
    "flutterEntry": "search_filter_bar.dart SearchFilterBar (same chips; Sort disabled without a query like Web)",
    "flutterRefs": [
@@ -12536,7 +12560,7 @@
    "capability": "Global search / command-palette overlay: query across channels, DMs (agent, human, self), computers and message hits with thread grouping, archived and plan-limited ('Upgrade to view') rows, 'Search for ...' and 'View all results' rows",
    "background": false,
    "status": "covered",
-   "webEntry": "components/search/SearchOverlay.tsx + MessageSearchPage.tsx (entity results from search/searchEntities.ts types channel|computer|agentDm|humanDm; message results from search/searchGrouping.ts)",
+   "webEntry": "features/search/SearchOverlay.tsx + MessageSearchPage.tsx (entities, app groups, and message hits)",
    "gate": "",
    "flutterEntry": "quick_switcher.dart QuickSwitcher (overlay) + resource_search.dart Search page; sections Recent conversations / Server entities / Messages, View all results row, Upgrade to view badge",
    "flutterRefs": [
@@ -12564,7 +12588,7 @@
    "capability": "Empty-query palette lists Recent conversations (your own visit history, padded by activity), up to 10 rows, excluding the open conversation",
    "background": false,
    "status": "covered",
-   "webEntry": "components/search/recentConversations.ts selectRecentConversationEntities + store/recentConversationStore.ts (localStorage, persisted)",
+   "webEntry": "features/search/recentConversations.ts selectRecentConversationEntities + store/recentConversationStore.ts (localStorage, persisted)",
    "gate": "",
    "flutterEntry": "recent_conversations.dart RecentConversationStore; quick_switcher.dart heading 'Recent conversations'",
    "flutterRefs": [
@@ -12585,16 +12609,16 @@
    "kind": "ui",
    "id": "ui:search.result-context-menu",
    "area": "search",
-   "capability": "Right-click a channel/DM search result for an 'Open' menu",
+   "capability": "Right-click a channel search result for an 'Open' menu",
    "background": false,
    "status": "covered",
-   "webEntry": "components/search/MessageSearchPage.tsx handleChannelResultContextMenu + ContextMenuPopup 'Open'",
+   "webEntry": "features/search/useSearchResultActions.ts handleChannelResultContextMenu + SearchChannelContextMenu.tsx",
    "gate": "",
-   "flutterEntry": "quick_switcher.dart _channelMenu via onSecondaryTapDown with 'Open'",
+   "flutterEntry": "quick_switcher.dart and resource_search.dart use the same Open menu",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/quick_switcher.dart",
-     "needle": "onSecondaryTapDown"
+     "file": "apps/raft_flutter/lib/features/search_sections.dart",
+     "needle": "Future<void> showSearchChannelMenu("
     }
    ],
    "justification": "",
@@ -12608,7 +12632,7 @@
    "capability": "Search result states: Load More, load-more failure, 'too broad' / 'timed out' guidance with Sort-by-newest action, Retry, empty states",
    "background": false,
    "status": "covered",
-   "webEntry": "components/search/MessageSearchPage.tsx (search.loadMore, search.queryTooBroad*, search.searchTimedOut*, search.retry)",
+   "webEntry": "features/search/MessageSearchPage.tsx, SearchNoResultsState.tsx and SearchMessageResultsSection.tsx",
    "gate": "",
    "flutterEntry": "quick_switcher.dart / resource_search.dart messages 'Sort by newest', 'Retry', 'Add a channel, sender, or time filter...'",
    "flutterRefs": [
@@ -12628,8 +12652,8 @@
    "capability": "A recent-sort text search that stopped at the server's scan budget says so ('Searched messages back to {time}...', 'No matches yet') and offers 'Continue searching' from the server cursor (MessageSearchContinueHint); a complete page pages by the same cursor; a failed page shows 'Could not load more results.' with Retry",
    "background": false,
    "status": "covered",
-   "webEntry": "components/search/MessageSearchPage.tsx SearchContinuation (readSearchContinuation, loadMoreResults, incompleteSearchNote, search.continueSearching, search.incompleteNoMatchesYet, search.loadMoreFailed)",
-   "gate": "full results page only (the overlay previews the first hits)",
+   "webEntry": "features/search/searchSnapshot.ts readSearchContinuation and useMessageSearchQuery.ts",
+   "gate": "server returned an incomplete window or an accepted continuation cursor",
    "flutterEntry": "search_continuation.dart SearchContinuation / SearchContinuations (one per accepted view), resource_filters.dart search(cursor:), resource_view.dart load(), resource_search.dart ResourceSearchResults + search_continue_footer.dart (note, 'Continue searching' / 'Load More' / 'Loading…', warning banner with Retry, 'No matches yet' empty state)",
    "flutterRefs": [
     {

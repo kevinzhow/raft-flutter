@@ -73,8 +73,12 @@ class ResourceSearchHome extends StatefulWidget {
     required this.onClear,
     required this.onEntity,
     this.controller,
+    this.wrapResult,
+    this.selectedKey,
   });
   final ScrollController? controller;
+  final Widget Function(String key, Widget child)? wrapResult;
+  final String? selectedKey;
   final List<String> history;
   final List<SearchEntity> frequent;
   final String origin;
@@ -102,7 +106,6 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
               MediaQuery.sizeOf(context).width <
               RaftLayoutMetrics.desktopBreakpoint,
         );
-    final homeRecipe = RaftSearchHomeRecipe(t);
     final searchViewport = rui.RaftSearchRecipe.resolve(
       states: rui.RaftRecipeStates({
         if (t.dark) rui.RaftRecipeStates.dark,
@@ -112,10 +115,11 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
     final touch = RaftInteraction.of(context).touch;
     if (widget.history.isEmpty && widget.frequent.isEmpty) {
       // Web `centeredEmptyState`: search.emptyTitle / search.emptyBody.
-      return RaftQuickSwitcherEmpty(
-        iconSize: 48,
+      return RaftProductEmptyState(
+        icon: (_, size, color) =>
+            RaftIcon(RaftGlyph.search, size: size, color: color),
         title: raftText(context, 'Search everything'),
-        detail: raftText(
+        description: raftText(
           context,
           'Search channels, DMs, people, agents, and message history.',
         ),
@@ -126,6 +130,8 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
       RaftGlyph glyph, {
       List<Widget> actions = const [],
     }) => RaftSearchHomeHeading(label: label, glyph: glyph, actions: actions);
+    Widget wrapResult(SearchEntity entity, Widget child) =>
+        widget.wrapResult?.call(entity.key, child) ?? child;
     return ListView(
       key: const PageStorageKey('search-home'),
       controller: widget.controller,
@@ -168,22 +174,14 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
         ],
         heading('Frequently used', RaftGlyph.star),
         if (widget.frequent.isEmpty)
-          CustomPaint(
-            foregroundPainter: RaftDashedBorderPainter(homeRecipe.tagBorder, 1),
-            child: Container(
-              width: double.infinity,
-              // `px-3 py-4` inside the border box.
-              padding: EdgeInsets.symmetric(
-                horizontal: 12.0 + (1),
-                vertical: 16.0 + (1),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              raftText(
+                context,
+                'Channels and contacts you open from Search will appear here.',
               ),
-              child: Text(
-                raftText(
-                  context,
-                  'Channels and contacts you open from Search will appear here.',
-                ),
-                style: recipe.metadata,
-              ),
+              style: t.scale(RaftTypeScale.callout, color: t.ui.foregroundHint),
             ),
           )
         else
@@ -203,64 +201,68 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
                 runSpacing: RaftSearchHomeRecipe.tagGap,
                 children: [
                   for (final entity in widget.frequent)
-                    SizedBox(
-                      width: width,
-                      child: RaftControl(
-                        key: ValueKey('search-frequent-${entity.key}'),
-                        semanticLabel: 'Open ${entity.title}',
-                        shadow: false,
-                        visualHeight: 64,
-                        onPressed: () => widget.onEntity(entity),
-                        child: Row(
-                          children: [
-                            if (entity.kind == 'channel')
-                              RaftIcon(RaftGlyph.hash, size: 14)
-                            else
-                              RaftAvatar(
-                                name: entity.title,
-                                size: 32,
-                                kind: entity.kind == 'agent'
-                                    ? RaftAvatarKind.agent
-                                    : RaftAvatarKind.human,
-                                imageUrl: raftPublicAvatarUrl(
-                                  widget.origin,
-                                  entity.row['avatarUrl'] as String?,
-                                ),
-                                // A person's built avatar (Web EntityResultRow
-                                // PersonAvatar).
-                                content:
-                                    entity.kind != 'agent' &&
-                                        isHumanAvatarUrl(
-                                          entity.row['avatarUrl'] as String?,
+                    wrapResult(
+                      entity,
+                      SizedBox(
+                        width: width,
+                        child: RaftControl(
+                          key: ValueKey('search-frequent-${entity.key}'),
+                          semanticLabel: 'Open ${entity.title}',
+                          shadow: false,
+                          selected: widget.selectedKey == entity.key,
+                          visualHeight: 64,
+                          onPressed: () => widget.onEntity(entity),
+                          child: Row(
+                            children: [
+                              if (entity.kind == 'channel')
+                                RaftIcon(RaftGlyph.hash, size: 14)
+                              else
+                                RaftAvatar(
+                                  name: entity.title,
+                                  size: 32,
+                                  kind: entity.kind == 'agent'
+                                      ? RaftAvatarKind.agent
+                                      : RaftAvatarKind.human,
+                                  imageUrl: raftPublicAvatarUrl(
+                                    widget.origin,
+                                    entity.row['avatarUrl'] as String?,
+                                  ),
+                                  // A person's built avatar (Web EntityResultRow
+                                  // PersonAvatar).
+                                  content:
+                                      entity.kind != 'agent' &&
+                                          isHumanAvatarUrl(
+                                            entity.row['avatarUrl'] as String?,
+                                          )
+                                      ? RaftHumanPixelAvatar(
+                                          avatarUrl:
+                                              entity.row['avatarUrl'] as String,
                                         )
-                                    ? RaftHumanPixelAvatar(
-                                        avatarUrl:
-                                            entity.row['avatarUrl'] as String,
-                                      )
-                                    : null,
+                                      : null,
+                                ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      entity.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: recipe.entityTitle,
+                                    ),
+                                    Text(
+                                      raftText(context, entity.subtitle),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: recipe.metadata,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    entity.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: recipe.entityTitle,
-                                  ),
-                                  Text(
-                                    raftText(context, entity.subtitle),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: recipe.metadata,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
