@@ -556,7 +556,13 @@ class FamilyRegistryTest(unittest.TestCase):
         self.assertEqual(self.families['side-panel-frame']['canonical'], ['RaftSidePanelFrame'])
         self.assertEqual(
             self.families['app-link-card']['canonical'],
-            ['RaftAppLinkCard', 'RaftAppLinkChip', 'RaftAppLinkLogo'],
+            [
+                'RaftAppLinkCard',
+                'RaftAppLinkChip',
+                'RaftAppLinkLogo',
+                'RaftAppLinkAuthorizationCard',
+                'RaftAppLinkSkeleton',
+            ],
         )
         self.assertIn('RaftArchivedNameBanner', self.families['banner']['deprecated'])
         self.assertNotIn('RaftAgentBanner', self.families['banner']['deprecated'])  # thin adapter over RaftBanner
