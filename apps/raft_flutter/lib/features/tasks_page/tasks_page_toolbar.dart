@@ -661,7 +661,6 @@ class _TasksPageToolbarState extends State<TasksPageToolbar> {
             ],
           ),
           RaftFitSearch(
-            minWidth: 144,
             semanticLabel: raftText(context, 'Search tasks'),
             hintText: raftText(context, 'Search tasks'),
             clearLabel: raftText(context, 'Clear search'),

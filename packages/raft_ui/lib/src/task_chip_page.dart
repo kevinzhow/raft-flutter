@@ -22,6 +22,7 @@ class RaftTaskRowSelection {
 
 /// Tailwind `inset-ring-2`: the keyboard focus ring of a row.
 const double _focusRingWidth = 2;
+const double _pageRowEndInset = 12;
 
 /// The list's own width under which a row is narrow (Web `@max-md/tasks`,
 /// 28rem of the page's `@container/tasks`): the channel moves into the
@@ -333,7 +334,7 @@ class _PageRowState extends State<_PageRow> {
                             padding: EdgeInsetsDirectional.fromSTEB(
                               sel == null ? 12 : 8,
                               vertical,
-                              12,
+                              _pageRowEndInset,
                               vertical,
                             ),
                             child: _PageRowContent(
@@ -584,7 +585,8 @@ class _RenderRowFlow extends RenderBox
 
     final loose = BoxConstraints(maxWidth: width);
     final leadSize = measure(lead, loose);
-    final trailSize = measure(trail, loose);
+    final trailConstraints = BoxConstraints(maxWidth: width + _pageRowEndInset);
+    final trailSize = measure(trail, trailConstraints);
     final fits =
         leadSize.width + _gap + _basis + _gap + trailSize.width <= width + .5;
     final titleWidth =
@@ -606,7 +608,7 @@ class _RenderRowFlow extends RenderBox
         : titleSize.height - titleBase;
     double trailBase = 0;
     if (fits) {
-      trailBase = baseline(trail, loose, trailSize);
+      trailBase = baseline(trail, trailConstraints, trailSize);
       if (trailBase > ascent) ascent = trailBase;
       final d = trailSize.height - trailBase;
       if (d > descent) descent = d;
@@ -629,7 +631,7 @@ class _RenderRowFlow extends RenderBox
         );
       } else {
         (trail.parentData as _RowFlowParentData).offset = Offset(
-          width - trailSize.width,
+          (width - trailSize.width).clamp(0.0, width),
           lineHeight + _rowGap,
         );
       }
