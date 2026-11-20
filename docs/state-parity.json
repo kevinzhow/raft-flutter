@@ -57110,25 +57110,25 @@
         "owner": "WP-SIDEBAR",
         "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5915/METHOD:buildWorkspace@47831/FUNCTION:<anonymous>@48049/FUNCTION:conversation@51163": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:buildWorkspace@47797/FUNCTION:<anonymous>@48015/FUNCTION:conversation@51129": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5915/METHOD:buildWorkspace@47831/FUNCTION:<anonymous>@48049/FUNCTION:workspace@64685": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:buildWorkspace@47797/FUNCTION:<anonymous>@48015/FUNCTION:workspace@64651": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5915/METHOD:desktopContentDetail@101508/FUNCTION:header@103218": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:desktopContentDetail@98661/FUNCTION:header@100371": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5915/METHOD:settingsRailAction@108725/FUNCTION:action@108759": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:settingsRailAction@105878/FUNCTION:action@105912": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
