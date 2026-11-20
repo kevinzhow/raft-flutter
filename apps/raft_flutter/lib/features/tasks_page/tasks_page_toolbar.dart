@@ -328,6 +328,7 @@ class _ViewItem extends RaftFitItem {
       child: RaftSegmentedControl<TasksPageView>(
         value: view,
         label: label,
+        iconsOnly: iconOnly,
         visualHeight: line,
         minimumTargetSize: line,
         onChanged: onChanged,
@@ -335,7 +336,7 @@ class _ViewItem extends RaftFitItem {
           for (final value in TasksPageView.values)
             RaftSegmentedOption(
               value: value,
-              label: iconOnly ? '' : name(value),
+              label: name(value),
               tooltip: iconOnly ? name(value) : null,
               glyph: value == TasksPageView.list
                   ? RaftGlyph.layoutList

@@ -34,6 +34,7 @@ class RaftSegmentedItem extends StatelessWidget {
     this.height = 32,
     this.focusNode,
     this.tooltip,
+    this.iconsOnly = false,
   });
 
   final String label;
@@ -49,6 +50,7 @@ class RaftSegmentedItem extends StatelessWidget {
   final double height;
   final FocusNode? focusNode;
   final String? tooltip;
+  final bool iconsOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +110,9 @@ class RaftSegmentedItem extends StatelessWidget {
             // the item, label and count still consume the generated recipe.
             borderRadius: BorderRadius.circular(radius),
           ),
+      width: iconsOnly ? height : null,
       height: height,
+      padding: iconsOnly ? EdgeInsets.zero : null,
       // A separate item's bounded Wrap still hugs its content. Container's
       // alignment would otherwise expand it to the whole available width.
       alignment: framed ? Alignment.center : null,
@@ -120,21 +124,22 @@ class RaftSegmentedItem extends StatelessWidget {
         spacing: gap,
         children: [
           if (glyph != null) RaftIcon(glyph!, size: svg!.width!, color: ink),
-          Flexible(
-            child: Text(
-              raftText(context, label),
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: RaftControlTypography.of(
-                context,
-                recipe.label.text(tokens, base: textStyle),
+          if (!iconsOnly)
+            Flexible(
+              child: Text(
+                raftText(context, label),
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: RaftControlTypography.of(
+                  context,
+                  recipe.label.text(tokens, base: textStyle),
+                ),
               ),
             ),
-          ),
           // Billing's product-owned note is preserved; the shared control's
           // own item, label and count styles come from its generated slots.
-          if (labelSuffix != null)
+          if (!iconsOnly && labelSuffix != null)
             Text(
               raftText(context, labelSuffix!),
               maxLines: 1,
@@ -149,7 +154,7 @@ class RaftSegmentedItem extends StatelessWidget {
                 ),
               ),
             ),
-          if (count != null)
+          if (!iconsOnly && count != null)
             Text(
               count!,
               maxLines: 1,
@@ -314,7 +319,12 @@ class RaftSegmentedControl<T> extends StatefulWidget {
     this.disabled = false,
     this.shrinkFrame = false,
     this.expand = false,
+    this.iconsOnly = false,
   });
+
+  /// The fit toolbar's compact form uses square segments and keeps their
+  /// labels accessible to assistive technology.
+  final bool iconsOnly;
 
   /// `className="w-full *:flex-1"`: the track fills its row, the segments share it equally.
   final bool expand;
@@ -446,6 +456,7 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
           count: item.count,
           labelSuffix: item.labelSuffix,
           tooltip: item.tooltip,
+          iconsOnly: widget.iconsOnly,
           checked: item.value == widget.value,
           height: widget.visualHeight,
           onPressed: _press(item),
