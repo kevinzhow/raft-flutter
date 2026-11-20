@@ -398,20 +398,23 @@ class _CandidateDetails extends StatelessWidget {
         if (isDefault || status != null)
           ConstrainedBox(
             constraints: BoxConstraints(minHeight: metadataLine),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: RaftSpace.x1_5,
-                children: [
-                  if (isDefault)
-                    const RaftBadge(
-                      label: 'Default',
-                      variant: RaftBadgeRecipeVariant.success,
-                    ),
-                  if (status != null)
-                    RaftCssText(raftText(context, status), style: caption),
-                ],
+            child: Padding(
+              padding: const EdgeInsets.only(top: RaftSpace.half),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: RaftSpace.x1_5,
+                  children: [
+                    if (isDefault)
+                      const RaftBadge(
+                        label: 'Default',
+                        variant: RaftBadgeRecipeVariant.success,
+                      ),
+                    if (status != null)
+                      RaftCssText(raftText(context, status), style: caption),
+                  ],
+                ),
               ),
             ),
           ),
