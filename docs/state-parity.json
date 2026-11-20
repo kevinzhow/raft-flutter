@@ -56969,7 +56969,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:buildTimeline@113599/FUNCTION:timelineFor@117377": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:buildTimeline@113579/FUNCTION:timelineFor@117281": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",

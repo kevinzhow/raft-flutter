@@ -2643,8 +2643,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     RaftMessage m, {
     bool parent = false,
     bool dmRead = false,
-    Widget? selectionLeading,
-    bool checked = false,
+    RaftCheckbox? selectionLeading,
     bool continuation = false,
     RaftMessageFollowedBy? followedBy,
     bool followsSystem = false,
@@ -2694,7 +2693,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       author: messageSenderName(context, m),
       avatar: senderAvatar(m),
       selectionLeading: selectionLeading,
-      checked: checked,
+      checked: selectionLeading?.value == true,
       content: translation.translatedContent ?? m.content,
       body: translatedBody(m, translation, fontSize),
       bodyFontSize: fontSize,
@@ -3109,7 +3108,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       continuation: continuation,
       followedBy: followedBy,
       followsSystem: followsSystem,
-      checked: checked,
       selectionLeading: selectable
           ? RaftCheckbox(
               value: checked,
@@ -3141,26 +3139,20 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     );
   }
 
-  Widget buildTimeline({required bool aboveChannelComposer}) {
+  Widget buildTimeline(bool aboveComposer) {
+    final thread = widget.thread;
     final timelineAdapter = adapter;
     final messages = timelineAdapter.messages;
     timelineKeys.progress
-      ..bind(
-        w,
-        thread: widget.thread,
-        visible: presentationActive,
-        changed: sync,
-      )
-      ..update(w, messages.map(source), systemStateAt, thread: widget.thread);
-    final dmReadId = dmReadStatusMessageId(w, rows, thread: widget.thread);
+      ..bind(w, thread: thread, visible: presentationActive, changed: sync)
+      ..update(w, messages.map(source), systemStateAt, thread: thread);
+    final dmReadId = dmReadStatusMessageId(w, rows, thread: thread);
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
-    final loading = widget.thread
-        ? _messages.state.threadLoading
-        : activity.loading;
+    final loading = thread ? _messages.state.threadLoading : activity.loading;
     final empty = rows.isEmpty;
     const recipe = RaftTimelineCompositionRecipe();
     final List<Widget> header;
-    if (widget.thread) {
+    if (thread) {
       header = [
         threadTopSliver(loading: loading, showSummary: loading || !empty),
         if (!loading && empty)
@@ -3251,7 +3243,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       chatController: timelineAdapter,
       backgroundColor: RaftConversationSurfaceRecipe(RaftTokens.of(context))
           .background(
-            widget.thread
+            thread
                 ? RaftConversationSurfaceRole.threadTimeline
                 : RaftConversationSurfaceRole.channelTimeline,
           ),
@@ -3263,9 +3255,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           builder: (context, constraints) => timelineFor(
             constraints.maxWidth,
             () => RaftMessageTimeline(
-              key: ValueKey(
-                'chat-list-${widget.thread ? 'thread' : 'channel'}',
-              ),
+              key: ValueKey('chat-list-${thread ? 'thread' : 'channel'}'),
               controller: viewport,
               retainRow: timelineKeys.retainRows(messages, source),
               rowRevision: (i) => timelineKeys.rowState(
@@ -3311,24 +3301,24 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 forward: forward,
                 footer: AgentTypingListEnd(
                   controller: w,
-                  thread: widget.thread,
-                  aboveComposer: aboveChannelComposer,
+                  thread: thread,
+                  aboveComposer: aboveComposer,
                 ),
               ),
-              hasOlder: widget.thread ? w.threadHasMore : activity.hasMore,
-              loadingOlder: widget.thread
+              hasOlder: thread ? w.threadHasMore : activity.hasMore,
+              loadingOlder: thread
                   ? _messages.state.loadingOlder
                   : activity.loadingOlder,
               onLoadOlder: presentationActive ? activity.older : null,
-              hasNewer: widget.thread
+              hasNewer: thread
                   ? _messages.threadWindow?.hasNewer == true
                   : _messages.state.hasNewer,
               onLoadNewer: presentationActive
-                  ? () => _messages.newer(thread: widget.thread)
+                  ? () => _messages.newer(thread: thread)
                   : null,
               onRecenter: (index, alignment) =>
                   recenter(first: messages[index].id, alignment: alignment),
-              empty: widget.thread
+              empty: thread
                   ? null
                   : loading
                   ? Center(
@@ -3394,8 +3384,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }
 
   Widget buildView(BuildContext context) {
+    final thread = widget.thread;
     scheduleBodyPreparation(context);
-    if (widget.thread &&
+    if (thread &&
         w.threadChannelId == null &&
         (_messages.threadResolutionLoading ||
             _messages.threadResolutionError != null)) {
@@ -3429,23 +3420,22 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           ? null
           : tile(w.presentedThreadParent!, parent: true),
     );
-    final (channelFooter, channelGraceBanner) = widget.thread
+    final (channelFooter, channelGraceBanner) = thread
         ? (threadFooterWidget(), null)
         : channelFooterWidgets();
     final aboveChannelComposer =
-        !widget.thread && channelFooter == null && !selection.active;
-    final currentTimeline = widget.thread && _messages.state.threadLoading
+        !thread && channelFooter == null && !selection.active;
+    final currentTimeline = thread && _messages.state.threadLoading
         ? widget.threadParentSlot == null
               ? loadingBody
               : taskLoadingBody(loadingBody)
-        : buildTimeline(aboveChannelComposer: aboveChannelComposer);
-    final historyWindow = widget.thread
+        : buildTimeline(aboveChannelComposer);
+    final historyWindow = thread
         ? _messages.threadWindow?.hasNewer == true
         : _messages.state.hasNewer;
     final bottomCount = historyWindow
         ? (w.conversationReads.unread[w.channel?.id] ?? 0)
         : newMessageCount;
-    final thread = widget.thread;
     final composeScope = w.draftScope(thread: thread),
         composeAuthority = workspaceAuthority(w);
     var composeWindow = thread
@@ -3524,7 +3514,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                     child: currentTimeline,
                   ),
                 ),
-                MessageHistoryGapMonitor(controller: w, thread: widget.thread),
+                MessageHistoryGapMonitor(controller: w, thread: thread),
                 AgentTypingLineHost(
                   controller: w,
                   thread: thread,
