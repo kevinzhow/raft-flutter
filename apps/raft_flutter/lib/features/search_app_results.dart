@@ -348,6 +348,7 @@ class SearchAppGroupSection extends StatelessWidget {
         context,
         card.home,
         fromAnotherServer: card.fromAnotherServer,
+        prefixChannel: true,
         serverName: results.serverName,
       ),
       artifactActorName(context, card.author),

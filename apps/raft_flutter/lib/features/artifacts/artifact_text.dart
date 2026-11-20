@@ -174,6 +174,7 @@ String artifactScopeLabel(
   BuildContext context,
   ArtifactHome home, {
   bool fromAnotherServer = false,
+  bool prefixChannel = false,
   String? serverName,
 }) {
   if (fromAnotherServer && home.kind == 'public') {
@@ -183,8 +184,9 @@ String artifactScopeLabel(
     case 'public':
       return raftText(context, 'Anyone with the link');
     case 'conversation':
-      if (home.conversationType == 'channel' ||
-          home.conversationType == 'private') {
+      if (prefixChannel &&
+          (home.conversationType == 'channel' ||
+              home.conversationType == 'private')) {
         final name = home.conversationName;
         return name.isEmpty ? '' : '#$name';
       }
