@@ -112,7 +112,17 @@ void main() {
         expect(hasWord(word), isTrue, reason: word);
       }
       expect(key('tasks-page-more'), findsNothing);
+      final create = key('tasks-page-new-task');
+      final button = t.getRect(create);
+      final icon = t.getRect(
+        find.descendant(of: create, matching: find.byType(RaftIcon)),
+      );
+      final label = t.getRect(
+        find.descendant(of: create, matching: find.text('New task')),
+      );
       await t.pumpWidget(const SizedBox());
+      expect(icon.left - button.left, closeTo(13, .01));
+      expect(button.right - label.right, closeTo(13, .01));
     });
 
     testWidgets('a fold (856x944, touch): the toolbar keeps its controls on '

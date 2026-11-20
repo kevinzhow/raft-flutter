@@ -128,6 +128,8 @@ class RaftFitButton extends RaftFitItem {
         uiVariant: variant,
         uiSize: RaftButtonSize.md,
         glyph: glyph,
+        // FitToolbarButton renders its glyph without Button's data-icon marker.
+        iconInlineStart: false,
         label: label,
         onPressed: onPressed,
       );
