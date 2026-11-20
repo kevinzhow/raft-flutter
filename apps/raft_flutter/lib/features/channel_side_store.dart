@@ -10,6 +10,7 @@
 // frame and for a server where none is saved yet.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
@@ -25,6 +26,7 @@ enum ChannelTasksFilter { all, mine }
 const _openKey = 'raft.channelSide.open';
 const _collapsedKey = 'raft.channelSide.collapsed';
 const _layoutKey = 'raft.channelSide.layout';
+const _conversationWidthKey = 'raft.channelSide.conversationWidth';
 const _splitsKey = 'raft.channelSide.splits';
 
 /// The card opened or picked last (ties go to the first in [open]); a card
@@ -46,6 +48,7 @@ class ChannelSideStore extends ChangeNotifier {
     _splits = _readSplits();
     _layout = _readDeviceLayout();
     _confirmed = _layout;
+    _conversationWidth = _readConversationWidth();
     w.addListener(_orderChanged);
     w.services.disposeWithSession(dispose);
     _orderChanged();
@@ -129,6 +132,10 @@ class ChannelSideStore extends ChangeNotifier {
   // ---- the column layout ---------------------------------------------------
 
   late ChannelSideLayout _layout;
+  int? _conversationWidth;
+
+  /// Device-local conversation width, set when an expanded seam settles.
+  int? get conversationWidth => _conversationWidth;
 
   /// The layout last known to be saved (or, with none saved there, this
   /// device's): what a refused save goes back to.
@@ -158,18 +165,37 @@ class ChannelSideStore extends ChangeNotifier {
 
   /// A column's width as dragged; [commit] saves it (on release), otherwise it
   /// only shows.
-  void resizeColumn(int column, num width, bool commit) =>
-      _resizeColumns({column: width}, commit);
+  void resizeColumn(
+    int column,
+    num width,
+    bool commit, {
+    double? conversationWidth,
+  }) => _resizeColumns({column: width}, commit, conversationWidth);
 
-  /// An expanded seam settles the visible columns together in one save.
-  void resizeColumns(Map<int, num> widths) => _resizeColumns(widths, true);
+  /// Save the row after an expanded seam takes its first effective resize.
+  void resizeExpandedDock(Map<int, num> widths, double conversationWidth) =>
+      _resizeColumns(widths, true, conversationWidth);
 
-  void _resizeColumns(Map<int, num> widths, bool commit) {
+  void _resizeColumns(
+    Map<int, num> widths,
+    bool commit,
+    double? conversationWidth,
+  ) {
     var next = _layout;
     for (final entry in widths.entries) {
       next = next.resize(entry.key, entry.value);
     }
-    if (!identical(next, _layout)) {
+    final previousConversation = _conversationWidth;
+    if (conversationWidth != null) {
+      final width = math.max(
+        channelSideMinSavedWidth,
+        conversationWidth.round(),
+      );
+      _conversationWidth = width;
+      if (commit) _remember(_conversationWidthKey, width);
+    }
+    if (!identical(next, _layout) ||
+        previousConversation != _conversationWidth) {
       _layout = next;
       notifyListeners();
     }
@@ -247,6 +273,15 @@ class ChannelSideStore extends ChangeNotifier {
     _hasFollowed = true;
     _followed = held;
     _show(held ?? _confirmed);
+  }
+
+  static int? _readConversationWidth() {
+    try {
+      final raw = DevicePreferences.current?.getString(_conversationWidthKey);
+      final width = int.tryParse(raw ?? '');
+      if (width != null && width >= channelSideMinSavedWidth) return width;
+    } catch (_) {}
+    return null;
   }
 
   static ChannelSideLayout _readDeviceLayout() {
