@@ -284,6 +284,62 @@ void main() {
     await t.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('expanded dock resizes from its displayed seam', (t) async {
+    final rig = await pump(t);
+    final expand = find.byKey(const Key('channel-side-card-tasks-expand'));
+    const column = 'channel-side-column-1';
+    const conversation = 'channel-side-conversation';
+    final filesBefore = rect(t, 'channel-side-card-files-header');
+    final normalWidth = rect(t, column).width;
+    Future<void> clickExpand() async {
+      await t.tap(expand.hitTestable());
+      await t.pump();
+    }
+
+    Future<TestGesture> dragFromSeam(double delta) async {
+      final dock = rect(t, column);
+      final g = await t.startGesture(
+        dock.topLeft + const Offset(6, 116),
+        kind: PointerDeviceKind.mouse,
+      );
+      for (var step = 0; step < 8; step++) {
+        await g.moveBy(Offset(delta / 8, 0));
+        await t.pump();
+      }
+      return g;
+    }
+
+    await clickExpand();
+    final shownWidth = rect(t, column).width;
+    expect(rect(t, conversation).width, 160);
+    final clamped = await dragFromSeam(-80);
+    await clamped.up();
+    await t.pump();
+    expect(rect(t, column).width, shownWidth);
+    expect(rig.saves, isEmpty);
+    await clickExpand();
+    expect(rect(t, column).width, normalWidth);
+    expect(rect(t, 'channel-side-card-files-header'), filesBefore);
+
+    await clickExpand();
+    final moved = await dragFromSeam(80);
+    final liveWidth = rect(t, column).width;
+    final liveConversation = rect(t, conversation).width;
+    await moved.up();
+    await settle(t);
+    expect(liveWidth, shownWidth - 80);
+    expect(liveConversation, 240);
+    expect(rect(t, column).width, shownWidth - 80);
+    expect(rect(t, 'channel-side-card-files-header').top, filesBefore.top);
+    expect(rig.saves, hasLength(1));
+    await clickExpand();
+    expect(rect(t, column).width, shownWidth);
+    await clickExpand();
+    expect(rect(t, column).width, shownWidth - 80);
+    expect(rect(t, conversation).width, 240);
+    expect(rig.saves, hasLength(1));
+  });
+
   testWidgets('expanded dock suspends move grips until Restore', (t) async {
     final rig = await pump(t);
     final expand = find.byKey(const Key('channel-side-card-tasks-expand'));

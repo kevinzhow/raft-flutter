@@ -36271,7 +36271,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@7557/METHOD:_build@9426/FUNCTION:chatContent@11036": {
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@8315/METHOD:_build@10831/FUNCTION:chatContent@13267": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace side panels",
