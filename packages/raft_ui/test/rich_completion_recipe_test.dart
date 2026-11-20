@@ -33,15 +33,13 @@ void main() {
         await tester.pumpAndSettle();
         final bundle = find.byType(RaftForwardedBundle);
         final tokens = RaftTokens.of(tester.element(bundle));
-        final boxes = tester.widgetList<Container>(
-          find.descendant(of: bundle, matching: find.byType(Container)),
+        final outer = tester.widget<RaftSnappedDecoratedBox>(
+          find.descendant(
+            of: find.byType(RaftMessageEmbedFrame),
+            matching: find.byType(RaftSnappedDecoratedBox),
+          ),
         );
-        final outer = boxes.firstWhere(
-          (box) =>
-              box.decoration is BoxDecoration &&
-              (box.decoration! as BoxDecoration).borderRadius != null,
-        );
-        expect((outer.decoration! as BoxDecoration).color, tokens.card);
+        expect(outer.decoration.color, tokens.card);
         final recipe = ForwardedSnapshotRecipe(tokens);
         expect(recipe.semantic.content, tokens.panel);
         final surfaces = tester.widgetList<DecoratedBox>(
