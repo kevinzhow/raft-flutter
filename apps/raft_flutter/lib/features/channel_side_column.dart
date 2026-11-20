@@ -52,6 +52,7 @@ class ChannelSideColumnView extends StatefulWidget {
     required this.cardOf,
     this.resize,
     this.tabGroups = const [],
+    this.expanded,
   });
 
   final ChannelSideStore store;
@@ -67,6 +68,7 @@ class ChannelSideColumnView extends StatefulWidget {
 
   /// Saved columns sharing this column's space. Each tab shows its own stack.
   final List<List<ChannelSideSection>> tabGroups;
+  final ChannelSideSection? expanded;
 
   @override
   State<ChannelSideColumnView> createState() => _ChannelSideColumnViewState();
@@ -117,7 +119,8 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
           final height = box.maxHeight;
           final sections = widget.sections;
           final grouped = widget.tabGroups.isNotEmpty;
-          final selected = grouped ? _active(sections) : null;
+          final expanded = widget.expanded;
+          final selected = grouped ? expanded ?? _active(sections) : null;
           final stack = grouped
               ? widget.tabGroups.firstWhere(
                   (group) => group.contains(selected),
@@ -129,7 +132,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
             height,
             stack.length,
           );
-          final active = oneAtATime
+          final active = oneAtATime && expanded == null
               ? _active(stack)
               : null; // the one showing where only one fits
           final shown = active == null ? stack : [active];
@@ -283,6 +286,9 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
     required bool folds,
   }) {
     bool folded(ChannelSideSection s) {
+      if (widget.expanded != null && shown.length > 1) {
+        return widget.expanded != s;
+      }
       final card = _card(s);
       return folds && card != null && store.collapsed(card);
     }
@@ -341,7 +347,8 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                   child: widget.cardOf(context, s, (
                     collapsed: folded(s),
                     stackEnd: s == stackEnd,
-                    onCollapsedChanged: folds && _card(s) != null
+                    onCollapsedChanged:
+                        folds && widget.expanded == null && _card(s) != null
                         ? (v) => store.setCollapsed(_card(s)!, v)
                         : null,
                   )),

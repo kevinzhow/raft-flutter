@@ -21,6 +21,7 @@ type ParityExtFrProps = {
   scene: string;
   preset: string;
   route: string;
+  sidePanels: boolean;
   crop: { x: number; y: number; w: number; h: number } | null;
 };
 
@@ -36,6 +37,7 @@ function parityExtFrProps(): ParityExtFrProps | null {
     scene: params.get("scene") ?? "home",
     preset: params.get("preset") ?? "mobile",
     route: params.get("route") ?? "",
+    sidePanels: params.get("sidePanels") === "true",
     crop: params.get("cw") ? { x: num("cx"), y: num("cy"), w: num("cw"), h: num("ch") } : null,
   };
 }
@@ -57,6 +59,7 @@ function parityExtFrPrimeStores(p: ParityExtFrProps) {
   parityExtShPrimeStores({
     raw: p.raw, platform: "desktop", surface: "frame", preset: p.preset, theme: "raft", extra: 0,
   } as never);
+  if (p.sidePanels) setServerFeatureFlagForTests(fxServer.id, "task_v2_conversations_v0", true);
   void parityExtFrShell;
 }
 

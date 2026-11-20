@@ -144,6 +144,7 @@ same way (including "inert").
 | Activity list rows | Row, same-row double click, done, menu | Preview / canonical / done / menu | `handleActivate` | OK (`activity_*` tests) |
 | Search result rows | Row, double click | Preview / chat | `handleMessageResultClick` | OK (`desktop_preview_single_location_test`, matrix setup) |
 | Saved rows | Row, bookmark button, context menu | Opens the message (thread rows via `canonicalTarget`), removes, menu | `openSavedEntry`, `unsave` | OK (matrix) |
+| Docked Tasks / Files headers | Expand / Restore, More actions, drag grip | Expand the column and show neighboring sections as headers. Restore or Escape recovers the saved layout. Move left / right and dropping the grip save the new dock. | `ChannelSideArea`, `ChannelSideStore.moveSection` | `channel_side_drag_test.dart` |
 | Task discussion (modal / page) | Avatar, `@mention` | Profile panel on the route under the modal | profile panel mounts under the modal (`closeTaskModal` not called) | SAME |
 | Task discussion | Inline `#N` | Swaps the task through the host | swaps the modal's task | FIXED (was a dialog) |
 | Task discussion | Billing banner link | Billing page | `nav.toSettings("billing")` | FIXED (was `() {}`) |

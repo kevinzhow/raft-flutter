@@ -3,6 +3,7 @@
 // share the rightmost column as tabs. Compact layouts cover the conversation.
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -253,6 +254,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   late ChannelFilesMedia media;
   final drag = ChannelSideDragController();
   final _chatKey = GlobalKey();
+  ChannelSideSection? _expanded;
   late Listenable listenable;
   int previewOpenedAt = 0;
 
@@ -263,6 +265,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   }
 
   void bind() {
+    _expanded = null;
     store = ChannelSideStore.of(w);
     preview = WebPreviewStore.of(w);
     details = ChannelDetailsStore.of(w);
@@ -324,16 +327,33 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     final (open, page) = _openChannelSide(w, preview, details);
     final foldedThread = RaftAdaptiveWorkspace.foldedThreadOf(context);
     final compact = RaftAdaptiveWorkspace.compactOf(context);
+    final visible = store.layout.visible(open);
     final placement = placeChannelSide(
-      store.layout.visible(open),
+      visible,
       width: box.maxWidth,
       compact: compact,
       threadFolded: foldedThread != null,
     );
     final beside = placement.mode == ChannelSideMode.beside;
-    final shown = beside
-        ? placement.columns.fold(0.0, (a, c) => a + c.width)
-        : 0.0;
+    final columns = placement.columns;
+    final expandedIndex = beside
+        ? columns.indexWhere((column) => column.sections.contains(_expanded))
+        : -1;
+    if (expandedIndex < 0) _expanded = null;
+    final docked = [
+      for (var i = 0; i < columns.length; i++)
+        expandedIndex < 0
+            ? columns[i]
+            : (
+                column: columns[i].column,
+                sections: columns[i].sections,
+                tabGroups: columns[i].tabGroups,
+                width: i == expandedIndex
+                    ? box.maxWidth - columns.length * channelSideColumnClip
+                    : channelSideColumnClip,
+              ),
+    ];
+    final shown = beside ? docked.fold(0.0, (a, c) => a + c.width) : 0.0;
     final covering =
         placement.mode == ChannelSideMode.overlay &&
         placement.columns.isNotEmpty;
@@ -363,7 +383,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           channelSideChatMinWidth +
               moved.visible(open).length * channelSideColumnClip,
     );
-    return Stack(
+    final row = Stack(
       clipBehavior: Clip.none,
       children: [
         Positioned.fill(
@@ -392,7 +412,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                 ),
               ),
               if (beside)
-                for (final c in placement.columns)
+                for (final c in docked)
                   SizedBox(
                     width: c.width,
                     child: _column(
@@ -403,16 +423,28 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                       page,
                       compact,
                       tabGroups: c.tabGroups,
-                      resize: ChannelSideResize(
-                        column: c.column,
-                        width: c.width,
-                        maxWidth:
-                            c.width +
-                            math.max(0.0, chatWidth - channelSideChatMinWidth),
-                        onResize: (width, commit) =>
-                            store.resizeColumn(c.column, width, commit),
-                        label: _resizeLabel(context, c.sections, page),
-                      ),
+                      expanded: c.sections.contains(_expanded)
+                          ? _expanded
+                          : null,
+                      movesOf: _expanded == null && c.tabGroups.isEmpty
+                          ? (section) =>
+                                _moveItems(context, open, visible, section)
+                          : null,
+                      resize: _expanded != null
+                          ? null
+                          : ChannelSideResize(
+                              column: c.column,
+                              width: c.width,
+                              maxWidth:
+                                  c.width +
+                                  math.max(
+                                    0.0,
+                                    chatWidth - channelSideChatMinWidth,
+                                  ),
+                              onResize: (width, commit) =>
+                                  store.resizeColumn(c.column, width, commit),
+                              label: _resizeLabel(context, c.sections, page),
+                            ),
                     ),
                   ),
             ],
@@ -439,6 +471,15 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           ),
         Positioned.fill(child: ChannelSideDragLayer(drag: drag)),
       ],
+    );
+    return Actions(
+      actions: {
+        if (_expanded != null)
+          DismissIntent: CallbackAction<DismissIntent>(
+            onInvoke: (_) => setState(() => _expanded = null),
+          ),
+      },
+      child: row,
     );
   }
 
@@ -474,6 +515,8 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     bool compact, {
     ChannelSideResize? resize,
     List<List<ChannelSideSection>> tabGroups = const [],
+    ChannelSideSection? expanded,
+    List<RaftMenuEntry> Function(ChannelSideSection)? movesOf,
   }) => ChannelSideColumnView(
     key: Key('channel-side-column-$index'),
     store: store,
@@ -482,8 +525,11 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     titles: _titles(context, page),
     resize: resize,
     tabGroups: tabGroups,
-    cardOf: (context, section, fold) =>
-        drag.card(section, _card(context, section, fold, mode, page, compact)),
+    expanded: expanded,
+    cardOf: (context, section, fold) => drag.card(
+      section,
+      _card(context, section, fold, mode, page, compact, movesOf),
+    ),
   );
 
   Widget _card(
@@ -493,6 +539,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     ChannelSideMode mode,
     WebPreviewPage? page,
     bool compact,
+    List<RaftMenuEntry> Function(ChannelSideSection)? movesOf,
   ) {
     final channelId = w.channel?.id ?? '';
     final body = widget.bodyOf?.call(context, section);
@@ -508,21 +555,16 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           collapsed: fold.collapsed,
           stackEnd: fold.stackEnd,
           onCollapsedChanged: fold.onCollapsedChanged,
+          expanded: _expanded == section,
+          onExpand: _expandAction(mode, section),
+          moves: movesOf?.call(section) ?? const [],
           headWrapper: widget.headWrapper ?? _wrapHead,
-          actions: [
-            RaftPanelAction(
-              key: const Key('channel-tasks-panel-new'),
-              glyph: RaftGlyph.plus,
-              tooltip: raftText(context, 'New task'),
-              minHitExtent: RaftMetrics.touchTarget,
-              onPressed: () => openChannelTaskCreate(
-                context,
-                controller: w,
-                channelId: channelId,
-                covering: mode == ChannelSideMode.overlay,
-              ),
-            ),
-          ],
+          onCreateTask: () => openChannelTaskCreate(
+            context,
+            controller: w,
+            channelId: channelId,
+            covering: mode == ChannelSideMode.overlay,
+          ),
           child:
               body ??
               ChannelSideTasksPanel(
@@ -547,6 +589,9 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           collapsed: fold.collapsed,
           stackEnd: fold.stackEnd,
           onCollapsedChanged: fold.onCollapsedChanged,
+          expanded: _expanded == section,
+          onExpand: _expandAction(mode, section),
+          moves: movesOf?.call(section) ?? const [],
           headWrapper: widget.headWrapper ?? _wrapHead,
           child:
               body ??
@@ -590,6 +635,61 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  VoidCallback? _expandAction(
+    ChannelSideMode mode,
+    ChannelSideSection section,
+  ) {
+    if (mode != ChannelSideMode.beside) return null;
+    return () =>
+        setState(() => _expanded = _expanded == section ? null : section);
+  }
+
+  List<RaftMenuEntry> _moveItems(
+    BuildContext context,
+    Set<ChannelSideSection> open,
+    List<VisibleChannelSideColumn> columns,
+    ChannelSideSection section,
+  ) {
+    final index = columns.indexWhere(
+      (column) => column.sections.contains(section),
+    );
+    if (index < 0) return const [];
+    final own = columns[index];
+    final shared = own.sections.length > 1;
+    final left = shared
+        ? own.column
+        : index > 0
+        ? columns[index - 1].column
+        : null;
+    final right = shared
+        ? own.column + 1
+        : index + 1 < columns.length
+        ? columns[index + 1].column + 1
+        : null;
+
+    RaftMenuEntry? option(int? at, String label, RaftGlyph glyph) {
+      if (at == null) return null;
+      final drop = ChannelSideDropNewColumn(at);
+      final moved = store.layout.move(section, drop).visible(open);
+      if (moved.length == columns.length &&
+          Iterable<int>.generate(
+            moved.length,
+          ).every((i) => listEquals(moved[i].sections, columns[i].sections))) {
+        return null;
+      }
+      return RaftMenuEntry(
+        label: raftText(context, label),
+        glyph: glyph,
+        onPressed: () => store.moveSection(section, drop),
+      );
+    }
+
+    return [
+      ?option(left, 'Move left', RaftGlyph.moveLeft),
+      ?option(right, 'Move right', RaftGlyph.moveRight),
+    ];
   }
 }
 

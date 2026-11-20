@@ -203,10 +203,12 @@ class RaftPanelAction extends StatelessWidget {
     required this.tooltip,
     this.onPressed,
     this.minHitExtent = 0,
+    this.ghostSize,
   });
   final RaftGlyph glyph;
   final String tooltip;
   final VoidCallback? onPressed;
+  final RaftButtonSize? ghostSize;
 
   /// Minimum touch target for touch input. Web's boxed action is
   /// 24x28 (Brutal) / 32x32 (Elegant); the visual and layout stay as Web
@@ -231,10 +233,11 @@ class RaftPanelAction extends StatelessWidget {
               semanticLabel: tooltip,
               uiVariant: RaftButtonVariant.ghost,
               uiSize:
-                  MediaQuery.sizeOf(context).width <
-                      RaftLayoutMetrics.desktopBreakpoint
-                  ? RaftButtonSize.iconLg
-                  : RaftButtonSize.iconMd,
+                  ghostSize ??
+                  (MediaQuery.sizeOf(context).width <
+                          RaftLayoutMetrics.desktopBreakpoint
+                      ? RaftButtonSize.iconLg
+                      : RaftButtonSize.iconMd),
               onPressed: onPressed,
             )
           : _interactive(context),

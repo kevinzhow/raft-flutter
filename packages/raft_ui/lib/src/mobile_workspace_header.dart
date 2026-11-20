@@ -49,10 +49,9 @@ class _MobileWorkspaceHeader extends StatelessWidget {
   );
 }
 
-/// NotificationTrigger's mobile-navbar frame treatment; generic SDK defaults
-/// retain their original 32/16 geometry and muted foreground.
-class _MobileHeaderBellRecipe extends _MobileNotificationRecipe {
-  const _MobileHeaderBellRecipe(
+/// NotificationTrigger's frame button in the phone navbar and desktop top bar.
+class _FrameBellRecipe extends _MobileNotificationRecipe {
+  const _FrameBellRecipe(
     super.tokens, {
     super.selected,
     required this.borderWidth,
@@ -61,17 +60,16 @@ class _MobileHeaderBellRecipe extends _MobileNotificationRecipe {
   @override
   Color get foreground =>
       tokens.colors[selected
-          ? 'foreground-workspace-rail-action-selected'
-          : 'foreground-workspace-rail-action']!;
+          ? 'foreground-on-frame-active'
+          : 'foreground-on-frame']!;
   @override
-  Color get background => selected
-      ? tokens.colors['layer-workspace-rail-selected']!
-      : Colors.transparent;
+  Color get background =>
+      selected ? tokens.colors['layer-frame-active']! : Colors.transparent;
   @override
   Color backgroundFor({bool hovered = false}) => selected
       ? background
       : hovered
-      ? tokens.colors['layer-workspace-rail-hover']!
+      ? tokens.colors['fill-frame-medium']!
       : background;
   @override
   Color backgroundForInteraction({
@@ -84,8 +82,17 @@ class _MobileHeaderBellRecipe extends _MobileNotificationRecipe {
   @override
   BorderSide side({bool hovered = false}) => BorderSide(
     width: borderWidth,
-    color: selected
-        ? tokens.colors['line-workspace-rail-selected']!
-        : Colors.transparent,
+    color: selected ? tokens.colors['line-frame-active']! : Colors.transparent,
   );
+
+  @override
+  List<BoxShadow> shadows({
+    bool hovered = false,
+    bool pressed = false,
+    bool focused = false,
+  }) => [
+    if (focused)
+      for (final layer in tokens.shadowLayers('shadow.focusRing').reversed)
+        if (!layer.inset) layer.toBoxShadow(),
+  ];
 }
