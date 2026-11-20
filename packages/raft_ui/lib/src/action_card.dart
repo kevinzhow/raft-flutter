@@ -282,11 +282,11 @@ class RaftSpecActionCardContent {
     return TextSpan(
       style: style,
       children: [
-        // Web adds inline margins around the separator with ::before.
-        const TextSpan(text: wordJoiner),
+        // Flutter advances each character by its tracking. The joiner
+        // supplies the leading margin from the Web separator’s ::before.
         const TextSpan(
-          text: '·',
-          style: TextStyle(letterSpacing: RaftSpace.x1 * 2),
+          text: '$wordJoiner·',
+          style: TextStyle(letterSpacing: RaftSpace.x1),
         ),
         TextSpan(text: '$wordJoiner$timestamp'),
       ],
