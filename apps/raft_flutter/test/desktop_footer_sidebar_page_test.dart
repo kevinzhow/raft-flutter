@@ -46,16 +46,15 @@ void main() {
         final help = find.byKey(const Key('rail-help'));
         final settings = find.byKey(const Key('rail-settings'));
         final bell = find.byType(RaftMobileNotificationButton);
-        // The desktop global row is 44px. The 36px actions are centered in
-        // the existing footer slots.
         expect(
           find.ancestor(of: bell, matching: find.byType(RaftWorkspaceTopBar)),
           findsOneWidget,
         );
         expect(t.getRect(bell).top, 3.5);
-        expect(t.getRect(help).top, 708);
-        expect(t.getRect(settings).top, 754);
         expect(t.getSize(bell), const Size(36, 36));
+        // Web v1.24 uses the fine-pointer AppRail footer below the top bar.
+        expect(t.getRect(help), const Rect.fromLTWH(6, 718, 36, 36));
+        expect(t.getRect(settings), const Rect.fromLTWH(6, 758, 36, 36));
         expect(t.widget<RaftWorkspaceHelpMenu>(help).attention, true);
         final attention = find.descendant(
           of: help,

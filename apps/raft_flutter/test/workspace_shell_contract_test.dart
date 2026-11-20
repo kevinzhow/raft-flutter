@@ -91,9 +91,9 @@ void main() {
             activity = t.getRect(find.byKey(const ValueKey('rail-activity')));
         expect(search.top, 4.5);
         expect(search.height, 34);
-        expect(activity.top - chat.top, 42);
-        // The 44px bar is followed by the rail's 8px top inset.
-        expect(chat.top, 52);
+        // Web v1.24 uses the AppRail first-child fine-pointer recipe here.
+        expect(chat, const Rect.fromLTWH(6, 50, 36, 36));
+        expect(activity, const Rect.fromLTWH(6, 90, 36, 36));
         w.server = RaftRecord({...w.server!.json, 'role': 'guest'});
         w.notifyListeners();
         await frames(t, () {});
