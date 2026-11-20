@@ -28,7 +28,9 @@ import 'css_border.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
-import 'recipe_surface.dart' show RaftCssBoxDecoration;
+import 'recipe_surface.dart'
+    show RaftCssBoxDecoration, RaftRecipeBinding, RaftSlotPaint;
+import 'recipes/message_item.g.dart';
 import 'raft/ui_tokens.dart';
 import 'tokens/raft_tokens.g.dart' show RaftTypeStyle;
 
@@ -409,6 +411,28 @@ class RaftMessageRowRecipe {
     letterSpacing: number('type.messageMeta.tracking', 0),
     color: tokens.colors['foreground-message-meta'],
   );
+  TextStyle get modelLabelStyle {
+    if (tokens.themeOverrides != null) return time;
+    final rt = tokens.recipeTokens;
+    final caption =
+        RaftMessageItemRecipe.resolve(
+          states: tokens.recipeStates(responsive: true),
+          tokens: rt,
+        ).meta.text(
+          rt,
+          base: TextStyle(
+            fontFamily: tokens.bodyFont,
+            fontFamilyFallback: tokens.fontFallback,
+          ),
+        );
+    final size = caption.fontSize!;
+    final step = sizeTier._step;
+    return caption.copyWith(
+      fontSize: size + step,
+      height: (size * caption.height! + step) / (size + step),
+    );
+  }
+
   TextStyle get subtitleStyle => time.copyWith(
     fontFamily: tokens.fontFamily('font.messageSubtitle'),
     fontFamilyFallback: tokens.fontFamilyFallback('font.messageSubtitle'),
