@@ -101,23 +101,26 @@ class RaftTaskPageList extends StatelessWidget {
             border: Border.all(color: t.ui.lineHairline),
             borderRadius: BorderRadius.circular(radius),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius - 1),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < tasks.length; i++)
-                  _wrapped(
-                    tasks[i].id,
-                    _PageRow(
-                      key: ValueKey('tasks-page-row-${tasks[i].id}'),
-                      task: tasks[i],
-                      divider: i > 0,
-                      narrow: narrow,
-                      list: this,
+          child: Padding(
+            padding: const EdgeInsets.all(RaftSpace.hairline),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radius - 1),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < tasks.length; i++)
+                    _wrapped(
+                      tasks[i].id,
+                      _PageRow(
+                        key: ValueKey('tasks-page-row-${tasks[i].id}'),
+                        task: tasks[i],
+                        divider: i > 0,
+                        narrow: narrow,
+                        list: this,
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         );

@@ -23,6 +23,7 @@ import 'mounted_avatar_recipe.dart';
 import 'recipes/recipe_runtime.dart' show RaftSlotStyle;
 import 'panel_edge.dart';
 import 'side_panel_frame.dart';
+import 'space.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
 import 'dismiss_scope.dart';
@@ -849,7 +850,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         Wrap(
           key: const ValueKey('task-properties'),
           spacing: 24,
-          runSpacing: widget.tasksPage ? 12 : 8,
+          runSpacing: RaftSpace.x2,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             property(
@@ -1019,16 +1020,22 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 
   /// raft-ui `DescriptionDetails`: elegant `text-sm leading-5
   /// text-foreground-muted`, brutal `text-sm text-foreground`.
-  TextStyle detailsStyle(RaftTokens t) => RaftTypography.body(
-    t,
-    size: 14,
-    line: 20,
-    color: _webHead(t) ? t.colors['foreground'] : t.muted,
-  );
+  TextStyle detailsStyle(RaftTokens t) => widget.tasksPage
+      ? t.scale(RaftTypeScale.callout, color: t.colors['foreground'])
+      : RaftTypography.body(
+          t,
+          size: 14,
+          line: 20,
+          color: _webHead(t) ? t.colors['foreground'] : t.muted,
+        );
 
-  /// raft-ui `DescriptionTerm`: elegant `text-[11px] font-medium leading-none
-  /// text-foreground-placeholder`, brutal `text-xs text-foreground-strong/50`.
-  TextStyle termStyle(RaftTokens t) => _webHead(t)
+  TextStyle termStyle(RaftTokens t) => widget.tasksPage
+      ? t.scale(
+          RaftTypeScale.footnote,
+          weight: FontWeight.w500,
+          color: t.colors['foreground-hint'],
+        )
+      : _webHead(t)
       ? RaftTypography.body(
           t,
           size: 13,
@@ -1056,18 +1063,35 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 
   /// `PropertyRow`: `flex min-w-0 items-center gap-2` of `DescriptionTerm`
   /// (`mb-0 shrink-0`) and `DescriptionDetails` (`min-w-0`).
-  Widget property(BuildContext context, String label, Widget value) {
+  Widget property(
+    BuildContext context,
+    String label,
+    Widget value, {
+    double hang = 0,
+  }) {
     final t = RaftTokens.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
-      spacing: widget.tasksPage ? 12 : 8,
+      spacing: widget.tasksPage ? RaftSpace.x3 - hang : RaftSpace.x2,
       crossAxisAlignment: widget.tasksPage
           ? CrossAxisAlignment.baseline
           : CrossAxisAlignment.center,
       textBaseline: widget.tasksPage ? TextBaseline.alphabetic : null,
       children: [
         RaftCssText(raftText(context, label), style: termStyle(t)),
-        Flexible(child: value),
+        Flexible(
+          child: widget.tasksPage
+              ? ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 28),
+                  child: Align(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: value,
+                  ),
+                )
+              : value,
+        ),
       ],
     );
   }

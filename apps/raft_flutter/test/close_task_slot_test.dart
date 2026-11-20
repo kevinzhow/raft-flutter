@@ -35,7 +35,7 @@ void main() {
       expect(toggle, findsNothing);
       final start = position.pixels;
       for (var swipe = 0; swipe < 3 && toggle.evaluate().isEmpty; swipe++) {
-        await t.drag(timeline, const Offset(0, -260));
+        await t.dragFrom(t.getCenter(timeline), const Offset(0, -260));
         await settle(t);
       }
       expect(position.pixels - start, greaterThan(100));

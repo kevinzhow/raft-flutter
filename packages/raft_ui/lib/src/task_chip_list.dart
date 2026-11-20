@@ -13,6 +13,7 @@ import 'mounted_avatar_recipe.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'raft/checkbox.dart';
 import 'raft/ui_tokens.dart';
+import 'space.dart';
 import 'task.dart' show raftTaskStatusLabel;
 import 'task_status_badge.dart';
 import 'theme.dart';

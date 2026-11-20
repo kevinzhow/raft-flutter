@@ -55656,7 +55656,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6012/METHOD:_historyDetail@51957/FUNCTION:badge@52354": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6033/METHOD:_historyDetail@52564/FUNCTION:badge@52961": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -55668,7 +55668,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6012/METHOD:assigneePanel@46098/FUNCTION:avatar@46457": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6033/METHOD:assigneePanel@46705/FUNCTION:avatar@47064": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
