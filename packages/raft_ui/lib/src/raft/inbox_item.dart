@@ -16,6 +16,7 @@ import 'package:raft_theme/recipes/inbox_item.g.dart' as raft;
 import '../indicators.dart';
 import '../interaction.dart';
 import '../mounted_task_chip.dart';
+import '../panel_layout.dart' show raftCssBaseline;
 import '../task_status_badge.dart';
 import '../tooltip.dart' show RaftTooltip;
 import '../recipe_surface.dart';
@@ -31,6 +32,7 @@ raft.RaftInboxItemRecipeStyle _resolve(
   bool hovered = false,
   bool pressed = false,
   bool selected = false,
+  bool popupOpen = false,
 }) {
   final t = RaftTokens.of(context);
   return raft.RaftInboxItemRecipe.resolve(
@@ -41,7 +43,10 @@ raft.RaftInboxItemRecipeStyle _resolve(
       pressed: pressed,
       responsive: true,
       pointerCoarse: RaftInteraction.of(context).touch,
-      extra: [if (selected) 'data-active=true'],
+      extra: [
+        if (selected) 'data-active=true',
+        if (popupOpen) 'data-popup-open',
+      ],
     ),
     tokens: t.recipeTokens,
   );
@@ -69,6 +74,7 @@ class RaftInboxItem extends StatefulWidget {
     this.marks = const [],
     this.actions = const [],
     this.selected = false,
+    this.popupOpen = false,
     this.unread = false,
     this.disabled = false,
     this.onOpen,
@@ -88,6 +94,9 @@ class RaftInboxItem extends StatefulWidget {
 
   /// Web `data-active`: the row open in the detail pane.
   final bool selected;
+
+  /// The row owns the current popup. Keep its cell fill and actions visible.
+  final bool popupOpen;
 
   /// Web `data-unread`: the title is bold and foreground.
   final bool unread;
@@ -222,7 +231,12 @@ class _RaftInboxItemState extends State<RaftInboxItem>
     final hasLine = widget.body != null || widget.marks.isNotEmpty;
     final hasActions = widget.actions.isNotEmpty;
     final revealed =
-        hasActions && (touch || _hovered || _focusWithin || widget.selected);
+        hasActions &&
+        (touch ||
+            _hovered ||
+            _focusWithin ||
+            widget.selected ||
+            widget.popupOpen);
     final keyboard =
         FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
     final showTime =
@@ -248,6 +262,7 @@ class _RaftInboxItemState extends State<RaftInboxItem>
         hovered: state.hovered && _enabled && !touch && !widget.selected,
         pressed: state.pressed && _enabled && !widget.selected,
         selected: widget.selected,
+        popupOpen: widget.popupOpen && _enabled && !widget.selected,
       );
       final titleStyle = style.itemTitle
           .text(tokens, base: DefaultTextStyle.of(context).style)
@@ -601,7 +616,11 @@ class RaftInboxItemListGroup extends StatelessWidget {
     required this.children,
     this.first = false,
   });
-  final String heading;
+  const RaftInboxItemListGroup.loading({super.key, required this.children})
+    : heading = null,
+      first = true;
+
+  final String? heading;
   final List<Widget> children;
 
   /// `first:mt-0`: the first group of a list has no top margin.
@@ -625,13 +644,27 @@ class RaftInboxItemListGroup extends StatelessWidget {
             padding:
                 head.padding.copyWith(bottom: head.padding.bottom) +
                 EdgeInsets.only(bottom: head.margin.bottom),
-            child: Text(
-              heading,
-              style: head.text(
-                tokens,
-                base: DefaultTextStyle.of(context).style,
-              ),
-            ),
+            child: heading == null
+                ? SizedBox(
+                    height: RaftScaled.extent(
+                      context,
+                      head.lineHeightPx ?? 18,
+                      fontSize:
+                          head.fontSize ??
+                          RaftTokens.of(context).typeSlot('footnote').fontSize,
+                    ),
+                    child: _inboxSkeletonTextBar(
+                      style: _skeletonTextStyle(context, head, tokens),
+                      width: 40,
+                    ),
+                  )
+                : Text(
+                    heading!,
+                    style: head.text(
+                      tokens,
+                      base: DefaultTextStyle.of(context).style,
+                    ),
+                  ),
           ),
           ...children,
         ],
@@ -640,9 +673,50 @@ class RaftInboxItemListGroup extends StatelessWidget {
   }
 }
 
+TextStyle _skeletonTextStyle(
+  BuildContext context,
+  RaftSlotStyle slot,
+  RaftTokenResolver tokens,
+) {
+  final style = slot.text(tokens, base: DefaultTextStyle.of(context).style);
+  final fontSize =
+      style.fontSize ?? RaftTokens.of(context).typeSlot('callout').fontSize;
+  return style.copyWith(
+    fontSize: MediaQuery.textScalerOf(context).scale(fontSize),
+  );
+}
+
+Widget _inboxSkeletonTextBar({
+  required TextStyle style,
+  required double width,
+  double? baseline,
+  bool mono = false,
+}) {
+  final fontSize = style.fontSize!;
+  // CSS vertical-align: middle centers the inline box half an x-height above
+  // the line baseline. These are the OS/2 sxHeight / unitsPerEm values of the
+  // bundled Space Grotesk and Space Mono faces used by the recipe's slots.
+  final xHeight = fontSize * (mono ? .496 : .486);
+  final height = fontSize * .75;
+  final top = (baseline ?? raftCssBaseline(style)) - (xHeight + height) / 2;
+  return Align(
+    alignment: AlignmentDirectional.topStart,
+    child: Padding(
+      padding: EdgeInsets.only(top: top < 0 ? 0 : top),
+      child: RaftSkeleton(
+        variant: RaftSkeletonVariant.line,
+        width: width,
+        height: height,
+        fromRecipe: true,
+        snapRecipeBounds: true,
+      ),
+    ),
+  );
+}
+
 /// `InboxItemSkeleton` (compact, leading, line): a disabled row of bars with
 /// the loaded row's padding and line heights, so nothing moves when the
-/// content arrives. [index] picks the bar widths (`nth-3n`).
+/// content arrives. [index] is the row's zero-based position in its group.
 class RaftInboxItemSkeleton extends StatelessWidget {
   const RaftInboxItemSkeleton({super.key, this.index = 0});
   final int index;
@@ -656,34 +730,31 @@ class RaftInboxItemSkeleton extends StatelessWidget {
       states: t.recipeStates(
         responsive: true,
         pointerCoarse: RaftInteraction.of(context).touch,
+        extra: [
+          if (index % 3 == 1) 'nth-child(3n+2)',
+          if (index % 3 == 2) 'nth-child(3n)',
+        ],
       ),
       tokens: tokens,
     );
-    final (title, body) = switch (index % 3) {
-      1 => (.45, .70),
-      2 => (.55, .75),
-      _ => (.60, .80),
-    };
-    final base = DefaultTextStyle.of(context).style;
+    double fraction(String slot) {
+      final width = skeleton.row['--inbox-item-skeleton-$slot'] as CssNum;
+      return width.value / 100;
+    }
+
     final headingHeight = style.itemTitle.lineHeightPx ?? 22;
     final lineHeight = style.itemLine.height ?? 22;
-    final bar = skeleton.bar.length('height');
-    final defaultLineFont = t.typeSlot('callout').fontSize;
-    Widget line(double fraction, TextStyle text) => LayoutBuilder(
-      builder: (context, constraints) => Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: SizedBox(
-          width: constraints.maxWidth * fraction,
-          height: RaftScaled.extent(
-            context,
-            bar ?? 10.5,
-            fontSize: text.fontSize ?? defaultLineFont,
-          ),
-          child: const RaftSkeleton(
-            variant: RaftSkeletonVariant.line,
-            fromRecipe: true,
-          ),
-        ),
+    final titleFont =
+        style.itemTitle.fontSize ?? t.typeSlot('subhead').fontSize;
+    final bodyFont = style.itemBody.fontSize ?? t.typeSlot('callout').fontSize;
+    final titleText = _skeletonTextStyle(context, style.itemTitle, tokens);
+    final timeText = _skeletonTextStyle(context, style.itemTimestamp, tokens);
+    final bodyText = _skeletonTextStyle(context, style.itemBody, tokens);
+    final baseline = raftCssBaseline(titleText);
+    Widget line(double widthFraction, TextStyle text) => LayoutBuilder(
+      builder: (context, constraints) => _inboxSkeletonTextBar(
+        style: text,
+        width: constraints.maxWidth * widthFraction,
       ),
     );
     final minHeight = style.item.minHeight ?? 0;
@@ -705,6 +776,7 @@ class RaftInboxItemSkeleton extends StatelessWidget {
                     child: const RaftSkeleton(
                       variant: RaftSkeletonVariant.block,
                       fromRecipe: true,
+                      snapRecipeBounds: true,
                     ),
                   ),
                 ),
@@ -714,12 +786,32 @@ class RaftInboxItemSkeleton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      height: RaftScaled.extent(context, headingHeight),
-                      child: line(title, base),
+                      height: RaftScaled.extent(
+                        context,
+                        headingHeight,
+                        fontSize: titleFont,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: style.itemHeading.columnGap ?? 8,
+                        children: [
+                          Expanded(child: line(fraction('title'), titleText)),
+                          _inboxSkeletonTextBar(
+                            style: timeText,
+                            width: skeleton.timestampBar.width ?? 36,
+                            baseline: baseline,
+                            mono: true,
+                          ),
+                        ],
+                      ),
                     ),
                     SizedBox(
-                      height: RaftScaled.extent(context, lineHeight),
-                      child: line(body, base),
+                      height: RaftScaled.extent(
+                        context,
+                        lineHeight,
+                        fontSize: bodyFont,
+                      ),
+                      child: line(fraction('body'), bodyText),
                     ),
                   ],
                 ),

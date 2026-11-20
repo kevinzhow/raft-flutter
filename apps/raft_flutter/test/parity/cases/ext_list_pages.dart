@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/runtime_account_usage.dart';
 import 'package:raft_flutter/data/search_memory.dart';
+import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/system_notification_projection.dart';
 import 'package:raft_flutter/data/system_notification_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -57,7 +58,16 @@ class _ListWorkspace extends ParityFixtureWorkspace {
 
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
-    final answer = _routes(ctx)['GET ${path.split('?').first}'];
+    var answer = _routes(ctx)['GET ${path.split('?').first}'];
+    if (answer case {'\$when': final List rules}) {
+      final match = rules.cast<Map>().where((rule) {
+        final conditions = rule['query'] as Map;
+        return conditions.entries.every(
+          (entry) => query?[entry.key]?.toString() == entry.value,
+        );
+      }).firstOrNull;
+      answer = match == null ? answer['\$default'] : match['answer'];
+    }
     if (answer is Map && answer['\$pending'] == true) {
       return Completer<dynamic>().future;
     }
@@ -553,6 +563,11 @@ Widget _panel(ParityContext ctx) {
   final width = (ctx.props['w'] as num? ?? 342).toDouble();
   final height = (ctx.props['h'] as num? ?? 620).toDouble();
   final now = parityNow(ctx);
+  if (panel == 'activity') {
+    final previousClock = sourceTimeNow;
+    sourceTimeNow = () => now;
+    ctx.onDispose(() => sourceTimeNow = previousClock);
+  }
   // Menus open at the pointer outside the panel: the React case screenshots
   // the whole viewport, so the Flutter side captures it too.
   final key = ctx.props['extCase'] as String;
@@ -563,6 +578,7 @@ Widget _panel(ParityContext ctx) {
       controller: w,
       section: panel,
       clock: () => now,
+      mobileRoot: panel == 'activity' && ctx.props['platform'] == 'mobile',
       onBack: () {},
       initialQuery: ctx.props['q'] as String?,
       searchMemory: _memory(ctx, w),
@@ -571,7 +587,7 @@ Widget _panel(ParityContext ctx) {
     ),
   );
   return RaftDensityScope(
-    density: ctx.props['platform'] == 'desktop' || panel == 'activity'
+    density: ctx.props['platform'] == 'desktop'
         ? RaftDensity.desktop
         : RaftDensity.touch,
     child: viewportCapture
@@ -625,11 +641,14 @@ Future<void> _interact(WidgetTester t, ParityContext ctx) async {
     case 'search.desktop-channel-filter':
       await _tap(t, find.text('Channel'), 250);
     case final k when k.endsWith('-filter-unread'):
+      await _tap(t, find.byType(RaftPickerTriggerButton));
       await _tap(t, find.text('Unread'));
     case final k when k.endsWith('-filter-mentions'):
+      await _tap(t, find.byType(RaftPickerTriggerButton));
       await _tap(t, find.text('Mentions'));
     case final k when k.startsWith('activity.') && k.endsWith('-context-menu'):
-      await _rightClick(t, find.byType(RaftConversationCard));
+      await _rightClick(t, find.byType(RaftInboxItem));
+      expect(find.byKey(const ValueKey('activity-menu-done')), findsOneWidget);
     case final k when k.startsWith('saved.') && k.endsWith('-actions'):
       await _rightClick(
         t,

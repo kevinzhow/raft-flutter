@@ -83,7 +83,6 @@ class RowFixture {
     selected: selected,
     located: located,
     canonical: canonical,
-    popupOpen: false,
     phoneTouch: phoneTouch,
     taskV2: taskV2,
     open: () => calls.opened++,

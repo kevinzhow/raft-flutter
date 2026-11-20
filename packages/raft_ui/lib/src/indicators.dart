@@ -4,7 +4,8 @@
 
 import 'package:flutter/material.dart';
 
-import 'raft/css_box.dart' show raftControlBorderPx;
+import 'css_pixel_snap.dart';
+import 'raft/css_box.dart' show RaftBorderSnap, raftControlBorderPx;
 import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/progress.g.dart';
@@ -370,6 +371,7 @@ class RaftSkeleton extends StatefulWidget {
     this.height,
     this.themed = false,
     this.fromRecipe = false,
+    this.snapRecipeBounds = false,
   });
 
   final RaftSkeletonVariant variant;
@@ -378,6 +380,9 @@ class RaftSkeleton extends StatefulWidget {
   /// the recipe's `data-variant` fill and radius, held at the first frame of
   /// `animate-pulse` like Playwright's disabled animations (no pulse).
   final bool fromRecipe;
+
+  /// Paint the four rounded edges at Blink's pixel-aligned bounds.
+  final bool snapRecipeBounds;
 
   /// The raft-ui `Skeleton` defaults (Elegant: `rounded-full` /
   /// `rounded-md` `bg-foreground-strong/8`); the sidebar rows pass `bg-ink-10`
@@ -428,13 +433,35 @@ class _RaftSkeletonState extends State<RaftSkeleton>
         RaftSkeletonVariant.block => RaftSkeletonRecipeVariant.block,
         RaftSkeletonVariant.circle => RaftSkeletonRecipeVariant.circle,
       };
+      final style = RaftSkeletonRecipe.resolve(
+        variant: variant,
+        states: t.recipeStates(extra: ['data-variant=${variant.css}']),
+        tokens: rt,
+      ).root;
+      if (widget.snapRecipeBounds) {
+        final fill = style.backgroundColor?.resolve(rt) ?? Colors.transparent;
+        final bounds = SizedBox(
+          width: widget.width ?? style.width,
+          height: widget.height ?? style.height,
+          child: RaftCssSnappedBox(
+            color: fill,
+            borderColor: Colors.transparent,
+            borderWidth: 0,
+            radius: style.borderRadius?.topLeft.x ?? 0,
+          ),
+        );
+        return ExcludeSemantics(
+          child: RaftBorderSnap.emulatedDeviceScaleFactor
+              ? MediaQuery(
+                  data: MediaQuery.of(context).copyWith(devicePixelRatio: 1),
+                  child: bounds,
+                )
+              : bounds,
+        );
+      }
       return ExcludeSemantics(
         child: RaftRecipeBox(
-          style: RaftSkeletonRecipe.resolve(
-            variant: variant,
-            states: t.recipeStates(extra: ['data-variant=${variant.css}']),
-            tokens: rt,
-          ).root,
+          style: style,
           tokens: rt,
           width: widget.width,
           height: widget.height,

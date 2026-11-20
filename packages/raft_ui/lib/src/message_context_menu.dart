@@ -42,6 +42,7 @@ class RaftMessageContextMenu extends StatelessWidget {
     this.onReact,
     this.reactionLabel,
     this.onDismiss,
+    this.width,
   });
 
   /// Item groups; empty groups are skipped, a divider sits between groups.
@@ -51,6 +52,9 @@ class RaftMessageContextMenu extends StatelessWidget {
   final ValueChanged<String>? onReact;
   final String Function(String emoji)? reactionLabel;
   final VoidCallback? onDismiss;
+
+  /// An authored CSS width, bounded below by the context-menu recipe.
+  final double? width;
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +113,14 @@ class RaftMessageContextMenu extends StatelessWidget {
       ],
     ];
     final gap = content.rowGap ?? 0;
+    final minWidth = t.size(
+      'size.menuPopupMin',
+      fallback: content.minWidth ?? 192,
+    );
+    final requestedWidth = width;
+    final fixedWidth = requestedWidth == null
+        ? null
+        : math.max(requestedWidth, minWidth);
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): () =>
@@ -119,12 +131,9 @@ class RaftMessageContextMenu extends StatelessWidget {
         child: Semantics(
           role: SemanticsRole.menu,
           child: ConstrainedBox(
-            // Web v1.21.23 min-w-60; a57b9dab min-w-48.
             constraints: BoxConstraints(
-              minWidth: t.size(
-                'size.menuPopupMin',
-                fallback: content.minWidth ?? 192,
-              ),
+              minWidth: fixedWidth ?? minWidth,
+              maxWidth: fixedWidth ?? double.infinity,
             ),
             child: IntrinsicWidth(
               child: RaftPopoverSurface(
@@ -211,10 +220,13 @@ double raftPlaceOverlayAxis({
 /// Opens [menu] as the MessageItem context-menu portal at [anchor] (global):
 /// a transparent dismiss backdrop, then the popup placed by the measured
 /// `useFloatingOverlayPosition` rule with an 8px viewport margin.
+/// [placementSize] matches call sites that place a menu using an estimate
+/// before CSS applies the popup's minimum width and content height.
 Future<T?> showRaftMessageContextMenu<T>({
   required BuildContext context,
   required Offset anchor,
   required Widget Function(BuildContext context) builder,
+  Size? placementSize,
 }) {
   return Navigator.of(context).push<T>(
     PageRouteBuilder<T>(
@@ -225,7 +237,7 @@ Future<T?> showRaftMessageContextMenu<T>({
       transitionDuration: Duration.zero,
       reverseTransitionDuration: Duration.zero,
       pageBuilder: (routeContext, _, _) => CustomSingleChildLayout(
-        delegate: _RaftContextMenuLayout(anchor),
+        delegate: _RaftContextMenuLayout(anchor, placementSize),
         child: Material(
           type: MaterialType.transparency,
           child: builder(routeContext),
@@ -236,34 +248,40 @@ Future<T?> showRaftMessageContextMenu<T>({
 }
 
 class _RaftContextMenuLayout extends SingleChildLayoutDelegate {
-  const _RaftContextMenuLayout(this.anchor);
+  const _RaftContextMenuLayout(this.anchor, this.placementSize);
   final Offset anchor;
+  final Size? placementSize;
+
+  static const _margin = 8.0;
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
       BoxConstraints.loose(
         Size(
-          math.max(0, constraints.maxWidth - 16),
-          math.max(0, constraints.maxHeight - 16),
+          math.max(0, constraints.maxWidth - _margin * 2),
+          math.max(0, constraints.maxHeight - _margin * 2),
         ),
       );
 
   @override
-  Offset getPositionForChild(Size size, Size childSize) => Offset(
-    raftPlaceOverlayAxis(
-      anchor: anchor.dx,
-      size: childSize.width,
-      viewportSize: size.width,
-    ),
-    raftPlaceOverlayAxis(
-      anchor: anchor.dy,
-      size: childSize.height,
-      viewportSize: size.height,
-    ),
-  );
+  Offset getPositionForChild(Size size, Size childSize) {
+    final placement = placementSize ?? childSize;
+    double axis(double point, double estimate, double viewport) =>
+        raftPlaceOverlayAxis(
+          anchor: point,
+          size: math.min(estimate, math.max(0, viewport - _margin * 2)),
+          viewportSize: viewport,
+          padding: _margin,
+        );
+    return Offset(
+      axis(anchor.dx, placement.width, size.width),
+      axis(anchor.dy, placement.height, size.height),
+    );
+  }
 
   @override
-  bool shouldRelayout(_RaftContextMenuLayout old) => old.anchor != anchor;
+  bool shouldRelayout(_RaftContextMenuLayout old) =>
+      old.anchor != anchor || old.placementSize != placementSize;
 }
 
 /// Convenience: a lucide icon for a menu row, 16px (MenuItem.tsx v1.24).

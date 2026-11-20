@@ -321,6 +321,13 @@ void main() {
           .getSize(find.byKey(const ValueKey('skeleton')))
           .height;
       expect(skeleton, loaded);
+      final timeBar = find.descendant(
+        of: find.byKey(const ValueKey('skeleton')),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is RaftSkeleton && widget.width == 36,
+        ),
+      );
+      expect(timeBar, findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

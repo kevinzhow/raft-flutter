@@ -52,12 +52,23 @@ class RaftConversationCardRecipe {
 
   // flat: Web v1.21.23 ThreadsInbox.tsx:103-108 / SavedPanel.tsx:269,
   // measured DOM. cards: a57b9dab resource_view.dart / resource_cards.dart.
-  EdgeInsets get listInset =>
-      flat ? const EdgeInsets.fromLTRB(0, 4, 0, 16) : const EdgeInsets.all(16);
-  double get listGap => flat ? 0 : gap;
+  EdgeInsets get listInset => !flat
+      ? const EdgeInsets.all(16)
+      : saved
+      ? const EdgeInsets.symmetric(vertical: gap)
+      : const EdgeInsets.fromLTRB(0, 4, 0, 16);
+  double get listGap => !flat ? gap : (saved ? 2 : 0);
   double get metadataGap => flat ? 8 : 4;
-  EdgeInsets get contentInset =>
-      flat ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12) : inset;
+  EdgeInsets get contentInset => flat
+      ? EdgeInsets.symmetric(
+          horizontal: saved && !tokens.desktop
+              ? RaftLayoutMetrics.panelInset
+              : 16,
+          vertical: saved
+              ? tokens.size('css.settings-row-inset', fallback: 12)
+              : 12,
+        )
+      : inset;
   static const inset = EdgeInsets.all(12);
   static const gap = 8.0;
   // ThreadsInbox timestamp and overlaid action both use transition-opacity.
@@ -300,6 +311,28 @@ class _RaftConversationCardState extends State<RaftConversationCard> {
     final background = selected ? recipe.selectedFill(base) : base;
     Widget surface(Widget child) {
       if (recipe.flat) {
+        if (widget.saved) {
+          final filled = hovered || widget.popupOpen;
+          return Material(
+            color: recipe.background,
+            child: Stack(
+              children: [
+                if (filled)
+                  Positioned.fill(
+                    left: RaftConversationCardRecipe.gap,
+                    right: RaftConversationCardRecipe.gap,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: t.ui['fill-cell-hover'],
+                        borderRadius: BorderRadius.circular(t.radius),
+                      ),
+                    ),
+                  ),
+                child,
+              ],
+            ),
+          );
+        }
         return Material(
           color: !selected && (hovered || widget.popupOpen)
               ? recipe.hoverBackground
