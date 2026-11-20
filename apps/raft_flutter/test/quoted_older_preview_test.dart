@@ -22,9 +22,6 @@ const _link = RaftPermalink(
   messageId: 'old-1',
 );
 
-/// Where the Flutter renders of the quote's "older" state are kept.
-const _captures = '/mnt/data/tmp/cindy/w24-bill/paywall';
-
 Map<String, dynamic> _limited() => {
   'error': 'History limited',
   'code': 'history_limited',
@@ -99,14 +96,16 @@ void main() {
   }
 
   Future<void> capture(WidgetTester t, GlobalKey key, String name) async {
+    final captureDir = Platform.environment['RAFT_BILLING_CAPTURE_DIR'];
+    if (captureDir == null || captureDir.isEmpty) return;
     await t.runAsync(() async {
       final boundary =
           key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 2);
       final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
       image.dispose();
-      await Directory(_captures).create(recursive: true);
-      await File('$_captures/$name.png')
+      await Directory(captureDir).create(recursive: true);
+      await File('$captureDir/$name.png')
           .writeAsBytes(bytes.buffer.asUint8List());
     });
   }
