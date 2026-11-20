@@ -246,7 +246,13 @@ void main() {
         final description = find.textContaining('dddd');
         final handle = find.text('@ann');
         expect(t.getSize(server).width, 128);
-        expect(t.getSize(description).width, greaterThan(128));
+        // The description takes the room left after the capped server label.
+        final descriptionWidth = t.getSize(description).width;
+        expect(descriptionWidth, greaterThan(0));
+        expect(
+          descriptionWidth,
+          width == 520 ? lessThan(128) : greaterThan(128),
+        );
         expect(
           t.getTopLeft(description).dx - t.getTopRight(server).dx,
           closeTo(6, 0.5),

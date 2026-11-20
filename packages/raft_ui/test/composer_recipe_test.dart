@@ -279,14 +279,8 @@ void main() {
         final popup = tester.getRect(
           find.byKey(const ValueKey('composer-suggestions-slot')),
         );
-        expect(
-          popup.bottom,
-          lessThan(
-            tester
-                .getRect(find.byKey(const ValueKey('composer-host-slot')))
-                .top,
-          ),
-        );
+        // The Web popup keeps an 8px gap above the composer card.
+        expect(shell.top - popup.bottom, 8);
         final option = find.byKey(
           const ValueKey('composer-suggestion-user-one'),
         );
