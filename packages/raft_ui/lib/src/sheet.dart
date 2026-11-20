@@ -364,7 +364,14 @@ class RaftSheet extends StatelessWidget {
         // field can change a pinned sliver's hit region even while it paints
         // in the same place.
         if (!showHandle && headerSlot != null)
-          _PointerDragArea(child: headerSlot),
+          _PointerDragArea(
+            child: ColoredBox(
+              // The narrow dialog header is a PanelHeader. Its canvas fill
+              // sits over the popover surface used by the rest of the sheet.
+              color: t.canvas,
+              child: headerSlot,
+            ),
+          ),
         Expanded(
           child: CustomScrollView(
             controller: controller,
