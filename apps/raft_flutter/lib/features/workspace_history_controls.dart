@@ -4,7 +4,11 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_location.dart';
+import '../data/raft_navigation_history.dart' show RaftNavigationKind;
 import '../data/workspace_controller.dart';
+import '../platform/content_coordinator.dart';
+import '../platform/content_links.dart';
+import '../platform/content_target.dart';
 
 /// Visits an observed entry without appending another history entry. Only the
 /// bound workspace owns these entries; late popup actions cannot cross epochs.
@@ -55,6 +59,34 @@ Future<void> visitWorkspaceHistory(
       );
     }
   }
+}
+
+/// After selecting the workspace, send explicit message links through content
+/// authorization and restore other routes from the accepted workspace URI.
+void restoreAcceptedLocation(
+  WorkspaceController w,
+  Uri uri, {
+  NativeContentCoordinator? externalLinks,
+}) {
+  final target = RaftLocation.fromUri(RaftLocation.canonicalLegacy(uri));
+  if (externalLinks != null && target.messageId != null) {
+    final frontend = ContentLinks.originFor(w.client.origin);
+    final landing = ContentTarget.parse(
+      frontend.resolveUri(target.uri),
+      origin: frontend,
+    );
+    if (landing != null) {
+      unawaited(
+        externalLinks.navigate(landing, replaceEntry: true, externalLink: true),
+      );
+      return;
+    }
+  }
+  final routeChanged = w.location.uri != target.uri;
+  if (routeChanged) {
+    w.navigation.navigate(target, kind: RaftNavigationKind.replace);
+  }
+  restoreAcceptedConversation(w, target, routeChanged: routeChanged);
 }
 
 /// A conversation route the app root accepted over the cache-painted workspace
