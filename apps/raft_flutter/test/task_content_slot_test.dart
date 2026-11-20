@@ -6,6 +6,7 @@
 // the list. Activity / Search open the same slot in their detail column.
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
@@ -172,7 +173,19 @@ void main() {
   testWidgets('Tasks detail shows its head and one empty discussion on open '
       'and switch, then close returns to the list', (t) async {
     try {
-      final w = await mountTasks(t, desktop, twoTasks: true);
+      await t.runAsync(() {
+        final font = FontLoader('packages/raft_ui/SpaceGrotesk')
+          ..addFont(
+            rootBundle.load('packages/raft_ui/assets/fonts/SpaceGrotesk.ttf'),
+          );
+        return font.load();
+      });
+      final w = await mountTasks(
+        t,
+        desktop,
+        platform: TargetPlatform.linux,
+        twoTasks: true,
+      );
       final second = find.byKey(const ValueKey('tasks-page-row-cell-task-2'));
       final title = find.byKey(const ValueKey('task-modal-title'));
       final empty = find.text('No discussion in this task yet');
@@ -256,6 +269,17 @@ void main() {
       expect(replies, findsNothing);
 
       final head = find.byKey(const ValueKey('task-conversation-head'));
+      final titleParagraph = t.renderObject<RenderParagraph>(
+        find.descendant(of: title, matching: find.byType(RichText)),
+      );
+      final baseline = titleParagraph.getDryBaseline(
+        titleParagraph.constraints,
+        TextBaseline.alphabetic,
+      )!;
+      expect(
+        titleParagraph.localToGlobal(Offset(0, baseline.roundToDouble())).dy,
+        t.getTopLeft(head).dy + 33,
+      );
       final timeline = find.byKey(const ValueKey('current-timeline'));
       final composer = find.byType(RaftComposer);
       final composerTop = t.getTopLeft(composer).dy;

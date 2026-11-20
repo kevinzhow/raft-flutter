@@ -11,7 +11,7 @@ import 'system_inset.dart';
 import 'auth_page.dart';
 import 'agent_profile.dart' show RaftPanelSection, raftPanelRuleColor;
 import 'indicators.dart' show RaftSkeleton;
-import 'panel_layout.dart' show RaftCssText;
+import 'panel_layout.dart' show RaftCssLineBox, RaftCssText;
 import 'recipes/button_variants.g.dart';
 import 'recipes/card.g.dart';
 
@@ -752,6 +752,29 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         (widget.canStatus || task['readOnlyReason'] != null) &&
         (task['claimedById'] == null || task['claimedByType'] == null);
     final description = '${task['description'] ?? ''}'.trim();
+    // v1.21.23 PanelHeading is a bare flex slot: the title inherits the
+    // body text (16/24 regular); a57b9dab drew it 18px bold.
+    // Task v2 (Web TASK_HEAD_TITLE_CLASS): `text-headline
+    // font-semibold text-foreground`.
+    final titleStyle = widget.conversation != null
+        ? t
+              .scale(RaftTypeScale.headline, weight: FontWeight.w600)
+              .copyWith(color: t.colors['foreground'])
+        : _webHead(t)
+        ? RaftTypography.body(
+            t,
+            size: 16,
+            line: 24,
+            color: t.colors['foreground'],
+          ).copyWith(fontFamily: t.headingFont)
+        : RaftTypography.heading(t, size: 18, line: 24.75);
+    final displayTitle = Text(
+      '${task['title'] ?? ''}',
+      key: const ValueKey('task-modal-title'),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+      style: titleStyle,
+    );
     final section = RaftPanelSection(
       topBorder: false,
       horizontal: widget.tasksPage && widget.inPlace ? 16 : 20,
@@ -762,28 +785,16 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           child: headText(
             RaftTaskHeadField.title,
             '${task['title'] ?? ''}',
-            Text(
-              '${task['title'] ?? ''}',
-              key: const ValueKey('task-modal-title'),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              // v1.21.23 PanelHeading is a bare flex slot: the title inherits the
-              // body text (16/24 regular); a57b9dab drew it 18px bold.
-              // Task v2 (Web TASK_HEAD_TITLE_CLASS): `text-headline
-              // font-semibold text-foreground`.
-              style: widget.conversation != null
-                  ? t
-                        .scale(RaftTypeScale.headline, weight: FontWeight.w600)
-                        .copyWith(color: t.colors['foreground'])
-                  : _webHead(t)
-                  ? RaftTypography.body(
-                      t,
-                      size: 16,
-                      line: 24,
-                      color: t.colors['foreground'],
-                    ).copyWith(fontFamily: t.headingFont)
-                  : RaftTypography.heading(t, size: 18, line: 24.75),
-            ),
+            widget.tasksPage &&
+                    widget.inPlace &&
+                    t.desktop &&
+                    widget.conversation != null
+                ? RaftCssLineBox(
+                    style: DefaultTextStyle.of(context).style.merge(titleStyle),
+                    textScaler: MediaQuery.textScalerOf(context),
+                    child: displayTitle,
+                  )
+                : displayTitle,
           ),
         ),
         if (editingField == RaftTaskHeadField.description)
