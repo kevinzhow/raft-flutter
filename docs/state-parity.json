@@ -52506,6 +52506,12 @@
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/task_chip_page.dart#function:_compactStatusBaselineInset": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Aligns the compact desktop task status pixel with the row metadata baseline."
+      },
       "packages/raft_ui/lib/src/task_chip_page.dart#method:RaftTaskPageList.build": {
         "role": "unresolved",
         "familyRefs": [],
