@@ -35,7 +35,7 @@ final _fixture = jsonDecode(
       .readAsStringSync(),
 ) as Map<String, dynamic>;
 
-ParityCase _actionCardCase(String name) {
+ParityCase _actionCardCase(String name, {bool encloseElementCrop = false}) {
   late WorkspaceController workspace;
   late RaftMessage message;
   final fixtureName = switch (name) {
@@ -43,6 +43,7 @@ ParityCase _actionCardCase(String name) {
     _ => name,
   };
   return ParityCase(
+    encloseElementCrop: encloseElementCrop,
     widgets: const [
       'raft_flutter:MessagePresentation',
       'raft_flutter:MessageActionCard',
@@ -193,7 +194,10 @@ ParityCase _actionCardCase(String name) {
 
 final Map<String, ParityCase> actionCardCases = {
   for (final name in _official)
-    'components.action-card.$name': _actionCardCase(name),
+    'components.action-card.$name': _actionCardCase(
+      name,
+      encloseElementCrop: true,
+    ),
 };
 
 final Map<String, ParityCase> extActionCardCases = {

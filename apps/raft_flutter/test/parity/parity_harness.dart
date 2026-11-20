@@ -44,6 +44,7 @@ class ParityCase {
     this.notes = '',
     this.fullLengthHeight,
     this.settle = const Duration(milliseconds: 400),
+    this.encloseElementCrop = false,
   });
 
   /// Product widgets exercised (for coverage reports, e.g. `raft_ui:RaftButton`).
@@ -53,6 +54,9 @@ class ParityCase {
   final String notes;
   final double? fullLengthHeight;
   final Duration settle;
+
+  /// Enclose the element's bounds in whole CSS pixels before applying density.
+  final bool encloseElementCrop;
 }
 
 /// Why a case has no Flutter capture. All of these count as NOT COVERED.
@@ -415,6 +419,11 @@ Future<Map<String, dynamic>> captureParityCase(
       );
     }
     final targetContext = keyed ?? ctx.targetKey.currentContext;
+    if (mapping.encloseElementCrop && targetContext == null) {
+      throw StateError(
+        'case ${ctx.id}: CSS enclosure requires an element target',
+      );
+    }
     if ((keyed != null || ctx.targetUsed) && targetContext != null) {
       final box = targetContext.findRenderObject()! as RenderBox;
       final origin = box.localToGlobal(Offset.zero, ancestor: rootBox);
@@ -422,12 +431,9 @@ Future<Map<String, dynamic>> captureParityCase(
       rect = raw.intersect(Offset.zero & size);
       if (rect != raw) targetNote = 'target clamped to viewport like React';
     }
-    // Extension element crops (`capture.androidKey`) follow Playwright's
-    // element screenshot, which captures the CSS-pixel rect enclosing a
-    // fractional box (floor / ceil in CSS px, then scaled: a card at
-    // y = 296.5 on a 3x page starts at device row 888, not 889); official
-    // crops keep their rounding.
-    final enclose = keyed != null;
+    // Playwright encloses fractional element bounds in CSS pixels before
+    // applying density. Use that crop for keyed extensions and opted-in cases.
+    final enclose = keyed != null || mapping.encloseElementCrop;
     final d = ctx.density;
     final pixelRect = enclose
         ? Rect.fromLTRB(
