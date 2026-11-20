@@ -421,6 +421,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         detailsToggle: detailsPlacement == null ? null : detailsToggle(context),
         focusMode: widget.focusMode,
         compactPage: widget.tasksPage && phone,
+        desktopBar: widget.tasksPage && widget.inPlace && t.desktop && !phone,
         pageStatus: detailsPlacement == _TaskDetailsPlacement.drawer
             ? RaftTaskStatus(status: '${task['status']}')
             : null,

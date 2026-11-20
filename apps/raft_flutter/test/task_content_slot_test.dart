@@ -268,6 +268,34 @@ void main() {
       expect(empty.hitTestable(), findsOneWidget);
       expect(replies, findsNothing);
 
+      final bar = t.getRect(find.byKey(const ValueKey('task-modal-bar')));
+      final close = find.byKey(const ValueKey('task-modal-close'));
+      final more = find.byKey(const ValueKey('task-overflow-trigger'));
+      expect(
+        [
+          more,
+          expand,
+          close,
+        ].map((action) => t.getRect(action).translate(-bar.right, -bar.top)),
+        const [
+          Rect.fromLTWH(-103, 7.5, 28, 28),
+          Rect.fromLTWH(-71, 7.5, 28, 28),
+          Rect.fromLTWH(-39, 7.5, 28, 28),
+        ],
+      );
+      expect(
+        t.getTopLeft(find.byKey(const ValueKey('task-modal-bar-label'))).dx,
+        bar.left + 16,
+      );
+      await t.tap(more.hitTestable());
+      await settle(t);
+      final viewInChannel = find.text('View in channel');
+      expect(viewInChannel.hitTestable(), findsOneWidget);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(t);
+      expect(viewInChannel, findsNothing);
+      expect(w.location.query('open'), 'task:task-2');
+
       final head = find.byKey(const ValueKey('task-conversation-head'));
       final titleParagraph = t.renderObject<RenderParagraph>(
         find.descendant(of: title, matching: find.byType(RichText)),
@@ -294,7 +322,7 @@ void main() {
       expect(t.getTopLeft(timeline).dy, t.getBottomLeft(head).dy);
       expect(t.getTopLeft(composer).dy, composerTop);
 
-      await t.tap(find.byKey(const ValueKey('task-modal-close')).hitTestable());
+      await t.tap(close.hitTestable());
       await settle(t);
       expect(w.location.query('open'), isNull);
       expect(title, findsNothing);

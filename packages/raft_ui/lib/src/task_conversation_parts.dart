@@ -11,8 +11,9 @@ import 'localization.dart';
 import 'raft/button.dart';
 import 'raft/ui_tokens.dart';
 import 'task_head_editor.dart';
+import 'space.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftTypeScale;
+import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeScale;
 
 /// The facts and commands of a task's own conversation (task v2). With it,
 /// [RaftTaskSurface] draws the task dialog: the bar names the task by [ref],
@@ -87,11 +88,12 @@ class RaftTaskConversationBar extends StatelessWidget {
     this.pageStatus,
     this.bottomBorder,
     this.compactPage = false,
+    this.desktopBar = false,
     this.focusMode,
   });
   final RaftTaskConversation conversation;
   final Object? taskNumber;
-  final bool mobile, compactPage;
+  final bool mobile, compactPage, desktopBar;
   final ({bool focused, VoidCallback toggle})? focusMode;
   final VoidCallback onClose;
 
@@ -127,17 +129,109 @@ class RaftTaskConversationBar extends StatelessWidget {
       style: t.scale(RaftTypeScale.subhead, weight: FontWeight.w700),
     );
     final menuLabel = raftText(context, 'Task actions');
+    final actionExtent = desktopBar ? RaftDesktopMetrics.barButtonSize : null;
+    final actionPadding = desktopBar ? EdgeInsets.zero : null;
+    final actions = <Widget>[
+      RaftDropdownMenu(
+        key: const ValueKey('task-overflow'),
+        label: menuLabel,
+        tooltip: 'Task actions',
+        width: 220,
+        align: RaftDropdownAlign.end,
+        triggerBuilder: (context, focus, open) => Focus(
+          focusNode: focus,
+          child: RaftButton(
+            key: const ValueKey('task-overflow-trigger'),
+            label: '',
+            glyph: RaftGlyph.ellipsisVertical,
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.iconSm,
+            physicalHeight: actionExtent,
+            visualWidth: actionExtent,
+            padding: actionPadding,
+            semanticLabel: raftText(context, 'Task actions'),
+            tooltip: raftText(context, 'Task actions'),
+            onPressed: open,
+          ),
+        ),
+        entries: [
+          if (c.onSearch != null)
+            RaftMenuEntry(
+              label: raftText(context, 'Search in task'),
+              glyph: RaftGlyph.search,
+              onPressed: c.onSearch,
+            ),
+          RaftMenuEntry(
+            label: raftText(context, 'View in channel'),
+            glyph: RaftGlyph.mapPin,
+            onPressed: c.onViewInChannel,
+          ),
+          RaftMenuEntry(
+            label: raftText(
+              context,
+              c.followed ? 'Unfollow task' : 'Follow task',
+            ),
+            glyph: c.followed
+                ? RaftGlyph.messageCircleOff
+                : RaftGlyph.messageCirclePlus,
+            onPressed: c.onFollow,
+          ),
+          if (c.onDelete != null) ...[
+            const RaftMenuEntry.separator(),
+            RaftMenuEntry(
+              label: raftText(context, 'Delete task'),
+              glyph: RaftGlyph.trash2,
+              onPressed: c.onDelete,
+            ),
+          ],
+        ],
+      ),
+      if (focusMode case final focus? when !mobile)
+        raftConversationHeaderToggle(
+          key: const Key('task-focus-mode'),
+          glyph: focus.focused ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
+          label: raftText(context, focus.focused ? 'Restore' : 'Expand'),
+          pressed: focus.focused,
+          onPressed: focus.toggle,
+        ),
+      if (!mobile)
+        RaftButton(
+          key: const ValueKey('task-modal-close'),
+          label: '',
+          glyph: RaftGlyph.x,
+          uiVariant: RaftButtonVariant.ghost,
+          uiSize: RaftButtonSize.iconSm,
+          physicalHeight: actionExtent,
+          visualWidth: actionExtent,
+          padding: actionPadding,
+          semanticLabel: raftText(context, 'Close task'),
+          tooltip: raftText(context, 'Close task'),
+          onPressed: onClose,
+        ),
+    ];
+    const columnMargin = RaftDesktopMetrics.pageInset;
+    const iconInset =
+        (RaftDesktopMetrics.barButtonSize -
+            RaftDesktopMetrics.controlIconSize) /
+        2;
     return Container(
       key: const ValueKey('task-modal-bar'),
       constraints: BoxConstraints(minHeight: compactPage ? 56 : 44),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: desktopBar
+          ? const EdgeInsetsDirectional.fromSTEB(
+              columnMargin,
+              0,
+              columnMargin - iconInset,
+              0,
+            )
+          : const EdgeInsets.symmetric(horizontal: RaftSpace.x3),
       decoration: BoxDecoration(
         border:
             bottomBorder ??
             Border(bottom: BorderSide(color: t.ui.lineHairline)),
       ),
       child: Row(
-        spacing: 8,
+        spacing: desktopBar ? RaftSpace.x3 : RaftSpace.x2,
         children: [
           if (mobile)
             RaftButton(
@@ -180,76 +274,20 @@ class RaftTaskConversationBar extends StatelessWidget {
                   ),
           ),
           if (detailsToggle case final toggle?) toggle,
-          RaftDropdownMenu(
-            key: const ValueKey('task-overflow'),
-            label: menuLabel,
-            tooltip: 'Task actions',
-            width: 220,
-            align: RaftDropdownAlign.end,
-            triggerBuilder: (context, focus, open) => Focus(
-              focusNode: focus,
-              child: RaftButton(
-                key: const ValueKey('task-overflow-trigger'),
-                label: '',
-                glyph: RaftGlyph.ellipsisVertical,
-                uiVariant: RaftButtonVariant.ghost,
-                uiSize: RaftButtonSize.iconSm,
-                semanticLabel: raftText(context, 'Task actions'),
-                tooltip: raftText(context, 'Task actions'),
-                onPressed: open,
-              ),
-            ),
-            entries: [
-              if (c.onSearch != null)
-                RaftMenuEntry(
-                  label: raftText(context, 'Search in task'),
-                  glyph: RaftGlyph.search,
-                  onPressed: c.onSearch,
-                ),
-              RaftMenuEntry(
-                label: raftText(context, 'View in channel'),
-                glyph: RaftGlyph.mapPin,
-                onPressed: c.onViewInChannel,
-              ),
-              RaftMenuEntry(
-                label: raftText(
-                  context,
-                  c.followed ? 'Unfollow task' : 'Follow task',
-                ),
-                glyph: c.followed
-                    ? RaftGlyph.messageCircleOff
-                    : RaftGlyph.messageCirclePlus,
-                onPressed: c.onFollow,
-              ),
-              if (c.onDelete != null) ...[
-                const RaftMenuEntry.separator(),
-                RaftMenuEntry(
-                  label: raftText(context, 'Delete task'),
-                  glyph: RaftGlyph.trash2,
-                  onPressed: c.onDelete,
-                ),
+          if (desktopBar)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: RaftSpace.x1,
+              children: [
+                for (final action in actions)
+                  SizedBox.square(
+                    dimension: RaftDesktopMetrics.barButtonSize,
+                    child: action,
+                  ),
               ],
-            ],
-          ),
-          if (focusMode case final focus? when !mobile)
-            raftConversationHeaderToggle(
-              key: const Key('task-focus-mode'),
-              glyph: focus.focused ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
-              label: raftText(context, focus.focused ? 'Restore' : 'Expand'),
-              pressed: focus.focused,
-              onPressed: focus.toggle,
-            ),
-          if (!mobile)
-            RaftButton(
-              key: const ValueKey('task-modal-close'),
-              label: '',
-              glyph: RaftGlyph.x,
-              uiVariant: RaftButtonVariant.ghost,
-              uiSize: RaftButtonSize.iconSm,
-              semanticLabel: raftText(context, 'Close task'),
-              tooltip: raftText(context, 'Close task'),
-              onPressed: onClose,
-            ),
+            )
+          else
+            ...actions,
         ],
       ),
     );
