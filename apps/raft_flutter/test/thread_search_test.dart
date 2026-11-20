@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/thread_search.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/thread_actions.dart';
+import 'package:raft_flutter/features/thread_outline_scope.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,7 +31,11 @@ void main() {
     expect(threadSearchMatches(rows, '   '), isEmpty);
   });
 
-  Future<(dynamic, dynamic)> mountThread(WidgetTester tester) async {
+  Future<(dynamic, dynamic)> mountThread(
+    WidgetTester tester, {
+    int replyCount = 3,
+    ChatViewportHandle? viewport,
+  }) async {
     tester.view.physicalSize = const Size(900, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -38,12 +43,25 @@ void main() {
     addTearDown(w.dispose);
     w.messageDomain.ledger.switchServer('s1');
     final replies = [
-      for (var i = 0; i < 3; i++) row('reply-$i', 'thread-1', i + 1),
+      for (var i = 0; i < replyCount; i++) row('reply-$i', 'thread-1', i + 1),
     ];
     api.routes['GET /messages/context/parent'] = (_) => {
       'messages': [row('parent', 'c1', 1)],
     };
     api.routes['GET /messages/channel/thread-1'] = (_) => {'messages': replies};
+    api.routes['GET /messages/channel/thread-1/human-outline'] = (_) => {
+      'items': [
+        for (final reply in replies.reversed)
+          {...reply, 'senderName': 'Alice', 'preview': reply['content']},
+        {
+          'id': 'parent',
+          'seq': '0',
+          'senderName': 'Alice',
+          'preview': 'Parent',
+        },
+      ],
+      'hasMore': false,
+    };
     await tester.runAsync(() async {
       await w.openThreadIdentity(
         parentChannelId: 'c1',
@@ -58,12 +76,93 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme(),
-        home: Scaffold(body: RaftChatView(controller: w, thread: true)),
+        home: Scaffold(
+          body: RaftChatView(
+            controller: w,
+            thread: true,
+            viewportHandle: viewport,
+          ),
+        ),
       ),
     );
     await tester.pump();
     return (w, api);
   }
+
+  testWidgets('the outline follows a mounted thread without disk history', (
+    tester,
+  ) async {
+    final viewport = ChatViewportHandle();
+    final (w, _) = await mountThread(
+      tester,
+      replyCount: 60,
+      viewport: viewport,
+    );
+    final outline = threadOutlineFor(w)!;
+    await tester.runAsync(outline.load);
+    await tester.pumpAndSettle();
+    expect(outline.currentId, startsWith('reply-'));
+
+    viewport.jumpToBeginning();
+    await tester.pump();
+    for (var i = 0; i < 15; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    final parentVisible = find
+        .text('Message parent')
+        .hitTestable()
+        .evaluate()
+        .isNotEmpty;
+    final current = outline.currentId;
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+    expect(parentVisible, isTrue);
+    expect(current, 'parent');
+  });
+
+  testWidgets(
+    'mounted search centers an interior match and shows bottom action',
+    (tester) async {
+      final (w, _) = await mountThread(tester, replyCount: 60);
+      w.threadSearch.open();
+      await tester.pumpAndSettle();
+      final input = find.byKey(const Key('thread-search-input'));
+      final field = find
+          .ancestor(
+            of: input,
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Container &&
+                  widget.decoration is BoxDecoration &&
+                  (widget.decoration! as BoxDecoration).border is Border,
+            ),
+          )
+          .first;
+      final decoration =
+          tester.widget<Container>(field).decoration! as BoxDecoration;
+      expect(decoration.borderRadius, isNotNull);
+      await tester.enterText(input, 'reply-30');
+      await tester.pumpAndSettle();
+      expect(find.text('1/1'), findsOneWidget);
+      final target = find.byKey(const ValueKey('message-wrapper-reply-30'));
+      final viewport = find.byKey(const Key('chat-list-thread'));
+      expect(target.hitTestable(), findsOneWidget);
+      expect(
+        tester.getCenter(target).dy,
+        closeTo(tester.getCenter(viewport).dy, 1),
+      );
+      expect(find.text('Back to bottom'), findsOneWidget);
+      await tester.tap(find.text('Back to bottom'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('message-wrapper-reply-59')).hitTestable(),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    },
+  );
 
   testWidgets('search bar: open, query, count, next / previous, close', (
     tester,

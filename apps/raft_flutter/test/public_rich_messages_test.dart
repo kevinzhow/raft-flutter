@@ -395,7 +395,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('First reply text'), findsOneWidget);
-      expect(find.text('2 replies ›'), findsOneWidget);
+      expect(find.text('2 replies'), findsOneWidget);
       // The badge is what the inline preview replaces; a row without previews keeps it.
       expect(find.byKey(const ValueKey('public-thread-open-m1')), findsNothing);
       expect(

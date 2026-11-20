@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -158,6 +159,56 @@ void main() {
         expect(find.byKey(const ValueKey('thread-back')), findsOneWidget);
         expect(find.byKey(const ValueKey('thread-close')), findsNothing);
         expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      '${dark ? 'dark' : 'light'} phone thread subtitle fits its full count',
+      (tester) async {
+        await tester.runAsync(() async {
+          for (final family in ['SpaceGrotesk', 'SpaceMono']) {
+            ByteData font;
+            try {
+              font = await rootBundle.load(
+                'packages/raft_ui/assets/fonts/$family.ttf',
+              );
+            } on FlutterError {
+              font = await rootBundle.load('assets/fonts/$family.ttf');
+            }
+            final name = 'packages/raft_ui/$family';
+            await (FontLoader(name)..addFont(Future.value(font))).load();
+          }
+        });
+        await mount(
+          tester,
+          RaftThreadHeader(
+            presentation: RaftThreadPresentation.side,
+            threadLabel: 'Thread',
+            parentLabel: '#wp-thread-acceptance-1119',
+            replyCount: 200,
+            jumpLabel: 'Scroll to first message',
+            backLabel: 'Back',
+            closeLabel: 'Close thread',
+            onBack: () {},
+            onViewParent: () {},
+            actions: [
+              RaftThreadOverflowAction(
+                label: 'Thread actions',
+                onPressed: () {},
+              ),
+            ],
+          ),
+          height: 844,
+        );
+        final count = find.byKey(const Key('thread-header-reply-count'));
+        final rich = find.descendant(
+          of: count,
+          matching: find.byType(RichText),
+        );
+        expect(
+          tester.renderObject<RenderParagraph>(rich).didExceedMaxLines,
+          isFalse,
+        );
       },
     );
 

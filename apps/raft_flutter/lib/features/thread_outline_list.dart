@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/source_time_formatter.dart';
 import '../data/thread_outline.dart';
 
 class ThreadOutlineAnchor extends StatefulWidget {
@@ -73,6 +75,7 @@ class _ThreadOutlineAnchorState extends State<ThreadOutlineAnchor> {
       ),
       routeSettings: const RouteSettings(name: 'thread-timeline-sheet'),
       sheetInitialSize: .5,
+      drawerMaxSize: .82,
       label: raftText(context, 'Timeline'),
       content: (context, _) => RaftSheet.fixed(
         key: const Key('thread-timeline-sheet'),
@@ -154,14 +157,31 @@ class ThreadOutlineList extends StatefulWidget {
 
 class _ThreadOutlineListState extends State<ThreadOutlineList> {
   final scroll = ScrollController();
+  final openingRow = GlobalKey();
   final rowFocus = <String, FocusNode>{};
   ThreadOutline get outline => widget.outline;
   bool get compact => widget.compact;
+  late final openingId = outline.currentId ?? outline.items.lastOrNull?.id;
+  late final openingIndex = outline.items.indexWhere(
+    (item) => item.id == openingId,
+  );
+  late final firstId = outline.items
+      .elementAtOrNull((openingIndex - 1).clamp(0, outline.items.length))
+      ?.id;
+  bool loadingOlder = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.focusCurrent) _queueCurrentFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (compact) {
+        final id = openingId;
+        if (id != null) _showCompactRow(id, focus: widget.focusCurrent);
+      } else if (openingRow.currentContext case final row?) {
+        unawaited(Scrollable.ensureVisible(row));
+      }
+    });
   }
 
   @override
@@ -174,18 +194,18 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.focusCurrent) return;
       final id = outline.currentId ?? outline.items.lastOrNull?.id;
-      if (id != null) _focusRow(id);
+      if (id != null) _showCompactRow(id, focus: true);
     });
   }
 
   double get compactExtent =>
       RaftScaled.extent(context, RaftThreadOutlineMetrics.compactRow);
 
-  void _focusRow(String id) {
+  void _showCompactRow(String id, {required bool focus}) {
     final node = rowFocus[id];
     final row = node?.context;
     if (row != null) {
-      node!.requestFocus();
+      if (focus) node!.requestFocus();
       unawaited(Scrollable.ensureVisible(row, alignment: .5));
       return;
     }
@@ -198,7 +218,7 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
         position.viewportDimension / 2;
     scroll.jumpTo(offset.clamp(0.0, position.maxScrollExtent));
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) rowFocus[id]?.requestFocus();
+      if (mounted && focus) rowFocus[id]?.requestFocus();
     });
   }
 
@@ -214,7 +234,9 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
     final focused = FocusManager.instance.primaryFocus;
     final next =
         items.indexWhere((item) => rowFocus[item.id] == focused) + direction;
-    if (next >= 0 && next < items.length) _focusRow(items[next].id);
+    if (next >= 0 && next < items.length) {
+      _showCompactRow(items[next].id, focus: true);
+    }
     return KeyEventResult.handled;
   }
 
@@ -230,10 +252,37 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final formatter = SourceTimeFormatter(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+      preferredTimezone: outline.preferredTimezone,
+      preferredTimeFormat: sourceTimeFormatPreference(
+        outline.preferredTimeFormat,
+      ),
+      systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
+          ? SourceTimeFormat.twentyFourHour
+          : null,
+      yesterdayLabel: raftText(context, 'Yesterday'),
+    );
     return ListenableBuilder(
       listenable: outline,
       builder: (context, _) {
         final items = outline.items;
+        final currentId = outline.currentId;
+        Widget row(ThreadOutlineItem item) => _OutlineRow(
+          key: ValueKey('thread-outline-row-${item.id}'),
+          item: item,
+          time: formatter.messageTime(item.createdAt),
+          own: item.senderId == outline.userId,
+          current: item.id == currentId,
+          compact: compact,
+          focusNode: compact
+              ? rowFocus.putIfAbsent(
+                  item.id,
+                  () => FocusNode(skipTraversal: true),
+                )
+              : null,
+          onTap: () => widget.onJump(item.id),
+        );
         return Column(
           children: [
             if (!compact)
@@ -269,40 +318,52 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
             Expanded(
               child: NotificationListener<ScrollNotification>(
                 onNotification: (event) {
-                  if (event.metrics.extentAfter < 150) {
-                    unawaited(outline.loadOlder());
+                  if (event is ScrollUpdateNotification && !loadingOlder) {
+                    if (compact && event.metrics.extentAfter < 150) {
+                      unawaited(outline.loadOlder());
+                    } else if (!compact && event.metrics.extentBefore < 150) {
+                      unawaited(
+                        _prepend(
+                          items,
+                          RaftSheetScope.maybeOf(context)?.scrollController ??
+                              scroll,
+                        ),
+                      );
+                    }
                   }
                   return false;
                 },
                 child: Focus(
                   canRequestFocus: false,
                   onKeyEvent: compact ? _onKey : null,
-                  child: ListView.builder(
-                    controller: compact
-                        ? scroll
-                        : RaftSheetScope.maybeOf(context)?.scrollController,
-                    reverse: true,
-                    itemExtent: compact ? compactExtent : null,
-                    padding: RaftThreadOutlineMetrics.listPadding,
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final item = items[items.length - index - 1];
-                      return _OutlineRow(
-                        key: ValueKey('thread-outline-row-${item.id}'),
-                        item: item,
-                        own: item.senderId == outline.userId,
-                        current: item.id == outline.currentId,
-                        compact: compact,
-                        focusNode: compact
-                            ? rowFocus.putIfAbsent(
-                                item.id,
-                                () => FocusNode(skipTraversal: true),
-                              )
-                            : null,
-                        onTap: () => widget.onJump(item.id),
-                      );
-                    },
-                  ),
+                  child: compact
+                      ? ListView.builder(
+                          controller: scroll,
+                          reverse: true,
+                          itemExtent: compactExtent,
+                          padding: RaftThreadOutlineMetrics.listPadding,
+                          itemCount: items.length,
+                          itemBuilder: (context, index) =>
+                              row(items[items.length - index - 1]),
+                        )
+                      : SingleChildScrollView(
+                          controller:
+                              RaftSheetScope.maybeOf(context)
+                                  ?.scrollController ??
+                              scroll,
+                          padding: RaftThreadOutlineMetrics.listPadding,
+                          child: Column(
+                            children: [
+                              for (final item in items)
+                                KeyedSubtree(
+                                  key: item.id == firstId
+                                      ? openingRow
+                                      : ValueKey(item.id),
+                                  child: row(item),
+                                ),
+                            ],
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -311,12 +372,42 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
       },
     );
   }
+
+  Future<void> _prepend(
+    List<ThreadOutlineItem> before,
+    ScrollController controller,
+  ) async {
+    if (before.isEmpty || !controller.hasClients) return;
+    final row = openingRow.currentContext?.findRenderObject();
+    final viewport = row == null ? null : RenderAbstractViewport.maybeOf(row);
+    if (row == null || viewport == null) return;
+    final lead = viewport.getOffsetToReveal(row, 0).offset;
+    loadingOlder = true;
+    final position = controller.position;
+    await outline.loadOlder();
+    if (!mounted || before.first.id == outline.items.firstOrNull?.id) {
+      loadingOlder = false;
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadingOlder = false;
+      if (mounted &&
+          row.attached &&
+          controller.hasClients &&
+          identical(position, controller.position)) {
+        final delta = viewport.getOffsetToReveal(row, 0).offset - lead;
+        final target = position.pixels + delta;
+        position.jumpTo(target.clamp(0, position.maxScrollExtent).toDouble());
+      }
+    });
+  }
 }
 
 class _OutlineRow extends StatelessWidget {
   const _OutlineRow({
     super.key,
     required this.item,
+    required this.time,
     required this.own,
     required this.current,
     required this.compact,
@@ -325,6 +416,7 @@ class _OutlineRow extends StatelessWidget {
   });
 
   final ThreadOutlineItem item;
+  final String time;
   final bool own, current, compact;
   final FocusNode? focusNode;
   final VoidCallback onTap;
@@ -333,11 +425,6 @@ class _OutlineRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final label = outlineItemText(context, item);
-    final date = item.createdAt?.toLocal();
-    final time = date == null
-        ? ''
-        : MaterialLocalizations.of(context)
-              .formatTimeOfDay(TimeOfDay.fromDateTime(date));
     final row = RaftInteractive(
       onPressed: onTap,
       focusNode: focusNode,
@@ -355,7 +442,7 @@ class _OutlineRow extends StatelessWidget {
         ),
         padding: RaftThreadOutlineMetrics.rowPadding(compact),
         decoration: BoxDecoration(
-          color: state.hovered || state.focusVisible
+          color: current || state.hovered || state.focusVisible || state.pressed
               ? t.colors['brand-soft']
               : null,
           borderRadius: RaftThreadOutlineMetrics.rowCorners(t),
@@ -366,26 +453,48 @@ class _OutlineRow extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     label,
                     maxLines: compact ? 1 : 2,
                     overflow: TextOverflow.ellipsis,
-                    style: RaftTypography.inherited(
-                      t,
-                      size: 14,
-                      color: t.muted,
+                    style: t.scale(
+                      t.typeSlot('callout'),
+                      weight: current ? FontWeight.w600 : null,
+                      color: current ? t.ink : t.muted,
                     ),
                   ),
                   if (!compact)
-                    Text(
-                      '${item.senderName}  $time',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: RaftTypography.inherited(
-                        t,
-                        size: 12,
-                        color: t.muted,
+                    Padding(
+                      padding: RaftThreadOutlineMetrics.metadataPadding,
+                      child: Row(
+                        spacing: RaftThreadOutlineMetrics.metadataGap,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              item.senderName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: t.scale(
+                                t.typeSlot('footnote'),
+                                color: t.ui.foregroundHint,
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              time,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: t.scale(
+                                t.typeSlot('mono-meta'),
+                                mono: true,
+                                color: t.ui.foregroundHint,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],

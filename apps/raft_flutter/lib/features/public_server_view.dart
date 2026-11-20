@@ -706,9 +706,11 @@ class _PublicServerViewState extends State<PublicServerView> {
       return null;
     }
     final formatter = timeFormatter;
-    final count = raftFormat(context, '{count} replies', {
-      'count': m.replyCount,
-    });
+    final count = raftFormat(
+      context,
+      m.replyCount == 1 ? '{count} reply' : '{count} replies',
+      {'count': m.replyCount},
+    );
     return RaftInlineThreadSurface(
       key: ValueKey('public-inline-thread-${m.id}'),
       replies: [
@@ -718,7 +720,7 @@ class _PublicServerViewState extends State<PublicServerView> {
             author: r.senderName,
             preview: r.preview,
             senderType: r.senderType,
-            timestamp: r.createdAt == null ? '' : formatter.clock(r.createdAt),
+            timestamp: formatter.messageTime(r.createdAt),
             avatar: avatarOf(
               author: r.senderName,
               senderType: r.senderType,
@@ -732,7 +734,7 @@ class _PublicServerViewState extends State<PublicServerView> {
       ],
       replyCount: m.replyCount,
       semanticLabel: count,
-      summary: Text('$count ›'),
+      summary: Text(count),
       onOpen: onOpen,
     );
   }

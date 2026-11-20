@@ -52,6 +52,7 @@ class _ThreadActionsState extends State<ThreadActions> {
   String? get error => errorNotice.message;
   late final String authority;
   OverlayEntry? menu;
+  final menuAnchor = GlobalKey();
   final menuGroup = Object();
   ThreadOutline? outline;
 
@@ -174,115 +175,119 @@ class _ThreadActionsState extends State<ThreadActions> {
     menu = null;
   }
 
-  void openMenu(BuildContext anchor, VoidCallback openTimeline) {
+  void openMenu(VoidCallback openTimeline) {
     if (!current) return;
     if (menu != null) {
       closeMenu();
       return;
     }
-    final box = anchor.findRenderObject() as RenderBox?;
     final overlay = Overlay.of(context);
-    final overlayBox = overlay.context.findRenderObject() as RenderBox?;
-    if (box == null || overlayBox == null) return;
-    final rect =
-        box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
     menu = OverlayEntry(
-      builder: (context) => Positioned(
-        left: (rect.right - 192).clamp(
-          8.0,
-          (overlayBox.size.width - 200).clamp(8.0, double.infinity),
-        ),
-        top: rect.bottom + 4,
-        child: RaftBackDismiss(
-          routeContext: this.context,
-          onDismiss: closeMenu,
-          child: TapRegion(
-            groupId: menuGroup,
-            onTapOutside: (_) => closeMenu(),
-            child: RaftDismissScope(
-              onDismiss: closeMenu,
-              takeFocus: true,
-              child: RaftMenuPanel(
+      builder: (context) => Positioned.fill(
+        child: RaftAnchoredPopup(
+          anchorKey: menuAnchor,
+          alignRight: Directionality.of(context) == TextDirection.ltr,
+          gap: 4,
+          snapToPixel: true,
+          child: RaftBackDismiss(
+            routeContext: this.context,
+            onDismiss: closeMenu,
+            child: TapRegion(
+              groupId: menuGroup,
+              onTapOutside: (_) => closeMenu(),
+              child: RaftDismissScope(
                 onDismiss: closeMenu,
-                children: [
-                  if (widget.onFollowers != null)
+                takeFocus: true,
+                child: RaftMenuPanel(
+                  kind: RaftMenuKind.dropdownMenu,
+                  onDismiss: closeMenu,
+                  children: [
+                    if (widget.onFollowers != null)
+                      RaftMenuItem(
+                        kind: RaftMenuKind.dropdownMenu,
+                        label: raftText(context, 'Following agents'),
+                        onPressed: () {
+                          closeMenu();
+                          if (current) widget.onFollowers!();
+                        },
+                      ),
+                    if (widget.onSearch != null)
+                      RaftMenuItem(
+                        kind: RaftMenuKind.dropdownMenu,
+                        label: raftText(context, 'Search in thread'),
+                        glyph: RaftGlyph.search,
+                        autofocus: true,
+                        onPressed: () {
+                          closeMenu();
+                          if (current) widget.onSearch!();
+                        },
+                      ),
+                    if (outline?.hasReplies(widget.parentMessageId) == true)
+                      RaftMenuItem(
+                        kind: RaftMenuKind.dropdownMenu,
+                        key: const Key('thread-timeline-menu-item'),
+                        label: raftText(context, 'Timeline'),
+                        glyph: RaftGlyph.list,
+                        onPressed: () {
+                          closeMenu();
+                          openTimeline();
+                        },
+                      ),
+                    if (widget.onViewChannel != null)
+                      RaftMenuItem(
+                        kind: RaftMenuKind.dropdownMenu,
+                        label: raftText(context, 'View in channel'),
+                        glyph: RaftGlyph.mapPin,
+                        onPressed: () {
+                          closeMenu();
+                          if (current) widget.onViewChannel!();
+                        },
+                      ),
+                    if (following == true && w.threadChannelId != null)
+                      RaftMenuItem(
+                        kind: RaftMenuKind.dropdownMenu,
+                        key: const Key('thread-mark-unread'),
+                        label: raftText(context, 'Mark as unread'),
+                        glyph: RaftGlyph.messageSquareDot,
+                        onPressed: () {
+                          final id = w.threadChannelId;
+                          closeMenu();
+                          if (current && id != null) {
+                            unawaited(
+                              w.conversationReads.markOpenThreadUnread(id),
+                            );
+                          }
+                        },
+                      ),
                     RaftMenuItem(
-                      label: raftText(context, 'Following agents'),
-                      onPressed: () {
-                        closeMenu();
-                        if (current) widget.onFollowers!();
-                      },
+                      kind: RaftMenuKind.dropdownMenu,
+                      key: const Key('thread-follow-menu-item'),
+                      label: raftText(
+                        context,
+                        following == true ? 'Unfollow thread' : 'Follow thread',
+                      ),
+                      glyph: following == true
+                          ? RaftGlyph.unfollowThread
+                          : RaftGlyph.followThread,
+                      onPressed: following == null || busy
+                          ? null
+                          : () {
+                              closeMenu();
+                              toggle();
+                            },
                     ),
-                  if (widget.onSearch != null)
-                    RaftMenuItem(
-                      label: raftText(context, 'Search in thread'),
-                      glyph: RaftGlyph.search,
-                      autofocus: true,
-                      onPressed: () {
-                        closeMenu();
-                        if (current) widget.onSearch!();
-                      },
-                    ),
-                  if (outline?.hasReplies(widget.parentMessageId) == true)
-                    RaftMenuItem(
-                      key: const Key('thread-timeline-menu-item'),
-                      label: raftText(context, 'Timeline'),
-                      glyph: RaftGlyph.list,
-                      onPressed: () {
-                        closeMenu();
-                        openTimeline();
-                      },
-                    ),
-                  if (widget.onViewChannel != null)
-                    RaftMenuItem(
-                      label: raftText(context, 'View in channel'),
-                      glyph: RaftGlyph.mapPin,
-                      onPressed: () {
-                        closeMenu();
-                        if (current) widget.onViewChannel!();
-                      },
-                    ),
-                  if (following == true && w.threadChannelId != null)
-                    RaftMenuItem(
-                      key: const Key('thread-mark-unread'),
-                      label: raftText(context, 'Mark as unread'),
-                      glyph: RaftGlyph.messageSquareDot,
-                      onPressed: () {
-                        final id = w.threadChannelId;
-                        closeMenu();
-                        if (current && id != null) {
-                          unawaited(
-                            w.conversationReads.markOpenThreadUnread(id),
-                          );
-                        }
-                      },
-                    ),
-                  RaftMenuItem(
-                    key: const Key('thread-follow-menu-item'),
-                    label: raftText(
-                      context,
-                      following == true ? 'Unfollow thread' : 'Follow thread',
-                    ),
-                    glyph: following == true
-                        ? RaftGlyph.messageCircleOff
-                        : RaftGlyph.messageCirclePlus,
-                    onPressed: following == null || busy
-                        ? null
-                        : () {
-                            closeMenu();
-                            toggle();
-                          },
-                  ),
-                  if (error != null || loadError != null)
-                    RaftMenuItem(
-                      label: raftText(context, 'Retry'),
-                      glyph: RaftGlyph.refreshCw,
-                      onPressed: () {
-                        closeMenu();
-                        retry();
-                      },
-                    ),
-                ],
+                    if (error != null || loadError != null)
+                      RaftMenuItem(
+                        kind: RaftMenuKind.dropdownMenu,
+                        label: raftText(context, 'Retry'),
+                        glyph: RaftGlyph.refreshCw,
+                        onPressed: () {
+                          closeMenu();
+                          retry();
+                        },
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -316,12 +321,13 @@ class _ThreadActionsState extends State<ThreadActions> {
       ? ThreadOutlineAnchor(
           outline: outline,
           onJump: jumpToOutlineRow,
-          builder: (anchor, openTimeline) => TapRegion(
+          builder: (_, openTimeline) => TapRegion(
+            key: menuAnchor,
             groupId: menuGroup,
             child: RaftThreadOverflowAction(
               key: const Key('thread-options'),
               label: raftText(context, 'Thread actions'),
-              onPressed: current ? () => openMenu(anchor, openTimeline) : null,
+              onPressed: current ? () => openMenu(openTimeline) : null,
             ),
           ),
         )
@@ -356,11 +362,10 @@ class _ThreadActionsState extends State<ThreadActions> {
                 RaftButton.text(
                   key: const Key('thread-follow-toggle'),
                   onPressed: following == null || busy ? null : toggle,
-                  icon: // Web ThreadOverflowMenu.tsx:110 MessageCircleOff/MessageCirclePlus.
-                  RaftIcon(
+                  icon: RaftIcon(
                     following == true
-                        ? RaftGlyph.messageCircleOff
-                        : RaftGlyph.messageCirclePlus,
+                        ? RaftGlyph.unfollowThread
+                        : RaftGlyph.followThread,
                     size: 18,
                   ),
                   label: Text(

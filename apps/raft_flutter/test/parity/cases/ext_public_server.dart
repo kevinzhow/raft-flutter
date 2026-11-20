@@ -5,7 +5,7 @@
 // Data: tool/parity-ext/fixtures/public-server.json (fixtures['ext:public-server']); `routeSets[props.routeSet]`
 // answers the API (`$pending` never answers, `$status` fails with that status), like the Web host's page.route.
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart' show addTearDown;
+import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -94,8 +94,10 @@ Widget _page(ParityContext ctx) {
   );
   return Builder(
     builder: (context) =>
-        RaftTokens.of(context).option('messageHeader.timePosition', or: 'x') ==
-            'inline'
+        ctx.props['routeSet'] != 'ps-thread-preview' &&
+            RaftTokens.of(context)
+                    .option('messageHeader.timePosition', or: 'x') ==
+                'inline'
         ? MediaQuery(
             data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
             child: page,
@@ -104,15 +106,28 @@ Widget _page(ParityContext ctx) {
   );
 }
 
-ParityCase _case({String? note}) => ParityCase(
-  widgets: const [
-    'raft_flutter:PublicServerView',
-    'raft_ui:RaftPublicServerLayout',
-  ],
-  notes: 'Extension suite (not official).${note == null ? '' : ' $note'}',
-  settle: const Duration(milliseconds: 600),
-  build: _page,
-);
+ParityCase _case({String? note, bool verifyThreadPreview = false}) =>
+    ParityCase(
+      widgets: const [
+        'raft_flutter:PublicServerView',
+        'raft_ui:RaftPublicServerLayout',
+      ],
+      notes: 'Extension suite (not official).${note == null ? '' : ' $note'}',
+      settle: const Duration(milliseconds: 600),
+      build: _page,
+      interact: verifyThreadPreview
+          ? (tester, ctx) async {
+              final preview = find.byKey(
+                const ValueKey('public-inline-thread-m4'),
+              );
+              expect(preview.hitTestable(), findsOneWidget);
+              final rect = tester.getRect(preview);
+              ctx.captureEvidence['publicThreadPreview'] = {
+                'bounds': [rect.left, rect.top, rect.width, rect.height],
+              };
+            }
+          : null,
+    );
 
 /// surface name -> builder; the platform lists are in [_platforms].
 final Map<String, ParityCase> _surfaces = {
@@ -132,6 +147,7 @@ final Map<String, ParityCase> _surfaces = {
     'page.join-agreement',
   ])
     s: _case(),
+  'page.thread-preview': _case(verifyThreadPreview: true),
 };
 
 /// Surfaces a platform does not run (see build-public-server.py `platforms`).

@@ -6,11 +6,14 @@ import 'package:flutter/services.dart';
 import 'adaptive_workspace.dart'
     show RaftAdaptiveWorkspace, RaftThreadPlacement;
 import 'design_primitives.dart';
+import 'focus_visible.dart';
 import 'channel_header.dart' show raftConversationHeaderToggle;
 import 'conversation_surface.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart';
+import 'recipe_surface.dart';
+import 'recipes/panel_header.g.dart' as recipes;
 import 'side_panel_frame.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
@@ -162,14 +165,13 @@ class RaftThreadHeader extends StatelessWidget {
     final showClose = (showCloseOverride ?? (!folded && recipe.showClose));
     final toggleFocus = allowFocusMode ? placement?.toggleFocus : null;
     final focused = placement?.focused ?? false;
-    final inline =
-        !stackMeta && !grows && (viewportWidth ?? viewport.width) >= 768;
+    final width = viewportWidth ?? viewport.width;
+    final inline = !stackMeta && !grows && width >= 768;
     final titleStyle = tokens.scale(tokens.typeSlot('headline'));
-    final metaStyle = tokens.scale(
-      tokens.typeSlot('mono-meta'),
-      mono: true,
-      color: tokens.ui.foregroundHint,
-    );
+    final metaStyle = recipes.RaftPanelHeaderRecipe.resolve(
+      tokens: tokens.recipeTokens,
+      states: tokens.recipeStates(responsive: true),
+    ).meta.text(tokens.recipeTokens);
 
     final title = interactiveTitle && onJumpToStart != null
         ? RaftTooltip(
@@ -230,6 +232,8 @@ class RaftThreadHeader extends StatelessWidget {
           : inline
           ? Row(
               spacing: 8,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 title,
                 Flexible(child: meta),
@@ -333,7 +337,7 @@ class RaftThreadSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final muted = t.muted;
+    final muted = t.ui.foregroundHint;
     final hint = raftText(
       context,
       task ? 'Search this task' : 'Search this thread',
@@ -357,20 +361,21 @@ class RaftThreadSearchBar extends StatelessWidget {
         children: [
           Expanded(
             child: ListenableBuilder(
-              listenable: focusNode,
+              listenable: Listenable.merge([
+                focusNode,
+                RaftFocusVisible.shared,
+              ]),
               builder: (context, _) {
-                final focused = focusNode.hasFocus;
+                final focused =
+                    focusNode.hasFocus && RaftFocusVisible.shared.keyboard;
                 return Container(
                   constraints: const BoxConstraints(minHeight: 32),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
-
                   decoration: BoxDecoration(
-                    color: t.panel,
-                    border: Border.all(
-                      color: t.colors['line-field']!,
-                      width: 1.5,
-                    ),
-                    boxShadow: focused ? t.themeShadows.sm.outer : const [],
+                    color: t.colors['layer-card'],
+                    borderRadius: BorderRadius.circular(t.radius),
+                    border: Border.all(color: t.ui.lineField, width: 1.5),
+                    boxShadow: focused ? t.focusShadows : const [],
                   ),
                   child: Row(
                     spacing: 8,

@@ -34,6 +34,7 @@ the fixture instant (fixtureData locale.nowEpochMillis = 2026-06-19T12:30Z, i.e.
 import json
 import pathlib
 import sys
+from datetime import datetime, timedelta, timezone
 
 here = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(here))
@@ -107,6 +108,31 @@ replies = [
     msg('msg-thread-r4', THREAD, OWNER, 'Yes, it matches the Web panel padding.', '2026-06-22T03:05:00.000Z'),
 ]
 thread_summary = summary(THREAD, 4, '2026-06-22T03:05:00.000Z', [OWNER['id'], CINDY['id'], DESIGNER['id']])
+
+# Deterministic counterpart of the reviewed dense thread. Three interior
+# matches leave enough history on both sides to distinguish center from top.
+Seq.n = 0
+dense_start = datetime(2026, 6, 19, 4, 37, tzinfo=timezone.utc)
+dense_parent = msg(PARENT, CH, OWNER, 'Thread timeline acceptance parent',
+                   dense_start.isoformat(), threadId=THREAD)
+dense = [
+    msg(f'outline-reply-{i:03}', THREAD, [OWNER, DESIGNER][(i // 5) % 2],
+        f'Outline reply {i:03}' + (' cobalt-needle' if i in (17, 82, 175) else ''),
+        (dense_start + timedelta(minutes=i)).isoformat())
+    for i in range(1, 201)
+]
+dense_summary = {
+    **summary(THREAD, len(dense), dense[-1]['createdAt'], [OWNER['id'], DESIGNER['id']]),
+    'followed': True,
+}
+
+
+def outline_item(row):
+    return {key: row[key] for key in ('id', 'seq', 'senderId', 'senderName', 'createdAt')} | {
+        'preview': row['content'], 'attachmentCount': 0,
+    }
+
+
 Seq.n = 0
 
 # ---- timeline content -----------------------------------------------------
@@ -158,6 +184,16 @@ THREAD_ROUTE = f'GET /messages/channel/{THREAD}'
 CONTEXT_ROUTE = f'GET /messages/context/{PARENT}'
 
 route_sets = {
+    'thread-dense': {
+        THREAD_ROUTE: page(dense),
+        CONTEXT_ROUTE: {'messages': [dense_parent], 'hasMore': False, 'hasNewer': False},
+        CHANNEL_ROUTE: page([dense_parent], summaries={PARENT: dense_summary}),
+        f'GET /messages/channel/{THREAD}/human-outline': {
+            'items': [outline_item(row) for row in reversed([dense_parent, *dense])], 'hasMore': False,
+        },
+        'GET /channels/threads/followed': {'threads': [{**dense_summary,
+            'parentChannelId': CH, 'parentMessageId': PARENT}]},
+    },
     'thread': {
         THREAD_ROUTE: page(replies),
         CONTEXT_ROUTE: {'messages': [parent], 'hasMore': False, 'hasNewer': False},
@@ -201,6 +237,7 @@ fixture = {
     'dms': [],
     'thread': {'parentChannelId': CH, 'parentMessageId': PARENT, 'threadChannelId': THREAD},
     'routes': {
+        f'GET /tasks/channel/{CH}': {'tasks': []},
         'GET /channels/threads/followers': {'threads': []},
         'GET /channels/threads/followed': {'threads': []},
     },
@@ -211,11 +248,14 @@ cases = []
 
 
 def add(scene, platform, state, title, *, route_set, props=None, win=(0, 120), interactions=(), android=(),
-        notes=None, surface='thread'):
+        notes=None, surface='thread', touch=False, mounted=None):
     """win = (y, height) in column coordinates; y < 0 counts from the bottom."""
     viewport = DESKTOP if platform == 'desktop' else MOBILE
     for suffix, theme in THEMES.items():
         cid = f'{PREFIX}{scene}.{platform}.{state}.{suffix}'
+        selector = f"[data-visual-case='{cid}']"
+        if mounted:
+            selector = f'body:has({mounted}) {selector}'
         c = {
             'id': cid,
             'title': f'{title} {platform} ({theme})',
@@ -223,7 +263,7 @@ def add(scene, platform, state, title, *, route_set, props=None, win=(0, 120), i
             'surface': f'thread-ext-{scene}',
             'category': 'extension/thread',
             'suite': 'raft-flutter-extension',
-            'viewport': viewport,
+            'viewport': {**viewport, **({'touch': True} if touch else {})},
             'theme': theme,
             'locale': 'en',
             'variants': [{'id': 'default', 'name': 'Default', 'props': {
@@ -231,7 +271,7 @@ def add(scene, platform, state, title, *, route_set, props=None, win=(0, 120), i
                 'platform': 'desktop' if platform == 'desktop' else 'mobile',
                 'routeSet': f'thext-{route_set}', 'winY': win[0], 'winH': win[1], 'surface': surface,
                 **(props or {})}}],
-            'capture': {'selector': f"[data-visual-case='{cid}']", 'crop': 'element', 'contract': 'component-bounds',
+            'capture': {'selector': selector, 'crop': 'element', 'contract': 'component-bounds',
                         'interactions': list(interactions), 'androidInteractions': list(android)},
             'reactPathHint': 'packages/web/src/components/message/ThreadPanel.tsx + ChatPanel.tsx',
             'androidCaseHint': f"apps/raft_flutter/test/parity/cases/ext_thread.dart '{scene}.{platform}.{state}'",
@@ -287,6 +327,43 @@ for platform, win in (('desktop', (0, 240)), ('mobile', (0, 240))):
         props={'surface': 'thread'}, win=win,
         interactions=[{'type': 'click', 'target': '[data-testid="thread-overflow-trigger"]'}],
         android=[{'type': 'tap', 'key': 'thread-options'}])
+
+
+def click(testid):
+    return {'type': 'click', 'target': f'[data-testid="{testid}"]'}
+
+
+def tap(key):
+    return {'type': 'tap', 'key': key}
+
+
+for platform, height in (('desktop', 756), ('mobile', 844)):
+    dense_props = {'surface': 'thread', 'longChannelName': 'wp-thread-acceptance-1119', 'extFixture': 'thread'}
+    touch = platform == 'mobile'
+    menu = [click('thread-overflow-trigger')]
+    menu_flutter = [tap('thread-options')]
+    add('thread', platform, 'dense-header', 'Dense thread header', route_set='thread-dense',
+        props=dense_props, win=(0, 56 if touch else 44), touch=touch,
+        mounted='[data-testid="thread-header-reply-count"]')
+    add('thread', platform, 'dense-menu', 'Followed thread menu', route_set='thread-dense',
+        props=dense_props, win=(0, 256), touch=touch, interactions=menu, android=menu_flutter,
+        mounted='[data-testid="thread-overflow-follow-action"]')
+    add('thread', platform, 'dense-outline', 'Timeline from the visible parent', route_set='thread-dense',
+        props=dense_props, win=(0, height), touch=touch,
+        interactions=[click('thread-scroll-to-top'), {'type': 'wait', 'ms': 350},
+                      *menu, click('thread-overflow-timeline')],
+        android=[{'type': 'tapText', 'text': 'Thread'}, {'type': 'wait', 'ms': 350},
+                 *menu_flutter, tap('thread-timeline-menu-item')],
+        mounted=f'[data-testid="conversation-outline-{"sheet" if touch else "popover"}"]')
+    add('thread', platform, 'dense-search', 'In-thread search, centered match', route_set='thread-dense',
+        props=dense_props, win=(0, height), touch=touch,
+        interactions=[*menu, click('thread-overflow-search'),
+                      {'type': 'fill', 'target': '[data-testid="thread-search-input"]', 'value': 'cobalt-needle'},
+                      {'type': 'wait', 'ms': 700}],
+        android=[*menu_flutter, {'type': 'tapText', 'text': 'Search in thread'},
+                 {'type': 'enter', 'key': 'thread-search-input', 'value': 'cobalt-needle'},
+                 {'type': 'wait', 'ms': 700}],
+        mounted='[data-testid="thread-search-fragment-highlight"]')
 
 manifest_out = manifest_path()
 manifest = json.loads(manifest_out.read_text())

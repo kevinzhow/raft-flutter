@@ -67,10 +67,7 @@ void main() {
         } else {
           expect(t.widget<RaftMenuItem>(entry).onPressed, isNotNull);
           expect(t.widget<RaftMenuItem>(entry).label, 'Follow thread');
-          expect(
-            t.widget<RaftMenuItem>(entry).glyph,
-            RaftGlyph.messageCirclePlus,
-          );
+          expect(t.widget<RaftMenuItem>(entry).glyph, RaftGlyph.followThread);
           await t.tap(find.byKey(const Key('thread-options')));
           await t.pumpAndSettle();
           expect(entry, findsNothing);

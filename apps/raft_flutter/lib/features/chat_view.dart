@@ -22,10 +22,10 @@ import 'history_reading_anchor.dart';
 import 'thread_unread_jump.dart';
 import 'message_history_gaps.dart';
 import 'thread_outline_viewport.dart';
+import 'thread_outline_scope.dart';
 import '../data/thread_start_jump.dart';
 import 'thread_viewport_handle.dart';
 import '../data/message_history_memory.dart';
-import '../data/message_history_positions.dart';
 import 'row_extents.dart';
 
 import '../data/raft_location.dart';
@@ -424,6 +424,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || searchActive != id) return;
       recenter(first: target.id, alignment: alignOn(id));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && searchActive == id) timelineScrolled();
+      });
     });
   }
 
@@ -825,6 +828,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           first: adapter.messages.first.id,
           alignment: RaftTimelineAlignment.start,
         );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && presentationActive) saveReadingAnchor();
+        });
       }
     }),
   );
@@ -847,7 +853,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final sampledId = widget.thread ? w.threadChannelId : w.channel?.id;
     MessageHistoryMemory.sample(w, this, () {
       if (mounted && sampledId == scope) saveReadingAnchor();
-    });
+    }, sampleWithoutStorage: widget.thread);
     // MessageTimeline.tsx AT_BOTTOM_THRESHOLD.
     final next = distanceFromLatest(position) <= 100;
     if (next != atBottom || (next && newMessageCount != 0)) {
@@ -925,10 +931,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   /// topmost visible row (by id, not pixels, which reflow) so the new one
   /// resumes there. Only readers above the latest end need it.
   void saveReadingAnchor() {
-    final id = widget.thread ? w.threadChannelId : w.channel?.id;
     if (!mounted ||
-        id == null ||
-        scope != id ||
         adapterWindow !=
             (widget.thread
                 ? _messages.threadGeneration
@@ -937,17 +940,17 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         viewport.positions.length != 1) {
       return;
     }
-    // A short restored context can end inside the viewport while newer rows
-    // remain on disk. Only the conversation's latest end clears its anchor.
-    if (atBottom &&
-        !(widget.thread
-            ? _messages.threadWindow?.hasNewer == true
-            : _messages.state.hasNewer)) {
-      w.messageWindows.clearReadingAnchor(id);
-      MessageHistoryPositions.save(w, id, null);
-    } else if (captureTimelineReadingAnchor(context) case final anchor?) {
-      _messages.saveReadingAnchor(id, anchor);
-    }
+    saveTimelineReadingAnchor(
+      w,
+      context,
+      scope: scope,
+      thread: widget.thread,
+      atBottom: atBottom,
+      replySequence: (key) {
+        final index = windowIndexOf(key);
+        return index == null ? null : source(adapter.messages[index]).seq;
+      },
+    );
   }
 
   @override
@@ -1348,6 +1351,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         if (bottom != atBottom) reportBottom(bottom);
         atBottom = bottom;
       });
+      if (widget.thread) saveReadingAnchor();
       if (preserving) return;
       highlightTimer?.cancel();
       if (target != null && _messages.state.highlightedMessageId == target) {
@@ -1791,7 +1795,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
 
     final unread = int.tryParse('${summary['unreadCount']}') ?? 0;
     final draft = w.drafts['thread:${parent.id}']?.trim().isNotEmpty == true;
-    final countLabel = raftFormat(context, '{count} replies', {'count': count});
+    final countLabel = raftFormat(
+      context,
+      count == 1 ? '{count} reply' : '{count} replies',
+      {'count': count},
+    );
     final unreadLabel = unread > 0
         ? ' · ${raftFormat(context, '{count} new', {'count': unread})}'
         : '';
@@ -2877,29 +2885,16 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       : null;
 
   Widget threadTopSliver({bool loading = false, bool showSummary = true}) =>
-      RaftThreadTimelineTopSliver(
+      buildThreadTimelineTop(
+        context,
+        w,
+        loading: loading,
         showSummary: showSummary,
         parentSlot: widget.threadParentSlot,
         parent: widget.hideThreadParent || w.presentedThreadParent == null
             ? null
             : tile(w.presentedThreadParent!, parent: true),
-        hasMore: loading || w.threadHasMore,
-        historyLimited: _messages.state.threadHistoryLimited,
-        loadingOlder: loading || _messages.state.loadingOlder,
-        loadingOlderLabel: raftText(context, 'Loading older replies...'),
-        historyLimitedLabel: raftText(
-          context,
-          'Older replies are limited by the current plan',
-        ),
-        historyLimitedChild: RaftHistoryPaywallView(
-          controller: w,
-          thread: true,
-          recentDivider: rows.isNotEmpty,
-        ),
-        beginningLabel: raftText(context, 'Beginning of replies'),
-        replyCountLabel: raftFormat(context, '{count} replies', {
-          'count': rows.length,
-        }),
+        replyCount: rows.length,
       );
 
   // Index the displayed window once, avoiding whole-channel scans per row.

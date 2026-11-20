@@ -2,8 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
 class ThreadOutlineTestWorkspace extends WorkspaceController {
-  ThreadOutlineTestWorkspace(super.client);
+  ThreadOutlineTestWorkspace(super.client, {this.replyCount = 4});
 
+  final int replyCount;
   final requests = <String>[];
   final jumps = <String>[];
 
@@ -22,7 +23,7 @@ class ThreadOutlineTestWorkspace extends WorkspaceController {
       return {
         'hasMore': false,
         'items': [
-          for (var i = 4; i >= 1; i--)
+          for (var i = replyCount; i >= 1; i--)
             {
               'id': i == 1 ? 'old-reply' : 'reply-$i',
               'seq': i + 1,

@@ -5261,6 +5261,90 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:attachmentGallery@66268/FUNCTION:view@67422": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:buildTimeline@113189/FUNCTION:timelineFor@116931": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:senderAvatar@78846/FUNCTION:avatar@81321": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/public_server_view.dart#local-function:CLASS:_PublicServerViewState@7983/METHOD:row@27427/FUNCTION:text@28665": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#local-function:CLASS:_ThreadOutlineListState@4361/METHOD:build@7472/FUNCTION:<anonymous>@8062/FUNCTION:row@8174": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Timeline row composition binds the accepted outline projection to the visible row."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_viewport.dart#function:buildThreadTimelineTop": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread timeline parent and history chrome use the existing thread top sliver."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#function:_searchMarkSpan": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Message content projects the published message search match into its selectable span."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13239/METHOD:build@18059/FUNCTION:anchoredOther@21200": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13239/METHOD:build@18059/FUNCTION:compactProse@20723": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13239/METHOD:build@18059/FUNCTION:selectable@21085": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36286/METHOD:build@36868/FUNCTION:failed@37024": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@55114/METHOD:build@55610/FUNCTION:<anonymous>@55719/FUNCTION:control@56956": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/presentation.dart#local-function:CLASS:RaftPresentedRoute@4833/METHOD:_buildSheet@11257/FUNCTION:surface@11555": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS2 overlay family",
+        "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/sheet.dart#method:RaftSheetMetrics.snapOverlayOpacity": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Drawer detents read the published snap-points overlay opacity."
+      },
       "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkChip": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -64800,6 +64884,10 @@
       "iconInlineEnd": "has:data-icon=inline-end"
     },
     "stateUses": {
+      "packages/raft_ui/lib/src/thread_composition.dart#method:RaftThreadHeader.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "WP-THREAD"
+      },
       "packages/raft_ui/lib/src/message_row_recipe.dart#method:RaftMessageRowRecipe.modelLabelStyle|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "owner": "design-system alignment",
         "applicability": "required",

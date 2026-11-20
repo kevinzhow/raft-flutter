@@ -329,6 +329,58 @@ void main() {
     );
   });
 
+  testWidgets('public inline preview uses singular copy and account clock', (
+    t,
+  ) async {
+    final routes = _routes();
+    routes['GET $_base/channels/c1/messages'] = (_, _) => {
+      'messages': [
+        {
+          ..._message(
+            'm2',
+            'Artin',
+            'Feedback on the rail?',
+            thread: 't1',
+            replies: 1,
+          ),
+          'latestReplies': [
+            {
+              'messageId': 'r1',
+              'senderType': 'user',
+              'senderName': 'Jun',
+              'preview': 'Looks good to me',
+              'createdAt': '2026-06-18T09:12:00.000Z',
+            },
+          ],
+        },
+      ],
+    };
+    final client = _PublicClient(
+      routes,
+      user: {
+        'id': 'u1',
+        'preferredTimezone': 'Asia/Kathmandu',
+        'preferredTimeFormat': '12h',
+      },
+    );
+    await _mount(
+      t,
+      client,
+      account: PublicServerAccount(servers: const [], onSelect: (_) {}),
+    );
+    final preview = find.byKey(const ValueKey('public-inline-thread-m2'));
+    final surface = t.widget<RaftInlineThreadSurface>(preview);
+    expect(surface.semanticLabel, '1 reply');
+    expect((surface.summary as Text).data, '1 reply');
+    expect(surface.replies.single.timestamp, contains('02:57 PM'));
+    await t.tap(find.text('Looks good to me'));
+    await t.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('public-server-thread-panel')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('the rail logo explains that signing in is needed', (t) async {
     await _mount(t, _PublicClient(_routes()));
     await t.tap(find.byKey(const Key('rail-workspace')));

@@ -18,6 +18,8 @@ abstract final class RaftThreadOutlineMetrics {
   static const headerHeight = 44.0;
   static const listPadding = EdgeInsets.fromLTRB(6, 4, 6, 8);
   static const titlePadding = EdgeInsets.symmetric(horizontal: 16);
+  static const metadataPadding = EdgeInsets.only(top: 2);
+  static const metadataGap = 6.0;
   static const railRight = 8.0;
   static const mediumRow = 44.0;
   static const compactRow = 30.0;

@@ -27,13 +27,14 @@ void main() {
           sessionStore: MemorySessionStore(),
         )..user = RaftRecord({'id': 'u'});
         client.selectServer('s');
-        final w = ThreadOutlineTestWorkspace(client)
+        final w = ThreadOutlineTestWorkspace(client, replyCount: 80)
           ..server = RaftRecord({'id': 's', 'role': 'owner'});
         w.messageDomain.state.threadIdentity = const WorkspaceThreadIdentity(
           parentChannelId: 'channel',
           parentMessageId: 'parent',
         );
         w.threadChannelId = 'replies';
+        w.messageDomain.state.highlightedMessageId = 'reply-5';
         w.messageDomain.state.threadVisit = ThreadVisit.request(
           w.messageDomain,
           'channel',
@@ -69,14 +70,34 @@ void main() {
         );
         await t.tap(find.byKey(const Key('thread-timeline-menu-item')));
         await t.pumpAndSettle();
-        expect(find.text('An older outline reply'), findsOneWidget);
+        final current = find.byKey(
+          const ValueKey('thread-outline-row-reply-5'),
+        );
+        expect(current.hitTestable(), findsOneWidget);
+        final row = find.descendant(
+          of: current,
+          matching: find.byType(RaftInteractive),
+        );
+        expect(t.widget<RaftInteractive>(row).selected, isTrue);
+        final fill = RaftTokens.of(t.element(row)).colors['brand-soft'];
+        expect(
+          find.descendant(
+            of: row,
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Container &&
+                  (widget.decoration as BoxDecoration?)?.color == fill,
+            ),
+          ),
+          findsOneWidget,
+        );
         final touch = platform == TargetPlatform.android;
         expect(find.byType(RaftSheet), touch ? findsOneWidget : findsNothing);
-        await t.tap(find.text('An older outline reply'));
+        await t.tap(find.text('Outline reply 4'));
         await t.pumpAndSettle();
 
-        expect(w.jumps, ['old-reply']);
-        expect(find.text('An older outline reply'), findsNothing);
+        expect(w.jumps, ['reply-4']);
+        expect(current, findsNothing);
         expect(
           w.requests.where((path) => path.endsWith('/human-outline')),
           hasLength(1),

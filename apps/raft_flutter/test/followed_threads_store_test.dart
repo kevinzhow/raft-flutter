@@ -516,7 +516,7 @@ void main() {
     await _pumpThreadActions(t, w);
     await _openThreadMenu(t);
     expect(_followItem(t).label, 'Unfollow thread');
-    expect(_followItem(t).glyph, RaftGlyph.messageCircleOff);
+    expect(_followItem(t).glyph, RaftGlyph.unfollowThread);
     expect(_followItem(t).onPressed, isNotNull);
     expect(find.text('Loading thread settings…'), findsNothing);
     expect(a.calls.length, before);
