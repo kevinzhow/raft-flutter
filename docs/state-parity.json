@@ -57419,6 +57419,38 @@
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5881/METHOD:settingsRailAction@105773/FUNCTION:action@105807": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@46960/METHOD:build@47420/FUNCTION:withoutRailInset@47658": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Projects safe-area insets for the mounted keyboard layout beside a rail."
+      },
+      "packages/raft_ui/lib/src/server_switcher_top_bar.dart#local-function:CLASS:_TopBarServerTriggerState@864/METHOD:build@8949/FUNCTION:<anonymous>@9058/FUNCTION:measure@10018": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Measures names for the mounted workspace switcher and its quick-switch capacity."
+      },
+      "packages/raft_ui/lib/src/workspace_shell.dart#local-function:CLASS:RaftWorkspaceRailAction@4573/METHOD:build@5355/FUNCTION:iconFor@5586": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Supplies the mounted rail action glyph to the shared icon and attention layers."
       }
     },
     "entries": {
@@ -66976,6 +67008,26 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#method:RaftWorkspaceRail.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "Shared desktop chrome",
+        "reason": "The mounted pointer rail below the top bar uses the responsive AppRail navigation padding and row gap."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#method:RaftWorkspaceRail.build|state:first-child": {
+        "applicability": "required",
+        "owner": "Shared desktop chrome",
+        "reason": "With the workspace switcher in the top bar, navigation receives the AppRail first-child state."
+      },
+      "packages/raft_ui/lib/src/workspace_shell.dart#method:RaftWorkspaceRailFooter.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "Shared desktop chrome",
+        "reason": "The mounted pointer rail uses the responsive AppRail footer gap and bottom inset."
+      },
+      "packages/raft_ui/lib/src/workspace_top_bar.dart#method:RaftWorkspaceSearchTrigger.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "Shared desktop chrome",
+        "reason": "The shared SearchTrigger takes the desktop body type scale at pointer widths of at least 768."
       }
     },
     "evidence": {},

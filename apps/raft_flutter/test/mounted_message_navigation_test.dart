@@ -78,6 +78,7 @@ Future<void> mountPage(
   double width = 1440,
   double height = 900,
   bool browserHost = kIsWeb,
+  TransitionBuilder? builder,
 }) async {
   tester.view.physicalSize = Size(width, height);
   tester.view.devicePixelRatio = 1;
@@ -85,6 +86,7 @@ Future<void> mountPage(
   await tester.pumpWidget(
     MaterialApp(
       theme: raftTheme(dark: dark),
+      builder: builder,
       home: withAppServices(
         WorkspaceHostScope(
           browser: browserHost,

@@ -292,9 +292,17 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
     final t = RaftTokens.of(context);
     return LayoutBuilder(
       builder: (context, box) {
+        // Button padding and border, avatar, gaps, chevron and optional globe.
+        final fullButtonChrome =
+            22 +
+            RaftAvatarSize.sm.extent +
+            8 +
+            4 +
+            16 +
+            (widget.publicPageLive ? 21 : 0);
         // At minimum window width, OS chrome and History can squeeze the
         // switcher below the avatar and chevron's combined box.
-        final showFullButton = t.desktop && box.maxWidth >= 78;
+        final showFullButton = t.desktop && box.maxWidth >= fullButtonChrome;
         final currentAvatarSize = showFullButton
             ? RaftAvatarSize.sm
             : RaftAvatarSize.xs;
@@ -327,7 +335,10 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
         // reserves its pl8; stripFreePx subtracts lead8, adds gap4, reserves line5.
         final nameSlot = math.min(120.0, widest) + 46;
         final free = math.max(0.0, box.maxWidth - nameSlot - 8 - 8 + 4 - 5);
-        final fit = math.min(widget.rows.length, (free / 36).floor());
+        final stripStride = t.desktop
+            ? RaftLayoutMetrics.desktopControl + RaftSpace.x1
+            : 36.0;
+        final fit = math.min(widget.rows.length, (free / stripStride).floor());
         final n = fit >= 2 ? fit : 0;
         final current = widget.rows.indexWhere((row) => row.current);
         final outside = n > 0 && current >= n;
@@ -396,6 +407,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
           controller: dragPortal,
           overlayChildBuilder: floatingAvatar,
           child: Row(
+            mainAxisSize: t.desktop ? MainAxisSize.min : MainAxisSize.max,
             children: [
               SizedBox(
                 width: n > 0
@@ -409,15 +421,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                                 textStyle: singleNameStyle,
                               ),
                             ) +
-                            (showFullButton
-                                // Button padding/border, avatar, gaps and chevron.
-                                ? 22 +
-                                      currentAvatarSize.extent +
-                                      8 +
-                                      4 +
-                                      16 +
-                                      (widget.publicPageLive ? 21 : 0)
-                                : 49),
+                            (showFullButton ? fullButtonChrome : 49),
                       ),
                 child: Align(
                   alignment: Alignment.centerLeft,
@@ -485,7 +489,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                 label: announcement,
                 child: const SizedBox.shrink(),
               ),
-              const Spacer(),
+              if (!t.desktop) const Spacer(),
             ],
           ),
         );

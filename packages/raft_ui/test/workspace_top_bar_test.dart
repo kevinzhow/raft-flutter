@@ -62,12 +62,16 @@ void main() {
           );
           await t.pumpAndSettle();
           final search = find.byKey(const Key('topbar-search'));
-          expect(
-            t.getRect(search),
-            platform == TargetPlatform.linux
-                ? const Rect.fromLTWH(248, 4.5, 360, 34)
-                : const Rect.fromLTWH(248, 5.5, 360, 36),
-          );
+          final searchRect = t.getRect(search);
+          if (platform == TargetPlatform.linux) {
+            expect(searchRect.top, 4.5);
+            expect(searchRect.height, 34);
+            expect(searchRect.center.dx, 428);
+            // The pointer field grows into the space left by both avatars.
+            expect(searchRect.width, greaterThan(360));
+          } else {
+            expect(searchRect, const Rect.fromLTWH(248, 5.5, 360, 36));
+          }
           final leading = platform == TargetPlatform.linux ? 7.0 : 8.0;
           expect(
             t.getRect(find.byKey(const Key('topbar-workspace'))).left,

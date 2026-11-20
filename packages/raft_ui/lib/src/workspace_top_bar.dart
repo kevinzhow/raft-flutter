@@ -11,6 +11,7 @@ import 'kbd.dart';
 import 'recipe_surface.dart';
 import 'recipes/search_trigger.g.dart';
 import 'shortcut_platform.dart';
+import 'space.dart';
 import 'status_bar.dart';
 import 'tap_slop.dart';
 import 'text_scaling.dart';
@@ -154,12 +155,8 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
   });
 
   /// The inner edge of either action region is 8px from the search field.
-  static const double _innerGap = 8;
+  static const double _innerGap = RaftSpace.x2;
   static const double _searchMaxWidth = 520;
-  // Reserve room for the workspace button (name capped at 160px, avatar
-  // and chevron, and a public-page globe when present). At narrow widths
-  // the button and quick switch strip already adapt to the base field width.
-  static const double _workspaceRoom = 258;
 
   final bool elasticSearch;
   final double leadingPadding;
@@ -175,15 +172,35 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
       math.min(360.0, size.width),
       _searchMaxWidth,
     );
-    final baseSide = (size.width - searchBase) / 2;
-    final leadingRoom = leadingPadding + _workspaceRoom + nav.width + _innerGap;
-    final searchSide = elasticSearch
+    final baseSide = math
+        .max((size.width - searchBase) / 2, right.width)
+        .clamp(0.0, size.width / 2);
+    final navigationGap = elasticSearch && hasNavigation ? _innerGap : 0.0;
+    final leadingInsets =
+        leadingPadding + nav.width + _innerGap + navigationGap;
+    // Lay out the switcher at the base field width, so search growth cannot
+    // reduce the number of avatars it chooses to show.
+    final workspaceWidth = math.max(0.0, baseSide - leadingInsets);
+    final left = layoutChild(
+      _TopBarSlot.leading,
+      BoxConstraints(
+        minWidth: elasticSearch ? 0 : workspaceWidth,
+        maxWidth: workspaceWidth,
+        maxHeight: size.height,
+      ),
+    );
+    final leadingDemand = leadingInsets + left.width;
+    final remaining = baseSide - math.max(leadingDemand, right.width);
+    final growth = elasticSearch
         ? math.max(
-            (size.width - _searchMaxWidth) / 2,
-            math.min(baseSide, leadingRoom),
+            0.0,
+            math.min(
+              remaining.floorToDouble(),
+              (_searchMaxWidth - searchBase) / 2,
+            ),
           )
-        : baseSide;
-    final side = math.max(searchSide, right.width).clamp(0.0, size.width / 2);
+        : 0.0;
+    final side = baseSide - growth;
     final search = layoutChild(
       _TopBarSlot.search,
       BoxConstraints(
@@ -191,15 +208,6 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
         maxWidth: size.width - 2 * side,
         maxHeight: size.height,
       ),
-    );
-    final workspaceWidth = math.max(
-      0.0,
-      side - leadingPadding - nav.width - _innerGap,
-    );
-    final left = layoutChild(
-      _TopBarSlot.leading,
-      BoxConstraints.tightFor(width: workspaceWidth)
-          .copyWith(maxHeight: size.height),
     );
     positionChild(
       _TopBarSlot.leading,

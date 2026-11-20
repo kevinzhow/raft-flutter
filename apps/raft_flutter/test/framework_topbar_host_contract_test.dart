@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/platform/desktop_title_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -27,6 +28,69 @@ void main() {
       expect(bounds('rail-tasks').top, 130);
       expect(bounds('rail-help').top, 818);
       expect(bounds('rail-settings').top, 858);
+    } finally {
+      await t.pumpWidget(const SizedBox.shrink());
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
+  testWidgets('elastic search leaves room for every mounted workspace avatar', (
+    t,
+  ) async {
+    final (w, _) = await pageFixture(t);
+    const longName = 'Ein sehr langer Arbeitsbereich für Zusammenarbeit';
+    final current = RaftRecord({...w.server!.json, 'name': longName});
+    w
+      ..server = current
+      ..servers = [
+        current,
+        for (var i = 1; i <= 7; i++)
+          RaftRecord({'id': 'extra-$i', 'name': '$longName $i'}),
+      ];
+    await mountPage(t, w, false, width: 1280);
+
+    Finder avatar(int index) =>
+        find.byKey(ValueKey('topbar-workspace-extra-$index'));
+    try {
+      for (final (width, visibleExtras) in [
+        (1280.0, 2),
+        (1150.0, 1),
+        (1040.0, 0),
+      ]) {
+        t.view.physicalSize = Size(width, 900);
+        await t.pumpAndSettle();
+        final search = t.getRect(find.byKey(const Key('topbar-search')));
+        final back = t.getRect(find.byKey(const Key('topbar-back')));
+        final history = t.getRect(find.byKey(const Key('topbar-history')));
+        expect(search.center.dx, width / 2);
+        expect(history.right, search.left - 8);
+        if (visibleExtras > 0) {
+          expect(avatar(visibleExtras), findsOneWidget);
+          expect(t.getRect(avatar(visibleExtras)).right, lessThan(back.left));
+        }
+        expect(avatar(visibleExtras + 1), findsNothing);
+      }
+      expect(t.takeException(), isNull);
+      await mountPage(
+        t,
+        w,
+        false,
+        width: 1040,
+        builder: (_, child) => DesktopTitleBarScope(
+          leadingInset: 88,
+          trailingInset: 138,
+          child: child!,
+        ),
+      );
+      final workspace = t.getRect(find.byKey(const Key('topbar-workspace')));
+      final back = t.getRect(find.byKey(const Key('topbar-back')));
+      final search = t.getRect(find.byKey(const Key('topbar-search')));
+      final bell = t.getRect(find.byKey(const Key('topbar-notifications')));
+      expect(workspace.left, greaterThanOrEqualTo(88));
+      expect(workspace.right, lessThan(back.left));
+      expect(search.center.dx, 520);
+      expect(search.right, lessThan(bell.left));
+      expect(bell.right, lessThanOrEqualTo(1040 - 138));
+      expect(t.takeException(), isNull);
     } finally {
       await t.pumpWidget(const SizedBox.shrink());
     }

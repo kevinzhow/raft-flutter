@@ -149,7 +149,8 @@ class WorkspaceHistoryControls extends StatelessWidget {
     final back = visit(history.index - 1), forward = visit(history.index + 1);
     return Row(
       mainAxisSize: MainAxisSize.min,
-      spacing: RaftTokens.of(context).desktop ? 2 : 0,
+      // AppTopBar places the history controls in a gap-0.5 group.
+      spacing: RaftTokens.of(context).desktop ? RaftSpace.half : 0,
       children: [
         if (!compact) ...[
           RaftIconButton(
