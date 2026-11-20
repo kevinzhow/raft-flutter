@@ -119,7 +119,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
               ),
               alignment: Alignment.centerRight,
               child: _StripButton(
-                variant: RaftButtonRecipeVariant.accent,
+                variant: RaftButtonRecipeVariant.outline,
                 glyph: RaftGlyph.userPlus,
                 label: raftText(context, 'Add All'),
                 onPressed: addable.any(executing.containsKey)
@@ -250,7 +250,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
           done('Added')
         else if (action.canAdd && local == null)
           _StripButton(
-            variant: RaftButtonRecipeVariant.accent,
+            variant: RaftButtonRecipeVariant.outline,
             glyph: RaftGlyph.userPlus,
             label: raftText(context, 'Add'),
             onPressed: busy
@@ -279,7 +279,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
         ],
         const SizedBox(width: 6),
         _StripButton(
-          variant: RaftButtonRecipeVariant.muted,
+          variant: RaftButtonRecipeVariant.ghost,
           label: raftText(context, 'Ignore'),
           onPressed: () => onDismiss(action.resolutionId),
         ),
@@ -305,8 +305,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
   }
 }
 
-/// raft-ui `Button size="sm"` resolved from the generated recipe (h-7,
-/// px-2.5, 12/16 bold, 14px icon, gap 5, hover lift + larger shadow).
+/// The strip uses raft-ui's standard medium buttons.
 class _StripButton extends StatelessWidget {
   const _StripButton({
     required this.variant,
@@ -324,7 +323,7 @@ class _StripButton extends StatelessWidget {
     label: label,
     glyph: glyph,
     variant: variant,
-    size: RaftButtonRecipeSize.sm,
+    size: RaftButtonRecipeSize.md,
     disabled: onPressed == null,
     onPressed: onPressed,
   );

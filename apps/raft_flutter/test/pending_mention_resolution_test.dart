@@ -132,6 +132,34 @@ void main() {
     expect(find.text('@bob'), findsOneWidget);
   });
 
+  testWidgets('mounted pending actions use outline and ghost button recipes', (
+    t,
+  ) async {
+    await mount(t);
+    try {
+      for (final (label, variant) in [
+        ('Add', RaftButtonRecipeVariant.outline),
+        ('Notify', RaftButtonRecipeVariant.outline),
+        ('Ignore', RaftButtonRecipeVariant.ghost),
+        ('Add All', RaftButtonRecipeVariant.outline),
+      ]) {
+        final button = t.widget<RaftRecipeButton>(
+          find.widgetWithText(RaftRecipeButton, label).first,
+        );
+        expect(button.variant, variant, reason: label);
+        expect(button.size, RaftButtonRecipeSize.md, reason: label);
+      }
+      await t.tap(find.text('Ignore').first);
+      await t.pump();
+      expect(find.text('@ann'), findsNothing);
+      expect(find.text('@bob'), findsOneWidget);
+      expect(w.requests, isEmpty);
+    } finally {
+      await t.pumpWidget(const SizedBox.shrink());
+      await t.pumpAndSettle();
+    }
+  });
+
   testWidgets('Add all: added rows leave, the row that failed stays', (
     t,
   ) async {

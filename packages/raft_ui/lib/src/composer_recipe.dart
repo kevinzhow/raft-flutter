@@ -9,6 +9,7 @@ import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/composer_suggestion_list.g.dart';
+import 'recipes/recipe_runtime.dart' show RaftSlotStyle;
 import 'theme.dart';
 import 'raft/css_box.dart';
 import 'raft/ui_tokens.dart';
@@ -184,18 +185,16 @@ class RaftComposerRecipe {
     weight: FontWeight.w700,
     color: tokens.ui.foregroundHint,
   );
-  Color suggestionBackground({
+  RaftSlotStyle suggestionOption({
     required bool highlighted,
-    bool hovered = false,
-  }) =>
-      RaftComposerSuggestionListRecipe.resolve(
-        states: tokens.recipeStates(
-          hovered: hovered,
-          extra: [if (highlighted) 'data-highlighted=true'],
-        ),
-        tokens: tokens.recipeTokens,
-      ).item.backgroundColor?.resolve(tokens.recipeTokens) ??
-      Colors.transparent;
+    required bool hovered,
+  }) => RaftComposerSuggestionListRecipe.resolve(
+    states: tokens.recipeStates(
+      hovered: hovered,
+      extra: [if (highlighted) 'data-highlighted=true'],
+    ),
+    tokens: tokens.recipeTokens,
+  ).item;
   TextStyle suggestionTitle({
     required bool highlighted,
     bool hovered = false,
@@ -208,7 +207,7 @@ class RaftComposerRecipe {
       );
 
   /// `ComposerSuggestionIcon variant="auxiliary"`.
-  Color get suggestionAuxiliary => tokens.colors['foreground-placeholder']!;
+  Color get suggestionAuxiliary => tokens.ui.foregroundHint;
 
   /// `ComposerSuggestionMeta variant="code"`: `text-xs font-mono`, bold with
   /// the highlighted option.

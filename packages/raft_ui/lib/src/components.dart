@@ -31,6 +31,7 @@ import 'raft/ui_tokens.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
 import 'mounted_reaction_recipe.dart';
 import 'composer_recipe.dart';
+import 'separator.dart';
 import 'focus_visible.dart';
 import 'system_inset.dart';
 import 'tap_slop.dart';
@@ -2923,6 +2924,10 @@ class _RaftComposerState extends State<RaftComposer> {
     if (widget.suggestionOverlay == null && options.isEmpty) {
       return const SizedBox.shrink();
     }
+    final showChannelHeading = options.any((item) {
+      final group = suggestionGroup(item);
+      return group == 1 || group == 2;
+    });
     return Positioned(
       left: 0,
       top: 0,
@@ -2980,10 +2985,7 @@ class _RaftComposerState extends State<RaftComposer> {
                               ? 'Computers'
                               : group == 4
                               ? 'Apps'
-                              : options.any(
-                                  (item) =>
-                                      [1, 2].contains(suggestionGroup(item)),
-                                )
+                              : showChannelHeading
                               ? 'In this channel'
                               : null;
                           final row = _RaftComposerSuggestionRow(
@@ -3003,33 +3005,19 @@ class _RaftComposerState extends State<RaftComposer> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // `ComposerSuggestionGroup separated`:
-                              // `mt-1 pt-1`;
-                              // Not-in-channel / Computers / Apps carry it even
-                              // as the first group (In-channel never does).
                               if (startGroup && group > 1)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  // The spacing only (no rule).
-                                  height: 4 + (0),
-                                  alignment: Alignment.topCenter,
-                                  child: null,
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 4),
+                                  child: RaftSeparator(),
                                 ),
                               if (startGroup && label != null)
                                 Padding(
                                   padding: recipe.suggestionGroupInset,
-                                  child: Text(
+                                  child: RaftCssText(
                                     raftText(context, label),
                                     style: recipe.suggestionGroupLabel,
                                   ),
                                 ),
-                              // Group: `flex-col gap-2` (2px) and the
-                              // label's `mb-0.5`.
-                              SizedBox(
-                                height: startGroup
-                                    ? (label != null ? 4 : 0)
-                                    : 2,
-                              ),
                               row,
                             ],
                           );
@@ -3498,6 +3486,10 @@ class _RaftComposerSuggestionRowState
   Widget build(BuildContext context) {
     final s = widget.suggestion;
     final recipe = widget.recipe;
+    final option = recipe.suggestionOption(
+      highlighted: widget.highlighted,
+      hovered: hovered,
+    );
 
     final title = recipe.suggestionTitle(
       highlighted: widget.highlighted,
@@ -3516,24 +3508,14 @@ class _RaftComposerSuggestionRowState
           excludeFromSemantics: true,
           onTap: widget.onPressed,
           child: ConstrainedBox(
-            // Web options are `py-2` rows on touch as well (no 48px floor).
-            constraints: const BoxConstraints(),
+            constraints: BoxConstraints(minHeight: option.minHeight ?? 36),
             // Not-in-channel options carry `opacity-60` on the whole button
             // (fill included, so a highlighted row is the lighter fill too).
             child: Opacity(
               opacity: !s.inChannel && s.isMention ? .6 : 1,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: recipe.suggestionBackground(
-                    highlighted: widget.highlighted,
-                    hovered: hovered,
-                  ),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                padding: option.padding,
+                decoration: option.decoration(recipe.tokens.recipeTokens),
                 child: Row(
                   children: [
                     if (s.isMention && s.avatar != null) ...[
@@ -3569,7 +3551,6 @@ class _RaftComposerSuggestionRowState
                     else
                       RaftIcon(
                         switch (s.type) {
-                          'channel' => RaftGlyph.hash,
                           'agent' => RaftGlyph.bot,
                           _ => RaftGlyph.user,
                         },
@@ -3676,7 +3657,7 @@ class _ChannelSuggestionBody extends StatelessWidget {
 }
 
 /// `ComposerSuggestionIcon variant="framed"` (channel rows), from the
-/// raft-ui composerSuggestionList recipe: a bare 14px icon (`-mr-1`).
+/// raft-ui composerSuggestionList recipe.
 class _FramedSuggestionIcon extends StatelessWidget {
   const _FramedSuggestionIcon({required this.glyph});
   final RaftGlyph glyph;
@@ -3688,30 +3669,12 @@ class _FramedSuggestionIcon extends StatelessWidget {
       iconVariant: RaftComposerSuggestionListRecipeIconVariant.framed,
       tokens: resolver,
     ).icon;
-    // CSS negative right margin reduces the flow width while the icon
-    // retains its own painted bounds; Flutter Padding cannot be negative.
-    final width = s.width ?? 14, height = s.height ?? 14;
-    return SizedBox(
-      width: (width + s.margin.right).clamp(0.0, double.infinity),
-      height: height,
-      child: OverflowBox(
-        alignment: Alignment.centerLeft,
-        minWidth: width,
-        maxWidth: width,
-        minHeight: height,
-        maxHeight: height,
-        child: Container(
-          width: width,
-          height: height,
-          alignment: Alignment.center,
-          decoration: s.decoration(resolver),
-          child: RaftIcon(
-            glyph,
-            size: width,
-            color: s.color?.resolve(resolver),
-          ),
-        ),
-      ),
+    return Container(
+      width: s.width,
+      height: s.height,
+      alignment: Alignment.center,
+      decoration: s.decoration(resolver),
+      child: RaftIcon(glyph, size: 11, color: s.color?.resolve(resolver)),
     );
   }
 }
