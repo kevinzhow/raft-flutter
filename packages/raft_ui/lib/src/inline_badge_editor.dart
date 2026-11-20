@@ -309,7 +309,7 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
                 opacity: borderless ? 1 : .4,
                 child: RaftIcon(
                   widget.indicator,
-                  size: inlineProperty
+                  size: borderless
                       ? 14
                       : widget.indicator == RaftGlyph.chevronDown
                       ? 12

@@ -112,6 +112,7 @@ RaftTaskConversation taskConversation(
                     : RaftAvatarKind.human,
                 imageUrl: current.avatar.uploadedUrl,
                 presence: current.presence,
+                uiSize: RaftAvatarSize.xs,
                 mountedContext: RaftMountedAvatarContext.compactList,
                 content: current.avatar.pixelKey == null
                     ? null

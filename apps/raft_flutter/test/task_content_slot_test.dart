@@ -75,6 +75,9 @@ Future<WorkspaceController> mountTasks(
     'taskNumber': 9,
     'conversationChannelId': 'second-conv',
     'hostMessageId': 'earlier',
+    'claimedByType': 'agent',
+    'claimedById': 'workbench-agent',
+    'claimedByName': 'Workbench Assistant',
   };
   final tasks = [v2Task, if (twoTasks) second];
   if (twoTasks) {
@@ -267,6 +270,31 @@ void main() {
       expect(t.widget<Text>(title).data, 'Second task title');
       expect(empty.hitTestable(), findsOneWidget);
       expect(replies, findsNothing);
+
+      final assignee = find.byKey(const ValueKey('task-properties-assignee'));
+      final assigneeChevron = find.descendant(
+        of: assignee,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftIcon && widget.glyph == RaftGlyph.chevronDown,
+        ),
+      );
+      final assigneeAvatar = find.descendant(
+        of: find.byKey(const ValueKey('task-properties')),
+        matching: find.byKey(const ValueKey('mounted-avatar-frame')),
+      );
+      expect(
+        [t.getSize(assigneeAvatar), t.getSize(assigneeChevron)],
+        const [Size.square(19), Size.square(14)],
+      );
+      await t.tap(assignee.hitTestable());
+      await settle(t);
+      final peopleSearch = find.text('Search people and agents');
+      expect(peopleSearch, findsOneWidget);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(t);
+      expect(peopleSearch, findsNothing);
+      expect(w.location.query('open'), 'task:task-2');
 
       final bar = t.getRect(find.byKey(const ValueKey('task-modal-bar')));
       final close = find.byKey(const ValueKey('task-modal-close'));
