@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_theme/recipes/recipe_runtime.dart';
 
 import 'design_primitives.dart' show RaftInteractive, RaftInteractionState;
+import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'recipe_surface.dart';
 import 'recipes/message_embed.g.dart' as embed;
 import 'theme.dart';
@@ -115,6 +116,20 @@ class RaftMessageEmbedFrame extends StatelessWidget {
     final overlay = tier == null ? null : t.colors[tier];
     if (base != null && overlay != null) {
       decoration = decoration.copyWith(color: Color.alphaBlend(overlay, base));
+    }
+    final fill = decoration.color;
+    final border = decoration.border;
+    if (fill != null && fill.a == 1 && border is Border && border.isUniform) {
+      final edge = border.top;
+      if (edge.style == BorderStyle.solid &&
+          edge.color.a > 0 &&
+          edge.color.a < 1) {
+        decoration = decoration.copyWith(
+          border: Border.fromBorderSide(
+            edge.copyWith(color: raftChromeBlend(edge.color, fill)),
+          ),
+        );
+      }
     }
     final frame = Container(
       decoration: decoration,
