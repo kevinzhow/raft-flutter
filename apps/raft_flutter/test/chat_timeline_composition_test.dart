@@ -84,7 +84,9 @@ void main() {
             );
           } else {
             expect(footerRect.bottom, closeTo(chatRect.bottom, .01));
-            expect(footerRect.height, 24);
+            // The measured Web gap is 12 dp including the preceding 1 dp
+            // timeline sentinel. The mounted footer covers the remaining 11 dp.
+            expect(footerRect.height, 11);
           }
           final first = t.getRect(find.byKey(const ValueKey('message-row-1')));
           expect(first.left, 12);
