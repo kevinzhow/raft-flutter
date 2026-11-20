@@ -14,6 +14,7 @@ import 'package:app_links/app_links.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/activity_attention.dart';
+import '../data/message_link_landing.dart';
 import '../data/notification_settings_store.dart';
 import '../data/workspace_controller.dart';
 import '../data/raft_location.dart';
@@ -451,7 +452,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
       uri,
       origin: ContentLinks.originFor(w.client.origin),
     );
-    if (target != null) unawaited(navigate(target));
+    if (target != null) unawaited(navigate(target, externalLink: true));
   }
 
   /// Raises the window with the focus token the desktop sent for the click,
@@ -633,16 +634,19 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   Future<void> navigate(
     ContentTarget target, {
     bool replaceEntry = false,
+    bool externalLink = false,
   }) async {
     final w = _workspace,
-        scope = _scope,
+        scope = currentScope,
         epoch = _epoch,
         navigation = ++_navigation;
     if (w == null || scope == null) return;
+    MessageLinkLanding.clear(w);
+    final messageLanding = externalLink && target.messageId != null;
     bool valid() =>
         !_closed &&
         _workspace == w &&
-        _scope == scope &&
+        currentScope == scope &&
         _epoch == epoch &&
         _navigation == navigation;
     final slug = w.location.serverSlug;
@@ -662,7 +666,15 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     final previousIndex = w.navigation.index;
     var published = false, replacedEntry = replaceEntry;
     // Verification starts first so it overlaps the page opening below.
-    final authorization = _authorizeContent(w.client, target, valid);
+    RaftChannel? backChannel;
+    final authorization = _authorizeContent(
+      w.client,
+      target,
+      valid,
+      onConversation: messageLanding
+          ? (channel) => backChannel = channel
+          : null,
+    );
     unawaited(authorization.then<void>((_) {}, onError: (Object _) {}));
     unawaited(
       w.readReceipts.hydrate(
@@ -718,14 +730,39 @@ class NativeContentCoordinator with WidgetsBindingObserver {
       }
       opening ??= _open(w, target, channel, replaceEntry: replacedEntry);
       await opening;
-    } catch (_) {
-      if (valid()) {
-        if (published) _revert(w, previous, previousIndex, replaceEntry);
-        // ignore: raft_lints/avoid_imperative_notice_state -- Workspace-level w.error is shown once as a toast by workspace_view.syncWorkspaceError and cleared there (self-dismissing).
-        w.setError(
-          'This link is unavailable for the current account or server.',
+    } catch (error) {
+      if (!valid()) return;
+      if (published) _revert(w, previous, previousIndex, replaceEntry);
+      if (messageLanding &&
+          (error is _UnavailableContentLink ||
+              error is RaftApiException &&
+                  const {403, 404, 410}.contains(error.status))) {
+        MessageLinkLanding.showFailure(
+          w,
+          onBack: () {
+            MessageLinkLanding.clear(w);
+            final channel = backChannel;
+            if (valid() &&
+                channel != null &&
+                w.can('viewChannel', resource: channel)) {
+              final destination = _destination(
+                w,
+                ContentTarget(channelId: channel.id),
+                channel.type == 'dm',
+              );
+              w.closeThread(navigate: false);
+              w.navigation.navigate(
+                destination,
+                kind: RaftNavigationKind.replace,
+              );
+              unawaited(w.selectChannel(channel, navigate: false));
+            }
+          },
         );
+        return;
       }
+      // ignore: raft_lints/avoid_imperative_notice_state -- Workspace-level w.error is shown once as a toast by workspace_view.syncWorkspaceError and cleared there (self-dismissing).
+      w.setError('This link is unavailable for the current account or server.');
     }
   }
 
@@ -840,8 +877,9 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   static Future<(RaftRecord, RaftChannel, ContentTarget)> _authorizeContent(
     RaftClient client,
     ContentTarget requested,
-    bool Function() valid,
-  ) async {
+    bool Function() valid, {
+    void Function(RaftChannel)? onConversation,
+  }) async {
     final rows = await client.servers();
     if (!valid()) throw const RaftApiException('Stale content link.');
     final server = rows
@@ -852,7 +890,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         )
         .firstOrNull;
     if (server == null || server.id != client.serverId) {
-      throw const RaftApiException('Unavailable server.');
+      throw const _UnavailableContentLink('Unavailable server.');
     }
     Future<Map> scopedChannel(String id) async {
       final channel = await client.get('/channels/$id');
@@ -860,7 +898,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
           channel is! Map ||
           channel['id'] != id ||
           channel['serverId'] != server.id) {
-        throw const RaftApiException('Unavailable channel.');
+        throw const _UnavailableContentLink('Unavailable channel.');
       }
       return channel;
     }
@@ -877,7 +915,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
           taskId is! String ||
           !ContentTarget.validId(parent) ||
           !ContentTarget.validId(taskId)) {
-        throw const RaftApiException('Unavailable task conversation.');
+        throw const _UnavailableContentLink('Unavailable task conversation.');
       }
       taskDetail = channel;
       target = ContentTarget(
@@ -888,6 +926,8 @@ class NativeContentCoordinator with WidgetsBindingObserver {
       );
       channel = await scopedChannel(parent);
     }
+    final conversation = RaftChannel(Map<String, dynamic>.from(channel));
+    onConversation?.call(conversation);
     if (target.messageId != null) {
       final task = target.task;
       if (task != null) {
@@ -906,7 +946,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         query: {'channelId': task?.conversationId ?? target.channelId},
       );
       if (!valid() || context is! Map || context['messages'] is! List) {
-        throw const RaftApiException('Unavailable message.');
+        throw const _UnavailableContentLink('Unavailable message.');
       }
       final canonicalMessage = context['canonicalTarget'];
       final rows = context['messages'] as List;
@@ -920,7 +960,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
               canonicalMessage is! Map ||
               canonicalMessage['kind'] != 'thread' ||
               canonicalMessage['messageId'] != target.messageId)) {
-        throw const RaftApiException('Unavailable message.');
+        throw const _UnavailableContentLink('Unavailable message.');
       }
       final canonical = context['canonicalTarget'];
       if (target.parentMessageId != null &&
@@ -929,10 +969,10 @@ class NativeContentCoordinator with WidgetsBindingObserver {
               canonical['threadParentMessageId'] != target.parentMessageId ||
               target.threadId != null &&
                   canonical['threadChannelId'] != target.threadId)) {
-        throw const RaftApiException('Unavailable thread.');
+        throw const _UnavailableContentLink('Unavailable thread.');
       }
     }
-    return (server, RaftChannel(Map<String, dynamic>.from(channel)), target);
+    return (server, conversation, target);
   }
 
   void _bindDesktop(WorkspaceController? workspace) => desktop?.bind(
@@ -1015,4 +1055,8 @@ class NativeContentCoordinator with WidgetsBindingObserver {
       await notifications.bind(null);
     }
   }
+}
+
+class _UnavailableContentLink extends RaftApiException {
+  const _UnavailableContentLink(super.message);
 }

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/message_presentation.dart';
+import 'package:raft_flutter/features/message_link_unavailable.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../parity_harness.dart';
@@ -16,7 +17,14 @@ final _fixture = jsonDecode(
   File('../../tool/parity-ext/fixtures/app-links.json').readAsStringSync(),
 ) as Map<String, dynamic>;
 
-const _states = ['block-chip', 'consent', 'consent-failed', 'loading'];
+const _states = [
+  'block-chip',
+  'consent',
+  'consent-failed',
+  'loading',
+  'undo',
+  'unavailable',
+];
 
 final Map<String, ParityCase> extAppLinkCases = {
   for (final platform in ['desktop', 'phone'])
@@ -33,6 +41,23 @@ ParityCase _case(String state) => ParityCase(
   ],
   settle: const Duration(milliseconds: 160),
   build: (ctx) {
+    if (state == 'unavailable') {
+      return Align(
+        alignment: Alignment.topLeft,
+        child: ctx.target(
+          SizedBox(
+            key: const ValueKey('app-link-parity-frame'),
+            width: (ctx.props['frameWidth'] as num).toDouble(),
+            height: ctx.height,
+            child: Material(
+              type: MaterialType.transparency,
+              child: MessageLinkUnavailable(onBack: () {}),
+            ),
+          ),
+        ),
+      );
+    }
+    final block = state == 'block-chip' || state == 'undo';
     final messageId = _fixture['messageId'] as String;
     final channel = RaftChannel({
       'id': _fixture['channelId'],
@@ -49,9 +74,8 @@ ParityCase _case(String state) => ParityCase(
             {'key': 'interactive_link_cards', 'enabled': true},
           ],
         },
-        'POST /messages/$messageId/link-cards/read': (_) => allowed
-            ? pending.future
-            : _fixture[state == 'block-chip' ? 'answer' : 'prompt'],
+        'POST /messages/$messageId/link-cards/read': (_) =>
+            allowed ? pending.future : _fixture[block ? 'answer' : 'prompt'],
         'POST /integrations/clients/tickets/link-preview-consent': (_) {
           if (state == 'consent-failed') {
             throw const RaftApiException('Fixture failure', status: 500);
@@ -78,24 +102,29 @@ ParityCase _case(String state) => ParityCase(
     });
     return Material(
       type: MaterialType.transparency,
-      child: Builder(
-        builder: (context) => Align(
-          alignment: Alignment.topLeft,
-          child: ctx.target(
-            SizedBox(
-              key: const ValueKey('app-link-parity-frame'),
-              width: (ctx.props['frameWidth'] as num).toDouble(),
-              height: ctx.height,
-              child: ColoredBox(
-                color: RaftTokens.of(context).ui.layerCanvas,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: MessagePresentation(
-                      controller: workspace,
-                      message: message,
-                      onExternalLink: (_) {},
+      child: RaftToastHost(
+        child: Builder(
+          builder: (context) => Align(
+            alignment: Alignment.topLeft,
+            child: ctx.target(
+              SizedBox(
+                key: const ValueKey('app-link-parity-frame'),
+                width: (ctx.props['frameWidth'] as num).toDouble(),
+                height: ctx.height,
+                child: ColoredBox(
+                  color: RaftTokens.of(context).ui.layerCanvas,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: MessagePresentation(
+                        controller: workspace,
+                        message: message,
+                        fontSize: RaftMessageSizeTier.md.bodySizeFor(
+                          RaftTokens.of(context),
+                        ),
+                        onExternalLink: (_) {},
+                      ),
                     ),
                   ),
                 ),
@@ -107,9 +136,22 @@ ParityCase _case(String state) => ParityCase(
     );
   },
   interact: (tester, _) async {
-    if (state == 'block-chip') {
+    if (state == 'unavailable') {
+      expect(
+        find.byKey(const ValueKey('message-link-unavailable-back')),
+        findsOneWidget,
+      );
+      return;
+    }
+    if (state == 'block-chip' || state == 'undo') {
       expect(find.text('Printer ticket'), findsOneWidget);
       expect(find.text('Ticket 123'), findsOneWidget);
+      if (state == 'undo') {
+        await tester.tap(find.text('Resolve'));
+        await tester.pump();
+        expect(find.text('Runs when the countdown ends'), findsOneWidget);
+        expect(find.text('Undo'), findsOneWidget);
+      }
       return;
     }
     final allow = find.text('Allow');

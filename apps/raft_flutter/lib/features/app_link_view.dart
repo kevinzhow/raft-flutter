@@ -217,7 +217,7 @@ class _AppLinkMessageViewState extends State<AppLinkMessageView> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          spacing: RaftScale.spacing,
+          spacing: RaftSpace.x2,
           children: [body, ...extras],
         );
       },
@@ -277,9 +277,9 @@ class _AppLinkChipState extends State<AppLinkChip> {
     final chip = RaftAppLinkChip(
       key: ValueKey('app-link-chip-${link.url}'),
       label: label,
-      icon: _linkIcon(link.app),
+      icon: _linkIcon(link.app, chip: true),
       prompt: consent,
-      domain: touch && link is AppLinkPreview ? domain : null,
+      domain: link is AppLinkPreview ? domain : null,
       onPressed: () {
         if (consent) {
           if (_hover.isOpen && _hover.pinned) {
@@ -320,12 +320,30 @@ class _AppLinkChipState extends State<AppLinkChip> {
               ),
               Padding(
                 padding: EdgeInsets.all(gap),
-                child: RaftButton(
-                  label: raftText(context, 'Open link'),
-                  onPressed: () {
-                    _hover.close();
-                    widget.openBrowser(link.url);
-                  },
+                child: Row(
+                  spacing: gap,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        domain,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: RaftTokens.of(context).scale(
+                          RaftTypeScale.footnote,
+                          color: RaftTokens.of(context).ui.foregroundMuted,
+                        ),
+                      ),
+                    ),
+                    RaftButton(
+                      label: raftText(context, 'Open link'),
+                      uiVariant: RaftButtonVariant.ghost,
+                      button: false,
+                      onPressed: () {
+                        _hover.close();
+                        widget.openBrowser(link.url);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -342,8 +360,13 @@ class _AppLinkChipState extends State<AppLinkChip> {
   }
 }
 
-Widget _linkIcon(LinkApp app, {bool large = false}) =>
-    RaftAppLinkLogo(name: app.name, logoUrl: app.icon, large: large);
+Widget _linkIcon(LinkApp app, {bool large = false, bool chip = false}) =>
+    RaftAppLinkLogo(
+      name: app.name,
+      logoUrl: app.icon,
+      large: large,
+      chip: chip,
+    );
 
 class AppLinkPrompt extends StatelessWidget {
   const AppLinkPrompt({
@@ -358,107 +381,52 @@ class AppLinkPrompt extends StatelessWidget {
   final bool embedded;
 
   @override
-  Widget build(BuildContext context) {
-    final choice = message.store.choice(link.app.id);
-    if (choice == AppLinkChoice.declined) return const SizedBox.shrink();
-    final tokens = RaftTokens.of(context);
-    final gap = RaftScale.space(2);
-    final inset = RaftScale.space(3);
-    final padding = EdgeInsets.all(inset);
-    final params = {'app': link.app.name};
-    final allowing = choice == AppLinkChoice.allowing;
-    final declining = choice == AppLinkChoice.declining;
-    final failed = choice == AppLinkChoice.failed;
-    final Widget content;
-    if (choice == AppLinkChoice.allowed) {
-      content = Semantics(
-        liveRegion: true,
-        label: raftText(context, 'Loading link preview'),
-        child: Padding(
-          padding: padding,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: gap,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              RaftSkeleton(width: 80, height: 12),
-              RaftSkeleton(width: 220, height: 12),
-              RaftSkeleton(width: 60, height: 20),
-            ],
-          ),
-        ),
-      );
-    } else {
-      content = Padding(
-        padding: padding,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: gap,
-          children: [
-            _linkIcon(link.app, large: true),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                spacing: RaftScale.spacing,
-                children: [
-                  Text(
-                    raftFormat(
-                      context,
-                      '{app} wants to show link previews here',
-                      params,
-                    ),
-                    style: tokens.scale(RaftTypeScale.subhead),
-                  ),
-                  Text(
-                    raftFormat(
-                      context,
-                      failed
-                          ? 'Couldn’t allow {app}. Check your connection and try again.'
-                          : 'After you allow, {app} will know which of its links you view.',
-                      params,
-                    ),
-                    style: tokens.scale(
-                      RaftTypeScale.footnote,
-                      color: tokens.ui.foregroundMuted,
-                    ),
-                  ),
-                  Wrap(
-                    spacing: gap,
-                    runSpacing: RaftScale.spacing,
-                    children: [
-                      RaftButton(
-                        label: raftText(context, failed ? 'Retry' : 'Allow'),
-                        disabled: declining,
-                        busy: allowing,
-                        loadingLabel: raftText(context, 'Allowing…'),
-                        onPressed: () => _choose(context, allow: true),
-                      ),
-                      RaftButton(
-                        label: raftText(context, 'Don’t allow'),
-                        tone: RaftButtonRecipeVariant.ghost,
-                        disabled: allowing,
-                        busy: declining,
-                        loadingLabel: raftText(context, 'Saving…'),
-                        onPressed: () => _choose(context, allow: false),
-                      ),
-                    ],
-                  ),
-                ],
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: message,
+    builder: (context, _) {
+      final choice = message.store.choice(link.app.id);
+      if (choice == AppLinkChoice.declined) return const SizedBox.shrink();
+      final failed = choice == AppLinkChoice.failed;
+      final content = choice == AppLinkChoice.allowed
+          ? RaftAppLinkSkeleton(
+              label: raftText(context, 'Loading link preview'),
+            )
+          : RaftAppLinkAuthorizationCard(
+              titleTemplate: raftText(
+                context,
+                '{app} wants to show link previews here',
               ),
-            ),
-          ],
+              appName: link.app.name,
+              logo: _linkIcon(link.app, large: true),
+              detail: raftFormat(
+                context,
+                failed
+                    ? 'Couldn’t allow {app}. Check your connection and try again.'
+                    : 'After you allow, {app} will know which of its links you view.',
+                {'app': link.app.name},
+              ),
+              allowLabel: raftText(context, failed ? 'Retry' : 'Allow'),
+              declineLabel: raftText(context, 'Don’t allow'),
+              allowingLabel: raftText(context, 'Allowing…'),
+              decliningLabel: raftText(context, 'Saving…'),
+              allowing: choice == AppLinkChoice.allowing,
+              declining: choice == AppLinkChoice.declining,
+              failed: failed,
+              onAllow: () => _choose(context, allow: true),
+              onDecline: () => _choose(context, allow: false),
+            );
+      return Padding(
+        padding: embedded
+            ? EdgeInsets.zero
+            : const EdgeInsets.all(RaftSpace.x2).copyWith(bottom: 0),
+        child: RaftMessageEmbedFrame(
+          key: embedded ? ValueKey('app-link-prompt-${link.app.id}') : null,
+          size: RaftMessageEmbedSize.item,
+          child: content,
         ),
       );
-    }
-    return embedded
-        ? RaftMessageEmbedFrame(
-            key: ValueKey('app-link-prompt-${link.app.id}'),
-            size: RaftMessageEmbedSize.item,
-            child: content,
-          )
-        : content;
-  }
+    },
+  );
 
   Future<void> _choose(BuildContext context, {required bool allow}) async {
     final toast = RaftToastHost.maybeOf(context);
@@ -534,6 +502,7 @@ class _LinkCard extends StatelessWidget {
             appName: link.app.name,
             domain: domain,
             icon: _linkIcon(link.app),
+            afterText: true,
             onOpen: () => openBrowser(link.url),
             body: cardBody,
             actions: actions,
@@ -558,6 +527,7 @@ class _LinkCard extends StatelessWidget {
                 ),
                 RaftButton(
                   label: raftText(context, 'Connect account'),
+                  uiVariant: RaftButtonVariant.standard,
                   onPressed: () {
                     RaftHoverCard.dismiss(context);
                     openBrowser(preview.connectUrl);
@@ -602,35 +572,39 @@ class _LinkCard extends StatelessWidget {
     final overflow = entries.where((entry) => !row.contains(entry)).toList();
     final tokens = RaftTokens.of(context);
     final gap = RaftScale.space(2);
-    return Wrap(
+    final statusGap = RaftScale.space(1.5);
+    final phase = operation.phase;
+    final working =
+        phase == AppLinkPhase.refreshing || phase == AppLinkPhase.preparing;
+    final pending =
+        phase == AppLinkPhase.pending || phase == AppLinkPhase.executing;
+    final holding = phase == AppLinkPhase.holding;
+    final menuWorking =
+        working && overflow.any((entry) => entry.key.label == operation.label);
+    final buttons = Wrap(
       alignment: WrapAlignment.end,
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: gap,
       runSpacing: gap,
       children: [
-        if (operation.phase case final phase?)
-          Semantics(
-            liveRegion: true,
-            child: Text(
-              raftText(context, switch (phase) {
-                AppLinkPhase.holding => 'Runs when the countdown ends',
-                AppLinkPhase.pending || AppLinkPhase.executing => 'In progress',
-                _ => 'Working…',
-              }),
-              style: tokens.scale(
-                RaftTypeScale.footnote,
-                color: tokens.ui.foregroundMuted,
-              ),
-            ),
-          ),
         if (overflow.isNotEmpty)
           RaftDropdownMenu(
             key: const ValueKey('app-link-more-trigger'),
             surfaceKey: const ValueKey('app-link-more-menu'),
             label: raftText(context, 'More actions'),
-            tooltip: raftText(context, 'More actions'),
-            glyph: RaftGlyph.ellipsis,
             align: RaftDropdownAlign.end,
+            triggerBuilder: (context, focus, toggle) {
+              final label = raftText(context, 'More actions');
+              return RaftButton(
+                focusNode: focus,
+                onPressed: toggle,
+                semanticLabel: label,
+                tooltip: label,
+                glyph: RaftGlyph.ellipsis,
+                uiVariant: RaftButtonVariant.ghost,
+                uiSize: RaftButtonSize.iconMd,
+              );
+            },
             entries: [
               for (final entry in overflow)
                 RaftMenuEntry(
@@ -651,7 +625,53 @@ class _LinkCard extends StatelessWidget {
           ...row.where((entry) => entry.key.ghost),
           ...row.where((entry) => !entry.key.ghost),
         ])
-          _button(context, preview, operation, entry.key, entry.value),
+          _button(
+            context,
+            preview,
+            operation,
+            entry.key,
+            entry.value,
+            working: working,
+          ),
+      ],
+    );
+    return Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: gap,
+      runSpacing: gap,
+      children: [
+        if (holding || pending || menuWorking)
+          Semantics(
+            liveRegion: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: statusGap,
+              children: [
+                if (!holding)
+                  const ExcludeSemantics(
+                    child: RaftSpinner(recipeSize: RaftSpinnerRecipeSize.xs),
+                  ),
+                Flexible(
+                  child: RaftCssText(
+                    raftText(
+                      context,
+                      holding
+                          ? 'Runs when the countdown ends'
+                          : pending
+                          ? 'In progress'
+                          : 'Working…',
+                    ),
+                    style: tokens.scale(
+                      RaftTypeScale.callout,
+                      color: tokens.ui.foregroundMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        buttons,
       ],
     );
   }
@@ -678,14 +698,20 @@ class _LinkCard extends StatelessWidget {
     AppLinkPreview preview,
     AppLinkOperation operation,
     RaftCardButton button,
-    AppLinkAction action,
-  ) {
+    AppLinkAction action, {
+    required bool working,
+  }) {
     return RaftButton(
       label: _label(context, button, action),
-      tone: button.ghost ? RaftButtonRecipeVariant.ghost : null,
+      uiVariant: button.ghost
+          ? RaftButtonVariant.ghost
+          : RaftButtonVariant.standard,
+      trailingGlyph: action is AppLinkOpen || _fallback(action)
+          ? RaftGlyph.arrowUpRight
+          : null,
       tooltip: button.disabledReason,
       disabled: _blocked(button, action, operation),
-      busy: operation.busy && operation.label == button.label,
+      busy: working && operation.label == button.label,
       loadingLabel: raftText(context, 'Working…'),
       onPressed: () => _activate(context, preview, operation, button, action),
     );
@@ -727,12 +753,20 @@ class _LinkCard extends StatelessWidget {
         holding = true;
         if (seconds == operation.undoSeconds) return;
         seconds = operation.undoSeconds;
+        final description = countdown.replaceAll('{seconds}', '$seconds');
+        if (handle?.isShown == true) {
+          handle?.updateDescription(description);
+          return;
+        }
         handle = toast?.show(
           title,
-          description: countdown.replaceAll('{seconds}', '$seconds'),
+          duration: action is AppLinkExecute ? action.undoWindow : null,
+          description: description,
           actionLabel: undo,
           onAction: operation.undo,
           tone: RaftToastRecipeTone.info,
+          dismissible: false,
+          icon: true,
         );
         return;
       }

@@ -5,9 +5,11 @@
       "canonical": [
         "RaftAppLinkCard",
         "RaftAppLinkChip",
-        "RaftAppLinkLogo"
+        "RaftAppLinkLogo",
+        "RaftAppLinkAuthorizationCard",
+        "RaftAppLinkSkeleton"
       ],
-      "note": "The block card frame and source row. The message card catalogue and product actions are separate.",
+      "note": "The app-link block, chip, identity, authorization prompt, and loading parts. Product requests and decisions remain in the message presentation.",
       "deprecated": {},
       "canonicalBindings": {
         "RaftAppLinkCard": {
@@ -21,6 +23,14 @@
         "RaftAppLinkLogo": {
           "declarationId": "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkLogo",
           "role": "paint_part"
+        },
+        "RaftAppLinkAuthorizationCard": {
+          "declarationId": "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkAuthorizationCard",
+          "role": "public_api"
+        },
+        "RaftAppLinkSkeleton": {
+          "declarationId": "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkSkeleton",
+          "role": "placement_part"
         }
       }
     },

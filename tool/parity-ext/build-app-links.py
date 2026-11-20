@@ -8,9 +8,11 @@ from builders import manifest_path
 AREA = 'components.app-links.'
 SCENARIOS = {
     'block-chip': '[data-app-link-block]',
+    'undo': '[data-link-card-pending="holding"]',
     'consent': '[data-app-link-preview-prompt]',
     'consent-failed': '[data-link-preview-prompt-error]',
     'loading': '[data-app-link-preview-pending]',
+    'unavailable': '[data-testid="message-link-unavailable"]',
 }
 path = manifest_path()
 manifest = json.loads(path.read_text())
@@ -30,13 +32,18 @@ for platform, viewport, width in [('desktop', 800, 640), ('phone', 390, 390)]:
                 'theme': theme,
                 'locale': 'en',
                 'variants': [{'id': 'default', 'name': 'Default', 'props': {
-                    'platform': platform, 'frameWidth': width, 'parityTheme': theme,
+                    'platform': platform,
+                    'frameWidth': viewport if name == 'undo' else width,
+                    'parityTheme': theme,
                 }}],
                 'capture': {
                     'selector': f'[data-visual-case="{case_id}"]:has({ready})',
                     'crop': 'element',
                     'contract': 'component-bounds',
                     'androidKey': 'app-link-parity-frame',
+                    **({'interactions': [
+                        {'type': 'click', 'target': '[data-link-card-action="resolve"]'},
+                    ]} if name == 'undo' else {}),
                 },
                 'reactPathHint': 'packages/web/src/components/message/AppLinkBlockCard.tsx',
                 'androidCaseHint': f"apps/raft_flutter/test/parity/cases/ext_app_links.dart '{case_id}'",

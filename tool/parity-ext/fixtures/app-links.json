@@ -42,6 +42,7 @@
               "placement": "block",
               "title": "Printer ticket",
               "business_revision": "first",
+              "card_revision": "first",
               "card": {
                 "root": "root",
                 "elements": {
@@ -66,7 +67,9 @@
                   "details": {
                     "type": "Text",
                     "props": {
-                      "text": "Printer on 3rd floor is out of toner."
+                      "text": "Printer on 3rd floor is out of toner.",
+                      "tone": "default",
+                      "mono": false
                     }
                   },
                   "resolve": {

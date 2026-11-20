@@ -1,5 +1,6 @@
 import 'mobile_server_tab.dart';
 import 'limit_notice.dart';
+import '../data/message_link_landing.dart';
 import '../data/limit_notice_queue.dart';
 import 'server_menu_model.dart';
 import 'agent_lounge.dart' show AgentLoungeFlag, loungeAgentName, loungeTitle;
@@ -86,6 +87,7 @@ import 'desktop_activity_flag.dart';
 import 'resource_search.dart';
 import 'quick_switcher_host.dart';
 import 'fleet_views.dart';
+import 'message_link_unavailable.dart';
 import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
 import 'panel_width_store.dart';
@@ -1447,7 +1449,15 @@ class _WorkspaceViewState extends State<WorkspaceView>
 
       // Mobile home keeps the sidebar mounted while the lists load and shows
       // SidebarRowsSkeleton rows (Sidebar.tsx channelsLoading), not a spinner.
-      Widget content = w.loading && w.server == null
+      final messageLinkFailure = MessageLinkLanding.failureOf(
+        mobileHost?.w ?? w,
+      );
+      Widget content = messageLinkFailure != null
+          ? MessageLinkUnavailable(
+              key: const ValueKey('message-link-unavailable'),
+              onBack: messageLinkFailure.onBack,
+            )
+          : w.loading && w.server == null
           ? const Center(child: RaftSpinner())
           : route == 'settings'
           ? settings()
