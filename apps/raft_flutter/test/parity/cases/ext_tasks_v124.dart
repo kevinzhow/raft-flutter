@@ -178,6 +178,13 @@ Future<void> _checkState(WidgetTester tester, ParityContext ctx) async {
       ),
       findsOneWidget,
     );
+    expect(
+      find.descendant(
+        of: agentRow,
+        matching: find.byKey(const ValueKey('mounted-avatar-presence')),
+      ),
+      findsOneWidget,
+    );
   }
 }
 

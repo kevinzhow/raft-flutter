@@ -383,6 +383,20 @@ void main() {
     expect(find.text('Unassigned'), findsNothing);
   });
 
+  testWidgets('page metadata labels use the same line height as the title', (
+    t,
+  ) async {
+    await _mount(t, picks: _Picks(), showUnassigned: true);
+    final row = _row('b');
+    Size box(String key) => t.getSize(
+      find.descendant(of: row, matching: find.byKey(ValueKey(key))),
+    );
+    final metadata = box('message-task-chip-unassigned').height;
+    final title = box('message-task-chip-title').height;
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(metadata, closeTo(title, .01));
+  });
+
   testWidgets('text scale 1x and 2x: rows grow with the text, nothing '
       'overflows, the box and the title stay readable', (t) async {
     final p = _Picks();

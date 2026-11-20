@@ -378,14 +378,10 @@ class _PageRowContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final callout = t.scale(RaftTypeScale.callout);
     final mono = t
         .scale(RaftTypeScale.monoMeta, mono: true, color: t.ui.foregroundHint)
         .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
-    final lineMono = mono.copyWith(
-      height: callout.fontSize! * callout.height! / mono.fontSize!,
-      leadingDistribution: TextLeadingDistribution.even,
-    );
+    final lineMono = raftCompactTaskRowTextStyle(t, mono);
     final number = '#${task.number}';
     final lead = list.showChannel && !narrow && task.ref != null
         ? task.ref!
@@ -456,17 +452,18 @@ class _PageRowContent extends StatelessWidget {
                 style: lineMono,
               ),
             if (unassigned)
-              Text(
+              RaftCssText(
                 unassignedLabel(list),
                 key: const ValueKey('message-task-chip-unassigned'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: t.scale(
-                  RaftTypeScale.caption,
-                  color: t.ui.foregroundHint,
+                style: raftCompactTaskRowTextStyle(
+                  t,
+                  t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
                 ),
               ),
-            if (showAssignee) RaftTaskAssignee(task: task),
+            if (showAssignee)
+              RaftTaskAssignee(task: task, alignToPageRow: true),
             if (list.showStatus)
               KeyedSubtree(
                 key: const ValueKey('message-task-chip-status'),

@@ -38,6 +38,7 @@ class RaftTaskChipRow {
     this.assigneeIsViewer = false,
     this.assigneeAvatarUrl,
     this.assigneeAvatarPixelKey,
+    this.assigneePresence,
     this.ref,
     this.channelName,
     this.time,
@@ -59,6 +60,7 @@ class RaftTaskChipRow {
   final String? assigneeName;
   final bool assigneeIsAgent, assigneeIsViewer;
   final String? assigneeAvatarUrl, assigneeAvatarPixelKey;
+  final RaftAvatarPresence? assigneePresence;
 
   /// The Tasks page across channels: the task's conversation ref
   /// (`#design:#25`, `dm:@peer:#25`), shown instead of `#25` where the list is
@@ -366,8 +368,13 @@ class RaftTaskReplyCount extends StatelessWidget {
 /// Web `TaskAssignee`: the assignee's avatar and name (You for the viewer),
 /// as the compact task rows and a board card's foot show them.
 class RaftTaskAssignee extends StatelessWidget {
-  const RaftTaskAssignee({super.key, required this.task});
+  const RaftTaskAssignee({
+    super.key,
+    required this.task,
+    this.alignToPageRow = false,
+  });
   final RaftTaskChipRow task;
+  final bool alignToPageRow;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -379,6 +386,7 @@ class RaftTaskAssignee extends StatelessWidget {
       kind: task.assigneeIsAgent ? RaftAvatarKind.agent : RaftAvatarKind.human,
       imageUrl: task.assigneeAvatarUrl,
       mountedContext: RaftMountedAvatarContext.compactList,
+      presence: task.assigneePresence,
       content: task.assigneeAvatarPixelKey == null
           ? null
           : RaftAvatarContent(
@@ -389,16 +397,24 @@ class RaftTaskAssignee extends StatelessWidget {
               pixelKey: task.assigneeAvatarPixelKey,
             ),
     );
-    final label = Text(
-      name,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: t.scale(
-        RaftTypeScale.caption,
-        weight: task.assigneeIsViewer ? FontWeight.w600 : FontWeight.w400,
-        color: task.assigneeIsViewer ? t.ui.foreground : t.ui.foregroundMuted,
-      ),
+    final style = t.scale(
+      RaftTypeScale.caption,
+      weight: task.assigneeIsViewer ? FontWeight.w600 : FontWeight.w400,
+      color: task.assigneeIsViewer ? t.ui.foreground : t.ui.foregroundMuted,
     );
+    final label = alignToPageRow
+        ? RaftCssText(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: raftCompactTaskRowTextStyle(t, style),
+          )
+        : Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          );
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 192),
       // A box with no room for the gap after the avatar drops the gap (the
@@ -419,6 +435,15 @@ class RaftTaskAssignee extends StatelessWidget {
 
   /// The avatar slot (20) and the gap after it (6).
   static const _avatarAndGap = 26.0;
+}
+
+/// The task row's metadata shares the title line height across font sizes.
+TextStyle raftCompactTaskRowTextStyle(RaftTokens tokens, TextStyle style) {
+  final callout = tokens.scale(RaftTypeScale.callout);
+  return style.copyWith(
+    height: callout.fontSize! * callout.height! / style.fontSize!,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
 }
 
 /// The accessible label of a row's reply count (Web `task.chip.*`).

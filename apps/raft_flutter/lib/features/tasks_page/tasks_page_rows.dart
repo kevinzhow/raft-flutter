@@ -49,7 +49,7 @@ RaftTaskChipRow tasksPageChipRow(
 }) {
   final base = messageTaskChipRow(w, task);
   final channel = task['channelName'];
-  final avatar = taskAssigneeAvatarProjection(w, task);
+  final assignee = taskAssigneeAvatarProjection(w, task, now: now);
 
   return RaftTaskChipRow(
     id: base.id,
@@ -61,8 +61,9 @@ RaftTaskChipRow tasksPageChipRow(
     assigneeName: base.assigneeName,
     assigneeIsAgent: base.assigneeIsAgent,
     assigneeIsViewer: base.assigneeIsViewer,
-    assigneeAvatarUrl: avatar?.uploadedUrl,
-    assigneeAvatarPixelKey: avatar?.pixelKey,
+    assigneeAvatarUrl: assignee?.avatar.uploadedUrl,
+    assigneeAvatarPixelKey: assignee?.avatar.pixelKey,
+    assigneePresence: assignee?.presence,
     ref: formatTaskConversationRef(task, dmPeerName: _dmPeer(w, task)),
     channelName: channel is String && channel.isNotEmpty ? channel : null,
     time: TaskActivityTime(task: task, now: now),

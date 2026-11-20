@@ -27,7 +27,7 @@ RaftTaskConversation taskConversation(
   final w = o.parent;
   final assignee = tasksPage ? taskAssigneeAvatarProjection(w, task) : null;
   final assigneeName = '${task['claimedByName'] ?? ''}';
-  final agentAssignee = assignee?.kind == 'agent';
+  final agentAssignee = assignee?.avatar.kind == 'agent';
   final dm = task['channelType'] == 'dm'
       ? [...w.dms].where((c) => c.id == task['channelId']).firstOrNull
       : null;
@@ -100,20 +100,30 @@ RaftTaskConversation taskConversation(
     earlierDiscussion: earlier,
     assigneeAvatar: assignee == null
         ? null
-        : RaftAvatar(
-            name: assigneeName,
-            kind: agentAssignee ? RaftAvatarKind.agent : RaftAvatarKind.human,
-            imageUrl: assignee.uploadedUrl,
-            mountedContext: RaftMountedAvatarContext.compactList,
-            content: assignee.pixelKey == null
-                ? null
-                : RaftAvatarContent(
-                    name: assigneeName,
-                    kind: agentAssignee
-                        ? RaftAvatarContentKind.agent
-                        : RaftAvatarContentKind.human,
-                    pixelKey: assignee.pixelKey,
-                  ),
+        : ListenableBuilder(
+            listenable: w.services.entityDirectory,
+            builder: (context, _) {
+              final current = taskAssigneeAvatarProjection(w, task);
+              if (current == null) return const SizedBox.shrink();
+              return RaftAvatar(
+                name: assigneeName,
+                kind: agentAssignee
+                    ? RaftAvatarKind.agent
+                    : RaftAvatarKind.human,
+                imageUrl: current.avatar.uploadedUrl,
+                presence: current.presence,
+                mountedContext: RaftMountedAvatarContext.compactList,
+                content: current.avatar.pixelKey == null
+                    ? null
+                    : RaftAvatarContent(
+                        name: assigneeName,
+                        kind: agentAssignee
+                            ? RaftAvatarContentKind.agent
+                            : RaftAvatarContentKind.human,
+                        pixelKey: current.avatar.pixelKey,
+                      ),
+              );
+            },
           ),
   );
 }

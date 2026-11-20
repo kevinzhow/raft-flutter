@@ -81,7 +81,7 @@ class TaskActivityTime extends StatelessWidget {
       child: Semantics(
         label: label,
         excludeSemantics: true,
-        child: Text(
+        child: RaftCssText(
           short,
           key: ValueKey(
             stale
@@ -90,7 +90,7 @@ class TaskActivityTime extends StatelessWidget {
           ),
           maxLines: 1,
           softWrap: false,
-          style: style,
+          style: raftCompactTaskRowTextStyle(t, style),
         ),
       ),
     );
