@@ -272,6 +272,7 @@ final Map<String, ParityCase> extAppsCases = {
         if (platform == 'mobile') 'scope-menu',
         if (platform == 'desktop') 'rail-entry',
         if (platform == 'mobile') 'server-popover',
+        if (platform == 'mobile') 'server-popover-surface',
         if (platform == 'mobile') 'server-popover-entry',
       ])
         'components.apps.route.$state.$platform.$theme': _appsSettings,

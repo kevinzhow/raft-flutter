@@ -499,9 +499,11 @@ cases = []
 
 def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integrations',
          verify_text=None, verify_key=None, absent_text=None,
-         shell='', role='owner', metadata_selector=None, bot_link=None,
+         shell='', role='owner', metadata_selector=None, bot_link=None, capture_key=None,
          login_server=None, login_disclosure=False,
          platforms=('desktop', 'mobile')):
+    if shell == 'login':
+        capture_key = 'human-login-content'
     for platform, width, height in [('desktop', 1280, 900), ('mobile', 390, 844)]:
         if platform not in platforms:
             continue
@@ -529,8 +531,8 @@ def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integ
                 }}],
                 'capture': {
                     'selector': selector,
-                    **({'crop': 'element', 'androidKey': 'human-login-content'}
-                       if shell == 'login' else
+                    **({'crop': 'element', 'androidKey': capture_key}
+                       if capture_key else
                        {'crop': 'viewport', 'contract': 'viewport-with-portal'}),
                     **({'metadataSelector': metadata_selector} if metadata_selector else {}),
                     'interactions': list(web_steps(steps, platform)),
@@ -760,6 +762,10 @@ case('route', 'server-popover', '[data-testid="mobile-server-tab-apps"]', [
     tap('mobile-tab-server'),
 ], shell='tasks', platforms=('mobile',), verify_key='mobile-server-tab-apps',
      verify_text='4 channel tasks', absent_text='Could not complete that. Try again.')
+case('route', 'server-popover-surface', '[data-testid="mobile-server-tab-popover"]', [
+    tap('mobile-tab-server'),
+], shell='tasks', platforms=('mobile',), verify_key='mobile-server-tab-apps',
+     capture_key='mobile-server-tab-popover')
 case('route', 'server-popover-entry', '[data-testid="apps-page"]', [
     tap('mobile-tab-server'),
     tap('mobile-server-tab-apps'),

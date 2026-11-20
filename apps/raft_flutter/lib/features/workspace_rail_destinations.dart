@@ -60,7 +60,6 @@ List<RaftRailDestination> workspaceRailDestinations(
       id: 'apps',
       label: tr('Apps'),
       glyph: RaftGlyph.blocks,
-      iconWidget: icon(RaftGlyph.blocks),
       attention: AppPermissionUpdates.of(workspace).summary.needsAdminReview,
     ),
 ];
