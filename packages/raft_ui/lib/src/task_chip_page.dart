@@ -408,15 +408,26 @@ class _PageRowContent extends StatelessWidget {
     final unassigned = list.showAssignee && list.showUnassigned && !assigned;
     final statusLabel = raftText(context, raftTaskStatusLabel(task.status));
     final compactStatus = list.showChannel && narrow;
-    final titleStyle = t.scale(
-      RaftTypeScale.callout,
-      weight: FontWeight.w400,
-      color: t.ui.foreground,
-    );
+    final scaled = RaftScaled.grows(context);
+    final desktopLayout =
+        MediaQuery.sizeOf(context).width >= RaftLayoutMetrics.desktopBreakpoint;
+    const probeWeight = int.fromEnvironment('TASKS_TITLE_WEIGHT');
+    final titleStyle = t
+        .scale(
+          RaftTypeScale.callout,
+          weight: FontWeight.w400,
+          color: t.ui.foreground,
+        )
+        .copyWith(
+          fontVariations: probeWeight == 0
+              ? null
+              : [FontVariation('wght', probeWeight.toDouble())],
+        );
     return _RowFlow(
       gap: 8,
       rowGap: 4,
       basis: 160,
+      wrapTrailing: !narrow || !desktopLayout || scaled,
       children: [
         RaftCssText(
           lead,
@@ -458,7 +469,7 @@ class _PageRowContent extends StatelessWidget {
           alignment: WrapAlignment.end,
           // The compact text line and icon badge share a 6px descent at
           // normal text size, so aligning their ends aligns the baselines.
-          crossAxisAlignment: compactStatus && !RaftScaled.grows(context)
+          crossAxisAlignment: compactStatus && !scaled
               ? WrapCrossAlignment.end
               : WrapCrossAlignment.center,
           spacing: 8,
@@ -514,19 +525,26 @@ class _RowFlow extends MultiChildRenderObjectWidget {
     required this.gap,
     required this.rowGap,
     required this.basis,
+    required this.wrapTrailing,
   });
   final double gap, rowGap, basis;
+  final bool wrapTrailing;
 
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderRowFlow(gap: gap, rowGap: rowGap, basis: basis);
+  RenderObject createRenderObject(BuildContext context) => _RenderRowFlow(
+    gap: gap,
+    rowGap: rowGap,
+    basis: basis,
+    wrapTrailing: wrapTrailing,
+  );
 
   @override
   void updateRenderObject(BuildContext context, _RenderRowFlow renderObject) {
     renderObject
       ..gap = gap
       ..rowGap = rowGap
-      ..basis = basis;
+      ..basis = basis
+      ..wrapTrailing = wrapTrailing;
   }
 }
 
@@ -540,11 +558,14 @@ class _RenderRowFlow extends RenderBox
     required double gap,
     required double rowGap,
     required double basis,
+    required bool wrapTrailing,
   }) : _gap = gap,
        _rowGap = rowGap,
-       _basis = basis;
+       _basis = basis,
+       _wrapTrailing = wrapTrailing;
 
   double _gap, _rowGap, _basis;
+  bool _wrapTrailing;
   set gap(double v) {
     if (v == _gap) return;
     _gap = v;
@@ -560,6 +581,12 @@ class _RenderRowFlow extends RenderBox
   set basis(double v) {
     if (v == _basis) return;
     _basis = v;
+    markNeedsLayout();
+  }
+
+  set wrapTrailing(bool value) {
+    if (value == _wrapTrailing) return;
+    _wrapTrailing = value;
     markNeedsLayout();
   }
 
@@ -601,7 +628,11 @@ class _RenderRowFlow extends RenderBox
 
     final loose = BoxConstraints(maxWidth: width);
     final leadSize = measure(lead, loose);
-    final trailConstraints = BoxConstraints(maxWidth: width + _pageRowEndInset);
+    final trailConstraints = BoxConstraints(
+      // The compact desktop flex group is shrink-0. In a clipped column it
+      // stays on one line, beyond the row's edge if necessary.
+      maxWidth: _wrapTrailing ? width + _pageRowEndInset : double.infinity,
+    );
     final trailSize = measure(trail, trailConstraints);
     final fits =
         leadSize.width + _gap + _basis + _gap + trailSize.width <= width + .5;

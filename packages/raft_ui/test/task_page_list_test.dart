@@ -47,6 +47,7 @@ Future<void> _mount(
   WidgetTester t, {
   required _Picks picks,
   double width = 900,
+  double? viewportWidth,
   bool dark = false,
   bool touch = false,
   bool selecting = false,
@@ -58,7 +59,8 @@ Future<void> _mount(
   TextDirection direction = TextDirection.ltr,
   List<RaftTaskChipRow> rows = _rows,
 }) async {
-  t.view.physicalSize = Size(width + 40, 900);
+  final viewport = Size(viewportWidth ?? width + 40, 900);
+  t.view.physicalSize = viewport;
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.resetPhysicalSize);
   addTearDown(t.view.resetDevicePixelRatio);
@@ -86,7 +88,7 @@ Future<void> _mount(
       theme: raftTheme(dark: dark),
       home: MediaQuery(
         data: MediaQueryData(
-          size: Size(width + 40, 900),
+          size: viewport,
           textScaler: TextScaler.linear(textScale),
         ),
         child: Scaffold(
@@ -355,6 +357,37 @@ void main() {
     );
     expect(meta.top, greaterThanOrEqualTo(title.bottom));
     expect(meta.right, t.getRect(_row('a')).right - 12);
+  });
+
+  testWidgets('desktop clipped column keeps trailing metadata on one line', (
+    t,
+  ) async {
+    await loadTaskFonts(t);
+    await _mount(
+      t,
+      picks: _Picks(),
+      width: 328,
+      viewportWidth: 1280,
+      showChannel: true,
+      rows: const [
+        RaftTaskChipRow(
+          id: 'a',
+          number: 11,
+          title: 'Review the focus mode layout',
+          status: 'todo',
+          channelName: 'workbench',
+          assigneeName: 'Workbench Assistant',
+          time: Text('2d ago'),
+        ),
+      ],
+    );
+    final channel = find.byKey(const ValueKey('message-task-chip-channel'));
+    final time = find.text('2d ago');
+    final channelBounds = t.getRect(channel);
+    final timeBounds = t.getRect(time);
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(timeBounds.top, lessThan(channelBounds.bottom));
+    expect(timeBounds.left, greaterThan(channelBounds.right));
   });
 
   testWidgets('across channels: the number names its channel where the list '

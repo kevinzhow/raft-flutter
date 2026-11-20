@@ -189,9 +189,14 @@ void main() {
       await t.enterText(editor, 'Draft stays with the task');
       final expand = find.byKey(const ValueKey('task-focus-mode'));
       final initialWidth = t.getSize(slot).width;
+      final listHeader = find.byKey(const Key('page-header-surface'));
+      final listToolbar = find.byKey(const Key('tasks-page-toolbar'));
+      final initialListWidth = t.getSize(listHeader).width;
       await t.tap(expand.hitTestable());
       await settle(t);
       expect(t.getSize(slot).width, greaterThan(initialWidth));
+      expect(t.getSize(listHeader).width, 160);
+      expect(t.getSize(listToolbar).width, 360);
       expect(
         t.widget<EditableText>(editor).controller.text,
         'Draft stays with the task',
@@ -200,6 +205,7 @@ void main() {
       await t.tap(expand.hitTestable());
       await settle(t);
       expect(t.getSize(slot).width, initialWidth);
+      expect(t.getSize(listHeader).width, initialListWidth);
       expect(
         t.widget<EditableText>(editor).controller.text,
         'Draft stays with the task',

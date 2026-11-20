@@ -178,16 +178,7 @@ class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
               textDirection: TextDirection.ltr,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: ClipRect(
-                    child: OverflowBox(
-                      alignment: AlignmentDirectional.topStart,
-                      minWidth: focused ? taskSlotListMin : null,
-                      maxWidth: focused ? taskSlotListMin : null,
-                      child: widget.child,
-                    ),
-                  ),
-                ),
+                Expanded(child: ClipRect(child: widget.child)),
                 if (open)
                   SizedBox(
                     width: width,
