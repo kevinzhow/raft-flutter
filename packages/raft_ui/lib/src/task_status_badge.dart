@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import 'icons.dart';
 import 'mounted_task_chip.dart';
@@ -77,7 +76,7 @@ class RaftTaskStatusBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: recipe.gap,
         children: [
-          labelHidden ? _StatusIconBaseline(child: icon) : icon,
+          icon,
           if (!labelHidden)
             Flexible(
               child: RaftCssText(
@@ -99,27 +98,6 @@ class RaftTaskStatusBadge extends StatelessWidget {
       child: ExcludeSemantics(child: badge),
     );
   }
-}
-
-// A compact badge has no in-flow label. Its first flex item's baseline is
-// synthesized at the bottom of the SVG.
-class _StatusIconBaseline extends SingleChildRenderObjectWidget {
-  const _StatusIconBaseline({required super.child});
-
-  @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderStatusIconBaseline();
-}
-
-class _RenderStatusIconBaseline extends RenderProxyBox {
-  @override
-  double computeDistanceToActualBaseline(TextBaseline baseline) => size.height;
-
-  @override
-  double computeDryBaseline(
-    BoxConstraints constraints,
-    TextBaseline baseline,
-  ) => getDryLayout(constraints).height;
 }
 
 /// The Pencil 10 at 40% opacity the InlineBadgeEditor puts after the label.

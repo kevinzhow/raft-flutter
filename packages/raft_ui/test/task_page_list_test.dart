@@ -55,6 +55,7 @@ Future<void> _mount(
   bool showChannel = false,
   bool showUnassigned = false,
   double textScale = 1,
+  TextDirection direction = TextDirection.ltr,
   List<RaftTaskChipRow> rows = _rows,
 }) async {
   t.view.physicalSize = Size(width + 40, 900);
@@ -91,7 +92,10 @@ Future<void> _mount(
         child: Scaffold(
           body: Align(
             alignment: Alignment.topLeft,
-            child: SizedBox(width: width, child: list),
+            child: SizedBox(
+              width: width,
+              child: Directionality(textDirection: direction, child: list),
+            ),
           ),
         ),
       ),
@@ -439,6 +443,53 @@ void main() {
     expect(badge.width, 24);
     expect(label.bottom, closeTo(badge.bottom, .01));
   });
+
+  testWidgets(
+    '2x RTL compact metadata wraps in reading order and stays tappable',
+    (t) async {
+      await loadTaskFonts(t);
+      final picks = _Picks();
+      await _mount(
+        t,
+        picks: picks,
+        width: 300,
+        showChannel: true,
+        showUnassigned: true,
+        textScale: 2,
+        direction: TextDirection.rtl,
+        touch: true,
+      );
+      final row = _row('b');
+      Rect bounds(String field) => t.getRect(
+        find.descendant(
+          of: row,
+          matching: find.byKey(ValueKey('message-task-chip-$field')),
+        ),
+      );
+      final cell = t.getRect(row);
+      final meta = bounds('meta');
+      final channel = bounds('channel');
+      final label = bounds('unassigned');
+      final badge = bounds('status');
+      expect(meta.left, greaterThanOrEqualTo(cell.left));
+      expect(meta.right, lessThanOrEqualTo(cell.right));
+      expect(meta.bottom, lessThanOrEqualTo(cell.bottom));
+      void expectBefore(Rect first, Rect second) {
+        if (first.top < second.bottom && second.top < first.bottom) {
+          expect(first.left, greaterThanOrEqualTo(second.right));
+        } else {
+          expect(first.bottom, lessThanOrEqualTo(second.top));
+        }
+      }
+
+      expectBefore(channel, label);
+      expectBefore(label, badge);
+      await t.longPress(_open('b'));
+      expect(picks.picked, [('b', false)]);
+      expect(picks.opened, isEmpty);
+      await t.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
   testWidgets('text scale 1x and 2x: rows grow with the text, nothing '
       'overflows, the box and the title stay readable', (t) async {

@@ -435,6 +435,10 @@ class _PageRowContent extends StatelessWidget {
                       task.title,
                       key: const ValueKey('message-task-chip-title'),
                       style: titleStyle,
+                      strutStyle: StrutStyle.fromTextStyle(
+                        titleStyle,
+                        forceStrutHeight: true,
+                      ),
                       softWrap: true,
                     )
                   : Text(
@@ -449,9 +453,16 @@ class _PageRowContent extends StatelessWidget {
               RaftTaskReplyCount(task: task, style: lineMono),
           ],
         ),
-        _PageMetadata(
+        Wrap(
           key: const ValueKey('message-task-chip-meta'),
-          alignBaselines: compactStatus,
+          alignment: WrapAlignment.end,
+          // The compact text line and icon badge share a 6px descent at
+          // normal text size, so aligning their ends aligns the baselines.
+          crossAxisAlignment: compactStatus && !RaftScaled.grows(context)
+              ? WrapCrossAlignment.end
+              : WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 4,
           children: [
             if (channel != null)
               RaftCssText(

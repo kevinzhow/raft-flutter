@@ -57451,25 +57451,25 @@
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27429/METHOD:_build@34434/FUNCTION:row@41572": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27461/METHOD:_build@34466/FUNCTION:row@41604": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27429/METHOD:_build@34434/FUNCTION:titleContent@37746": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27461/METHOD:_build@34466/FUNCTION:titleContent@37778": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27429/METHOD:_build@34434/FUNCTION:titleWithIndicators@40802": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27461/METHOD:_build@34466/FUNCTION:titleWithIndicators@40834": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27429/METHOD:_build@34434/FUNCTION:wrappedTitle@36605": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27461/METHOD:_build@34466/FUNCTION:wrappedTitle@36637": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
