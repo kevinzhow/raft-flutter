@@ -385,9 +385,13 @@ void main() {
     final time = find.text('2d ago');
     final channelBounds = t.getRect(channel);
     final timeBounds = t.getRect(time);
+    final status = t.getRect(find.byType(RaftTaskStatusBadge));
     await t.pumpWidget(const SizedBox.shrink());
     expect(timeBounds.top, lessThan(channelBounds.bottom));
     expect(timeBounds.left, greaterThan(channelBounds.right));
+    expect(status.height, 22);
+    expect(channelBounds.top - status.top, 1);
+    expect(channelBounds.bottom - status.bottom, 1);
   });
 
   testWidgets('across channels: the number names its channel where the list '

@@ -24,6 +24,20 @@ class RaftTaskRowSelection {
 const double _focusRingWidth = 2;
 const double _pageRowEndInset = 12;
 
+// The compact badge's baseline is the bottom of its centred status SVG.
+double _compactStatusBaselineInset(
+  RaftTokens tokens,
+  RaftMessageTaskStatus status,
+  TextStyle mono,
+) {
+  final recipe = RaftMessageTaskChipRecipe(tokens, status);
+  if (!recipe.squareStatus) return 0;
+  final icon = RaftMessageTaskStatusIcon.pixelOf(tokens);
+  final badgeDescent = (recipe.chipHeight - icon) / 2;
+  final monoDescent = mono.fontSize! * mono.height! - raftCssBaseline(mono);
+  return (monoDescent - badgeDescent).clamp(0.0, double.infinity);
+}
+
 Color _pageListHairline(RaftTokens t, [Color? fill]) {
   final line = t.ui.lineHairline;
   final card = t.ui.layerCard;
@@ -411,6 +425,15 @@ class _PageRowContent extends StatelessWidget {
     final scaled = RaftScaled.grows(context);
     final desktopLayout =
         MediaQuery.sizeOf(context).width >= RaftLayoutMetrics.desktopBreakpoint;
+    final singleLineMeta = narrow && desktopLayout && !scaled;
+    final status = raftTaskStatusOf(task.status);
+    final statusBadge = list.showStatus
+        ? RaftTaskStatusBadge(
+            status: status,
+            label: statusLabel,
+            labelHidden: compactStatus,
+          )
+        : null;
     const probeWeight = int.fromEnvironment('TASKS_TITLE_WEIGHT');
     final titleStyle = t
         .scale(
@@ -427,7 +450,7 @@ class _PageRowContent extends StatelessWidget {
       gap: 8,
       rowGap: 4,
       basis: 160,
-      wrapTrailing: !narrow || !desktopLayout || scaled,
+      wrapTrailing: !singleLineMeta,
       children: [
         RaftCssText(
           lead,
@@ -467,8 +490,8 @@ class _PageRowContent extends StatelessWidget {
         Wrap(
           key: const ValueKey('message-task-chip-meta'),
           alignment: WrapAlignment.end,
-          // The compact text line and icon badge share a 6px descent at
-          // normal text size, so aligning their ends aligns the baselines.
+          // Give the desktop pixel badge the text line's descent so their
+          // bottom alignment matches the source flex baseline.
           crossAxisAlignment: compactStatus && !scaled
               ? WrapCrossAlignment.end
               : WrapCrossAlignment.center,
@@ -494,14 +517,21 @@ class _PageRowContent extends StatelessWidget {
               ),
             if (showAssignee)
               RaftTaskAssignee(task: task, alignToPageRow: true),
-            if (list.showStatus)
+            if (statusBadge != null)
               KeyedSubtree(
                 key: const ValueKey('message-task-chip-status'),
-                child: RaftTaskStatusBadge(
-                  status: raftTaskStatusOf(task.status),
-                  label: statusLabel,
-                  labelHidden: compactStatus,
-                ),
+                child: compactStatus && singleLineMeta
+                    ? Padding(
+                        padding: EdgeInsets.only(
+                          bottom: _compactStatusBaselineInset(
+                            t,
+                            status,
+                            lineMono,
+                          ),
+                        ),
+                        child: statusBadge,
+                      )
+                    : statusBadge,
               ),
             ?task.time,
           ],
