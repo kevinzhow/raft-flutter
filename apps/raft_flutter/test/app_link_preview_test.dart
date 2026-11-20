@@ -114,6 +114,17 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Allow'), findsOneWidget);
+      expect(
+        tester
+            .widget<RaftButton>(
+              find.ancestor(
+                of: find.text('Allow'),
+                matching: find.byType(RaftButton),
+              ),
+            )
+            .uiVariant,
+        RaftButtonVariant.standard,
+      );
       await tester.tap(find.text('Allow'));
       await tester.pumpAndSettle();
       expect(find.text('Allow'), findsNothing);
@@ -122,6 +133,14 @@ void main() {
       await tester.tap(find.text('Resolve'));
       await tester.pump();
       expect(find.text('Undo'), findsOneWidget);
+      expect(find.text('Runs when the countdown ends'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('Resolve'),
+          matching: find.byType(RaftButton),
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.text('Undo'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 6));

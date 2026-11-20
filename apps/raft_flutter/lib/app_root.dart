@@ -58,6 +58,8 @@ import 'platform/native_sharing.dart';
 import 'platform/ios_share_session.dart';
 import 'platform/incoming_share_staging.dart';
 import 'platform/content_coordinator.dart';
+import 'platform/content_links.dart';
+import 'platform/content_target.dart';
 import 'platform/workspace_cache.dart';
 import 'platform/desktop_window_exit.dart';
 import 'platform/desktop_windows.dart';
@@ -1657,20 +1659,39 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         ).uri;
         appRouter.publish(uri, replace: true);
       }
+      ContentTarget? messageLanding;
       if (uri != null &&
           uri.pathSegments.elementAtOrNull(1) == selected.string('slug')) {
         // MainLayout useRailLegacyRedirect: legacy shapes REPLACE in place.
         final target = RaftLocation.fromUri(RaftLocation.canonicalLegacy(uri));
-        final routeChanged = w.location.uri != target.uri;
-        if (routeChanged) {
-          w.navigation.navigate(target, kind: RaftNavigationKind.replace);
+        if (location != null && target.messageId != null) {
+          final frontend = ContentLinks.originFor(c.origin);
+          messageLanding = ContentTarget.parse(
+            frontend.resolveUri(target.uri),
+            origin: frontend,
+          );
         }
-        restoreAcceptedConversation(w, target, routeChanged: routeChanged);
+        if (messageLanding == null) {
+          final routeChanged = w.location.uri != target.uri;
+          if (routeChanged) {
+            w.navigation.navigate(target, kind: RaftNavigationKind.replace);
+          }
+          restoreAcceptedConversation(w, target, routeChanged: routeChanged);
+        }
       }
       showServerSelector = false;
       chooserReturn = serverSwitchLocation = serverSwitchReturn = null;
       directoryLoading = false;
       content.bindWorkspace(w);
+      if (messageLanding != null) {
+        unawaited(
+          content.navigate(
+            messageLanding,
+            replaceEntry: true,
+            externalLink: true,
+          ),
+        );
+      }
       workspaceChanged();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (current() && !showServerSelector && w.server?.id == selected.id) {

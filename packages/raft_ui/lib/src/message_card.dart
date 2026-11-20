@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'icons.dart';
 import 'localization.dart' show raftFormat;
 import 'message_body.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'raft/badge.dart';
 import 'separator.dart';
 import 'raft/button.dart';
@@ -343,17 +344,27 @@ class RaftMessageCard extends StatelessWidget {
           RaftCardTextTone.warning => t.colors['warning-strong'] ?? ui.warning,
           RaftCardTextTone.normal => ui.foreground,
         };
-        return Text(
-          text,
-          maxLines: inRow ? 1 : clamp,
-          softWrap: !inRow,
-          overflow: inRow || clamp != null
-              ? TextOverflow.ellipsis
-              : TextOverflow.clip,
-          style: mono
-              ? t.scale(RaftTypeScale.monoMeta, color: color)
-              : t.scale(RaftTypeScale.callout, color: color),
-        );
+        final step = mono ? RaftTypeScale.monoMeta : RaftTypeScale.callout;
+        final style = t.scale(step, mono: contentOnly && mono, color: color);
+        final lines = inRow ? 1 : clamp;
+        final overflow = lines != null
+            ? TextOverflow.ellipsis
+            : TextOverflow.clip;
+        return contentOnly
+            ? RaftCssText(
+                text,
+                maxLines: lines,
+                softWrap: !inRow,
+                overflow: overflow,
+                style: style.copyWith(height: step.height),
+              )
+            : Text(
+                text,
+                maxLines: lines,
+                softWrap: !inRow,
+                overflow: overflow,
+                style: style,
+              );
       case RaftCardBadge(:final text, :final variant):
         final badge = RaftBadge(
           label: text,

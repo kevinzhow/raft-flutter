@@ -150,7 +150,7 @@ class RaftToast extends StatelessWidget {
     final cell = s.icon.width ?? 20;
     final titleOnly = !icon && !hasAction && !hasClose && !hasDescription;
     final padding = s.content.padding;
-    final row = Row(
+    final copy = Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: cross,
       children: [
@@ -169,9 +169,14 @@ class RaftToast extends StatelessWidget {
           SizedBox(width: s.content.columnGap ?? 12),
         ],
         Flexible(child: body),
+      ],
+    );
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(child: copy),
         if (close != null || action != null) ...[
           SizedBox(width: s.content.columnGap ?? 12),
-          // `ToastActions`: `gap-4`, close before the action.
           if (close != null) close,
           if (close != null && action != null)
             SizedBox(width: s.actions.columnGap ?? 16),
@@ -395,6 +400,11 @@ class RaftToastHandle {
   bool get isShown =>
       _controller._serial == _serial && _controller._title != null;
 
+  /// Updates the details of a countdown without replacing its focused action.
+  void updateDescription(String description) {
+    if (isShown) _controller._setDescription(description);
+  }
+
   /// Closes this toast as [RaftToastCloseReason.dismissed]; a newer toast is
   /// left alone.
   void dismiss() {
@@ -517,6 +527,12 @@ class RaftToastController extends ChangeNotifier {
     notifyListeners();
     replacedClose?.call(RaftToastCloseReason.replaced);
     return RaftToastHandle._(this, serial);
+  }
+
+  void _setDescription(String description) {
+    if (_description == description) return;
+    _description = description;
+    notifyListeners();
   }
 
   void _start() {

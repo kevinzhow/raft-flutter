@@ -205,20 +205,7 @@ ReadMessageCard? readMessageCard(
         case 'Badge':
           final p = props({'text', 'tone'});
           if (!_badgeTones.contains(p['tone'] ?? 'neutral')) _invalid();
-          return RaftCardBadge(
-            _text(p['text'], 1, 60),
-            variant: linkButton == null
-                ? null
-                : switch (p['tone']) {
-                    'review' => RaftBadgeRecipeVariant.information,
-                    'progress' => RaftBadgeRecipeVariant.busy,
-                    'warning' => RaftBadgeRecipeVariant.warning,
-                    'action' => RaftBadgeRecipeVariant.accent,
-                    'done' => RaftBadgeRecipeVariant.success,
-                    'closed' => RaftBadgeRecipeVariant.muted,
-                    _ => null,
-                  },
-          );
+          return RaftCardBadge(_text(p['text'], 1, 60));
         case 'RelativeTime':
           return RaftCardRelativeTime(_time(props({'at'})['at']));
         case 'Duration':

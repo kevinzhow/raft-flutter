@@ -10,6 +10,7 @@ import 'message_markdown.dart';
 import 'message_touch_taps.dart';
 import 'markdown_scrollbar.dart';
 import 'message_tokens.dart';
+import 'tokens/tokens.dart' show RaftScale;
 import 'message_reference_chip.dart';
 import 'message_row_recipe.dart' show RaftMessageSizeTier;
 
@@ -1160,7 +1161,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 4,
+                    spacing: RaftScale.space(2),
                     children: [block, ...cards],
                   );
                 },
@@ -1980,8 +1981,12 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     if (inlineLink != null) {
       return Text.rich(
         WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: raftMessageTapControlRegion(inlineLink),
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: DefaultTextStyle.merge(
+            style: base,
+            child: raftMessageTapControlRegion(inlineLink),
+          ),
         ),
       );
     }

@@ -44,6 +44,7 @@ EXT_SURFACE_LEVEL = {
     'components.channelheader.desktop': FRAME,
     'components.channelheader.mobile': FRAME,
     # L2 pages
+    'components.app-links.unavailable': PAGE,
     'components.screens-ext.channel': PAGE, 'components.screens-ext.dm': PAGE,
     'components.screens-ext.composer': PAGE, 'components.screens-ext.activity': PAGE,
     'components.ext-settings.nav': PAGE, 'components.ext-settings.about': PAGE,
@@ -87,7 +88,7 @@ EXT_SURFACE_LEVEL = {
 EXT_AREA_LEVEL = {
     'conversation': COMPONENT, 'thread-ext': COMPONENT, 'composer-states': COMPONENT, 'errors': COMPONENT,
     'search-overlay': COMPONENT, 'composerattachments': COMPONENT,
-    'action-card-v124': COMPONENT,
+    'action-card-v124': COMPONENT, 'app-links': COMPONENT,
     # the coverage families added by this audit name their level in the id: components.<area>.<level>.<...>
     'frame': FRAME, 'framework': FRAME, 'pages': PAGE, 'states': FRAME,
 }
