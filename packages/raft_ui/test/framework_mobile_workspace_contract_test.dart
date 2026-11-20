@@ -24,7 +24,7 @@ void main() {
             );
             addTearDown(t.view.reset);
             var opened = 0, notifications = 0;
-            final semantics = t.ensureSemantics();
+            const unread = 'Other servers have unread messages';
             await t.pumpWidget(
               MaterialApp(
                 theme: raftTheme(dark: dark),
@@ -36,6 +36,7 @@ void main() {
                       key: const Key('selector'),
                       label: 'Visual Server',
                       attention: true,
+                      attentionLabel: unread,
                       viewportHeight: height,
                       onPressed: () => opened++,
                     ),
@@ -58,9 +59,15 @@ void main() {
               matching: find.byType(RaftButton),
             );
             expect(t.getSize(control).height, 36);
+            final badge = find.descendant(
+              of: selector,
+              matching: find.byType(RaftAvatarBadge),
+            );
+            expect(badge, findsOneWidget);
+            expect(t.getSize(badge), const Size.square(9));
             expect(
-              t.getSize(find.byType(RaftAttentionDot)),
-              const Size(10, 10),
+              find.bySemanticsLabel('Visual Server, $unread'),
+              findsOneWidget,
             );
             expect(
               t
@@ -92,7 +99,6 @@ void main() {
             await t.pump();
             expect(notifications, 1);
             expect(t.takeException(), isNull);
-            semantics.dispose();
             await t.pumpWidget(const SizedBox.shrink());
           },
           variant: TargetPlatformVariant.only(platform),
