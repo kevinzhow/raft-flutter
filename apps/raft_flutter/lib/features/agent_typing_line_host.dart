@@ -295,9 +295,11 @@ class AgentTypingLineHost extends StatelessWidget {
     super.key,
     required this.controller,
     required this.thread,
+    this.fadeAboveComposer = false,
   });
   final WorkspaceController controller;
   final bool thread;
+  final bool fadeAboveComposer;
 
   @override
   Widget build(BuildContext context) => AgentTypingListener(
@@ -315,29 +317,40 @@ class AgentTypingLineHost extends StatelessWidget {
         );
         // Out of a channel, and in one while nobody works there: the typing
         // line itself (it shows nothing while nobody types).
-        if (state.faces.isEmpty || !state.inChannel) {
-          return Align(
-            alignment: Alignment.bottomCenter,
-            child: IgnorePointer(
-              child: RaftAgentTypingLine(
-                agents: state.faces,
-                sentence: state.sentence,
-              ),
+        final showsWorkingSummary = state.faces.isNotEmpty && state.inChannel;
+        final line = showsWorkingSummary
+            ? Align(
+                alignment: Alignment.bottomLeft,
+                child: SizedBox(
+                  key: const Key('agent-typing-line'),
+                  height: raftAgentTypingLineHeight,
+                  child: RaftWorkingSummary(
+                    agents: state.rows,
+                    sentence: state.sentence,
+                    onOpenAgent: (id) =>
+                        controller.openProfile(RaftProfileKind.agent, id),
+                  ),
+                ),
+              )
+            : Align(
+                alignment: Alignment.bottomCenter,
+                child: IgnorePointer(
+                  child: RaftAgentTypingLine(
+                    agents: state.faces,
+                    sentence: state.sentence,
+                  ),
+                ),
+              );
+        if (!fadeAboveComposer) return line;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            RaftMessageListEndFade(
+              aboveComposer: true,
+              solidTail: state.faces.isEmpty ? 0 : raftAgentTypingLineHeight,
             ),
-          );
-        }
-        return Align(
-          alignment: Alignment.bottomLeft,
-          child: SizedBox(
-            key: const Key('agent-typing-line'),
-            height: raftAgentTypingLineHeight,
-            child: RaftWorkingSummary(
-              agents: state.rows,
-              sentence: state.sentence,
-              onOpenAgent: (id) =>
-                  controller.openProfile(RaftProfileKind.agent, id),
-            ),
-          ),
+            line,
+          ],
         );
       });
     },
@@ -352,9 +365,11 @@ class AgentTypingListEnd extends StatefulWidget {
     super.key,
     required this.controller,
     required this.thread,
+    required this.aboveComposer,
   });
   final WorkspaceController controller;
   final bool thread;
+  final bool aboveComposer;
 
   @override
   State<AgentTypingListEnd> createState() => _AgentTypingListEndState();
@@ -390,7 +405,7 @@ class _AgentTypingListEndState extends State<AgentTypingListEnd> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const RaftTimelineFooter(),
+            RaftTimelineFooter(aboveComposer: widget.aboveComposer),
             if (shown) const SizedBox(height: raftAgentTypingListEnd),
           ],
         );

@@ -57760,12 +57760,6 @@
         "owner": "WP-COMPOSE",
         "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:buildTimeline@113540/FUNCTION:timelineFor@117282": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-THREAD",
-        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
-      },
       "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27687/METHOD:_build@34756/FUNCTION:row@41894": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -57796,29 +57790,41 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@37061/METHOD:build@37435/FUNCTION:bar@38544": {
+      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.suggestionSurface": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Resolves the generated ComposerSuggestionList surface for the mounted composer."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@37446/METHOD:build@37820/FUNCTION:bar@38929": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@37061/METHOD:build@37435/FUNCTION:text@38714": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@37446/METHOD:build@37820/FUNCTION:text@39099": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27360/METHOD:build@27538/FUNCTION:bar@28473": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27745/METHOD:build@27923/FUNCTION:bar@28858": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27360/METHOD:build@27538/FUNCTION:line@27736": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27745/METHOD:build@27923/FUNCTION:line@28121": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:buildTimeline@113599/FUNCTION:timelineFor@117377": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       }
     },
     "entries": {

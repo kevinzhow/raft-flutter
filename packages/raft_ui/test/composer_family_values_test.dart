@@ -63,7 +63,7 @@ void main() {
         expect(r.shellInset.bottom, 5);
         expect(r.toolbarGap, 6);
         expect(r.actionGap, 6);
-        expect(r.metaGap, 6);
+        expect(r.metaGap, 8);
         expect(r.actionFace, fine ? 28 : 32);
         expect(r.firstActionOffset, fine ? -5 : -7);
         // Pointer-fine is the desktop token variant, never width alone.

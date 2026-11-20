@@ -579,30 +579,34 @@ Widget _avatar(
   RaftAvatarPresence? presence,
 }) {
   final agent = type == 'agent';
-  final avatar = RaftAvatar(
+  const avatarContext = RaftMountedAvatarContext.compactList;
+  return RaftMountedAvatarFrame(
     name: name,
-    size: 20,
-    kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
-    mountedContext: RaftMountedAvatarContext.compactList,
+    extent: RaftAvatarSize.xs.extent,
+    avatarContext: avatarContext,
+    identity: agent
+        ? RaftMountedAvatarIdentity.agent
+        : RaftMountedAvatarIdentity.human,
     presence: presence,
     muted: muted,
-    content: RaftAvatarContent(
+    child: RaftAvatarContent(
       name: name,
       kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
       uploadedUrl: source.uploadedUrl,
       pixelKey: source.pixelKey,
       fallback: Opacity(
         opacity: muted && !agent ? .5 : 1,
-        child: RaftMountedAvatarFallback(
-          avatarContext: RaftMountedAvatarContext.compactList,
-          identity: agent
-              ? RaftMountedAvatarIdentity.agent
-              : RaftMountedAvatarIdentity.human,
-        ),
+        child: agent
+            ? const RaftMountedAvatarFallback(
+                avatarContext: avatarContext,
+                identity: RaftMountedAvatarIdentity.agent,
+              )
+            : Center(
+                child: RaftIcon(RaftGlyph.user, size: RaftAvatarSize.xs.icon),
+              ),
       ),
     ),
   );
-  return avatar;
 }
 
 /// Web `getMentionCandidateServerLabel` input: a roster row names its source

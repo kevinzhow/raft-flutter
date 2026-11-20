@@ -15,9 +15,8 @@ import 'separator.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 
-/// Applies selection paint to the message that owns the toggle gesture.
-Widget raftSelectableMessage(
-  BuildContext context, {
+/// Routes the row tap to the selection toggle while row controls are inert.
+Widget raftSelectableMessage({
   required bool selected,
   required VoidCallback? onTap,
   required Widget child,
@@ -26,14 +25,7 @@ Widget raftSelectableMessage(
   child: GestureDetector(
     behavior: HitTestBehavior.opaque,
     onTap: onTap,
-    child: AbsorbPointer(
-      child: selected
-          ? ColoredBox(
-              color: RaftTokens.of(context).colors['info-soft']!,
-              child: child,
-            )
-          : child,
-    ),
+    child: AbsorbPointer(child: child),
   ),
 );
 
@@ -156,7 +148,12 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
     return RaftNavigationBarStyle(
       background: t.canvas,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + raftBottomInset(context)),
+        padding: EdgeInsets.fromLTRB(
+          recipe.horizontalInset,
+          0,
+          recipe.horizontalInset,
+          12 + raftBottomInset(context),
+        ),
         child: Align(
           alignment: Alignment.bottomCenter,
           heightFactor: 1,

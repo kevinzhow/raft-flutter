@@ -59,10 +59,10 @@ void main() {
             home: Scaffold(body: candidate.avatar),
           ),
         );
-        expect(
-          tester.widget<RaftAvatar>(find.byType(RaftAvatar)).presence?.activity,
-          RaftAvatarActivity.working,
-        );
+        final avatar = find.byType(RaftMountedAvatarFrame);
+        RaftMountedAvatarFrame frame() => tester.widget(avatar);
+        expect(tester.getSize(avatar), const Size.square(19));
+        expect(frame().presence?.activity, RaftAvatarActivity.working);
         final reads = a.calls.length;
         activity.event(
           RaftEvent('agent:activity', {
@@ -73,10 +73,7 @@ void main() {
           }),
         );
         await tester.pump();
-        expect(
-          tester.widget<RaftAvatar>(find.byType(RaftAvatar)).presence?.activity,
-          RaftAvatarActivity.offline,
-        );
+        expect(frame().presence?.activity, RaftAvatarActivity.offline);
         expect(a.calls.length, reads);
         activity.event(
           RaftEvent('agent:activity', {
@@ -87,23 +84,20 @@ void main() {
           }),
         );
         await tester.pump();
-        expect(
-          tester.widget<RaftAvatar>(find.byType(RaftAvatar)).presence?.activity,
-          RaftAvatarActivity.offline,
-        );
+        expect(frame().presence?.activity, RaftAvatarActivity.offline);
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(dark: dark),
             home: Scaffold(body: candidate.mutedAvatar),
           ),
         );
-        final muted = tester.widget<RaftAvatar>(find.byType(RaftAvatar));
+        final muted = frame();
         expect(muted.presence, null);
         expect(muted.muted, true);
         w.server = RaftRecord({'id': 's1', 'role': 'guest'});
         w.notifyListeners();
         await tester.pump();
-        expect(find.byType(RaftAvatar), findsNothing);
+        expect(avatar, findsNothing);
         expect(directory.people, isEmpty);
         await tester.pumpWidget(const SizedBox());
         expect(activity.ended, false);

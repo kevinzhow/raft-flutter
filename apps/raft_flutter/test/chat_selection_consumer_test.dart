@@ -164,8 +164,15 @@ void main() {
           t.element(find.byType(RaftSelectionToolbar)),
         ).colors['info-soft'];
         expect(
-          find.byWidgetPredicate(
-            (widget) => widget is ColoredBox && widget.color == selectedInk,
+          find.ancestor(
+            of: find.byWidgetPredicate(
+              (widget) =>
+                  widget is RaftMessageRowFillScope &&
+                  widget.color == selectedInk,
+            ),
+            matching: find.byWidgetPredicate(
+              (widget) => widget is RaftMessageRow && widget.checked,
+            ),
           ),
           findsNWidgets(2),
         );

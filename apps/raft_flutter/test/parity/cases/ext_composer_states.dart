@@ -13,7 +13,7 @@
 // rectangle the React host marks.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart'
-    show addTearDown, expect, find, findsOneWidget;
+    show addTearDown, closeTo, expect, find, findsOneWidget;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
@@ -159,6 +159,18 @@ final ParityCase _case = ParityCase(
         find.byType(RaftPendingMentionActionStrip).hitTestable(),
         findsOneWidget,
       );
+    }
+    if (ctx.props['state'] == 'single' && ctx.props['platform'] == 'mobile') {
+      final sent = find.ancestor(
+        of: find.text(_state(ctx)['draft'] as String, findRichText: true),
+        matching: find.byType(RaftMessageRow),
+      );
+      expect(sent, findsOneWidget);
+      final composerTop = tester.getTopLeft(find.byType(RaftComposer)).dy;
+      expect(composerTop - tester.getBottomLeft(sent).dy, closeTo(12, .01));
+      final fade = tester.getRect(find.byType(RaftMessageListEndFade));
+      expect(fade.height, 16);
+      expect(fade.bottom, composerTop);
     }
   },
 );

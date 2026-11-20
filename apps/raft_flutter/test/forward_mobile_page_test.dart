@@ -152,6 +152,11 @@ void main() {
       );
       expect(t.getSize(peer), const Size.square(27));
       expect(t.getSize(row).height, 44);
+      final label = t.widget<RichText>(
+        find.descendant(of: row, matching: find.byType(RichText)),
+      );
+      expect(label.text.style?.fontSize, 15);
+      expect(label.text.style?.height, closeTo(20 / 15, .001));
       expect(
         t
             .widget<RaftPanelAction>(
