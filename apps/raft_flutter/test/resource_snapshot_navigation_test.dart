@@ -15,13 +15,18 @@ import 'activity_incremental_refresh_test.dart'
         ActivityWorkspace,
         activityFixture,
         activityScroll,
+        channelRow,
         shown,
         skeleton;
 
 void main() {
   late ActivityClient client;
   late ActivityWorkspace w;
-  setUp(() => (client, w) = activityFixture());
+  setUp(() {
+    (client, w) = activityFixture();
+    client.responses['GET /channels'] = const <Map<String, dynamic>>[];
+    client.responses['GET /channels/dm'] = const <Map<String, dynamic>>[];
+  });
   tearDown(() async {
     w.dispose();
     await client.dispose();
@@ -106,33 +111,81 @@ void main() {
   testWidgets('a role or server change never serves the previous snapshot', (
     tester,
   ) async {
+    final placeholders = find.byType(RaftInboxItemSkeleton);
     await tester.pumpWidget(page('activity'));
     await tester.pumpAndSettle();
+    expect(shown('Preview 0'), findsOneWidget);
+    final dynamic ownerState = tester.state(find.byType(ResourceView));
+    final ownerAuthority = ownerState.identityAuthority as String;
     await tester.pumpWidget(away());
-    w.server = RaftRecord({'id': 's1', 'role': 'member'});
+    expect(
+      w.resourceSnapshots.read<ResourceSnapshot>('activity', ownerAuthority),
+      isNotNull,
+    );
+
+    w.applyMembershipRole({
+      'userId': 'alice',
+      'serverId': 's1',
+      'role': 'member',
+    });
+    expect(w.server?.string('role'), 'member');
+    w.inbox[0] = {...w.inbox[0], 'lastMessagePreview': 'Member preview'};
     w.hold = Completer<void>();
     await tester.pumpWidget(page('activity'));
-    final dynamic state = tester.state(find.byType(ResourceView));
-    expect(state.rows, isEmpty);
+    final dynamic memberState = tester.state(find.byType(ResourceView));
+    final memberAuthority = memberState.identityAuthority as String;
+    expect(memberAuthority, isNot(ownerAuthority));
+    expect(memberState.rows, isEmpty);
+    expect(shown('Preview 0'), findsNothing);
+    expect(shown('Member preview'), findsNothing);
+    expect(skeleton, findsOneWidget);
+    expect(placeholders, findsNothing);
+    await tester.pump(const Duration(seconds: 1));
+    expect(placeholders, findsNWidgets(10));
+    expect(shown('Preview 0'), findsNothing);
+    w.hold!.complete();
+    w.hold = null;
+    await tester.pumpAndSettle();
+    expect(memberState.rows, hasLength(50));
+    expect(shown('Member preview'), findsOneWidget);
+    expect(shown('Preview 0'), findsNothing);
+    expect(skeleton, findsNothing);
+    await tester.pumpWidget(away());
+    expect(
+      w.resourceSnapshots.read<ResourceSnapshot>('activity', memberAuthority),
+      isNotNull,
+    );
+
+    // Server selection drops the snapshot under its original key.
+    client.responses['GET /channels'] = [
+      {'id': 'ch0', 'name': 'Server 2 channel', 'joined': true},
+    ];
+    // On the mobile home, selection refreshes channels without opening chat.
+    w.mobileNavigation = true;
+    await w.selectServer(RaftRecord({'id': 's2', 'role': 'owner'}));
+    expect(w.error, isNull);
+    expect(client.serverId, 's2');
+    expect(w.channels.single.name, 'Server 2 channel');
+    expect(
+      w.resourceSnapshots.read<ResourceSnapshot>('activity', memberAuthority),
+      isNull,
+    );
+    w.inbox = [
+      {...channelRow(0), 'lastMessagePreview': 'Server 2 preview'},
+    ];
+    w.hold = Completer<void>();
+    await tester.pumpWidget(page('activity'));
+    final dynamic serverState = tester.state(find.byType(ResourceView));
+    expect(serverState.rows, isEmpty);
+    expect(shown('Member preview'), findsNothing);
+    expect(shown('Server 2 preview'), findsNothing);
     expect(skeleton, findsOneWidget);
     w.hold!.complete();
     w.hold = null;
     await tester.pumpAndSettle();
-    expect(state.rows, hasLength(50));
-    await tester.pumpWidget(away());
-    expect(
-      w.resourceSnapshots.read('activity', state.identityAuthority),
-      isNotNull,
-    );
-    // Server switch drops every page snapshot.
-    unawaited(w.selectServer(RaftRecord({'id': 's2', 'role': 'owner'})));
-    w.server = RaftRecord({'id': 's1', 'role': 'member'});
-    client.selectServer('s1');
-    expect(
-      w.resourceSnapshots.read('activity', state.identityAuthority),
-      isNull,
-    );
-    await tester.pumpAndSettle();
+    expect(shown('Member preview'), findsNothing);
+    expect(shown('Server 2 preview'), findsOneWidget);
+    expect(skeleton, findsNothing);
   });
 
   testWidgets('Saved keeps its rows across navigation', (tester) async {
