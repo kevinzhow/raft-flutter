@@ -664,7 +664,7 @@ def react_capture(cases, refresh, dom_dump=None):
                     env['PARITY_EXT_DOM_DUMP'] = str(dom_dump)
                 else:
                     env.pop('PARITY_EXT_DOM_DUMP', None)
-                cmd = ['pnpm', 'exec', 'playwright', 'test', '--config', str(config), '--reporter=line']
+                cmd = parity.playwright_command(config)
                 for cid in ids:
                     rows[cid]['playwrightAttempted'] = True
                     rows[cid]['attemptedThisRun'] = True

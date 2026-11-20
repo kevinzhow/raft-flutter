@@ -14,7 +14,7 @@
 // min(720px, 92vw), height min(680px, 80vh), top max(8vh + 16px, (100vh - h)/2).
 // The query is typed by the case's interactions; /messages/search is answered
 // by the generated provider spec from fixture.search (tool/parity-ext/run).
-import ParityExtSearchOverlay from "../src/components/search/SearchOverlay";
+import { SearchOverlay as ParityExtSearchOverlay } from "../src/features/search/SearchOverlay";
 import { useRecentConversationStore as useParityExtSearchRecentStore } from "../src/store/recentConversationStore";
 import parityExtSearchFixture from "virtual:parity-ext/search-overlay";
 

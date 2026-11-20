@@ -25,7 +25,7 @@ import { useThreadStore as parityExtTdThreadStore } from "../src/store/threadSto
 // the host's module graph so the first capture never races the chunk fetch
 // (the modal head would still show its Suspense skeleton).
 import "../src/components/task/TaskModalHead";
-import "../src/components/message/ThreadPanel";
+import "../src/features/thread/ThreadPanel";
 import parityExtTdFixture from "virtual:parity-ext/taskdetail";
 
 type ParityExtTdProps = {

@@ -12,7 +12,7 @@
 //                   side thread column (desktop) / full width (mobile)
 // Data: tool/parity-ext/fixtures/channelheader.json (the Flutter provider
 // reads the same file).
-import ParityExtChThreadPanel from "../src/components/message/ThreadPanel";
+import { ThreadPanel as ParityExtChThreadPanel } from "../src/features/thread/ThreadPanel";
 import parityExtChFixture from "virtual:parity-ext/channelheader";
 import type { CSSProperties as ParityExtChCSSProperties } from "react";
 

@@ -439,7 +439,7 @@ mcp_notion = {'id': 'notion', 'name': 'Notion', 'description': 'Pages, databases
               'authMode': 'oauth', 'endpointUrl': 'https://mcp.notion.com/mcp', 'credentialHeaderNames': []}
 T = OFFICIAL['times']
 H = OFFICIAL['humans']
-members = [{'userId': H[k]['memberId'] if k == 'owner' else H[k]['id'], 'serverId': SID, 'email': H[k]['email'], 'gravatarHash': '',
+members = [{'userId': H[k]['id'], 'serverId': SID, 'email': H[k]['email'], 'gravatarHash': '',
             'name': H[k]['name'], 'displayName': H[k]['displayName'], 'description': H[k].get('description'),
             'avatarUrl': None, 'role': H[k]['role'], 'joinedAt': T['memberJoinedAtIso'], 'membershipStatus': 'active'}
            for k in ('owner', 'designer', 'jiacheng')]

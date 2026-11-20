@@ -374,7 +374,7 @@
   },
   "GET /servers/visual-server/members": [
    {
-    "userId": "visual-human-1",
+    "userId": "visual-user",
     "serverId": "visual-server",
     "email": "artin@slock.ai",
     "gravatarHash": "",

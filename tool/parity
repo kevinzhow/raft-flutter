@@ -448,6 +448,13 @@ CHROMIUM_TEXT_ARGS = {
 }
 
 
+def playwright_command(config):
+    # Use the installed runner directly. The v1.24 package manager can attempt
+    # a dependency install before "pnpm exec", mutating the pinned checkout.
+    runner = RAFT_SOURCE / 'packages/web/node_modules/@playwright/test/cli.js'
+    return ['node', str(runner), 'test', '--config', str(config), '--reporter=line']
+
+
 def run_react_production_fonts(case_ids, log, text_render='android'):
     """Same env and Playwright invocation as the CLI's runReactProvider, with
     the generated spec/config."""
@@ -466,7 +473,7 @@ def run_react_production_fonts(case_ids, log, text_render='android'):
         'PARITY_CHROMIUM_ARGS': json.dumps(CHROMIUM_TEXT_ARGS[text_render]),
         'PARITY_BASELINE_HOST_OUT': str(REACT_GEN),
     })
-    cmd = ['pnpm', 'exec', 'playwright', 'test', '--config', str(config), '--reporter=line']
+    cmd = playwright_command(config)
     print('+', ' '.join(cmd), flush=True)
     with open(log, 'a') as sink:
         r = subprocess.run(cmd, cwd=RAFT_SOURCE / 'packages/web', env=env, stdout=sink, stderr=subprocess.STDOUT)

@@ -17,7 +17,7 @@
 // them in the host's module graph so a capture never races a chunk fetch (the
 // Suspense fallback "Loading..." would be captured).
 import "../src/components/agent/AgentActivityLog";
-import "../src/components/agent/AgentMcpTab";
+import "../src/components/agent/AgentAppAccessTab";
 import "../src/components/agent/AgentSkills";
 import "../src/components/member/HumanDetailPanel";
 import "../src/components/profile/ExternalIdentityDetailPanel";

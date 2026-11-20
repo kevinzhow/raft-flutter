@@ -22,14 +22,20 @@ import { MobileTabBar as ParityExtShMobileTabBar } from "../src/components/layou
 import ParityExtShConfirmDialog from "../src/components/ConfirmDialog";
 import ParityExtShBanner from "../src/components/ui/Banner";
 import ParityExtShEmptyState from "../src/components/ui/EmptyState";
-import ParityExtShBottomSheet from "../src/components/ui/BottomSheet";
 import {
-  OverflowActionRow as ParityExtShOverflowActionRow,
-  OverflowCommandRow as ParityExtShOverflowCommandRow,
-  OverflowDangerZone as ParityExtShOverflowDangerZone,
-  OverflowSheet as ParityExtShOverflowSheet,
-  OverflowSwitchRow as ParityExtShOverflowSwitchRow,
-} from "../src/components/ui/OverflowSheet";
+  Dialog as ParityExtShDialog,
+  DialogBody as ParityExtShDialogBody,
+  DialogHeader as ParityExtShDialogHeader,
+  DialogSheetContent as ParityExtShDialogSheetContent,
+  DialogTitle as ParityExtShDialogTitle,
+  DropdownMenu as ParityExtShMenu,
+  DropdownMenuCheckboxItem as ParityExtShMenuCheckboxItem,
+  DropdownMenuContent as ParityExtShMenuContent,
+  DropdownMenuItem as ParityExtShMenuItem,
+  DropdownMenuItemCount as ParityExtShMenuItemCount,
+  DropdownMenuSeparator as ParityExtShMenuSeparator,
+  DropdownMenuTrigger as ParityExtShMenuTrigger,
+} from "raft-ui";
 import ParityExtShToastProvider from "../src/components/LocalizedToastProvider";
 import { toast as parityExtShToast } from "raft-ui";
 import { Archive as ParityExtShArchive, Bell as ParityExtShBell, Inbox as ParityExtShInbox, Link2 as ParityExtShLink, Search as ParityExtShSearch, Trash2 as ParityExtShTrash } from "lucide-react";
@@ -347,35 +353,33 @@ function ParityExtShPrimitiveView({ p }: { p: ParityExtShProps }) {
     );
   } else if (surface === "bottomsheet") {
     body = (
-      <ParityExtShBottomSheet data-testid="shell-bottom-sheet" onClose={() => undefined} sheetClassName="p-4">
-        <div className="text-base font-bold">Add to home screen</div>
-        <p className="mt-2 text-sm text-foreground-muted theme-brutal:text-black/70">Install Raft for faster access and notifications.</p>
-        <div className="mt-4 flex justify-end gap-2">
-          <ParityExtShButton size="sm" variant="outline">Not now</ParityExtShButton>
-          <ParityExtShButton size="sm" variant="default">Install</ParityExtShButton>
-        </div>
-      </ParityExtShBottomSheet>
+      <ParityExtShDialog open>
+        <ParityExtShDialogSheetContent data-testid="shell-bottom-sheet">
+          <ParityExtShDialogHeader>
+            <ParityExtShDialogTitle>Add to home screen</ParityExtShDialogTitle>
+          </ParityExtShDialogHeader>
+          <ParityExtShDialogBody>
+            <p className="text-sm text-foreground-muted">Install Raft for faster access and notifications.</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <ParityExtShButton size="sm" variant="outline">Not now</ParityExtShButton>
+              <ParityExtShButton size="sm" variant="default">Install</ParityExtShButton>
+            </div>
+          </ParityExtShDialogBody>
+        </ParityExtShDialogSheetContent>
+      </ParityExtShDialog>
     );
   } else if (surface === "overflow") {
     body = (
-      <ParityExtShOverflowSheet
-        open
-        onOpenChange={() => undefined}
-        title="#design"
-        descriptionId={"message.channelSettings.infoDescription" as never}
-        testId="shell-overflow-sheet"
-      >
-        <ParityExtShOverflowCommandRow icon={<ParityExtShLink size={16} />} label="Copy channel link" onClick={() => undefined} />
-        <ParityExtShOverflowSwitchRow labelId="shell-mute" icon={<ParityExtShBell size={16} />} label="Mute notifications" checked={false} onCheckedChange={() => undefined} />
-        <div className="px-4 py-2">
-          <ParityExtShOverflowActionRow icon={<ParityExtShArchive size={16} />} label="Archive channel" trailing="3" onClick={() => undefined} />
-        </div>
-        <ParityExtShOverflowDangerZone>
-          <div className="px-4 py-2">
-            <ParityExtShOverflowActionRow danger icon={<ParityExtShTrash size={16} />} label="Delete channel" onClick={() => undefined} />
-          </div>
-        </ParityExtShOverflowDangerZone>
-      </ParityExtShOverflowSheet>
+      <ParityExtShMenu open>
+        <ParityExtShMenuTrigger render={<ParityExtShButton>#design</ParityExtShButton>} />
+        <ParityExtShMenuContent side="bottom" align="start" data-testid="shell-overflow-sheet">
+          <ParityExtShMenuItem><ParityExtShLink />Copy channel link</ParityExtShMenuItem>
+          <ParityExtShMenuCheckboxItem checked={false}><ParityExtShBell />Mute notifications</ParityExtShMenuCheckboxItem>
+          <ParityExtShMenuItem><ParityExtShArchive />Archive channel<ParityExtShMenuItemCount>3</ParityExtShMenuItemCount></ParityExtShMenuItem>
+          <ParityExtShMenuSeparator />
+          <ParityExtShMenuItem variant="destructive"><ParityExtShTrash />Delete channel</ParityExtShMenuItem>
+        </ParityExtShMenuContent>
+      </ParityExtShMenu>
     );
   }
   return (

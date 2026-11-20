@@ -17,7 +17,7 @@
 // bottom. Data: tool/parity-ext/fixtures/thread.json (`routes` + `routeSets`
 // are answered by the provider spec for React and by the fake client for
 // Flutter).
-import ParityExtThThreadPanel from "../src/components/message/ThreadPanel";
+import { ThreadPanel as ParityExtThThreadPanel } from "../src/features/thread/ThreadPanel";
 import parityExtThFixture from "virtual:parity-ext/thread";
 import type { CSSProperties as ParityExtThCSSProperties } from "react";
 

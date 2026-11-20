@@ -13,16 +13,13 @@
 // Data: tool/parity-ext/fixtures/members-pages.json (the Flutter provider reads the same file);
 // its `routes` + the case's `routeSet` answer the API reads.
 import "../src/components/agent/AgentActivityLog";
-import "../src/components/agent/AgentMcpTab";
+import "../src/components/agent/AgentAppAccessTab";
 import "../src/components/agent/AgentSkills";
 import "../src/components/agent/AgentUnavailablePanel";
 import "../src/components/member/HumanDetailPanel";
 import "../src/components/profile/ExternalIdentityDetailPanel";
-import "../src/components/settings/MemberGraphSection";
 import ParityExtMpReportIssueDialog from "../src/components/agent/ReportIssueDialog";
 import parityExtMpFixture from "virtual:parity-ext/members-pages";
-import { CHANNEL_MANAGER_ROLE_ACTIONS_FEATURE_FLAG_KEY as parityExtMpRoleActionsKey } from "@botiverse/raft-shared";
-import { useLayoutEffect as parityExtMpUseLayoutEffect } from "react";
 import type { CSSProperties as ParityExtMpCSSProperties, ReactNode as ParityExtMpReactNode } from "react";
 
 type ParityExtMpProps = {
@@ -137,7 +134,7 @@ function ParityExtMpReport({ props, caseId }: { props: ParityExtMpProps; caseId:
 }
 
 // The channel-settings drawer's members page (host/ChannelSettingsCases.tsx ParityExtCsView, which owns the
-// stores, the ChatPanel mount and the shell sizing) with the channel-manager role actions flag on. The
+// stores, the ChatPanel mount and the shell sizing). The
 // case props are the channel-settings case's (channel, role, guestFlag); the interactions open the page.
 function ParityExtMpChannel({ props }: { props: ParityExtMpProps }) {
   const params = props.params;
@@ -149,10 +146,6 @@ function ParityExtMpChannel({ props }: { props: ParityExtMpProps }) {
     guestFlag: params.get("guestFlag") === "true",
     pinned: params.get("pinned") === "true",
   };
-  useMemo(() => setServerFeatureFlagForTests(fxServer.id, parityExtMpRoleActionsKey, true), []);
-  parityExtMpUseLayoutEffect(() => {
-    setServerFeatureFlagForTests(fxServer.id, parityExtMpRoleActionsKey, true);
-  }, []);
   return <ParityExtCsView props={csProps as never} />;
 }
 

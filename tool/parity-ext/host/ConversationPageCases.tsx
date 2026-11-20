@@ -13,7 +13,7 @@
 //                  reactions, quotes, action cards, translation)
 // Data: tool/parity-ext/fixtures/conversation.json (`routes` + `routeSets` are
 // answered by the provider spec for React and by the fake client for Flutter).
-import ParityExtCvThreadPanel from "../src/components/message/ThreadPanel";
+import { ThreadPanel as ParityExtCvThreadPanel } from "../src/features/thread/ThreadPanel";
 import { useThreadStore as parityExtCvThreadStore } from "../src/store/threadStore";
 import { useTranslationStore as parityExtCvTranslationStore } from "../src/store/translationStore";
 import { useReadReceiptStore as parityExtCvReadStore } from "../src/store/readReceiptStore";

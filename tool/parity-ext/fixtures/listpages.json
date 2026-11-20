@@ -296,8 +296,8 @@
    ],
    "humans": [
     {
-     "id": "visual-human-1",
-     "userId": "visual-human-1",
+     "id": "visual-user",
+     "userId": "visual-user",
      "serverId": "visual-server",
      "name": "artin",
      "displayName": "artin",

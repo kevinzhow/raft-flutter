@@ -17,7 +17,8 @@ import ParityExtApSetupGate from "../src/components/onboarding/ServerSetupProjec
 import ParityExtApReleaseNotes from "../src/components/settings/ReleaseNotesPanel";
 import { useLayoutEffect as parityExtApUseLayoutEffect } from "react";
 import { useChannelStore as parityExtApChannelStore } from "../src/store/channelStore";
-import { AuthBootstrapStatus as ParityExtApBootstrap, ServerAccessDeniedPage as ParityExtApDenied, ServerSelectionPage as ParityExtApServerSelection } from "../src/App";
+import { AuthBootstrapStatus as ParityExtApBootstrap } from "../src/components/auth/AuthBootstrapStatus";
+import { ServerAccessDeniedPage as ParityExtApDenied, ServerSelectionPage as ParityExtApServerSelection } from "../src/App";
 import { useAuthStore as parityExtApAuthStore } from "../src/store/authStore";
 import { useServerStore as parityExtApServerStore } from "../src/store/serverStore";
 import parityExtApFixture from "virtual:parity-ext/auth-pages";

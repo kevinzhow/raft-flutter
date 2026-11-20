@@ -355,7 +355,8 @@ class ReactCaptureProvenanceTest(unittest.TestCase):
     def runner(self, command, **kwargs):
         if command[0] == 'git':
             return self.real_run(command, **kwargs)
-        self.assertEqual(command[:4], ['pnpm', 'exec', 'playwright', 'test'])
+        playwright = self.source / 'packages/web/node_modules/@playwright/test/cli.js'
+        self.assertEqual(command[:3], ['node', str(playwright), 'test'])
         env = kwargs['env']
         config = pathlib.Path(command[command.index('--config') + 1])
         spec = self.gen / 'react-provider.spec.ts'

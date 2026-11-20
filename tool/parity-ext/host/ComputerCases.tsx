@@ -14,7 +14,7 @@
 //   add    -> machine/AddMachineDialog
 // Data comes from tool/parity-ext/fixtures/computers.json, which the Flutter
 // provider reads too.
-import ParityExtMachineDetailPanel from "../src/components/machine/MachineDetailPanel";
+import { MachineDetailPanel as ParityExtMachineDetailPanel } from "../src/features/computer/MachineDetailPanel";
 import ParityExtAddMachineDialog from "../src/components/machine/AddMachineDialog";
 import parityExtFixture from "virtual:parity-ext/computers";
 import type { CSSProperties as ParityExtCSSProperties } from "react";

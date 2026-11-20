@@ -93,7 +93,7 @@ CHANNEL_ROSTER = {
         'activityDetail': _cindy['activityDetail'],
     }],
     'humans': [{
-        'id': _owner['memberId'], 'userId': _owner['memberId'], 'serverId': FX['server']['id'],
+        'id': _owner['id'], 'userId': _owner['id'], 'serverId': FX['server']['id'],
         'name': _owner['name'], 'displayName': _owner['displayName'], 'description': _owner['description'],
         'avatarUrl': None, 'gravatarHash': '', 'email': _owner['email'], 'role': _owner['role'],
         'joinedAt': FX['times']['memberJoinedAtIso'],
