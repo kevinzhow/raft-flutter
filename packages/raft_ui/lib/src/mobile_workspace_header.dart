@@ -30,11 +30,7 @@ class _MobileWorkspaceHeader extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: recipe.background,
-            border: Border(
-              bottom: BorderSide(
-                color: recipe.tokens.colors['line-workspace-rail']!,
-              ),
-            ),
+            border: Border(bottom: recipe.border),
           ),
           child: Row(
             children: [

@@ -30472,6 +30472,14 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#method:RaftMobileRootHeaderRecipe.border": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header"
+        ],
+        "owner": "design-system alignment",
+        "reason": "Supplies the shared mobile page header seam to the title, custom content, and Home workspace forms of TabRootBar."
+      },
       "packages/raft_ui/lib/src/mobile_navigation.dart#method:RaftMobileServerSelector.build": {
         "role": "unresolved",
         "familyRefs": [],

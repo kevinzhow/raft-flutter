@@ -711,13 +711,7 @@ class _AttentionDot extends StatelessWidget {
   }
 }
 
-/// Web mobile TAB ROOT navbar. Home / Members / Settings render it in
-/// `Sidebar` (`mobileInline`): `h-panel-header` (`--shell-header-height`:
-/// 62 Brutal / 56 Elegant / 48 on viewports <= 600px tall), `px-4`, `border-b`
-/// `border-line-muted` + `bg-layer-panel`; Brutal `border-b-2 border-black` +
-/// `bg-soft-signal`. The label is `text-base font-bold` (Brutal `text-black`).
-/// TasksPanel uses the same bar with `px-5` ([inset] 20). Activity and
-/// Computers are native-only tab roots and reuse this style.
+/// Web TabRootBar's PanelSectionHeader frame, used by phone page headers.
 @immutable
 class RaftMobileRootHeaderRecipe {
   const RaftMobileRootHeaderRecipe(
@@ -734,10 +728,7 @@ class RaftMobileRootHeaderRecipe {
       RaftLayoutMetrics.shellHeaderHeight(tokens, viewportHeight);
   // Web PanelSectionHeader; old theme packs preserve a57's root fill.
   Color get background => tokens.colors['layer-section-header-mobile']!;
-  BorderSide get border => BorderSide(
-    color: tokens.colors['line-muted']!,
-    width: tokens.size('stroke.rule', fallback: 1),
-  );
+  BorderSide get border => RaftMobilePageHeader.defaultBorder(tokens);
   // Web TabRootBar's `PanelTitle` is `text-headline` (17/22 on a phone); the
   // old looks keep the 16/24 heading.
   TextStyle get title =>
