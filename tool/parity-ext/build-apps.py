@@ -153,6 +153,15 @@ external_bot = {
     'avatarDigest': None,
     'actorProjectionRevision': 1,
 }
+external_bot_channel = {
+    'id': 'channel-home',
+    'serverId': 'visual-server',
+    'name': '首页专修',
+    'type': 'channel',
+    'joined': True,
+    'description': 'Home shell, server badge, and bottom dock polish',
+    'createdAt': local_app['createdAt'],
+}
 external_bot_message = {
     'id': 'fixture-external-bot-message',
     'seq': 1,
@@ -280,12 +289,8 @@ route_sets = {
         },
     },
     'external-bot': {
-        'GET /channels/channel-home': {
-            'id': 'channel-home', 'serverId': 'visual-server',
-            'name': '首页专修', 'type': 'public', 'joined': True,
-            'description': 'Home shell, server badge, and bottom dock polish',
-            'createdAt': local_app['createdAt'],
-        },
+        'GET /channels': [external_bot_channel],
+        'GET /channels/channel-home': external_bot_channel,
         'GET /external-avatars/visual-deploy-bot.png': {
             '$file': 'announcement-picture.png', '$contentType': 'image/png',
         },

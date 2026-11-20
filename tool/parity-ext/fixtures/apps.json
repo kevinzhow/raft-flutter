@@ -657,11 +657,22 @@
    }
   },
   "external-bot": {
+   "GET /channels": [
+    {
+     "id": "channel-home",
+     "serverId": "visual-server",
+     "name": "\u9996\u9875\u4e13\u4fee",
+     "type": "channel",
+     "joined": true,
+     "description": "Home shell, server badge, and bottom dock polish",
+     "createdAt": "2026-06-18T00:00:00.000Z"
+    }
+   ],
    "GET /channels/channel-home": {
     "id": "channel-home",
     "serverId": "visual-server",
     "name": "\u9996\u9875\u4e13\u4fee",
-    "type": "public",
+    "type": "channel",
     "joined": true,
     "description": "Home shell, server badge, and bottom dock polish",
     "createdAt": "2026-06-18T00:00:00.000Z"
