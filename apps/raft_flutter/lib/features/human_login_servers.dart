@@ -20,6 +20,8 @@ enum HumanLoginCommit {
   /// Not installed and only an owner or admin may install it.
   adminNeeded,
 
+  suspended,
+
   /// The lookup did not answer for this server.
   unavailable,
 }
@@ -27,6 +29,7 @@ enum HumanLoginCommit {
 HumanLoginCommit humanLoginCommit(HumanLoginRow? row) {
   final client = row?.client;
   if (client == null) return HumanLoginCommit.unavailable;
+  if (client.suspended) return HumanLoginCommit.suspended;
   if (!client.installRequired) return HumanLoginCommit.ready;
   return client.canInstall
       ? HumanLoginCommit.install
@@ -138,13 +141,16 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
   /// Servers that have the app: canonical Select.
   Widget _plain(BuildContext context) {
     final choices = widget.lookup.choices;
+    final ready = choices.where((choice) => choice.client.ready).toList();
     return RaftSelectField<String>(
       key: const ValueKey('human-login-server-select'),
       label: raftText(context, 'Raft server'),
       placeholder: raftText(context, 'Raft server'),
-      value: widget.selectedId.isEmpty ? null : widget.selectedId,
+      value: ready.any((choice) => choice.server.id == widget.selectedId)
+          ? widget.selectedId
+          : null,
       items: [
-        for (final choice in choices)
+        for (final choice in ready)
           RaftSelectItem(
             value: choice.server.id,
             label: choice.server.label,
@@ -263,6 +269,7 @@ class _ServerRow extends StatelessWidget {
       HumanLoginCommit.ready => 'Installed',
       HumanLoginCommit.install => 'Not installed',
       HumanLoginCommit.adminNeeded => 'Admin needed',
+      HumanLoginCommit.suspended => 'Suspended',
       HumanLoginCommit.unavailable => 'Unavailable',
     };
     return RaftAvatarListRow(
@@ -374,6 +381,10 @@ class HumanLoginCommitZone extends StatelessWidget {
               tr(
                 'Installation status could not be loaded. Reload this page to try again.',
               ),
+              style: _body(t, color: t.ink),
+            ),
+            HumanLoginCommit.suspended => Text(
+              tr(HumanLoginMessages.serverSuspended),
               style: _body(t, color: t.ink),
             ),
           },

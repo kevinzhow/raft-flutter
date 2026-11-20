@@ -430,7 +430,7 @@ void main() {
           isA<HumanLoginException>().having(
             (e) => e.text,
             'text',
-            'OAuth client not found for server',
+            HumanLoginMessages.notRegisteredForAny,
           ),
         ),
       );

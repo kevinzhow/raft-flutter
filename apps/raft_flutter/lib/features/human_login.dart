@@ -223,10 +223,10 @@ class HumanLoginRequest {
   /// The `POST /oauth/authorize/human` body of Web `authorizeWithClient`.
   Map<String, Object?> authorizeBody({
     required String clientId,
-    required String serverId,
+    String? serverId,
   }) => {
     'clientId': clientId,
-    'serverId': serverId,
+    'serverId': ?serverId,
     'returnUrl': returnUrl,
     'scopes': scopes,
     if (oidc) ...{
@@ -235,7 +235,7 @@ class HumanLoginRequest {
       if (codeChallenge.isNotEmpty) 'codeChallenge': codeChallenge,
       if (codeChallengeMethod.isNotEmpty)
         'codeChallengeMethod': codeChallengeMethod,
-      if (serverHint.isNotEmpty) 'server': serverHint,
+      if (serverId != null && serverHint.isNotEmpty) 'server': serverHint,
     },
   };
 }
@@ -268,6 +268,8 @@ class HumanLoginClient {
     this.marketplace = false,
     this.installRequired = false,
     this.canInstall = false,
+    this.accountMode = false,
+    this.suspended = false,
     this.disallowedScopes = const [],
     this.scopeReason,
     this.allowedScopes,
@@ -294,6 +296,8 @@ class HumanLoginClient {
       setupDescription: text('setupDescription'),
       marketplace: json['marketplace'] == true,
       installRequired: json['availability'] == 'install_required',
+      accountMode: json['loginMode'] == 'account',
+      suspended: json['availability'] == 'suspended',
       // Only an app waiting for an install carries `installation`; a ready
       // one is never installed twice.
       canInstall:
@@ -335,6 +339,8 @@ class HumanLoginClient {
       setupDescription,
       scopeReason;
   final bool marketplace, installRequired, canInstall;
+  final bool accountMode, suspended;
+  bool get ready => !installRequired && !suspended;
   final List<String> disallowedScopes;
 
   /// What an install confirms (server routes/oauth.ts:1095-1099): the app's
@@ -363,6 +369,8 @@ class HumanLoginClient {
     marketplace: marketplace,
     installRequired: installRequired,
     canInstall: canInstall,
+    accountMode: accountMode,
+    suspended: suspended,
     disallowedScopes: disallowedScopes,
     scopeReason: scopeReason,
     allowedScopes: scopes,
@@ -383,6 +391,7 @@ class HumanLoginClient {
     setupDescription: setupDescription,
     // It was a Marketplace app; installing it does not change that.
     marketplace: true,
+    accountMode: accountMode,
     disallowedScopes: disallowedScopes,
     scopeReason: scopeReason,
     allowedScopes: allowedScopes,
@@ -410,7 +419,9 @@ class HumanLoginChoice {
   final HumanLoginClient client;
 
   /// Web `marketplaceServerRank`: ready first, then installable, then admin.
-  int get rank => !client.installRequired
+  int get rank => client.suspended
+      ? 3
+      : client.ready
       ? 0
       : client.canInstall
       ? 1
@@ -441,6 +452,9 @@ class HumanLoginLookup {
   final List<HumanLoginRow> rows;
 
   List<HumanLoginChoice> get choices => [for (final row in rows) ?row.choice];
+
+  HumanLoginChoice? get accountChoice =>
+      choices.where((choice) => choice.client.accountMode).firstOrNull;
 
   /// Web `isMarketplaceApp`: some server lists it as a Marketplace app or
   /// waiting for an install.
@@ -504,7 +518,7 @@ abstract interface class HumanLoginApi {
   /// `GET /oauth/clients/lookup` for [serverId].
   Future<dynamic> lookup(String serverId, Map<String, String> query);
 
-  /// `POST /oauth/authorize/human`.
+  /// Account requests omit `serverId` and use `/oauth/authorize/account`.
   Future<dynamic> authorize(Map<String, Object?> body);
 
   /// `POST /integrations/marketplace/<id>/install` on [serverId] (Web sends
@@ -561,8 +575,12 @@ class ClientHumanLoginApi implements HumanLoginApi {
       client.getForServer(serverId, '/oauth/clients/lookup', query: query);
 
   @override
-  Future<dynamic> authorize(Map<String, Object?> body) =>
-      client.post('/oauth/authorize/human', data: body);
+  Future<dynamic> authorize(Map<String, Object?> body) => client.post(
+    body.containsKey('serverId')
+        ? '/oauth/authorize/human'
+        : '/oauth/authorize/account',
+    data: body,
+  );
 
   @override
   Future<dynamic> installMarketplaceApp(
@@ -605,6 +623,12 @@ class HumanLoginMessages {
       'This service is missing a configured return URL.';
   static const continueFailed = 'Failed to continue with Raft.';
   static const installFailed = 'Failed to install this Marketplace app.';
+  static const rootIssuerRequired =
+      "This app is set up to sign in through a Server-specific address, which it can't use. Ask the app's developer to use Raft's main sign-in address.";
+  static const accountSuspended =
+      "This app's installations on your Servers are suspended. Ask a Server owner or admin to restore it.";
+  static const serverSuspended =
+      "This App's installation on this Server is suspended. Ask a Server owner or admin to restore it.";
 
   /// pages.humanLogin.permissionsChanged.
   static const permissionsChanged =
@@ -732,7 +756,8 @@ bool humanLoginCanContinue(
   HumanLoginRequest request,
   HumanLoginChoice choice,
 ) =>
-    !choice.client.installRequired &&
+    choice.client.ready &&
+    (!choice.client.accountMode || request.serverHint.isEmpty) &&
     request.returnUrl.trim().isNotEmpty &&
     !hasAgentInboundScope(request.scopes) &&
     choice.client.disallowedScopes.isEmpty;
@@ -843,7 +868,7 @@ Future<Uri> authorizeHumanLogin(
   Future<dynamic> send() => api.authorize(
     request.authorizeBody(
       clientId: choice.client.clientId,
-      serverId: choice.server.id,
+      serverId: choice.client.accountMode ? null : choice.server.id,
     ),
   );
   try {
@@ -851,6 +876,27 @@ Future<Uri> authorizeHumanLogin(
   } on SecondFactorStepUpCancelled {
     rethrow;
   } on RaftApiException catch (error) {
+    if (error.status == 409 && error.code == 'login_mode_changed') {
+      throw const HumanLoginModeChanged();
+    }
+    if (error.status == 404 ||
+        (error.status == 403 && error.code == 'app_not_available')) {
+      throw const HumanLoginException(HumanLoginMessages.notRegisteredForAny);
+    }
+    if (choice.client.accountMode) {
+      if (error.status == 400 && error.code == 'root_issuer_required') {
+        throw const HumanLoginAccountRefusal(
+          HumanLoginMessages.rootIssuerRequired,
+        );
+      }
+      if (error.status == 403 &&
+          error.details['error_description'] ==
+              "This App's installations on your Servers are suspended. Ask a Server owner or admin to restore it.") {
+        throw const HumanLoginAccountRefusal(
+          HumanLoginMessages.accountSuspended,
+        );
+      }
+    }
     // Web: `error_description || error || continueFailed`.
     throw _refused(
       error,
@@ -872,4 +918,12 @@ Future<Uri> authorizeHumanLogin(
   } on Object {
     throw const HumanLoginException(HumanLoginMessages.continueFailed);
   }
+}
+
+class HumanLoginModeChanged implements Exception {
+  const HumanLoginModeChanged();
+}
+
+class HumanLoginAccountRefusal extends HumanLoginException {
+  const HumanLoginAccountRefusal(super.text);
 }

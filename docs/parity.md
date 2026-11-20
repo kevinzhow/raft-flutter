@@ -2095,11 +2095,12 @@ behaviour checklists (`docs/behavior-parity/`).
   above): an unread agent message starts open, a read one starts collapsed, per visit; the reader's toggle wins.
   Confirmed again for the v1.21.12 message-row port. Checked against the code in
   `agent_message_collapse.dart`.
-* **Browser-hosted login pages are not ported.** "Login with Raft" (consent / setup, `/oauth/clients/lookup`,
-  `/oauth/authorize/human`), device / CLI login approval (`/login/device`, `/auth/device/approve`) and native-app
-  login approval (`/login/app`, `/auth/app-login/requests/*`) are browser pages, so these rows are intentional
-  differences (➖) in `capability-parity.json`; they were ❌ in some rows and ➖ in others before. The private-app share
-  link page (`/integration-invites/:token`) is a different surface and is still recorded as missing.
+* **Login with Raft.** The in-app browser opens the native sign-in sheet for a matching Raft setup URL.
+  The app looks up the client through `/oauth/clients/lookup`. Server mode picks a server and calls
+  `/oauth/authorize/human`. Web v1.24 account mode calls `/oauth/authorize/account` with the person's Raft
+  account. Setup links opened in a system browser use the Web page. Device and CLI approval
+  (`/login/device`, `/auth/device/approve`) and native-app login approval
+  (`/login/app`, `/auth/app-login/requests/*`) remain browser pages.
 * **Social sign-in stays on `/auth/mobile/oauth/*` (owner decision 2654e77c, 2026-11-13).** Server v1.24 moves current
   apps to the `/auth/app-login/*` browser handoff and can switch the old native pair off with
   `legacy_mobile_oauth_upgrade_required_v0` (426 `APP_UPDATE_REQUIRED`). The handoff needs a client id and callback

@@ -65,6 +65,8 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared by a new attempt (Login with Raft, Install and continue or another server) and gone with the sheet.
   String? failure;
   String selectedId = '';
+  bool loginModeChanged = false;
+  HumanLoginAccountRefusal? accountRefusal;
 
   /// The authorization is under way.
   bool submitting = false;
@@ -106,6 +108,27 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
 
   HumanLoginChoice? get choice => row?.choice;
 
+  bool get accountView {
+    final account = lookupResult?.accountChoice;
+    return account != null &&
+        (widget.request.serverHint.isNotEmpty ||
+            account.client.ready ||
+            !lookupResult!.choices.any(
+              (choice) => choice.client.installRequired,
+            ));
+  }
+
+  String? get accountRefusalText {
+    if (!accountView) return null;
+    if (widget.request.serverHint.isNotEmpty) {
+      return HumanLoginMessages.rootIssuerRequired;
+    }
+    return accountRefusal?.text ??
+        (lookupResult!.accountChoice!.client.suspended
+            ? HumanLoginMessages.accountSuspended
+            : null);
+  }
+
   /// Giving an app access to the account: with two-step verification on,
   /// "Verify it's you" first (Web HumanLoginSetupPage, reason appAccess).
   Future<dynamic> stepUp(Future<dynamic> Function() request) {
@@ -121,9 +144,10 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
   }
 
   Future<void> confirm() async {
-    final current = choice;
+    final current = accountView ? lookupResult?.accountChoice : choice;
     if (current == null ||
         busy ||
+        accountRefusalText != null ||
         !humanLoginCanContinue(widget.request, current)) {
       return;
     }
@@ -131,24 +155,7 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
       submitting = true;
       failure = null;
     });
-    try {
-      final location = await authorizeHumanLogin(
-        widget.api,
-        widget.request,
-        current,
-        guard: stepUp,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop(location);
-    } on SecondFactorStepUpCancelled {
-      if (mounted) setState(() => submitting = false);
-    } on HumanLoginException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        submitting = false;
-        failure = error.text;
-      });
-    }
+    await _authorize(current);
   }
 
   /// Web `installMarketplaceApp`: the person pressed "Install and continue"
@@ -188,23 +195,44 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
     if (!mounted) return;
     // The app is on the server now, whatever the login answers.
     setState(() => lookupResult = lookupResult!.replaced(installed));
+    await _authorize(installed);
+  }
+
+  Future<void> _authorize(HumanLoginChoice current) async {
     try {
       final location = await authorizeHumanLogin(
         widget.api,
         widget.request,
-        installed,
+        current,
         guard: stepUp,
       );
       if (!mounted) return;
       Navigator.of(context).pop(location);
+    } on HumanLoginModeChanged {
+      if (!mounted) return;
+      setState(() {
+        lookupResult = null;
+        lookupFailed = false;
+        loginModeChanged = true;
+      });
+      await lookup();
     } on SecondFactorStepUpCancelled {
-      if (mounted) setState(() => installingId = '');
+      return;
+    } on HumanLoginAccountRefusal catch (error) {
+      if (mounted) setState(() => accountRefusal = error);
     } on HumanLoginException catch (error) {
       if (!mounted) return;
       setState(() {
-        installingId = '';
         failure = error.text;
+        lookupFailed = error.text == HumanLoginMessages.notRegisteredForAny;
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          installingId = '';
+          submitting = false;
+        });
+      }
     }
   }
 
@@ -240,16 +268,20 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
     final scopes = widget.request.scopes;
     final marketplace = found?.isMarketplace ?? false;
     final commit = humanLoginCommit(current);
-    final details = found?.detailsClient(selectedId);
+    final account = found?.accountChoice;
+    final refusal = accountRefusalText;
+    final details = accountView
+        ? account?.client
+        : found?.detailsClient(selectedId);
     final notAccessible =
         lookupFailed && failure == HumanLoginMessages.notRegisteredForAny;
-    final choiceNow = choice;
+    final choiceNow = accountView ? account : choice;
     // The primary button, as Web words it: a Marketplace app continues with
     // "Continue login", or installs first; any other app is "Login with Raft".
     final installing = installingId.isNotEmpty;
-    final String? primaryLabel = lookupFailed
+    final String? primaryLabel = lookupFailed || refusal != null
         ? null
-        : !marketplace
+        : accountView || !marketplace
         ? (submitting ? 'Continuing...' : 'Login with Raft')
         : switch (commit) {
             HumanLoginCommit.adminNeeded => null,
@@ -261,7 +293,7 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
           };
     final VoidCallback? primary = choiceNow == null || busy
         ? null
-        : commit == HumanLoginCommit.install
+        : !accountView && commit == HumanLoginCommit.install
         ? (humanLoginCanInstall(widget.request, choiceNow)
               ? installAndContinue
               : null)
@@ -309,23 +341,24 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
               if (notAccessible)
                 const HumanLoginNotAccessible()
               else if (found != null && details != null) ...[
-                ..._app(context, current, details),
-                HumanLoginServerField(
-                  lookup: found,
-                  selectedId: selectedId,
-                  enabled: !busy,
-                  installingId: installingId,
-                  onSelect: (id) => setState(() {
-                    selectedId = id;
-                    failure = null;
-                  }),
-                ),
+                ..._app(context, current, details, refusal),
+                if (!accountView)
+                  HumanLoginServerField(
+                    lookup: found,
+                    selectedId: selectedId,
+                    enabled: !busy,
+                    installingId: installingId,
+                    onSelect: (id) => setState(() {
+                      selectedId = id;
+                      failure = null;
+                    }),
+                  ),
                 RequestedAppScopes(
                   key: const ValueKey('human-login-scopes'),
                   scopes: scopes,
                 ),
-                ..._notices(context, current?.client, scopes),
-                if (marketplace)
+                ..._notices(context, choiceNow?.client, scopes),
+                if (marketplace && !accountView)
                   HumanLoginCommitZone(
                     row: current,
                     scopes: scopes,
@@ -351,24 +384,43 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
     BuildContext context,
     HumanLoginRow? current,
     HumanLoginClient client,
+    String? refusal,
   ) {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
     final serviceName = client.name.isNotEmpty ? client.name : tr('this app');
     return [
       Text(
-        raftFormat(context, '{serviceName} wants to connect to {serverName}', {
-          'serviceName': serviceName,
-          'serverName': current?.server.name ?? tr('this server'),
-        }),
+        raftFormat(
+          context,
+          client.accountMode
+              ? '{serviceName} wants to use your Raft account'
+              : '{serviceName} wants to connect to {serverName}',
+          {
+            'serviceName': serviceName,
+            'serverName': current?.server.name ?? tr('this server'),
+          },
+        ),
         key: const ValueKey('human-login-title'),
         style: RaftTypography.heading(t, size: 16, line: 22),
       ),
+      if (refusal != null)
+        Focus(
+          autofocus: accountRefusal != null,
+          skipTraversal: true,
+          child: RaftBanner(
+            key: const ValueKey('human-login-account-refusal'),
+            description: tr(refusal),
+            size: RaftBannerRecipeSize.sm,
+          ),
+        ),
       Text.rich(
         TextSpan(
           children: raftRichText(
             context,
-            'Use your Raft account with <b>{serviceName}</b> on an available Raft Server.',
+            client.accountMode
+                ? "Sign in to <b>{serviceName}</b> with your Raft account. The app learns who you are. What it can see on each Server is decided by that Server's owners and admins."
+                : 'Use your Raft account with <b>{serviceName}</b> on an available Raft Server.',
             {
               'b': (inner) => TextSpan(
                 text: inner,
@@ -394,6 +446,24 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
             size: 12,
             line: 16,
             color: t.colors['foreground-hint'],
+          ),
+        ),
+      if (loginModeChanged && client.accountMode)
+        RaftBanner(
+          description: raftFormat(
+            context,
+            '{serviceName} now signs you in with your Raft account. Check the details below, then sign in again.',
+            {'serviceName': serviceName},
+          ),
+          status: RaftBannerRecipeStatus.info,
+          size: RaftBannerRecipeSize.sm,
+        ),
+      if (client.accountMode && !accountView)
+        Text(
+          raftFormat(
+            context,
+            'Install {serviceName} on one of your Servers to continue.',
+            {'serviceName': serviceName},
           ),
         ),
       RaftDialogSectionEyebrow('App details'),
