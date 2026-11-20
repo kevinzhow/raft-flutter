@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -322,6 +323,58 @@ void main() {
     w.dispose();
     await client.dispose();
     await t.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('desktop bell keeps the 36 px hit area around its 34 px box', (
+    t,
+  ) async {
+    t.view.devicePixelRatio = 1;
+    t.view.physicalSize = const Size(1280, 800);
+    addTearDown(t.view.reset);
+    final client = _Client();
+    final w = WorkspaceController(client)
+      ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'guest'});
+    await t.pumpWidget(
+      MaterialApp(
+        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topCenter,
+            child: RaftWorkspaceTopBar(
+              workspace: const SizedBox.shrink(),
+              onSearch: () {},
+              trailing: [
+                SystemNotificationBell(
+                  controller: w,
+                  onBilling: () {},
+                  mobile: false,
+                  topBar: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final bell = t.getRect(find.byType(RaftMobileNotificationButton));
+    expect(bell.size, const Size.square(34));
+    expect(bell.right, 1267);
+    await t.tapAt(
+      Offset(bell.left - 2, bell.center.dy),
+      kind: PointerDeviceKind.mouse,
+    );
+    await t.pump();
+    expect(find.byType(RaftNotificationCenter), findsNothing);
+    await t.tapAt(
+      Offset(bell.left - .5, bell.center.dy),
+      kind: PointerDeviceKind.mouse,
+    );
+    await t.pump();
+    expect(find.byType(RaftNotificationCenter), findsOneWidget);
+    await t.pumpWidget(const SizedBox.shrink());
+    w.dispose();
+    await client.dispose();
   });
 
   for (final keyboard in [0.0, 180.0]) {

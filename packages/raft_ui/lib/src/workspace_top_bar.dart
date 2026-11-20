@@ -17,7 +17,7 @@ import 'status_bar.dart';
 import 'tap_slop.dart';
 import 'text_scaling.dart';
 import 'theme.dart';
-import 'tokens/raft_tokens.g.dart' show RaftDesktopMetrics, RaftLight;
+import 'tokens/raft_tokens.g.dart' show RaftDesktopMetrics;
 
 /// Global workspace actions occupy wide native desktop windows as well as
 /// browser/tablet layouts whose theme includes the workspace bar.
@@ -68,7 +68,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
         : 8.0 + leadingInset;
     // The trailing frame glyph ends 20px from the window edge in AppTopBar.
     final trailingPadding = t.desktop
-        ? 20 - (RaftLight.frameItemHeight - 20) / 2 + trailingInset
+        ? 20 - (RaftDesktopMetrics.frameItemHeight - 20) / 2 + trailingInset
         : 8 + trailingInset;
     final workspaceMinimumWidth = t.desktop && workspace is RaftServerSwitcher
         ? (workspace as RaftServerSwitcher).topBarMinimumWidth(context)

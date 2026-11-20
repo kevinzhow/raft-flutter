@@ -15,31 +15,51 @@ class RaftTapSlopAnchor extends SingleChildRenderObjectWidget {
   const RaftTapSlopAnchor({
     super.key,
     required this.minSize,
+    this.includePointerRelease = false,
     required super.child,
   });
 
   final Size minSize;
 
+  /// Keeps a pointer click valid inside the expanded target on release.
+  final bool includePointerRelease;
+
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      RenderTapSlopAnchor(minSize);
+      RenderTapSlopAnchor(minSize)
+        ..includePointerRelease = includePointerRelease;
 
   @override
   void updateRenderObject(
     BuildContext context,
     RenderTapSlopAnchor renderObject,
-  ) => renderObject.minSize = minSize;
+  ) {
+    renderObject
+      ..minSize = minSize
+      ..includePointerRelease = includePointerRelease;
+  }
 }
 
 class RenderTapSlopAnchor extends RenderProxyBox {
   RenderTapSlopAnchor(this._minSize);
 
   Size _minSize;
+  bool includePointerRelease = false;
   Size get minSize => _minSize;
   set minSize(Size value) {
     if (value == _minSize) return;
     _minSize = value;
   }
+
+  Rect get hitBounds => Rect.fromCenter(
+    center: size.center(Offset.zero),
+    width: math.max(size.width, minSize.width),
+    height: math.max(size.height, minSize.height),
+  );
+
+  bool acceptsPointerRelease(Offset globalPosition) =>
+      includePointerRelease &&
+      hitBounds.contains(globalToLocal(globalPosition));
 }
 
 /// Gives the whole visible control priority over a neighbour's expanded tap
@@ -206,11 +226,7 @@ class RenderTapSlopHost extends RenderProxyBox {
         // Directly on an anchor: the normal hit test resolves it.
         return super.hitTest(result, position: position);
       }
-      final target = Rect.fromCenter(
-        center: visual.center,
-        width: math.max(visual.width, anchor.minSize.width),
-        height: math.max(visual.height, anchor.minSize.height),
-      );
+      final target = anchor.hitBounds.shift(origin);
       if (!target.contains(position)) continue;
       final dx = math.max(
         0.0,

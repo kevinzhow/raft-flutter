@@ -902,8 +902,9 @@ class RaftMobileNotificationButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     if (onFrame || (mobileHeader && _stickerWorkspace(t))) {
+      final frameExtent = t.size('css.frame-item-height', fallback: 36);
       final extent = onFrame
-          ? t.size('css.frame-item-height', fallback: 36)
+          ? (t.desktop ? RaftLayoutMetrics.desktopControl : frameExtent)
           : t.size('size.mobileHeaderAction', fallback: 44);
       final icon = RaftIcon(
         RaftGlyph.bell,
@@ -916,34 +917,36 @@ class RaftMobileNotificationButton extends StatelessWidget {
       );
       final control = Semantics(
         expanded: open,
-        child: RaftControl(
-          onPressed: onPressed,
-          semanticLabel: raftText(context, semanticLabel),
-          tooltip: onFrame ? raftText(context, semanticLabel) : null,
-          minimumTargetSize: extent,
-          visualHeight: extent,
-          visualWidth: extent,
-          recipe: _FrameBellRecipe(
-            t,
-            selected: open,
-            borderWidth: raftControlBorderPx(context, 1.5),
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              icon,
-              if (attention)
-                Positioned.fill(child: RaftRailAttention(child: icon)),
-            ],
+        child: RaftBlinkSnap(
+          child: RaftControl(
+            onPressed: onPressed,
+            semanticLabel: raftText(context, semanticLabel),
+            tooltip: onFrame ? raftText(context, semanticLabel) : null,
+            minimumTargetSize: extent,
+            visualHeight: extent,
+            visualWidth: extent,
+            recipe: _FrameBellRecipe(
+              t,
+              selected: open,
+              borderWidth: raftControlBorderPx(context, 1.5),
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                icon,
+                if (attention)
+                  Positioned.fill(child: RaftRailAttention(child: icon)),
+              ],
+            ),
           ),
         ),
       );
-      return RaftDensityScope.of(context) == RaftDensity.touch
-          ? RaftTapSlopAnchor(
-              minSize: const Size.square(RaftMetrics.touchTarget),
-              child: control,
-            )
-          : control;
+      final touch = RaftDensityScope.of(context) == RaftDensity.touch;
+      return RaftTapSlopAnchor(
+        minSize: Size.square(touch ? RaftMetrics.touchTarget : frameExtent),
+        includePointerRelease: onFrame && !touch,
+        child: control,
+      );
     }
     if (rail) {
       return RaftWorkspaceRailAction(
