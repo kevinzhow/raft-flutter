@@ -62,7 +62,7 @@ void main() {
         find.byKey(const ValueKey('activity-channel-ch3')),
       );
       expect(find.byType(Dialog), findsNothing);
-      final menu = find.byType(RaftSidebarContextMenu);
+      final menu = find.byKey(const ValueKey('raft-message-context-menu'));
       expect(menu, findsOneWidget);
       expect(tester.getTopLeft(menu), at);
       // Web db5e InboxContextMenu sets width: 184 without a minWidth override.
@@ -72,9 +72,13 @@ void main() {
       expect(find.text('Mark as Done'), findsOneWidget);
       // A channel row has no follow control.
       expect(find.text('Unfollow'), findsNothing);
-      await tester.tap(find.text('Mark as read'));
+      await tester.tap(
+        find.descendant(of: menu, matching: find.text('Mark as read')),
+        kind: PointerDeviceKind.mouse,
+      );
       await tester.pumpAndSettle();
       expect(menu, findsNothing);
+      expect(client.posts, contains('POST /channels/ch3/read-all'));
       final row = (state.rows as List).firstWhere(
         (r) => r['channelId'] == 'ch3',
       );

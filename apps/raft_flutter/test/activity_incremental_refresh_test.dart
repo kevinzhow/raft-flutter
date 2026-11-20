@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/activity_list_view.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -189,8 +190,12 @@ class ActivityWorkspace extends WorkspaceController {
 Finder shown(String text) =>
     find.textContaining(RegExp('${RegExp.escape(text)}\$'), findRichText: true);
 
+/// Detects the loading branch even before Activity paints its placeholders.
 Finder get skeleton => find.byWidgetPredicate(
-  (widget) => widget is RaftActivityLoadingList || widget is RaftSpinner,
+  (widget) =>
+      widget is ActivityInboxLoadingList ||
+      widget is RaftActivityLoadingList ||
+      widget is RaftSpinner,
 );
 
 ScrollableState activityScroll(WidgetTester tester) => tester.state(
