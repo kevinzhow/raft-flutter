@@ -404,7 +404,9 @@ void main() {
     expect(metadata, closeTo(title, .01));
   });
 
-  testWidgets('a phone row uses the compact assignee avatar size', (t) async {
+  testWidgets('a phone row uses the compact assignee avatar and caption', (
+    t,
+  ) async {
     await _mount(
       t,
       picks: _Picks(),
@@ -417,8 +419,19 @@ void main() {
       matching: find.byKey(const ValueKey('mounted-avatar-frame')),
     );
     final size = t.getSize(avatar);
+    final captionWeight = t.widget<Text>(find.text('Bob')).style!.fontWeight;
+    final placeholder = find.descendant(
+      of: avatar,
+      matching: find.byWidgetPredicate(
+        (widget) => widget is RaftIcon && widget.glyph == RaftGlyph.user,
+      ),
+    );
+    expect(placeholder, findsOneWidget);
+    final iconSize = t.getSize(placeholder);
     await t.pumpWidget(const SizedBox.shrink());
     expect(size, const Size.square(19));
+    expect(iconSize, const Size.square(12));
+    expect(captionWeight, FontWeight.w500);
   });
 
   testWidgets('phone metadata shares the compact status icon baseline', (

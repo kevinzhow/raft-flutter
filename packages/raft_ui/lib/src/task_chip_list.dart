@@ -384,6 +384,7 @@ class RaftTaskAssignee extends StatelessWidget {
         ? raftText(context, 'You')
         : task.assigneeName!;
     final avatarSize = alignToPageRow ? RaftAvatarSize.xs : null;
+    final pageHuman = alignToPageRow && !task.assigneeIsAgent;
     final avatar = RaftAvatar(
       name: task.assigneeName!,
       kind: task.assigneeIsAgent ? RaftAvatarKind.agent : RaftAvatarKind.human,
@@ -391,19 +392,33 @@ class RaftTaskAssignee extends StatelessWidget {
       mountedContext: RaftMountedAvatarContext.compactList,
       uiSize: avatarSize,
       presence: task.assigneePresence,
-      content: task.assigneeAvatarPixelKey == null
-          ? null
-          : RaftAvatarContent(
+      content: pageHuman || task.assigneeAvatarPixelKey != null
+          ? RaftAvatarContent(
               name: task.assigneeName!,
               kind: task.assigneeIsAgent
                   ? RaftAvatarContentKind.agent
                   : RaftAvatarContentKind.human,
+              uploadedUrl: pageHuman ? task.assigneeAvatarUrl : null,
               pixelKey: task.assigneeAvatarPixelKey,
-            ),
+              fallback: pageHuman
+                  ? Center(
+                      child: RaftIcon(
+                        RaftGlyph.user,
+                        size: RaftAvatarSize.xs.icon,
+                        color: t.ui.stickerInk,
+                      ),
+                    )
+                  : null,
+            )
+          : null,
     );
     final style = t.scale(
       RaftTypeScale.caption,
-      weight: task.assigneeIsViewer ? FontWeight.w600 : FontWeight.w400,
+      weight: task.assigneeIsViewer
+          ? FontWeight.w600
+          : alignToPageRow
+          ? null
+          : FontWeight.w400,
       color: task.assigneeIsViewer ? t.ui.foreground : t.ui.foregroundMuted,
     );
     final label = alignToPageRow
