@@ -116,6 +116,9 @@ void main() {
     final input = tester.widget<EditableText>(find.byType(EditableText));
     expect(input.focusNode.hasFocus, isTrue);
     expect(find.text('Write your answer'), findsOneWidget);
+    await tester.enterText(find.byType(EditableText), 'Friday');
+    await tester.pump();
+    expect(input.controller.text, 'Friday');
     expect(find.text('Submitted'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });

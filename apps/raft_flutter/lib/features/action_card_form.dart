@@ -834,6 +834,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
                 ? raftText(context, 'Write your answer')
                 : _copy(other['placeholder']),
             focusNode: _focus[field.name],
+            focusRingFollowsInputModality: widget.question,
             maxLength: other['maxLength'] as int?,
             semanticLabel: _copy(other['label']),
             enabled: enabled,

@@ -54683,19 +54683,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:addon@37049": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:addon@38296": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:box@36739": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:box@37986": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:resolve@35513": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -55841,21 +55841,21 @@
           "card"
         ]
       },
-      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9836/METHOD:sections@10579/FUNCTION:field@11842": {
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9583/METHOD:sections@10326/FUNCTION:field@11589": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
           "card"
         ]
       },
-      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9836/METHOD:sections@10579/FUNCTION:generic@13461": {
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9583/METHOD:sections@10326/FUNCTION:generic@13208": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
           "card"
         ]
       },
-      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9836/METHOD:sections@10579/FUNCTION:render@14343": {
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9583/METHOD:sections@10326/FUNCTION:render@14090": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -55893,14 +55893,14 @@
           "button"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8843/METHOD:properties@10336/FUNCTION:label@10658": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8843/METHOD:properties@10917/FUNCTION:label@11239": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
           "card"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8843/METHOD:properties@10336/FUNCTION:value@10758": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8843/METHOD:properties@10917/FUNCTION:value@11339": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -56318,7 +56318,7 @@
           "button"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17172/METHOD:_titleLine@18569/FUNCTION:item@18761": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17753/METHOD:_titleLine@19150/FUNCTION:item@19342": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -56326,7 +56326,7 @@
           "button"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17172/METHOD:_titleLine@18569/FUNCTION:items@19017": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17753/METHOD:_titleLine@19150/FUNCTION:items@19598": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -66916,32 +66916,32 @@
         "owner": "WP-CHAN",
         "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:resolve@35513|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:resolve@35513|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:resolve@35513|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:resolve@35513|state:focus-within": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:focus-within": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:resolve@35513|state:has:data-slot=input-group-control+data-invalid": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:has:data-slot=input-group-control+data-invalid": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34057/METHOD:_buildRecipe@35327/FUNCTION:resolve@35513|state:has:data-slot=input-group-control+disabled": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35304/METHOD:_buildRecipe@36574/FUNCTION:resolve@36760|state:has:data-slot=input-group-control+disabled": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."

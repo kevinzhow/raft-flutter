@@ -28,12 +28,21 @@ Future<void> _size(WidgetTester tester, double w, double h) async {
 
 /// Every box decoration that draws a border under [root].
 List<BoxDecoration> _frames(WidgetTester tester, Finder root) => [
-  for (final box in tester.widgetList<DecoratedBox>(
-    find.descendant(of: root, matching: find.byType(DecoratedBox)),
+  for (final frame in tester.widgetList<Widget>(
+    find.descendant(
+      of: root,
+      matching: find.byWidgetPredicate(
+        (widget) => widget is DecoratedBox || widget is RaftSnappedDecoratedBox,
+      ),
+    ),
   ))
-    if (box.decoration is BoxDecoration &&
-        (box.decoration as BoxDecoration).border != null)
-      box.decoration as BoxDecoration,
+    if ((switch (frame) {
+          DecoratedBox(:final decoration) => decoration,
+          RaftSnappedDecoratedBox(:final decoration) => decoration,
+          _ => null,
+        })
+        case final BoxDecoration box when box.border != null)
+      box,
 ];
 
 Map<String, dynamic> _snapshot() => {

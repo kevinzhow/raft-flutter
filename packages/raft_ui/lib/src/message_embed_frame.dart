@@ -7,6 +7,8 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_theme/recipes/recipe_runtime.dart';
 
 import 'design_primitives.dart' show RaftInteractive, RaftInteractionState;
+import 'panel_layout.dart' show RaftSnappedDecoratedBox;
+import 'raft/css_box.dart' show RaftBorderSnap;
 import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'recipe_surface.dart';
 import 'recipes/message_embed.g.dart' as embed;
@@ -132,9 +134,12 @@ class RaftMessageEmbedFrame extends StatelessWidget {
         );
       }
     }
-    final frame = Container(
+    final frame = RaftSnappedDecoratedBox(
       decoration: decoration,
       clipBehavior: Clip.antiAlias,
+      paintDevicePixelRatio: RaftBorderSnap.emulatedDeviceScaleFactor
+          ? 1
+          : null,
       child: RaftSurfaceBackgroundScope(
         color: fill?.a == 1 ? fill : null,
         child: child,

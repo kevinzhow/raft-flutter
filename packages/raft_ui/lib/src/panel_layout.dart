@@ -1648,18 +1648,53 @@ class RaftSnappedDecoratedBox extends StatelessWidget {
     super.key,
     required this.decoration,
     this.padding = EdgeInsets.zero,
+    this.clipBehavior = Clip.none,
+    this.paintDevicePixelRatio,
     this.child,
   });
   final BoxDecoration decoration;
   final EdgeInsetsGeometry padding;
+  final Clip clipBehavior;
+  final double? paintDevicePixelRatio;
   final Widget? child;
   @override
-  Widget build(BuildContext context) => _SnappedDecoration(
-    decoration: decoration,
-    devicePixelRatio: View.of(context).devicePixelRatio,
-    // Like Container: the border width is part of the content inset.
-    child: Padding(padding: padding.add(decoration.padding), child: child),
-  );
+  Widget build(BuildContext context) {
+    // Like Container: reserve border space and clip only the child.
+    final content = Padding(
+      padding: padding.add(decoration.padding),
+      child: child,
+    );
+    return _SnappedDecoration(
+      decoration: decoration,
+      devicePixelRatio:
+          paintDevicePixelRatio ?? View.of(context).devicePixelRatio,
+      child: clipBehavior == Clip.none
+          ? content
+          : ClipPath(
+              clipper: _SnappedDecorationClipper(
+                decoration,
+                Directionality.of(context),
+              ),
+              clipBehavior: clipBehavior,
+              child: content,
+            ),
+    );
+  }
+}
+
+class _SnappedDecorationClipper extends CustomClipper<Path> {
+  const _SnappedDecorationClipper(this.decoration, this.direction);
+
+  final BoxDecoration decoration;
+  final TextDirection direction;
+
+  @override
+  Path getClip(Size size) =>
+      decoration.getClipPath(Offset.zero & size, direction);
+
+  @override
+  bool shouldReclip(_SnappedDecorationClipper oldClipper) =>
+      oldClipper.decoration != decoration || oldClipper.direction != direction;
 }
 
 class _SnappedDecoration extends SingleChildRenderObjectWidget {
@@ -1715,14 +1750,19 @@ class _RenderSnappedDecoration extends RenderProxyBox {
   @override
   void paint(PaintingContext context, Offset offset) {
     final global = localToGlobal(Offset.zero);
-    final left = _snap(global.dx), top = _snap(global.dy);
-    final right = _snap(global.dx + size.width);
-    final bottom = _snap(global.dy + size.height);
+    final bounds = global.isFinite
+        ? Rect.fromLTRB(
+            _snap(global.dx),
+            _snap(global.dy),
+            _snap(global.dx + size.width),
+            _snap(global.dy + size.height),
+          ).shift(offset - global)
+        : offset & size;
     _painter ??= _decoration.createBoxPainter(markNeedsPaint);
     _painter!.paint(
       context.canvas,
-      offset + Offset(left - global.dx, top - global.dy),
-      ImageConfiguration(size: Size(right - left, bottom - top)),
+      bounds.topLeft,
+      ImageConfiguration(size: bounds.size),
     );
     super.paint(context, offset);
   }

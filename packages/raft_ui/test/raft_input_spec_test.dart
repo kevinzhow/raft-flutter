@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
@@ -179,6 +180,37 @@ void main() {
           isTrue,
         );
         expect(tester.getSize(find.byType(RaftTextInput)).height, 44);
+      },
+    );
+
+    testWidgets(
+      '$mode modality-aware input keeps focus and typing after pointer input',
+      (tester) async {
+        final changes = <String>[];
+        await tester.pumpWidget(
+          _app(
+            dark,
+            RaftTextInput(
+              focusRingFollowsInputModality: true,
+              onChanged: changes.add,
+            ),
+          ),
+        );
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        final focus = tester
+            .widget<EditableText>(find.byType(EditableText))
+            .focusNode;
+        expect(focus.hasPrimaryFocus, isTrue);
+        expect(_rings(tester), isNotEmpty);
+        await tester.tap(find.byType(TextField));
+        await tester.pump();
+        expect(_rings(tester), isEmpty);
+        expect(focus.hasPrimaryFocus, isTrue);
+        await tester.enterText(find.byType(TextField), 'hello');
+        await tester.pump();
+        expect(changes, ['hello']);
+        expect(_rings(tester), isEmpty);
       },
     );
 

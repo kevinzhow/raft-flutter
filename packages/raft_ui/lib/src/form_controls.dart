@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
+import 'focus_visible.dart';
 import 'localization.dart' show raftText;
 import 'recipe_surface.dart';
 import 'recipes/field.g.dart' as gen;
@@ -395,11 +396,15 @@ class RaftTextInput extends StatefulWidget {
     this.mono = false,
     this.numeric = false,
     this.upperCase = false,
+    this.focusRingFollowsInputModality = false,
   });
 
   final TextEditingController? controller;
   final String? initialValue, hintText, semanticLabel;
   final bool readOnly, enabled, invalid, obscureText, autofocus;
+
+  /// Follow raft-ui's keyboard-only focus-ring paint while retaining editor focus.
+  final bool focusRingFollowsInputModality;
 
   /// Key of the inner [TextField] (tests and focus lookups).
   final Key? fieldKey;
@@ -478,10 +483,12 @@ class _RaftTextInputState extends State<RaftTextInput>
   TextEditingController get controller =>
       widget.controller ??
       (_ownedController ??= TextEditingController(text: widget.initialValue));
+  bool _keyboardRing = true;
 
   @override
   void initState() {
     super.initState();
+    if (widget.focusRingFollowsInputModality) _observeModality(true);
     // Programmatic focus (autofocus) places the caret at the end without the
     // touch selection handles, like a focused Web input.
     void caretToEnd() {
@@ -503,7 +510,41 @@ class _RaftTextInputState extends State<RaftTextInput>
   }
 
   @override
+  void didUpdateWidget(RaftTextInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusRingFollowsInputModality !=
+        widget.focusRingFollowsInputModality) {
+      _observeModality(widget.focusRingFollowsInputModality);
+    }
+  }
+
+  void _observeModality(bool observe) {
+    final modality = RaftFocusVisible.shared;
+    if (observe) {
+      _keyboardRing = modality.keyboard;
+      modality.acquire();
+      modality.addListener(_modalityChanged);
+    } else {
+      modality.removeListener(_modalityChanged);
+      modality.release();
+    }
+  }
+
+  @override
+  void _changed() {
+    _keyboardRing = RaftFocusVisible.shared.keyboard;
+    super._changed();
+  }
+
+  void _modalityChanged() {
+    if (focus.hasFocus && _keyboardRing && !RaftFocusVisible.shared.keyboard) {
+      setState(() => _keyboardRing = false);
+    }
+  }
+
+  @override
   void dispose() {
+    if (widget.focusRingFollowsInputModality) _observeModality(false);
     _ownedController?.dispose();
     super.dispose();
   }
@@ -545,8 +586,9 @@ class _RaftTextInputState extends State<RaftTextInput>
         disabled: !widget.enabled,
         extra: [
           if (focused) RaftRecipeStates.focus,
-          // Editable text inputs match :focus-visible even after pointer focus.
-          if (focused) RaftRecipeStates.focusVisible,
+          if (focused &&
+              (!widget.focusRingFollowsInputModality || _keyboardRing))
+            RaftRecipeStates.focusVisible,
           if (widget.invalid) 'data-invalid',
         ],
       ),

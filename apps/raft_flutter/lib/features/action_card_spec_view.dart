@@ -154,14 +154,7 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
                 if (completionCopy.length > 1)
                   TextSpan(text: completionCopy.skip(1).join(by)),
                 if (committedAt != null)
-                  TextSpan(
-                    text:
-                        '\u00a0·\u00a0${widget.formatTimestamp(committedAt).replaceAll(' ', '\u00a0')}',
-                    style: content.tokens.scale(
-                      RaftTypeScale.monoMeta,
-                      mono: true,
-                    ),
-                  ),
+                  content.completionTime(widget.formatTimestamp(committedAt)),
               ],
               if (resultSummary != null)
                 TextSpan(text: ' →\u00a0$resultSummary'),

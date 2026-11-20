@@ -270,6 +270,28 @@ class RaftSpecActionCardContent {
     style: _nameStyle.copyWith(color: tokens.ui.foreground),
   );
 
+  TextSpan completionTime(String timestamp) {
+    final style = tokens.scale(
+      RaftTypeScale.monoMeta,
+      color: tokens.ui.foregroundMuted,
+      mono: true,
+    );
+    return TextSpan(
+      style: style,
+      children: [
+        WidgetSpan(
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x1),
+            child: RaftCssText('·', style: style),
+          ),
+        ),
+        TextSpan(text: timestamp),
+      ],
+    );
+  }
+
   InlineSpan entityReference(
     BuildContext context,
     String label, {
