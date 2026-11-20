@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/raft/ui_tokens.dart' show raftChromeBlend;
 
 Widget _app(
   Widget child, {
