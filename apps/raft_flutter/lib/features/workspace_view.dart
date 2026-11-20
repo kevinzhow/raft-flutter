@@ -1,6 +1,5 @@
 import 'mobile_server_tab.dart';
 import 'limit_notice.dart';
-import '../data/message_link_landing.dart';
 import '../data/limit_notice_queue.dart';
 import 'server_menu_model.dart';
 import 'agent_lounge.dart' show AgentLoungeFlag, loungeAgentName, loungeTitle;
@@ -1449,10 +1448,13 @@ class _WorkspaceViewState extends State<WorkspaceView>
 
       // Mobile home keeps the sidebar mounted while the lists load and shows
       // SidebarRowsSkeleton rows (Sidebar.tsx channelsLoading), not a spinner.
-      final messageLinkFailure = MessageLinkLanding.failureOf(
-        mobileHost?.w ?? w,
-      );
-      Widget content = messageLinkFailure != null
+      final landingWorkspace = mobileHost?.w ?? w;
+      final messageLinkFailure = landingWorkspace.navigation.messageLinkFailure;
+      Widget content =
+          messageLinkFailure != null &&
+              messageLinkFailure.authority ==
+                  landingWorkspace.navigationAuthority &&
+              messageLinkFailure.revision == landingWorkspace.navigationRevision
           ? MessageLinkUnavailable(
               key: const ValueKey('message-link-unavailable'),
               onBack: messageLinkFailure.onBack,

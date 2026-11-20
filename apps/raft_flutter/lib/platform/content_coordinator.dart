@@ -641,7 +641,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         epoch = _epoch,
         navigation = ++_navigation;
     if (w == null || scope == null) return;
-    MessageLinkLanding.clear(w);
+    _clearMessageLinkFailure(w);
     final messageLanding = externalLink && target.messageId != null;
     bool valid() =>
         !_closed &&
@@ -737,10 +737,11 @@ class NativeContentCoordinator with WidgetsBindingObserver {
           (error is _UnavailableContentLink ||
               error is RaftApiException &&
                   const {403, 404, 410}.contains(error.status))) {
-        MessageLinkLanding.showFailure(
-          w,
+        w.navigation.messageLinkFailure = MessageLinkLanding(
+          authority: w.navigationAuthority,
+          revision: w.navigationRevision,
           onBack: () {
-            MessageLinkLanding.clear(w);
+            _clearMessageLinkFailure(w);
             final channel = backChannel;
             if (valid() &&
                 channel != null &&
@@ -759,11 +760,18 @@ class NativeContentCoordinator with WidgetsBindingObserver {
             }
           },
         );
+        w.notifyListeners();
         return;
       }
       // ignore: raft_lints/avoid_imperative_notice_state -- Workspace-level w.error is shown once as a toast by workspace_view.syncWorkspaceError and cleared there (self-dismissing).
       w.setError('This link is unavailable for the current account or server.');
     }
+  }
+
+  void _clearMessageLinkFailure(WorkspaceController w) {
+    if (w.navigation.messageLinkFailure == null) return;
+    w.navigation.messageLinkFailure = null;
+    w.notifyListeners();
   }
 
   RaftLocation _destination(

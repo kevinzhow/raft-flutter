@@ -909,7 +909,10 @@ class MarkdownBuilder implements md.NodeVisitor {
     final wrap = inlineTextWrapper;
     return wrap == null
         ? mergedWidgets
-        : [for (final run in mergedWidgets) if (run is Text) wrap(run) else run];
+        : [
+            for (final run in mergedWidgets)
+              if (run is Text) wrap(run) else run
+          ];
   }
 
   TextAlign _textAlignForBlockTag(String? blockTag) {

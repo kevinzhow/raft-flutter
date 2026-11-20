@@ -1,4 +1,5 @@
 import '../features/settings_sub_pages.dart' show settingsSubPageFor;
+import 'message_link_landing.dart';
 import 'navigation_registry.dart';
 import 'phone_stack.dart';
 import 'raft_location.dart';
@@ -23,6 +24,9 @@ class WorkspaceNavigation {
   int _index = -1;
   int _revision = 0;
   int _taskRevision = 0;
+
+  /// Receiver-local presentation for a denied external message entry.
+  MessageLinkLanding? messageLinkFailure;
 
   /// First history entry made under the live phone layout; see
   /// [phoneReturnSource].
