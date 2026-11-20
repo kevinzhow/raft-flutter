@@ -46,7 +46,8 @@ ChannelSidePlacement placeChannelSide(
   required double width,
   required bool compact,
   bool threadFolded = false,
-  bool keepDraggedWidths = false,
+  double? conversationWidth,
+  Map<int, double> dockWidths = const {},
 }) {
   if (visible.isEmpty) {
     return const ChannelSidePlacement(ChannelSideMode.beside, []);
@@ -74,17 +75,15 @@ ChannelSidePlacement placeChannelSide(
   final chatFloor = threadFolded
       ? channelSideChatMinWidth * 2
       : channelSideChatMinWidth;
-  final mainWidth = math.max(
-    keepDraggedWidths && !threadFolded ? channelSideColumnClip : chatFloor,
-    width - sideSaved,
-  );
   final saved = [
-    mainWidth,
-    for (final group in groups) group.first.width.toDouble(),
+    conversationWidth ?? math.max(chatFloor, width - sideSaved),
+    for (final group in groups)
+      dockWidths[group.first.column] ?? group.first.width.toDouble(),
   ];
   final floors = [
-    math.min(mainWidth, chatFloor),
-    for (final group in groups) _contentFloor(group.first),
+    math.min(saved.first, chatFloor),
+    for (var i = 0; i < groups.length; i++)
+      math.min(saved[i + 1], groups[i].first.minWidth.toDouble()),
   ];
   final widths = _solveChannelSideWidths(
     saved,
@@ -263,6 +262,9 @@ class _ExpandedDockSeam {
   final double initialWidth;
   final Map<int, double> initialWidths;
 
+  double conversationAt(double width) =>
+      channelSideColumnClip + (neighbor == null ? initialWidth - width : 0);
+
   Map<int, double> atWidth(double width) => {
     ...initialWidths,
     column: width,
@@ -280,7 +282,6 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   final _chatKey = GlobalKey();
   ChannelSideSection? _expanded;
   ({_ExpandedDockSeam seam, double width})? _resizePreview;
-  bool _keepDraggedWidths = false;
   late Listenable listenable;
   int previewOpenedAt = 0;
 
@@ -293,7 +294,6 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   void bind() {
     _expanded = null;
     _resizePreview = null;
-    _keepDraggedWidths = false;
     store = ChannelSideStore.of(w);
     preview = WebPreviewStore.of(w);
     details = ChannelDetailsStore.of(w);
@@ -358,9 +358,10 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     setState(() {
       _expanded = null;
       _resizePreview = commit ? null : (seam: seam, width: shown);
-      if (commit && moved) _keepDraggedWidths = true;
     });
-    if (commit && moved) store.resizeColumns(seam.atWidth(shown));
+    if (commit && moved) {
+      store.resizeExpandedDock(seam.atWidth(shown), seam.conversationAt(shown));
+    }
   }
 
   Widget _build(BuildContext context, BoxConstraints box) {
@@ -368,12 +369,33 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     final foldedThread = RaftAdaptiveWorkspace.foldedThreadOf(context);
     final compact = RaftAdaptiveWorkspace.compactOf(context);
     final visible = store.layout.visible(open);
+    final ownsSeam =
+        !compact &&
+        foldedThread == null &&
+        !RaftInteraction.of(context).touch &&
+        box.maxWidth >= (visible.length + 1) * channelSideColumnClip;
+    if (_resizePreview case final active?) {
+      if (!ownsSeam ||
+          visible.length != active.seam.initialWidths.length ||
+          visible.any(
+            (column) => !active.seam.initialWidths.containsKey(column.column),
+          )) {
+        _resizePreview = null;
+      }
+    }
+    final resizePreview = _resizePreview;
+    final conversationWidth = ownsSeam && visible.isNotEmpty
+        ? store.conversationWidth?.toDouble()
+        : null;
     final placement = placeChannelSide(
       visible,
       width: box.maxWidth,
       compact: compact,
       threadFolded: foldedThread != null,
-      keepDraggedWidths: _keepDraggedWidths,
+      conversationWidth:
+          resizePreview?.seam.conversationAt(resizePreview.width) ??
+          conversationWidth,
+      dockWidths: resizePreview?.seam.atWidth(resizePreview.width) ?? const {},
     );
     final beside = placement.mode == ChannelSideMode.beside;
     final columns = placement.columns;
@@ -381,14 +403,6 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
         ? columns.indexWhere((column) => column.sections.contains(_expanded))
         : -1;
     if (expandedIndex < 0) _expanded = null;
-    if (_resizePreview case final active?) {
-      if (!beside ||
-          !columns.any((column) => column.column == active.seam.column)) {
-        _resizePreview = null;
-      }
-    }
-    final resizePreview = _resizePreview;
-    final previewWidths = resizePreview?.seam.atWidth(resizePreview.width);
     final docked = [
       for (var i = 0; i < columns.length; i++)
         (
@@ -396,7 +410,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           sections: columns[i].sections,
           tabGroups: columns[i].tabGroups,
           width: expandedIndex < 0
-              ? (previewWidths?[columns[i].column] ?? columns[i].width)
+              ? columns[i].width
               : i == expandedIndex
               ? box.maxWidth - columns.length * channelSideColumnClip
               : channelSideColumnClip,
@@ -408,15 +422,11 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
         placement.columns.isNotEmpty;
     final chatWidth = box.maxWidth - shown;
     final hasDock = beside && placement.columns.isNotEmpty;
-    final ownedExpandedSeam =
-        expandedIndex >= 0 &&
-            foldedThread == null &&
-            !RaftInteraction.of(context).touch &&
-            columns.every((column) => column.tabGroups.isEmpty)
+    final ownedExpandedSeam = expandedIndex >= 0 && ownsSeam
         ? _ExpandedDockSeam(docked, expandedIndex)
         : null;
     final seam = resizePreview?.seam ?? ownedExpandedSeam;
-    final chatMinimum = _keepDraggedWidths && foldedThread == null
+    final chatMinimum = conversationWidth != null
         ? channelSideColumnClip
         : channelSideChatMinWidth;
     final chatContentFloor = hasDock && chatWidth < channelSideChatMinWidth
@@ -504,7 +514,19 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                                 if (seam?.column == c.column) {
                                   _resizeExpandedDock(seam!, width, commit);
                                 } else {
-                                  store.resizeColumn(c.column, width, commit);
+                                  store.resizeColumn(
+                                    c.column,
+                                    width,
+                                    commit,
+                                    conversationWidth: conversationWidth == null
+                                        ? null
+                                        : chatWidth +
+                                              c.width -
+                                              width.clamp(
+                                                channelSideMinSavedWidth,
+                                                channelSideMaxSavedWidth,
+                                              ),
+                                  );
                                 }
                               },
                               label: _resizeLabel(context, c.sections, page),

@@ -57596,7 +57596,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@8315/METHOD:_build@10831/FUNCTION:chatContent@13267": {
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@8480/METHOD:_build@10922/FUNCTION:chatContent@13655": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace side panels",

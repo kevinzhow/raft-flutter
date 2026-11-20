@@ -3,6 +3,8 @@
 // with the proxy and the place shown, the keyboard (Space, arrows, Space,
 // Escape) with its announcements, the refusal where no room is left, and where
 // no drag exists at all (touch, a phone, floating, one section).
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -70,13 +72,14 @@ Future<Rig> pump(
   bool files = true,
   bool dark = false,
   bool bodies = true,
+  Map<String, Object> savedPreferences = const {},
 }) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
   inits.clear();
   DevicePreferences.reset();
-  SharedPreferences.setMockInitialValues({});
+  SharedPreferences.setMockInitialValues(savedPreferences);
   await t.runAsync(() async {
     DevicePreferences.adopt(await SharedPreferences.getInstance());
   });
@@ -338,6 +341,139 @@ void main() {
     expect(rect(t, column).width, shownWidth - 80);
     expect(rect(t, conversation).width, 240);
     expect(rig.saves, hasLength(1));
+  });
+
+  testWidgets('expanded width survives rebind with its saved desktop layout', (
+    t,
+  ) async {
+    const layoutKey = 'raft.channelSide.layout';
+    final legacyLayout = ChannelSideLayout.defaults.resize(1, 960);
+    final rig = await pump(
+      t,
+      savedPreferences: {layoutKey: jsonEncode(legacyLayout.toJson())},
+    );
+    const conversation = 'channel-side-conversation';
+    const column = 'channel-side-column-1';
+    expect(rect(t, conversation).width, 360);
+    expect(rect(t, column).width, 840);
+    final expand = find.byKey(const Key('channel-side-card-tasks-expand'));
+    await t.tap(expand.hitTestable());
+    await t.pump();
+    final gesture = await t.startGesture(
+      rect(t, column).topLeft + const Offset(6, 116),
+      kind: PointerDeviceKind.mouse,
+    );
+    await gesture.moveBy(const Offset(80, 0));
+    await t.pump();
+    expect(rect(t, conversation).width, 240);
+    expect(rect(t, column).width, 960);
+    await gesture.up();
+    await settle(t);
+    expect(rig.saves, hasLength(1));
+    final preferences = DevicePreferences.current!;
+    await t.runAsync(preferences.reload);
+    final saved = {
+      for (final key in preferences.getKeys())
+        if (key.startsWith('raft.channelSide.')) key: preferences.get(key)!,
+    };
+    expect(jsonDecode(saved[layoutKey]! as String), legacyLayout.toJson());
+    expect(
+      (rig.saves.single.data as Map)['channelSideLayout'],
+      legacyLayout.toJson(),
+    );
+    final areaState = t.state(find.byType(ChannelSideArea));
+    final rebound = await pump(t, savedPreferences: saved);
+    expect(t.state(find.byType(ChannelSideArea)), same(areaState));
+    expect(rebound.w, isNot(same(rig.w)));
+    final reloaded = (rect(t, conversation).width, rect(t, column).width);
+    expect(reloaded, (240, 960));
+    expect(saved['raft.channelSide.conversationWidth'], '240');
+    expect((rig.saves.single.data as Map).keys, ['channelSideLayout']);
+    await t.tap(expand.hitTestable());
+    await t.pump();
+    await t.tap(expand.hitTestable());
+    await t.pump();
+    expect((rect(t, conversation).width, rect(t, column).width), reloaded);
+    expect(rebound.saves, isEmpty);
+    await t.pumpWidget(const SizedBox.shrink());
+    final fresh = await pump(t, savedPreferences: saved);
+    expect((rect(t, conversation).width, rect(t, column).width), reloaded);
+    expect(fresh.saves, isEmpty);
+    final handle = find.byKey(const Key('channel-side-column-resize-1'));
+    Focus.of(
+      t.element(
+        find.descendant(of: handle, matching: find.byType(RaftHoverRegion)),
+      ),
+    ).requestFocus();
+    await t.pump();
+    await t.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await settle(t);
+    expect((rect(t, conversation).width, rect(t, column).width), (224, 976));
+    expect(fresh.saves, hasLength(1));
+    await t.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('expanded resize fits a changing viewport with Files beside it', (
+    t,
+  ) async {
+    final rig = await pump(t, size: const Size(990, 800));
+    await t.tap(
+      find.byKey(const Key('channel-side-card-files-overflow')).hitTestable(),
+    );
+    await t.pumpAndSettle();
+    await t.tap(find.text('Move right').hitTestable());
+    await settle(t);
+    expect(columnsOf(rig.store.layout), 'tasks | files');
+    final savesBefore = rig.saves.length;
+    final expand = find.byKey(const Key('channel-side-card-tasks-expand'));
+    await t.tap(expand.hitTestable());
+    await t.pump();
+    Rect taskDock() => rect(t, 'channel-side-column-1');
+    (double, double, double) widths() => (
+      rect(t, 'channel-side-conversation').width,
+      taskDock().width,
+      rect(t, 'channel-side-column-2').width,
+    );
+    expect(widths(), (160, 670, 160));
+    expect(
+      rect(t, 'channel-side-card-files-header').left,
+      taskDock().right + 1,
+    );
+    final gesture = await t.startGesture(
+      taskDock().topLeft + const Offset(6, 116),
+      kind: PointerDeviceKind.mouse,
+    );
+    await gesture.moveBy(const Offset(80, 0));
+    await t.pump();
+    final held = widths();
+    t.view.physicalSize = const Size(870, 800);
+    await t.pump();
+    final shrunk = widths();
+    await gesture.moveBy(const Offset(20, 0));
+    await t.pump();
+    final continued = widths();
+    expect(rig.saves, hasLength(savesBefore));
+    await gesture.up();
+    await settle(t);
+    final released = widths();
+    t.view.physicalSize = const Size(990, 800);
+    await t.pump();
+    expect(held, (240, 590, 160));
+    expect(shrunk, (240, 470, 160));
+    expect(continued, (260, 450, 160));
+    expect(released, continued);
+    expect(widths(), (260, 570, 160));
+    expect(
+      rect(t, 'channel-side-card-files-header').left,
+      taskDock().right + 1,
+    );
+    expect(rig.saves, hasLength(savesBefore + 1));
+    await t.tap(expand.hitTestable());
+    await t.pump();
+    await t.tap(expand.hitTestable());
+    await t.pump();
+    expect(widths(), (260, 570, 160));
+    await t.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('expanded dock suspends move grips until Restore', (t) async {
