@@ -125,6 +125,10 @@ void main() {
               closeTo(viewport.bottom - remainingInset - 20, .01),
             );
             expect(t.takeException(), isNull);
+          } on TestFailure catch (error, stack) {
+            // Let testWidgets release its restoration manager and final render
+            // tree before reporting an assertion that interrupted the body.
+            addTearDown(() => Error.throwWithStackTrace(error, stack));
           } finally {
             await t.pumpWidget(const SizedBox.shrink());
             if (!nextPage.isCompleted) nextPage.complete();
