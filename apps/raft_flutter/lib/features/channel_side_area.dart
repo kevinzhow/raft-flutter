@@ -369,13 +369,13 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
       child: child,
     );
     final chat = _Inert(key: _chatKey, inert: covering, child: widget.child);
-    // Sections move only beside the chat, by a pointer, with more than one
-    // open (Web `sideSectionDrag` enabled).
+    // Web suspends section moves while a unit is expanded.
     drag.sync(
       store: store,
       area: context,
       enabled:
           beside &&
+          _expanded == null &&
           !RaftInteraction.of(context).touch &&
           placement.columns.fold(0, (n, c) => n + c.sections.length) > 1,
       fits: (moved) =>
