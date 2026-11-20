@@ -9,8 +9,9 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_day_groups.dart';
 
-/// Web `ThreadsInbox` combines the scroller's padding with the list's own.
-const double _listInset = 8;
+// ThreadsInbox has 8px above the first group on both viewport paths. Its
+// list ends with 4px before the ScrollArea's 16px safe-bottom rhythm.
+const _listPadding = EdgeInsets.only(top: 8, bottom: 4 + 16);
 
 /// `InboxItemListGroup` margin between two days.
 const double _groupGap = 6;
@@ -59,10 +60,7 @@ class _ActivityInboxLoadingListState extends State<ActivityInboxLoadingList> {
   Widget build(BuildContext context) => !_visible
       ? const SizedBox.expand()
       : ListView(
-          padding: raftScrollPadding(
-            context,
-            const EdgeInsets.symmetric(vertical: _listInset),
-          ),
+          padding: raftScrollPadding(context, _listPadding),
           children: [
             RaftInboxItemListGroup.loading(
               children: [
@@ -108,10 +106,7 @@ class ActivityListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final padding = raftScrollPadding(
-      context,
-      const EdgeInsets.symmetric(vertical: _listInset),
-    );
+    final padding = raftScrollPadding(context, _listPadding);
     var start = 0;
     final slivers = <Widget>[
       ?(phoneBar == null ? null : PinnedHeaderSliver(child: phoneBar)),
@@ -166,7 +161,14 @@ class ActivityListView extends StatelessWidget {
         ),
       );
     }
-    if (tail != null) slivers.add(SliverToBoxAdapter(child: tail));
+    if (tail != null) {
+      slivers.add(
+        SliverPadding(
+          padding: const EdgeInsets.only(top: _rowGap),
+          sliver: SliverToBoxAdapter(child: tail),
+        ),
+      );
+    }
     slivers.add(SliverToBoxAdapter(child: SizedBox(height: padding.bottom)));
     return CustomScrollView(
       controller: controller,

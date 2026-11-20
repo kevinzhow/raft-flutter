@@ -177,22 +177,26 @@ void main() {
         final dynamic state = await mount(tester);
         final scroll = activityScroll(tester);
         expect(scroll.position.pixels, 0);
+        final firstRowTop = tester.getRect(card('Channel 0')).top;
+        final heading = find.byType(RaftInboxItemListGroup).first;
+        // Desktop scroller and list each add 4px. After the heading,
+        // including its margin, the list flex gap adds another 2px.
+        expect(
+          firstRowTop,
+          listRect(tester).top + 8 + tester.getSize(heading).height + 2,
+        );
+
         client.emit('message:new', live('t1', 20, 2000));
         await tester.pump();
         expect(state.rows.first['channelId'], 'ch20');
         expect(scroll.position.pixels, 0);
         expect(find.byType(RaftNewUpdatesButton), findsNothing);
-        final list = listRect(tester);
-        // Web ThreadsInbox: `py-1`, then the day's heading (26 + 2px gap).
-        expect(
-          tester.getRect(card('Channel 20')).top,
-          list.top +
-              4 +
-              tester.getSize(find.byType(RaftInboxItemListGroup).first).height,
-        );
+        expect(tester.getRect(card('Channel 20')).top, firstRowTop);
         serverMoves(20, 2000, 't1');
         await tester.pump(const Duration(milliseconds: 150));
         await tester.pumpAndSettle();
+        expect(tester.getRect(card('Channel 20')).top, firstRowTop);
+        expect(scroll.position.pixels, 0);
         expect(find.byType(RaftNewUpdatesButton), findsNothing);
 
         // Scrolled down, an update shows the pill; scrolling back to the top
