@@ -6,20 +6,6 @@ import 'app_permission_updates.dart';
 import 'artifacts/artifact_session.dart';
 import 'computers_rack/computer_attention_seen.dart';
 
-Widget listenWorkspaceRail(
-  WorkspaceController workspace,
-  Widget Function() build,
-) => AppPermissionUpdatesHost(
-  workspace: workspace,
-  child: ListenableBuilder(
-    listenable: Listenable.merge([
-      ArtifactSession.of(workspace),
-      AppPermissionUpdates.of(workspace),
-    ]),
-    builder: (_, _) => build(),
-  ),
-);
-
 List<RaftRailDestination> workspaceRailDestinations(
   WorkspaceController workspace, {
   required String Function(String) tr,

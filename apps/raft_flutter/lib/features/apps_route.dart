@@ -3,10 +3,26 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
+import 'app_permission_updates.dart';
 import 'artifacts/artifact_dashboard.dart';
+import 'artifacts/artifact_session.dart';
 import 'integrations_views.dart';
 
 const workspaceCatalogRoutes = {'apps', 'artifacts'};
+
+Widget listenWorkspaceRail(
+  WorkspaceController workspace,
+  Widget Function() build,
+) => AppPermissionUpdatesHost(
+  workspace: workspace,
+  child: ListenableBuilder(
+    listenable: Listenable.merge([
+      ArtifactSession.of(workspace),
+      AppPermissionUpdates.of(workspace),
+    ]),
+    builder: (_, _) => build(),
+  ),
+);
 
 Widget workspaceCatalogPage(
   String route,
