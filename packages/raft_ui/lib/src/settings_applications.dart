@@ -18,8 +18,8 @@ import 'raft_underline.dart';
 import 'system_inset.dart';
 import 'design_primitives.dart'
     show
+        RaftDropdownAlign,
         RaftDropdownMenu,
-        RaftDropdownTriggerStyle,
         RaftInheritedFontScope,
         RaftInteractive,
         RaftMenuEntry,
@@ -37,7 +37,7 @@ import 'pull_to_refresh.dart';
 import 'recipe_min_height.dart' show RaftMinHeightBox;
 import 'raft/avatar.dart';
 import 'raft/badge.dart';
-import 'raft/list_row.dart' show RaftListRowSkeleton, RaftListRowVariant;
+import 'raft/list_row.dart' show RaftListRowSkeleton;
 import 'token_geometry.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart'
@@ -46,6 +46,8 @@ import 'toggle_group.dart';
 import 'separator.dart';
 import 'settings_controls.dart';
 import 'settings_layout.dart';
+import 'select_field.dart';
+import 'surface_background_scope.dart';
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeScale;
@@ -230,8 +232,8 @@ class RaftConnectedAppsSection extends StatelessWidget {
   final VoidCallback? onRegister;
   final RaftConnectedAppsTab tab;
 
-  /// Marketplace / Installed / My apps counts (a zero hides the count).
-  final ({int marketplace, int installed, int myApps}) counts;
+  /// Marketplace is absent in Settings and until its total arrives on the page.
+  final ({int? marketplace, int installed, int myApps}) counts;
   final ValueChanged<RaftConnectedAppsTab> onTab;
   final TextEditingController searchController;
   final ValueChanged<String>? onSearch;
@@ -264,8 +266,10 @@ class RaftConnectedAppsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
-    final toggle = _LayoutToggle(value: layout, onChanged: onLayout);
-    final toolbar = _toolbar(context, toggle);
+    final pageInset = !t.desktop && raftBreakpointWidth(context) >= 768
+        ? RaftSpace.x5
+        : RaftSpace.x4;
+    final toolbar = _toolbar(context);
     final placeholders = _AppsLoading(
       key: ValueKey(tab),
       tab: tab,
@@ -367,14 +371,23 @@ class RaftConnectedAppsSection extends StatelessWidget {
           bottom: 0,
           action: onRegister == null
               ? null
-              : RaftSettingsRecipeButton(
+              : RaftDropdownMenu(
                   key: const ValueKey('connected-apps-register'),
-                  label: 'Register App',
-                  glyph: RaftGlyph.plus,
-                  glyphSize: 14,
-                  variant: RaftButtonRecipeVariant.accent,
-                  size: RaftButtonRecipeSize.sm,
-                  onPressed: onRegister,
+                  surfaceKey: const ValueKey('settings-apps-add-menu'),
+                  label: raftTextZh(context, 'Add app', '添加应用'),
+                  align: RaftDropdownAlign.end,
+                  entries: _registerOptions(context),
+                  triggerBuilder: (context, focus, press) => RaftButton(
+                    label: raftTextZh(context, 'Add app', '添加应用'),
+                    glyph: RaftGlyph.plus,
+                    trailingGlyph: RaftGlyph.chevronDown,
+                    glyphSize: 14,
+                    gap: RaftSpace.x1_5,
+                    uiVariant: RaftButtonVariant.accent,
+                    uiSize: RaftButtonSize.md,
+                    focusNode: focus,
+                    onPressed: press,
+                  ),
                 ),
         ),
       if (!standalone) toolbar,
@@ -431,10 +444,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
               padding: raftScrollPadding(
                 context,
                 standalone
-                    ? EdgeInsets.symmetric(
-                        horizontal: t.desktop ? 20 : 16,
-                        vertical: 16,
-                      )
+                    ? EdgeInsets.symmetric(horizontal: pageInset, vertical: 16)
                     : RaftSettingsPanelFrame.contentInset.add(
                         const EdgeInsets.only(bottom: 24),
                       ),
@@ -512,20 +522,26 @@ class RaftConnectedAppsSection extends StatelessWidget {
         ),
       );
       if (!standalone) return scroller;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _pageToolbar(context, toolbar),
-          Expanded(
-            child: refresh == null
-                ? scroller
-                : RaftPullToRefresh(
-                    enabled: pullable,
-                    onRefresh: refresh,
-                    child: scroller,
-                  ),
+      return ColoredBox(
+        color: t.canvas,
+        child: RaftSurfaceBackgroundScope(
+          color: t.canvas,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _pageToolbar(t, toolbar, pageInset),
+              Expanded(
+                child: refresh == null
+                    ? scroller
+                    : RaftPullToRefresh(
+                        enabled: pullable,
+                        onRefresh: refresh,
+                        child: scroller,
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       );
     }
     return RaftInheritedFont(
@@ -545,14 +561,13 @@ class RaftConnectedAppsSection extends StatelessWidget {
     );
   }
 
-  Widget _pageToolbar(BuildContext context, Widget toolbar) {
-    final t = RaftTokens.of(context);
+  Widget _pageToolbar(RaftTokens t, Widget toolbar, double inset) {
     final air = t.desktop ? RaftDesktopMetrics.headerAir : 8.0;
     return Container(
       padding: EdgeInsets.fromLTRB(
-        t.desktop ? 20 : 16,
+        inset,
         air,
-        t.desktop ? 20 : 16,
+        inset,
         t.desktop ? air - 1 : air,
       ),
       decoration: BoxDecoration(
@@ -562,8 +577,28 @@ class RaftConnectedAppsSection extends StatelessWidget {
     );
   }
 
-  Widget _toolbar(BuildContext context, Widget toggle) {
+  Widget _toolbar(BuildContext context) {
     String tr(String value) => raftText(context, value);
+    final filters = [
+      ?typeFilter,
+      RaftFitPicker(
+        key: const ValueKey('connected-apps-category-filter'),
+        label:
+            categories.where((entry) => entry.$1 == category).firstOrNull?.$2 ??
+            tr('All categories'),
+        glyph: RaftGlyph.layoutList,
+        applied: category != 'all',
+        labelOrder: 20,
+        menuEntries: [
+          for (final (value, label) in categories)
+            RaftMenuEntry(
+              label: label,
+              checked: value == category,
+              onPressed: () => onCategory(value),
+            ),
+        ],
+      ),
+    ];
     return RaftFitToolbar(
       wrap: true,
       semanticLabel: tr('Apps'),
@@ -593,27 +628,8 @@ class RaftConnectedAppsSection extends StatelessWidget {
                   onPressed: onClearFilters,
                 ),
           items: [
-            ?typeFilter,
-            RaftFitPicker(
-              key: const ValueKey('connected-apps-category-filter'),
-              label:
-                  categories
-                      .where((entry) => entry.$1 == category)
-                      .firstOrNull
-                      ?.$2 ??
-                  tr('All categories'),
-              glyph: RaftGlyph.layoutList,
-              applied: category != 'all',
-              labelOrder: 20,
-              menuEntries: [
-                for (final (value, label) in categories)
-                  RaftMenuEntry(
-                    label: label,
-                    checked: value == category,
-                    onPressed: () => onCategory(value),
-                  ),
-              ],
-            ),
+            ...filters.where((picker) => picker.applied),
+            ...filters.where((picker) => !picker.applied),
           ],
         ),
         RaftFitGroup(
@@ -636,7 +652,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
           ],
           items: [
             ?sortFilter,
-            RaftFitChild(child: toggle),
+            _LayoutToggle(value: layout, onChanged: onLayout),
           ],
         ),
         RaftFitGroup(
@@ -650,23 +666,21 @@ class RaftConnectedAppsSection extends StatelessWidget {
                 glyph: RaftGlyph.plus,
                 variant: RaftButtonVariant.primary,
                 plusOrder: 40,
-                menuEntries: [
-                  RaftMenuEntry(
-                    label: raftTextZh(
-                      context,
-                      'Create a Raft app',
-                      '创建 Raft 应用',
-                    ),
-                    glyph: RaftGlyph.globe,
-                    onPressed: onRegister,
-                  ),
-                ],
+                menuEntries: _registerOptions(context),
               ),
           ],
         ),
       ],
     );
   }
+
+  List<RaftMenuEntry> _registerOptions(BuildContext context) => [
+    RaftMenuEntry(
+      label: raftTextZh(context, 'Create a Raft app', '创建 Raft 应用'),
+      glyph: RaftGlyph.globe,
+      onPressed: onRegister,
+    ),
+  ];
 }
 
 class _AppsScope extends RaftFitItem {
@@ -677,7 +691,7 @@ class _AppsScope extends RaftFitItem {
   }) : super(labelOrder: 50);
 
   final RaftConnectedAppsTab tab;
-  final ({int marketplace, int installed, int myApps}) counts;
+  final ({int? marketplace, int installed, int myApps}) counts;
   final ValueChanged<RaftConnectedAppsTab> onTab;
 
   @override
@@ -717,7 +731,7 @@ class _AppsScope extends RaftFitItem {
               RaftSegmentedOption(
                 value: value,
                 label: tr(label),
-                count: count == 0 ? null : '$count',
+                count: count?.toString(),
                 itemKey: probe ? null : ValueKey('connected-apps-tab-$id'),
               ),
           ],
@@ -728,20 +742,31 @@ class _AppsScope extends RaftFitItem {
       (entry) => entry.$1 == tab,
       orElse: () => tabs.first,
     );
-    return RaftDropdownMenu(
+    final tokens = RaftTokens.of(context);
+    return RaftSelectField<RaftConnectedAppsTab>(
       key: probe ? null : const ValueKey('connected-apps-scope-select'),
-      label: tr(active.$2),
-      triggerStyle: RaftDropdownTriggerStyle.picker,
-      trailingGlyph: RaftGlyph.chevronDown,
-      entries: [
+      label: '${tr('Apps')}, ${tr(active.$2)}',
+      toolbarPicker: true,
+      popupMinWidth: 160,
+      value: tab,
+      onChanged: (value) {
+        if (value != null) onTab(value);
+      },
+      items: [
         for (final (value, label, count, id) in tabs)
-          RaftMenuEntry(
+          RaftSelectItem(
+            value: value,
             label: tr(label),
-            checked: value == tab,
-            leading: probe
+            labelKey: probe ? null : ValueKey('connected-apps-tab-$id'),
+            listTrailing: count == null
                 ? null
-                : SizedBox.shrink(key: ValueKey('connected-apps-tab-$id')),
-            onPressed: () => onTab(value),
+                : Text(
+                    '$count',
+                    style: tokens.scale(
+                      RaftTypeScale.monoMeta,
+                      color: tokens.ui.foregroundHint,
+                    ),
+                  ),
           ),
       ],
     );
@@ -1033,34 +1058,42 @@ class _SliverCollection extends StatelessWidget {
   }
 }
 
-/// ConnectedAppsViewToggle: raft-ui ToggleGroup with two `h-8 w-8 p-0` icon items (LayoutGrid 16 / List 17).
-class _LayoutToggle extends StatelessWidget {
-  const _LayoutToggle({required this.value, required this.onChanged});
+class _LayoutToggle extends RaftFitItem {
+  const _LayoutToggle({required this.value, required this.onChanged})
+    : super(labelOrder: 10);
   final RaftConnectedAppsLayout value;
   final ValueChanged<RaftConnectedAppsLayout> onChanged;
+
   @override
-  Widget build(
+  bool get hasLabelForm => true;
+
+  @override
+  Widget buildForm(
     BuildContext context,
-  ) => RaftToggleGroup<RaftConnectedAppsLayout>(
+    RaftFitForm form, {
+    required bool probe,
+    List<RaftMenuEntry> moreEntries = const [],
+  }) => RaftToggleGroup<RaftConnectedAppsLayout>(
     semanticLabel: 'App layout',
     value: {value},
     // The Web handler ignores the empty value of a pressed item pressed again.
     onChanged: (next) {
       if (next.isNotEmpty) onChanged(next.first);
     },
-    items: const [
+    items: [
       RaftToggleGroupItem(
         value: RaftConnectedAppsLayout.grid,
         glyph: RaftGlyph.layoutGrid,
-        tooltip: 'Grid view',
-        itemKey: ValueKey('connected-apps-view-grid'),
+        label: form == RaftFitForm.full ? 'Grid view' : null,
+        tooltip: form != RaftFitForm.full && !probe ? 'Grid view' : null,
+        itemKey: probe ? null : const ValueKey('connected-apps-view-grid'),
       ),
       RaftToggleGroupItem(
         value: RaftConnectedAppsLayout.list,
         glyph: RaftGlyph.list,
-        glyphSize: 17,
-        tooltip: 'List view',
-        itemKey: ValueKey('connected-apps-view-list'),
+        label: form == RaftFitForm.full ? 'List view' : null,
+        tooltip: form != RaftFitForm.full && !probe ? 'List view' : null,
+        itemKey: probe ? null : const ValueKey('connected-apps-view-list'),
       ),
     ],
   );
@@ -1847,7 +1880,15 @@ class RaftAppPermissionsSummary extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: RaftSpace.x4,
                 children: [
-                  SizedBox(width: 176, child: label),
+                  SizedBox(
+                    width: 176,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: RaftSpace.half,
+                      ),
+                      child: label,
+                    ),
+                  ),
                   Expanded(child: values),
                 ],
               )
@@ -1949,6 +1990,7 @@ class RaftConnectedAppDetailCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
+    final footerInset = t.desktop ? RaftSpace.x4 : RaftSpace.x5;
     final identity = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2021,11 +2063,11 @@ class RaftConnectedAppDetailCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              RaftSpace.x5,
+            padding: EdgeInsets.fromLTRB(
+              footerInset,
               0,
-              RaftSpace.x5,
-              RaftSpace.x5,
+              footerInset,
+              footerInset,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

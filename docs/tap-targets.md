@@ -103,6 +103,12 @@ returns to Apps. Guests keep their own link-preview choices in Settings → Apps
 `mobile_server_tab_test.dart`, `apps_permission_notice_test.dart` and
 `apps_route_links_test.dart` exercise the mounted entry points.
 
+In Login with Raft, the App details card opens the app homepage in the
+system browser when the lookup provides an HTTP(S) homepage. Consent stays
+open on the same account or server selection when the person returns.
+`human_login_account_mode_test.dart` exercises the homepage action and
+checks that it sends no install or authorization request.
+
 ### Task conversation details
 
 The task title-bar details toggle targets the current task's properties. The

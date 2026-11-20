@@ -76,6 +76,7 @@ class _LinkPreviewConsentsState extends State<LinkPreviewConsents> {
               action: RaftButton(
                 label: tr('Retry'),
                 uiSize: RaftButtonSize.md,
+                uiVariant: RaftButtonVariant.outline,
                 onPressed: store.readConsentChoices,
               ),
             ),
@@ -137,6 +138,7 @@ class _LinkPreviewConsentsState extends State<LinkPreviewConsents> {
               key: const ValueKey('link-preview-consents-manage'),
               label: tr('Manage'),
               uiSize: RaftButtonSize.md,
+              uiVariant: RaftButtonVariant.outline,
               onPressed: () => openLinkPreviewConsents(context, store),
             ),
           ),

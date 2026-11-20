@@ -145,6 +145,8 @@ in `apps/raft_flutter`.
 | `action-card-feedback` | dialog | x esc sysback | x esc sysback | x esc sysback | FeedbackCardDialog.tsx:69 NarrowDialogContent, pointer dismissal disabled | ok |  |
 | `action-card-mcp-default` | dialog | x esc sysback | x esc sysback | x esc sysback | McpConnectCardBody.tsx:307 ConfirmDialog | ok |  |
 | `action-card-send-create-agent` | dialog | x esc sysback | x esc sysback | x esc sysback | actionCardIntentFlows.tsx:730 ConfirmDialog | ok |  |
+| `settings-apps-add-menu` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | IntegrationsSection.tsx: Add app closes on Escape and outside press. | ok |  |
+| `apps-page` | panel | back sysback | - (Select another rail destination or use navigation history.) | - (Select another rail destination or use navigation history.) | IntegrationsSection.tsx: Apps is a route with a narrow Back action and browser history. | ok |  |
 | `drafts-page` | page | back sysback | - (this is a root section; leave through navigation or history) | - (this is a root section; leave through navigation or history) | DraftsPanel.tsx: mobile Back; desktop uses sidebar and history | ok |  |
 | `add-external-member-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | AddExternalMemberDialog.tsx uses DialogCard with X and Escape | ok |  |
 | `external-invite-withdraw-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ExternalInviteRows.tsx uses ConfirmDialog with X and Escape | ok |  |

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/human_login.dart';
@@ -17,6 +19,8 @@ void main() {
     String serverHint = '',
     Size size = const Size(390, 844),
     TargetPlatform platform = TargetPlatform.linux,
+    Future<bool> Function(Uri)? openExternal,
+    bool settle = true,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -31,6 +35,7 @@ void main() {
               await showHumanLoginSheet(
                 context,
                 api: api,
+                openExternal: openExternal,
                 request: HumanLoginRequest(
                   clientId: 'artifact-share',
                   returnUrl: 'https://artifacts.example.com/auth/callback',
@@ -49,8 +54,79 @@ void main() {
       ),
     );
     await tester.tap(find.text('Open sign-in'));
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+    }
   }
+
+  testWidgets('slow lookup shows loading after one second', (tester) async {
+    final pending = Completer<void>();
+    final api = FakeHumanLoginApi(lookupGate: pending);
+    await open(tester, api, (_) {}, settle: false);
+
+    final skeleton = find.byKey(const ValueKey('human-login-lookup-skeleton'));
+    await tester.pump(const Duration(milliseconds: 999));
+    expect(tester.widget<Opacity>(skeleton).opacity, 0);
+    expect(primary, findsNothing);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(tester.widget<Opacity>(skeleton).opacity, 1);
+    expect(find.text('Loading…'), findsOneWidget);
+    expect(primary, findsNothing);
+
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Loading…'), findsNothing);
+    expect(primary, findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('human-login-cancel')));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('opening the app homepage keeps the consent open', (
+    tester,
+  ) async {
+    final api = FakeHumanLoginApi(
+      client: {...FakeHumanLoginApi.app(), 'loginMode': 'account'},
+    );
+    final opened = <Uri>[];
+    await open(
+      tester,
+      api,
+      (_) => fail('Opening the homepage must not close consent'),
+      openExternal: (location) async {
+        opened.add(location);
+        return true;
+      },
+    );
+    final homepage = find.byKey(const ValueKey('human-login-app-homepage'));
+    await tester.ensureVisible(homepage);
+    await tester.tap(homepage);
+    await tester.pumpAndSettle();
+    expect(opened, [Uri.parse('https://example.com')]);
+    expect(primary, findsOneWidget);
+    expect(api.installs, isEmpty);
+    expect(api.authorizations, isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('desktop account consent uses the Web card content width', (
+    tester,
+  ) async {
+    final api = FakeHumanLoginApi(
+      client: {...FakeHumanLoginApi.app(), 'loginMode': 'account'},
+    );
+    await open(tester, api, (_) {}, size: const Size(1280, 900));
+
+    final consent = find.byKey(const ValueKey('human-login-content'));
+    expect(tester.getSize(consent).width, 552);
+    expect(
+      find.ancestor(of: consent, matching: find.byType(RaftDialog)),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('human-login-cancel')));
+    await tester.pumpAndSettle();
+  });
 
   for (final (size, platform) in [
     (const Size(390, 844), TargetPlatform.linux),
@@ -76,6 +152,30 @@ void main() {
         find.text('Artifact Share wants to use your Raft account'),
         findsOneWidget,
       );
+      expect(find.text('Artifact Share'), findsNWidgets(2));
+      expect(
+        find.text('The app you are continuing to with Login with Raft.'),
+        findsOneWidget,
+      );
+      final identityScope = find.descendant(
+        of: find.byKey(const ValueKey('human-login-scopes')),
+        matching: find.text('openid'),
+      );
+      expect(identityScope, findsNothing);
+      final identityDisclosure = find.byKey(
+        const ValueKey('human-login-identity-disclosure'),
+      );
+      if (identityDisclosure.hitTestable().evaluate().isEmpty) {
+        final scroller = find
+            .ancestor(of: identityDisclosure, matching: find.byType(Scrollable))
+            .first;
+        await tester.drag(scroller, const Offset(0, -280));
+        await tester.pumpAndSettle();
+      }
+      expect(identityDisclosure.hitTestable(), findsOneWidget);
+      await tester.tap(identityDisclosure);
+      await tester.pumpAndSettle();
+      expect(identityScope, findsOneWidget);
       expect(serverPicker, findsNothing);
       expect(api.authorizations, isEmpty);
 

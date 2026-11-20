@@ -8842,8 +8842,8 @@
    "capability": "Load the server's registered (My apps) OAuth clients",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > Applications loads clients, marketplace, overview in parallel",
-   "gate": "Tab hidden for guests",
+   "webEntry": "Apps loads clients, marketplace and overview in parallel",
+   "gate": "Apps route hidden for guests",
    "flutterEntry": "integrations_views.dart IntegrationsView._loadData",
    "flutterRefs": [
     {
@@ -8851,8 +8851,8 @@
      "needle": "'/integrations/clients'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_settings.dart",
-     "needle": "'Applications'"
+     "file": "apps/raft_flutter/lib/features/apps_route.dart",
+     "needle": "IntegrationsView(controller: workspace, standalone: true)"
     }
    ],
    "justification": "",
@@ -9071,7 +9071,7 @@
    "status": "covered",
    "webEntry": "IMBridgesSettingsSection / SlackBridgeSetupWizard (Settings > IM Bridges) load()",
    "gate": "Settings tab only when slack_bridge feature flag allows; mutations need manageIntegrations (read-only note otherwise)",
-   "flutterEntry": "im_bridges_view.dart IMBridgesView (Settings > 'IM Bridges', shown only when slack_bridge_v0 flag on; manageIntegrations for actions)",
+   "flutterEntry": "im_bridges_view.dart IMBridgesView (Settings > IM bridges, shown only when slack_bridge_v0 flag is on; manageIntegrations for actions)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/im_bridges_view.dart",
@@ -9079,7 +9079,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/workspace_settings.dart",
-     "needle": "'IM Bridges'"
+     "needle": "'IM bridges'"
     }
    ],
    "justification": "",
@@ -10133,11 +10133,11 @@
    "status": "covered",
    "webEntry": "appEditorSections rail + syncAppEditorSectionFromScroll",
    "gate": "manageIntegrations",
-   "flutterEntry": "connected_app_editor.dart railLabel sections",
+   "flutterEntry": "connected_app_editor.dart App editor sections",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
-     "needle": "railLabel: 'Webhook'"
+     "needle": "railLabel: 'App editor sections'"
     },
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",

@@ -115,6 +115,17 @@ Widget _page(ParityContext ctx) {
       if (flags.contains(key)) value,
   };
   final routeSet = ctx.props['routeSet'] as String? ?? '';
+  final shell = ctx.props['appsShell'] as String?;
+  final shellTasks = shell == 'tasks'
+      ? ((ctx.fixtures['tasksFixture'] as Map)['tasks'] as List).cast<Map>()
+      : const <Map>[];
+  final shellTaskCounts = <Object?, int>{};
+  for (final task in shellTasks) {
+    final status = task['status'] == 'in_review'
+        ? 'in_progress'
+        : task['status'];
+    shellTaskCounts.update(status, (count) => count + 1, ifAbsent: () => 1);
+  }
   // Store-primed Administration states (the React host patches the same).
   final serverJson = {
     ...fixture.server,
@@ -137,6 +148,9 @@ Widget _page(ParityContext ctx) {
       'GET /servers/visual-server': (_) => serverJson,
       // The official spec's /api/agents rows (fxAgentDetailAgents).
       'GET /agents': (_) => fixture.agents,
+      if (shell == 'tasks') 'GET /tasks/server': (_) => {'tasks': shellTasks},
+      if (shell == 'tasks')
+        'GET /tasks/server/counts': (_) => {'counts': shellTaskCounts},
       'POST /feature-flags/evaluate': (data) => {
         'evaluations': [
           for (final key in (data is Map ? data['keys'] as List? : null) ?? [])
@@ -196,11 +210,19 @@ Widget _page(ParityContext ctx) {
   final server = RaftRecord(serverJson);
   w
     ..server = server
-    ..servers = [server];
+    ..servers = [
+      server,
+      if (shell != null && shell.isNotEmpty && shell != 'login')
+        RaftRecord({
+          ...serverJson,
+          'id': 'visual-alt-server',
+          'name': 'Android Lab',
+          'slug': 'android-lab',
+        }),
+    ];
   // Mobile cases: SettingsPanel fills the 390px viewport (the React host
   // mounts it alone); desktop: the 1216px page beside the 64px rail.
   final mobile = ctx.props['platform'] == 'mobile';
-  final shell = ctx.props['appsShell'] as String?;
   if (shell != null && shell.isNotEmpty) {
     if (shell == 'channel/channel-home') {
       final channel = RaftChannel({
@@ -230,6 +252,7 @@ Widget _page(ParityContext ctx) {
         ),
         onAppearance: (_) async {},
         onLogout: () async {},
+        onChooseServer: () {},
       ),
     );
   }
@@ -264,7 +287,7 @@ Widget _page(ParityContext ctx) {
     ),
   );
   return ctx.frame(
-    width: mobile ? ctx.width : 1216,
+    width: mobile || ctx.props['extFixture'] == 'apps' ? ctx.width : 1216,
     height: ctx.height,
     padding: EdgeInsets.zero,
     child: ctx.props['tab'] == 'release-notes'

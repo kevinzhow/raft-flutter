@@ -155,7 +155,11 @@ RaftConnectedAppBadge? _installBadge(BuildContext context, Object? raw) {
   final badge = managementMap(raw);
   return switch (badge['kind']) {
     // settings.connectedApps.marketplaceNew: 新上架 (the plain `New` entry is 新增).
-    'new' => RaftConnectedAppBadge.warning(raftTextZh(context, 'New', '新上架')),
+    'new' => RaftConnectedAppBadge(
+      raftTextZh(context, 'New', '新上架'),
+      variant: RaftBadgeRecipeVariant.information,
+      appearance: RaftBadgeRecipeAppearance.soft,
+    ),
     'bucket' => RaftConnectedAppBadge.outline(
       raftFormat(context, '{count} installs', {
         'count': const {
@@ -291,8 +295,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
   Future<void> _loadData(int request, int generation) async {
     unawaited(mcpLoad ??= _loadMcpApps());
     unawaited(_readInstallTextFlag());
-    if (widget.standalone)
+    if (widget.standalone) {
       unawaited(_loadMarketplaceTotal(request, generation));
+    }
     final data = await Future.wait(
       [
         '/integrations/clients',
@@ -1008,8 +1013,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                 },
                 onViewProfile: (id) {
                   close();
-                  if (source == authority)
+                  if (source == authority) {
                     w.openProfile(RaftProfileKind.agent, id);
+                  }
                 },
               ),
             if (hasAppSetup(app.source))
@@ -1521,6 +1527,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                   if (updateCount > 0)
                     RaftBanner(
                       live: false,
+                      size: RaftBannerRecipeSize.sm,
                       description: raftFormat(
                         context,
                         canManage
@@ -1534,6 +1541,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                       ),
                       action: RaftSettingsRecipeButton(
                         label: tr('View updates'),
+                        variant: RaftButtonRecipeVariant.outline,
                         onPressed: showUpdates,
                       ),
                     ),
@@ -1553,11 +1561,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
         onRegister: canManage ? openEditor : null,
         tab: shownTab,
         counts: (
-          marketplace: widget.standalone
-              ? marketplaceTotal ?? 0
-              : listingPage.legacy
-              ? p.listings.length
-              : listingPage.total,
+          marketplace: widget.standalone ? marketplaceTotal : null,
           installed: p.installed.length + mcpApps.length,
           myApps: p.registered.length,
         ),

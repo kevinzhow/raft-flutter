@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/human_login.dart';
@@ -14,6 +14,20 @@ import '../parity_harness.dart';
 import 'ext_settings.dart';
 import 'members_settings/fixture_client.dart';
 
+Widget _appsPage(ParityContext context) {
+  final page = extSettingsPage(context);
+  return Builder(
+    builder: (contextTheme) => Theme(
+      data: Theme.of(contextTheme).copyWith(
+        platform: context.props['platform'] == 'desktop'
+            ? TargetPlatform.linux
+            : TargetPlatform.android,
+      ),
+      child: page,
+    ),
+  );
+}
+
 final _appsSettings = ParityCase(
   widgets: const [
     'raft_flutter:WorkspaceSettings',
@@ -21,7 +35,7 @@ final _appsSettings = ParityCase(
     'raft_ui:RaftConnectedAppDetailCard',
   ],
   settle: const Duration(milliseconds: 600),
-  build: extSettingsPage,
+  build: _appsPage,
   interact: (tester, context) async {
     final key = context.props['verifyKey'] as String;
     final text = context.props['verifyText'] as String;
@@ -36,7 +50,7 @@ final _appsSettings = ParityCase(
 final _appsLogin = ParityCase(
   widgets: const ['raft_flutter:HumanLoginSheet'],
   settle: const Duration(milliseconds: 600),
-  build: extSettingsPage,
+  build: _appsPage,
   interact: (tester, context) async {
     final fixture = MsFixture(context);
     final server = fixture.server;
@@ -79,7 +93,19 @@ final _appsLogin = ParityCase(
       ),
     );
     await tester.pump();
+    if (client[r'$pending'] == true) {
+      await tester.pump(const Duration(seconds: 1));
+    }
     await tester.pumpAndSettle();
+    if (context.props['loginDisclosure'] == true) {
+      final disclosure = find.byKey(
+        const ValueKey('human-login-identity-disclosure'),
+      );
+      await tester.ensureVisible(disclosure);
+      await tester.pumpAndSettle();
+      await tester.tap(disclosure.hitTestable());
+      await tester.pumpAndSettle();
+    }
     final key = context.props['verifyKey'] as String;
     expect(find.byKey(ValueKey(key)), findsOneWidget);
     if (key != 'human-login-continue') {
@@ -113,7 +139,7 @@ final _appsExternal = ParityCase(
           : previous.fetcher(url),
     );
     context.onDispose(() => RaftImageBytes.instance = previous);
-    return extSettingsPage(context);
+    return _appsPage(context);
   },
   interact: (tester, context) async {
     await tester.pumpAndSettle();
@@ -132,6 +158,21 @@ final _appsExternal = ParityCase(
           .uploadedUrl,
       endsWith(_externalBotAvatar),
     );
+    final profileImages = find.descendant(
+      of: find.byKey(const ValueKey('profile-panel')),
+      matching: find.byType(Image),
+    );
+    expect(profileImages, findsNWidgets(2));
+    await tester.runAsync(() async {
+      for (final image in profileImages.evaluate()) {
+        await precacheImage(
+          (image.widget as Image).image,
+          image,
+          onError: (error, _) => fail('External avatar did not decode: $error'),
+        );
+      }
+    });
+    await tester.pump();
   },
 );
 
@@ -144,6 +185,7 @@ final Map<String, ParityCase> extAppsCases = {
         'unavailable',
         'outage',
         'account',
+        'account-identity-expanded',
         'install',
         'account-suspended',
         'account-server-issuer',
@@ -167,6 +209,7 @@ final Map<String, ParityCase> extAppsCases = {
         'dialog.installed-permissions',
         'dialog.review-permissions',
         'dialog.developer-edit',
+        'dialog.add-app-menu',
         'dialog.reject-prompt-text',
         'dialog.link-previews',
         'dialog.link-previews-revoke',

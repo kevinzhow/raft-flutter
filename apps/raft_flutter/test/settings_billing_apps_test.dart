@@ -175,14 +175,13 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Apps'), findsOneWidget);
       expect(find.text('Third-party apps for this server'), findsNothing);
-      // Private-shared listings stay out of the marketplace; Installed holds
-      // the installed listing plus the server-local client.
+      // Settings does not fetch the unfiltered Marketplace total for its tab.
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('connected-apps-tab-marketplace')),
           matching: find.text('2'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.text('Shared App'), findsNothing);
       expect(find.text('100+ installs'), findsOneWidget);

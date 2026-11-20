@@ -360,12 +360,8 @@ void main() {
       final gate = Completer<void>();
       final api = waiting()..lookupGate = gate;
       await open(t, api);
-      expect(find.text('Loading available Raft Servers...'), findsOneWidget);
-      expect(
-        button(t, primary).onPressed,
-        isNull,
-        reason: 'nothing to confirm yet',
-      );
+      expect(api.lookups, hasLength(1));
+      expect(primary, findsNothing, reason: 'nothing to confirm yet');
       await tapKey(t, cancel);
       expect(sheet, findsNothing);
       expect(result, isNull);

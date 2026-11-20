@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +10,13 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/connected_app_editor.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_ui/raft_ui.dart';
+
+Future<void> _openRegistration(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('connected-apps-register')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Create a Raft app'));
+  await tester.pumpAndSettle();
+}
 
 class _Adapter implements HttpClientAdapter {
   final calls = <RequestOptions>[];
@@ -171,8 +177,7 @@ void main() {
       return {'client': created, 'clientSecret': 'shown-once-secret'};
     };
     await _mount(t, w, openMyApps: false);
-    await t.tap(find.byKey(const ValueKey('connected-apps-register')));
-    await t.pumpAndSettle();
+    await _openRegistration(t);
     expect(find.byKey(editor), findsOneWidget);
     expect(find.text('Create Raft app'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
@@ -228,14 +233,13 @@ void main() {
       };
       a.statuses['POST /integrations/clients'] = 409;
       await _mount(t, w, openMyApps: false);
-      await t.tap(find.byKey(const ValueKey('connected-apps-register')));
-      await t.pumpAndSettle();
+      await _openRegistration(t);
       await t.enterText(find.byKey(const ValueKey('connected-app-name')), 'X');
       await t.tap(find.byKey(submit));
       await t.pumpAndSettle();
       expect(find.byKey(editor), findsOneWidget);
       expect(find.text('Client ID already exists'), findsOneWidget);
-      expect(find.text('Register App'), findsWidgets);
+      expect(find.text('Add app'), findsOneWidget);
     },
   );
 
@@ -250,14 +254,13 @@ void main() {
     };
     a.statuses['POST /integrations/clients'] = 409;
     await _mount(t, w, openMyApps: false);
-    await t.tap(find.byKey(const ValueKey('connected-apps-register')));
-    await t.pumpAndSettle();
+    await _openRegistration(t);
     await t.enterText(find.byKey(const ValueKey('connected-app-name')), 'X');
     await t.tap(find.byKey(submit));
     await t.pumpAndSettle();
     expect(find.byKey(editor), findsOneWidget);
     expect(find.text('Client ID already exists'), findsOneWidget);
-    expect(find.text('Register App'), findsWidgets);
+    expect(find.text('Add app'), findsOneWidget);
   });
 
   testWidgets('editing prefills the app, saves with PATCH and closes', (
@@ -414,8 +417,7 @@ void main() {
     addTearDown(w.dispose);
     _routes(a, []);
     await _mount(t, w, openMyApps: false);
-    await t.tap(find.byKey(const ValueKey('connected-apps-register')));
-    await t.pumpAndSettle();
+    await _openRegistration(t);
     final dangerItem = find.widgetWithText(
       RaftSettingsSidebarItem,
       'Danger zone',

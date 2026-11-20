@@ -73,6 +73,12 @@ void main() {
       final footer = find.text('Close');
       expect(title.hitTestable(), findsOneWidget);
       expect(footer.hitTestable(), findsOneWidget);
+      final panelBounds = tester.getRect(find.byType(RaftDialogSurface));
+      final actionsBounds = tester.getRect(find.byType(RaftDialogActions));
+      final inset = platform == TargetPlatform.linux ? 16 : 20;
+      expect(actionsBounds.left - panelBounds.left, inset);
+      expect(panelBounds.right - actionsBounds.right, inset);
+      expect(panelBounds.bottom - actionsBounds.bottom, inset);
       final titlePosition = tester.getTopLeft(title);
       final footerPosition = tester.getTopLeft(footer);
       final body = find.ancestor(

@@ -2,6 +2,8 @@
 // recipe `trigger` slot), value / chevron icon, and the popup (`content`,
 // `list`, `item`, `itemIndicator` slots) in an overlay anchored below the
 // trigger.
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
 import 'package:raft_theme/recipes/select.g.dart' as raft_select;
@@ -13,6 +15,7 @@ import 'icons.dart';
 import 'localization.dart';
 import 'menu_popup_backend.dart';
 import 'panel_layout.dart' show RaftCssText;
+import 'picker_trigger_button.dart';
 import 'recipe_surface.dart';
 import 'recipes/badge.g.dart' show RaftBadgeRecipeVariant;
 import 'recipes/button_variants.g.dart';
@@ -60,6 +63,7 @@ class RaftSelectItem<T> {
     this.badge,
     this.suffix,
     this.suffixInList = true,
+    this.listTrailing,
     this.listed = true,
   }) : onAction = null;
 
@@ -79,6 +83,7 @@ class RaftSelectItem<T> {
        badge = null,
        suffix = null,
        suffixInList = true,
+       listTrailing = null,
        listed = true;
 
   final T value;
@@ -112,6 +117,7 @@ class RaftSelectItem<T> {
   /// [suffixInList] is false (the group heading already says it).
   final String? suffix;
   final bool suffixInList;
+  final Widget? listTrailing;
 
   /// Set for the action row ([RaftSelectItem.action]).
   final VoidCallback? onAction;
@@ -207,6 +213,8 @@ class RaftSelectField<T> extends StatefulWidget {
     this.visualHeight = RaftMetrics.buttonMd,
     this.minimumTargetHeight,
     this.height,
+    this.toolbarPicker = false,
+    this.popupMinWidth,
   });
 
   /// Callsite trigger height (`SelectTrigger className="h-10"`).
@@ -230,6 +238,8 @@ class RaftSelectField<T> extends StatefulWidget {
   /// Kept for source compatibility; the trigger is the Button md box.
   final double visualHeight;
   final double? minimumTargetHeight;
+  final bool toolbarPicker;
+  final double? popupMinWidth;
 
   @override
   State<RaftSelectField<T>> createState() => _RaftSelectFieldState<T>();
@@ -289,21 +299,32 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
     final hasValue =
         selected != null ||
         (widget.value != null && widget.unmatchedLabel != null);
-    final trigger = RaftInteractive(
-      onPressed: enabled ? toggle : null,
-      focusNode: triggerFocus,
-      semanticLabel: widget.label == null
-          ? null
-          : raftText(context, widget.label!),
-      builder: (context, st) => _raftTrigger(
-        context,
-        t,
-        st,
-        enabled: enabled,
-        selected: selected,
-        hasValue: hasValue,
-      ),
-    );
+    final onPressed = enabled ? toggle : null;
+    final trigger = widget.toolbarPicker
+        ? RaftPickerTriggerButton(
+            label:
+                selected?.label ??
+                (hasValue ? widget.unmatchedLabel! : widget.placeholder),
+            semanticLabel: widget.label,
+            onPressed: onPressed,
+            focusNode: triggerFocus,
+            invalid: widget.invalid,
+          )
+        : RaftInteractive(
+            onPressed: onPressed,
+            focusNode: triggerFocus,
+            semanticLabel: widget.label == null
+                ? null
+                : raftText(context, widget.label!),
+            builder: (context, st) => _raftTrigger(
+              context,
+              t,
+              st,
+              enabled: enabled,
+              selected: selected,
+              hasValue: hasValue,
+            ),
+          );
     return CompositedTransformTarget(
       key: anchorKey,
       link: link,
@@ -438,6 +459,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
           key: ValueKey(item.value),
           label: item.semanticLabel,
           labelChild: item.listChild,
+          trailing: item.listTrailing,
           enabled: item.enabled,
           selected: !item.isAction && item.value == widget.value,
           description: item.description,
@@ -466,7 +488,10 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
                 movement: Scrollable.maybeOf(this.context)?.position,
                 child: RaftMenuPopupBackend(
                   key: const ValueKey('raft-select-popup'),
-                  anchorWidth: triggerSize.width,
+                  anchorWidth: math.max(
+                    triggerSize.width,
+                    widget.popupMinWidth ?? 0,
+                  ),
                   triggerFocus: triggerFocus,
                   preferredIndex: preferredItem < 0 || preferred < 0
                       ? null

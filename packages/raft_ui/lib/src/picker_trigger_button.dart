@@ -22,6 +22,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
   const RaftPickerTriggerButton({
     super.key,
     required this.label,
+    this.semanticLabel,
     this.onPressed,
     this.glyph,
     this.trailingGlyph = RaftGlyph.chevronDown,
@@ -37,6 +38,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
   });
 
   final String label;
+  final String? semanticLabel;
   final VoidCallback? onPressed;
 
   /// The inline-start icon (`data-icon="inline-start"`) and the indicator at the end.
@@ -69,10 +71,12 @@ class RaftPickerTriggerButton extends StatelessWidget {
     final button = RaftInteractive(
       onPressed: canActivate ? onPressed : null,
       focusNode: focusNode,
-      semanticLabel: [
-        raftText(context, label),
-        if (value != null && value!.isNotEmpty) value!,
-      ].join(' '),
+      semanticLabel:
+          semanticLabel ??
+          [
+            raftText(context, label),
+            if (value != null && value!.isNotEmpty) value!,
+          ].join(' '),
       builder: (context, st) {
         var style = RaftPickerTriggerButtonRecipe.resolve(
           states: t.recipeStates(

@@ -2095,7 +2095,10 @@ behaviour checklists (`docs/behavior-parity/`).
   above): an unread agent message starts open, a read one starts collapsed, per visit; the reader's toggle wins.
   Confirmed again for the v1.21.12 message-row port. Checked against the code in
   `agent_message_collapse.dart`.
-* **Login with Raft.** The in-app browser opens the native sign-in sheet for a matching Raft setup URL.
+* **Login with Raft.** The in-app browser opens native consent for a matching Raft setup URL.
+  A narrow window uses a sheet. A wide window uses a dialog. Kevin approved native consent on
+  2026-10-25 (`b673ca98`, message `0229eee3`). The capability row is
+  `ui:integrations.login-with-raft-consent-page`.
   The app looks up the client through `/oauth/clients/lookup`. Server mode picks a server and calls
   `/oauth/authorize/human`. Web v1.24 account mode calls `/oauth/authorize/account` with the person's Raft
   account. Setup links opened in a system browser use the Web page. Device and CLI approval

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -82,7 +83,9 @@ void _appRoutes(
 }
 
 Future<void> register(WidgetTester tester) async {
-  await tester.tap(find.text('Register App'));
+  await tester.tap(find.byKey(const ValueKey('connected-apps-register')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Create a Raft app'));
   await tester.pumpAndSettle();
   await tester.enterText(
     find.byKey(const ValueKey('connected-app-name')),
@@ -496,11 +499,30 @@ void main() {
       host(SingleChildScrollView(child: IntegrationsView(controller: w))),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Register App'), findsOneWidget);
+    final addApp = find.byKey(const ValueKey('connected-apps-register'));
+    expect(find.text('Add app'), findsOneWidget);
+    await tester.tap(addApp);
+    await tester.pumpAndSettle();
+    expect(find.text('Create a Raft app').hitTestable(), findsOneWidget);
+    expect(find.byKey(const ValueKey('connected-app-editor')), findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('Create a Raft app'), findsNothing);
+    await tester.tap(addApp);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create a Raft app'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('connected-app-editor')), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Close app form').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('connected-app-editor')), findsNothing);
     expect(
-      find.byKey(const ValueKey('connected-apps-tab-my-apps')),
+      find.byKey(const ValueKey('connected-apps-scope-select')),
       findsOneWidget,
     );
+    await tester.tap(find.byKey(const ValueKey('connected-apps-scope-select')));
+    await tester.pumpAndSettle();
+    expect(find.text('Developer').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -1043,7 +1065,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(w.client.generation, generation);
       expect(find.text('private-one-time'), findsNothing);
-      expect(find.text('Register App'), findsNothing);
+      expect(find.text('Add app'), findsNothing);
     },
   );
   testWidgets(

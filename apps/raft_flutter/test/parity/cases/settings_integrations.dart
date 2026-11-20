@@ -11,9 +11,7 @@
 // Issues; clients: server-local Slack Bridge; overview empty).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_flutter/data/personal_presentation.dart';
-import 'package:raft_flutter/features/workspace_settings.dart';
-import 'package:raft_flutter/platform/native_notifications.dart';
+import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,7 +21,7 @@ import 'members_settings/fixture_client.dart';
 final Map<String, ParityCase> settingsIntegrationsCases = {
   'components.settings.integrations.permission-review': ParityCase(
     widgets: [
-      'raft_flutter:WorkspaceSettings',
+      'raft_ui:RaftSettingsPanelFrame',
       'raft_flutter:IntegrationsView',
       'raft_ui:RaftConnectedAppDetailCard',
       'raft_ui:RaftAppPermissionsSummary',
@@ -107,6 +105,11 @@ final Map<String, ParityCase> settingsIntegrationsCases = {
               {
                 'kind': 'app',
                 'id': 'app:${app['id']}',
+                'name': app['name'],
+                'description': app['description'],
+                'logoUrl': app['logoUrl'],
+                'category': app['category'],
+                'publisherName': app['publisherName'],
                 'app': app,
                 'installed': app['installedAt'] != null,
               },
@@ -135,17 +138,17 @@ final Map<String, ParityCase> settingsIntegrationsCases = {
         'GET /integrations/overview': (_) => <dynamic>[],
       });
       return Scaffold(
-        body: WorkspaceSettings(
-          controller: w,
-          appearance: const RaftAppearance(mode: ThemeMode.light),
-          onAppearance: (_) {},
-          presentation: PersonalPresentationStore(),
-          notifications: NativeNotificationService(
-            platform: TargetPlatform.android,
+        body: Builder(
+          builder: (context) => RaftSettingsPanelFrame(
+            attached: false,
+            header: RaftPanelHeaderBar(
+              title: 'Apps',
+              background: RaftTokens.of(context).canvas,
+              onBack: ctx.width < 768 ? () {} : null,
+            ),
+            contentColor: RaftTokens.of(context).canvas,
+            child: IntegrationsView(controller: w),
           ),
-          onLogout: () async {},
-          initialTab: 'integrations',
-          mobileRoot: false,
         ),
       );
     },

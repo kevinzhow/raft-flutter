@@ -91,6 +91,11 @@ installed_with_granted_bot = {
     **installed_with_bot,
     'bot': {'offered': True, 'grant': 'granted', **granted_bot},
 }
+installed_with_revoked_bot = {
+    **installed_with_bot,
+    'bot': {'offered': True, 'grant': 'revoked', 'handle': 'issues'},
+}
+bot_path = 'POST /integrations/clients/market_github/install/bot'
 listing_with_setup = {
     **install_with_bot,
     'setupUrl': 'https://app.example.invalid/setup',
@@ -99,10 +104,10 @@ listing_with_setup = {
 install_path = 'POST /integrations/marketplace/market_slack/install'
 
 
-def after_install(records, installed_records):
+def after_mutation(path, before, after):
     return {
-        '$default': records,
-        '$when': [{'after': install_path, 'answer': installed_records}],
+        '$default': before,
+        '$when': [{'after': path, 'answer': after}],
     }
 
 
@@ -111,8 +116,8 @@ def successful_install(listing):
     before = [listing, *marketplace[1:]]
     after = [installed, *marketplace[1:]]
     return {
-        'GET /integrations/marketplace': after_install(before, after),
-        'GET /integrations/marketplace/listings': after_install(
+        'GET /integrations/marketplace': after_mutation(install_path, before, after),
+        'GET /integrations/marketplace/listings': after_mutation(install_path,
             {'items': [marketplace_entry(app) for app in before], 'total': len(before)},
             {'items': [marketplace_entry(app) for app in after], 'total': len(after)},
         ),
@@ -275,6 +280,12 @@ route_sets = {
         },
     },
     'external-bot': {
+        'GET /channels/channel-home': {
+            'id': 'channel-home', 'serverId': 'visual-server',
+            'name': '首页专修', 'type': 'public', 'joined': True,
+            'description': 'Home shell, server badge, and bottom dock polish',
+            'createdAt': local_app['createdAt'],
+        },
         'GET /external-avatars/visual-deploy-bot.png': {
             '$file': 'announcement-picture.png', '$contentType': 'image/png',
         },
@@ -372,17 +383,25 @@ route_sets = {
     },
     'bot-step-up': {
         'GET /integrations/marketplace': [marketplace[0], installed_with_bot, *marketplace[2:]],
-        'POST /integrations/clients/market_github/install/bot': step_up_required("adding this app's bot"),
+        bot_path: step_up_required("adding this app's bot"),
     },
     'bot-granted': {
-        'GET /integrations/marketplace': [marketplace[0], installed_with_bot, *marketplace[2:]],
-        'POST /integrations/clients/market_github/install/bot': {
+        'GET /integrations/marketplace': after_mutation(
+            bot_path,
+            [marketplace[0], installed_with_bot, *marketplace[2:]],
+            [marketplace[0], installed_with_granted_bot, *marketplace[2:]],
+        ),
+        bot_path: {
             'botGrant': 'granted', 'bot': granted_bot,
         },
     },
     'bot-removed': {
-        'GET /integrations/marketplace': [marketplace[0], installed_with_granted_bot, *marketplace[2:]],
-        'POST /integrations/clients/market_github/install/bot': {
+        'GET /integrations/marketplace': after_mutation(
+            bot_path,
+            [marketplace[0], installed_with_granted_bot, *marketplace[2:]],
+            [marketplace[0], installed_with_revoked_bot, *marketplace[2:]],
+        ),
+        bot_path: {
             'botGrant': 'revoked', 'bot': None,
         },
     },
@@ -471,7 +490,7 @@ share_editor_steps = (
     ),
     (
         {'type': 'fill', 'target': f'[data-testid="{share_input}"]', 'value': 'fixture-team'},
-        {'type': 'enterText', 'key': share_input, 'value': 'fixture-team'},
+        {'type': 'enterText', 'key': share_input, 'text': 'fixture-team'},
     ),
     tap('connected-app-share-create-button'),
 )
@@ -481,7 +500,7 @@ cases = []
 def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integrations',
          verify_text=None, verify_key=None, absent_text=None,
          shell='', role='owner', metadata_selector=None, bot_link=None,
-         login_server=None,
+         login_server=None, login_disclosure=False,
          platforms=('desktop', 'mobile')):
     for platform, width, height in [('desktop', 1280, 900), ('mobile', 390, 844)]:
         if platform not in platforms:
@@ -504,11 +523,15 @@ def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integ
                     'appsShell': shell,
                     **({'app_bot': bot_link} if bot_link else {}),
                     **({'server': login_server} if login_server else {}),
+                    **({'loginDisclosure': True} if login_disclosure else {}),
                     'verifyText': verify_text or '', 'verifyKey': verify_key or '',
                     'absentText': absent_text or '',
                 }}],
                 'capture': {
-                    'selector': selector, 'crop': 'viewport', 'contract': 'viewport-with-portal',
+                    'selector': selector,
+                    **({'crop': 'element', 'androidKey': 'human-login-content'}
+                       if shell == 'login' else
+                       {'crop': 'viewport', 'contract': 'viewport-with-portal'}),
                     **({'metadataSelector': metadata_selector} if metadata_selector else {}),
                     'interactions': list(web_steps(steps, platform)),
                     'androidInteractions': [
@@ -525,6 +548,7 @@ def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integ
                             if platform == 'mobile' and web['type'] == 'scope'
                             else [action]
                         )
+                        if native is not None
                     ],
                 },
                 'reactPathHint': (
@@ -555,6 +579,9 @@ case('dialog', 'review-permissions', '[data-testid="connected-app-detail-body"]'
      [review_permissions], verify_key='connected-app-installed-detail', verify_text='Approve update')
 case('dialog', 'developer-edit', '[data-testid="connected-app-editor-content"]',
      [scope('my-apps', 'myapps'), edit_local_app], verify_key='connected-app-editor')
+case('dialog', 'add-app-menu', '[data-testid="register-app-menu"]',
+     [tap('register-app-menu-trigger', 'connected-apps-register')],
+     verify_key='settings-apps-add-menu', verify_text='Create a Raft app')
 case('dialog', 'reject-prompt-text', '[data-testid="app-prompt-text-reject-reason"]',
      [market, detail, reject_prompt], route_set='prompt-review', flags='prompt-text',
      verify_key='app-prompt-text-reject-dialog')
@@ -635,6 +662,7 @@ case('route', 'marketplace-more-error', '[data-testid="apps-marketplace-load-mor
 case('route', 'marketplace-more-loaded',
      '[data-testid="connected-apps-marketplace-collection"]:has-text("GitHub Issues")',
      [market, load_more], shell='apps', route_set='marketplace-more-loaded',
+     metadata_selector='[data-testid="connected-apps-marketplace-collection"]',
      verify_text='Showing 2 / 2', absent_text='Load more')
 case('route', 'developer', '[data-testid="connected-apps-my-apps-collection"]',
      [developer], shell='apps', verify_text='Slack Bridge')
@@ -717,19 +745,21 @@ case('route', 'add-app', '[data-testid="register-app-menu"]', [
 ], shell='apps', verify_text='Create a Raft app')
 case('route', 'type-menu', '[role="listbox"]:has-text("Raft apps")', [
     tap('apps-filter-type'),
-], shell='apps', verify_text='Raft apps')
+], shell='apps', metadata_selector='[role="listbox"]', verify_text='Raft apps')
 case('route', 'category-menu', '[role="listbox"]:has-text("Communication")', [
     tap('connected-apps-category-filter'),
-], shell='apps', verify_text='Communication')
+], shell='apps', metadata_selector='[role="listbox"]', verify_text='Communication')
 case('route', 'scope-menu', '[role="listbox"]:has-text("Marketplace")', [
     tap('connected-apps-scope-select'),
-], shell='apps', verify_text='Marketplace', platforms=('mobile',))
+], shell='apps', metadata_selector='[role="listbox"]', verify_text='Marketplace',
+     platforms=('mobile',))
 case('route', 'rail-entry', '[data-testid="apps-page"]', [
     tap('left-rail-tab-apps', 'rail-apps'),
 ], shell='tasks', platforms=('desktop',), verify_key='apps-page')
 case('route', 'server-popover', '[data-testid="mobile-server-tab-apps"]', [
     tap('mobile-tab-server'),
-], shell='tasks', platforms=('mobile',), verify_key='mobile-server-tab-apps')
+], shell='tasks', platforms=('mobile',), verify_key='mobile-server-tab-apps',
+     verify_text='4 channel tasks', absent_text='Could not complete that. Try again.')
 case('route', 'server-popover-entry', '[data-testid="apps-page"]', [
     tap('mobile-tab-server'),
     tap('mobile-server-tab-apps'),
@@ -741,35 +771,40 @@ case('profile', 'external-bot', '[data-testid="external-identity-header"]', [
     ),
 ], shell='channel/channel-home', route_set='external-bot',
      verify_key='external-identity-header', verify_text='Posted as Slack bot · ture')
-case('login', 'person', '[data-testid="human-login-setup-scroller"]:has(button:has-text("Login with Raft"))',
-     shell='login', route_set='login-person', verify_key='human-login-continue',
-     metadata_selector='[data-testid="human-login-setup-scroller"]')
+case('login', 'person', '[data-testid="human-login-setup-scroller"] main > section:has(button:has-text("Login with Raft"))',
+     shell='login', route_set='login-person', verify_key='human-login-continue')
 case('login', 'loading', '[data-testid="login-lookup-skeleton"][data-shown="true"]',
      shell='login', route_set='login-loading', verify_key='human-login-sheet',
-     verify_text='Loading available Raft Servers...')
+     verify_text='Loading…')
 case('login', 'unavailable', '[data-testid="app-not-available"]',
      shell='login', route_set='login-unavailable',
      verify_key='human-login-not-accessible', verify_text="This app isn't available to you")
-case('login', 'outage', '[data-testid="human-login-setup-scroller"]:has-text("Installation status could not be loaded.")',
+case('login', 'outage', '[data-testid="human-login-setup-scroller"] main > section:has-text("Installation status could not be loaded.")',
      shell='login', route_set='login-outage',
      verify_key='human-login-error',
      verify_text='Installation status could not be loaded. Reload this page to try again.')
 case('login', 'account', '[data-testid="account-login-panel"]',
      shell='login', route_set='login-account', verify_key='human-login-continue',
      verify_text='Artifact Share wants to use your Raft account')
-case('login', 'install', '[data-testid="marketplace-login-commit"]',
+case('login', 'account-identity-expanded', '[data-testid="account-login-panel"]', [
+    (
+        {'type': 'click', 'target': '[data-testid="login-with-raft-requested-scopes"] details > summary'},
+        None,
+    ),
+], shell='login', route_set='login-account', login_disclosure=True,
+     verify_key='human-login-continue', verify_text='openid')
+case('login', 'install', '[data-testid="human-login-setup-scroller"] main > section:has([data-testid="marketplace-login-commit"])',
      shell='login', route_set='login-install', flags='prompt-text',
-     verify_key='human-login-continue', verify_text='Install and continue',
-     metadata_selector='[data-testid="human-login-setup-scroller"]')
-case('login', 'account-suspended', '[data-testid="account-login-refusal"]',
+     verify_key='human-login-continue', verify_text='Install and continue')
+case('login', 'account-suspended', '[data-testid="account-login-panel"]:has([data-testid="account-login-refusal"])',
      shell='login', route_set='login-account-suspended',
      verify_key='human-login-account-refusal',
      verify_text="This app's installations on your Servers are suspended. Ask a Server owner or admin to restore it.")
-case('login', 'account-server-issuer', '[data-testid="account-login-refusal"]',
+case('login', 'account-server-issuer', '[data-testid="account-login-panel"]:has([data-testid="account-login-refusal"])',
      shell='login', route_set='login-account', login_server='visual-server',
      verify_key='human-login-account-refusal',
      verify_text="This app is set up to sign in through a Server-specific address, which it can't use. Ask the app's developer to use Raft's main sign-in address.")
-case('login', 'admin-needed', '[data-testid="marketplace-login-commit-zone"]:has-text("Find a server admin")',
+case('login', 'admin-needed', '[data-testid="human-login-setup-scroller"] main > section:has([data-testid="marketplace-login-commit-zone"]:has-text("Find a server admin"))',
      shell='login', route_set='login-admin-needed', role='member',
      verify_key='human-login-find-admin', verify_text='Find a server admin')
 

@@ -122,6 +122,16 @@ void main() {
       );
       expect(find.text('Login scopes'), findsOneWidget);
       expect(find.text('New in this update'), findsNWidgets(2));
+      final newBadges = tester.widgetList<RaftBadge>(
+        find.ancestor(
+          of: find.text('New in this update'),
+          matching: find.byType(RaftBadge),
+        ),
+      );
+      expect(newBadges.map((badge) => badge.appearance), [
+        RaftBadgeRecipeAppearance.outline,
+        RaftBadgeRecipeAppearance.outline,
+      ]);
       expect(
         tester.getTopLeft(find.text('App permissions')).dy,
         lessThan(tester.getTopLeft(find.text('Login with Raft access')).dy),

@@ -11,8 +11,9 @@ import 'package:raft_flutter/features/link_preview_consents.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'close_dialogs_test.dart'
-    show anyX, openFromButton, registerNoScrimTests;
+    show anyX, fromIntegrations, openFromButton, registerNoScrimTests;
 import 'parity/cases/screens/screen_fixture.dart';
+import 'support/close_registry_apps.dart';
 import 'support/close_registry_dialogs.dart';
 import 'support/close_runner.dart';
 import 'support/close_surface.dart';
@@ -62,6 +63,7 @@ Future<void> _openDetail(
   Widget child,
   String action,
 ) async {
+  await tester.pumpWidget(const SizedBox.shrink());
   await openFromButton(
     tester,
     size,
@@ -81,6 +83,27 @@ Future<void> _openDetail(
 }
 
 void main() {
+  setUp(() {
+    final previous = WidgetController.hitTestWarningShouldBeFatal;
+    WidgetController.hitTestWarningShouldBeFatal = true;
+    addTearDown(() => WidgetController.hitTestWarningShouldBeFatal = previous);
+  });
+
+  registerCloseTests(
+    [
+      appsSurfaces.firstWhere(
+        (surface) => surface.id == 'settings-apps-add-menu',
+      ),
+    ],
+    {
+      'settings-apps-add-menu': (tester, size) => fromIntegrations(
+        tester,
+        size,
+        tap: const ValueKey('connected-apps-register'),
+        surface: const ValueKey('settings-apps-add-menu'),
+      ),
+    },
+  );
   final harness = <String, OpenSurface>{
     'connected-app-bot-remove-dialog': (tester, size) async {
       await _openDetail(
@@ -116,6 +139,7 @@ void main() {
       (revoke
           ? 'link-preview-consents-revoke-dialog'
           : 'link-preview-consents-dialog'): (tester, size) async {
+        await tester.pumpWidget(const SizedBox.shrink());
         final store = AppLinkStore.of(_workspace(tester));
         await store.readConsentChoices();
         await openFromButton(

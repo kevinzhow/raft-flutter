@@ -46,6 +46,7 @@ void main() {
 
     const scope = ValueKey('connected-apps-scope-select');
     expect(find.byKey(scope), findsOneWidget);
+    expect(tester.getSize(find.byKey(scope)).height, 32);
     expect(find.text('Third-party apps for this server'), findsNothing);
     await tester.tap(find.byKey(scope));
     await tester.pumpAndSettle();
@@ -53,6 +54,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(scope), findsOneWidget);
     expect(find.text('No apps in the Marketplace yet'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets(
@@ -91,6 +93,11 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Garden Journal'), findsOneWidget);
+      final app = find.ancestor(
+        of: find.text('Garden Journal'),
+        matching: find.byType(RaftCard),
+      );
+      expect(tester.getTopLeft(app).dx, 20);
       expect(reads, 1);
       expect(mcpReads, 1);
 
@@ -116,7 +123,7 @@ void main() {
     },
   );
 
-  testWidgets('empty Marketplace explains how listings appear', (tester) async {
+  testWidgets('empty Marketplace keeps applied filters first', (tester) async {
     var listingsReads = 0;
     final client = ScreenFixtureClient(
       (method, path, _) {
@@ -160,6 +167,15 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Browse marketplace'), findsNothing);
+
+    final type = find.byKey(const ValueKey('apps-filter-type'));
+    final category = find.byKey(const ValueKey('connected-apps-category-filter'));
+    expect(tester.getTopLeft(type).dx, lessThan(tester.getTopLeft(category).dx));
+    await tester.tap(category);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Communication').hitTestable());
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(category).dx, lessThan(tester.getTopLeft(type).dx));
   });
 
   testWidgets('cold Apps waits one second before showing its placeholders', (
@@ -199,6 +215,7 @@ void main() {
     expect(find.byKey(placeholders), findsNothing);
     await tester.pump(const Duration(milliseconds: 1));
     expect(find.byKey(placeholders), findsOneWidget);
+    expect(tester.getTopLeft(find.byKey(placeholders)).dx, 16);
     clients.complete([]);
     await tester.pumpAndSettle();
     expect(find.byKey(placeholders), findsNothing);

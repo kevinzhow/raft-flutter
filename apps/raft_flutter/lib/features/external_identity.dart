@@ -22,7 +22,7 @@ String externalActorKindLabel(BuildContext context, String? kind) =>
       'human' => 'Human',
       'guest' => 'Guest',
       'remote' => 'Remote participant',
-      'bot' => 'Bot',
+      'bot' => 'App',
       _ => 'External participant',
     });
 
@@ -46,6 +46,7 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
     required this.profile,
     required this.onClose,
     this.onBack,
+    this.showCompactClose = false,
   });
   final WorkspaceController controller;
   final Map<String, dynamic> profile;
@@ -53,6 +54,7 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
 
   /// Page-stack back (phone); without it the desktop panel shows a close.
   final VoidCallback? onBack;
+  final bool showCompactClose;
 
   @override
   Widget build(BuildContext context) {
@@ -77,19 +79,20 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
               : 'avatarUrl']
           as String?,
     );
-    // AvatarSlot `type="app"`: the provider avatar, else bold initials.
-    Widget avatar(RaftAvatarSlotContext slot) => RaftAvatarSlot(
-      name: name,
-      slot: slot,
-      agent: false,
-      server: true,
-      content: RaftAvatarContent(
+    Widget avatar(RaftAvatarSize size) => RaftStickerAvatar(
+      size: size,
+      type: RaftAvatarType.human,
+      child: RaftAvatarContent(
         name: name,
         kind: RaftAvatarContentKind.app,
         uploadedUrl: avatarUrl,
-        fallback: RaftExternalInitials(name: name, large: slot.size >= 48),
+        fallback: RaftAvatarInitials(
+          name.trim().isEmpty ? 'A' : RaftExternalInitials.initials(name),
+          size: size,
+        ),
       ),
     );
+    final t = RaftTokens.of(context);
     final wide = !RaftAdaptiveWorkspace.compactOf(context);
     return RaftPanelTextScope(
       sans: true,
@@ -100,15 +103,14 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
             key: const Key('external-identity-header'),
             title: name,
             subtitle: subtitle,
-            iconSlot: avatar(RaftAvatarSlotContext.panelHeader),
+            iconSlot: avatar(t.desktop ? RaftAvatarSize.sm : RaftAvatarSize.md),
             iconAlwaysVisible: true,
             profileBody: true,
             onBack: onBack,
             backKey: const Key('external-mobile-back'),
             backTooltip: raftText(context, 'Back'),
             actions: [
-              // `hidden md:flex` unless a page-stack back leads the header.
-              if (onBack != null || wide)
+              if (wide || showCompactClose)
                 RaftPanelIconButton(
                   glyph: RaftGlyph.x,
                   tooltip: raftText(context, 'Close'),
@@ -133,7 +135,7 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
                   : null,
               fromLabel: raftTextZh(context, 'From', '来自'),
               workspaceName: profile['workspaceName'] as String?,
-              avatar: avatar(RaftAvatarSlotContext.profileTile),
+              avatar: avatar(RaftAvatarSize.xl),
             ),
           ),
         ],

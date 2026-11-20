@@ -14,8 +14,7 @@ import 'localization.dart';
 import 'overlays/dialog.dart';
 import 'recipe_surface.dart';
 import 'recipes/badge.g.dart';
-import 'recipes/button_variants.g.dart'
-    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
+import 'recipes/button_variants.g.dart' show RaftButtonRecipeSize;
 import 'recipes/card.g.dart';
 import 'recipes/table.g.dart';
 import 'select_field.dart';

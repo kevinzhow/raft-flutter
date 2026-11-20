@@ -17,7 +17,7 @@ void main() {
     var closed = false;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
         home: Scaffold(
           body: ExternalIdentityDetailPanel(
             controller: controller,
@@ -40,8 +40,16 @@ void main() {
     expect(find.text('Deployments'), findsNWidgets(2));
     expect(find.text('Posted as Deploy hook'), findsOneWidget);
     expect(find.text('From Slack · Build Desk'), findsOneWidget);
+    expect(find.text('App'), findsNWidgets(2));
     expect(find.text('Slack · Bot'), findsNothing);
     expect(find.text('Engineering'), findsNothing);
+    final stickers = tester.widgetList<RaftStickerAvatar>(
+      find.byType(RaftStickerAvatar),
+    );
+    expect(stickers.map((avatar) => avatar.size), [
+      RaftAvatarSize.sm,
+      RaftAvatarSize.xl,
+    ]);
     for (final avatar in tester.widgetList<RaftAvatarContent>(
       find.byType(RaftAvatarContent),
     )) {

@@ -272,7 +272,9 @@ void main() {
         await t.pumpWidget(_host(IntegrationsView(controller: w)));
         await t.pumpAndSettle();
         await openMyApps(t);
-        await t.tap(find.text('Register App'));
+        await t.tap(find.byKey(const ValueKey('connected-apps-register')));
+        await t.pumpAndSettle();
+        await t.tap(find.text('Create a Raft app'));
         await t.pumpAndSettle();
         await t.enterText(
           find.byKey(const ValueKey('connected-app-name')),

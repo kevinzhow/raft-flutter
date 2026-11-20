@@ -6,10 +6,11 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/app_install_expectation.dart';
-import 'connected_app_consent.dart';
 import 'human_login.dart';
 import 'human_login_servers.dart';
 import 'second_factor_step_up.dart';
+
+const _loginDialogWidth = 552.0 + RaftSpace.x4 * 2;
 
 /// The native "Login with Raft" confirmation: Web `HumanLoginSetupPage` for
 /// an app that opened its sign-in inside the in-app browser. A bottom sheet on
@@ -37,6 +38,7 @@ Future<Uri?> showHumanLoginSheet(
   // No text input: nothing to guard.
   guardUnsaved: false,
   label: 'Login with Raft',
+  dialogMaxWidth: _loginDialogWidth,
 );
 
 class HumanLoginSheet extends StatefulWidget {
@@ -325,11 +327,12 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
       unawaited(inApp(members));
       return;
     }
-    final open =
-        widget.openExternal ??
-        (uri) => launchUrl(uri, mode: LaunchMode.externalApplication);
-    unawaited(open(widget.api.webOrigin.resolveUri(members)));
+    unawaited(openExternal(widget.api.webOrigin.resolveUri(members)));
   }
+
+  Future<bool> openExternal(Uri uri) =>
+      widget.openExternal?.call(uri) ??
+      launchUrl(uri, mode: LaunchMode.externalApplication);
 
   @override
   Widget build(BuildContext context) {
@@ -354,7 +357,8 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
     // The primary button, as Web words it: a Marketplace app continues with
     // "Continue login", or installs first; any other app is "Login with Raft".
     final installing = installingId.isNotEmpty;
-    final String? primaryLabel = lookupFailed || refusal != null
+    final String? primaryLabel =
+        found == null || lookupFailed || refusal != null
         ? null
         : accountView || !marketplace
         ? (submitting ? 'Continuing...' : 'Login with Raft')
@@ -397,12 +401,12 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
           ),
       ],
     );
-    final body = Column(
+    final content = Column(
+      key: const ValueKey('human-login-content'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x3,
       children: [
-        if (found == null && !lookupFailed)
-          RaftDialogDescription('Loading available Raft Servers...'),
+        if (found == null && !lookupFailed) const _LoginLookupLoading(),
         if (notAccessible)
           HumanLoginNotAccessible(signedInAs: widget.api.signedInAs)
         else if (found != null && details != null) ...[
@@ -424,6 +428,7 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
           RequestedAppScopes(
             key: const ValueKey('human-login-scopes'),
             scopes: scopes,
+            collapseIdentity: true,
           ),
           ..._notices(context, choiceNow?.client, scopes),
           if (marketplace && !accountView)
@@ -462,6 +467,13 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
                   }
                 : null,
           ),
+      ],
+    );
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: RaftSpace.x3,
+      children: [
+        content,
         if (found != null && !lookupFailed) const HumanLoginFaq(),
       ],
     );
@@ -480,6 +492,7 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
               key: sheetKey,
               title: 'Login with Raft',
               onClose: busy ? () {} : cancel,
+              maxWidth: _loginDialogWidth,
               actions: actions,
               child: _Scrolls(child: body),
             ),
@@ -495,20 +508,36 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
     final serviceName = client.name.isNotEmpty ? client.name : tr('this app');
+    final wide = !RaftFormFrame.sheetOf(context);
     return [
-      Text(
-        raftFormat(
-          context,
-          client.accountMode
-              ? '{serviceName} wants to use your Raft account'
-              : '{serviceName} wants to connect to {serverName}',
-          {
-            'serviceName': serviceName,
-            'serverName': current?.server.name ?? tr('this server'),
-          },
+      Semantics(
+        header: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: RaftSpace.x1,
+          children: [
+            Text(
+              raftFormat(
+                context,
+                client.accountMode
+                    ? '{serviceName} wants to use your Raft account'
+                    : '{serviceName} wants to connect to {serverName}',
+                {
+                  'serviceName': serviceName,
+                  'serverName': current?.server.name ?? tr('this server'),
+                },
+              ),
+              key: const ValueKey('human-login-title'),
+              style: t.scale(
+                wide ? RaftTypeScale.title : RaftTypeScale.headline,
+              ),
+            ),
+            Text(
+              serviceName,
+              style: t.scale(wide ? RaftTypeScale.hero : RaftTypeScale.display),
+            ),
+          ],
         ),
-        key: const ValueKey('human-login-title'),
-        style: RaftTypography.heading(t, size: 16, line: 22),
       ),
       if (refusal != null)
         Focus(
@@ -572,8 +601,28 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
             {'serviceName': serviceName},
           ),
         ),
-      RaftDialogSectionEyebrow('App details'),
-      _AppCard(client: client),
+      Padding(
+        padding: const EdgeInsets.only(top: RaftSpace.x2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: RaftSpace.x1_5,
+          children: [
+            Text(
+              tr('App details'),
+              style: t.scale(
+                RaftTypeScale.footnote,
+                weight: FontWeight.w600,
+                color: t.muted,
+              ),
+            ),
+            _AppCard(client: client, openExternal: openExternal),
+            Text(
+              tr('The app you are continuing to with Login with Raft.'),
+              style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
+            ),
+          ],
+        ),
+      ),
     ];
   }
 
@@ -630,21 +679,120 @@ class _Scrolls extends StatelessWidget {
   }
 }
 
+class _LoginLookupLoading extends StatefulWidget {
+  const _LoginLookupLoading();
+
+  @override
+  State<_LoginLookupLoading> createState() => _LoginLookupLoadingState();
+}
+
+class _LoginLookupLoadingState extends State<_LoginLookupLoading> {
+  final delay = RaftIdleTimer(yieldToAnimation: false);
+  bool shown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    delay.start(const Duration(seconds: 1), () => setState(() => shown = true));
+  }
+
+  @override
+  void dispose() {
+    delay.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final label = raftText(context, 'Loading…');
+    return Semantics(
+      label: label,
+      liveRegion: true,
+      excludeSemantics: true,
+      child: Opacity(
+        key: const ValueKey('human-login-lookup-skeleton'),
+        opacity: shown ? 1 : 0,
+        child: TickerMode(
+          enabled: shown,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                spacing: RaftSpace.x2,
+                children: [
+                  const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.md),
+                  Text(
+                    label,
+                    style: tokens.scale(
+                      RaftTypeScale.callout,
+                      color: tokens.ui.foregroundMuted,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: RaftSpace.x5),
+              for (final (fraction, height) in [
+                (.75, RaftSpace.x6),
+                (.5, RaftSpace.x5 * 2),
+                (1.0, null),
+                (2 / 3, null),
+              ]) ...[
+                FractionallySizedBox(
+                  widthFactor: fraction,
+                  alignment: Alignment.centerLeft,
+                  child: RaftSkeleton(
+                    variant: RaftSkeletonVariant.line,
+                    height: height,
+                    fromRecipe: true,
+                  ),
+                ),
+                const SizedBox(height: RaftSpace.x3),
+              ],
+              const SizedBox(height: RaftSpace.x5),
+              const RaftSkeleton(height: RaftSpace.x4 * 4, fromRecipe: true),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AppCard extends StatelessWidget {
-  const _AppCard({required this.client});
+  const _AppCard({required this.client, required this.openExternal});
   final HumanLoginClient client;
+  final Future<bool> Function(Uri) openExternal;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final url = Uri.tryParse(client.homepageUrl ?? '');
+    final homepage =
+        url != null &&
+            url.host.isNotEmpty &&
+            (url.isScheme('https') || url.isScheme('http'))
+        ? url
+        : null;
     String tr(String s) => raftText(context, s);
     return RaftCard(
-      padding: const EdgeInsets.all(RaftSpace.x3),
+      key: homepage == null ? null : const ValueKey('human-login-app-homepage'),
+      onTap: homepage == null ? null : () => unawaited(openExternal(homepage)),
+      linkUrl: homepage,
+      semanticLabel: homepage == null ? null : '${tr('Open')} ${client.name}',
+      padding: const EdgeInsets.symmetric(
+        horizontal: RaftSpace.x3,
+        vertical: RaftSpace.x2 + RaftSpace.half,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: RaftSpace.x3,
         children: [
-          RaftAppLogo(initials: client.initials, logoUrl: client.logoUrl),
+          RaftAppLogo(
+            initials: client.initials,
+            logoUrl: client.logoUrl,
+            size: RaftAppLogoSize.sm,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,15 +805,22 @@ class _AppCard extends StatelessWidget {
                   children: [
                     Text(
                       client.name,
-                      style: RaftTypography.heading(t, size: 14, line: 20),
+                      style: t.scale(
+                        RaftTypeScale.subhead,
+                        weight: FontWeight.w700,
+                      ),
                     ),
                     RaftSettingsRecipeBadge(
                       label: tr(
-                        client.marketplace || client.installRequired
+                        client.suspended
+                            ? 'Suspended'
+                            : client.marketplace || client.installRequired
                             ? 'Marketplace'
                             : 'Ready',
                       ),
-                      variant: RaftBadgeRecipeVariant.success,
+                      variant: client.suspended
+                          ? RaftBadgeRecipeVariant.muted
+                          : RaftBadgeRecipeVariant.success,
                       appearance: RaftBadgeRecipeAppearance.soft,
                     ),
                   ],
@@ -673,16 +828,20 @@ class _AppCard extends StatelessWidget {
                 if (client.description != null)
                   Text(
                     client.description!,
-                    style: RaftTypography.inherited(
-                      t,
-                      size: 13,
-                      line: 18,
-                      color: t.muted,
-                    ),
+                    style: t.scale(RaftTypeScale.footnote, color: t.muted),
                   ),
               ],
             ),
           ),
+          if (homepage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: RaftSpace.half),
+              child: RaftIcon(
+                RaftGlyph.arrowUpRight,
+                size: RaftSpace.x4,
+                color: t.ui.foregroundHint,
+              ),
+            ),
         ],
       ),
     );

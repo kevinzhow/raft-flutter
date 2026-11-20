@@ -80,7 +80,7 @@ class _ConnectedAppBotState extends State<ConnectedAppBot> {
     } on SecondFactorStepUpCancelled {
       return;
     } catch (error) {
-      if (!current()) return;
+      if (!mounted || !current()) return;
       final message =
           error is RaftApiException &&
               error.details['code'] == 'app_bot_handle_conflict'

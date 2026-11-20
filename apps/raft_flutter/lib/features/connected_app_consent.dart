@@ -31,10 +31,16 @@ class ConnectedAppPermissionSet extends StatelessWidget {
     Widget lines(
       List<String> values,
       List<String> additions,
-      String Function(String) name,
+      Widget Function(String) name,
       String Function(String) description,
     ) => values.isEmpty
-        ? Text(tr('None'))
+        ? Text(
+            tr('None'),
+            style: tokens.scale(
+              RaftTypeScale.callout,
+              color: tokens.ui.foregroundHint,
+            ),
+          )
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: RaftSpace.x2,
@@ -42,34 +48,33 @@ class ConnectedAppPermissionSet extends StatelessWidget {
               for (final value in values.toSet())
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: RaftSpace.half,
                   children: [
                     Wrap(
                       spacing: RaftSpace.x1_5,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text(
-                          tr(name(value)),
-                          style: tokens.scale(
-                            RaftTypeScale.callout,
-                            weight: FontWeight.w600,
-                          ),
-                        ),
+                        name(value),
                         if (additions.contains(value))
-                          Text(
-                            tr('New in this update'),
-                            style: tokens.scale(RaftTypeScale.footnote),
+                          RaftBadge(
+                            label: tr('New in this update'),
+                            appearance: RaftBadgeRecipeAppearance.outline,
                           ),
                       ],
                     ),
                     Text(
                       tr(description(value)),
-                      style: tokens.scale(RaftTypeScale.footnote),
+                      style: tokens.scale(
+                        RaftTypeScale.footnote,
+                        color: tokens.ui.foregroundMuted,
+                      ),
                     ),
                   ],
                 ),
             ],
           );
     return RaftDescriptionList(
+      rowGap: RaftSpace.x3,
       entries: [
         RaftDescriptionEntry(
           tr('Login scopes'),
@@ -77,7 +82,7 @@ class ConnectedAppPermissionSet extends StatelessWidget {
           detailsChild: lines(
             permissions.scopes,
             newScopes,
-            (scope) => scope,
+            (scope) => Text.rich(raftInlineCodeSpan(context, scope)),
             (scope) =>
                 integrationScopeCopy[scope] ??
                 (scope == 'agent:action_request:write'
@@ -91,7 +96,24 @@ class ConnectedAppPermissionSet extends StatelessWidget {
           detailsChild: lines(
             permissions.groups,
             newGroups,
-            (group) => appNotificationGroupLabels[group] ?? group,
+            (group) {
+              final label = appNotificationGroupLabels[group];
+              if (label == null) {
+                return Text.rich(raftInlineCodeSpan(context, group));
+              }
+              return Text(
+                group == 'agent_reminder_write'
+                    ? tr(label)
+                    : raftFormat(context, '{resource} · read', {
+                        'resource': tr(label),
+                      }),
+                style: tokens.scale(
+                  RaftTypeScale.callout,
+                  weight: FontWeight.w600,
+                  color: tokens.ui.foreground,
+                ),
+              );
+            },
             (group) =>
                 _groupSummary[group] ??
                 'Raft has no description for this data group.',

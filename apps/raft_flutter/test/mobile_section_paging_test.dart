@@ -208,7 +208,9 @@ void main() {
       api.routes['GET /integrations/marketplace'] = (_) => [];
       api.routes['GET /integrations/overview'] = (_) => [];
       await mount(t, IntegrationsView(controller: w));
-      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.tap(find.byKey(const ValueKey('connected-apps-scope-select')));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Marketplace').hitTestable());
       await t.pumpAndSettle();
       final before = api.calls.length;
       await swipe(t);

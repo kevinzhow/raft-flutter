@@ -129,7 +129,13 @@ abstract final class NavigationRegistry {
     NavigationSettingsTab('billing'),
     NavigationSettingsTab('administration'),
     NavigationSettingsTab('im-bridges'),
-    NavigationSettingsTab('integrations'),
+    NavigationSettingsTab(
+      'integrations',
+      phone: false,
+      wide: false,
+      reason:
+          'Members open the Apps route. Guests retain Settings link previews.',
+    ),
     NavigationSettingsTab('labs'),
     NavigationSettingsTab('mcp'),
     NavigationSettingsTab('providers'),

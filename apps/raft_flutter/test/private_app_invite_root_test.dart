@@ -200,7 +200,7 @@ void main() {
   for (final theme in ['light', 'dark']) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
-        'installed invite opens selected server settings at $theme/$width',
+        'installed invite opens selected server Apps at $theme/$width',
         (t) async {
           final f = RootFixture();
           addTearDown(() => f.close(t));
@@ -219,10 +219,8 @@ void main() {
           await t.tap(button);
           await f.flush(t);
           expect(f.workspace(t).server?.id, 'b');
-          expect(
-            f.workspace(t).navigation.location.uri.path,
-            '/s/beta/settings/integrations',
-          );
+          expect(f.workspace(t).navigation.location.uri.path, '/s/beta/apps');
+          expect(find.byKey(const ValueKey('apps-page')), findsOneWidget);
           expect(
             f.adapter.calls.where(
               (o) => o.method == 'POST' && o.path.endsWith('/install'),

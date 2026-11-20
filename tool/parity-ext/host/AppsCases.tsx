@@ -55,7 +55,7 @@ function ParityExtAppsSettings({ caseId }: { caseId: string }) {
   return (
     <main className="min-h-screen bg-layer-canvas font-display text-foreground">
       <div data-visual-case={caseId} className={`flex overflow-hidden ${shell ? "flex-col" : ""}`}
-        style={{ width: mobile || shell ? window.innerWidth : 1216, height: window.innerHeight }}>
+        style={{ width: window.innerWidth, height: window.innerHeight }}>
         {shell === "login" && AppsHumanLogin ? (
           <AppsHumanLogin />
         ) : shell ? (
