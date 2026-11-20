@@ -256,15 +256,11 @@ class _ScopeItem extends RaftFitItem {
       key: probe ? null : const ValueKey('tasks-page-scope-select'),
       label: current,
       tooltip: probe ? null : label,
-      triggerBuilder: (context, focus, toggle) => RaftButton(
+      triggerBuilder: (context, focus, toggle) => RaftPickerTriggerButton(
         label: current,
         semanticLabel: '$label, $current',
         tooltip: probe ? null : label,
-        uiVariant: RaftButtonVariant.outline,
-        uiSize: RaftButtonSize.md,
-        trailingGlyph: RaftGlyph.chevronDown,
-        glyphSize: 14,
-        physicalHeight: line,
+        fitToolbar: true,
         focusNode: focus,
         onPressed: toggle,
       ),

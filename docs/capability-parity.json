@@ -11151,7 +11151,7 @@
    "status": "covered",
    "webEntry": "TaskModalHead + TaskProperties + embedded ThreadPanel (intent task)",
    "gate": "Any member who can open the task; guests read-only",
-   "flutterEntry": "task_surface.dart SourceTaskSurface -> RaftTaskSurface + RaftChatView thread",
+   "flutterEntry": "task_surface.dart SourceTaskSurface -> RaftTaskSurface (description toggle via RaftShowMoreToggle) + RaftChatView thread",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/task_surface.dart",
@@ -11159,7 +11159,7 @@
     },
     {
      "file": "packages/raft_ui/lib/src/task_surface.dart",
-     "needle": "Show More"
+     "needle": "RaftShowMoreToggle("
     }
    ],
    "justification": "",
