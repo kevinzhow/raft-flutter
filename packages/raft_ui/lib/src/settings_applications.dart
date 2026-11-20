@@ -2,39 +2,53 @@
 // 26f77ef, packages/web/src/components/settings/SettingsPanel.tsx
 // IntegrationsSection + AppNotificationsControls.tsx +
 // SettingsSegmentedControls.tsx ConnectedAppsTabSegmentedControl): the
-// Applications header, the intro card with the Marketplace / Installed /
-// My apps tabs, the search / category / layout filters, the three app
-// collections (grid or list), and the listing / installed-app detail cards.
+// Apps toolbar, the three app collections (grid or list), and the listing
+// and installed-app detail cards.
 // The app supplies the projected rows and callbacks; class lists live here.
 import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption;
+import 'raft/button.dart';
+import 'raft/fit_toolbar.dart';
+import 'banner.dart';
 import 'card.dart' show RaftCard;
 
 import 'package:flutter/material.dart';
 
 import 'raft_underline.dart';
 import 'system_inset.dart';
-import 'design_primitives.dart' show RaftInteractive, RaftTypography;
+import 'design_primitives.dart'
+    show
+        RaftDropdownMenu,
+        RaftDropdownTriggerStyle,
+        RaftInheritedFontScope,
+        RaftInteractive,
+        RaftMenuEntry,
+        RaftTypography;
+import 'empty_state.dart';
 import 'error_presentation.dart';
 import 'icons.dart';
+import 'idle_work.dart';
+import 'indicators.dart' show RaftSkeleton, RaftSkeletonVariant;
+import 'interaction.dart';
 import 'list_items.dart' show RaftSectionEyebrow;
 import 'localization.dart';
 import 'overlays/dialog.dart';
+import 'pull_to_refresh.dart';
 import 'recipe_min_height.dart' show RaftMinHeightBox;
 import 'raft/avatar.dart';
-import 'text_scaling.dart' show RaftScaled;
+import 'raft/badge.dart';
+import 'raft/list_row.dart' show RaftListRowSkeleton, RaftListRowVariant;
 import 'token_geometry.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'toggle_group.dart';
-import 'select_field.dart';
 import 'separator.dart';
 import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftTypeScale;
+import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeScale;
 import 'tooltip.dart';
 import 'viewport_breakpoints.dart';
 import 'sized_image.dart';
@@ -50,11 +64,25 @@ class RaftConnectedAppBadge {
 
   /// ConnectedAppDistributionBadge / origin badges.
   const RaftConnectedAppBadge.success(String label)
-    : this(label, variant: RaftBadgeRecipeVariant.success);
+    : this(
+        label,
+        variant: RaftBadgeRecipeVariant.success,
+        appearance: RaftBadgeRecipeAppearance.soft,
+      );
   const RaftConnectedAppBadge.warning(String label)
-    : this(label, variant: RaftBadgeRecipeVariant.warning);
+    : this(
+        label,
+        variant: RaftBadgeRecipeVariant.warning,
+        appearance: RaftBadgeRecipeAppearance.soft,
+      );
   const RaftConnectedAppBadge.outline(String label)
     : this(label, appearance: RaftBadgeRecipeAppearance.outline);
+  const RaftConnectedAppBadge.muted(String label)
+    : this(
+        label,
+        variant: RaftBadgeRecipeVariant.muted,
+        appearance: RaftBadgeRecipeAppearance.soft,
+      );
   final String label;
   final RaftBadgeRecipeVariant? variant;
   final RaftBadgeRecipeAppearance? appearance;
@@ -75,6 +103,8 @@ enum RaftMarketplaceAppState {
 
 /// ConnectedAppLogo: AvatarSlot `type="app"` (initials placeholder or logo).
 enum RaftAppLogoSize {
+  xs(27, 11, 13),
+
   /// `surface-list`: `!size-8 !border-2`, `text-xs`.
   sm(32, 12, 16),
 
@@ -152,7 +182,6 @@ class RaftConnectedAppRow {
 class RaftConnectedAppsSection extends StatelessWidget {
   const RaftConnectedAppsSection({
     super.key,
-    required this.description,
     required this.tab,
     required this.counts,
     required this.onTab,
@@ -174,15 +203,23 @@ class RaftConnectedAppsSection extends StatelessWidget {
     this.myAppsIntro,
     this.reviewNote,
     this.secretReveal,
-    this.marketplaceFilters = const [],
     this.marketplaceFooter,
     this.installedFooter,
     this.notice,
+    this.standalone = false,
+    this.typeFilter,
+    this.sortFilter,
+    this.onClearFilters,
+    this.onBrowseMarketplace,
+    this.onRetry,
+    this.onRefresh,
+    this.recommendation,
+    this.emptyDetail,
+    this.marketplaceLoading = false,
   });
 
   /// `renderClientSecretReveal` under the filters while the editor is closed.
   final Widget? secretReveal;
-  final String description;
   final String? adminNote;
   final bool loading;
 
@@ -211,183 +248,52 @@ class RaftConnectedAppsSection extends StatelessWidget {
 
   /// The empty box under an empty collection.
   final String? emptyMessage;
+  final String? emptyDetail;
   final String? myAppsIntro, reviewNote;
-  final List<Widget> marketplaceFilters;
   final Widget? marketplaceFooter;
   final Widget? installedFooter;
   final Widget? notice;
+  final bool standalone;
+  final RaftFitPicker? typeFilter, sortFilter;
+  final VoidCallback? onClearFilters, onBrowseMarketplace, onRetry;
+  final RefreshCallback? onRefresh;
+  final RaftMarketplaceAppTile? recommendation;
+  final bool marketplaceLoading;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
-    final band = raftBreakpointWidth(context);
-    final intro = RaftSettingsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      raftText(context, 'Third-party apps for this server'),
-                      style: text.title,
-                    ),
-                    const SizedBox(height: 4),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 672),
-                      child: Text(description, style: _relaxed(t, text.muted)),
-                    ),
-                    if (adminNote != null) ...[
-                      const SizedBox(height: 4),
-                      Text(adminNote!, style: _relaxed(t, text.muted)),
-                    ],
-                  ],
-                ),
+    final toggle = _LayoutToggle(value: layout, onChanged: onLayout);
+    final toolbar = _toolbar(context, toggle);
+    final placeholders = _AppsLoading(
+      key: ValueKey(tab),
+      tab: tab,
+      layout: layout,
+      canManage: onRegister != null,
+    );
+    final pending =
+        error == null &&
+        (tab == RaftConnectedAppsTab.marketplace
+            ? marketplaceLoading
+            : loading);
+    final empty = switch ((emptyMessage, emptyDetail)) {
+      (final String title, final String detail) => RaftEmptyState(
+        title: title,
+        detail: detail,
+        glyph: RaftGlyph.blocks,
+        blockPadding: 40,
+        action: onBrowseMarketplace == null
+            ? null
+            : RaftButton(
+                label: raftText(context, 'Browse marketplace'),
+                onPressed: onBrowseMarketplace,
+                uiSize: RaftButtonSize.md,
               ),
-              if (loading) ...[
-                const SizedBox(width: 12),
-                Text(
-                  raftText(context, 'Loading apps…'),
-                  style: RaftTypography.inherited(
-                    t,
-                    size: 12,
-                    line: 16,
-                    weight: FontWeight.w700,
-                    color: text.faint,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 16),
-          RaftSegmentedControl<RaftConnectedAppsTab>(
-            value: tab,
-            label: raftText(context, 'Connected apps view'),
-            onChanged: onTab,
-            items: [
-              for (final (value, label, count, key) in [
-                (
-                  RaftConnectedAppsTab.marketplace,
-                  'Marketplace',
-                  counts.marketplace,
-                  'marketplace',
-                ),
-                (
-                  RaftConnectedAppsTab.installed,
-                  'Installed',
-                  counts.installed,
-                  'installed',
-                ),
-                (
-                  RaftConnectedAppsTab.myApps,
-                  'Developer',
-                  counts.myApps,
-                  'my-apps',
-                ),
-              ])
-                RaftSegmentedOption(
-                  value: value,
-                  label: raftText(context, label),
-                  count: count > 0 ? '$count' : null,
-                  itemKey: ValueKey('connected-apps-tab-$key'),
-                ),
-            ],
-          ),
-        ],
       ),
-    );
-    final search = RaftMinHeightBox(
-      height: 40,
-      child: RaftRecipeInput(
-        fieldKey: const ValueKey('connected-apps-search'),
-        controller: searchController,
-        placeholder: raftText(context, 'Search apps…'),
-        onChanged: onSearch,
-        height: 40,
-      ),
-    );
-    final select = RaftSelectField<String>(
-      key: const ValueKey('connected-apps-category-filter'),
-      value: category,
-      label: 'Filter connected apps by category',
-      height: 40,
-      items: [
-        for (final (value, label) in categories)
-          RaftSelectItem(value: value, label: label),
-      ],
-      onChanged: (value) {
-        if (value != null) onCategory(value);
-      },
-    );
-    final toggle = RaftMinHeightBox(
-      height: 40,
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: _LayoutToggle(value: layout, onChanged: onLayout),
-      ),
-    );
-    // Scaled text no longer fits the search, category and layout controls on
-    // one or two rows: they stack, as on a narrow viewport.
-    final stackFilters = RaftScaled.grows(context);
-    final Widget filters = stackFilters
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              search,
-              const SizedBox(height: 8),
-              select,
-              const SizedBox(height: 8),
-              toggle,
-            ],
-          )
-        : band >= 768
-        ? Row(
-            children: [
-              Expanded(child: search),
-              const SizedBox(width: 8),
-              SizedBox(width: 220, child: select),
-              const SizedBox(width: 8),
-              toggle,
-            ],
-          )
-        : band >= 640
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: search),
-                  const SizedBox(width: 8),
-                  toggle,
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(child: select),
-                  const SizedBox(width: 8),
-                  // `auto` column (the toggle's width) stays empty.
-                  const SizedBox(width: 72),
-                ],
-              ),
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              search,
-              const SizedBox(height: 8),
-              select,
-              const SizedBox(height: 8),
-              toggle,
-            ],
-          );
-    final empty = emptyMessage == null ? null : _EmptyBox(emptyMessage!);
+      (final String title, null) => _EmptyBox(title),
+      _ => null,
+    };
     final body = switch (tab) {
       RaftConnectedAppsTab.marketplace => Column(
         key: const ValueKey('connected-apps-marketplace-tab'),
@@ -454,33 +360,50 @@ class RaftConnectedAppsSection extends StatelessWidget {
       ),
     };
     final children = <Widget>[
-      RaftSettingsSectionHeader(
-        label: 'Applications',
-        glyph: RaftGlyph.link2,
-        bottom: 0,
-        action: onRegister == null
-            ? null
-            : RaftSettingsRecipeButton(
-                key: const ValueKey('connected-apps-register'),
-                label: 'Register App',
-                glyph: RaftGlyph.plus,
-                glyphSize: 14,
-                variant: RaftButtonRecipeVariant.accent,
-                size: RaftButtonRecipeSize.sm,
-                onPressed: onRegister,
-              ),
-      ),
-      intro,
+      if (!standalone)
+        RaftSettingsSectionHeader(
+          label: 'Apps',
+          glyph: RaftGlyph.appWindow,
+          bottom: 0,
+          action: onRegister == null
+              ? null
+              : RaftSettingsRecipeButton(
+                  key: const ValueKey('connected-apps-register'),
+                  label: 'Register App',
+                  glyph: RaftGlyph.plus,
+                  glyphSize: 14,
+                  variant: RaftButtonRecipeVariant.accent,
+                  size: RaftButtonRecipeSize.sm,
+                  onPressed: onRegister,
+                ),
+        ),
+      if (!standalone) toolbar,
+      if (adminNote != null)
+        Text(
+          adminNote!,
+          style: t.scale(RaftTypeScale.footnote, color: t.muted),
+        ),
       ?notice,
-      filters,
-      if (tab == RaftConnectedAppsTab.marketplace &&
-          marketplaceFilters.isNotEmpty)
-        Wrap(spacing: 8, runSpacing: 8, children: marketplaceFilters),
-      if (error != null && error!.isNotEmpty) RaftConnectedAppsError(error!),
+      if (error case final message? when message.isNotEmpty)
+        onRetry == null
+            ? RaftConnectedAppsError(message)
+            : RaftBanner(
+                description: message,
+                size: RaftBannerRecipeSize.sm,
+                live: false,
+                action: RaftButton(
+                  glyph: RaftGlyph.refreshCw,
+                  label: raftText(context, 'Retry'),
+                  uiVariant: RaftButtonVariant.outline,
+                  onPressed: onRetry,
+                ),
+              ),
       ?secretReveal,
-      body,
+      pending ? placeholders : body,
     ];
     if (scrollable) {
+      final refresh = onRefresh;
+      final pullable = refresh != null && RaftInteraction.of(context).touch;
       final cards = <Widget>[
         if (tab == RaftConnectedAppsTab.marketplace)
           for (final app in marketplace)
@@ -490,16 +413,31 @@ class RaftConnectedAppsSection extends StatelessWidget {
       ];
       Widget gap(double height) =>
           SliverToBoxAdapter(child: SizedBox(height: height));
-      return RaftInheritedFont(
+      Widget heading(String title) => SliverToBoxAdapter(
+        child: Semantics(
+          header: true,
+          child: Text(
+            title,
+            style: t.scale(RaftTypeScale.callout, weight: FontWeight.w700),
+          ),
+        ),
+      );
+      final scroller = RaftInheritedFont(
         child: CustomScrollView(
           primary: false,
+          physics: pullable ? const AlwaysScrollableScrollPhysics() : null,
           slivers: [
             SliverPadding(
               padding: raftScrollPadding(
                 context,
-                RaftSettingsPanelFrame.contentInset.add(
-                  const EdgeInsets.only(bottom: 24),
-                ),
+                standalone
+                    ? EdgeInsets.symmetric(
+                        horizontal: t.desktop ? 20 : 16,
+                        vertical: 16,
+                      )
+                    : RaftSettingsPanelFrame.contentInset.add(
+                        const EdgeInsets.only(bottom: 24),
+                      ),
               ),
               sliver: SliverMainAxisGroup(
                 slivers: [
@@ -511,7 +449,18 @@ class RaftConnectedAppsSection extends StatelessWidget {
                         child: child,
                       ),
                     ),
-                  gap(16),
+                  if (children.length > 1) gap(16),
+                  if (recommendation case final app?) ...[
+                    heading(raftTextZh(context, 'Recommended for you', '为你推荐')),
+                    gap(8),
+                    _SliverCollection(
+                      layout: layout,
+                      children: [_MarketplaceCard(app: app, layout: layout)],
+                    ),
+                    gap(16),
+                    heading(raftText(context, 'Installed')),
+                    gap(8),
+                  ],
                   if (tab == RaftConnectedAppsTab.myApps) ...[
                     if (myAppsIntro != null)
                       SliverToBoxAdapter(
@@ -522,9 +471,13 @@ class RaftConnectedAppsSection extends StatelessWidget {
                       ),
                     gap(12),
                   ],
-                  _SliverCollection(layout: layout, children: cards),
+                  if (pending)
+                    SliverToBoxAdapter(child: placeholders)
+                  else
+                    _SliverCollection(layout: layout, children: cards),
                   if (empty != null) ...[
-                    if (tab != RaftConnectedAppsTab.myApps)
+                    if (emptyDetail == null &&
+                        tab != RaftConnectedAppsTab.myApps)
                       gap(tab == RaftConnectedAppsTab.marketplace ? 12 : 8),
                     SliverToBoxAdapter(child: empty),
                   ],
@@ -558,6 +511,22 @@ class RaftConnectedAppsSection extends StatelessWidget {
           ],
         ),
       );
+      if (!standalone) return scroller;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _pageToolbar(context, toolbar),
+          Expanded(
+            child: refresh == null
+                ? scroller
+                : RaftPullToRefresh(
+                    enabled: pullable,
+                    onRefresh: refresh,
+                    child: scroller,
+                  ),
+          ),
+        ],
+      );
     }
     return RaftInheritedFont(
       child: Padding(
@@ -573,6 +542,208 @@ class RaftConnectedAppsSection extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _pageToolbar(BuildContext context, Widget toolbar) {
+    final t = RaftTokens.of(context);
+    final air = t.desktop ? RaftDesktopMetrics.headerAir : 8.0;
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        t.desktop ? 20 : 16,
+        air,
+        t.desktop ? 20 : 16,
+        t.desktop ? air - 1 : air,
+      ),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: t.ui.lineSeam)),
+      ),
+      child: toolbar,
+    );
+  }
+
+  Widget _toolbar(BuildContext context, Widget toggle) {
+    String tr(String value) => raftText(context, value);
+    return RaftFitToolbar(
+      wrap: true,
+      semanticLabel: tr('Apps'),
+      children: [
+        RaftFitGroup(
+          firstLine: true,
+          items: [_AppsScope(tab: tab, counts: counts, onTab: onTab)],
+        ),
+        RaftFitSearch(
+          semanticLabel: tr('Search apps'),
+          hintText: tr('Search apps…'),
+          clearLabel: tr('Clear search'),
+          controller: searchController,
+          fieldKey: const ValueKey('connected-apps-search'),
+          collapseOrder: 70,
+          onChanged: onSearch,
+        ),
+        RaftFitGroup(
+          scroll: true,
+          wrapOrder: 30,
+          end: onClearFilters == null
+              ? null
+              : RaftButton(
+                  uiVariant: RaftButtonVariant.ghost,
+                  uiSize: RaftButtonSize.md,
+                  label: raftTextZh(context, 'Clear all', '清除筛选'),
+                  onPressed: onClearFilters,
+                ),
+          items: [
+            ?typeFilter,
+            RaftFitPicker(
+              key: const ValueKey('connected-apps-category-filter'),
+              label:
+                  categories
+                      .where((entry) => entry.$1 == category)
+                      .firstOrNull
+                      ?.$2 ??
+                  tr('All categories'),
+              glyph: RaftGlyph.layoutList,
+              applied: category != 'all',
+              labelOrder: 20,
+              menuEntries: [
+                for (final (value, label) in categories)
+                  RaftMenuEntry(
+                    label: label,
+                    checked: value == category,
+                    onPressed: () => onCategory(value),
+                  ),
+              ],
+            ),
+          ],
+        ),
+        RaftFitGroup(
+          firstLine: true,
+          moreOrder: 60,
+          moreItem: [
+            if (sortFilter?.menuEntries case final choices?) ...[
+              ...choices,
+              const RaftMenuEntry.separator(),
+            ],
+            for (final (value, label) in [
+              (RaftConnectedAppsLayout.grid, 'Grid view'),
+              (RaftConnectedAppsLayout.list, 'List view'),
+            ])
+              RaftMenuEntry(
+                label: tr(label),
+                checked: value == layout,
+                onPressed: () => onLayout(value),
+              ),
+          ],
+          items: [
+            ?sortFilter,
+            RaftFitChild(child: toggle),
+          ],
+        ),
+        RaftFitGroup(
+          firstLine: true,
+          items: [
+            const RaftFitMore(key: ValueKey('apps-toolbar-more')),
+            if (standalone && onRegister != null)
+              RaftFitButton(
+                key: const ValueKey('register-app-menu-trigger'),
+                label: raftTextZh(context, 'Add app', '添加应用'),
+                glyph: RaftGlyph.plus,
+                variant: RaftButtonVariant.primary,
+                plusOrder: 40,
+                menuEntries: [
+                  RaftMenuEntry(
+                    label: raftTextZh(
+                      context,
+                      'Create a Raft app',
+                      '创建 Raft 应用',
+                    ),
+                    glyph: RaftGlyph.globe,
+                    onPressed: onRegister,
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AppsScope extends RaftFitItem {
+  const _AppsScope({
+    required this.tab,
+    required this.counts,
+    required this.onTab,
+  }) : super(labelOrder: 50);
+
+  final RaftConnectedAppsTab tab;
+  final ({int marketplace, int installed, int myApps}) counts;
+  final ValueChanged<RaftConnectedAppsTab> onTab;
+
+  @override
+  bool get hasLabelForm => true;
+
+  @override
+  Widget buildForm(
+    BuildContext context,
+    RaftFitForm form, {
+    required bool probe,
+    List<RaftMenuEntry> moreEntries = const [],
+  }) {
+    const installed = RaftConnectedAppsTab.installed;
+    const market = RaftConnectedAppsTab.marketplace;
+    const developer = RaftConnectedAppsTab.myApps;
+    final tabs = [
+      (installed, 'Installed', counts.installed, 'installed'),
+      (market, 'Marketplace', counts.marketplace, 'marketplace'),
+      (developer, 'Developer', counts.myApps, 'my-apps'),
+    ];
+    String tr(String value) => raftText(context, value);
+    final line = RaftTokens.of(context).desktop
+        ? RaftDesktopMetrics.controlHeight
+        : 32.0;
+    if (form == RaftFitForm.full) {
+      return Align(
+        widthFactor: 1,
+        heightFactor: line / (line + 6),
+        child: RaftSegmentedControl<RaftConnectedAppsTab>(
+          label: tr('Apps'),
+          value: tab,
+          onChanged: onTab,
+          visualHeight: line,
+          minimumTargetSize: line,
+          items: [
+            for (final (value, label, count, id) in tabs)
+              RaftSegmentedOption(
+                value: value,
+                label: tr(label),
+                count: count == 0 ? null : '$count',
+                itemKey: probe ? null : ValueKey('connected-apps-tab-$id'),
+              ),
+          ],
+        ),
+      );
+    }
+    final active = tabs.firstWhere(
+      (entry) => entry.$1 == tab,
+      orElse: () => tabs.first,
+    );
+    return RaftDropdownMenu(
+      key: probe ? null : const ValueKey('connected-apps-scope-select'),
+      label: tr(active.$2),
+      triggerStyle: RaftDropdownTriggerStyle.picker,
+      trailingGlyph: RaftGlyph.chevronDown,
+      entries: [
+        for (final (value, label, count, id) in tabs)
+          RaftMenuEntry(
+            label: tr(label),
+            checked: value == tab,
+            leading: probe
+                ? null
+                : SizedBox.shrink(key: ValueKey('connected-apps-tab-$id')),
+            onPressed: () => onTab(value),
+          ),
+      ],
     );
   }
 }
@@ -616,10 +787,170 @@ class _EmptyBox extends StatelessWidget {
   }
 }
 
+class _AppsLoading extends StatefulWidget {
+  const _AppsLoading({
+    super.key,
+    required this.tab,
+    required this.layout,
+    required this.canManage,
+  });
+
+  final RaftConnectedAppsTab tab;
+  final RaftConnectedAppsLayout layout;
+  final bool canManage;
+
+  @override
+  State<_AppsLoading> createState() => _AppsLoadingState();
+}
+
+class _AppsLoadingState extends State<_AppsLoading> {
+  final delay = RaftIdleTimer(yieldToAnimation: false);
+  var shown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    delay.start(const Duration(seconds: 1), () => setState(() => shown = true));
+  }
+
+  @override
+  void dispose() {
+    delay.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!shown) return const SizedBox.shrink();
+    final installed = widget.tab == RaftConnectedAppsTab.installed;
+    final marketplace = widget.tab == RaftConnectedAppsTab.marketplace;
+    final grid = widget.layout == RaftConnectedAppsLayout.grid;
+    final collection = installed || (marketplace && grid);
+    final count = marketplace ? 6 : 4;
+    Widget placeholder(int index) => collection
+        ? _AppCardSkeleton(
+            installed: installed,
+            grid: grid,
+            canManage: widget.canManage,
+          )
+        : RaftListRowSkeleton(index: index, description: true);
+    return _Collection(
+      key: ValueKey(
+        installed
+            ? 'apps-installed-loading-collection'
+            : marketplace
+            ? 'apps-marketplace-loading-collection'
+            : 'apps-developer-loading-collection',
+      ),
+      layout: collection ? widget.layout : RaftConnectedAppsLayout.list,
+      children: [
+        for (var index = 0; index < count; index++) placeholder(index),
+      ],
+    );
+  }
+}
+
+class _AppCardSkeleton extends StatelessWidget {
+  const _AppCardSkeleton({
+    required this.installed,
+    required this.grid,
+    required this.canManage,
+  });
+
+  final bool installed, grid, canManage;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    Widget block(double width, double height) =>
+        RaftSkeleton(fromRecipe: true, width: width, height: height);
+    Widget line(double width, String scale) {
+      final size = t.typeSlot(scale);
+      return RaftMinHeightBox(
+        height: size.lineHeight,
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: RaftSkeleton(
+            fromRecipe: true,
+            variant: RaftSkeletonVariant.line,
+            width: width,
+            height: size.fontSize * .75,
+          ),
+        ),
+      );
+    }
+
+    final logo = installed ? 35.0 : 51.0;
+    final info = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: RaftSpace.x3,
+      children: [
+        block(logo, logo),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              line(installed ? 128 : 112, 'body'),
+              const SizedBox(height: RaftSpace.half),
+              line(installed ? 192 : 160, 'footnote'),
+              if (raftBreakpointWidth(context) < 768) line(96, 'footnote'),
+              if (installed) ...[
+                const SizedBox(height: RaftSpace.x2),
+                block(80, 22),
+                const SizedBox(height: RaftSpace.x1),
+                line(grid ? 112 : 256, 'callout'),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+    final action = canManage
+        ? block(
+            installed ? 96 : 64,
+            t.desktop ? RaftDesktopMetrics.controlHeight : 32,
+          )
+        : installed
+        ? null
+        : block(80, 22);
+    final body = !grid && raftBreakpointWidth(context) >= 640
+        ? Row(
+            spacing: RaftSpace.x3,
+            children: [
+              Expanded(child: info),
+              ?action,
+            ],
+          )
+        : Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: RaftSpace.x3,
+            children: [
+              info,
+              if (action != null)
+                Align(alignment: AlignmentDirectional.centerEnd, child: action),
+            ],
+          );
+    return ExcludeSemantics(
+      child: installed
+          ? RaftCard.item(
+              interactive: false,
+              child: grid
+                  ? ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 184 - 24),
+                      child: body,
+                    )
+                  : body,
+            )
+          : RaftCard(padding: const EdgeInsets.all(RaftSpace.x3), child: body),
+    );
+  }
+}
+
 /// `grid gap-3 md:grid-cols-2` (rows stretch to the taller card) or
 /// `space-y-2`.
 class _Collection extends StatelessWidget {
-  const _Collection({required this.layout, required this.children});
+  const _Collection({super.key, required this.layout, required this.children});
   final RaftConnectedAppsLayout layout;
   final List<Widget> children;
   @override
@@ -749,6 +1080,7 @@ class RaftAppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarSize = switch (size) {
+      RaftAppLogoSize.xs => RaftAvatarSize.sm,
       RaftAppLogoSize.sm => RaftAvatarSize.md,
       RaftAppLogoSize.md || RaftAppLogoSize.lg => RaftAvatarSize.lg,
     };
@@ -772,16 +1104,16 @@ class _Badge extends StatelessWidget {
   const _Badge(this.badge);
   final RaftConnectedAppBadge badge;
   @override
-  Widget build(BuildContext context) => RaftSettingsRecipeBadge(
-    label: badge.label,
-    variant: badge.variant,
-    appearance: badge.appearance,
+  Widget build(BuildContext context) => RaftBadge(
+    label: raftText(context, badge.label),
+    variant: badge.variant ?? RaftBadgeRecipeVariant.default_,
+    appearance: badge.appearance ?? RaftBadgeRecipeAppearance.solid,
+    fontFamily: RaftInheritedFontScope.active(context)
+        ? RaftTokens.of(context).headingFont
+        : null,
   );
 }
 
-/// The marketplace listing button: `w-full border border-line-muted
-/// bg-layer-panel p-3 shadow-raft-sm hover:shadow-raft-md` (Brutal
-/// `border-2 border-black bg-white shadow-brutal-sm hover:shadow-brutal`).
 class _MarketplaceCard extends StatelessWidget {
   const _MarketplaceCard({required this.app, required this.layout});
   final RaftMarketplaceAppTile app;
@@ -811,7 +1143,7 @@ class _MarketplaceCard extends StatelessWidget {
                       t,
                       size: 16,
                       line: 24,
-                      weight: FontWeight.w700,
+                      weight: FontWeight.w600,
                       color: text.strong,
                     ),
                   ),
@@ -839,81 +1171,42 @@ class _MarketplaceCard extends StatelessWidget {
         RaftConnectedAppBadge.success(app.stateLabel),
       ),
       RaftMarketplaceAppState.available => _Badge(
-        RaftConnectedAppBadge.outline(app.stateLabel),
+        RaftConnectedAppBadge.muted(app.stateLabel),
       ),
-      RaftMarketplaceAppState.install => _InstallPill(app.stateLabel),
+      RaftMarketplaceAppState.install => RaftButton(
+        label: app.stateLabel,
+        uiVariant: RaftButtonVariant.outline,
+        uiSize: RaftButtonSize.md,
+        inertWhenDisabled: true,
+        button: false,
+      ),
     };
-    return RaftInteractive(
+    return RaftCard.item(
       key: ValueKey('connected-app-${app.id}'),
-      onPressed: app.onOpen,
-      semanticLabel: app.name,
-      builder: (context, st) {
-        final hovered = st.hovered;
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: t.panel,
-            border: Border.all(color: t.colors['line-muted']!, width: 1),
-            boxShadow: (hovered ? t.themeShadows.md : t.themeShadows.sm).outer,
-          ),
-          child: grid
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  // `flex-1` spacer: pushes the chip down when the row gives
-                  // the card a height, shrink-wraps in a single column.
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    info,
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: trailing,
-                      ),
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(child: info),
-                    const SizedBox(width: 12),
-                    trailing,
-                  ],
+      onTap: app.onOpen,
+      padding: const EdgeInsets.all(12),
+      child: grid
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                info,
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: trailing,
+                  ),
                 ),
-        );
-      },
-    );
-  }
-}
-
-/// `rounded-sm bg-accent-soft px-2.5 py-1 text-xs text-accent-strong
-/// btn-brutal-sm theme-brutal:rounded-none theme-brutal:bg-brutal-pink
-/// theme-brutal:text-black` (`.btn-brutal-sm`: `border border-line-strong
-/// font-display font-bold shadow-raft-xs`).
-class _InstallPill extends StatelessWidget {
-  const _InstallPill(this.label);
-  final String label;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        // Translucent fills sit over the card, not over its outer shadow.
-        color: Color.alphaBlend(t.colors['accent-soft']!, t.panel),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: t.colors['line-strong']!),
-        boxShadow: t.themeShadows.xs.outer,
-      ),
-      child: Text(
-        label,
-        style: RaftTypography.heading(
-          t,
-          size: 12,
-          line: 16,
-          weight: FontWeight.w700,
-        ).copyWith(color: t.colors['accent-strong']),
-      ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(child: info),
+                const SizedBox(width: 12),
+                trailing,
+              ],
+            ),
     );
   }
 }
@@ -1027,7 +1320,7 @@ class _AppRowCard extends StatelessWidget {
       t,
       size: 16,
       line: 24,
-      weight: FontWeight.w700,
+      weight: FontWeight.w600,
       color: text.strong,
     );
     final name = row.onOpenName == null
@@ -1189,11 +1482,15 @@ class RaftConnectedAppDetailSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final fill = cream ? t.ui.fillMuted : t.ui.layerCard;
+    final border = fill.a == 1 && t.ui.lineHairline.a < 1
+        ? raftChromeBlend(t.ui.lineHairline, fill)
+        : t.ui.lineHairline;
     return Container(
       padding: const EdgeInsets.all(RaftSpace.x4),
       decoration: BoxDecoration(
-        color: cream ? t.ui.fillMuted : t.ui.layerCard,
-        border: Border.all(color: t.ui.lineHairline),
+        color: fill,
+        border: Border.all(color: border),
         borderRadius: t.corner('radius.container', fallback: 10),
       ),
       child: Column(
@@ -1239,6 +1536,7 @@ class RaftConnectedAppDetailRow extends StatelessWidget {
       RaftTypeScale.footnote,
       color: t.ui.foregroundMuted,
     );
+    final callout = t.typeSlot('callout');
     final value = DefaultTextStyle.merge(
       style: t.scale(
         RaftTypeScale.callout,
@@ -1246,7 +1544,18 @@ class RaftConnectedAppDetailRow extends StatelessWidget {
         color: text.strong,
       ),
       textAlign: wide ? TextAlign.right : TextAlign.left,
-      child: child,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight:
+              MediaQuery.textScalerOf(context).scale(callout.fontSize) *
+              callout.height,
+        ),
+        child: Align(
+          alignment: wide ? Alignment.centerRight : Alignment.centerLeft,
+          heightFactor: 1,
+          child: child,
+        ),
+      ),
     );
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1470,19 +1779,16 @@ class _DisclosureMarker extends CustomPainter {
       old.open != open || old.color != color;
 }
 
-/// AppNotificationRequestSummary / InstalledAppNotifications: the
-/// `border-t-2 border-line-strong pt-4` section with the Bell 18 header,
-/// the App permissions eyebrow, a description, an optional status badge and
-/// the `sm:grid-cols-N` columns of scope chips.
+/// The requested or installed App permissions with an inset scope group.
 class RaftAppPermissionsSummary extends StatelessWidget {
   const RaftAppPermissionsSummary({
     super.key,
-    required this.description,
     required this.columns,
+    this.description,
     this.badge,
     this.loading,
   });
-  final String description;
+  final String? description;
 
   /// (label, values, empty copy) per column.
   final List<(String, List<String>, String)> columns;
@@ -1493,163 +1799,121 @@ class RaftAppPermissionsSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
-    final topRule = BoxDecoration(
-      border: Border(top: BorderSide(color: t.ui.lineHairline)),
-    );
     if (loading != null) {
-      return Container(
-        padding: const EdgeInsets.only(top: 12),
-        decoration: topRule,
-        child: Text(
-          loading!,
-          style: RaftTypography.body(
-            t,
-            size: 12,
-            line: 16,
-            weight: FontWeight.w700,
-            color: text.faint,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: RaftSpace.x3,
+        children: [
+          const RaftSeparator(),
+          Text(
+            loading!,
+            style: t.scale(RaftTypeScale.footnote, color: t.ui.foregroundHint),
           ),
-        ),
+        ],
       );
     }
-    final columnLabel = RaftTypography.body(
-      t,
-      size: 10,
-      line: 15,
-      weight: FontWeight.w700,
-      color: text.faint,
+    final wide = raftBreakpointWidth(context) >= 640;
+    final footnote = t.scale(
+      RaftTypeScale.footnote,
+      color: t.ui.foregroundHint,
     );
-    Widget column((String, List<String>, String) c) => Container(
-      padding: const EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: t.colors['line-muted']!, width: 2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(c.$1, style: columnLabel),
-          const SizedBox(height: 8),
-          if (c.$2.isEmpty)
-            // A `text-xs` inline span inside a block: the line box keeps the
-            // 16px / 24px parent strut, so the 12px text sits 5px lower.
-            Padding(
-              // ds-allow: Web AppNotificationsControls.tsx scope column `text-xs` span in the 24px line box (5 + 16 + 3)
-              padding: const EdgeInsets.only(top: 5, bottom: 3),
-              child: Text(
-                c.$3,
-                style: RaftTypography.body(
-                  t,
-                  size: 12,
-                  line: 16,
-                  weight: FontWeight.w700,
-                  color: t.muted,
-                ),
-              ),
-            )
-          else
-            Wrap(
+    Widget scopeRow((String, List<String>, String) scope) {
+      final label = Text(
+        scope.$1,
+        style: footnote.copyWith(fontWeight: FontWeight.w500),
+      );
+      final values = scope.$2.isEmpty
+          ? Text(scope.$3, style: footnote)
+          : Wrap(
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final v in c.$2)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: t.panel,
-                      border: Border.all(color: t.colors['line-strong']!),
-                    ),
-                    child: Text(
-                      v,
-                      style: RaftTypography.body(
-                        t,
-                        size: 11,
-                        line: 11 * 1.5,
-                        weight: FontWeight.w700,
-                        color: t.muted,
-                      ),
+                for (final value in scope.$2)
+                  _Badge(
+                    RaftConnectedAppBadge(
+                      value,
+                      appearance: RaftBadgeRecipeAppearance.soft,
                     ),
                   ),
               ],
-            ),
-        ],
-      ),
-    );
-    final wide = raftBreakpointWidth(context) >= 640;
-    return Container(
-      padding: const EdgeInsets.only(top: 16),
-      decoration: topRule,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // `flex flex-wrap items-start justify-between gap-2`: the badge
-          // wraps below the description when the pair does not fit.
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
+            );
+      return Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x4,
+          vertical: RaftSpace.x3,
+        ),
+        child: wide
+            ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: RaftSpace.x4,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: RaftIcon(
-                      RaftGlyph.bell,
-                      size: 18,
-                      color: t.ui.foregroundMuted,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RaftSectionEyebrow(
-                          raftText(context, 'App permissions'),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          description,
-                          style: t.scale(
-                            RaftTypeScale.footnote,
-                            color: t.ui.foregroundMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  SizedBox(width: 176, child: label),
+                  Expanded(child: values),
                 ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: RaftSpace.x2,
+                children: [label, values],
               ),
-              if (badge != null) _Badge(badge!),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const RaftSeparator(),
+        const SizedBox(height: RaftSpace.x4),
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          spacing: RaftSpace.x2,
+          runSpacing: RaftSpace.x2,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: RaftSpace.x2,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: RaftIcon(
+                    RaftGlyph.bell,
+                    size: 18,
+                    color: t.ui.foregroundMuted,
+                  ),
+                ),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: RaftSpace.x1,
+                    children: [
+                      RaftSectionEyebrow(raftText(context, 'App permissions')),
+                      if (description case final copy?)
+                        Text(
+                          copy,
+                          style: footnote.copyWith(color: t.ui.foregroundMuted),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (badge != null) _Badge(badge!),
+          ],
+        ),
+        const SizedBox(height: RaftSpace.x3),
+        RaftCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (index, scope) in columns.indexed) ...[
+                if (index > 0) const RaftSeparator(),
+                scopeRow(scope),
+              ],
             ],
           ),
-          const SizedBox(height: 12),
-          if (wide)
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (i, c) in columns.indexed) ...[
-                    if (i > 0) const SizedBox(width: 12),
-                    Expanded(child: column(c)),
-                  ],
-                ],
-              ),
-            )
-          else
-            for (final (i, c) in columns.indexed) ...[
-              if (i > 0) const SizedBox(height: 12),
-              column(c),
-            ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

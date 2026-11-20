@@ -526,10 +526,10 @@ class _HumanLoginFaqState extends State<HumanLoginFaq> {
   }
 }
 
-/// Web's page for an app no server of the account has: the explanation and
-/// how to get access (it replaces the form).
 class HumanLoginNotAccessible extends StatelessWidget {
-  const HumanLoginNotAccessible({super.key});
+  const HumanLoginNotAccessible({super.key, this.signedInAs});
+
+  final String? signedInAs;
 
   @override
   Widget build(BuildContext context) {
@@ -541,35 +541,14 @@ class HumanLoginNotAccessible extends StatelessWidget {
       spacing: RaftSpace.x3,
       children: [
         Text(
-          tr('This App is not accessible yet'),
+          tr("This app isn't available to you"),
           style: RaftTypography.heading(t, size: 16, line: 22),
         ),
-        Text(
-          tr(
-            'This private third-party App is not available on any Raft Server you can access.',
+        if (signedInAs case final String who when who.isNotEmpty)
+          Text(
+            '${tr('Signed in as')} $who',
+            style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
           ),
-          style: _body(t),
-        ),
-        RaftCard(
-          background: t.colors['info-soft'],
-          padding: const EdgeInsets.all(RaftSpace.x4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: RaftSpace.x1,
-            children: [
-              Text(
-                tr('How can I get access?'),
-                style: _body(t, weight: FontWeight.w700, color: t.ink),
-              ),
-              Text(
-                tr(
-                  'Ask the third party that provides this App to add you to a Raft Server where the App is integrated, or ask them to publish the App to the Raft Marketplace.',
-                ),
-                style: _body(t, color: t.ink),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }

@@ -3333,6 +3333,48 @@
       ]
     },
     {
+      "id": "apps.collection",
+      "title": "Apps",
+      "webEntry": "packages/web/src/components/apps/AppsPage.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/apps_route.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": ["components.apps.route.loading.*.*"],
+          "status": "fixing",
+          "justification": "Both render a delayed Apps grid skeleton during the first read. Scored capture is pending."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": ["components.apps.route.empty.*.*"],
+          "status": "fixing",
+          "justification": "Both show the empty Installed state with a Marketplace action for managers. The paired capture is pending."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": ["components.apps.route.error.*.*"],
+          "status": "fixing",
+          "justification": "Both offer Retry after the Apps read fails. The paired capture is pending."
+        },
+        {
+          "state": "partial",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": ["components.apps.route.partial.*.*"],
+          "status": "gap",
+          "gapKind": "impl-diff",
+          "size": "S",
+          "justification": "Both preserve the installed Raft Apps when the MCP read fails. Flutter adds a Retry action to the MCP warning."
+        }
+      ]
+    },
+    {
       "id": "settings.integrations.marketplace-pages",
       "title": "Apps Marketplace pages",
       "webEntry": "packages/web/src/components/apps/MarketplaceListingsTab.tsx",
@@ -3342,17 +3384,15 @@
           "state": "loading",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "gapKind": "impl-diff",
-          "size": "S",
-          "justification": "Flutter uses a spinner on a cold listing read. Web renders collection skeletons after a delay."
+          "parityCase": ["components.apps.route.marketplace-loading.*.*"],
+          "status": "fixing",
+          "justification": "Both render a delayed collection skeleton on a cold listing read. Visual acceptance is pending."
         },
         {
           "state": "empty",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
+          "parityCase": ["components.apps.route.marketplace-empty.*.*"],
           "status": "gap",
           "gapKind": "case-missing",
           "size": "S",
@@ -3362,7 +3402,7 @@
           "state": "error",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
+          "parityCase": ["components.apps.route.marketplace-error.*.*"],
           "status": "gap",
           "gapKind": "case-missing",
           "size": "S",
@@ -3372,7 +3412,11 @@
           "state": "partial",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
+          "parityCase": [
+            "components.apps.route.marketplace-paging.*.*",
+            "components.apps.route.marketplace-more-error.*.*",
+            "components.apps.route.marketplace-more-loaded.*.*"
+          ],
           "status": "gap",
           "gapKind": "case-missing",
           "size": "S",
@@ -4069,40 +4113,47 @@
     {
       "id": "login.human-login-sheet",
       "title": "Login with Raft confirmation (in-app artifact browser)",
-      "webEntry": "packages/web/src/pages/HumanLoginSetupPage.tsx (v1.21.23-source.1)",
+      "webEntry": "packages/web/src/pages/HumanLoginSetupPage.tsx (v1.24.0-source.1)",
       "flutterEntry": "apps/raft_flutter/lib/features/human_login_sheet.dart",
       "states": [
         {
           "state": "loading",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
+          "parityCase": ["components.apps.login.loading.*.*"],
           "status": "intentional",
-          "justification": "Native sheet over the in-app browser: 'Loading available Raft Servers...' until the lookup answers, Cancel stays available. Widget tests (artifact_viewer_test.dart) cover it; Web's page is not a comparable surface."
+          "justification": "Native confirmation keeps Cancel available while lookup runs. Web holds a page skeleton for one second before showing it. Visual acceptance is pending."
         },
         {
           "state": "empty",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
+          "parityCase": ["components.apps.login.unavailable.*.*"],
           "status": "intentional",
-          "justification": "App registered on no server the account can use: Web's 'This App is not accessible yet' explanation; a server the link names that the account is not in: Web's 'no access' text; only Back. Widget tests cover both."
+          "justification": "Native confirmation and Web show the generic unavailable message without workspace or access details. Native Back returns to the artifact browser. Visual acceptance is pending."
         },
         {
           "state": "error",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
+          "parityCase": [
+            "components.apps.login.outage.*.*",
+            "components.apps.login.account-suspended.*.*",
+            "components.apps.login.account-server-issuer.*.*"
+          ],
           "status": "intentional",
-          "justification": "A refused authorization shows the server's error_description or Web's generic text; the person can retry or cancel (which returns the browser to the sign-in page). Widget tests cover refusal, generic failure and retry."
+          "justification": "Native consent retries a failed lookup inside the confirmation and returns to the artifact browser on Cancel. Account refusals remove the sign-in action. Web shows these states on its sign-in route. Visual acceptance is pending."
         },
         {
           "state": "partial",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
+          "parityCase": [
+            "components.apps.login.install.*.*",
+            "components.apps.login.admin-needed.*.*"
+          ],
           "status": "intentional",
-          "justification": "A Marketplace app waiting for an install: the commit zone says who may install; a person with installation.canInstall gets 'Install and continue' (install, then authorize, as separate steps of one explicit press), anyone else Web's explanation and no button. Widget tests (human_login_install_test.dart) cover both, a failed install and a refused login after the install."
+          "justification": "An eligible person can review the permissions, prompt text and bot option before installing and authorizing. A person who needs an admin can open Members. Native consent and the Web route have different hosts. Visual acceptance is pending."
         }
       ]
     },
@@ -5301,6 +5352,12 @@
       ],
       "billing": [
         "settings.billing"
+      ],
+      "apps": [
+        "apps.collection",
+        "settings.integrations.marketplace-pages",
+        "settings.integrations.link-preview-choices",
+        "settings.integrations.prompt-text"
       ],
       "artifacts": [
         "artifact.dashboard"
@@ -58445,6 +58502,17 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Source-reviewed canonical control delegation only; current matched-state mounting and visual acceptance remain pending. Required conditions are registered separately; no visual PASS is asserted."
+      },
+      "screen:apps.collection": {
+        "owner": "WP-APPS",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "apps.collection",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/apps_route.dart#method:AppsRoute.build",
+          "packages/raft_ui/lib/src/settings_applications.dart#method:RaftConnectedAppsSection.build"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The workspace mounts the Apps route from the rail and phone server popover. Visual acceptance is pending."
       },
       "screen:settings.integrations.marketplace-pages": {
         "owner": "WP-APPS",

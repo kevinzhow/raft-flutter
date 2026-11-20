@@ -111,6 +111,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   WorkspaceController? _listenedController;
   String? _operationAuthority;
   String get authority => pageIdentity(w);
+  bool get hasAcceptedData => _accepted;
   Future<void> loadData(int request, int generation);
   void clearData();
   bool deniesLoad(Object failure) =>
@@ -361,11 +362,13 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   Future<V?> scopedRaftModal<V>(
     Widget Function(BuildContext) builder, {
     bool form = false,
+    bool formDismissible = true,
     double dialogMaxWidth = 560,
   }) => _scopedRoute<V>(
     builder,
     raft: true,
     form: form,
+    formDismissible: formDismissible,
     dialogMaxWidth: dialogMaxWidth,
   );
 
@@ -373,6 +376,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     Widget Function(BuildContext) builder, {
     required bool raft,
     required bool form,
+    bool formDismissible = true,
     double dialogMaxWidth = 560,
   }) async {
     final sourceAuthority = _operationAuthority ?? authority;
@@ -409,6 +413,9 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
           context,
           builder: scoped,
           dialogMaxWidth: dialogMaxWidth,
+          dismissible: formDismissible,
+          dragDismissible: formDismissible,
+          guardUnsaved: formDismissible,
         );
       }
       return await (raft

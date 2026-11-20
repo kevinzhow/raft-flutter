@@ -41,7 +41,6 @@ class _AppsPreviewState extends State<_AppsPreview> {
   @override
   Widget build(BuildContext context) => RaftConnectedAppsSection(
     scrollable: true,
-    description: 'Browse registered workspace applications.',
     tab: RaftConnectedAppsTab.myApps,
     counts: (marketplace: 0, installed: 0, myApps: 1000),
     onTab: (_) {},
@@ -60,9 +59,7 @@ class _AppsPreviewState extends State<_AppsPreview> {
             name: 'Application $i',
             initials: 'AP',
             meta: 'Workspace application',
-            description: i.isEven
-                ? 'One short description.'
-                : 'A longer description that wraps at narrow widths and keeps each grid pair the same height.',
+            description: i.isEven ? 'One short description.' : 'A longer description that wraps at narrow widths and keeps each grid pair the same height.',
           ),
     ],
   );

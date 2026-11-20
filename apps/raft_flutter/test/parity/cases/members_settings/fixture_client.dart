@@ -10,7 +10,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 
 import '../../parity_harness.dart';
 
-/// `'METHOD /path'` → JSON value, or a function of the request data.
+/// `'METHOD /path'` → JSON value, or a function of the body or GET query.
 typedef MsRoutes = Map<String, Object? Function(dynamic data)>;
 
 class MsFixtureClient extends RaftClient {
@@ -53,7 +53,7 @@ class MsFixtureClient extends RaftClient {
     requests.add(key);
     final route = routes[key];
     if (route != null) {
-      final value = route(data);
+      final value = route(method == 'GET' ? query ?? data : data);
       if (value is RaftApiException) throw value;
       return value;
     }

@@ -85,6 +85,24 @@ Use the existing navigation and close registries when they already cover a
 part of the contract. Platform-specific gestures and system handoffs use the
 existing native verification path.
 
+### Apps navigation
+
+The desktop rail Apps button and the phone server popover Apps cell visit
+`RaftRoute.apps` in the current server. The phone cell closes the popover
+before pushing the Apps page. Back returns to the source route and restores
+focus to the server tab on the phone. Desktop Forward reopens the Apps page.
+The bell's permission-update action opens this route with
+`permission_updates=1` and shows the first pending installed app's review.
+The review dot follows the current server's pending admin review state.
+The Installed card's Review permissions button opens the same detail dialog
+for that app. Closing the dialog returns to Installed. Approving the update
+refreshes both the bell count and the Apps dot, and removes the button when
+the app has no pending permissions. View profile closes the installed app
+dialog and opens the bot's profile in the workspace. Closing the profile
+returns to Apps. Guests keep their own link-preview choices in Settings → Apps.
+`mobile_server_tab_test.dart`, `apps_permission_notice_test.dart` and
+`apps_route_links_test.dart` exercise the mounted entry points.
+
 ### Task conversation details
 
 The task title-bar details toggle targets the current task's properties. The
@@ -96,22 +114,6 @@ position with its draft. On wide task slots the same control collapses or
 restores the pinned properties above the conversation. The task's own
 Back or close affordance still returns to the originating surface.
 Legacy tasks and tasks without loaded properties have no details toggle.
-
-### Applications
-
-The mobile server popover's Apps cell dismisses the popover and opens
-Settings → Applications for the current server. Back returns to the previous
-page and focus returns to the server tab. Guests do not see the cell. The
-review dot follows the current server's pending admin review state.
-
-The notification bell's View updates action closes the bell and opens
-Applications on Installed. It opens the first app awaiting a permission
-review when one exists. Closing that dialog returns to Installed. Approving
-the update refreshes both the bell count and the Apps dot.
-
-The Installed card's Review permissions button opens the same detail dialog
-for that app. Closing returns to the card. After approval, the button goes
-away when the app has no pending permissions.
 
 ### Adding a container
 

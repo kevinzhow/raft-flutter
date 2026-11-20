@@ -60,7 +60,7 @@ void main() {
     await tap(find.byKey(serverTabKey));
     await tap(bell);
     await tap(find.text('View updates'));
-    expect(fixture.workspace(tester).location.settingsPath, ['applications']);
+    expect(fixture.workspace(tester).location.uri.path, '/s/alpha/apps');
     expect(
       find.byKey(const Key('connected-app-installed-detail')),
       findsOneWidget,
@@ -89,7 +89,7 @@ void main() {
       find.byKey(const Key('connected-app-review-permissions-garden')),
       findsNothing,
     );
-    await tap(find.byKey(const Key('mobile-settings-back')));
+    await tap(find.byKey(const Key('apps-mobile-back')));
     await openServerPopover(tester, flush: fixture.flush);
     expect(find.byKey(dot), findsNothing);
     await tap(find.byKey(serverTabKey));

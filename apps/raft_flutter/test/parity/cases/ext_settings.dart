@@ -14,13 +14,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
+import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
+import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_flutter/platform/app_update.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/app_services_fixture.dart';
 import '../parity_harness.dart';
+import 'fixture_when.dart';
 import 'members_settings/fixture_client.dart';
 import 'release_notes_source.dart';
 
@@ -65,18 +69,28 @@ MsRoutes _routes(ParityContext ctx) {
       (apps['routeSets'] as Map?)?[ctx.props['routeSet']] as Map? ?? const {},
     ),
   };
+  final completedRoutes = <String>{};
   return {
-    for (final MapEntry(:key, :value) in merged.entries)
-      key: (_) {
+    for (final MapEntry(key: key, value: answer) in merged.entries)
+      key: (input) {
+        final value = resolveFixtureWhen(
+          answer,
+          key.startsWith('GET ') && input is Map<String, dynamic>
+              ? input
+              : null,
+          completedRoutes: completedRoutes,
+        );
         if (value is Map && value[r'$pending'] == true) {
           return Completer<Object?>().future;
         }
         if (value is Map && value[r'$status'] != null) {
-          return RaftApiException(
+          return RaftApiException.response(
             'fixture error',
             status: value[r'$status'] as int,
+            body: value[r'$body'] as Map?,
           );
         }
+        completedRoutes.add(key);
         return value;
       },
   };
@@ -186,6 +200,39 @@ Widget _page(ParityContext ctx) {
   // Mobile cases: SettingsPanel fills the 390px viewport (the React host
   // mounts it alone); desktop: the 1216px page beside the 64px rail.
   final mobile = ctx.props['platform'] == 'mobile';
+  final shell = ctx.props['appsShell'] as String?;
+  if (shell != null && shell.isNotEmpty) {
+    if (shell == 'channel/channel-home') {
+      final channel = RaftChannel({
+        ...w.channels.single.json,
+        'id': 'channel-home',
+        'name': '首页专修',
+        'description': 'Home shell, server badge, and bottom dock polish',
+      });
+      w.channels = [channel];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(w.selectChannel(channel, autoRead: false));
+      });
+    } else {
+      w.setSection(shell == 'login' ? 'tasks' : shell);
+    }
+    if (ctx.props['app_bot'] case final String clientId) {
+      w.navigation.navigate(
+        w.location.withQuery({'app_bot': clientId}),
+        kind: RaftNavigationKind.replace,
+      );
+    }
+    return withAppServices(
+      WorkspaceView(
+        controller: w,
+        appearance: RaftAppearance(
+          mode: ctx.dark ? ThemeMode.dark : ThemeMode.light,
+        ),
+        onAppearance: (_) async {},
+        onLogout: () async {},
+      ),
+    );
+  }
   // The React provider freezes its clock at the fixture instant (the Free
   // trial notice and relative dates read it).
   final now = DateTime.fromMillisecondsSinceEpoch(

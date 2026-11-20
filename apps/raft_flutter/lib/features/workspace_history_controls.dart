@@ -4,7 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_location.dart';
+import '../data/raft_navigation_history.dart';
 import '../data/workspace_controller.dart';
+import 'apps_route.dart';
 
 /// Visits an observed entry without appending another history entry. Only the
 /// bound workspace owns these entries; late popup actions cannot cross epochs.
@@ -63,11 +65,15 @@ Future<void> visitWorkspaceHistory(
 /// or rewriting that route. A thread it names is already on screen (the
 /// phone's page, the wide panel); a cold start after iOS reclaimed the app has
 /// no thread open, so read it, or the page stays "No replies yet".
-void restoreAcceptedConversation(
-  WorkspaceController w,
-  RaftLocation target, {
-  required bool routeChanged,
-}) {
+void acceptWorkspaceLocation(WorkspaceController w, Uri uri) {
+  final target = appsRouteLocation(
+    uri,
+    guest: w.server?.string('role') == 'guest',
+  );
+  final routeChanged = target.uri != w.location.uri;
+  if (routeChanged) {
+    w.navigation.navigate(target, kind: RaftNavigationKind.replace);
+  }
   if (!{RaftRoute.channel, RaftRoute.dm}.contains(target.route)) return;
   final thread = target.thread;
   if (routeChanged || w.channel?.id != target.entityId) {
@@ -112,6 +118,7 @@ String _historyLabel(
     RaftRoute.members => 'Members',
     RaftRoute.computers => 'Computers',
     RaftRoute.artifacts => 'Artifacts',
+    RaftRoute.apps => 'Apps',
     RaftRoute.search => 'Search',
     RaftRoute.settings => 'Settings',
     RaftRoute.activity => 'Activity',

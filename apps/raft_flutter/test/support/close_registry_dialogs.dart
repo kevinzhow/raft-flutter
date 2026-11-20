@@ -554,7 +554,7 @@ const dialogSurfaces = <CloseSurface>[
     'connected-app-editor',
     kind: SurfaceKind.dialog,
     webOutside: WebOutside.stays,
-    web: 'SettingsPanel.tsx:6746-6775 Modal (no backdrop close) + CloseButton',
+    web: 'IntegrationsSection.tsx:1743 FormDialog, narrow sheet, X or Escape, desktop Cancel, outside press stays',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
     desktop: {_x, _esc, _sys},

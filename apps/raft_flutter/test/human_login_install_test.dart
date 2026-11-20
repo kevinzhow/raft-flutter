@@ -497,8 +497,11 @@ void main() {
     testWidgets('a server that did not answer is Unavailable, not usable', (
       t,
     ) async {
-      final api = several(count: 2);
-      api.clients.remove('srv-2');
+      final api = several(count: 2)
+        ..lookupFailures['srv-2'] = const RaftApiException(
+          'Offline',
+          status: 503,
+        );
       await open(t, api, server: '');
       expect(
         t
@@ -600,19 +603,13 @@ void main() {
       expect(find.text('Install and continue'), findsOneWidget);
     });
 
-    testWidgets('a server the account is not a member of: Web\'s message', (
+    testWidgets('a server outside the account shows the generic refusal', (
       t,
     ) async {
       final api = several();
       await open(t, api, server: 'srv-elsewhere');
       expect(api.lookups, isEmpty);
-      expect(
-        find.descendant(
-          of: error,
-          matching: find.text('You do not have access to any Raft Servers.'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text("This app isn't available to you"), findsOneWidget);
       expect(primary, findsNothing);
       expect(find.text('Back'), findsOneWidget);
       await tapKey(t, cancel);
@@ -620,25 +617,19 @@ void main() {
       expect(api.installs, isEmpty);
     });
 
-    testWidgets('a server that answers "not a member" is kept as Unavailable', (
+    testWidgets('a server that answers app not available is omitted', (
       t,
     ) async {
-      // The lookup answers 404 for a server the account cannot see the app on.
       final api = several(count: 2)..clients.remove('srv-1');
       await open(t, api, server: '');
       expect(
-        t
-            .widget<RaftSettingsRecipeBadge>(
-              find.byKey(const ValueKey('human-login-server-state-srv-1')),
-            )
-            .label,
-        'Unavailable',
+        find.byKey(const ValueKey('human-login-server-srv-1')),
+        findsNothing,
       );
-      // The usable server is the one chosen first.
       expect(find.text('Install and continue'), findsOneWidget);
     });
 
-    testWidgets('an app no server has: Web\'s "not accessible" explanation', (
+    testWidgets('an unavailable app shows the generic refusal and Back', (
       t,
     ) async {
       final api = FakeHumanLoginApi(clients: {});
@@ -647,11 +638,34 @@ void main() {
         find.byKey(const ValueKey('human-login-not-accessible')),
         findsOneWidget,
       );
-      expect(find.text('This App is not accessible yet'), findsOneWidget);
-      expect(find.text('How can I get access?'), findsOneWidget);
+      expect(find.text("This app isn't available to you"), findsOneWidget);
+      expect(find.text('Signed in as person@example.com'), findsOneWidget);
+      expect(find.text('How can I get access?'), findsNothing);
       expect(primary, findsNothing);
+      expect(api.authorizations, isEmpty);
       await tapKey(t, cancel);
       expect(result, isNull);
+    });
+
+    testWidgets('a lookup outage can be retried from consent', (t) async {
+      final api = waiting()
+        ..lookupFailures['srv-1'] = const RaftApiException(
+          'Offline',
+          status: 503,
+        );
+      await open(t, api);
+      expect(error, findsOneWidget);
+      expect(find.text("This app isn't available to you"), findsNothing);
+      expect(primary, findsNothing);
+
+      api.lookupFailures.clear();
+      await tapKey(t, find.text('Retry'));
+      expect(api.lookups.map((lookup) => lookup.serverId), ['srv-1', 'srv-1']);
+      expect(find.text('Install and continue'), findsOneWidget);
+      expect(error, findsNothing);
+      expect(find.text('Retry'), findsNothing);
+      expect(api.installs, isEmpty);
+      expect(api.authorizations, isEmpty);
     });
   });
 

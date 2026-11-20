@@ -15,7 +15,7 @@ import 'server_menu_model.dart';
 
 /// The server's own pages the phone's server tab opens (Web v1.24
 /// MobileServerTab). Each is a pushed page with Back, not a tab root.
-enum ServerPage { artifacts, members, computers, integrations, settings }
+enum ServerPage { artifacts, members, computers, apps, settings }
 
 /// [ServerPage] ids, as the bar's tab ids spell them.
 final serverPageNames = {for (final page in ServerPage.values) page.name};
@@ -267,7 +267,7 @@ class _ServerPopoverContentState extends State<_ServerPopoverContent> {
         ListenableBuilder(
           listenable: AppPermissionUpdates.of(w),
           builder: (context, _) => page(
-            id: ServerPage.integrations,
+            id: ServerPage.apps,
             key: 'apps',
             glyph: RaftGlyph.blocks,
             label: 'Apps',

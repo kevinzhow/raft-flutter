@@ -707,40 +707,36 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         onReauthorize: disconnectable && p.stage != 'oauth'
             ? () => run(() => reauthorize(authority), refresh: false)
             : null,
-      );
-      wizard = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: RaftSpace.x3,
-        children: [
-          wizard,
-          SlackBridgeRecovery(
-            bridge: p,
-            canManage: manage,
-            busy: busy,
-            showOutbound: stage == RaftSlackStage.health && !editingMappings,
-            onRefresh: refresh,
-            onRetry: (delivery) => recover('retry-delivery', {
-              'bindingId': delivery['bindingId'],
-              'bindingEpoch': delivery['bindingEpoch'],
-              'deliveryId': delivery['deliveryId'],
-              'expectedProviderAttempts': delivery['providerAttempts'],
-              'duplicateRiskAcknowledged': true,
-            }),
-            onReplay: (event) => recover('replay-inbound', {
-              'bindingId': event['bindingId'],
-              'bindingEpoch': event['bindingEpoch'],
-              if (event['eventId'] != null)
-                'eventId': event['eventId']
-              else
-                'reason': event['reason'],
-            }),
-          ),
-        ],
+        deliveryRecovery: SlackBridgeRecovery(
+          bridge: p,
+          canManage: manage,
+          busy: busy,
+          showOutbound: stage == RaftSlackStage.health && !editingMappings,
+          onRefresh: refresh,
+          onRetry: (delivery) => recover('retry-delivery', {
+            'bindingId': delivery['bindingId'],
+            'bindingEpoch': delivery['bindingEpoch'],
+            'deliveryId': delivery['deliveryId'],
+            'expectedProviderAttempts': delivery['providerAttempts'],
+            'duplicateRiskAcknowledged': true,
+          }),
+          onReplay: (event) => recover('replay-inbound', {
+            'bindingId': event['bindingId'],
+            'bindingEpoch': event['bindingEpoch'],
+            if (event['eventId'] != null)
+              'eventId': event['eventId']
+            else
+              'reason': event['reason'],
+          }),
+        ),
       );
     }
     return ListView(
       primary: false,
-      padding: raftScrollPadding(context, RaftSettingsPanelFrame.contentInset),
+      padding: raftScrollPadding(
+        context,
+        RaftSettingsPanelFrame.contentInsetFor(context),
+      ),
       children: [
         RaftMessagingBridgesSection(
           failed: failedLoad,

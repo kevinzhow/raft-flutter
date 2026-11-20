@@ -40,6 +40,7 @@ void main() {
     'approving records the displayed scope, group and text revision',
     (tester) async {
       var approved = false;
+      var listingReads = 0;
       final client = _PermissionClient((method, path, _) {
         if (path == '/feature-flags/evaluate') {
           return {
@@ -58,6 +59,10 @@ void main() {
               'permissionApprovalRequired': !approved,
             },
           ];
+        }
+        if (path == '/integrations/marketplace/listings') {
+          listingReads++;
+          return {'items': [], 'total': 0};
         }
         if (path == '$_permissions/grant') {
           approved = true;
@@ -98,11 +103,29 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Garden'));
+      await tester.tap(
+        find.byKey(const ValueKey('connected-apps-tab-marketplace')),
+      );
+      await tester.pumpAndSettle();
+      expect(listingReads, 1);
+      await tester.tap(find.text('View updates'));
       await tester.pumpAndSettle();
 
+      expect(listingReads, 1);
+      expect(
+        find.text('Approving the update approves all of this:'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Approve Update also confirms this text.'),
+        findsOneWidget,
+      );
       expect(find.text('Login scopes'), findsOneWidget);
       expect(find.text('New in this update'), findsNWidgets(2));
+      expect(
+        tester.getTopLeft(find.text('App permissions')).dy,
+        lessThan(tester.getTopLeft(find.text('Login with Raft access')).dy),
+      );
       expect(
         find.textContaining('Answer questions about the greenhouse.'),
         findsOneWidget,
@@ -120,6 +143,10 @@ void main() {
         },
       ]);
       expect(approve, findsNothing);
+      expect(
+        find.text('Approve Update also confirms this text.'),
+        findsNothing,
+      );
       await tester.tap(find.text('Close').last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Garden'));

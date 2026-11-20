@@ -97,6 +97,8 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
       if (!mounted) return;
       setState(() {
         lookupResult = found;
+        failure = null;
+        lookupFailed = false;
         // Web: the best server first (ready, then installable).
         selectedId = found.choices.first.server.id;
       });
@@ -343,7 +345,11 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
         ? account?.client
         : found?.detailsClient(selectedId);
     final notAccessible =
-        lookupFailed && failure == HumanLoginMessages.notRegisteredForAny;
+        lookupFailed &&
+        (failure == HumanLoginMessages.notRegisteredForAny ||
+            failure == HumanLoginMessages.noServerAccess);
+    final lookupUnavailable =
+        lookupFailed && failure == HumanLoginMessages.serverStatusUnavailable;
     final choiceNow = accountView ? account : choice;
     // The primary button, as Web words it: a Marketplace app continues with
     // "Continue login", or installs first; any other app is "Login with Raft".
@@ -398,7 +404,7 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
         if (found == null && !lookupFailed)
           RaftDialogDescription('Loading available Raft Servers...'),
         if (notAccessible)
-          const HumanLoginNotAccessible()
+          HumanLoginNotAccessible(signedInAs: widget.api.signedInAs)
         else if (found != null && details != null) ...[
           ..._app(context, current, details, refusal),
           if (!accountView)
@@ -445,8 +451,18 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
             tr(failure!),
             key: const ValueKey('human-login-error'),
             bold: true,
+            retryLabel: 'Retry',
+            onRetry: lookupUnavailable
+                ? () {
+                    setState(() {
+                      failure = null;
+                      lookupFailed = false;
+                    });
+                    unawaited(lookup());
+                  }
+                : null,
           ),
-        if (found != null || notAccessible) const HumanLoginFaq(),
+        if (found != null && !lookupFailed) const HumanLoginFaq(),
       ],
     );
     const sheetKey = ValueKey('human-login-sheet');

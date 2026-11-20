@@ -81,7 +81,6 @@ void main() {
               home: Scaffold(
                 body: RaftConnectedAppsSection(
                   scrollable: true,
-                  description: 'Fixture applications',
                   tab: RaftConnectedAppsTab.myApps,
                   counts: (marketplace: 0, installed: 0, myApps: 1000),
                   onTab: (_) {},

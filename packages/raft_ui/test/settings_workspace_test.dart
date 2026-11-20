@@ -117,6 +117,12 @@ void main() {
       _host(const RaftMessagingBridgesSection(failed: true, child: Text('x'))),
     );
     expect(find.text('Messaging bridges'), findsOneWidget);
+    expect(
+      find.text(
+        'Manage connections between Raft and external messaging services.',
+      ),
+      findsNothing,
+    );
     expect(find.text('Raft for Slack'), findsOneWidget);
     expect(find.text('x'), findsNothing);
   });

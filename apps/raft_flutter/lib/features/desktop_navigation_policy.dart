@@ -29,10 +29,9 @@ class DesktopNavigationPolicy {
   factory DesktopNavigationPolicy.forSection(
     String section,
   ) => switch (section) {
-    'tasks' || 'artifacts' => DesktopNavigationPolicy._(
-      section,
-      DesktopSidebarKind.hidden,
-    ),
+    'tasks' ||
+    'artifacts' ||
+    'apps' => DesktopNavigationPolicy._(section, DesktopSidebarKind.hidden),
     'search' => const DesktopNavigationPolicy._(
       'search',
       DesktopSidebarKind.searchMaster,
@@ -87,7 +86,10 @@ class DesktopNavigationPolicy {
           (route == 'chat' || content && target != null),
       profile:
           location.profile != null &&
-          (chat || content || wide && taskSlotId(location) != null),
+          (chat ||
+              route == 'apps' ||
+              content ||
+              wide && taskSlotId(location) != null),
     );
   }
 

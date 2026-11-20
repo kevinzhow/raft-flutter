@@ -49,6 +49,8 @@ class SlackBridgeRecovery extends StatelessWidget {
       children: [
         if (showOutbound && blocks.isNotEmpty)
           RaftBanner(
+            size: RaftBannerRecipeSize.sm,
+            glyph: RaftGlyph.triangleAlert,
             title: tr('Slack sync is waiting to resume'),
             description: tr(
               'Messages stay in order and resume automatically when the connection is restored.',
@@ -59,6 +61,8 @@ class SlackBridgeRecovery extends StatelessWidget {
           ),
         if (showOutbound && attachments.isNotEmpty)
           RaftBanner(
+            size: RaftBannerRecipeSize.sm,
+            glyph: RaftGlyph.triangleAlert,
             title: tr('Attachment source unavailable'),
             footer: _lines([
               for (final row in attachments)
@@ -73,6 +77,7 @@ class SlackBridgeRecovery extends StatelessWidget {
           ),
         if (showOutbound && notices.isNotEmpty)
           RaftBanner(
+            size: RaftBannerRecipeSize.sm,
             title: tr('Card updates in Slack'),
             footer: _lines([
               for (final row in notices)
@@ -84,45 +89,61 @@ class SlackBridgeRecovery extends StatelessWidget {
           ),
         if (showOutbound && deliveries.isNotEmpty)
           RaftBanner(
+            size: RaftBannerRecipeSize.sm,
+            glyph: RaftGlyph.triangleAlert,
             title: tr('Outgoing messages are waiting for recovery.'),
             description: tr(
               'Restore the Raft app’s access to the Slack channel, then retry the stalled message in place. If Slack accepted an earlier attempt, retrying may create a duplicate. Slack’s retry delay is respected. Later messages keep their order.',
             ),
-            footer: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: RaftSpace.x2,
-              children: [
-                if (canManage)
-                  for (final delivery in deliveries)
-                    Wrap(
-                      spacing: RaftSpace.x2,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text('#${name(delivery)}'),
-                        retryButton(
-                          delivery['retryRequested'] == true
-                              ? 'Retry requested'
-                              : 'Retry stalled message',
-                          delivery['retryRequested'] == true ||
-                                  !bindings.any(
-                                    (binding) =>
-                                        binding['id'] ==
-                                            delivery['bindingId'] &&
-                                        binding['bindingEpoch'] ==
-                                            delivery['bindingEpoch'] &&
-                                        binding['state'] == 'active',
-                                  )
-                              ? null
-                              : () => onRetry(delivery),
-                        ),
-                      ],
-                    ),
-                retryButton('Refresh and recheck', onRefresh),
-              ],
+            footer: Padding(
+              padding: const EdgeInsets.only(top: RaftSpace.x3),
+              child: Wrap(
+                spacing: RaftSpace.x2,
+                runSpacing: RaftSpace.x2,
+                children: [
+                  if (canManage)
+                    for (final delivery in deliveries)
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: RaftSpace.x2,
+                        children: [
+                          RaftCssText(
+                            '#${name(delivery)}',
+                            style: RaftTokens.of(context)
+                                .scale(RaftTypeScale.callout),
+                          ),
+                          retryButton(
+                            delivery['retryRequested'] == true
+                                ? 'Retry requested'
+                                : 'Retry stalled message',
+                            delivery['retryRequested'] == true ||
+                                    !bindings.any(
+                                      (binding) =>
+                                          binding['id'] ==
+                                              delivery['bindingId'] &&
+                                          binding['bindingEpoch'] ==
+                                              delivery['bindingEpoch'] &&
+                                          binding['state'] == 'active',
+                                    )
+                                ? null
+                                : () => onRetry(delivery),
+                          ),
+                        ],
+                      ),
+                  RaftButton(
+                    label: tr('Refresh and recheck'),
+                    uiVariant: RaftButtonVariant.ghost,
+                    onPressed: busy ? null : onRefresh,
+                  ),
+                ],
+              ),
             ),
           ),
         if (events.isNotEmpty || (summary is Map && summary['count'] != 0))
           RaftBanner(
+            size: RaftBannerRecipeSize.sm,
+            glyph: RaftGlyph.triangleAlert,
             title: tr('Messages need attention'),
             description: tr(
               'These messages are saved safely while later messages continue. Retry after the issue is resolved; a retried message keeps its original time and may appear before later messages.',

@@ -173,8 +173,8 @@ void main() {
       await mount(t);
       await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
       await t.pumpAndSettle();
-      expect(find.text('Applications'), findsOneWidget);
-      expect(find.text('Third-party apps for this server'), findsOneWidget);
+      expect(find.text('Apps'), findsOneWidget);
+      expect(find.text('Third-party apps for this server'), findsNothing);
       // Private-shared listings stay out of the marketplace; Installed holds
       // the installed listing plus the server-local client.
       expect(

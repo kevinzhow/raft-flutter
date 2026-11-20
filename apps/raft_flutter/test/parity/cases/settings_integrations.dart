@@ -151,7 +151,16 @@ final Map<String, ParityCase> settingsIntegrationsCases = {
     },
     interact: (t, ctx) async {
       await t.pump(const Duration(milliseconds: 400));
-      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      final scope = find.byKey(const ValueKey('connected-apps-scope-select'));
+      if (scope.hitTestable().evaluate().isNotEmpty) {
+        await t.tap(scope);
+        await t.pumpAndSettle();
+        await t.tap(find.text('Marketplace').hitTestable());
+      } else {
+        await t.tap(
+          find.byKey(const ValueKey('connected-apps-tab-marketplace')),
+        );
+      }
       await t.pump(const Duration(milliseconds: 400));
       await t.tap(find.byKey(const ValueKey('connected-app-market_slack')));
       await t.pump(const Duration(milliseconds: 400));

@@ -97,6 +97,7 @@ class RaftFitButton extends RaftFitItem {
     this.collapsedGlyph,
     this.variant = RaftButtonVariant.ghost,
     this.onPressed,
+    this.menuEntries,
     super.labelOrder,
     super.plusOrder,
     super.moreOrder,
@@ -108,6 +109,7 @@ class RaftFitButton extends RaftFitItem {
   final RaftGlyph? glyph, collapsedGlyph;
   final RaftButtonVariant variant;
   final VoidCallback? onPressed;
+  final List<RaftMenuEntry>? menuEntries;
 
   @override
   bool get hasLabelForm => glyph != null || collapsedGlyph != null;
@@ -121,41 +123,50 @@ class RaftFitButton extends RaftFitItem {
     required bool probe,
     List<RaftMenuEntry> moreEntries = const [],
   }) {
-    final k = probe ? null : key;
-    if (form == RaftFitForm.full) {
-      return RaftButton(
-        key: k,
-        uiVariant: variant,
-        uiSize: RaftButtonSize.md,
-        glyph: glyph,
-        label: label,
-        onPressed: onPressed,
-      );
-    }
-    final fit = _fitStyle(
-      context,
-      extra: [form == RaftFitForm.label ? 'data-fit-label' : 'data-fit-plus'],
-    );
-    final square = fit.button.length('width');
-    final px = fit.button.length('padding-left') ?? 0;
-    return RaftButton(
-      key: k,
+    final full = form == RaftFitForm.full;
+    final fit = full
+        ? null
+        : _fitStyle(
+            context,
+            extra: [
+              form == RaftFitForm.label ? 'data-fit-label' : 'data-fit-plus',
+            ],
+          ).button;
+    final px = fit?.length('padding-left') ?? 0;
+    Widget trigger(FocusNode? focus, VoidCallback? press) => RaftButton(
+      key: probe || menuEntries != null ? null : key,
       uiVariant: variant,
       uiSize: RaftButtonSize.md,
-      glyph: form == RaftFitForm.plus
+      glyph: full
+          ? glyph
+          : form == RaftFitForm.plus
           ? RaftGlyph.plus
           : (collapsedGlyph ?? glyph),
-      semanticLabel: raftText(context, label),
-      tooltip: probe ? null : label,
-      visualWidth: square,
-      onPressed: onPressed,
-      styleBuilder: (context, state, style) => style.copyWith(
-        properties: {
-          ...style.properties,
-          'padding-left': CssNum(px, 'px'),
-          'padding-right': CssNum(px, 'px'),
-        },
-      ),
+      label: full ? label : '',
+      semanticLabel: full ? null : raftText(context, label),
+      tooltip: full || probe ? null : label,
+      visualWidth: fit?.length('width'),
+      focusNode: focus,
+      onPressed: press,
+      styleBuilder: full
+          ? null
+          : (context, state, style) => style.copyWith(
+              properties: {
+                ...style.properties,
+                'padding-left': CssNum(px, 'px'),
+                'padding-right': CssNum(px, 'px'),
+              },
+            ),
+    );
+    if (probe || menuEntries == null) {
+      return trigger(null, onPressed ?? (menuEntries == null ? null : () {}));
+    }
+    return RaftDropdownMenu(
+      key: key,
+      label: label,
+      entries: menuEntries!,
+      align: RaftDropdownAlign.end,
+      triggerBuilder: (context, focus, press) => trigger(focus, press),
     );
   }
 }
@@ -171,6 +182,7 @@ class RaftFitPicker extends RaftFitItem {
     required this.label,
     this.glyph,
     this.value,
+    this.applied = false,
     this.onPressed,
     this.menuEntries,
     super.labelOrder,
@@ -182,6 +194,7 @@ class RaftFitPicker extends RaftFitItem {
   final String label;
   final RaftGlyph? glyph;
   final String? value;
+  final bool applied;
   final VoidCallback? onPressed;
   final List<RaftMenuEntry>? menuEntries;
 
@@ -209,7 +222,7 @@ class RaftFitPicker extends RaftFitItem {
         key: probe || menuEntries != null ? null : key,
         label: label,
         glyph: glyph,
-        selected: _hasValue,
+        selected: applied || _hasValue,
         value: value,
         valueSlot: fit.pickerValue,
         labelHidden: gone,
@@ -1125,7 +1138,16 @@ class _FitScrollGroupState extends State<_FitScrollGroup> {
         spacing: widget.gap,
         children: [
           Expanded(child: body),
-          ?end,
+          if (end != null)
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: (widget.width - widget.gap).clamp(
+                  0.0,
+                  double.infinity,
+                ),
+              ),
+              child: end,
+            ),
         ],
       ),
     );

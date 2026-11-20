@@ -44,6 +44,17 @@ class NavigationSettingsTab {
 /// Unknown targets fall back safely in release builds (Web falls back to
 /// Account too) but fail loudly in debug and tests through [reportFallback].
 abstract final class NavigationRegistry {
+  static const sectionCapabilities = {
+    'agents': 'viewAgents',
+    'computers': 'viewMachines',
+    'members': 'viewMembers',
+    'providers': 'manageExternalAuth',
+    'im-bridges': 'manageIntegrations',
+    'administration': 'viewServerSettings',
+    'billing': 'viewBilling',
+    'workspace-settings': 'viewServerSettings',
+  };
+
   static const sections = <NavigationSection>[
     NavigationSection('home', RaftRoute.home),
     NavigationSection('chat', RaftRoute.home),
@@ -51,6 +62,7 @@ abstract final class NavigationRegistry {
     NavigationSection('members', RaftRoute.members),
     NavigationSection('computers', RaftRoute.computers),
     NavigationSection('artifacts', RaftRoute.artifacts),
+    NavigationSection('apps', RaftRoute.apps),
     NavigationSection('search', RaftRoute.search),
     NavigationSection('activity', RaftRoute.activity),
     NavigationSection('tasks', RaftRoute.tasks),

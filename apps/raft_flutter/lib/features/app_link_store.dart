@@ -15,6 +15,7 @@ enum AppLinkChoice { allowing, declining, allowed, declined, failed }
 typedef AppLinkConsentRow = ({
   String id,
   String name,
+  String? icon,
   DateTime date,
   bool allowed,
 });
@@ -248,7 +249,16 @@ class AppLinkStore {
                     '${row[key == 'allowed' ? 'granted_at' : 'declined_at']}',
                   )
                   case final date?)
-                (id: id, name: name, date: date, allowed: key == 'allowed'),
+                (
+                  id: id,
+                  name: name,
+                  icon: switch (row['app']['icon']) {
+                    final String icon => icon,
+                    _ => null,
+                  },
+                  date: date,
+                  allowed: key == 'allowed',
+                ),
       ];
     } on RaftApiException catch (error) {
       if (!latest()) return;

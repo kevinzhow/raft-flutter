@@ -25,7 +25,6 @@ import 'data/shared_draft_attachment.dart';
 import 'data/incoming_share_targets.dart';
 import 'features/incoming_share_picker.dart';
 import 'features/incoming_share_review.dart';
-import 'data/raft_navigation_history.dart';
 import 'features/app_root_router.dart';
 import 'features/app_root_public.dart';
 import 'features/app_viewport.dart';
@@ -1660,12 +1659,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       if (uri != null &&
           uri.pathSegments.elementAtOrNull(1) == selected.string('slug')) {
         // MainLayout useRailLegacyRedirect: legacy shapes REPLACE in place.
-        final target = RaftLocation.fromUri(RaftLocation.canonicalLegacy(uri));
-        final routeChanged = w.location.uri != target.uri;
-        if (routeChanged) {
-          w.navigation.navigate(target, kind: RaftNavigationKind.replace);
-        }
-        restoreAcceptedConversation(w, target, routeChanged: routeChanged);
+        acceptWorkspaceLocation(w, uri);
       }
       showServerSelector = false;
       chooserReturn = serverSwitchLocation = serverSwitchReturn = null;

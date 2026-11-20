@@ -23,6 +23,45 @@ class _RecoveryClient extends ScreenFixtureClient {
 
 void main() {
   testWidgets(
+    'a narrow provisioning error uses the Settings gutter and warning',
+    (tester) async {
+      final client = _RecoveryClient((method, path, _) {
+        if (path == '/feature-flags/evaluate') {
+          return {
+            'evaluations': [
+              {'key': 'slack_bridge_v0', 'enabled': true},
+            ],
+          };
+        }
+        if (path == '/slack-bridge/provisioning') {
+          throw const RaftApiException('Service unavailable', status: 503);
+        }
+        return const <Object?>[];
+      });
+      final workspace = WorkspaceController(client)
+        ..server = RaftRecord({'id': 'workspace', 'role': 'owner'});
+      addTearDown(client.dispose);
+      addTearDown(workspace.dispose);
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme().copyWith(platform: TargetPlatform.linux),
+          home: Scaffold(body: IMBridgesView(controller: workspace)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final warning = find.byType(RaftBanner);
+      expect(warning, findsOneWidget);
+      expect(tester.widget<RaftBanner>(warning).glyph, RaftGlyph.alertTriangle);
+      expect(tester.getTopLeft(warning).dx, 16);
+      expect(find.byKey(const ValueKey('slack-bridge-wizard')), findsNothing);
+    },
+  );
+
+  testWidgets(
     'negotiates delivery diagnostics and retries the selected delivery',
     (tester) async {
       const path = '/slack-bridge/provisioning';
@@ -97,7 +136,29 @@ void main() {
 
       expect(reads.single, containsPair('deliveryHealth', '1'));
       expect(reads.single, containsPair('inboundRecovery', '1'));
+      final recovery = find.widgetWithText(
+        RaftBanner,
+        'Outgoing messages are waiting for recovery.',
+      );
+      final banner = tester.widget<RaftBanner>(recovery);
+      expect(banner.size, RaftBannerRecipeSize.sm);
+      expect(banner.glyph, RaftGlyph.triangleAlert);
       final retry = find.widgetWithText(RaftButton, 'Retry stalled message');
+      final channel = find.descendant(
+        of: recovery,
+        matching: find.text('#general'),
+      );
+      expect(
+        tester.getBottomLeft(channel).dy,
+        lessThan(tester.getTopLeft(retry).dy),
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('slack-bridge-health')),
+          matching: retry,
+        ),
+        findsOneWidget,
+      );
       await tester.ensureVisible(retry);
       await tester.tap(retry);
       await tester.pumpAndSettle();

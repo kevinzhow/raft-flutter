@@ -637,7 +637,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       settingsLocationOpener(w, allowed: current(captured))(
         WorkspaceNavigation.locationForSection(
           w.location.serverSlug,
-          'integrations',
+          'apps',
         ).withQuery({'permission_updates': '1'}),
       );
       return;

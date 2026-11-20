@@ -662,16 +662,13 @@ void main() {
       expect(FakeWebView.loads.last, startsWith('$callback?code='));
     });
 
-    testWidgets('a server the account is not in: Web\'s message, then back', (
+    testWidgets('a server the account is not in shows the generic refusal', (
       t,
     ) async {
       final api = FakeHumanLoginApi();
       await mount(t, api: api);
       await openSetup(t, setupUrl(server: 'srv-other'));
-      expect(
-        find.text('You do not have access to any Raft Servers.'),
-        findsOneWidget,
-      );
+      expect(find.text("This app isn't available to you"), findsOneWidget);
       expect(loginButton, findsNothing);
       expect(api.lookups, isEmpty);
       await t.tap(cancelButton);
@@ -681,20 +678,15 @@ void main() {
       expect(FakeWebView.shown, artifact);
     });
 
-    testWidgets('an app not registered on the server: Web\'s explanation', (
+    testWidgets('an unavailable app gives no server or access details', (
       t,
     ) async {
       final api = FakeHumanLoginApi(clients: {});
       await mount(t, api: api);
       await openSetup(t, setupUrl());
-      // Web shows its "not accessible" page, not the form.
-      expect(find.text('This App is not accessible yet'), findsOneWidget);
-      expect(
-        find.text(
-          'This private third-party App is not available on any Raft Server you can access.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text("This app isn't available to you"), findsOneWidget);
+      expect(find.text('Signed in as person@example.com'), findsOneWidget);
+      expect(find.text('How can I get access?'), findsNothing);
       expect(loginButton, findsNothing);
     });
 

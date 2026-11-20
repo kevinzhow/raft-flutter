@@ -33,6 +33,7 @@ import 'composer_send_key_setting.dart';
 import 'billing_view.dart';
 import 'im_bridges_view.dart';
 import 'integrations_views.dart';
+import 'link_preview_consents.dart';
 import 'labs_view.dart';
 import 'locale_settings_page.dart';
 import 'feedback_unread.dart';
@@ -398,20 +399,22 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
           if (widget.bridgeEnabled)
             RaftSettingsDestination(
               'im-bridges',
-              'IM Bridges',
-              RaftGlyph.network,
+              'IM bridges',
+              RaftGlyph.arrowLeftRight,
               (_) => IMBridgesView(controller: w),
               group: WorkspaceSettings.workspace,
               scroll: false,
             ),
-          if (!guest)
+          if (guest || widget.initialTab == 'integrations')
             RaftSettingsDestination(
               'integrations',
-              'Applications',
-              RaftGlyph.link2,
-              (_) => IntegrationsView(controller: w),
+              'Apps',
+              RaftGlyph.appWindow,
+              (_) => guest
+                  ? LinkPreviewConsents(workspace: w, guest: true)
+                  : IntegrationsView(controller: w),
               group: WorkspaceSettings.workspace,
-              scroll: false,
+              scroll: guest,
             ),
           if (widget.labsEnabled)
             RaftSettingsDestination(

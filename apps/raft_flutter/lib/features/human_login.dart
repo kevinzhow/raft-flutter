@@ -658,6 +658,8 @@ class HumanLoginMessages {
   static const noServerAccess = 'You do not have access to any Raft Servers.';
   static const notRegisteredForAny =
       'This app is not registered for any Raft Server you can access.';
+  static const serverStatusUnavailable =
+      'Installation status could not be loaded. Reload this page to try again.';
   static const missingClientId =
       'This service is missing a registered client id.';
   static const missingReturnUrl =
@@ -689,10 +691,10 @@ List<HumanLoginServer> humanLoginCandidates(
           if (s.id == request.serverHint || s.slug == request.serverHint) s,
       ];
 
-/// Web's lookup effect: every candidate server is asked for the client; a
-/// server that answers an error is kept as "unavailable" (Web lists it in the
-/// Marketplace picker). Throws [HumanLoginException] with Web's text when no
-/// server has the app.
+bool _appNotAvailable(RaftApiException error) =>
+    error.status == 404 ||
+    (error.status == 403 && error.code == 'app_not_available');
+
 Future<HumanLoginLookup> lookupHumanLoginClient(
   HumanLoginApi api,
   HumanLoginRequest request,
@@ -704,29 +706,36 @@ Future<HumanLoginLookup> lookupHumanLoginClient(
   if (candidates.isEmpty) {
     throw const HumanLoginException(HumanLoginMessages.noServerAccess);
   }
-  final rows = await Future.wait([
-    for (final server in candidates)
-      api
-          .lookup(server.id, {
-            'client_id': request.clientId,
-            'server_id': server.id,
-            'scope': request.scopes.join(' '),
-          })
-          .then<HumanLoginRow>(
-            (data) => data is Map
-                ? HumanLoginRow(server, HumanLoginClient.fromJson(data))
-                : HumanLoginRow(server),
-          )
-          .catchError((Object _) => HumanLoginRow(server)),
-  ]);
+  Future<HumanLoginRow?> lookup(HumanLoginServer server) async {
+    try {
+      final data = await api.lookup(server.id, {
+        'client_id': request.clientId,
+        'server_id': server.id,
+        'scope': request.scopes.join(' '),
+      });
+      return data is Map
+          ? HumanLoginRow(server, HumanLoginClient.fromJson(data))
+          : HumanLoginRow(server);
+    } on RaftApiException catch (error) {
+      return _appNotAvailable(error) ? null : HumanLoginRow(server);
+    } catch (_) {
+      return HumanLoginRow(server);
+    }
+  }
+
+  final answers = await Future.wait(candidates.map(lookup));
+  final rows = answers.nonNulls.toList();
+  if (rows.isEmpty) {
+    throw const HumanLoginException(HumanLoginMessages.notRegisteredForAny);
+  }
+  if (rows.every((row) => row.client == null)) {
+    throw const HumanLoginException(HumanLoginMessages.serverStatusUnavailable);
+  }
   rows.sort(
     (a, b) => a.rank != b.rank
         ? a.rank.compareTo(b.rank)
         : a.server.name.toLowerCase().compareTo(b.server.name.toLowerCase()),
   );
-  if (rows.every((r) => r.client == null)) {
-    throw const HumanLoginException(HumanLoginMessages.notRegisteredForAny);
-  }
   return HumanLoginLookup(rows);
 }
 
@@ -949,8 +958,7 @@ Future<Uri> authorizeHumanLogin(
     if (error.status == 409 && error.code == 'login_mode_changed') {
       throw const HumanLoginModeChanged();
     }
-    if (error.status == 404 ||
-        (error.status == 403 && error.code == 'app_not_available')) {
+    if (_appNotAvailable(error)) {
       throw const HumanLoginException(HumanLoginMessages.notRegisteredForAny);
     }
     if (choice.client.accountMode) {

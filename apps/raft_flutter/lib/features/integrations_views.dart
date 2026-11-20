@@ -6,8 +6,10 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/app_install_expectation.dart';
+import '../data/cause_notice.dart';
 import '../data/device_preferences.dart';
 import '../data/raft_location.dart' show RaftProfileKind;
+import '../data/raft_navigation_history.dart';
 import '../data/user_error.dart';
 import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
@@ -176,8 +178,13 @@ const _layoutPreference = 'raft:connected-apps:view-mode';
 /// install / uninstall, and Register / Edit for managers. A revisit renders
 /// the last accepted rows at once and revalidates in the background.
 class IntegrationsView extends StatefulWidget {
-  const IntegrationsView({super.key, required this.controller});
+  const IntegrationsView({
+    super.key,
+    required this.controller,
+    this.standalone = false,
+  });
   final WorkspaceController controller;
+  final bool standalone;
   @override
   State<IntegrationsView> createState() => _IntegrationsState();
 }
@@ -197,7 +204,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
   String category = 'all', listingType = 'all', listingSort = 'installs';
   Timer? listingSearch;
   Future<bool>? installTextFlag;
-  int? handledReviewLink;
+  int? handledAppLink;
+  int? marketplaceTotal;
+  late final botLinkNotice = CauseNotice(scope: () => authority);
   RaftConnectedAppsLayout layout =
       DevicePreferences.current?.getString(_layoutPreference) == 'list'
       ? RaftConnectedAppsLayout.list
@@ -216,6 +225,13 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
 
   void refreshPage() {
     if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(covariant IntegrationsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    rebindManagementController();
+    if (hasAcceptedData) _openLocationTarget();
   }
 
   Timer? secretReset;
@@ -240,6 +256,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     mcpApps = [];
     mcpLoad = null;
     mcpFailed = false;
+    marketplaceTotal = null;
     savingId = null;
     createdSecret.value = null;
   }
@@ -252,6 +269,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     'marketplace': marketplace,
     'access': access,
     'mcpApps': mcpApps,
+    'marketplaceTotal': marketplaceTotal,
   };
   @override
   bool restoreSnapshot(Map<String, Object?> fields) {
@@ -259,6 +277,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     marketplace = fields['marketplace'] as List<Map<String, dynamic>>;
     access = fields['access'] as List<Map<String, dynamic>>;
     mcpApps = fields['mcpApps'] as List<Map<String, dynamic>>? ?? [];
+    marketplaceTotal = fields['marketplaceTotal'] as int?;
     return true;
   }
 
@@ -272,6 +291,8 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
   Future<void> _loadData(int request, int generation) async {
     unawaited(mcpLoad ??= _loadMcpApps());
     unawaited(_readInstallTextFlag());
+    if (widget.standalone)
+      unawaited(_loadMarketplaceTotal(request, generation));
     final data = await Future.wait(
       [
         '/integrations/clients',
@@ -286,14 +307,87 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     if (tab == RaftConnectedAppsTab.marketplace) {
       await _loadListings();
     }
-    if (accepts(generation, request) &&
-        w.location.uri.queryParameters['permission_updates'] == '1' &&
-        handledReviewLink != w.navigation.revision) {
-      handledReviewLink = w.navigation.revision;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (accepts(generation, request)) showUpdates();
-      });
+    if (accepts(generation, request)) _openLocationTarget();
+  }
+
+  Future<void> _loadMarketplaceTotal(int request, int generation) async {
+    int? total;
+    try {
+      final result = await w.client.get(
+        ConnectedAppMarketplace.path,
+        query: const {'sort': 'installs'},
+      );
+      total = managementMap(result)['total'] as int?;
+    } on RaftApiException {
+      total = null;
     }
+    if (!accepts(generation, request)) return;
+    setState(() => marketplaceTotal = total);
+    saveSnapshot();
+  }
+
+  void _openLocationTarget() {
+    final revision = w.navigation.revision;
+    if (handledAppLink == revision) return;
+    final review = w.location.query('permission_updates') == '1';
+    final listingId = w.location.query('marketplace_app')?.trim();
+    final installedId = w.location.query('installed_app')?.trim();
+    final botClientId = w.location.query('app_bot')?.trim();
+    final consumesLink = botClientId != null || installedId != null;
+    if (!review && listingId == null && !consumesLink) return;
+    final listing = projection.listings
+        .where(
+          (row) =>
+              listingId != null &&
+              (row['id'] == listingId || row['clientId'] == listingId),
+        )
+        .firstOrNull;
+    final installed = projection.installed
+        .where(
+          (app) => botClientId != null
+              ? app.source['clientId'] == botClientId
+              : app.id == installedId,
+        )
+        .firstOrNull;
+    if (!review && listing == null && !consumesLink) return;
+    handledAppLink = revision;
+    final source = authority;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          authority != source ||
+          w.navigation.revision != revision) {
+        return;
+      }
+      if (consumesLink) {
+        w.navigation.navigate(
+          w.location.withQuery({'installed_app': null, 'app_bot': null}),
+          kind: RaftNavigationKind.replace,
+        );
+        handledAppLink = w.navigation.revision;
+      }
+      if (botClientId != null) {
+        selectTab(RaftConnectedAppsTab.installed);
+        _clearFilters();
+        setState(
+          () => botLinkNotice.raise(
+            installed == null
+                ? 'This server doesn’t have this app installed.'
+                : null,
+          ),
+        );
+        if (installed != null) {
+          unawaited(openInstalled(installed, fromBotLink: true));
+        }
+      } else if (review) {
+        showUpdates();
+      } else if (installed != null) {
+        selectTab(RaftConnectedAppsTab.installed);
+        _clearFilters();
+        unawaited(openInstalled(installed));
+      } else if (listing != null) {
+        unawaited(openListing(listing));
+      }
+    });
   }
 
   Future<void> _loadMcpApps() async {
@@ -310,6 +404,10 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
       if (!mounted || source != authority) return;
       setState(() => mcpFailed = error.status != 404);
     }
+  }
+
+  Future<void> _refreshApps() async {
+    await Future.wait([mcpLoad = _loadMcpApps(), reload()]);
   }
 
   Future<bool> _readInstallTextFlag() {
@@ -387,31 +485,32 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
 
   Future<void> _showEditor(Map<String, dynamic>? app) async {
     await scopedRaftModal<void>(
-      (modal) => RaftModalBackdrop(
-        child: ConnectedAppEditor(
-          controller: w,
-          app: app,
-          promptTextConsent: app == null ? null : _readInstallTextFlag(),
-          secret: createdSecret,
-          onDenied: invalidateDeniedMutation,
-          onClose: () => Navigator.of(modal).pop(),
-          onUpdated: (updated) {
-            if (!mounted) return;
-            setState(
-              () => apps = [
-                for (final app in apps)
-                  if (app['id'] == updated['id']) updated else app,
-              ],
-            );
-            saveSnapshot();
-          },
-          onSaved: ({created}) async {
-            if (created != null && mounted) {
-              setState(() => tab = RaftConnectedAppsTab.myApps);
-            }
-            await reload();
-          },
-        ),
+      form: true,
+      formDismissible: false,
+      dialogMaxWidth: 1024,
+      (modal) => ConnectedAppEditor(
+        controller: w,
+        app: app,
+        promptTextConsent: app == null ? null : _readInstallTextFlag(),
+        secret: createdSecret,
+        onDenied: invalidateDeniedMutation,
+        onClose: () => Navigator.of(modal).pop(),
+        onUpdated: (updated) {
+          if (!mounted) return;
+          setState(
+            () => apps = [
+              for (final app in apps)
+                if (app['id'] == updated['id']) updated else app,
+            ],
+          );
+          saveSnapshot();
+        },
+        onSaved: ({created}) async {
+          if (created != null && mounted) {
+            setState(() => tab = RaftConnectedAppsTab.myApps);
+          }
+          await reload();
+        },
       ),
     );
   }
@@ -848,7 +947,10 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
         : raftFormat(context, '{resource} · read', {'resource': resource});
   }
 
-  Future<void> openInstalled(_InstalledApp app) async {
+  Future<void> openInstalled(
+    _InstalledApp app, {
+    bool fromBotLink = false,
+  }) async {
     final source = authority;
     await showRaftDialog<void>(
       context: context,
@@ -860,6 +962,26 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
         }
         String tr(String s) => raftText(modal, s);
         final granted = app.grantedScopes;
+        final awaitingApproval = _awaitsApproval(app);
+        final permissions = canManage
+            ? _InstalledAppPermissions(
+                controller: w,
+                clientId: app.id,
+                service: app.source['clientId'] as String?,
+                canManage: true,
+                groupLabel: (g) => _groupLabel(modal, g),
+                onUpdated: () async {
+                  await Future.wait([
+                    reload(),
+                    AppPermissionUpdates.of(w).refresh(changed: true),
+                  ]);
+                },
+              )
+            : null;
+        final offeredBot = managementMap(app.source['bot']);
+        final hasBot =
+            offeredBot['offered'] != false &&
+            (offeredBot['handle'] as String?)?.isNotEmpty == true;
         return RaftConnectedAppDetailCard(
           key: const ValueKey('connected-app-installed-detail'),
           eyebrow: 'Installed app',
@@ -870,13 +992,20 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
           closeLabel: tr('Close installed app details'),
           onClose: close,
           sections: [
-            if (app.source['bot'] is Map)
+            if (awaitingApproval && !hasBot) ?permissions,
+            if (hasBot)
               ConnectedAppBot(
                 workspace: w,
                 clientId: app.id,
                 appName: app.name,
-                offer: managementMap(app.source['bot']),
+                offer: offeredBot,
                 onChanged: (bot) => _updateBot(app.id, bot),
+                fromBotLink: fromBotLink,
+                pendingPermissions: awaitingApproval ? permissions : null,
+                onFindAdmin: () {
+                  close();
+                  if (source == authority) w.setSection('members');
+                },
                 onViewProfile: (id) {
                   close();
                   if (source == authority)
@@ -902,19 +1031,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
               emptyLabel: tr('No active grant scopes'),
             ),
             LinkPreviewAppChoice(store: AppLinkStore.of(w), appId: app.id),
-            _InstalledAppPermissions(
-              controller: w,
-              clientId: app.id,
-              service: app.source['clientId'] as String?,
-              canManage: canManage,
-              groupLabel: (g) => _groupLabel(modal, g),
-              onUpdated: () async {
-                await Future.wait([
-                  reload(),
-                  AppPermissionUpdates.of(w).refresh(changed: true),
-                ]);
-              },
-            ),
+            if (!awaitingApproval) ?permissions,
           ],
           footer: [
             RaftConnectedAppButton(
@@ -931,11 +1048,15 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
 
   void showUpdates() {
     final waiting = projection.installed.where(_awaitsApproval).firstOrNull;
+    selectTab(RaftConnectedAppsTab.installed);
+    _clearFilters();
+    if (waiting != null) unawaited(openInstalled(waiting));
+  }
+
+  void _clearFilters() {
     search.clear();
     category = listingType = 'all';
     filterListings();
-    selectTab(RaftConnectedAppsTab.installed);
-    if (waiting != null) unawaited(openInstalled(waiting));
   }
 
   bool _awaitsApproval(_InstalledApp app) =>
@@ -1014,7 +1135,14 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     return (
       listings: [
         for (final app in marketplace)
-          if (app['privateShared'] != true) app,
+          if (app['privateShared'] != true &&
+              (app['serverId'] != w.server?.id ||
+                  (app['humanMarketplaceVisible'] == true &&
+                      const {
+                        'published',
+                        'unpublish_requested',
+                      }.contains(app['publishStatus']))))
+            app,
       ],
       installed: installed,
       registered: apps,
@@ -1057,6 +1185,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.standalone) return section(context, tab, scrollable: true);
     Widget page(BuildContext context, RaftConnectedAppsTab value) =>
         KeyedSubtree(
           key: PageStorageKey(('connected-apps', authority, value)),
@@ -1086,6 +1215,8 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     final p = projection;
     final updateCount = p.installed.where(_awaitsApproval).length;
     final query = search.text.trim().toLowerCase();
+    final narrowed =
+        query.isNotEmpty || category != 'all' || listingType != 'all';
     String byline(
       Map<String, dynamic> app,
     ) => raftFormat(context, '{category} · by {developer}', {
@@ -1095,6 +1226,38 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
       'developer':
           '${app['publisherServerName'] ?? app['publisherName'] ?? tr('Third-party developer')}',
     });
+    RaftMarketplaceAppTile appTile(
+      String id,
+      Map<String, dynamic> app, {
+      String? recommendation,
+    }) {
+      final installed = app['installedAt'] != null;
+      return RaftMarketplaceAppTile(
+        id: id,
+        name: '${app['name'] ?? ''}',
+        initials: integrationInitials('${app['name'] ?? app['clientId']}'),
+        logoUrl: app['logoUrl'] as String?,
+        byline: recommendation ?? byline(app),
+        description: recommendation == null
+            ? app['description'] as String?
+            : null,
+        badge: _installBadge(context, app['marketplaceInstallBadge']),
+        state: installed
+            ? RaftMarketplaceAppState.installed
+            : canManage
+            ? RaftMarketplaceAppState.install
+            : RaftMarketplaceAppState.available,
+        stateLabel: tr(
+          installed
+              ? 'Installed'
+              : canManage
+              ? 'Install'
+              : 'Available',
+        ),
+        onOpen: () => openListing(app),
+      );
+    }
+
     final visibleListings = listingPage.legacy
         ? [
             for (final app in p.listings)
@@ -1126,30 +1289,23 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             ),
           )
         else if (row case {'app': final Map<String, dynamic> app})
-          if (app['id'] case final String id)
-            RaftMarketplaceAppTile(
-              id: id,
-              name: '${app['name'] ?? ''}',
-              initials: integrationInitials(
-                '${app['name'] ?? app['clientId']}',
-              ),
-              logoUrl: app['logoUrl'] as String?,
-              byline: byline(app),
-              description: app['description'] as String?,
-              badge: _installBadge(context, app['marketplaceInstallBadge']),
-              state: app['installedAt'] != null
-                  ? RaftMarketplaceAppState.installed
-                  : canManage
-                  ? RaftMarketplaceAppState.install
-                  : RaftMarketplaceAppState.available,
-              stateLabel: app['installedAt'] != null
-                  ? tr('Installed')
-                  : canManage
-                  ? tr('Install')
-                  : tr('Available'),
-              onOpen: () => openListing(app),
-            ),
+          if (app['id'] case final String id) appTile(id, app),
     ];
+    final recommended =
+        widget.standalone &&
+            shownTab == RaftConnectedAppsTab.installed &&
+            !loading &&
+            error == null &&
+            !narrowed
+        ? p.listings
+              .where(
+                (app) =>
+                    app['clientId'] == 'stamp' &&
+                    app['official'] == true &&
+                    app['installedAt'] == null,
+              )
+              .firstOrNull
+        : null;
     final installedRows = [
       for (final app in p.installed)
         if (listingType != 'mcp' &&
@@ -1163,8 +1319,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             name: app.name,
             initials: integrationInitials(app.name),
             logoUrl: app.logoUrl,
-            meta:
-                '${tr(integrationCategoryDisplay(integrationCategoryLabel(app.category)))} · ${app.developer}',
+            meta: app.editable
+                ? '${tr(integrationCategoryDisplay(integrationCategoryLabel(app.category)))} · ${app.developer}'
+                : byline(app.source),
             badges: [
               ?_distributionBadge(
                 context,
@@ -1223,10 +1380,11 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     ];
     final registeredRows = [
       for (final app in p.registered)
-        if (matches(query, '${app['name'] ?? ''}', app['category'], [
-          app['description'],
-          app['clientId'],
-        ]))
+        if (listingType != 'mcp' &&
+            matches(query, '${app['name'] ?? ''}', app['category'], [
+              app['description'],
+              app['clientId'],
+            ]))
           RaftConnectedAppRow(
             id: '${app['id']}',
             name: '${app['name'] ?? ''}',
@@ -1256,14 +1414,44 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
           ),
     ];
     final cold = loading;
-    final empty = cold
+    final emptyDetail = cold || error != null
+        ? null
+        : switch (shownTab) {
+            RaftConnectedAppsTab.marketplace
+                when !narrowed &&
+                    listingPage.loaded &&
+                    !listingPage.failed &&
+                    listings.isEmpty =>
+              tr('Apps appear here once Raft has reviewed them.'),
+            RaftConnectedAppsTab.installed
+                when p.installed.isEmpty && mcpApps.isEmpty =>
+              tr(
+                canManage
+                    ? 'Install one from the Marketplace, or add your own with Add App.'
+                    : 'Server owners and admins install apps from the Marketplace.',
+              ),
+            RaftConnectedAppsTab.myApps when p.registered.isEmpty => tr(
+              canManage
+                  ? 'Create a Raft App with Add App to build your own for this server.'
+                  : 'Raft Apps this server builds appear here.',
+            ),
+            _ => null,
+          };
+    final empty = cold || error != null
         ? null
         : switch (shownTab) {
             RaftConnectedAppsTab.marketplace
                 when listingPage.loaded &&
                     !listingPage.failed &&
                     listings.isEmpty =>
-              tr('No marketplace apps match this view'),
+              tr(
+                emptyDetail == null
+                    ? 'No marketplace apps match this view'
+                    : 'No apps in the Marketplace yet',
+              ),
+            RaftConnectedAppsTab.installed
+                when p.installed.isEmpty && mcpApps.isEmpty =>
+              tr('No apps installed yet'),
             RaftConnectedAppsTab.installed when installedRows.isEmpty => tr(
               'No installed apps match this view',
             ),
@@ -1276,42 +1464,98 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     return Semantics(
       liveRegion: error != null,
       child: RaftConnectedAppsSection(
+        standalone: widget.standalone,
         scrollable: scrollable,
-        description: tr(
-          canManage
-              ? 'Browse reviewed marketplace apps, see apps installed on this server, and manage apps registered by this server.'
-              : 'Browse reviewed marketplace apps, see apps installed on this server, and view apps registered by this server.',
+        onRetry: _refreshApps,
+        onRefresh: widget.standalone ? _refreshApps : null,
+        typeFilter: _toolbarFilter(
+          'apps-filter-type',
+          RaftGlyph.shapes,
+          listingType,
+          const [
+            ('all', 'All types'),
+            ('app', 'Raft apps'),
+            ('mcp', 'MCP apps'),
+          ],
+          (type) => listingType = type,
+          20,
         ),
+        sortFilter: shownTab == RaftConnectedAppsTab.marketplace
+            ? _toolbarFilter(
+                'apps-filter-sort',
+                RaftGlyph.arrowDownUp,
+                listingSort,
+                const [
+                  ('installs', 'Most installed'),
+                  ('published', 'Newest'),
+                  ('name', 'Name'),
+                ],
+                (sort) => listingSort = sort,
+                10,
+              )
+            : null,
+        onClearFilters: narrowed ? _clearFilters : null,
+        onBrowseMarketplace:
+            canManage &&
+                shownTab == RaftConnectedAppsTab.installed &&
+                p.installed.isEmpty &&
+                mcpApps.isEmpty
+            ? () {
+                _clearFilters();
+                selectTab(RaftConnectedAppsTab.marketplace);
+              }
+            : null,
         adminNote: canManage
             ? null
             : tr(
                 'Only server owners and admins can install, edit, or remove apps.',
               ),
         loading: cold,
-        notice: updateCount == 0
+        marketplaceLoading: !listingPage.loaded && !listingPage.failed,
+        notice: updateCount == 0 && !botLinkNotice.isActive
             ? null
-            : RaftBanner(
-                live: false,
-                description: raftFormat(
-                  context,
-                  canManage
-                      ? updateCount == 1
-                            ? '{count} installed app has new permissions awaiting your review.'
-                            : '{count} installed apps have new permissions awaiting your review.'
-                      : updateCount == 1
-                      ? '{count} installed app needs an administrator to approve new permissions.'
-                      : '{count} installed apps need an administrator to approve new permissions.',
-                  {'count': updateCount},
-                ),
-                action: RaftSettingsRecipeButton(
-                  label: tr('View updates'),
-                  onPressed: showUpdates,
-                ),
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: RaftSpace.x4,
+                children: [
+                  if (updateCount > 0)
+                    RaftBanner(
+                      live: false,
+                      description: raftFormat(
+                        context,
+                        canManage
+                            ? updateCount == 1
+                                  ? '{count} installed app has new permissions awaiting your review.'
+                                  : '{count} installed apps have new permissions awaiting your review.'
+                            : updateCount == 1
+                            ? '{count} installed app needs an administrator to approve new permissions.'
+                            : '{count} installed apps need an administrator to approve new permissions.',
+                        {'count': updateCount},
+                      ),
+                      action: RaftSettingsRecipeButton(
+                        label: tr('View updates'),
+                        onPressed: showUpdates,
+                      ),
+                    ),
+                  if (botLinkNotice.message case final message?)
+                    RaftBanner(
+                      key: const ValueKey(
+                        'connected-apps-bot-link-not-installed',
+                      ),
+                      description: tr(message),
+                      status: RaftBannerRecipeStatus.info,
+                      size: RaftBannerRecipeSize.sm,
+                      closeLabel: tr('Close'),
+                      onClose: () => setState(botLinkNotice.clear),
+                    ),
+                ],
               ),
         onRegister: canManage ? openEditor : null,
         tab: shownTab,
         counts: (
-          marketplace: listingPage.legacy
+          marketplace: widget.standalone
+              ? marketplaceTotal ?? 0
+              : listingPage.legacy
               ? p.listings.length
               : listingPage.total,
           installed: p.installed.length + mcpApps.length,
@@ -1330,26 +1574,18 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
           category = next;
           filterListings();
         },
-        marketplaceFilters: listingPage.legacy
-            ? const []
-            : [
-                listingFilter('Filter apps by type', listingType, const [
-                  ('all', 'All types'),
-                  ('app', 'Raft apps'),
-                  ('mcp', 'MCP apps'),
-                ], (type) => listingType = type),
-                listingFilter('Sort apps', listingSort, const [
-                  ('installs', 'Most installed'),
-                  ('published', 'Newest'),
-                  ('name', 'Name'),
-                ], (sort) => listingSort = sort),
-              ],
-        marketplaceFooter: listingPage.legacy
+        marketplaceFooter:
+            listingPage.legacy ||
+                emptyDetail != null ||
+                (widget.standalone &&
+                    !listingPage.loaded &&
+                    !listingPage.failed)
             ? null
             : ConnectedAppMarketplaceFooter(
                 page: listingPage,
                 retry: _loadListings,
                 loadMore: () => _loadListings(next: true),
+                standalone: widget.standalone,
               ),
         installedFooter: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1373,10 +1609,22 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
         onLayout: setLayout,
         error: error,
         marketplace: listings,
+        recommendation: recommended != null && recommended['id'] is String
+            ? appTile(
+                recommended['id'] as String,
+                recommended,
+                recommendation: raftTextZh(
+                  context,
+                  'Connect GitHub: agents push code and open pull requests; you review and merge.',
+                  '连接 GitHub：Agent 推代码、开 PR，你来审批和合并。',
+                ),
+              )
+            : null,
         rows: shownTab == RaftConnectedAppsTab.installed
             ? installedRows
             : registeredRows,
         emptyMessage: empty,
+        emptyDetail: emptyDetail,
         myAppsIntro: tr(
           canManage
               ? 'Raft Apps this server builds. Edit one to change its details, get its client secret or request Marketplace review.'
@@ -1392,32 +1640,38 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     );
   }
 
-  Widget listingFilter(
-    String label,
+  RaftFitPicker _toolbarFilter(
+    String key,
+    RaftGlyph glyph,
     String selected,
-    List<(String, String)> items,
+    List<(String, String)> choices,
     ValueChanged<String> onSelect,
-  ) => SizedBox(
-    width: 176,
-    child: RaftSelectField<String>(
-      value: selected,
-      label: label,
-      items: [
-        for (final (value, title) in items)
-          RaftSelectItem(
-            value: value,
-            label: title == 'Newest'
-                ? raftTextZh(context, 'Newest', '最新上架')
-                : raftText(context, title),
-          ),
-      ],
-      onChanged: (next) {
-        if (next == null || next == selected) return;
-        onSelect(next);
-        filterListings();
-      },
+    int order,
+  ) => RaftFitPicker(
+    key: ValueKey(key),
+    label: _filterTitle(
+      choices.firstWhere((choice) => choice.$1 == selected).$2,
     ),
+    glyph: glyph,
+    applied: selected != choices.first.$1,
+    labelOrder: order,
+    menuEntries: [
+      for (final (value, title) in choices)
+        RaftMenuEntry(
+          label: _filterTitle(title),
+          checked: value == selected,
+          onPressed: () {
+            if (value == selected) return;
+            onSelect(value);
+            filterListings();
+          },
+        ),
+    ],
   );
+
+  String _filterTitle(String title) => title == 'Newest'
+      ? raftTextZh(context, 'Newest', '最新上架')
+      : raftText(context, title);
 }
 
 /// IntegrationsSection `InstalledConnectedApp`.
@@ -1576,7 +1830,6 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
     String tr(String s) => raftText(context, s);
     if (loading) {
       return RaftAppPermissionsSummary(
-        description: '',
         columns: const [],
         loading: tr('Loading App Notifications...'),
       );
@@ -1608,6 +1861,8 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
     final needsText =
         textState['confirmation_required'] == true && current != null;
     final needsPermissions = s['approval_required'] == true;
+    const promptChangeNotice =
+        'This app changed the text it adds to agent prompts. Until an admin confirms it, agents keep using the last confirmed version. Confirmed text reaches each agent the next time it starts.';
     final reviewed = AppInstallExpectation(
       scopes: managementStrings(s['requested_scopes']),
       groups: managementStrings(s['requested_groups']),
@@ -1617,12 +1872,9 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftAppPermissionsSummary(
-          description: tr(
-            'Permissions granted to this app on this Server are independent of user login and webhook delivery. Review and approve any additional access here.',
-          ),
           badge: managementStrings(s['effective_groups']).isNotEmpty
               ? RaftConnectedAppBadge.success(tr('Enabled'))
-              : RaftConnectedAppBadge.outline(tr('Disabled')),
+              : RaftConnectedAppBadge.muted(tr('Disabled')),
           columns: [
             (
               tr('Approved data'),
@@ -1654,44 +1906,59 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
         if (needsPermissions || needsText) ...[
           const SizedBox(height: RaftSpace.x3),
           RaftBanner(
-            description: tr(
-              needsPermissions
-                  ? 'This app requests new access. Review it before approving the update; until then it keeps the access you approved.'
-                  : 'This app changed the text it adds to agent prompts. Until an admin confirms it, agents keep using the last confirmed version. Confirmed text reaches each agent the next time it starts.',
-            ),
-            footer: Column(
+            live: false,
+            size: RaftBannerRecipeSize.sm,
+            descriptionBuilder: (style) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: RaftSpace.x2,
               children: [
-                if (needsPermissions)
+                if (needsPermissions) ...[
+                  Text(
+                    tr(
+                      'This app requests new access. Review it before approving the update; until then it keeps the access you approved.',
+                    ),
+                    style: style,
+                  ),
+                  Text(
+                    tr('Approving the update approves all of this:'),
+                    style: style,
+                  ),
                   ConnectedAppPermissionSet(
                     permissions: reviewed,
                     newScopes: managementStrings(s['new_scopes']),
                     newGroups: newly,
                   ),
-                if (needsText)
+                ],
+                if (needsText) ...[
+                  Text(tr(promptChangeNotice), style: style),
+                  if (needsPermissions)
+                    Text(
+                      tr('Approve Update also confirms this text.'),
+                      style: style,
+                    ),
                   ConnectedAppPromptComparison(
                     before: confirmed,
                     after: current,
                     beforeTitle: 'Agents use now',
                     afterTitle: 'Pending text',
-                  )
-                else if (current != null)
-                  ConnectedAppPromptTextBlock(
-                    title: 'Text added to agent prompts',
-                    text: current,
                   ),
-                if (widget.canManage)
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: RaftButton(
-                      label: tr(saving ? 'Approving...' : 'Approve update'),
-                      tone: RaftButtonRecipeVariant.outline,
-                      onPressed: saving ? null : () => approve(reviewed),
-                    ),
-                  ),
+                ],
               ],
             ),
+            footer: widget.canManage
+                ? Padding(
+                    padding: const EdgeInsets.only(top: RaftSpace.x2),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: RaftButton(
+                        label: tr(saving ? 'Approving...' : 'Approve update'),
+                        tone: RaftButtonRecipeVariant.outline,
+                        size: RaftButtonRecipeSize.md,
+                        onPressed: saving ? null : () => approve(reviewed),
+                      ),
+                    ),
+                  )
+                : null,
           ),
         ] else if (confirmed != null) ...[
           const SizedBox(height: RaftSpace.x3),

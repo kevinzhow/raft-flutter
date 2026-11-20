@@ -163,6 +163,13 @@
     {
      "kind": "app",
      "id": "app:market_slack",
+     "name": "Slack Bridge",
+     "description": "Mirror Slock activity into Slack channels.",
+     "logoUrl": null,
+     "category": "Productivity & Collaboration",
+     "publisherName": "Raft Labs",
+     "publishedAt": null,
+     "installed": false,
      "app": {
       "serverId": "visual-server",
       "publishRejectionReason": null,
@@ -195,12 +202,18 @@
        "kind": "bucket",
        "bucket": "100_plus"
       }
-     },
-     "installed": false
+     }
     },
     {
      "kind": "app",
      "id": "app:market_github",
+     "name": "GitHub Issues",
+     "description": "Create issues from tasks and feedback.",
+     "logoUrl": null,
+     "category": "Development",
+     "publisherName": "Raft Labs",
+     "publishedAt": null,
+     "installed": true,
      "app": {
       "serverId": "visual-server",
       "publishRejectionReason": null,
@@ -233,12 +246,18 @@
        "kind": "none"
       },
       "permissionApprovalRequired": true
-     },
-     "installed": true
+     }
     },
     {
      "kind": "app",
      "id": "app:market_linear",
+     "name": "Linear Sync",
+     "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+     "logoUrl": null,
+     "category": "Developer Tools",
+     "publisherName": "Linear Workspace",
+     "publishedAt": null,
+     "installed": false,
      "app": {
       "serverId": "visual-server",
       "publishRejectionReason": null,
@@ -267,8 +286,7 @@
       "marketplaceInstallBadge": {
        "kind": "new"
       }
-     },
-     "installed": false
+     }
     }
    ],
    "total": 3
@@ -331,6 +349,644 @@
    "GET /integrations/link-preview-consents": {
     "$status": 503
    }
+  },
+  "marketplace-loading": {
+   "GET /integrations/marketplace/listings": {
+    "$pending": true
+   }
+  },
+  "marketplace-empty": {
+   "GET /integrations/marketplace/listings": {
+    "items": [],
+    "total": 0
+   }
+  },
+  "marketplace-error": {
+   "GET /integrations/marketplace/listings": {
+    "$status": 503
+   }
+  },
+  "marketplace-paging": {
+   "GET /integrations/marketplace/listings": {
+    "$default": {
+     "items": [
+      {
+       "kind": "app",
+       "id": "app:market_slack",
+       "name": "Slack Bridge",
+       "description": "Mirror Slock activity into Slack channels.",
+       "logoUrl": null,
+       "category": "Productivity & Collaboration",
+       "publisherName": "Raft Labs",
+       "publishedAt": null,
+       "installed": false,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/slack/oauth/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "identity"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_slack",
+        "clientId": "client_slack_bridge",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Productivity & Collaboration",
+        "dataAccessSummary": "Messages and channel metadata",
+        "name": "Slack Bridge",
+        "description": "Mirror Slock activity into Slack channels.",
+        "homepageUrl": "https://example.com/slack",
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": true,
+        "marketplaceInstallBadge": {
+         "kind": "bucket",
+         "bucket": "100_plus"
+        }
+       }
+      }
+     ],
+     "total": 2,
+     "nextCursor": "second-page"
+    },
+    "$when": [
+     {
+      "query": {
+       "cursor": "second-page"
+      },
+      "answer": {
+       "$pending": true
+      }
+     }
+    ]
+   }
+  },
+  "marketplace-more-error": {
+   "GET /integrations/marketplace/listings": {
+    "$default": {
+     "items": [
+      {
+       "kind": "app",
+       "id": "app:market_slack",
+       "name": "Slack Bridge",
+       "description": "Mirror Slock activity into Slack channels.",
+       "logoUrl": null,
+       "category": "Productivity & Collaboration",
+       "publisherName": "Raft Labs",
+       "publishedAt": null,
+       "installed": false,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/slack/oauth/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "identity"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_slack",
+        "clientId": "client_slack_bridge",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Productivity & Collaboration",
+        "dataAccessSummary": "Messages and channel metadata",
+        "name": "Slack Bridge",
+        "description": "Mirror Slock activity into Slack channels.",
+        "homepageUrl": "https://example.com/slack",
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": true,
+        "marketplaceInstallBadge": {
+         "kind": "bucket",
+         "bucket": "100_plus"
+        }
+       }
+      }
+     ],
+     "total": 2,
+     "nextCursor": "second-page"
+    },
+    "$when": [
+     {
+      "query": {
+       "cursor": "second-page"
+      },
+      "answer": {
+       "$status": 503
+      }
+     }
+    ]
+   }
+  },
+  "marketplace-more-loaded": {
+   "GET /integrations/marketplace/listings": {
+    "$default": {
+     "items": [
+      {
+       "kind": "app",
+       "id": "app:market_slack",
+       "name": "Slack Bridge",
+       "description": "Mirror Slock activity into Slack channels.",
+       "logoUrl": null,
+       "category": "Productivity & Collaboration",
+       "publisherName": "Raft Labs",
+       "publishedAt": null,
+       "installed": false,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/slack/oauth/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "identity"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_slack",
+        "clientId": "client_slack_bridge",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Productivity & Collaboration",
+        "dataAccessSummary": "Messages and channel metadata",
+        "name": "Slack Bridge",
+        "description": "Mirror Slock activity into Slack channels.",
+        "homepageUrl": "https://example.com/slack",
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": true,
+        "marketplaceInstallBadge": {
+         "kind": "bucket",
+         "bucket": "100_plus"
+        }
+       }
+      }
+     ],
+     "total": 2,
+     "nextCursor": "second-page"
+    },
+    "$when": [
+     {
+      "query": {
+       "cursor": "second-page"
+      },
+      "answer": {
+       "items": [
+        {
+         "kind": "app",
+         "id": "app:market_github",
+         "name": "GitHub Issues",
+         "description": "Create issues from tasks and feedback.",
+         "logoUrl": null,
+         "category": "Development",
+         "publisherName": "Raft Labs",
+         "publishedAt": null,
+         "installed": true,
+         "app": {
+          "serverId": "visual-server",
+          "publishRejectionReason": null,
+          "returnUrl": "https://example.com/github/callback",
+          "agentManifestUrl": null,
+          "allowedScopes": [
+           "openid",
+           "profile",
+           "agent:read"
+          ],
+          "logoUrl": null,
+          "createdByUserId": "visual-user",
+          "createdAt": "2026-06-18T00:00:00.000Z",
+          "updatedAt": "2026-06-18T00:00:00.000Z",
+          "id": "market_github",
+          "clientId": "client_github_issues",
+          "appType": "third_party_global",
+          "publishStatus": "published",
+          "category": "Development",
+          "dataAccessSummary": "Tasks and feedback",
+          "name": "GitHub Issues",
+          "description": "Create issues from tasks and feedback.",
+          "homepageUrl": "https://example.com/github",
+          "humanMarketplaceVisible": true,
+          "installedAt": "2026-06-18T00:00:00.000Z",
+          "publisherName": "Raft Labs",
+          "privateShared": false,
+          "official": false,
+          "marketplaceInstallBadge": {
+           "kind": "none"
+          },
+          "permissionApprovalRequired": true
+         }
+        }
+       ],
+       "total": 2,
+       "nextCursor": null
+      }
+     }
+    ]
+   }
+  },
+  "private-share": {
+   "GET /integrations/clients/client_1/share-links": {
+    "links": []
+   },
+   "POST /integrations/clients/client_1/share-links": {
+    "link": {
+     "id": "visual-share-link",
+     "clientId": "client_1",
+     "targetServerSlug": "fixture-team",
+     "expiresAt": "2026-07-18T00:00:00.000Z",
+     "revokedAt": null,
+     "lastUsedAt": null,
+     "consumedAt": null,
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z"
+    },
+    "token": "visual-fixture-invite",
+    "client": {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/oauth/callback",
+     "agentManifestUrl": "https://example.com/manifest.json",
+     "allowedScopes": [],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "client_1",
+     "clientId": "client_slack_bridge",
+     "appType": "third_party_global",
+     "publishStatus": "private",
+     "category": "Productivity & Collaboration",
+     "dataAccessSummary": "Messages and channel metadata",
+     "name": "Slack Bridge",
+     "description": "Server-local OAuth client.",
+     "homepageUrl": "https://example.com",
+     "humanMarketplaceVisible": false
+    }
+   },
+   "DELETE /integrations/clients/client_1/share-links/visual-share-link": {
+    "id": "visual-share-link",
+    "clientId": "client_1",
+    "targetServerSlug": "fixture-team",
+    "expiresAt": "2026-07-18T00:00:00.000Z",
+    "revokedAt": "2026-06-18T00:00:00.000Z",
+    "lastUsedAt": null,
+    "consumedAt": null,
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "updatedAt": "2026-06-18T00:00:00.000Z"
+   }
+  },
+  "external-bot": {
+   "GET /external-avatars/visual-deploy-bot.png": {
+    "$file": "announcement-picture.png",
+    "$contentType": "image/png"
+   },
+   "GET /messages/channel/channel-home": {
+    "messages": [
+     {
+      "id": "fixture-external-bot-message",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "channel-home",
+      "messageType": "chat",
+      "senderType": "external_projection",
+      "senderId": "B000FIXTURE",
+      "senderName": "Slack bot \u00b7 ture",
+      "content": "The staging build is ready for review.",
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "externalAuthor": {
+       "provider": "slack",
+       "appRegistrationId": "visual-external-app",
+       "installId": "visual-external-install",
+       "workspaceId": "visual-slack-workspace",
+       "workspaceName": "Fixture Slack",
+       "externalActorId": "B000FIXTURE",
+       "externalConversationId": "C000FIXTURE",
+       "externalMessageId": "external-bot-message",
+       "actorKind": "bot",
+       "displayName": "Slack bot \u00b7 ture",
+       "profileDisplayName": "Deploy Bot",
+       "profileAvatarUrl": "/api/external-avatars/visual-deploy-bot.png",
+       "appName": "Deployer",
+       "avatarUrl": null,
+       "avatarDigest": null,
+       "actorProjectionRevision": 1
+      }
+     }
+    ],
+    "hasMore": false,
+    "threadSummariesByParentMessageId": {}
+   }
+  },
+  "login-person": {
+   "GET /oauth/clients/lookup": {
+    "id": "fixture-login-app",
+    "clientId": "fixture-login",
+    "name": "Artifact Share",
+    "description": "Shares private artifacts",
+    "appType": "third_party_global",
+    "homepageUrl": "https://app.example.invalid",
+    "returnUrl": "https://app.example.invalid/complete",
+    "availability": "ready"
+   }
+  },
+  "login-loading": {
+   "GET /oauth/clients/lookup": {
+    "$pending": true
+   }
+  },
+  "login-unavailable": {
+   "GET /oauth/clients/lookup": {
+    "$status": 404
+   }
+  },
+  "login-outage": {
+   "GET /oauth/clients/lookup": {
+    "$status": 503
+   }
+  },
+  "login-account": {
+   "GET /oauth/clients/lookup": {
+    "id": "fixture-login-app",
+    "clientId": "fixture-login",
+    "name": "Artifact Share",
+    "description": "Shares private artifacts",
+    "appType": "third_party_global",
+    "homepageUrl": "https://app.example.invalid",
+    "returnUrl": "https://app.example.invalid/complete",
+    "availability": "ready",
+    "loginMode": "account"
+   }
+  },
+  "login-account-suspended": {
+   "GET /oauth/clients/lookup": {
+    "id": "fixture-login-app",
+    "clientId": "fixture-login",
+    "name": "Artifact Share",
+    "description": "Shares private artifacts",
+    "appType": "third_party_global",
+    "homepageUrl": "https://app.example.invalid",
+    "returnUrl": "https://app.example.invalid/complete",
+    "availability": "suspended",
+    "loginMode": "account"
+   }
+  },
+  "login-admin-needed": {
+   "GET /oauth/clients/lookup": {
+    "id": "fixture-login-app",
+    "clientId": "fixture-login",
+    "name": "Artifact Share",
+    "description": "Shares private artifacts",
+    "appType": "third_party_global",
+    "homepageUrl": "https://app.example.invalid",
+    "returnUrl": "https://app.example.invalid/complete",
+    "availability": "install_required",
+    "marketplace": true,
+    "installation": {
+     "serverId": "visual-server",
+     "canInstall": false
+    }
+   }
+  },
+  "login-install": {
+   "GET /oauth/clients/lookup": {
+    "id": "fixture-login-app",
+    "clientId": "fixture-login",
+    "name": "Artifact Share",
+    "description": "Shares private artifacts",
+    "appType": "third_party_global",
+    "homepageUrl": "https://app.example.invalid",
+    "returnUrl": "https://app.example.invalid/complete",
+    "availability": "install_required",
+    "marketplace": true,
+    "installation": {
+     "serverId": "visual-server",
+     "canInstall": true
+    },
+    "bot": {
+     "offered": true,
+     "handle": "slack",
+     "grant": "pending"
+    },
+    "promptTextRevisionId": "live",
+    "whenToUse": "Share a private artifact on request.",
+    "allowedScopes": [
+     "openid",
+     "profile",
+     "agent:read"
+    ],
+    "appNotificationGroups": [
+     "server"
+    ]
+   },
+   "POST /feature-flags/evaluate": {
+    "evaluations": [
+     {
+      "key": "app_prompt_text_consent",
+      "enabled": true
+     }
+    ]
+   }
+  },
+  "withdraw-publish": {
+   "GET /integrations/clients": [
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/oauth/callback",
+     "agentManifestUrl": "https://example.com/manifest.json",
+     "allowedScopes": [],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "client_1",
+     "clientId": "client_slack_bridge",
+     "appType": "server_local",
+     "publishStatus": "publish_requested",
+     "category": "Productivity & Collaboration",
+     "dataAccessSummary": "Messages and channel metadata",
+     "name": "Slack Bridge",
+     "description": "Server-local OAuth client.",
+     "homepageUrl": "https://example.com",
+     "humanMarketplaceVisible": false
+    }
+   ],
+   "POST /integrations/clients/client_1/withdraw-publish": {
+    "serverId": "visual-server",
+    "publishRejectionReason": null,
+    "returnUrl": "https://example.com/oauth/callback",
+    "agentManifestUrl": "https://example.com/manifest.json",
+    "allowedScopes": [],
+    "logoUrl": null,
+    "createdByUserId": "visual-user",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "updatedAt": "2026-06-18T00:00:00.000Z",
+    "id": "client_1",
+    "clientId": "client_slack_bridge",
+    "appType": "server_local",
+    "publishStatus": "private",
+    "category": "Productivity & Collaboration",
+    "dataAccessSummary": "Messages and channel metadata",
+    "name": "Slack Bridge",
+    "description": "Server-local OAuth client.",
+    "homepageUrl": "https://example.com",
+    "humanMarketplaceVisible": false
+   },
+   "GET /integrations/clients/client_1/share-links": {
+    "links": []
+   }
+  },
+  "recommended": {
+   "GET /integrations/marketplace": [
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/slack/oauth/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "identity"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_slack",
+     "clientId": "client_slack_bridge",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Productivity & Collaboration",
+     "dataAccessSummary": "Messages and channel metadata",
+     "name": "Slack Bridge",
+     "description": "Mirror Slock activity into Slack channels.",
+     "homepageUrl": "https://example.com/slack",
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": true,
+     "marketplaceInstallBadge": {
+      "kind": "bucket",
+      "bucket": "100_plus"
+     }
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/github/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "agent:read"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_github",
+     "clientId": "client_github_issues",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Development",
+     "dataAccessSummary": "Tasks and feedback",
+     "name": "GitHub Issues",
+     "description": "Create issues from tasks and feedback.",
+     "homepageUrl": "https://example.com/github",
+     "humanMarketplaceVisible": true,
+     "installedAt": "2026-06-18T00:00:00.000Z",
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "none"
+     },
+     "permissionApprovalRequired": true
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": null,
+     "agentManifestUrl": null,
+     "allowedScopes": [],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_linear",
+     "clientId": "client_linear_sync",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Developer Tools",
+     "dataAccessSummary": "Tasks",
+     "name": "Linear Sync",
+     "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+     "homepageUrl": null,
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Linear",
+     "publisherServerName": "Linear Workspace",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "new"
+     }
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/slack/oauth/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "identity"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_stamp",
+     "clientId": "stamp",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Productivity & Collaboration",
+     "dataAccessSummary": "Messages and channel metadata",
+     "name": "Stamp",
+     "description": "Mirror Slock activity into Slack channels.",
+     "homepageUrl": "https://example.com/slack",
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": true,
+     "marketplaceInstallBadge": {
+      "kind": "none"
+     }
+    }
+   ]
   },
   "prompt-review": {
    "GET /integrations/marketplace": [
@@ -437,6 +1093,13 @@
      {
       "kind": "app",
       "id": "app:market_slack",
+      "name": "Slack Bridge",
+      "description": "Mirror Slock activity into Slack channels.",
+      "logoUrl": null,
+      "category": "Productivity & Collaboration",
+      "publisherName": "Raft Labs",
+      "publishedAt": null,
+      "installed": false,
       "app": {
        "serverId": "visual-server",
        "publishRejectionReason": null,
@@ -471,12 +1134,18 @@
        },
        "promptTextRevisionId": "live",
        "whenToUse": "Summarize Slack conversations."
-      },
-      "installed": false
+      }
      },
      {
       "kind": "app",
       "id": "app:market_github",
+      "name": "GitHub Issues",
+      "description": "Create issues from tasks and feedback.",
+      "logoUrl": null,
+      "category": "Development",
+      "publisherName": "Raft Labs",
+      "publishedAt": null,
+      "installed": true,
       "app": {
        "serverId": "visual-server",
        "publishRejectionReason": null,
@@ -509,12 +1178,18 @@
         "kind": "none"
        },
        "permissionApprovalRequired": true
-      },
-      "installed": true
+      }
      },
      {
       "kind": "app",
       "id": "app:market_linear",
+      "name": "Linear Sync",
+      "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+      "logoUrl": null,
+      "category": "Developer Tools",
+      "publisherName": "Linear Workspace",
+      "publishedAt": null,
+      "installed": false,
       "app": {
        "serverId": "visual-server",
        "publishRejectionReason": null,
@@ -543,8 +1218,7 @@
        "marketplaceInstallBadge": {
         "kind": "new"
        }
-      },
-      "installed": false
+      }
      }
     ],
     "total": 3
@@ -561,6 +1235,1656 @@
      "name": "Slack Bridge",
      "when_to_use": "Summarize Slack conversations for this server."
     }
+   },
+   "POST /integrations/clients/market_slack/prompt-text/review": {
+    "$status": 409,
+    "$body": {
+     "code": "PROMPT_TEXT_REVIEW_STALE"
+    }
+   }
+  },
+  "install-step-up": {
+   "GET /integrations/marketplace": [
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/slack/oauth/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "identity"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_slack",
+     "clientId": "client_slack_bridge",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Productivity & Collaboration",
+     "dataAccessSummary": "Messages and channel metadata",
+     "name": "Slack Bridge",
+     "description": "Mirror Slock activity into Slack channels.",
+     "homepageUrl": "https://example.com/slack",
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": true,
+     "marketplaceInstallBadge": {
+      "kind": "bucket",
+      "bucket": "100_plus"
+     },
+     "bot": {
+      "offered": true,
+      "handle": "slack",
+      "grant": "pending"
+     },
+     "promptTextRevisionId": "live",
+     "whenToUse": "Summarize Slack conversations."
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/github/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "agent:read"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_github",
+     "clientId": "client_github_issues",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Development",
+     "dataAccessSummary": "Tasks and feedback",
+     "name": "GitHub Issues",
+     "description": "Create issues from tasks and feedback.",
+     "homepageUrl": "https://example.com/github",
+     "humanMarketplaceVisible": true,
+     "installedAt": "2026-06-18T00:00:00.000Z",
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "none"
+     },
+     "permissionApprovalRequired": true
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": null,
+     "agentManifestUrl": null,
+     "allowedScopes": [],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_linear",
+     "clientId": "client_linear_sync",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Developer Tools",
+     "dataAccessSummary": "Tasks",
+     "name": "Linear Sync",
+     "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+     "homepageUrl": null,
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Linear",
+     "publisherServerName": "Linear Workspace",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "new"
+     }
+    }
+   ],
+   "GET /integrations/marketplace/listings": {
+    "items": [
+     {
+      "kind": "app",
+      "id": "app:market_slack",
+      "name": "Slack Bridge",
+      "description": "Mirror Slock activity into Slack channels.",
+      "logoUrl": null,
+      "category": "Productivity & Collaboration",
+      "publisherName": "Raft Labs",
+      "publishedAt": null,
+      "installed": false,
+      "app": {
+       "serverId": "visual-server",
+       "publishRejectionReason": null,
+       "returnUrl": "https://example.com/slack/oauth/callback",
+       "agentManifestUrl": null,
+       "allowedScopes": [
+        "openid",
+        "profile",
+        "identity"
+       ],
+       "logoUrl": null,
+       "createdByUserId": "visual-user",
+       "createdAt": "2026-06-18T00:00:00.000Z",
+       "updatedAt": "2026-06-18T00:00:00.000Z",
+       "id": "market_slack",
+       "clientId": "client_slack_bridge",
+       "appType": "third_party_global",
+       "publishStatus": "published",
+       "category": "Productivity & Collaboration",
+       "dataAccessSummary": "Messages and channel metadata",
+       "name": "Slack Bridge",
+       "description": "Mirror Slock activity into Slack channels.",
+       "homepageUrl": "https://example.com/slack",
+       "humanMarketplaceVisible": true,
+       "installedAt": null,
+       "publisherName": "Raft Labs",
+       "privateShared": false,
+       "official": true,
+       "marketplaceInstallBadge": {
+        "kind": "bucket",
+        "bucket": "100_plus"
+       },
+       "bot": {
+        "offered": true,
+        "handle": "slack",
+        "grant": "pending"
+       },
+       "promptTextRevisionId": "live",
+       "whenToUse": "Summarize Slack conversations."
+      }
+     },
+     {
+      "kind": "app",
+      "id": "app:market_github",
+      "name": "GitHub Issues",
+      "description": "Create issues from tasks and feedback.",
+      "logoUrl": null,
+      "category": "Development",
+      "publisherName": "Raft Labs",
+      "publishedAt": null,
+      "installed": true,
+      "app": {
+       "serverId": "visual-server",
+       "publishRejectionReason": null,
+       "returnUrl": "https://example.com/github/callback",
+       "agentManifestUrl": null,
+       "allowedScopes": [
+        "openid",
+        "profile",
+        "agent:read"
+       ],
+       "logoUrl": null,
+       "createdByUserId": "visual-user",
+       "createdAt": "2026-06-18T00:00:00.000Z",
+       "updatedAt": "2026-06-18T00:00:00.000Z",
+       "id": "market_github",
+       "clientId": "client_github_issues",
+       "appType": "third_party_global",
+       "publishStatus": "published",
+       "category": "Development",
+       "dataAccessSummary": "Tasks and feedback",
+       "name": "GitHub Issues",
+       "description": "Create issues from tasks and feedback.",
+       "homepageUrl": "https://example.com/github",
+       "humanMarketplaceVisible": true,
+       "installedAt": "2026-06-18T00:00:00.000Z",
+       "publisherName": "Raft Labs",
+       "privateShared": false,
+       "official": false,
+       "marketplaceInstallBadge": {
+        "kind": "none"
+       },
+       "permissionApprovalRequired": true
+      }
+     },
+     {
+      "kind": "app",
+      "id": "app:market_linear",
+      "name": "Linear Sync",
+      "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+      "logoUrl": null,
+      "category": "Developer Tools",
+      "publisherName": "Linear Workspace",
+      "publishedAt": null,
+      "installed": false,
+      "app": {
+       "serverId": "visual-server",
+       "publishRejectionReason": null,
+       "returnUrl": null,
+       "agentManifestUrl": null,
+       "allowedScopes": [],
+       "logoUrl": null,
+       "createdByUserId": "visual-user",
+       "createdAt": "2026-06-18T00:00:00.000Z",
+       "updatedAt": "2026-06-18T00:00:00.000Z",
+       "id": "market_linear",
+       "clientId": "client_linear_sync",
+       "appType": "third_party_global",
+       "publishStatus": "published",
+       "category": "Developer Tools",
+       "dataAccessSummary": "Tasks",
+       "name": "Linear Sync",
+       "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+       "homepageUrl": null,
+       "humanMarketplaceVisible": true,
+       "installedAt": null,
+       "publisherName": "Linear",
+       "publisherServerName": "Linear Workspace",
+       "privateShared": false,
+       "official": false,
+       "marketplaceInstallBadge": {
+        "kind": "new"
+       }
+      }
+     }
+    ],
+    "total": 3
+   },
+   "POST /integrations/marketplace/market_slack/install": {
+    "$status": 403,
+    "$body": {
+     "error": "Confirm it's you with your second step before installing this app.",
+     "code": "second_factor_step_up_required",
+     "methods": [
+      "totp",
+      "backup_code"
+     ]
+    }
+   }
+  },
+  "install-success": {
+   "GET /integrations/marketplace": {
+    "$default": [
+     {
+      "serverId": "visual-server",
+      "publishRejectionReason": null,
+      "returnUrl": "https://example.com/slack/oauth/callback",
+      "agentManifestUrl": null,
+      "allowedScopes": [
+       "openid",
+       "profile",
+       "identity"
+      ],
+      "logoUrl": null,
+      "createdByUserId": "visual-user",
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "updatedAt": "2026-06-18T00:00:00.000Z",
+      "id": "market_slack",
+      "clientId": "client_slack_bridge",
+      "appType": "third_party_global",
+      "publishStatus": "published",
+      "category": "Productivity & Collaboration",
+      "dataAccessSummary": "Messages and channel metadata",
+      "name": "Slack Bridge",
+      "description": "Mirror Slock activity into Slack channels.",
+      "homepageUrl": "https://example.com/slack",
+      "humanMarketplaceVisible": true,
+      "installedAt": null,
+      "publisherName": "Raft Labs",
+      "privateShared": false,
+      "official": true,
+      "marketplaceInstallBadge": {
+       "kind": "bucket",
+       "bucket": "100_plus"
+      },
+      "bot": {
+       "offered": true,
+       "handle": "slack",
+       "grant": "pending"
+      },
+      "promptTextRevisionId": "live",
+      "whenToUse": "Summarize Slack conversations."
+     },
+     {
+      "serverId": "visual-server",
+      "publishRejectionReason": null,
+      "returnUrl": "https://example.com/github/callback",
+      "agentManifestUrl": null,
+      "allowedScopes": [
+       "openid",
+       "profile",
+       "agent:read"
+      ],
+      "logoUrl": null,
+      "createdByUserId": "visual-user",
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "updatedAt": "2026-06-18T00:00:00.000Z",
+      "id": "market_github",
+      "clientId": "client_github_issues",
+      "appType": "third_party_global",
+      "publishStatus": "published",
+      "category": "Development",
+      "dataAccessSummary": "Tasks and feedback",
+      "name": "GitHub Issues",
+      "description": "Create issues from tasks and feedback.",
+      "homepageUrl": "https://example.com/github",
+      "humanMarketplaceVisible": true,
+      "installedAt": "2026-06-18T00:00:00.000Z",
+      "publisherName": "Raft Labs",
+      "privateShared": false,
+      "official": false,
+      "marketplaceInstallBadge": {
+       "kind": "none"
+      },
+      "permissionApprovalRequired": true
+     },
+     {
+      "serverId": "visual-server",
+      "publishRejectionReason": null,
+      "returnUrl": null,
+      "agentManifestUrl": null,
+      "allowedScopes": [],
+      "logoUrl": null,
+      "createdByUserId": "visual-user",
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "updatedAt": "2026-06-18T00:00:00.000Z",
+      "id": "market_linear",
+      "clientId": "client_linear_sync",
+      "appType": "third_party_global",
+      "publishStatus": "published",
+      "category": "Developer Tools",
+      "dataAccessSummary": "Tasks",
+      "name": "Linear Sync",
+      "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+      "homepageUrl": null,
+      "humanMarketplaceVisible": true,
+      "installedAt": null,
+      "publisherName": "Linear",
+      "publisherServerName": "Linear Workspace",
+      "privateShared": false,
+      "official": false,
+      "marketplaceInstallBadge": {
+       "kind": "new"
+      }
+     }
+    ],
+    "$when": [
+     {
+      "after": "POST /integrations/marketplace/market_slack/install",
+      "answer": [
+       {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/slack/oauth/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "identity"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_slack",
+        "clientId": "client_slack_bridge",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Productivity & Collaboration",
+        "dataAccessSummary": "Messages and channel metadata",
+        "name": "Slack Bridge",
+        "description": "Mirror Slock activity into Slack channels.",
+        "homepageUrl": "https://example.com/slack",
+        "humanMarketplaceVisible": true,
+        "installedAt": "2026-06-18T00:00:00.000Z",
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": true,
+        "marketplaceInstallBadge": {
+         "kind": "bucket",
+         "bucket": "100_plus"
+        },
+        "bot": {
+         "offered": true,
+         "handle": "slack",
+         "grant": "pending"
+        },
+        "promptTextRevisionId": "live",
+        "whenToUse": "Summarize Slack conversations."
+       },
+       {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/github/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "agent:read"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_github",
+        "clientId": "client_github_issues",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Development",
+        "dataAccessSummary": "Tasks and feedback",
+        "name": "GitHub Issues",
+        "description": "Create issues from tasks and feedback.",
+        "homepageUrl": "https://example.com/github",
+        "humanMarketplaceVisible": true,
+        "installedAt": "2026-06-18T00:00:00.000Z",
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": false,
+        "marketplaceInstallBadge": {
+         "kind": "none"
+        },
+        "permissionApprovalRequired": true
+       },
+       {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": null,
+        "agentManifestUrl": null,
+        "allowedScopes": [],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_linear",
+        "clientId": "client_linear_sync",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Developer Tools",
+        "dataAccessSummary": "Tasks",
+        "name": "Linear Sync",
+        "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+        "homepageUrl": null,
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Linear",
+        "publisherServerName": "Linear Workspace",
+        "privateShared": false,
+        "official": false,
+        "marketplaceInstallBadge": {
+         "kind": "new"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "GET /integrations/marketplace/listings": {
+    "$default": {
+     "items": [
+      {
+       "kind": "app",
+       "id": "app:market_slack",
+       "name": "Slack Bridge",
+       "description": "Mirror Slock activity into Slack channels.",
+       "logoUrl": null,
+       "category": "Productivity & Collaboration",
+       "publisherName": "Raft Labs",
+       "publishedAt": null,
+       "installed": false,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/slack/oauth/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "identity"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_slack",
+        "clientId": "client_slack_bridge",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Productivity & Collaboration",
+        "dataAccessSummary": "Messages and channel metadata",
+        "name": "Slack Bridge",
+        "description": "Mirror Slock activity into Slack channels.",
+        "homepageUrl": "https://example.com/slack",
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": true,
+        "marketplaceInstallBadge": {
+         "kind": "bucket",
+         "bucket": "100_plus"
+        },
+        "bot": {
+         "offered": true,
+         "handle": "slack",
+         "grant": "pending"
+        },
+        "promptTextRevisionId": "live",
+        "whenToUse": "Summarize Slack conversations."
+       }
+      },
+      {
+       "kind": "app",
+       "id": "app:market_github",
+       "name": "GitHub Issues",
+       "description": "Create issues from tasks and feedback.",
+       "logoUrl": null,
+       "category": "Development",
+       "publisherName": "Raft Labs",
+       "publishedAt": null,
+       "installed": true,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/github/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "agent:read"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_github",
+        "clientId": "client_github_issues",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Development",
+        "dataAccessSummary": "Tasks and feedback",
+        "name": "GitHub Issues",
+        "description": "Create issues from tasks and feedback.",
+        "homepageUrl": "https://example.com/github",
+        "humanMarketplaceVisible": true,
+        "installedAt": "2026-06-18T00:00:00.000Z",
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": false,
+        "marketplaceInstallBadge": {
+         "kind": "none"
+        },
+        "permissionApprovalRequired": true
+       }
+      },
+      {
+       "kind": "app",
+       "id": "app:market_linear",
+       "name": "Linear Sync",
+       "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+       "logoUrl": null,
+       "category": "Developer Tools",
+       "publisherName": "Linear Workspace",
+       "publishedAt": null,
+       "installed": false,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": null,
+        "agentManifestUrl": null,
+        "allowedScopes": [],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_linear",
+        "clientId": "client_linear_sync",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Developer Tools",
+        "dataAccessSummary": "Tasks",
+        "name": "Linear Sync",
+        "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+        "homepageUrl": null,
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Linear",
+        "publisherServerName": "Linear Workspace",
+        "privateShared": false,
+        "official": false,
+        "marketplaceInstallBadge": {
+         "kind": "new"
+        }
+       }
+      }
+     ],
+     "total": 3
+    },
+    "$when": [
+     {
+      "after": "POST /integrations/marketplace/market_slack/install",
+      "answer": {
+       "items": [
+        {
+         "kind": "app",
+         "id": "app:market_slack",
+         "name": "Slack Bridge",
+         "description": "Mirror Slock activity into Slack channels.",
+         "logoUrl": null,
+         "category": "Productivity & Collaboration",
+         "publisherName": "Raft Labs",
+         "publishedAt": null,
+         "installed": true,
+         "app": {
+          "serverId": "visual-server",
+          "publishRejectionReason": null,
+          "returnUrl": "https://example.com/slack/oauth/callback",
+          "agentManifestUrl": null,
+          "allowedScopes": [
+           "openid",
+           "profile",
+           "identity"
+          ],
+          "logoUrl": null,
+          "createdByUserId": "visual-user",
+          "createdAt": "2026-06-18T00:00:00.000Z",
+          "updatedAt": "2026-06-18T00:00:00.000Z",
+          "id": "market_slack",
+          "clientId": "client_slack_bridge",
+          "appType": "third_party_global",
+          "publishStatus": "published",
+          "category": "Productivity & Collaboration",
+          "dataAccessSummary": "Messages and channel metadata",
+          "name": "Slack Bridge",
+          "description": "Mirror Slock activity into Slack channels.",
+          "homepageUrl": "https://example.com/slack",
+          "humanMarketplaceVisible": true,
+          "installedAt": "2026-06-18T00:00:00.000Z",
+          "publisherName": "Raft Labs",
+          "privateShared": false,
+          "official": true,
+          "marketplaceInstallBadge": {
+           "kind": "bucket",
+           "bucket": "100_plus"
+          },
+          "bot": {
+           "offered": true,
+           "handle": "slack",
+           "grant": "pending"
+          },
+          "promptTextRevisionId": "live",
+          "whenToUse": "Summarize Slack conversations."
+         }
+        },
+        {
+         "kind": "app",
+         "id": "app:market_github",
+         "name": "GitHub Issues",
+         "description": "Create issues from tasks and feedback.",
+         "logoUrl": null,
+         "category": "Development",
+         "publisherName": "Raft Labs",
+         "publishedAt": null,
+         "installed": true,
+         "app": {
+          "serverId": "visual-server",
+          "publishRejectionReason": null,
+          "returnUrl": "https://example.com/github/callback",
+          "agentManifestUrl": null,
+          "allowedScopes": [
+           "openid",
+           "profile",
+           "agent:read"
+          ],
+          "logoUrl": null,
+          "createdByUserId": "visual-user",
+          "createdAt": "2026-06-18T00:00:00.000Z",
+          "updatedAt": "2026-06-18T00:00:00.000Z",
+          "id": "market_github",
+          "clientId": "client_github_issues",
+          "appType": "third_party_global",
+          "publishStatus": "published",
+          "category": "Development",
+          "dataAccessSummary": "Tasks and feedback",
+          "name": "GitHub Issues",
+          "description": "Create issues from tasks and feedback.",
+          "homepageUrl": "https://example.com/github",
+          "humanMarketplaceVisible": true,
+          "installedAt": "2026-06-18T00:00:00.000Z",
+          "publisherName": "Raft Labs",
+          "privateShared": false,
+          "official": false,
+          "marketplaceInstallBadge": {
+           "kind": "none"
+          },
+          "permissionApprovalRequired": true
+         }
+        },
+        {
+         "kind": "app",
+         "id": "app:market_linear",
+         "name": "Linear Sync",
+         "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+         "logoUrl": null,
+         "category": "Developer Tools",
+         "publisherName": "Linear Workspace",
+         "publishedAt": null,
+         "installed": false,
+         "app": {
+          "serverId": "visual-server",
+          "publishRejectionReason": null,
+          "returnUrl": null,
+          "agentManifestUrl": null,
+          "allowedScopes": [],
+          "logoUrl": null,
+          "createdByUserId": "visual-user",
+          "createdAt": "2026-06-18T00:00:00.000Z",
+          "updatedAt": "2026-06-18T00:00:00.000Z",
+          "id": "market_linear",
+          "clientId": "client_linear_sync",
+          "appType": "third_party_global",
+          "publishStatus": "published",
+          "category": "Developer Tools",
+          "dataAccessSummary": "Tasks",
+          "name": "Linear Sync",
+          "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+          "homepageUrl": null,
+          "humanMarketplaceVisible": true,
+          "installedAt": null,
+          "publisherName": "Linear",
+          "publisherServerName": "Linear Workspace",
+          "privateShared": false,
+          "official": false,
+          "marketplaceInstallBadge": {
+           "kind": "new"
+          }
+         }
+        }
+       ],
+       "total": 3
+      }
+     }
+    ]
+   },
+   "POST /integrations/marketplace/market_slack/install": {
+    "ok": true,
+    "botGrant": "granted"
+   }
+  },
+  "install-setup": {
+   "GET /integrations/marketplace": {
+    "$default": [
+     {
+      "serverId": "visual-server",
+      "publishRejectionReason": null,
+      "returnUrl": "https://example.com/slack/oauth/callback",
+      "agentManifestUrl": null,
+      "allowedScopes": [
+       "openid",
+       "profile",
+       "identity"
+      ],
+      "logoUrl": null,
+      "createdByUserId": "visual-user",
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "updatedAt": "2026-06-18T00:00:00.000Z",
+      "id": "market_slack",
+      "clientId": "client_slack_bridge",
+      "appType": "third_party_global",
+      "publishStatus": "published",
+      "category": "Productivity & Collaboration",
+      "dataAccessSummary": "Messages and channel metadata",
+      "name": "Slack Bridge",
+      "description": "Mirror Slock activity into Slack channels.",
+      "homepageUrl": "https://example.com/slack",
+      "humanMarketplaceVisible": true,
+      "installedAt": null,
+      "publisherName": "Raft Labs",
+      "privateShared": false,
+      "official": true,
+      "marketplaceInstallBadge": {
+       "kind": "bucket",
+       "bucket": "100_plus"
+      },
+      "bot": {
+       "offered": true,
+       "handle": "slack",
+       "grant": "pending"
+      },
+      "promptTextRevisionId": "live",
+      "whenToUse": "Summarize Slack conversations.",
+      "setupUrl": "https://app.example.invalid/setup",
+      "setupDescription": "Choose what Slack Bridge should sync."
+     },
+     {
+      "serverId": "visual-server",
+      "publishRejectionReason": null,
+      "returnUrl": "https://example.com/github/callback",
+      "agentManifestUrl": null,
+      "allowedScopes": [
+       "openid",
+       "profile",
+       "agent:read"
+      ],
+      "logoUrl": null,
+      "createdByUserId": "visual-user",
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "updatedAt": "2026-06-18T00:00:00.000Z",
+      "id": "market_github",
+      "clientId": "client_github_issues",
+      "appType": "third_party_global",
+      "publishStatus": "published",
+      "category": "Development",
+      "dataAccessSummary": "Tasks and feedback",
+      "name": "GitHub Issues",
+      "description": "Create issues from tasks and feedback.",
+      "homepageUrl": "https://example.com/github",
+      "humanMarketplaceVisible": true,
+      "installedAt": "2026-06-18T00:00:00.000Z",
+      "publisherName": "Raft Labs",
+      "privateShared": false,
+      "official": false,
+      "marketplaceInstallBadge": {
+       "kind": "none"
+      },
+      "permissionApprovalRequired": true
+     },
+     {
+      "serverId": "visual-server",
+      "publishRejectionReason": null,
+      "returnUrl": null,
+      "agentManifestUrl": null,
+      "allowedScopes": [],
+      "logoUrl": null,
+      "createdByUserId": "visual-user",
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "updatedAt": "2026-06-18T00:00:00.000Z",
+      "id": "market_linear",
+      "clientId": "client_linear_sync",
+      "appType": "third_party_global",
+      "publishStatus": "published",
+      "category": "Developer Tools",
+      "dataAccessSummary": "Tasks",
+      "name": "Linear Sync",
+      "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+      "homepageUrl": null,
+      "humanMarketplaceVisible": true,
+      "installedAt": null,
+      "publisherName": "Linear",
+      "publisherServerName": "Linear Workspace",
+      "privateShared": false,
+      "official": false,
+      "marketplaceInstallBadge": {
+       "kind": "new"
+      }
+     }
+    ],
+    "$when": [
+     {
+      "after": "POST /integrations/marketplace/market_slack/install",
+      "answer": [
+       {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/slack/oauth/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "identity"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_slack",
+        "clientId": "client_slack_bridge",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Productivity & Collaboration",
+        "dataAccessSummary": "Messages and channel metadata",
+        "name": "Slack Bridge",
+        "description": "Mirror Slock activity into Slack channels.",
+        "homepageUrl": "https://example.com/slack",
+        "humanMarketplaceVisible": true,
+        "installedAt": "2026-06-18T00:00:00.000Z",
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": true,
+        "marketplaceInstallBadge": {
+         "kind": "bucket",
+         "bucket": "100_plus"
+        },
+        "bot": {
+         "offered": true,
+         "handle": "slack",
+         "grant": "pending"
+        },
+        "promptTextRevisionId": "live",
+        "whenToUse": "Summarize Slack conversations.",
+        "setupUrl": "https://app.example.invalid/setup",
+        "setupDescription": "Choose what Slack Bridge should sync."
+       },
+       {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/github/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "agent:read"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_github",
+        "clientId": "client_github_issues",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Development",
+        "dataAccessSummary": "Tasks and feedback",
+        "name": "GitHub Issues",
+        "description": "Create issues from tasks and feedback.",
+        "homepageUrl": "https://example.com/github",
+        "humanMarketplaceVisible": true,
+        "installedAt": "2026-06-18T00:00:00.000Z",
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": false,
+        "marketplaceInstallBadge": {
+         "kind": "none"
+        },
+        "permissionApprovalRequired": true
+       },
+       {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": null,
+        "agentManifestUrl": null,
+        "allowedScopes": [],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_linear",
+        "clientId": "client_linear_sync",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Developer Tools",
+        "dataAccessSummary": "Tasks",
+        "name": "Linear Sync",
+        "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+        "homepageUrl": null,
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Linear",
+        "publisherServerName": "Linear Workspace",
+        "privateShared": false,
+        "official": false,
+        "marketplaceInstallBadge": {
+         "kind": "new"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "GET /integrations/marketplace/listings": {
+    "$default": {
+     "items": [
+      {
+       "kind": "app",
+       "id": "app:market_slack",
+       "name": "Slack Bridge",
+       "description": "Mirror Slock activity into Slack channels.",
+       "logoUrl": null,
+       "category": "Productivity & Collaboration",
+       "publisherName": "Raft Labs",
+       "publishedAt": null,
+       "installed": false,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/slack/oauth/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "identity"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_slack",
+        "clientId": "client_slack_bridge",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Productivity & Collaboration",
+        "dataAccessSummary": "Messages and channel metadata",
+        "name": "Slack Bridge",
+        "description": "Mirror Slock activity into Slack channels.",
+        "homepageUrl": "https://example.com/slack",
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": true,
+        "marketplaceInstallBadge": {
+         "kind": "bucket",
+         "bucket": "100_plus"
+        },
+        "bot": {
+         "offered": true,
+         "handle": "slack",
+         "grant": "pending"
+        },
+        "promptTextRevisionId": "live",
+        "whenToUse": "Summarize Slack conversations.",
+        "setupUrl": "https://app.example.invalid/setup",
+        "setupDescription": "Choose what Slack Bridge should sync."
+       }
+      },
+      {
+       "kind": "app",
+       "id": "app:market_github",
+       "name": "GitHub Issues",
+       "description": "Create issues from tasks and feedback.",
+       "logoUrl": null,
+       "category": "Development",
+       "publisherName": "Raft Labs",
+       "publishedAt": null,
+       "installed": true,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": "https://example.com/github/callback",
+        "agentManifestUrl": null,
+        "allowedScopes": [
+         "openid",
+         "profile",
+         "agent:read"
+        ],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_github",
+        "clientId": "client_github_issues",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Development",
+        "dataAccessSummary": "Tasks and feedback",
+        "name": "GitHub Issues",
+        "description": "Create issues from tasks and feedback.",
+        "homepageUrl": "https://example.com/github",
+        "humanMarketplaceVisible": true,
+        "installedAt": "2026-06-18T00:00:00.000Z",
+        "publisherName": "Raft Labs",
+        "privateShared": false,
+        "official": false,
+        "marketplaceInstallBadge": {
+         "kind": "none"
+        },
+        "permissionApprovalRequired": true
+       }
+      },
+      {
+       "kind": "app",
+       "id": "app:market_linear",
+       "name": "Linear Sync",
+       "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+       "logoUrl": null,
+       "category": "Developer Tools",
+       "publisherName": "Linear Workspace",
+       "publishedAt": null,
+       "installed": false,
+       "app": {
+        "serverId": "visual-server",
+        "publishRejectionReason": null,
+        "returnUrl": null,
+        "agentManifestUrl": null,
+        "allowedScopes": [],
+        "logoUrl": null,
+        "createdByUserId": "visual-user",
+        "createdAt": "2026-06-18T00:00:00.000Z",
+        "updatedAt": "2026-06-18T00:00:00.000Z",
+        "id": "market_linear",
+        "clientId": "client_linear_sync",
+        "appType": "third_party_global",
+        "publishStatus": "published",
+        "category": "Developer Tools",
+        "dataAccessSummary": "Tasks",
+        "name": "Linear Sync",
+        "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+        "homepageUrl": null,
+        "humanMarketplaceVisible": true,
+        "installedAt": null,
+        "publisherName": "Linear",
+        "publisherServerName": "Linear Workspace",
+        "privateShared": false,
+        "official": false,
+        "marketplaceInstallBadge": {
+         "kind": "new"
+        }
+       }
+      }
+     ],
+     "total": 3
+    },
+    "$when": [
+     {
+      "after": "POST /integrations/marketplace/market_slack/install",
+      "answer": {
+       "items": [
+        {
+         "kind": "app",
+         "id": "app:market_slack",
+         "name": "Slack Bridge",
+         "description": "Mirror Slock activity into Slack channels.",
+         "logoUrl": null,
+         "category": "Productivity & Collaboration",
+         "publisherName": "Raft Labs",
+         "publishedAt": null,
+         "installed": true,
+         "app": {
+          "serverId": "visual-server",
+          "publishRejectionReason": null,
+          "returnUrl": "https://example.com/slack/oauth/callback",
+          "agentManifestUrl": null,
+          "allowedScopes": [
+           "openid",
+           "profile",
+           "identity"
+          ],
+          "logoUrl": null,
+          "createdByUserId": "visual-user",
+          "createdAt": "2026-06-18T00:00:00.000Z",
+          "updatedAt": "2026-06-18T00:00:00.000Z",
+          "id": "market_slack",
+          "clientId": "client_slack_bridge",
+          "appType": "third_party_global",
+          "publishStatus": "published",
+          "category": "Productivity & Collaboration",
+          "dataAccessSummary": "Messages and channel metadata",
+          "name": "Slack Bridge",
+          "description": "Mirror Slock activity into Slack channels.",
+          "homepageUrl": "https://example.com/slack",
+          "humanMarketplaceVisible": true,
+          "installedAt": "2026-06-18T00:00:00.000Z",
+          "publisherName": "Raft Labs",
+          "privateShared": false,
+          "official": true,
+          "marketplaceInstallBadge": {
+           "kind": "bucket",
+           "bucket": "100_plus"
+          },
+          "bot": {
+           "offered": true,
+           "handle": "slack",
+           "grant": "pending"
+          },
+          "promptTextRevisionId": "live",
+          "whenToUse": "Summarize Slack conversations.",
+          "setupUrl": "https://app.example.invalid/setup",
+          "setupDescription": "Choose what Slack Bridge should sync."
+         }
+        },
+        {
+         "kind": "app",
+         "id": "app:market_github",
+         "name": "GitHub Issues",
+         "description": "Create issues from tasks and feedback.",
+         "logoUrl": null,
+         "category": "Development",
+         "publisherName": "Raft Labs",
+         "publishedAt": null,
+         "installed": true,
+         "app": {
+          "serverId": "visual-server",
+          "publishRejectionReason": null,
+          "returnUrl": "https://example.com/github/callback",
+          "agentManifestUrl": null,
+          "allowedScopes": [
+           "openid",
+           "profile",
+           "agent:read"
+          ],
+          "logoUrl": null,
+          "createdByUserId": "visual-user",
+          "createdAt": "2026-06-18T00:00:00.000Z",
+          "updatedAt": "2026-06-18T00:00:00.000Z",
+          "id": "market_github",
+          "clientId": "client_github_issues",
+          "appType": "third_party_global",
+          "publishStatus": "published",
+          "category": "Development",
+          "dataAccessSummary": "Tasks and feedback",
+          "name": "GitHub Issues",
+          "description": "Create issues from tasks and feedback.",
+          "homepageUrl": "https://example.com/github",
+          "humanMarketplaceVisible": true,
+          "installedAt": "2026-06-18T00:00:00.000Z",
+          "publisherName": "Raft Labs",
+          "privateShared": false,
+          "official": false,
+          "marketplaceInstallBadge": {
+           "kind": "none"
+          },
+          "permissionApprovalRequired": true
+         }
+        },
+        {
+         "kind": "app",
+         "id": "app:market_linear",
+         "name": "Linear Sync",
+         "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+         "logoUrl": null,
+         "category": "Developer Tools",
+         "publisherName": "Linear Workspace",
+         "publishedAt": null,
+         "installed": false,
+         "app": {
+          "serverId": "visual-server",
+          "publishRejectionReason": null,
+          "returnUrl": null,
+          "agentManifestUrl": null,
+          "allowedScopes": [],
+          "logoUrl": null,
+          "createdByUserId": "visual-user",
+          "createdAt": "2026-06-18T00:00:00.000Z",
+          "updatedAt": "2026-06-18T00:00:00.000Z",
+          "id": "market_linear",
+          "clientId": "client_linear_sync",
+          "appType": "third_party_global",
+          "publishStatus": "published",
+          "category": "Developer Tools",
+          "dataAccessSummary": "Tasks",
+          "name": "Linear Sync",
+          "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+          "homepageUrl": null,
+          "humanMarketplaceVisible": true,
+          "installedAt": null,
+          "publisherName": "Linear",
+          "publisherServerName": "Linear Workspace",
+          "privateShared": false,
+          "official": false,
+          "marketplaceInstallBadge": {
+           "kind": "new"
+          }
+         }
+        }
+       ],
+       "total": 3
+      }
+     }
+    ]
+   },
+   "POST /integrations/marketplace/market_slack/install": {
+    "ok": true,
+    "botGrant": "granted"
+   },
+   "GET /integrations/clients/market_slack/setup": {
+    "status": "pending",
+    "revision": 1,
+    "completedAt": null,
+    "canConfigure": true,
+    "url": "https://app.example.invalid/setup",
+    "description": "Choose what Slack Bridge should sync."
+   }
+  },
+  "install-permissions-changed": {
+   "POST /integrations/marketplace/market_slack/install": {
+    "$status": 409,
+    "$body": {
+     "error": "This app's permissions just changed. Review the current permissions, then confirm again.",
+     "code": "APP_PERMISSIONS_CHANGED",
+     "current_scopes": [
+      "openid",
+      "profile",
+      "identity",
+      "agent:read"
+     ],
+     "current_groups": [
+      "server"
+     ],
+     "current_text_revision_id": null,
+     "current_text": null
+    }
+   }
+  },
+  "bot-step-up": {
+   "GET /integrations/marketplace": [
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/slack/oauth/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "identity"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_slack",
+     "clientId": "client_slack_bridge",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Productivity & Collaboration",
+     "dataAccessSummary": "Messages and channel metadata",
+     "name": "Slack Bridge",
+     "description": "Mirror Slock activity into Slack channels.",
+     "homepageUrl": "https://example.com/slack",
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": true,
+     "marketplaceInstallBadge": {
+      "kind": "bucket",
+      "bucket": "100_plus"
+     }
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/github/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "agent:read"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_github",
+     "clientId": "client_github_issues",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Development",
+     "dataAccessSummary": "Tasks and feedback",
+     "name": "GitHub Issues",
+     "description": "Create issues from tasks and feedback.",
+     "homepageUrl": "https://example.com/github",
+     "humanMarketplaceVisible": true,
+     "installedAt": "2026-06-18T00:00:00.000Z",
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "none"
+     },
+     "permissionApprovalRequired": true,
+     "bot": {
+      "offered": true,
+      "handle": "issues",
+      "grant": "pending"
+     }
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": null,
+     "agentManifestUrl": null,
+     "allowedScopes": [],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_linear",
+     "clientId": "client_linear_sync",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Developer Tools",
+     "dataAccessSummary": "Tasks",
+     "name": "Linear Sync",
+     "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+     "homepageUrl": null,
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Linear",
+     "publisherServerName": "Linear Workspace",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "new"
+     }
+    }
+   ],
+   "POST /integrations/clients/market_github/install/bot": {
+    "$status": 403,
+    "$body": {
+     "error": "Confirm it's you with your second step before adding this app's bot.",
+     "code": "second_factor_step_up_required",
+     "methods": [
+      "totp",
+      "backup_code"
+     ]
+    }
+   }
+  },
+  "bot-granted": {
+   "GET /integrations/marketplace": [
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/slack/oauth/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "identity"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_slack",
+     "clientId": "client_slack_bridge",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Productivity & Collaboration",
+     "dataAccessSummary": "Messages and channel metadata",
+     "name": "Slack Bridge",
+     "description": "Mirror Slock activity into Slack channels.",
+     "homepageUrl": "https://example.com/slack",
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": true,
+     "marketplaceInstallBadge": {
+      "kind": "bucket",
+      "bucket": "100_plus"
+     }
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/github/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "agent:read"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_github",
+     "clientId": "client_github_issues",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Development",
+     "dataAccessSummary": "Tasks and feedback",
+     "name": "GitHub Issues",
+     "description": "Create issues from tasks and feedback.",
+     "homepageUrl": "https://example.com/github",
+     "humanMarketplaceVisible": true,
+     "installedAt": "2026-06-18T00:00:00.000Z",
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "none"
+     },
+     "permissionApprovalRequired": true,
+     "bot": {
+      "offered": true,
+      "handle": "issues",
+      "grant": "pending"
+     }
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": null,
+     "agentManifestUrl": null,
+     "allowedScopes": [],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_linear",
+     "clientId": "client_linear_sync",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Developer Tools",
+     "dataAccessSummary": "Tasks",
+     "name": "Linear Sync",
+     "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+     "homepageUrl": null,
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Linear",
+     "publisherServerName": "Linear Workspace",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "new"
+     }
+    }
+   ],
+   "POST /integrations/clients/market_github/install/bot": {
+    "botGrant": "granted",
+    "bot": {
+     "agentId": "visual-issues-bot",
+     "handle": "issues"
+    }
+   }
+  },
+  "bot-removed": {
+   "GET /integrations/marketplace": [
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/slack/oauth/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "identity"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_slack",
+     "clientId": "client_slack_bridge",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Productivity & Collaboration",
+     "dataAccessSummary": "Messages and channel metadata",
+     "name": "Slack Bridge",
+     "description": "Mirror Slock activity into Slack channels.",
+     "homepageUrl": "https://example.com/slack",
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": true,
+     "marketplaceInstallBadge": {
+      "kind": "bucket",
+      "bucket": "100_plus"
+     }
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": "https://example.com/github/callback",
+     "agentManifestUrl": null,
+     "allowedScopes": [
+      "openid",
+      "profile",
+      "agent:read"
+     ],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_github",
+     "clientId": "client_github_issues",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Development",
+     "dataAccessSummary": "Tasks and feedback",
+     "name": "GitHub Issues",
+     "description": "Create issues from tasks and feedback.",
+     "homepageUrl": "https://example.com/github",
+     "humanMarketplaceVisible": true,
+     "installedAt": "2026-06-18T00:00:00.000Z",
+     "publisherName": "Raft Labs",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "none"
+     },
+     "permissionApprovalRequired": true,
+     "bot": {
+      "offered": true,
+      "grant": "granted",
+      "agentId": "visual-issues-bot",
+      "handle": "issues"
+     }
+    },
+    {
+     "serverId": "visual-server",
+     "publishRejectionReason": null,
+     "returnUrl": null,
+     "agentManifestUrl": null,
+     "allowedScopes": [],
+     "logoUrl": null,
+     "createdByUserId": "visual-user",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-18T00:00:00.000Z",
+     "id": "market_linear",
+     "clientId": "client_linear_sync",
+     "appType": "third_party_global",
+     "publishStatus": "published",
+     "category": "Developer Tools",
+     "dataAccessSummary": "Tasks",
+     "name": "Linear Sync",
+     "description": "Keep Linear issues and Raft tasks in step: status, assignee and comments flow both ways, and agents can open issues from any thread when work needs tracking.",
+     "homepageUrl": null,
+     "humanMarketplaceVisible": true,
+     "installedAt": null,
+     "publisherName": "Linear",
+     "publisherServerName": "Linear Workspace",
+     "privateShared": false,
+     "official": false,
+     "marketplaceInstallBadge": {
+      "kind": "new"
+     }
+    }
+   ],
+   "POST /integrations/clients/market_github/install/bot": {
+    "botGrant": "revoked",
+    "bot": null
    }
   },
   "slack-healthy": {
@@ -709,6 +3033,336 @@
         "heldAt": null
        }
       ]
+     }
+    }
+   }
+  },
+  "slack-retry-requested": {
+   "GET /slack-bridge/provisioning": {
+    "protocolVersion": 1,
+    "oauthAuthority": null,
+    "snapshot": {
+     "stage": "health",
+     "workspaceName": "Fixture Slack",
+     "raftChannels": [
+      {
+       "id": "r1",
+       "name": "general"
+      }
+     ],
+     "slackChannels": [
+      {
+       "id": "s1",
+       "name": "general",
+       "isMember": true,
+       "privacyClass": "public"
+      }
+     ],
+     "channelPairs": [
+      {
+       "raftChannelId": "r1",
+       "slackChannelId": "s1",
+       "bindingEpoch": 7
+      }
+     ],
+     "preflight": null,
+     "rawHealth": {
+      "install": {
+       "state": "active",
+       "epochs": {
+        "grant": "2",
+        "connection": "4",
+        "scope": "3",
+        "credential": "5"
+       }
+      },
+      "credential": {
+       "state": "active"
+      },
+      "bindings": [
+       {
+        "id": "b1",
+        "state": "active",
+        "bindingEpoch": 7,
+        "stateReason": null,
+        "recoveryAction": "none"
+       }
+      ],
+      "audiences": [
+       {
+        "bindingId": "b1",
+        "status": "matched"
+       }
+      ],
+      "lastVerifiedAt": "2026-10-08T00:00:00Z",
+      "agentMentionSync": null,
+      "failingSurface": null,
+      "outboundDeliveries": [
+       {
+        "raftChannelId": "r1",
+        "bindingId": "b1",
+        "bindingEpoch": 7,
+        "deliveryId": "delivery-1",
+        "providerAttempts": 2,
+        "state": "outcome_unknown",
+        "retryRequested": false
+       }
+      ],
+      "inboundIsolated": [
+       {
+        "raftChannelId": "r1",
+        "bindingId": "b1",
+        "bindingEpoch": 7,
+        "eventId": "event-1",
+        "reason": "actor_identity_pending",
+        "firstFailureAt": null,
+        "heldAt": null
+       }
+      ]
+     }
+    }
+   },
+   "POST /slack-bridge/provisioning/retry-delivery": {
+    "protocolVersion": 1,
+    "oauthAuthority": null,
+    "snapshot": {
+     "stage": "health",
+     "workspaceName": "Fixture Slack",
+     "raftChannels": [
+      {
+       "id": "r1",
+       "name": "general"
+      }
+     ],
+     "slackChannels": [
+      {
+       "id": "s1",
+       "name": "general",
+       "isMember": true,
+       "privacyClass": "public"
+      }
+     ],
+     "channelPairs": [
+      {
+       "raftChannelId": "r1",
+       "slackChannelId": "s1",
+       "bindingEpoch": 7
+      }
+     ],
+     "preflight": null,
+     "rawHealth": {
+      "install": {
+       "state": "active",
+       "epochs": {
+        "grant": "2",
+        "connection": "4",
+        "scope": "3",
+        "credential": "5"
+       }
+      },
+      "credential": {
+       "state": "active"
+      },
+      "bindings": [
+       {
+        "id": "b1",
+        "state": "active",
+        "bindingEpoch": 7,
+        "stateReason": null,
+        "recoveryAction": "none"
+       }
+      ],
+      "audiences": [
+       {
+        "bindingId": "b1",
+        "status": "matched"
+       }
+      ],
+      "lastVerifiedAt": "2026-10-08T00:00:00Z",
+      "agentMentionSync": null,
+      "failingSurface": null,
+      "outboundDeliveries": [
+       {
+        "raftChannelId": "r1",
+        "bindingId": "b1",
+        "bindingEpoch": 7,
+        "deliveryId": "delivery-1",
+        "providerAttempts": 2,
+        "state": "outcome_unknown",
+        "retryRequested": true
+       }
+      ],
+      "inboundIsolated": [
+       {
+        "raftChannelId": "r1",
+        "bindingId": "b1",
+        "bindingEpoch": 7,
+        "eventId": "event-1",
+        "reason": "actor_identity_pending",
+        "firstFailureAt": null,
+        "heldAt": null
+       }
+      ]
+     }
+    }
+   }
+  },
+  "slack-replayed": {
+   "GET /slack-bridge/provisioning": {
+    "protocolVersion": 1,
+    "oauthAuthority": null,
+    "snapshot": {
+     "stage": "health",
+     "workspaceName": "Fixture Slack",
+     "raftChannels": [
+      {
+       "id": "r1",
+       "name": "general"
+      }
+     ],
+     "slackChannels": [
+      {
+       "id": "s1",
+       "name": "general",
+       "isMember": true,
+       "privacyClass": "public"
+      }
+     ],
+     "channelPairs": [
+      {
+       "raftChannelId": "r1",
+       "slackChannelId": "s1",
+       "bindingEpoch": 7
+      }
+     ],
+     "preflight": null,
+     "rawHealth": {
+      "install": {
+       "state": "active",
+       "epochs": {
+        "grant": "2",
+        "connection": "4",
+        "scope": "3",
+        "credential": "5"
+       }
+      },
+      "credential": {
+       "state": "active"
+      },
+      "bindings": [
+       {
+        "id": "b1",
+        "state": "active",
+        "bindingEpoch": 7,
+        "stateReason": null,
+        "recoveryAction": "none"
+       }
+      ],
+      "audiences": [
+       {
+        "bindingId": "b1",
+        "status": "matched"
+       }
+      ],
+      "lastVerifiedAt": "2026-10-08T00:00:00Z",
+      "agentMentionSync": null,
+      "failingSurface": null,
+      "outboundDeliveries": [
+       {
+        "raftChannelId": "r1",
+        "bindingId": "b1",
+        "bindingEpoch": 7,
+        "deliveryId": "delivery-1",
+        "providerAttempts": 2,
+        "state": "outcome_unknown",
+        "retryRequested": false
+       }
+      ],
+      "inboundIsolated": [
+       {
+        "raftChannelId": "r1",
+        "bindingId": "b1",
+        "bindingEpoch": 7,
+        "eventId": "event-1",
+        "reason": "actor_identity_pending",
+        "firstFailureAt": null,
+        "heldAt": null
+       }
+      ]
+     }
+    }
+   },
+   "POST /slack-bridge/provisioning/replay-inbound": {
+    "protocolVersion": 1,
+    "oauthAuthority": null,
+    "snapshot": {
+     "stage": "health",
+     "workspaceName": "Fixture Slack",
+     "raftChannels": [
+      {
+       "id": "r1",
+       "name": "general"
+      }
+     ],
+     "slackChannels": [
+      {
+       "id": "s1",
+       "name": "general",
+       "isMember": true,
+       "privacyClass": "public"
+      }
+     ],
+     "channelPairs": [
+      {
+       "raftChannelId": "r1",
+       "slackChannelId": "s1",
+       "bindingEpoch": 7
+      }
+     ],
+     "preflight": null,
+     "rawHealth": {
+      "install": {
+       "state": "active",
+       "epochs": {
+        "grant": "2",
+        "connection": "4",
+        "scope": "3",
+        "credential": "5"
+       }
+      },
+      "credential": {
+       "state": "active"
+      },
+      "bindings": [
+       {
+        "id": "b1",
+        "state": "active",
+        "bindingEpoch": 7,
+        "stateReason": null,
+        "recoveryAction": "none"
+       }
+      ],
+      "audiences": [
+       {
+        "bindingId": "b1",
+        "status": "matched"
+       }
+      ],
+      "lastVerifiedAt": "2026-10-08T00:00:00Z",
+      "agentMentionSync": null,
+      "failingSurface": null,
+      "outboundDeliveries": [
+       {
+        "raftChannelId": "r1",
+        "bindingId": "b1",
+        "bindingEpoch": 7,
+        "deliveryId": "delivery-1",
+        "providerAttempts": 2,
+        "state": "outcome_unknown",
+        "retryRequested": false
+       }
+      ],
+      "inboundIsolated": []
      }
     }
    }

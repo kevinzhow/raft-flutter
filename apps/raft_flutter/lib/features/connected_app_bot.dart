@@ -17,6 +17,9 @@ class ConnectedAppBot extends StatefulWidget {
     required this.offer,
     required this.onChanged,
     required this.onViewProfile,
+    this.fromBotLink = false,
+    this.pendingPermissions,
+    this.onFindAdmin,
   });
 
   final WorkspaceController workspace;
@@ -24,6 +27,9 @@ class ConnectedAppBot extends StatefulWidget {
   final Map<String, dynamic> offer;
   final ValueChanged<Map<String, dynamic>> onChanged;
   final ValueChanged<String> onViewProfile;
+  final bool fromBotLink;
+  final Widget? pendingPermissions;
+  final VoidCallback? onFindAdmin;
 
   @override
   State<ConnectedAppBot> createState() => _ConnectedAppBotState();
@@ -109,6 +115,7 @@ class _ConnectedAppBotState extends State<ConnectedAppBot> {
           {'handle': handle, 'app': widget.appName},
         ),
         confirmLabel: raftText(context, 'Remove'),
+        confirmVariant: RaftButtonRecipeVariant.warning,
         onConfirm: () => update(false, confirming: true),
       ),
       overModal: true,
@@ -158,61 +165,77 @@ class _ConnectedAppBotState extends State<ConnectedAppBot> {
               ],
             ),
           ),
-        RaftConnectedAppDetailSection(
-          title: 'Posts as',
-          description: tr('Admins of this server decide whether it joins.'),
-          child: RaftCard(
-            padding: const EdgeInsets.all(RaftSpace.x3),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: RaftSpace.x2,
-              children: [
-                Text(
-                  widget.appName,
-                  style: tokens.scale(RaftTypeScale.callout),
-                ),
-                Text('@$handle', style: tokens.scale(RaftTypeScale.monoMeta)),
-                if (granted)
-                  RaftSettingsRecipeBadge(
-                    label: tr('Added to server'),
-                    variant: RaftBadgeRecipeVariant.success,
-                  )
-                else ...[
+        ?widget.pendingPermissions,
+        Focus(
+          autofocus: widget.fromBotLink,
+          skipTraversal: true,
+          child: RaftConnectedAppDetailSection(
+            title: 'Posts as',
+            description: tr('Admins of this server decide whether it joins.'),
+            child: RaftCard(
+              padding: const EdgeInsets.all(RaftSpace.x3),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: RaftSpace.x2,
+                children: [
                   Text(
-                    raftFormat(
-                      context,
-                      'DMs members as {app} (review requests, for example)',
-                      names,
-                    ),
+                    widget.appName,
+                    style: tokens.scale(RaftTypeScale.callout),
                   ),
-                  Text(tr('Posts in channels once it’s invited')),
-                  Text(tr('Can’t see channels it hasn’t joined')),
-                ],
-                Wrap(
-                  spacing: RaftSpace.x2,
-                  runSpacing: RaftSpace.x2,
-                  children: [
-                    if (granted && agent is String)
-                      button(
-                        tr('View profile'),
-                        () => widget.onViewProfile(agent),
+                  Text('@$handle', style: tokens.scale(RaftTypeScale.monoMeta)),
+                  if (granted)
+                    RaftSettingsRecipeBadge(
+                      label: tr('Added to server'),
+                      variant: RaftBadgeRecipeVariant.success,
+                    )
+                  else ...[
+                    Text(
+                      raftFormat(
+                        context,
+                        'DMs members as {app} (review requests, for example)',
+                        names,
                       ),
-                    if (canManage)
-                      granted
-                          ? button(tr('Remove'), confirmRemove)
-                          : button(
-                              raftFormat(
-                                context,
-                                'Add @{handle} to {server}',
-                                names,
-                              ),
-                              () => update(true),
-                            ),
+                    ),
+                    Text(tr('Posts in channels once it’s invited')),
+                    Text(tr('Can’t see channels it hasn’t joined')),
                   ],
-                ),
-                if (failure.message case final message?)
-                  RaftErrorBanner(message),
-              ],
+                  Wrap(
+                    spacing: RaftSpace.x2,
+                    runSpacing: RaftSpace.x2,
+                    children: [
+                      if (granted && agent is String)
+                        button(
+                          tr('View profile'),
+                          () => widget.onViewProfile(agent),
+                        ),
+                      if (canManage)
+                        granted
+                            ? button(tr('Remove'), confirmRemove)
+                            : button(
+                                raftFormat(
+                                  context,
+                                  'Add @{handle} to {server}',
+                                  names,
+                                ),
+                                () => update(true),
+                              ),
+                      if (!canManage && !granted && widget.fromBotLink) ...[
+                        Text(
+                          raftFormat(
+                            context,
+                            'Only an owner or admin can add @{handle}.',
+                            names,
+                          ),
+                        ),
+                        if (widget.onFindAdmin case final findAdmin?)
+                          button(tr('Find a server admin'), findAdmin),
+                      ],
+                    ],
+                  ),
+                  if (failure.message case final message?)
+                    RaftErrorBanner(message),
+                ],
+              ),
             ),
           ),
         ),

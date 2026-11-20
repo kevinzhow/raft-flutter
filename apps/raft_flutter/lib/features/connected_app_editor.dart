@@ -901,8 +901,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     final sections = [
       RaftAppEditorSection(
         id: 'profile',
-        glyph: RaftGlyph.user,
-        railLabel: 'Profile',
         title: 'Profile',
         description: 'Public identity and Marketplace-facing metadata.',
         status: tr(profileComplete ? 'Complete' : 'Needs details'),
@@ -910,8 +908,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'login',
-        glyph: RaftGlyph.shield,
-        railLabel: 'Login with Raft',
         title: 'Login with Raft',
         description: 'Authorized by the user at login.',
         status: tr(loginStatus),
@@ -919,8 +915,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'setup',
-        glyph: RaftGlyph.settings,
-        railLabel: 'Installation setup',
         title: 'Installation setup',
         description: 'Tell installers where to connect an external account or configure your App.',
         status: tr(setupRequired ? 'Setup required' : 'No setup required'),
@@ -933,8 +927,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'permissions',
-        glyph: RaftGlyph.shield,
-        railLabel: 'App permissions',
         title: 'App permissions',
         description: 'Approved by a Server admin at installation. The app accesses data directly.',
         status: raftFormat(context, '{count} permissions selected', {
@@ -944,8 +936,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'notifications',
-        glyph: RaftGlyph.bell,
-        railLabel: 'Webhook',
         title: 'Webhook',
         experimentalBadge: true,
         description: 'Deliver subscribed events to the app.',
@@ -954,8 +944,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'distribution',
-        glyph: RaftGlyph.link2,
-        railLabel: 'Distribution',
         title: 'Distribution',
         description:
             'Private sharing, Marketplace review, and publication state.',
@@ -964,8 +952,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'danger',
-        glyph: RaftGlyph.alertTriangle,
-        railLabel: 'Danger zone',
         title: 'Danger zone',
         description: 'Credential rotation, offline review, and deletion stay separate from routine configuration.',
         status: tr(app == null ? 'Available after save' : 'Restricted'),
@@ -975,15 +961,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     ];
     final showSecret = secret != null;
     return RaftConnectedAppEditorCard(
-      eyebrow: app == null ? 'Register App' : 'Edit app',
-      name: app == null ? tr('New connected app') : '${app['name']}',
-      description: 'Configure login, permissions, and events.',
-      initials: integrationInitials(
-        name.text.isNotEmpty
-            ? name.text
-            : '${app?['name'] ?? app?['clientId'] ?? 'App'}',
-      ),
-      logoUrl: app?['logoUrl'] as String?,
+      formTitle: app == null
+          ? raftTextZh(context, 'Create Raft app', '创建 Raft 应用')
+          : raftFormat(context, 'Edit {name}', {'name': app['name']}),
       closeLabel: tr('Close app form'),
       onClose: widget.onClose,
       submitLabel: tr(

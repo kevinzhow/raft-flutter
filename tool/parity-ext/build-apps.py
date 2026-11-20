@@ -11,8 +11,28 @@ PREFIX = 'components.apps.'
 FIXTURES = Path(__file__).resolve().parent / 'fixtures'
 settings = json.loads((FIXTURES / 'settings.json').read_text())
 marketplace = settings['routes']['GET /integrations/marketplace']
+local_apps = settings['routes']['GET /integrations/clients']
+local_app = local_apps[0]
+local_path = f'/integrations/clients/{local_app["id"]}'
 permissions_path = 'GET /integrations/marketplace/market_github/install/app-notifications'
 permissions = settings['routes'][permissions_path]
+
+
+def marketplace_entry(app):
+    return {
+        'kind': 'app',
+        'id': f'app:{app["id"]}',
+        'name': app['name'],
+        'description': app.get('description'),
+        'logoUrl': app.get('logoUrl'),
+        'category': app.get('category'),
+        'publisherName': app.get('publisherServerName') or app.get('publisherName'),
+        'publishedAt': app.get('publishedAt'),
+        'installed': app['installedAt'] is not None,
+        'app': app,
+    }
+
+
 marketplace[1]['permissionApprovalRequired'] = True
 permissions.update({
     'approval_required': True,
@@ -31,6 +51,125 @@ prompt_revisions = {
                 'when_to_use': prompt_listing['whenToUse']},
     'pending': {'id': 'submitted', 'name': prompt_listing['name'],
                 'when_to_use': 'Summarize Slack conversations for this server.'},
+}
+share_link = {
+    'id': 'visual-share-link',
+    'clientId': local_app['id'],
+    'targetServerSlug': 'fixture-team',
+    'expiresAt': '2026-07-18T00:00:00.000Z',
+    'revokedAt': None,
+    'lastUsedAt': None,
+    'consumedAt': None,
+    'createdAt': local_app['createdAt'],
+    'updatedAt': local_app['updatedAt'],
+}
+
+
+def step_up_required(action):
+    return {
+        '$status': 403,
+        '$body': {
+            'error': f"Confirm it's you with your second step before {action}.",
+            'code': 'second_factor_step_up_required',
+            'methods': ['totp', 'backup_code'],
+        },
+    }
+
+
+install_with_bot = {
+    **marketplace[0],
+    'bot': {'offered': True, 'handle': 'slack', 'grant': 'pending'},
+    'promptTextRevisionId': 'live',
+    'whenToUse': 'Summarize Slack conversations.',
+}
+installed_with_bot = {
+    **marketplace[1],
+    'bot': {'offered': True, 'handle': 'issues', 'grant': 'pending'},
+}
+granted_bot = {'agentId': 'visual-issues-bot', 'handle': 'issues'}
+installed_with_granted_bot = {
+    **installed_with_bot,
+    'bot': {'offered': True, 'grant': 'granted', **granted_bot},
+}
+listing_with_setup = {
+    **install_with_bot,
+    'setupUrl': 'https://app.example.invalid/setup',
+    'setupDescription': 'Choose what Slack Bridge should sync.',
+}
+install_path = 'POST /integrations/marketplace/market_slack/install'
+
+
+def after_install(records, installed_records):
+    return {
+        '$default': records,
+        '$when': [{'after': install_path, 'answer': installed_records}],
+    }
+
+
+def successful_install(listing):
+    installed = {**listing, 'installedAt': local_app['updatedAt']}
+    before = [listing, *marketplace[1:]]
+    after = [installed, *marketplace[1:]]
+    return {
+        'GET /integrations/marketplace': after_install(before, after),
+        'GET /integrations/marketplace/listings': after_install(
+            {'items': [marketplace_entry(app) for app in before], 'total': len(before)},
+            {'items': [marketplace_entry(app) for app in after], 'total': len(after)},
+        ),
+        install_path: {'ok': True, 'botGrant': 'granted'},
+    }
+
+
+stale_prompt_text = 'The text changed while you were looking at it. Review the current text, then try again.'
+install_permissions_changed = "This app's permissions just changed. Review the current permissions, then confirm again."
+recommended_app = {
+    **marketplace[0],
+    'id': 'market_stamp',
+    'clientId': 'stamp',
+    'name': 'Stamp',
+    'official': True,
+    'marketplaceInstallBadge': {'kind': 'none'},
+}
+external_bot = {
+    'provider': 'slack',
+    'appRegistrationId': 'visual-external-app',
+    'installId': 'visual-external-install',
+    'workspaceId': 'visual-slack-workspace',
+    'workspaceName': 'Fixture Slack',
+    'externalActorId': 'B000FIXTURE',
+    'externalConversationId': 'C000FIXTURE',
+    'externalMessageId': 'external-bot-message',
+    'actorKind': 'bot',
+    'displayName': 'Slack bot · ture',
+    'profileDisplayName': 'Deploy Bot',
+    'profileAvatarUrl': '/api/external-avatars/visual-deploy-bot.png',
+    'appName': 'Deployer',
+    'avatarUrl': None,
+    'avatarDigest': None,
+    'actorProjectionRevision': 1,
+}
+external_bot_message = {
+    'id': 'fixture-external-bot-message',
+    'seq': 1,
+    'serverId': 'visual-server',
+    'channelId': 'channel-home',
+    'messageType': 'chat',
+    'senderType': 'external_projection',
+    'senderId': external_bot['externalActorId'],
+    'senderName': external_bot['displayName'],
+    'content': 'The staging build is ready for review.',
+    'createdAt': local_app['createdAt'],
+    'externalAuthor': external_bot,
+}
+login_client = {
+    'id': 'fixture-login-app',
+    'clientId': 'fixture-login',
+    'name': 'Artifact Share',
+    'description': 'Shares private artifacts',
+    'appType': 'third_party_global',
+    'homepageUrl': 'https://app.example.invalid',
+    'returnUrl': 'https://app.example.invalid/complete',
+    'availability': 'ready',
 }
 slack_path = '/slack-bridge/provisioning'
 slack_healthy = {
@@ -72,13 +211,16 @@ slack_recovery['snapshot']['rawHealth'].update({
         'firstFailureAt': None, 'heldAt': None,
     }],
 })
+slack_retry_requested = deepcopy(slack_recovery)
+slack_retry_requested['snapshot']['rawHealth']['outboundDeliveries'][0]['retryRequested'] = True
+slack_replayed = deepcopy(slack_recovery)
+slack_replayed['snapshot']['rawHealth']['inboundIsolated'] = []
 routes = {
     **{key: value for key, value in settings['routes'].items()
        if key.startswith('GET /integrations/')},
     'GET /mcp/apps': {'apps': []},
     'GET /integrations/marketplace/listings': {
-        'items': [{'kind': 'app', 'id': f'app:{app["id"]}', 'app': app,
-                   'installed': app['installedAt'] is not None} for app in marketplace],
+        'items': [marketplace_entry(app) for app in marketplace],
         'total': len(marketplace),
     },
     'GET /integrations/permission-updates': {'count': 1, 'needsAdminReview': True},
@@ -88,6 +230,19 @@ routes = {
         'declined': [],
     },
 }
+def marketplace_pages(next_page):
+    return {
+        'GET /integrations/marketplace/listings': {
+            '$default': {
+                'items': [marketplace_entry(marketplace[0])],
+                'total': 2,
+                'nextCursor': 'second-page',
+            },
+            '$when': [{'query': {'cursor': 'second-page'}, 'answer': next_page}],
+        },
+    }
+
+
 route_sets = {
     'loading': {'GET /integrations/clients': {'$pending': True}},
     'empty': {'GET /integrations/clients': [], 'GET /integrations/marketplace': [],
@@ -98,18 +253,149 @@ route_sets = {
     'link-previews-loading': {'GET /integrations/link-preview-consents': {'$pending': True}},
     'link-previews-empty': {'GET /integrations/link-preview-consents': {'allowed': [], 'declined': []}},
     'link-previews-error': {'GET /integrations/link-preview-consents': {'$status': 503}},
+    'marketplace-loading': {'GET /integrations/marketplace/listings': {'$pending': True}},
+    'marketplace-empty': {'GET /integrations/marketplace/listings': {'items': [], 'total': 0}},
+    'marketplace-error': {'GET /integrations/marketplace/listings': {'$status': 503}},
+    'marketplace-paging': marketplace_pages({'$pending': True}),
+    'marketplace-more-error': marketplace_pages({'$status': 503}),
+    'marketplace-more-loaded': marketplace_pages({
+        'items': [marketplace_entry(marketplace[1])],
+        'total': 2,
+        'nextCursor': None,
+    }),
+    'private-share': {
+        f'GET {local_path}/share-links': {'links': []},
+        f'POST {local_path}/share-links': {
+            'link': share_link,
+            'token': 'visual-fixture-invite',
+            'client': {**local_app, 'appType': 'third_party_global'},
+        },
+        f'DELETE {local_path}/share-links/{share_link["id"]}': {
+            **share_link, 'revokedAt': local_app['updatedAt'],
+        },
+    },
+    'external-bot': {
+        'GET /external-avatars/visual-deploy-bot.png': {
+            '$file': 'announcement-picture.png', '$contentType': 'image/png',
+        },
+        'GET /messages/channel/channel-home': {
+            'messages': [external_bot_message],
+            'hasMore': False,
+            'threadSummariesByParentMessageId': {},
+        },
+    },
+    'login-person': {'GET /oauth/clients/lookup': login_client},
+    'login-loading': {'GET /oauth/clients/lookup': {'$pending': True}},
+    'login-unavailable': {'GET /oauth/clients/lookup': {'$status': 404}},
+    'login-outage': {'GET /oauth/clients/lookup': {'$status': 503}},
+    'login-account': {
+        'GET /oauth/clients/lookup': {**login_client, 'loginMode': 'account'},
+    },
+    'login-account-suspended': {
+        'GET /oauth/clients/lookup': {
+            **login_client, 'loginMode': 'account', 'availability': 'suspended',
+        },
+    },
+    'login-admin-needed': {
+        'GET /oauth/clients/lookup': {
+            **login_client,
+            'availability': 'install_required',
+            'marketplace': True,
+            'installation': {'serverId': 'visual-server', 'canInstall': False},
+        },
+    },
+    'login-install': {
+        'GET /oauth/clients/lookup': {
+            **login_client,
+            'availability': 'install_required',
+            'marketplace': True,
+            'installation': {'serverId': 'visual-server', 'canInstall': True},
+            'bot': install_with_bot['bot'],
+            'promptTextRevisionId': 'live',
+            'whenToUse': 'Share a private artifact on request.',
+            'allowedScopes': ['openid', 'profile', 'agent:read'],
+            'appNotificationGroups': ['server'],
+        },
+        'POST /feature-flags/evaluate': {
+            'evaluations': [{'key': 'app_prompt_text_consent', 'enabled': True}],
+        },
+    },
+    'withdraw-publish': {
+        'GET /integrations/clients': [
+            {**local_app, 'publishStatus': 'publish_requested'}, *local_apps[1:],
+        ],
+        f'POST {local_path}/withdraw-publish': local_app,
+        f'GET {local_path}/share-links': {'links': []},
+    },
+    'recommended': {'GET /integrations/marketplace': [*marketplace, recommended_app]},
     'prompt-review': {
         'GET /integrations/marketplace': [prompt_listing, *marketplace[1:]],
         'GET /integrations/marketplace/listings': {
-            'items': [{'kind': 'app', 'id': f'app:{app["id"]}', 'app': app,
-                       'installed': app['installedAt'] is not None}
+            'items': [marketplace_entry(app)
                       for app in [prompt_listing, *marketplace[1:]]],
             'total': len(marketplace),
         },
         'GET /integrations/clients/market_slack/prompt-text': prompt_revisions,
+        'POST /integrations/clients/market_slack/prompt-text/review': {
+            '$status': 409, '$body': {'code': 'PROMPT_TEXT_REVIEW_STALE'},
+        },
+    },
+    'install-step-up': {
+        'GET /integrations/marketplace': [install_with_bot, *marketplace[1:]],
+        'GET /integrations/marketplace/listings': {
+            'items': [marketplace_entry(app) for app in [install_with_bot, *marketplace[1:]]],
+            'total': len(marketplace),
+        },
+        install_path: step_up_required('installing this app'),
+    },
+    'install-success': successful_install(install_with_bot),
+    'install-setup': {
+        **successful_install(listing_with_setup),
+        'GET /integrations/clients/market_slack/setup': {
+            'status': 'pending', 'revision': 1, 'completedAt': None,
+            'canConfigure': True, 'url': listing_with_setup['setupUrl'],
+            'description': listing_with_setup['setupDescription'],
+        },
+    },
+    'install-permissions-changed': {
+        install_path: {
+            '$status': 409,
+            '$body': {
+                'error': install_permissions_changed,
+                'code': 'APP_PERMISSIONS_CHANGED',
+                'current_scopes': ['openid', 'profile', 'identity', 'agent:read'],
+                'current_groups': ['server'],
+                'current_text_revision_id': None,
+                'current_text': None,
+            },
+        },
+    },
+    'bot-step-up': {
+        'GET /integrations/marketplace': [marketplace[0], installed_with_bot, *marketplace[2:]],
+        'POST /integrations/clients/market_github/install/bot': step_up_required("adding this app's bot"),
+    },
+    'bot-granted': {
+        'GET /integrations/marketplace': [marketplace[0], installed_with_bot, *marketplace[2:]],
+        'POST /integrations/clients/market_github/install/bot': {
+            'botGrant': 'granted', 'bot': granted_bot,
+        },
+    },
+    'bot-removed': {
+        'GET /integrations/marketplace': [marketplace[0], installed_with_granted_bot, *marketplace[2:]],
+        'POST /integrations/clients/market_github/install/bot': {
+            'botGrant': 'revoked', 'bot': None,
+        },
     },
     'slack-healthy': {f'GET {slack_path}': slack_healthy},
     'slack-recovery': {f'GET {slack_path}': slack_recovery},
+    'slack-retry-requested': {
+        f'GET {slack_path}': slack_recovery,
+        f'POST {slack_path}/retry-delivery': slack_retry_requested,
+    },
+    'slack-replayed': {
+        f'GET {slack_path}': slack_recovery,
+        f'POST {slack_path}/replay-inbound': slack_replayed,
+    },
     'slack-unavailable': {f'GET {slack_path}': {
         '$status': 503, '$body': {'ok': False, 'code': 'slack_bridge_provider_unavailable'},
     }},
@@ -155,7 +441,7 @@ detail = (
     {'type': 'tap', 'key': 'connected-app-market_slack'},
 )
 installed_detail = (
-    {'type': 'click', 'target': '[data-testid="connected-app-item-market_github"] :is(button, [role="button"]):has-text("GitHub Issues")'},
+    {'type': 'click', 'target': '[data-testid="connected-app-item-market_github"] [role="button"][aria-label="GitHub Issues"]'},
     {'type': 'tap', 'key': 'connected-app-installed-market_github'},
 )
 manage_previews = tap('link-preview-consents-manage')
@@ -165,16 +451,41 @@ review_permissions = tap_text(
 )
 revoke_preview = tap_text('Revoke', '[data-testid="link-preview-consents-allowed"] button:has-text("Revoke")')
 reject_prompt = tap_text('Reject text update', '[data-testid="app-prompt-text-review"] button:has-text("Reject text update")')
+approve_prompt = tap_text('Approve text update', '[data-testid="app-prompt-text-review"] button:has-text("Approve text update")')
+install = (
+    {'type': 'click', 'target': 'button:has-text("Install to this server")'},
+    {'type': 'tap', 'key': 'connected-app-install'},
+)
 edit_local_app = (
     {'type': 'click', 'target': '[data-testid="connected-apps-my-apps-collection"] button:has-text("Edit")'},
     {'type': 'tap', 'key': 'connected-app-action-client_1'},
+)
+developer = scope('my-apps', 'myapps')
+share_input = 'connected-app-share-target-input'
+share_created = 'connected-app-share-created'
+share_editor_steps = (
+    developer, edit_local_app,
+    (
+        {'type': 'reveal', 'target': f'[data-testid="{share_input}"]'},
+        {'type': 'reveal', 'key': share_input},
+    ),
+    (
+        {'type': 'fill', 'target': f'[data-testid="{share_input}"]', 'value': 'fixture-team'},
+        {'type': 'enterText', 'key': share_input, 'value': 'fixture-team'},
+    ),
+    tap('connected-app-share-create-button'),
 )
 cases = []
 
 
 def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integrations',
-         verify_text=None, verify_key=None, absent_text=None):
+         verify_text=None, verify_key=None, absent_text=None,
+         shell='', role='owner', metadata_selector=None, bot_link=None,
+         login_server=None,
+         platforms=('desktop', 'mobile')):
     for platform, width, height in [('desktop', 1280, 900), ('mobile', 390, 844)]:
+        if platform not in platforms:
+            continue
         for suffix, theme in [('raft', 'raft-light'), ('raft-dark', 'raft-dark')]:
             case_id = f'{PREFIX}{group}.{state}.{platform}.{suffix}'
             cases.append({
@@ -188,17 +499,38 @@ def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integ
                 'theme': theme,
                 'locale': 'en',
                 'variants': [{'id': 'default', 'name': 'Default', 'props': {
-                    'tab': tab, 'extKind': 'apps', 'extFixture': 'apps',
+                    'tab': tab, 'role': role, 'extKind': 'apps', 'extFixture': 'apps',
                     'platform': platform, 'parityTheme': theme, 'routeSet': route_set, 'flags': flags,
+                    'appsShell': shell,
+                    **({'app_bot': bot_link} if bot_link else {}),
+                    **({'server': login_server} if login_server else {}),
                     'verifyText': verify_text or '', 'verifyKey': verify_key or '',
                     'absentText': absent_text or '',
                 }}],
                 'capture': {
                     'selector': selector, 'crop': 'viewport', 'contract': 'viewport-with-portal',
+                    **({'metadataSelector': metadata_selector} if metadata_selector else {}),
                     'interactions': list(web_steps(steps, platform)),
-                    'androidInteractions': [native for _, native in steps],
+                    'androidInteractions': [
+                        native
+                        for web, action in steps
+                        for native in (
+                            [
+                                {'type': 'tap', 'key': 'connected-apps-scope-select'},
+                                {'type': 'tapText', 'text': {
+                                    'installed': 'Installed', 'marketplace': 'Marketplace',
+                                    'myapps': 'Developer',
+                                }[web['value']]},
+                            ]
+                            if platform == 'mobile' and web['type'] == 'scope'
+                            else [action]
+                        )
+                    ],
                 },
-                'reactPathHint': 'packages/web/src/features/apps/IntegrationsSection.tsx',
+                'reactPathHint': (
+                    'packages/web/src/pages/HumanLoginSetupPage.tsx' if shell == 'login'
+                    else 'packages/web/src/features/apps/IntegrationsSection.tsx'
+                ),
                 'androidCaseHint': 'apps/raft_flutter/test/parity/cases/ext_apps.dart',
                 'tolerance': {'pixelRatio': 0.04, 'layoutDp': 1, 'ignoreAntialiasing': True},
             })
@@ -236,13 +568,210 @@ case('page', 'link-previews-empty', '[data-testid="connected-apps-installed-coll
      route_set='link-previews-empty', absent_text='Link previews')
 case('page', 'link-previews-error', '[data-testid="link-preview-consents-row"]',
      route_set='link-previews-error')
+case('page', 'guest-link-previews-loading', '[data-testid="link-preview-consents-loading"]',
+     route_set='link-previews-loading', role='guest', absent_text='Manage')
+case('page', 'guest-link-previews-empty', '[data-testid="link-preview-consents-empty"]',
+     route_set='link-previews-empty', role='guest', verify_key='link-preview-consents-card')
+case('page', 'guest-link-previews-error', '[data-testid="link-preview-consents-row"]',
+     route_set='link-previews-error', role='guest', verify_text='Retry')
+case('dialog', 'guest-link-previews', '[data-testid="link-preview-manage-dialog"]',
+     [manage_previews], role='guest', verify_key='link-preview-consents-dialog')
 case('bridge', 'healthy', '[data-testid="slack-bridge-health"]',
      route_set='slack-healthy', flags='bridge', tab='im-bridges')
 case('bridge', 'delivery-recovery', '[data-testid="slack-delivery-recovery"]',
      route_set='slack-recovery', flags='bridge', tab='im-bridges',
      verify_text='Retry stalled message')
-case('bridge', 'provider-unavailable', '[role="status"]:has-text("The Slack bridge operation failed")',
-     route_set='slack-unavailable', flags='bridge', tab='im-bridges')
+case('bridge', 'provider-unavailable', '[role="status"]',
+     route_set='slack-unavailable', flags='bridge', tab='im-bridges',
+     verify_text='The Slack bridge operation failed. No setup state was assumed.')
+case('bridge', 'retry-requested',
+     '[data-testid="slack-delivery-recovery"] button:has-text("Retry requested")', [
+         (
+             {'type': 'click', 'target': '[data-testid="slack-delivery-recovery"] button:has-text("Retry stalled message")'},
+             {'type': 'tap', 'finder': {'text': 'Retry stalled message'}, 'scroll': False},
+         ),
+     ], route_set='slack-retry-requested', flags='bridge', tab='im-bridges',
+     metadata_selector='[data-testid="slack-bridge-health"]', verify_text='Retry requested')
+case('bridge', 'replayed',
+     '[data-testid="slack-bridge-health"]:not(:has([data-testid="slack-inbound-isolated"]))', [
+         tap_text('Retry message',
+                  '[data-testid="slack-inbound-isolated"] button:has-text("Retry message")'),
+     ], route_set='slack-replayed', flags='bridge', tab='im-bridges',
+     absent_text='Retry message')
+
+case('route', 'installed', '[data-testid="apps-page"]', shell='apps',
+     verify_key='apps-page', verify_text='GitHub Issues')
+case('route', 'recommended', '[data-testid="apps-recommended-stamp"]',
+     shell='apps', route_set='recommended', verify_text='Recommended for you')
+case('route', 'recommended-detail', '[data-testid="connected-app-detail-body"]', [
+    tap('apps-recommended-stamp', 'connected-app-market_stamp'),
+], shell='apps', route_set='recommended', verify_key='connected-app-detail')
+case('route', 'loading', '[data-testid="apps-loading-collection"]', [
+    ({'type': 'wait', 'ms': 1100}, {'type': 'wait', 'ms': 1100}),
+], shell='apps', route_set='loading', verify_key='apps-installed-loading-collection')
+case('route', 'empty', '[data-testid="apps-installed-empty"]', shell='apps',
+     route_set='empty', verify_text='No apps installed yet')
+case('route', 'error', '[data-testid="apps-load-failed"]', shell='apps',
+     route_set='error', verify_text='Retry')
+case('route', 'partial', '[data-testid="connected-apps-installed-collection"]',
+     shell='apps', route_set='partial', verify_text='GitHub Issues')
+case('route', 'marketplace', '[data-testid="connected-apps-marketplace-collection"]',
+     [market], shell='apps', verify_key='connected-app-market_slack')
+case('route', 'marketplace-loading', '[data-testid="apps-marketplace-loading-collection"]', [
+    market, ({'type': 'wait', 'ms': 1100}, {'type': 'wait', 'ms': 1100}),
+], shell='apps', route_set='marketplace-loading',
+     verify_key='apps-marketplace-loading-collection', absent_text='Slack Bridge')
+case('route', 'marketplace-empty', '[data-testid="apps-marketplace-empty"]',
+     [market], shell='apps', route_set='marketplace-empty', verify_text='No apps in the Marketplace yet')
+case('route', 'marketplace-error', '[data-testid="apps-marketplace-load-failed"]',
+     [market], shell='apps', route_set='marketplace-error', verify_key='apps-marketplace-load-failed')
+load_more = tap_text('Load more', '[data-testid="apps-marketplace-load-more"]')
+case('route', 'marketplace-paging', '[data-testid="apps-marketplace-load-more"]:disabled',
+     [market, load_more], shell='apps', route_set='marketplace-paging',
+     verify_text='Loading…')
+case('route', 'marketplace-more-error', '[data-testid="apps-marketplace-load-more-failed"]',
+     [market, load_more], shell='apps', route_set='marketplace-more-error',
+     verify_text="Couldn't load more apps.")
+case('route', 'marketplace-more-loaded',
+     '[data-testid="connected-apps-marketplace-collection"]:has-text("GitHub Issues")',
+     [market, load_more], shell='apps', route_set='marketplace-more-loaded',
+     verify_text='Showing 2 / 2', absent_text='Load more')
+case('route', 'developer', '[data-testid="connected-apps-my-apps-collection"]',
+     [developer], shell='apps', verify_text='Slack Bridge')
+case('route', 'installed-permissions', '[data-testid="connected-app-detail-body"]',
+     [installed_detail], shell='apps', verify_key='connected-app-installed-detail')
+case('route', 'review-permissions', '[data-testid="connected-app-detail-body"]',
+     [review_permissions], shell='apps',
+     verify_key='connected-app-installed-detail', verify_text='Approve update')
+case('route', 'marketplace-detail', '[data-testid="connected-app-detail-body"]',
+     [market, detail], shell='apps', verify_key='connected-app-detail')
+case('route', 'developer-edit', '[data-testid="connected-app-editor-content"]',
+     [developer, edit_local_app], shell='apps',
+     verify_key='connected-app-editor')
+case('route', 'share-created', f'[data-testid="{share_created}"]',
+     share_editor_steps, shell='apps', route_set='private-share',
+     verify_key=share_created)
+case('route', 'share-revoked',
+     f'[data-testid="connected-app-private-share-card"]:not(:has([data-testid="{share_created}"]))',
+     [*share_editor_steps,
+      tap_text('Revoke', '[data-testid="connected-app-share-link-row"] button')],
+     shell='apps', route_set='private-share', verify_key='connected-app-share-links',
+     absent_text="Link for fixture-team. Copy it now: it's shown only once.")
+case('route', 'publish-withdrawn', '[data-testid="connected-app-private-share-card"]',
+     [developer, edit_local_app, tap('connected-app-withdraw-publish-button')],
+     shell='apps', route_set='withdraw-publish', verify_key='connected-app-share-links',
+     absent_text='Withdraw request')
+case('route', 'reject-prompt-text', '[data-testid="app-prompt-text-reject-reason"]',
+     [market, detail, reject_prompt], shell='apps', route_set='prompt-review',
+     flags='prompt-text', verify_key='app-prompt-text-reject-dialog')
+case('route', 'stale-prompt-text',
+     f'[data-testid="app-prompt-text-review"]:has-text("{stale_prompt_text}")',
+     [market, detail, approve_prompt], shell='apps', route_set='prompt-review',
+     metadata_selector='[data-testid="app-prompt-text-review"]',
+     flags='prompt-text', verify_text=stale_prompt_text)
+case('route', 'install-step-up', '[data-testid="second-factor-step-up-dialog"]',
+     [market, detail, install], shell='apps', route_set='install-step-up',
+     flags='prompt-text', verify_text="Verify it's you")
+case('route', 'install-permissions-changed', '[data-testid="connected-app-detail-body"]',
+     [market, detail, install], shell='apps', route_set='install-permissions-changed',
+     verify_key='connected-app-detail', verify_text=install_permissions_changed)
+case('route', 'install-setup', '[data-testid="app-installation-setup"]',
+     [market, detail, install], shell='apps', route_set='install-setup',
+     verify_key='connected-app-detail', verify_text='Installed, setup pending')
+case('route', 'install-success',
+     'body:not(:has([data-testid="connected-app-detail-body"])) [data-testid="connected-apps-marketplace-collection"]',
+     [market, detail, install], shell='apps', route_set='install-success',
+     verify_key='connected-app-market_slack', absent_text='Install to this server')
+case('route', 'bot-step-up', '[data-testid="second-factor-step-up-dialog"]', [
+    installed_detail, tap_text('Add @issues', 'button:has-text("Add @issues") >> nth=0'),
+], shell='apps', route_set='bot-step-up', verify_text="Verify it's you")
+case('route', 'bot-granted', '[data-testid="connected-app-bot-section"][data-bot-grant="granted"]',
+     [installed_detail, tap_text('Add @issues', 'button:has-text("Add @issues") >> nth=0')],
+     shell='apps', route_set='bot-granted',
+     verify_key='connected-app-installed-detail', verify_text='Added to server')
+remove_bot = tap_text('Remove', '[data-testid="connected-app-bot-remove"]')
+case('route', 'bot-remove', '[data-testid="connected-app-bot-remove-confirm"]',
+     [installed_detail, remove_bot], shell='apps', route_set='bot-removed',
+     verify_key='connected-app-bot-remove-dialog')
+case('route', 'bot-removed', '[data-testid="connected-app-bot-section"][data-bot-grant="revoked"]', [
+    installed_detail, remove_bot,
+    (
+        {'type': 'click', 'target': '[data-testid="connected-app-bot-remove-confirm"]'},
+        {'type': 'tap', 'finder': {'text': 'Remove', 'in': 'connected-app-bot-remove-dialog'}},
+    ),
+], shell='apps', route_set='bot-removed', verify_key='connected-app-installed-detail',
+     absent_text='Added to server')
+case('route', 'bot-link', '[data-testid="connected-app-bot-section"]',
+     shell='apps', route_set='bot-step-up', bot_link=installed_with_bot['clientId'],
+     verify_key='connected-app-installed-detail')
+case('route', 'bot-link-unavailable', '[data-testid="connected-apps-bot-link-not-installed"]',
+     shell='apps', bot_link='unknown-app',
+     verify_key='connected-apps-bot-link-not-installed')
+case('route', 'link-previews', '[data-testid="link-preview-manage-dialog"]',
+     [manage_previews], shell='apps', verify_key='link-preview-consents-dialog')
+case('route', 'link-previews-revoke', '[data-testid="link-preview-revoke-dialog"]',
+     [manage_previews, revoke_preview], shell='apps',
+     verify_key='link-preview-consents-revoke-dialog')
+case('route', 'add-app', '[data-testid="register-app-menu"]', [
+    tap('register-app-menu-trigger'),
+], shell='apps', verify_text='Create a Raft app')
+case('route', 'type-menu', '[role="listbox"]:has-text("Raft apps")', [
+    tap('apps-filter-type'),
+], shell='apps', verify_text='Raft apps')
+case('route', 'category-menu', '[role="listbox"]:has-text("Communication")', [
+    tap('connected-apps-category-filter'),
+], shell='apps', verify_text='Communication')
+case('route', 'scope-menu', '[role="listbox"]:has-text("Marketplace")', [
+    tap('connected-apps-scope-select'),
+], shell='apps', verify_text='Marketplace', platforms=('mobile',))
+case('route', 'rail-entry', '[data-testid="apps-page"]', [
+    tap('left-rail-tab-apps', 'rail-apps'),
+], shell='tasks', platforms=('desktop',), verify_key='apps-page')
+case('route', 'server-popover', '[data-testid="mobile-server-tab-apps"]', [
+    tap('mobile-tab-server'),
+], shell='tasks', platforms=('mobile',), verify_key='mobile-server-tab-apps')
+case('route', 'server-popover-entry', '[data-testid="apps-page"]', [
+    tap('mobile-tab-server'),
+    tap('mobile-server-tab-apps'),
+], shell='tasks', platforms=('mobile',), verify_key='apps-page')
+case('profile', 'external-bot', '[data-testid="external-identity-header"]', [
+    (
+        {'type': 'click', 'target': '#message-fixture-external-bot-message button[data-avatar-kind="external"]'},
+        {'type': 'tap', 'key': 'sender-avatar-fixture-external-bot-message'},
+    ),
+], shell='channel/channel-home', route_set='external-bot',
+     verify_key='external-identity-header', verify_text='Posted as Slack bot · ture')
+case('login', 'person', '[data-testid="human-login-setup-scroller"]:has(button:has-text("Login with Raft"))',
+     shell='login', route_set='login-person', verify_key='human-login-continue',
+     metadata_selector='[data-testid="human-login-setup-scroller"]')
+case('login', 'loading', '[data-testid="login-lookup-skeleton"][data-shown="true"]',
+     shell='login', route_set='login-loading', verify_key='human-login-sheet',
+     verify_text='Loading available Raft Servers...')
+case('login', 'unavailable', '[data-testid="app-not-available"]',
+     shell='login', route_set='login-unavailable',
+     verify_key='human-login-not-accessible', verify_text="This app isn't available to you")
+case('login', 'outage', '[data-testid="human-login-setup-scroller"]:has-text("Installation status could not be loaded.")',
+     shell='login', route_set='login-outage',
+     verify_key='human-login-error',
+     verify_text='Installation status could not be loaded. Reload this page to try again.')
+case('login', 'account', '[data-testid="account-login-panel"]',
+     shell='login', route_set='login-account', verify_key='human-login-continue',
+     verify_text='Artifact Share wants to use your Raft account')
+case('login', 'install', '[data-testid="marketplace-login-commit"]',
+     shell='login', route_set='login-install', flags='prompt-text',
+     verify_key='human-login-continue', verify_text='Install and continue',
+     metadata_selector='[data-testid="human-login-setup-scroller"]')
+case('login', 'account-suspended', '[data-testid="account-login-refusal"]',
+     shell='login', route_set='login-account-suspended',
+     verify_key='human-login-account-refusal',
+     verify_text="This app's installations on your Servers are suspended. Ask a Server owner or admin to restore it.")
+case('login', 'account-server-issuer', '[data-testid="account-login-refusal"]',
+     shell='login', route_set='login-account', login_server='visual-server',
+     verify_key='human-login-account-refusal',
+     verify_text="This app is set up to sign in through a Server-specific address, which it can't use. Ask the app's developer to use Raft's main sign-in address.")
+case('login', 'admin-needed', '[data-testid="marketplace-login-commit-zone"]:has-text("Find a server admin")',
+     shell='login', route_set='login-admin-needed', role='member',
+     verify_key='human-login-find-admin', verify_text='Find a server admin')
 
 path = manifest_path()
 manifest = json.loads(path.read_text())

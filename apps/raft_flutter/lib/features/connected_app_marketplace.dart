@@ -74,14 +74,31 @@ class ConnectedAppMarketplaceFooter extends StatelessWidget {
     required this.page,
     required this.retry,
     required this.loadMore,
+    this.standalone = false,
   });
 
   final ConnectedAppMarketplace page;
   final VoidCallback retry, loadMore;
+  final bool standalone;
 
   @override
   Widget build(BuildContext context) {
     String tr(String text) => raftText(context, text);
+    final t = RaftTokens.of(context);
+    if (standalone && page.failed && !page.loaded) {
+      return RaftBanner(
+        key: const ValueKey('apps-marketplace-load-failed'),
+        description: tr("Couldn't load the Marketplace."),
+        size: RaftBannerRecipeSize.sm,
+        live: false,
+        action: RaftButton(
+          glyph: RaftGlyph.refreshCw,
+          label: tr('Retry'),
+          uiVariant: RaftButtonVariant.outline,
+          onPressed: retry,
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x2,
@@ -106,6 +123,7 @@ class ConnectedAppMarketplaceFooter extends StatelessWidget {
                       'shown': page.rows.length,
                       'total': page.total,
                     }),
+                    style: t.scale(RaftTypeScale.monoMeta, color: t.muted),
                   ),
                 if (page.loading && !page.loaded)
                   const RaftSpinner(size: 16)
@@ -118,6 +136,7 @@ class ConnectedAppMarketplaceFooter extends StatelessWidget {
                           ? 'Load more'
                           : 'Retry',
                     ),
+                    variant: RaftButtonRecipeVariant.outline,
                     onPressed: page.loading
                         ? null
                         : page.cursor != null

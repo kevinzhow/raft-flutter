@@ -204,9 +204,11 @@ void main() {
         .focusNode!;
     for (final page in ['members', 'computers', 'apps', 'settings']) {
       await openServerPage(t, page, flush: f.flush);
-      expect(w.location.route.name, page == 'apps' ? 'settings' : page);
+      expect(w.location.route.name, page);
       if (page == 'apps') {
-        expect(w.location.settingsPath, ['applications']);
+        expect(w.location.uri.path, '/s/alpha/apps');
+        expect(find.byKey(const Key('apps-page')), findsOneWidget);
+        expect(find.byKey(serverPopoverKey), findsNothing);
       }
       expect(find.byKey(_bar), findsNothing, reason: page);
       expect(
@@ -215,13 +217,17 @@ void main() {
                 .evaluate()
                 .isNotEmpty ||
             find.byKey(const Key('mobile-detail-back')).evaluate().isNotEmpty ||
-            find.byKey(const Key('mobile-settings-back')).evaluate().isNotEmpty,
+            find
+                .byKey(const Key('mobile-settings-back'))
+                .evaluate()
+                .isNotEmpty ||
+            find.byKey(const Key('apps-mobile-back')).evaluate().isNotEmpty,
         isTrue,
         reason: page,
       );
       // Back returns to the tab root it was opened from, with its bar.
       if (page == 'apps') {
-        await t.tap(find.byKey(const Key('mobile-settings-back')));
+        await t.tap(find.byKey(const Key('apps-mobile-back')));
       } else {
         expect(await t.binding.handlePopRoute(), isTrue);
       }
@@ -235,6 +241,67 @@ void main() {
     await t.tap(find.byKey(const Key('mobile-tab-home')));
     await f.flush(t);
     expect(focus.hasFocus, isFalse);
+    await f.close(t);
+  });
+
+  testWidgets('Apps rail opens a page and history returns to Tasks', (t) async {
+    final f = RootFixture();
+    await f.mount(t, 'light', 1280, uri: Uri.parse('/s/alpha/tasks'));
+    final w = f.workspace(t);
+    await t.tap(find.byKey(const Key('rail-apps')));
+    await f.flush(t);
+    expect(w.location.uri.path, '/s/alpha/apps');
+    expect(find.byKey(const Key('apps-page')), findsOneWidget);
+    expect(find.byKey(const Key('apps-mobile-back')), findsNothing);
+    await t.tap(find.byKey(const Key('topbar-back')));
+    await f.flush(t);
+    expect(w.location.route, RaftRoute.tasks);
+    expect(find.byKey(const Key('apps-page')), findsNothing);
+    await t.tap(find.byKey(const Key('topbar-forward')));
+    await f.flush(t);
+    expect(w.location.uri.path, '/s/alpha/apps');
+    await f.close(t);
+  }, variant: TargetPlatformVariant({TargetPlatform.linux}));
+
+  testWidgets('legacy Apps link preserves query and fragment', (t) async {
+    final f = await _mount(
+      t,
+      uri: '/s/alpha/settings/applications?marketplace_app=rain&tab=marketplace#app',
+    );
+    expect(
+      f.workspace(t).location.toString(),
+      '/s/alpha/apps?marketplace_app=rain&tab=marketplace#app',
+    );
+    await t.tap(find.byKey(const Key('apps-mobile-back')));
+    await f.flush(t);
+    expect(f.workspace(t).location.route, RaftRoute.home);
+    await f.close(t);
+  });
+
+  testWidgets('guests keep their Apps consent settings and leave /apps', (
+    t,
+  ) async {
+    final f = await _mount(
+      t,
+      uri: '/s/alpha/settings/applications',
+      role: 'guest',
+      setup: (fixture) {
+        fixture.overrides['GET /integrations/link-preview-consents'] = (_) => {
+          'allowed': [],
+          'declined': [],
+        };
+      },
+    );
+    expect(f.workspace(t).location.uri.path, '/s/alpha/settings/applications');
+    expect(find.text('No link previews yet'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('link-preview-consents-card')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('apps-page')), findsNothing);
+    await f.pushUri(t, '/s/alpha/apps');
+    expect(f.workspace(t).location.route, RaftRoute.home);
+    expect(find.byKey(const Key('apps-page')), findsNothing);
     await f.close(t);
   });
 

@@ -1,28 +1,32 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/cause_notice.dart';
 import '../data/workspace_controller.dart';
 import 'app_link_store.dart';
+import 'integrations_views.dart' show integrationInitials;
 
 const _description =
     'Apps you allow show previews of their links, for you on this server. After you allow an app, it knows which of its links you view.';
 
 RaftListRow _consentRow(
-  String title, {
+  String? title, {
   Key? key,
   String? description,
+  Widget? logo,
   Widget? action,
 }) => RaftListRow(
   key: key,
   variant: RaftListRowVariant.plain,
   interactive: false,
   children: [
+    ?logo,
     RaftListRowBody(
       children: [
-        RaftListRowTitle(title),
+        if (title != null) RaftListRowTitle(title),
         if (description != null) RaftListRowDescription(description),
       ],
     ),
@@ -69,8 +73,9 @@ class _LinkPreviewConsentsState extends State<LinkPreviewConsents> {
             _consentRow(
               tr('Link previews'),
               description: tr('Couldn’t load your link preview choices.'),
-              action: RaftSettingsRecipeButton(
+              action: RaftButton(
                 label: tr('Retry'),
+                uiSize: RaftButtonSize.md,
                 onPressed: store.readConsentChoices,
               ),
             ),
@@ -90,9 +95,30 @@ class _LinkPreviewConsentsState extends State<LinkPreviewConsents> {
             : const SizedBox.shrink();
       }
       if (rows.isEmpty) {
-        return widget.guest
-            ? _consentRow(tr('No link previews yet'))
-            : const SizedBox.shrink();
+        if (!widget.guest) return const SizedBox.shrink();
+        return RaftCard(
+          key: const ValueKey('link-preview-consents-card'),
+          variant: RaftCardRecipeVariant.inset,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              RaftCardSectionHeader(
+                aboveContent: true,
+                title: RaftCardTitle(Text(tr('Link previews'))),
+                description: RaftCardDescription(Text(tr(_description))),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(RaftSpace.x4),
+                child: Text(
+                  tr('No link previews yet'),
+                  textAlign: TextAlign.center,
+                  style: RaftTokens.of(context)
+                      .scale(RaftTypeScale.callout, weight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        );
       }
       final allowed = rows.where((row) => row.allowed).length;
       final declined = rows.length - allowed;
@@ -107,9 +133,10 @@ class _LinkPreviewConsentsState extends State<LinkPreviewConsents> {
           _consentRow(
             tr('Link previews'),
             description: counts.join(' · '),
-            action: RaftSettingsRecipeButton(
+            action: RaftButton(
               key: const ValueKey('link-preview-consents-manage'),
               label: tr('Manage'),
+              uiSize: RaftButtonSize.md,
               onPressed: () => openLinkPreviewConsents(context, store),
             ),
           ),
@@ -125,6 +152,7 @@ Future<void> openLinkPreviewConsents(
 ) => showRaftForm<void>(
   context,
   guardUnsaved: false,
+  dialogMaxWidth: 448,
   label: raftText(context, 'Link previews'),
   builder: (_) => _LinkPreviewChoices(store: store),
 );
@@ -164,17 +192,24 @@ class _LinkPreviewChoices extends StatefulWidget {
 
 class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
   final search = TextEditingController();
+  final searchFocus = FocusNode();
+  final actions = <String, FocusNode>{};
   late final issue = CauseNotice(scope: () => widget.store.current);
   String? changing;
 
   @override
   void dispose() {
     search.dispose();
+    searchFocus.dispose();
+    for (final action in actions.values) {
+      action.dispose();
+    }
     super.dispose();
   }
 
   Future<void> change(AppLinkConsentRow row, {required bool allow}) async {
     if (changing != null || !widget.store.current) return;
+    final hadFocus = actions[row.id]?.hasFocus == true;
     setState(() {
       changing = row.id;
       issue.clear();
@@ -184,6 +219,7 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
       if (!mounted || !widget.store.current) return;
       if (ok) {
         await widget.store.readConsentChoices();
+        if (allow && hadFocus) _restoreFocus(row.id);
       } else {
         final text = raftFormat(
           context,
@@ -201,7 +237,7 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
   }
 
   Future<void> revoke(AppLinkConsentRow row) async {
-    await RaftConfirmDialog.show(
+    final confirmed = await RaftConfirmDialog.show(
       context,
       RaftConfirmDialog(
         surfaceKey: const ValueKey('link-preview-consents-revoke-dialog'),
@@ -214,25 +250,52 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
         cancelLabel: raftText(context, 'Keep allowed'),
         confirmLabel: raftText(context, 'Revoke'),
         confirmKey: const ValueKey('link-preview-consents-revoke-confirm'),
+        confirmVariant: RaftButtonRecipeVariant.warning,
+        actionSize: RaftButtonRecipeSize.lg,
+        maxWidth: 400,
+        initialFocusCancel: true,
         loadingLabel: raftTextZh(context, 'Revoking…', '正在撤销…'),
         onConfirm: () => change(row, allow: false),
       ),
-      overModal: true,
+      overModal: widget.appId == null,
     );
+    if (confirmed == true) _restoreFocus(row.id);
   }
 
-  Widget _row(BuildContext context, AppLinkConsentRow row) {
-    final date = MaterialLocalizations.of(context)
-        .formatMediumDate(row.date.toLocal());
+  void _restoreFocus(String id) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          (ModalRoute.of(context)?.isCurrent ?? true) &&
+          widget.store.current) {
+        actions[id]?.requestFocus();
+      }
+    });
+  }
+
+  RaftListRow _row(BuildContext context, AppLinkConsentRow row) {
+    final date = DateFormat.yMMMd(Localizations.localeOf(context).toString())
+        .format(row.date.toLocal());
+    final manage = widget.appId == null;
     return _consentRow(
-      row.name,
+      manage ? row.name : null,
       key: ValueKey('link-preview-choice-${row.id}'),
+      logo: manage
+          ? ExcludeSemantics(
+              child: RaftAppLogo(
+                initials: integrationInitials(row.name),
+                logoUrl: row.icon,
+                size: RaftAppLogoSize.xs,
+              ),
+            )
+          : null,
       description: raftFormat(
         context,
         row.allowed ? 'Allowed on {date}' : 'Declined on {date}',
         {'date': date},
       ),
       action: RaftButton(
+        uiSize: RaftButtonSize.md,
+        focusNode: actions.putIfAbsent(row.id, FocusNode.new),
         label: raftText(
           context,
           row.allowed
@@ -256,7 +319,8 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
     builder: (context, rows, _) {
       String tr(String value) => raftText(context, value);
       final appId = widget.appId;
-      final query = search.text.trim().toLowerCase();
+      final searchable = appId == null && (rows?.length ?? 0) > 8;
+      final query = searchable ? search.text.trim().toLowerCase() : '';
       final shown = [
         for (final row in rows ?? const <AppLinkConsentRow>[])
           if (row.name.toLowerCase().contains(query) &&
@@ -266,19 +330,31 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
       if (appId != null) {
         return shown.isEmpty
             ? const SizedBox.shrink()
-            : _row(context, shown.first);
+            : RaftListRowGroup(children: [_row(context, shown.first)]);
+      }
+      if (searchable && !RaftInteraction.of(context).touch) {
+        if (!searchFocus.hasFocus && actions.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) searchFocus.requestFocus();
+          });
+        }
       }
       final body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: RaftSpace.x3,
+        spacing: RaftSpace.x4,
         children: [
-          Text(tr(_description)),
-          if (rows?.isNotEmpty == true)
-            RaftRecipeInput(
+          RaftDialogDescription(tr(_description)),
+          if (searchable)
+            RaftSearchInput(
               controller: search,
-              placeholder: tr('Search apps'),
-              autofocus: !RaftInteraction.of(context).touch,
+              focusNode: searchFocus,
+              hint: tr('Search apps'),
+              clearLabel: tr('Clear search'),
               onChanged: (_) => setState(() {}),
+              onClear: () {
+                setState(search.clear);
+                searchFocus.requestFocus();
+              },
             ),
           if (issue.message case final message?) RaftErrorBanner(message),
           if (rows?.isEmpty == true)
@@ -286,11 +362,24 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
           else if (shown.isEmpty)
             Text(tr('No apps match this search')),
           for (final allowed in [true, false])
-            if (shown.any((row) => row.allowed == allowed)) ...[
-              RaftDialogSectionEyebrow(tr(allowed ? 'Allowed' : 'Declined')),
-              for (final row in shown.where((row) => row.allowed == allowed))
-                _row(context, row),
-            ],
+            if (shown.any((row) => row.allowed == allowed))
+              Column(
+                spacing: RaftSpace.x2,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  RaftDialogSectionEyebrow(
+                    tr(allowed ? 'Allowed' : 'Declined'),
+                  ),
+                  RaftListRowGroup(
+                    children: [
+                      for (final row in shown.where(
+                        (row) => row.allowed == allowed,
+                      ))
+                        _row(context, row),
+                    ],
+                  ),
+                ],
+              ),
         ],
       );
       void close() => Navigator.of(context).pop();
@@ -300,6 +389,7 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
           key: key,
           title: tr('Link previews'),
           onClose: close,
+          commit: const SizedBox.shrink(),
           body: body,
         );
       }

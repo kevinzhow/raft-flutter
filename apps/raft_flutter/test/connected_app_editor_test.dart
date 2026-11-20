@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -173,7 +174,9 @@ void main() {
     await t.tap(find.byKey(const ValueKey('connected-apps-register')));
     await t.pumpAndSettle();
     expect(find.byKey(editor), findsOneWidget);
-    expect(find.text('New connected app'), findsOneWidget);
+    expect(find.text('Create Raft app'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(t.getCenter(find.byKey(submit)).dy, greaterThan(400));
     for (final id in [
       'profile',
       'login',
@@ -268,9 +271,15 @@ void main() {
     await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
     await t.pumpAndSettle();
     expect(find.byKey(editor), findsOneWidget);
-    expect(find.text('Edit app'), findsOneWidget);
+    expect(find.text('Edit db9 Drive'), findsOneWidget);
     expect(find.text('db9 Drive'), findsWidgets);
     expect(find.text('OAuth ready'), findsWidgets);
+    await t.tap(find.text('Cancel'));
+    await t.pumpAndSettle();
+    expect(find.byKey(editor), findsNothing);
+    expect(a.calls.where((call) => call.method == 'PATCH'), isEmpty);
+    await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
+    await t.pumpAndSettle();
     await t.enterText(
       find.byKey(const ValueKey('connected-app-name')),
       'db9 Drive v2',
@@ -407,7 +416,13 @@ void main() {
     await _mount(t, w, openMyApps: false);
     await t.tap(find.byKey(const ValueKey('connected-apps-register')));
     await t.pumpAndSettle();
-    await t.tap(find.text('Danger zone').first);
+    final dangerItem = find.widgetWithText(
+      RaftSettingsSidebarItem,
+      'Danger zone',
+    );
+    Focus.of(t.element(dangerItem)).requestFocus();
+    await t.pump();
+    await t.sendKeyEvent(LogicalKeyboardKey.enter);
     await t.pumpAndSettle();
     expect(
       find.text(

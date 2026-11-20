@@ -264,7 +264,11 @@ void main() {
     await _tap(tester, find.text('Remove'));
     expect(find.text('Remove @sprinkler?'), findsOneWidget);
     expect(client.posts[path], hasLength(1));
-    await _tap(tester, find.text('Remove').last);
+    final confirmRemove = find.descendant(
+      of: find.byKey(const ValueKey('connected-app-bot-remove-dialog')),
+      matching: find.text('Remove'),
+    );
+    await _tap(tester, confirmRemove);
     expect(client.posts[path], [
       {'action': 'grant'},
       {'action': 'revoke'},
@@ -395,10 +399,16 @@ void main() {
       platform: TargetPlatform.linux,
       size: const Size(390, 844),
     );
-    await _tap(
-      tester,
-      find.byKey(const ValueKey('connected-apps-tab-my-apps')),
-    );
+    final scope = find.byKey(const ValueKey('connected-apps-scope-select'));
+    if (scope.evaluate().isNotEmpty) {
+      await _tap(tester, scope);
+      await _tap(tester, find.text('Developer'));
+    } else {
+      await _tap(
+        tester,
+        find.byKey(const ValueKey('connected-apps-tab-my-apps')),
+      );
+    }
     await _tap(
       tester,
       find.byKey(const ValueKey('connected-app-action-garden')),
@@ -439,6 +449,7 @@ void main() {
       tester,
       find.byKey(const ValueKey('link-preview-consents-manage')),
     );
+    expect(find.text('Search apps'), findsNothing);
     await _tap(tester, find.text('Revoke'));
     expect(
       client.posts['/integrations/clients/irrigation/link-preview-decline'],

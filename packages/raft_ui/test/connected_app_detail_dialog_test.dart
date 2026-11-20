@@ -37,6 +37,7 @@ void main() {
                       for (var index = 0; index < 30; index++)
                         RaftConnectedAppDetailSection(
                           title: 'Section $index',
+                          cream: true,
                           child: const Text('Garden details and permissions'),
                         ),
                     ],
@@ -58,6 +59,16 @@ void main() {
       await tester.tap(find.text('Open Garden'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      final section = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(RaftConnectedAppDetailSection).first,
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final edge = (section.decoration as BoxDecoration).border as Border;
+      expect(edge.top.color, const Color(0xffd1d1d1));
       final title = find.text('Garden');
       final footer = find.text('Close');
       expect(title.hitTestable(), findsOneWidget);

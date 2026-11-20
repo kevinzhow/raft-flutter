@@ -48,9 +48,11 @@ class RaftEmptyState extends StatelessWidget {
     this.glyph,
     this.action,
     this.titleHeading = false,
+    this.blockPadding,
   });
 
   final String title, detail;
+  final double? blockPadding;
 
   /// Web `titleHeading`: the title is the heading of an area this empty state
   /// fills on its own (a screen reader finds it by heading).
@@ -98,7 +100,7 @@ class RaftEmptyState extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: m.inline,
-          vertical: t.size('space.emptyBlock', fallback: 48),
+          vertical: blockPadding ?? t.size('space.emptyBlock', fallback: 48),
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
