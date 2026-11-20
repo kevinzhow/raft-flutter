@@ -24,6 +24,16 @@ class RaftTaskRowSelection {
 const double _focusRingWidth = 2;
 const double _pageRowEndInset = 12;
 
+Color _pageListHairline(RaftTokens t, [Color? fill]) {
+  final line = t.ui.lineHairline;
+  final card = t.ui.layerCard;
+  if (card.a != 1 || line.a == 0 || line.a == 1) return line;
+  return raftChromeBlend(
+    line,
+    fill == null ? card : Color.alphaBlend(fill, card),
+  );
+}
+
 /// The list's own width under which a row is narrow (Web `@max-md/tasks`,
 /// 28rem of the page's `@container/tasks`): the channel moves into the
 /// trailing group and the status keeps only its pixel.
@@ -99,7 +109,7 @@ class RaftTaskPageList extends StatelessWidget {
           key: const ValueKey('tasks-page-list'),
           decoration: BoxDecoration(
             color: t.ui.layerCard,
-            border: Border.all(color: t.ui.lineHairline),
+            border: Border.all(color: _pageListHairline(t)),
             borderRadius: BorderRadius.circular(radius),
           ),
           child: Padding(
@@ -297,7 +307,7 @@ class _PageRowState extends State<_PageRow> {
             color: fill,
             border: Border(
               top: widget.divider
-                  ? BorderSide(color: t.ui.lineHairline)
+                  ? BorderSide(color: _pageListHairline(t, fill))
                   : BorderSide.none,
             ),
           ),

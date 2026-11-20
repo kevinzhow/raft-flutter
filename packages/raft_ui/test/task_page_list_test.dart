@@ -305,8 +305,7 @@ void main() {
     t,
   ) async {
     final p = _Picks();
-    await _mount(t, picks: p);
-    final tokens = raftTheme().extension<RaftTokens>()!;
+    await _mount(t, picks: p, dark: true);
     BoxDecoration of(String id) =>
         t
                 .widget<DecoratedBox>(
@@ -316,7 +315,9 @@ void main() {
             as BoxDecoration;
     expect((of('a').border! as Border).top.style, BorderStyle.none);
     final second = (of('b').border! as Border).top;
-    expect(second.color, tokens.colors['line-hairline']);
+    // Pinned Elegant Dark paints line-hairline over the card at RGB 57/57/55.
+    const line = Color(0xff393937);
+    expect(second.color.toARGB32(), line.toARGB32());
     expect(second.width, 1);
   });
 
