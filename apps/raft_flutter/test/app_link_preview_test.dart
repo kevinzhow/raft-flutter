@@ -134,6 +134,17 @@ void main() {
       await tester.pump();
       expect(find.text('Undo'), findsOneWidget);
       expect(find.text('Runs when the countdown ends'), findsOneWidget);
+      final countdown = find.text('5s to undo');
+      expect(countdown, findsOneWidget);
+      final countdownText = tester.widget<Text>(countdown).textSpan;
+      expect(countdownText, isA<TextSpan>());
+      final digits = (countdownText! as TextSpan).children!
+          .whereType<TextSpan>()
+          .singleWhere((span) => span.text == '5');
+      expect(
+        digits.style!.fontFamily,
+        RaftTokens.of(tester.element(countdown)).monoFont,
+      );
       expect(
         find.ancestor(
           of: find.text('Resolve'),
@@ -141,6 +152,12 @@ void main() {
         ),
         findsOneWidget,
       );
+      await tester.pump(const Duration(milliseconds: 250));
+      final countdownNode = tester.getSemantics(countdown);
+      expect(countdownNode.label, '5s to undo');
+      expect(countdownNode.flagsCollection.isLiveRegion, isFalse);
+      await tester.pump(const Duration(milliseconds: 750));
+      expect(find.text('4s to undo'), findsOneWidget);
       await tester.tap(find.text('Undo'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 6));

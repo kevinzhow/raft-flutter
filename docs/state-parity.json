@@ -57487,7 +57487,7 @@
         "owner": "Shared desktop chrome",
         "reason": "Supplies the mounted rail action glyph to the shared icon and attention layers."
       },
-      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23870": {
+      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23965": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-LINK",
@@ -57830,7 +57830,7 @@
         "declarationRefs": [
           "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkMessageView",
           "apps/raft_flutter/lib/features/app_link_view.dart#function:showAppLinkConfirmation",
-          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23870",
+          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23965",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkPrompt._choose",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState._showNotice"
         ],

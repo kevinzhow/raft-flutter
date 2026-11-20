@@ -12,6 +12,7 @@ import 'design_primitives.dart'
     show RaftInteractive, RaftLayoutMetrics, RaftTouchTarget;
 import 'interaction.dart';
 import 'icons.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'raft/ui_tokens.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
@@ -41,12 +42,13 @@ class RaftToast extends StatelessWidget {
     super.key,
     required this.title,
     this.description,
+    this.descriptionSpan,
     this.tone = RaftToastRecipeTone.success,
     this.icon = false,
     this.onClose,
     this.actionLabel,
     this.onAction,
-  });
+  }) : assert(description == null || descriptionSpan == null);
   final String title;
 
   /// `toast.success(..., { action: { label, onClick } })`: a trailing text
@@ -56,6 +58,9 @@ class RaftToast extends StatelessWidget {
 
   /// `ToastDescription` under the title (stacked in the same body column).
   final String? description;
+
+  /// Styled description, in its own semantics node so updates are silent.
+  final InlineSpan? descriptionSpan;
   final RaftToastRecipeTone tone;
 
   /// LocalizedToastProvider default (`hasIcon !== false`): the tone glyph in a
@@ -77,7 +82,7 @@ class RaftToast extends StatelessWidget {
     final ui = t.ui, rt = t.recipeTokens;
     final hasClose = onClose != null;
     final hasAction = actionLabel != null;
-    final hasDescription = description != null;
+    final hasDescription = description != null || descriptionSpan != null;
     final s = RaftToastRecipe.resolve(
       layout: RaftToastRecipeLayout.inline,
       states: t.recipeStates(
@@ -101,18 +106,20 @@ class RaftToast extends StatelessWidget {
       RaftToastRecipeTone.info => RaftGlyph.info,
       _ => RaftGlyph.alertTriangle,
     };
+    final descriptionStyle = s.description
+        .text(rt)
+        .copyWith(height: title.height, color: onHud.withValues(alpha: .7));
     final body = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(this.title, style: title),
-        if (hasDescription)
-          Text(
-            description!,
-            style: s.description
-                .text(rt)
-                .copyWith(color: onHud.withValues(alpha: .7)),
+        if (descriptionSpan != null)
+          Semantics(
+            container: true,
+            child: RaftCssText.rich(descriptionSpan!, style: descriptionStyle),
           ),
+        if (description != null) Text(description!, style: descriptionStyle),
       ],
     );
     final close = hasClose
@@ -402,7 +409,12 @@ class RaftToastHandle {
 
   /// Updates the details of a countdown without replacing its focused action.
   void updateDescription(String description) {
-    if (isShown) _controller._setDescription(description);
+    if (isShown) _controller._setDescription(text: description);
+  }
+
+  /// Updates a styled description without replacing its focused action.
+  void updateDescriptionSpan(InlineSpan description) {
+    if (isShown) _controller._setDescription(span: description);
   }
 
   /// Closes this toast as [RaftToastCloseReason.dismissed]; a newer toast is
@@ -425,6 +437,7 @@ class RaftToastController extends ChangeNotifier {
   String? get title => _title;
   String? _description;
   String? get description => _description;
+  InlineSpan? _descriptionSpan;
   String? _actionLabel;
   VoidCallback? _onAction;
   String? get actionLabel => _actionLabel;
@@ -493,6 +506,7 @@ class RaftToastController extends ChangeNotifier {
     String title, {
     Duration? duration,
     String? description,
+    InlineSpan? descriptionSpan,
     String? actionLabel,
     VoidCallback? onAction,
     RaftToastRecipeTone tone = RaftToastRecipeTone.success,
@@ -507,6 +521,7 @@ class RaftToastController extends ChangeNotifier {
     bool? icon,
     void Function(RaftToastCloseReason reason)? onClose,
   }) {
+    assert(description == null || descriptionSpan == null);
     _timer?.cancel();
     final replacedClose = _title == null ? null : _onClose;
     final serial = ++_serial;
@@ -515,6 +530,7 @@ class RaftToastController extends ChangeNotifier {
     _icon = icon;
     _title = title;
     _description = description;
+    _descriptionSpan = descriptionSpan;
     _actionLabel = actionLabel;
     _onAction = onAction;
     _tone = tone;
@@ -529,9 +545,10 @@ class RaftToastController extends ChangeNotifier {
     return RaftToastHandle._(this, serial);
   }
 
-  void _setDescription(String description) {
-    if (_description == description) return;
-    _description = description;
+  void _setDescription({String? text, InlineSpan? span}) {
+    if (_description == text && _descriptionSpan == span) return;
+    _description = text;
+    _descriptionSpan = span;
     notifyListeners();
   }
 
@@ -570,6 +587,7 @@ class RaftToastController extends ChangeNotifier {
     final onClose = _onClose;
     _title = null;
     _description = null;
+    _descriptionSpan = null;
     _actionLabel = null;
     _onAction = null;
     _onClose = null;
@@ -608,6 +626,7 @@ class _ToastContent {
   const _ToastContent({
     required this.title,
     required this.description,
+    required this.descriptionSpan,
     required this.tone,
     required this.icon,
     required this.close,
@@ -615,6 +634,7 @@ class _ToastContent {
   });
   final String title;
   final String? description;
+  final InlineSpan? descriptionSpan;
   final RaftToastRecipeTone tone;
   final bool icon, close;
   final String? actionLabel;
@@ -669,6 +689,7 @@ class _RaftToastPortalState extends State<RaftToastPortal>
     _content = _ToastContent(
       title: c.title!,
       description: c.description,
+      descriptionSpan: c._descriptionSpan,
       tone: c.tone,
       icon: c.hasIcon,
       close: c.hasClose,
@@ -810,6 +831,7 @@ class _RaftToastPortalState extends State<RaftToastPortal>
       Widget toast = RaftToast(
         title: content.title,
         description: content.description,
+        descriptionSpan: content.descriptionSpan,
         tone: content.tone,
         // LocalizedToastProvider: the mark is on unless `hasIcon === false`;
         // the close button only when the caller asked for it.
