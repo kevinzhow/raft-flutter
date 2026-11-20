@@ -57596,7 +57596,7 @@
         "owner": "Workspace side panels",
         "reason": "Mounts the chat or folded thread inside the clipped conversation region."
       },
-      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@33041/METHOD:build@33365/FUNCTION:<anonymous>@34008/FUNCTION:text@34288": {
+      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@33790/METHOD:build@34114/FUNCTION:<anonymous>@34757/FUNCTION:text@35037": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

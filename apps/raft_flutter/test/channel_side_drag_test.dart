@@ -206,13 +206,22 @@ void main() {
     expect(bodyFiles, findsNothing);
     final taskHead = rect(t, 'channel-side-card-tasks-header');
     final fileHead = rect(t, 'channel-side-card-files-header');
+    final column = rect(t, 'channel-side-column-1');
+    expect(taskHead.left, column.left + 1);
+    expect(taskHead.right, column.right);
+    expect(t.getSize(expandTasks), const Size.square(28));
+    final taskTitle = find.descendant(
+      of: find.byKey(const Key('channel-side-card-tasks-header')),
+      matching: find.text('Tasks'),
+    );
+    expect(t.getTopLeft(taskTitle).dx - taskHead.left, 51);
 
     expect(expandTasks.hitTestable(), findsOne);
     await t.tap(expandTasks);
     await t.pump();
     expect(rect(t, 'chat').width, 360);
     expect(rect(t, 'channel-side-conversation').width, 160);
-    expect(rect(t, 'channel-side-card-tasks-header').width, 1040);
+    expect(rect(t, 'channel-side-card-tasks-header').width, 1039);
     expect(foldFiles, findsNothing);
 
     await t.tap(expandFiles.hitTestable());
@@ -253,7 +262,7 @@ void main() {
       expect(grip(tasks), findsNothing);
       await t.tap(expand.hitTestable());
       await t.pump();
-      expect(rect(t, 'channel-side-card-tasks-header').width, size.width - 160);
+      expect(rect(t, 'channel-side-card-tasks-header').width, size.width - 161);
       await t.tap(expand.hitTestable());
       await t.pump();
       expect(rect(t, 'channel-side-card-tasks-header'), original);

@@ -332,7 +332,9 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
         for (final s in all)
           Positioned(
             key: ValueKey(s),
-            left: 0,
+            left: widget.mode == ChannelSideMode.beside && _card(s) != null
+                ? RaftSpace.hairline
+                : 0,
             right: 0,
             top: shown.contains(s) ? tops[shown.indexOf(s)] : 0,
             height: shown.contains(s) ? heights[shown.indexOf(s)] : height,

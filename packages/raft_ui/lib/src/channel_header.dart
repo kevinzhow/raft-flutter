@@ -29,6 +29,8 @@ import 'theme.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'tooltip.dart';
 import 'working_agents.dart';
+import 'raft/blink_snap.dart';
+import 'tokens/raft_tokens.g.dart' show RaftDesktopMetrics;
 
 /// Header bar of a mounted conversation panel: Web `PanelHeader` inside the
 /// `edge="attached"` ConversationPanelRoot (ChatPanel). The panel root paints
@@ -359,6 +361,7 @@ Widget raftConversationHeaderToggle({
   required String label,
   required bool pressed,
   RaftButtonSize size = RaftButtonSize.iconSm,
+  bool desktopBar = false,
   VoidCallback? onPressed,
 }) => _ConversationHeaderToggle(
   key: key,
@@ -366,6 +369,7 @@ Widget raftConversationHeaderToggle({
   label: label,
   pressed: pressed,
   size: size,
+  desktopBar: desktopBar,
   onPressed: onPressed,
 );
 
@@ -376,12 +380,14 @@ class _ConversationHeaderToggle extends StatelessWidget {
     required this.label,
     required this.pressed,
     required this.size,
+    required this.desktopBar,
     this.onPressed,
   });
   final RaftGlyph glyph;
   final String label;
   final bool pressed;
   final RaftButtonSize size;
+  final bool desktopBar;
   final VoidCallback? onPressed;
 
   @override
@@ -410,9 +416,13 @@ class _ConversationHeaderToggle extends StatelessWidget {
         // The head's Search and Settings are ghost icon-sm buttons
         // (_ConversationHeaderAction): the toggle takes their square.
         final source = RaftButtonMetrics.of(size, RaftButtonVariant.ghost, t);
-        final extent = source.height;
-        final glyphSize = source.icon;
-        return CustomPaint(
+        final extent = desktopBar
+            ? RaftDesktopMetrics.barButtonSize
+            : source.height;
+        final glyphSize = desktopBar
+            ? RaftDesktopMetrics.controlIconSize
+            : source.icon;
+        final control = CustomPaint(
           foregroundPainter: RaftCssFocusOutline(
             enabled: state.focusVisible,
             color: t.colors['line-strong']!,
@@ -428,7 +438,15 @@ class _ConversationHeaderToggle extends StatelessWidget {
                 width: extent,
                 height: extent,
                 alignment: Alignment.center,
-                decoration: s.decoration(rt),
+                decoration: desktopBar
+                    ? s
+                          .decoration(rt)
+                          .copyWith(
+                            borderRadius: BorderRadius.circular(
+                              RaftDesktopMetrics.barButtonRadius,
+                            ),
+                          )
+                    : s.decoration(rt),
                 child: RaftIcon(
                   glyph,
                   size: glyphSize,
@@ -438,6 +456,7 @@ class _ConversationHeaderToggle extends StatelessWidget {
             ),
           ),
         );
+        return desktopBar ? RaftBlinkSnap(child: control) : control;
       },
     ),
   );

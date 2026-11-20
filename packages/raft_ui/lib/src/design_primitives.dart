@@ -3527,10 +3527,21 @@ class _RaftInteractiveState extends State<RaftInteractive>
                       final reach = details.kind == PointerDeviceKind.touch
                           ? RaftMetrics.touchTarget / 2
                           : 0.0;
-                      if (box is RenderBox &&
+                      final releasedInside =
+                          box is RenderBox &&
                           (Offset.zero & box.size)
                               .inflate(reach)
-                              .contains(details.localPosition)) {
+                              .contains(details.localPosition);
+                      if (releasedInside ||
+                          (reach == 0 &&
+                              context
+                                      .findAncestorRenderObjectOfType<
+                                        RenderTapSlopAnchor
+                                      >()
+                                      ?.acceptsPointerRelease(
+                                        details.globalPosition,
+                                      ) ==
+                                  true)) {
                         widget.onPressed?.call();
                       }
                     }

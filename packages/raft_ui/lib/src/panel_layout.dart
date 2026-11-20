@@ -36,6 +36,7 @@ import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'large_content_viewer.dart';
 import 'theme.dart';
 import 'tooltip.dart';
+import 'tokens/raft_tokens.g.dart' show RaftDesktopMetrics;
 
 /// The panel ink: the semantic token (the Web `theme-brutal:text-black/<n>`
 /// overrides do not apply).
@@ -204,11 +205,15 @@ class RaftPanelAction extends StatelessWidget {
     this.onPressed,
     this.minHitExtent = 0,
     this.ghostSize,
+    this.desktopBar = false,
+    this.focusNode,
   });
   final RaftGlyph glyph;
   final String tooltip;
   final VoidCallback? onPressed;
   final RaftButtonSize? ghostSize;
+  final bool desktopBar;
+  final FocusNode? focusNode;
 
   /// Minimum touch target for touch input. Web's boxed action is
   /// 24x28 (Brutal) / 32x32 (Elegant); the visual and layout stay as Web
@@ -219,33 +224,41 @@ class RaftPanelAction extends StatelessWidget {
     final ghost =
         RaftTokens.of(context).option('panelAction.surface', or: 'outline') ==
         'ghost';
+    final control = ghost
+        ? RaftButton(
+            label: '',
+            glyph: glyph,
+            tooltip: tooltip,
+            semanticLabel: tooltip,
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize:
+                ghostSize ??
+                (MediaQuery.sizeOf(context).width <
+                        RaftLayoutMetrics.desktopBreakpoint
+                    ? RaftButtonSize.iconLg
+                    : RaftButtonSize.iconMd),
+            physicalHeight: desktopBar
+                ? RaftDesktopMetrics.barButtonSize
+                : null,
+            visualWidth: desktopBar ? RaftDesktopMetrics.barButtonSize : null,
+            glyphSize: desktopBar ? RaftDesktopMetrics.controlIconSize : null,
+            focusNode: focusNode,
+            onPressed: onPressed,
+          )
+        : _interactive(context);
     return RaftTouchTargetExpander(
       minSize: Size.square(
         minHitExtent > 0 && RaftInteraction.of(context).touch
             ? minHitExtent
             : 0,
       ),
-      child: ghost
-          ? RaftButton(
-              label: '',
-              glyph: glyph,
-              tooltip: tooltip,
-              semanticLabel: tooltip,
-              uiVariant: RaftButtonVariant.ghost,
-              uiSize:
-                  ghostSize ??
-                  (MediaQuery.sizeOf(context).width <
-                          RaftLayoutMetrics.desktopBreakpoint
-                      ? RaftButtonSize.iconLg
-                      : RaftButtonSize.iconMd),
-              onPressed: onPressed,
-            )
-          : _interactive(context),
+      child: desktopBar ? RaftBlinkSnap(child: control) : control,
     );
   }
 
   Widget _interactive(BuildContext context) => RaftInteractive(
     onPressed: onPressed,
+    focusNode: focusNode,
     semanticLabel: tooltip,
     tooltip: tooltip,
     builder: (context, state) {
@@ -454,7 +467,11 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.background,
     this.leading,
     this.inlineMeta = false,
+    this.desktopBar = false,
   });
+
+  /// Use the v1.24 fine-pointer column margin and bar-button overhang.
+  final bool desktopBar;
 
   /// A control before the title, after Back (a side card's fold chevron).
   final Widget? leading;
@@ -547,17 +564,28 @@ class RaftPanelHeaderBar extends StatelessWidget {
       ],
     );
     final fill = background ?? t.colors['layer-panel-header']!;
+    const contentInset = RaftDesktopMetrics.pageInset;
+    const actionInset =
+        (RaftDesktopMetrics.barButtonSize -
+            RaftDesktopMetrics.controlIconSize) /
+        2;
+    final edges = desktopBar
+        ? EdgeInsets.only(
+            left: leading == null ? contentInset : contentInset - actionInset,
+            right: actions.isEmpty ? contentInset : contentInset - actionInset,
+          )
+        : raftPanelHeaderEdges(
+            context,
+            hasBack: onBack != null,
+            hasActions: actions.isNotEmpty,
+            leftPadding: leftPadding,
+          );
     return RaftStatusBarSource(
       color: fill,
       child: Container(
         height: grows ? null : height,
         constraints: BoxConstraints(minHeight: height),
-        padding: raftPanelHeaderEdges(
-          context,
-          hasBack: onBack != null,
-          hasActions: actions.isNotEmpty,
-          leftPadding: leftPadding,
-        ).copyWith(top: grows ? 8 : 0, bottom: grows ? 8 : 0),
+        padding: edges.copyWith(top: grows ? 8 : 0, bottom: grows ? 8 : 0),
         decoration: BoxDecoration(
           color: fill,
           border:

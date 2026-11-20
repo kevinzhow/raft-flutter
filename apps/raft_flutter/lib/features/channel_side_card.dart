@@ -113,6 +113,7 @@ class ChannelSideCardView extends StatelessWidget {
         ];
         final compactActions =
             !covering && box.maxWidth < channelSideCompactHeaderWidth;
+        final desktopBar = t.desktop && !covering && !compactActions;
         final actionSize = compactActions
             ? RaftButtonSize.iconXs
             : RaftButtonSize.iconSm;
@@ -120,6 +121,7 @@ class ChannelSideCardView extends StatelessWidget {
           key: Key('$id-header'),
           title: title,
           leftPadding: leadingInset,
+          desktopBar: desktopBar,
           background: t.colors['layer-canvas'],
           bottomRule: true,
           bottomBorder: stackEnd
@@ -138,6 +140,7 @@ class ChannelSideCardView extends StatelessWidget {
                         : RaftGlyph.chevronDown,
                     tooltip: collapseLabel,
                     ghostSize: covering ? null : actionSize,
+                    desktopBar: desktopBar,
                     onPressed: () => onCollapsedChanged!(!collapsed),
                     minHitExtent: RaftMetrics.touchTarget,
                   ),
@@ -150,6 +153,7 @@ class ChannelSideCardView extends StatelessWidget {
                 glyph: RaftGlyph.plus,
                 tooltip: newTask,
                 ghostSize: covering ? null : actionSize,
+                desktopBar: desktopBar,
                 minHitExtent: RaftMetrics.touchTarget,
                 onPressed: onCreateTask,
               ),
@@ -161,13 +165,11 @@ class ChannelSideCardView extends StatelessWidget {
                 align: RaftDropdownAlign.end,
                 sideOffset: RaftSpace.x1,
                 entries: menu,
-                triggerBuilder: (context, focus, onPressed) => RaftButton(
-                  label: '',
-                  semanticLabel: moreActions,
+                triggerBuilder: (context, focus, onPressed) => RaftPanelAction(
                   tooltip: moreActions,
                   glyph: RaftGlyph.ellipsisVertical,
-                  uiVariant: RaftButtonVariant.ghost,
-                  uiSize: actionSize,
+                  ghostSize: actionSize,
+                  desktopBar: desktopBar,
                   focusNode: focus,
                   onPressed: onPressed,
                 ),
@@ -178,6 +180,7 @@ class ChannelSideCardView extends StatelessWidget {
                 glyph: expanded ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
                 label: raftText(context, expanded ? 'Restore' : 'Expand'),
                 pressed: expanded,
+                desktopBar: desktopBar,
                 size: actionSize,
                 onPressed: onExpand,
               ),
@@ -187,6 +190,7 @@ class ChannelSideCardView extends StatelessWidget {
                 glyph: RaftGlyph.x,
                 tooltip: closeLabel,
                 ghostSize: actionSize,
+                desktopBar: desktopBar,
                 onPressed: onClose,
                 minHitExtent: RaftMetrics.touchTarget,
               ),
