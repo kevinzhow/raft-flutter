@@ -185,7 +185,13 @@ CONTEXT_ROUTE = f'GET /messages/context/{PARENT}'
 
 route_sets = {
     'thread-dense': {
-        THREAD_ROUTE: page(dense),
+        THREAD_ROUTE: {
+            # Both mounts start with the full dense window. Web infers older
+            # history from its page size and asks before the earliest reply
+            # when explicitly jumping to the parent. This cursor is exhausted.
+            '$when': [{'query': {'before': str(dense[0]['seq'])}, 'answer': page([])}],
+            '$default': page(dense),
+        },
         CONTEXT_ROUTE: {'messages': [dense_parent], 'hasMore': False, 'hasNewer': False},
         CHANNEL_ROUTE: page([dense_parent], summaries={PARENT: dense_summary}),
         f'GET /messages/channel/{THREAD}/human-outline': {
@@ -348,13 +354,15 @@ for platform, height in (('desktop', 756), ('mobile', 844)):
     add('thread', platform, 'dense-menu', 'Followed thread menu', route_set='thread-dense',
         props=dense_props, win=(0, 256), touch=touch, interactions=menu, android=menu_flutter,
         mounted='[data-testid="thread-overflow-follow-action"]')
-    add('thread', platform, 'dense-outline', 'Timeline from the visible parent', route_set='thread-dense',
+    live_tail = '[data-testid="thread-message-scroller"] [data-message-id="outline-reply-200"]'
+    live_menu = f'body:has({live_tail}) [data-testid="thread-overflow-trigger"]'
+    outline = f'[data-testid="conversation-outline-{"sheet" if touch else "popover"}"]'
+    add('thread', platform, 'dense-outline', 'Open Timeline at the live end', route_set='thread-dense',
         props=dense_props, win=(0, height), touch=touch,
-        interactions=[click('thread-scroll-to-top'), {'type': 'wait', 'ms': 350},
-                      *menu, click('thread-overflow-timeline')],
-        android=[{'type': 'tapText', 'text': 'Thread'}, {'type': 'wait', 'ms': 350},
-                 *menu_flutter, tap('thread-timeline-menu-item')],
-        mounted=f'[data-testid="conversation-outline-{"sheet" if touch else "popover"}"]')
+        interactions=[{'type': 'click', 'target': live_menu},
+                      click('thread-overflow-timeline')],
+        android=[*menu_flutter, tap('thread-timeline-menu-item')],
+        mounted=f'{outline} [data-outline-row^="outline-reply-"][aria-current="true"]')
     add('thread', platform, 'dense-search', 'In-thread search, centered match', route_set='thread-dense',
         props=dense_props, win=(0, height), touch=touch,
         interactions=[*menu, click('thread-overflow-search'),

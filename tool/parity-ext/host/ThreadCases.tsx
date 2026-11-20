@@ -72,6 +72,7 @@ function parityExtThPrimeStores(props: ParityExtThProps) {
     const routes = (parityExtThFixture.routeSets as Record<string, Record<string, any>>)[props.routeSet];
     const channelPage = routes[`GET /messages/channel/${thread.parentChannelId}`];
     parityExtThThreadStore.setState({
+      openThreadChannelId: thread.threadChannelId,
       openParentMessageId: thread.parentMessageId,
       openParentChannelId: thread.parentChannelId,
       summaries: channelPage.threadSummariesByParentMessageId,

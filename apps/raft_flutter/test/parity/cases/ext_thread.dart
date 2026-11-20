@@ -19,6 +19,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/history_reading_anchor.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +28,7 @@ import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 
 import '../parity_harness.dart';
+import 'fixture_when.dart';
 import 'home_tasks/fixture_workspace.dart';
 import 'thread_composer/fake_workspace.dart';
 import 'thread_messages/chat_stage.dart' show ParityIdentities;
@@ -54,10 +56,19 @@ class _ExtClient extends ParityFakeClient {
     int limit = 50,
     BigInt? before,
     BigInt? after,
-  }) {
-    final pending = _special('GET', '/messages/channel/$id');
+  }) async {
+    final path = '/messages/channel/$id';
+    final pending = _special('GET', path);
     if (pending != null) return pending as Future<Map<String, dynamic>>;
-    return super.messagePage(id, limit: limit, before: before, after: after);
+    requests.add('PAGE $path');
+    final answer = resolveFixtureWhen(routes['GET $path'], {
+      'limit': limit,
+      'before': ?before,
+      'after': ?after,
+    });
+    return answer is Map
+        ? Map<String, dynamic>.from(answer)
+        : {'messages': <dynamic>[], 'hasMore': false};
   }
 
   @override
@@ -299,12 +310,36 @@ final ParityCase _denseCase = ParityCase(
     };
     expect(target.hitTestable(), findsOneWidget);
     final rect = tester.getRect(target);
+    final position = state == 'dense-outline'
+        ? _outlineBackground(tester)
+        : null;
     ctx.captureEvidence['thread'] = {
       'state': state,
       'bounds': [rect.left, rect.top, rect.width, rect.height],
+      'background': ?position,
     };
   },
 );
+
+Map<String, Object> _outlineBackground(WidgetTester tester) {
+  final timeline = find.byKey(const Key('chat-list-thread'));
+  final anchor = captureTimelineReadingAnchor(
+    tester.element(timeline),
+    threadParentKey: 'msg-thread-parent',
+  )!;
+  final scrollable = find
+      .descendant(of: timeline, matching: find.byType(Scrollable))
+      .first;
+  final position = tester.state<ScrollableState>(scrollable).position;
+  expect(position.extentAfter, closeTo(0, 1));
+  expect(anchor.messageKey, startsWith('outline-reply-'));
+  return {
+    'first': anchor.messageKey,
+    'offset': anchor.top,
+    'pixels': position.pixels,
+    'max': position.maxScrollExtent,
+  };
+}
 
 const _scenes = {
   'thread': [
