@@ -303,7 +303,7 @@ The visual suite has three explicit levels, because a theme change can move any 
 `tool/parity-ext/levels.py` is the only place that assigns an id to a level (`unassigned()` reports a family it does not know).
 Looks and what each is compared with:
 
-* **raft**: Flutter in the Raft look against the pinned Web v1.21.23 render (the default pipelines).
+* **raft**: Flutter in the Raft look against the Web revision pinned in [source-reference.json](source-reference.json).
 
 One command runs any slice and writes one summary (level x look x mode):
 

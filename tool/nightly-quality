@@ -17,8 +17,8 @@ Four jobs on a fresh worktree of origin/cindy/integration, one Chinese summary:
                 (~/.cache/raft-flutter/test-impact/<package>/map.json.gz) that `tool/test-impact select` reads.
                 No extra suite run: the probe adds one VM-service call at the end of each test file.
   4. visual     the fast subset of the three-level visual suite (tool/nightly_visual.py): L1 frame cases and
-                the key L2 pages at phone and desktop widths, light mode, for the Raft look (against the Web
-                v1.21.23 render); the summary lists the cases below the 96% line and every drop since the previous night.
+                the key L2 pages at phone and desktop widths, light mode, for the Raft look against the pinned
+                Web render. The summary lists cases below the 96% line and drops within the same Web revision.
 
 The test jobs take the shared gate lock (/tmp/raft-flutter-check.lock, same flock as tool/prepare-handoff)
 so they never overlap a gate; they wait up to --lock-wait-minutes and then record "skipped: gate busy".
