@@ -6,16 +6,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/src/raft/ui_tokens.dart' show raftChromeBlend;
 
-Widget _app(Widget child, {TargetPlatform platform = TargetPlatform.linux}) =>
-    MaterialApp(
-      theme: raftTheme().copyWith(platform: platform),
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: Align(alignment: Alignment.topLeft, child: child),
-        ),
-      ),
-    );
+Widget _app(
+  Widget child, {
+  TargetPlatform platform = TargetPlatform.linux,
+  bool dark = false,
+}) => MaterialApp(
+  theme: raftTheme(dark: dark).copyWith(platform: platform),
+  home: Scaffold(
+    body: SingleChildScrollView(
+      child: Align(alignment: Alignment.topLeft, child: child),
+    ),
+  ),
+);
 
 Future<void> _size(WidgetTester tester, double w, double h) async {
   tester.view.physicalSize = Size(w, h);
@@ -103,30 +107,36 @@ void main() {
       });
     }
 
-    testWidgets('radius 10, one 1px hairline, layer card, no inset frame', (
-      tester,
-    ) async {
-      await _size(tester, 1024, 768);
-      await tester.pumpWidget(
-        _app(
-          const RaftMessageEmbedFrame(
-            size: RaftMessageEmbedSize.content,
-            child: SizedBox(width: 2000, height: 40),
-          ),
-        ),
+    for (final dark in [false, true]) {
+      testWidgets(
+        'radius 10, one 1px hairline, layer card, no inset frame ${dark ? 'dark' : 'light'}',
+        (tester) async {
+          await _size(tester, 1024, 768);
+          await tester.pumpWidget(
+            _app(
+              const RaftMessageEmbedFrame(
+                size: RaftMessageEmbedSize.content,
+                child: SizedBox(width: 2000, height: 40),
+              ),
+              dark: dark,
+            ),
+          );
+          final frame = find.byType(RaftMessageEmbedFrame);
+          expect(tester.getSize(frame).width, 560);
+          final ui = RaftTokens.of(tester.element(frame)).ui;
+          final frames = _frames(tester, frame);
+          expect(frames, hasLength(1));
+          final border = frames.single.border! as Border;
+          expect(frames.single.borderRadius, BorderRadius.circular(10));
+          expect(border.top.width, 1);
+          expect(
+            border.top.color,
+            raftChromeBlend(ui.lineHairline, ui.layerCard),
+          );
+          expect(frames.single.color, ui.layerCard);
+        },
       );
-      expect(tester.getSize(find.byType(RaftMessageEmbedFrame)).width, 560);
-      final ui = RaftTokens.of(
-        tester.element(find.byType(RaftMessageEmbedFrame)),
-      ).ui;
-      final frames = _frames(tester, find.byType(RaftMessageEmbedFrame));
-      expect(frames, hasLength(1));
-      final border = frames.single.border! as Border;
-      expect(frames.single.borderRadius, BorderRadius.circular(10));
-      expect(border.top.width, 1);
-      expect(border.top.color, ui.lineHairline);
-      expect(frames.single.color, ui.layerCard);
-    });
+    }
 
     testWidgets('interactive frame lays hover and press tiers, keeps border', (
       tester,
@@ -150,9 +160,16 @@ void main() {
       await tester.pump();
       final hover = frame();
       expect(hover.gradient ?? hover.image ?? hover.color, isNot(rest.color));
+      final ui = RaftTokens.of(
+        tester.element(find.byType(RaftMessageEmbedFrame)),
+      ).ui;
+      expect(
+        (hover.border! as Border).top.width,
+        (rest.border! as Border).top.width,
+      );
       expect(
         (hover.border! as Border).top.color,
-        (rest.border! as Border).top.color,
+        raftChromeBlend(ui.lineHairline, hover.color!),
       );
     });
   });
@@ -269,7 +286,10 @@ void main() {
       final frames = _frames(tester, card);
       expect(frames.first.borderRadius, BorderRadius.circular(10));
       expect((frames.first.border! as Border).top.width, 1);
-      expect((frames.first.border! as Border).top.color, ui.lineHairline);
+      expect(
+        (frames.first.border! as Border).top.color,
+        raftChromeBlend(ui.lineHairline, ui.layerCard),
+      );
       expect(frames.first.color, ui.layerCard);
     });
   });
