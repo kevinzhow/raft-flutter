@@ -9,9 +9,9 @@
 // The composed channel / DM screen of the screens-ext family (real LeftRail +
 // Sidebar + ChatPanel at 1280x800, ChatPanel alone at 390x844) with a window
 // marker over its bottom (`composer-window`): the composer, the banner above it
-// and the suggestion popover. The send states press Enter in the composer; the
-// POST /v2/messages receipt (pending-mention actions, unresolved handles, delivery
-// warnings) is answered by the fixture routes. `patch` / `extraChannels` adjust the
+// and the suggestion popover. The send states use Send on phone and Enter on
+// desktop. The fixture routes answer POST /v2/messages with pending-mention
+// actions, unresolved handles or delivery warnings. `patch` / `extraChannels` adjust the
 // channel store after the composed screen primed it (a running conversion job, an
 // archived channel for the #channel popover).
 import parityExtCompStFixture from "virtual:parity-ext/composer-states";
