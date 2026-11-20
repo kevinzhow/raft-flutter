@@ -57567,7 +57567,7 @@
         "owner": "WP-LINK",
         "reason": "SDK-owned app link authorization or pending presentation."
       },
-      "packages/raft_ui/lib/src/app_link_card.dart#local-function:CLASS:RaftAppLinkLogo@4567/METHOD:build@4840/FUNCTION:image@4914": {
+      "packages/raft_ui/lib/src/app_link_card.dart#local-function:CLASS:RaftAppLinkLogo@4942/METHOD:build@5215/FUNCTION:image@5289": {
         "role": "entry_composition",
         "familyRefs": [
           "app-link-card"

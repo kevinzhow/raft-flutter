@@ -80,6 +80,11 @@ class RaftAppLinkChip extends StatelessWidget {
             .copyWith(fontFamily: t.monoFont);
         final gap = recipe.root.columnGap ?? RaftScale.spacing;
         final scaler = MediaQuery.textScalerOf(context);
+        // The reference suffix's relative top is (suffix em - chip em) / 4.
+        final suffixTop =
+            (scaler.scale(suffixStyle.fontSize ?? chipSize) -
+                scaler.scale(chipSize)) /
+            4;
         return ConstrainedBox(
           constraints: BoxConstraints(maxWidth: scaler.scale(chipSize) * 24),
           child: RaftRecipeBox(
@@ -112,11 +117,14 @@ class RaftAppLinkChip extends StatelessWidget {
                       if (touchDomain != null)
                         Flexible(
                           flex: 2,
-                          child: RaftCssText(
-                            touchDomain,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: suffixStyle,
+                          child: Transform.translate(
+                            offset: Offset(0, suffixTop),
+                            child: RaftCssText(
+                              touchDomain,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: suffixStyle,
+                            ),
                           ),
                         ),
                     ],
