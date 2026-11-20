@@ -171,6 +171,10 @@ class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
         final width = focused
             ? math.max(minWidth, constraints.maxWidth - 160)
             : preferredWidth.clamp(minWidth, maxWidth).toDouble();
+        final seam = RaftPanelEdge.side(
+          RaftTokens.of(context),
+          RaftPanelEdgeStyle.attachedPanel,
+        )!;
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -184,10 +188,15 @@ class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
                     width: width,
                     child: RaftSidePanelFrame(
                       placement: RaftSidePanelPlacement.docked,
-                      child: TasksPageDetailFocus(
-                        focused: focused,
-                        toggle: toggleFocus,
-                        child: const TaskContentSlot(),
+                      // TasksRoute's border-l consumes space inside the
+                      // saved column width. The frame owns the seam paint.
+                      child: Padding(
+                        padding: EdgeInsets.only(left: seam.width),
+                        child: TasksPageDetailFocus(
+                          focused: focused,
+                          toggle: toggleFocus,
+                          child: const TaskContentSlot(),
+                        ),
                       ),
                     ),
                   ),

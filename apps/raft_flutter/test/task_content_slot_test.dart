@@ -4,6 +4,7 @@
 // `?task=<channel>:task:<id>`, its × and Escape close it and focus goes back
 // to the task's card. On a phone it is the task's page, its Back returning to
 // the list. Activity / Search open the same slot in their detail column.
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -196,20 +197,50 @@ void main() {
       final listHeader = find.byKey(const Key('page-header-surface'));
       final listToolbar = find.byKey(const Key('tasks-page-toolbar'));
       final initialListWidth = t.getSize(listHeader).width;
+
+      void expectDockSeam() {
+        final detail = t.getRect(slot);
+        expect(detail.left - t.getRect(listHeader).right, 1);
+        expect(detail.right, desktop.width);
+      }
+
+      expectDockSeam();
       await t.tap(expand.hitTestable());
       await settle(t);
       expect(t.getSize(slot).width, greaterThan(initialWidth));
       expect(t.getSize(listHeader).width, 160);
       expect(t.getSize(listToolbar).width, 360);
+      expectDockSeam();
       expect(
         t.widget<EditableText>(editor).controller.text,
         'Draft stays with the task',
       );
       expect(w.location.query('open'), 'task:task-1');
+      final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: t.getCenter(title));
+      await t.pump();
+      final titleEdit = find.byKey(const ValueKey('task-modal-title-edit'));
+      expect(titleEdit.hitTestable(), findsOneWidget);
+      await mouse.moveTo(t.getCenter(titleEdit));
+      await mouse.down(t.getCenter(titleEdit));
+      await mouse.up();
+      await t.pump();
+      final titleInput = find.descendant(
+        of: find.byKey(const ValueKey('task-head-title-input')),
+        matching: find.byType(EditableText),
+      );
+      await t.enterText(titleInput, 'Temporary title edit');
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(t);
+      expect(titleInput, findsNothing);
+      expect(t.widget<Text>(title).data, v2Task['title']);
+      expect(w.location.query('open'), 'task:task-1');
+      await mouse.removePointer();
       await t.tap(expand.hitTestable());
       await settle(t);
       expect(t.getSize(slot).width, initialWidth);
       expect(t.getSize(listHeader).width, initialListWidth);
+      expectDockSeam();
       expect(
         t.widget<EditableText>(editor).controller.text,
         'Draft stays with the task',
@@ -218,6 +249,7 @@ void main() {
       await t.tap(second.hitTestable());
       await settle(t);
       expect(w.location.query('open'), 'task:task-2');
+      expectDockSeam();
       expect(title.hitTestable(), findsOneWidget);
       expect(t.widget<Text>(title).data, 'Second task title');
       expect(empty.hitTestable(), findsOneWidget);
@@ -342,6 +374,8 @@ void main() {
     expect(find.byType(SourceTaskSurface), findsOneWidget);
     expect(w.location.query('task'), 'c1:task:task-1');
     final detail = find.byType(SourceTaskSurface);
+    expect(t.getRect(detail).left, 0);
+    expect(t.getSize(detail).width, 390);
     final timeline = find.descendant(
       of: detail,
       matching: find.byKey(const ValueKey('current-timeline')),
