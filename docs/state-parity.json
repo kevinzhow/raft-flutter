@@ -57831,6 +57831,42 @@
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27799/METHOD:_build@34868/FUNCTION:row@42006": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27799/METHOD:_build@34868/FUNCTION:titleContent@38180": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27799/METHOD:_build@34868/FUNCTION:titleWithIndicators@41236": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27799/METHOD:_build@34868/FUNCTION:wrappedTitle@37039": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7778/METHOD:_bar@9733/FUNCTION:badged@10077": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7778/METHOD:_bar@9733/FUNCTION:item@10796": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
