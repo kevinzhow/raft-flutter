@@ -54,6 +54,7 @@ slack_healthy = {
                           'stateReason': None, 'recoveryAction': 'none'}],
             'audiences': [{'bindingId': 'b1', 'status': 'matched'}],
             'lastVerifiedAt': '2026-10-08T00:00:00Z',
+            'agentMentionSync': None,
             'failingSurface': None,
         },
     },
@@ -154,7 +155,7 @@ detail = (
     {'type': 'tap', 'key': 'connected-app-market_slack'},
 )
 installed_detail = (
-    {'type': 'click', 'target': '[data-testid="connected-app-item-market_github"] button:has-text("GitHub Issues")'},
+    {'type': 'click', 'target': '[data-testid="connected-app-item-market_github"] :is(button, [role="button"]):has-text("GitHub Issues")'},
     {'type': 'tap', 'key': 'connected-app-installed-market_github'},
 )
 manage_previews = tap('link-preview-consents-manage')
@@ -240,7 +241,7 @@ case('bridge', 'healthy', '[data-testid="slack-bridge-health"]',
 case('bridge', 'delivery-recovery', '[data-testid="slack-delivery-recovery"]',
      route_set='slack-recovery', flags='bridge', tab='im-bridges',
      verify_text='Retry stalled message')
-case('bridge', 'provider-unavailable', '[data-testid="slack-bridge-setup-wizard"]',
+case('bridge', 'provider-unavailable', '[role="status"]:has-text("The Slack bridge operation failed")',
      route_set='slack-unavailable', flags='bridge', tab='im-bridges')
 
 path = manifest_path()

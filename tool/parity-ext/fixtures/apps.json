@@ -621,6 +621,7 @@
        }
       ],
       "lastVerifiedAt": "2026-10-08T00:00:00Z",
+      "agentMentionSync": null,
       "failingSurface": null
      }
     }
@@ -684,6 +685,7 @@
        }
       ],
       "lastVerifiedAt": "2026-10-08T00:00:00Z",
+      "agentMentionSync": null,
       "failingSurface": null,
       "outboundDeliveries": [
        {

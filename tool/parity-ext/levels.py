@@ -54,7 +54,7 @@ EXT_SURFACE_LEVEL = {
     'components.ext-settings.providers': PAGE, 'components.ext-settings.im-bridges': PAGE,
     'components.ext-settings.account': PAGE, 'components.ext-settings.appearance': PAGE,
     'components.ext-settings.notifications': PAGE,
-    'components.apps.page': PAGE, 'components.apps.dialog': COMPONENT,
+    'components.apps.page': PAGE, 'components.apps.dialog': COMPONENT, 'components.apps.bridge': PAGE,
     'components.wp6.settings': PAGE, 'components.wp6.tasks': PAGE,
     'components.members-ext.list': PAGE, 'components.members-ext.human': PAGE, 'components.members-ext.agent': PAGE,
     'components.members-ext.activity': PAGE, 'components.members-ext.saved': PAGE,
