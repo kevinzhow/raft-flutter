@@ -25,7 +25,6 @@ import 'data/shared_draft_attachment.dart';
 import 'data/incoming_share_targets.dart';
 import 'features/incoming_share_picker.dart';
 import 'features/incoming_share_review.dart';
-import 'data/raft_navigation_history.dart';
 import 'features/app_root_router.dart';
 import 'features/app_root_public.dart';
 import 'features/app_viewport.dart';
