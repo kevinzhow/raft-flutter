@@ -865,8 +865,19 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               context,
               'Status',
               status(context, inPullDown: inPullDown),
+              // DescriptionList hangs a leading task-status-badge by 7 px.
+              hang: raftTaskStatusVocabulary.contains('${task['status']}')
+                  ? 7
+                  : 0,
             ),
-            property(context, 'Assignee', assignee(context)),
+            property(
+              context,
+              'Assignee',
+              assignee(context),
+              hang: widget.conversation?.assigneeAvatar == null
+                  ? RaftSpace.x1_5
+                  : 0,
+            ),
             if (widget.conversation?.source case final source?)
               property(context, 'Source', source),
             property(
