@@ -11,7 +11,7 @@ const PARITY_EXT_TASKS_V124_PREFIX = "components.pages.tasks-v124.";
   const params = new URLSearchParams(window.location.search);
   const id = params.get("case") ?? "";
   if (!id.startsWith(PARITY_EXT_TASKS_V124_PREFIX)) return;
-  params.set("tab", params.get("tab") === "all" ? "all" : "mine");
+  params.set("tab", "mine");
   params.set("view", "list");
   window.history.replaceState(null, "", `/s/${fxServer.slug}/tasks?${params}`);
 })();

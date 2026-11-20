@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/message_task_actions.dart';
@@ -63,10 +62,6 @@ Widget _build(ParityContext ctx) {
     ]
     ..dms = const [];
   workspace.messageDomain.ledger.switchServer('visual-server');
-  workspace.navigation.navigate(
-    workspace.location.withQuery({'tab': ctx.props['tab'], 'view': 'list'}),
-    kind: RaftNavigationKind.replace,
-  );
   TaskV2ConversationsFlag.of(workspace).markEnabled();
   final tasks = TasksPageStore.of(workspace);
   ctx.onDispose(() {
@@ -94,6 +89,14 @@ Future<void> _checkState(WidgetTester tester, ParityContext ctx) async {
       state == 'detail-focus';
   final title = find.byKey(const ValueKey('task-modal-title')).hitTestable();
   expect(title, open ? findsOneWidget : findsNothing);
+  final surface = open
+      ? title
+      : find.byKey(const ValueKey('tasks-page-toolbar'));
+  final tokens = RaftTokens.of(tester.element(surface));
+  expect(
+    tokens.colors['layer-canvas']!.computeLuminance(),
+    ctx.id.endsWith('.elegant-dark') ? lessThan(.1) : greaterThan(.9),
+  );
   if (open) {
     expect(
       tester.widget<Text>(title).data,
@@ -107,6 +110,10 @@ Future<void> _checkState(WidgetTester tester, ParityContext ctx) async {
     );
     expect(find.text('No replies yet'), findsNothing);
   } else {
+    expect(
+      find.byKey(const ValueKey('tasks-page-all-list')),
+      state == 'list-all' ? findsOneWidget : findsNothing,
+    );
     if (ctx.props['platform'] == 'desktop') {
       expect(
         find.descendant(

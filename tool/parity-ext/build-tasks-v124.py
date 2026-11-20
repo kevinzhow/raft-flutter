@@ -144,6 +144,33 @@ def case(platform, state, suffix, theme):
         'detail-focus': (OPEN, FOCUS),
     }[state]
     opened = state in ('detail-open', 'detail-switch', 'detail-focus')
+    web_actions = [{'type': 'click', 'target': web} for web, _ in actions]
+    flutter_actions = [
+        {'type': 'tap', 'key': flutter, 'scroll': False, 'mouse': not phone}
+        for _, flutter in actions
+    ]
+    if state == 'list-all':
+        if phone:
+            web_actions = [
+                {'type': 'click', 'target': '[data-testid="tasks-page-scope-select"]'},
+                {'type': 'click', 'target': '[data-testid="tasks-page-scope-select-all"]'},
+            ]
+            flutter_actions = [
+                {'type': 'tap', 'key': 'tasks-page-scope-select', 'scroll': False},
+                {'type': 'tapText', 'text': 'All'},
+            ]
+        else:
+            web_actions = [{'type': 'click', 'target': '[data-testid="tasks-page-tab-all"]'}]
+            flutter_actions = [
+                {'type': 'tap', 'key': 'tasks-page-tab-all', 'scroll': False, 'mouse': True},
+            ]
+    visible = (
+        '[data-testid="task-modal-title"]' if opened else
+        '[data-testid="tasks-page-list-all"] [data-task-id="visual-task-15"]'
+        if state == 'list-all' else '[data-task-id="visual-task-16"]'
+    )
+    if theme.endswith('-dark'):
+        visible = f'html.dark {visible}'
     return {
         'id': f'{PREFIX}{platform}.{state}.{suffix}',
         'title': f'Tasks v1.24 {platform} {state} ({theme})',
@@ -157,20 +184,16 @@ def case(platform, state, suffix, theme):
         'locale': 'en',
         'variants': [{'id': 'default', 'name': 'Default', 'props': {
             'extFixture': FIXTURE,
+            'parityTheme': theme,
             'state': state,
             'platform': platform,
-            'tab': 'all' if state == 'list-all' else 'mine',
         }}],
         'capture': {
-            'selector': '[data-testid="task-modal-title"]' if opened
-                        else '[data-testid="tasks-page-toolbar"]',
+            'selector': visible,
             'crop': 'viewport',
             'contract': 'viewport-with-portal',
-            'interactions': [{'type': 'click', 'target': web} for web, _ in actions],
-            'androidInteractions': [
-                {'type': 'tap', 'key': flutter, 'scroll': False, 'mouse': not phone}
-                for _, flutter in actions
-            ],
+            'interactions': web_actions,
+            'androidInteractions': flutter_actions,
         },
         'reactPathHint': 'packages/web/src/components/layout/TasksRoute.tsx',
         'androidCaseHint': 'apps/raft_flutter/test/parity/cases/ext_tasks_v124.dart',
