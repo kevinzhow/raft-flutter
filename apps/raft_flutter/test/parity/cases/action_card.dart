@@ -99,6 +99,7 @@ ParityCase _actionCardCase(String name) {
                 alignment: Alignment.topLeft,
                 child: ctx.target(
                   SizedBox(
+                    key: const ValueKey('action-card-v124-frame'),
                     width: ctx.width,
                     child: Padding(
                       padding: const EdgeInsets.all(16),

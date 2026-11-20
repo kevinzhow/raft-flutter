@@ -52,6 +52,7 @@ for platform, width in [('desktop', 640), ('phone', 390)]:
                 }}],
                 'capture': {
                     'selector': selector, 'crop': 'element', 'contract': 'component-bounds',
+                    'androidKey': 'action-card-v124-frame',
                     'interactions': [
                         {**step, 'target': f"{selector} {step['target']}"}
                         if 'target' in step else step for step in steps
