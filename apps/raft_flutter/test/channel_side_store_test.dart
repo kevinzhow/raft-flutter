@@ -105,6 +105,17 @@ Map<String, dynamic> orderWith(ChannelSideLayout? layout) => {
 };
 
 const _deviceLayout = 'raft.channelSide.layout';
+const _deviceConversationWidth = 'raft.channelSide.conversationWidth';
+
+Future<void> expectDeviceWidths(ChannelSideLayout layout, int? width) async {
+  final prefs = DevicePreferences.current!;
+  await prefs.reload();
+  expect(
+    ChannelSideLayout.parse(jsonDecode(prefs.getString(_deviceLayout)!)),
+    layout,
+  );
+  expect(prefs.getString(_deviceConversationWidth), width?.toString());
+}
 
 Future<void> _settle() => Future<void>.delayed(Duration.zero);
 
@@ -244,6 +255,24 @@ void main() {
       );
     });
   });
+
+  test(
+    'expanded resize without a server saves both widths on this device',
+    () async {
+      await boot();
+      client.selectServer(null);
+      final store = ChannelSideStore.of(w);
+      final resized = store.layout.resize(1, 960);
+      store.resizeExpandedDock({1: 960}, 240);
+      expect((store.layout, store.conversationWidth), (resized, 240));
+      expect(client.patches, isEmpty);
+      await expectDeviceWidths(resized, 240);
+      final fresh = _Workspace(client);
+      addTearDown(fresh.dispose);
+      final reopened = ChannelSideStore.of(fresh);
+      expect((reopened.layout, reopened.conversationWidth), (resized, 240));
+    },
+  );
 
   group('saving', () {
     test(
@@ -385,6 +414,77 @@ void main() {
       await _settle();
       expect(store.layout, saved);
     });
+
+    test(
+      'a refused expanded resize restores the absent legacy width preference',
+      () async {
+        await boot({_deviceLayout: jsonEncode(other.toJson())});
+        w.sidebarOrder = orderWith(null);
+        final store = ChannelSideStore.of(w);
+        store.resizeExpandedDock({1: 960}, 240);
+        expect(store.conversationWidth, 240);
+        expect(client.patches.single.data.keys, ['channelSideLayout']);
+        client.patches.single.done.completeError(
+          const RaftApiException('no', status: 403),
+        );
+        await _settle();
+        expect((store.layout, store.conversationWidth), (other, null));
+        await expectDeviceWidths(other, null);
+      },
+    );
+
+    test('a refused resize with the same dock restores the accepted conversation width', () async {
+      await boot({_deviceConversationWidth: '260'});
+      w.sidebarOrder = orderWith(saved);
+      final store = ChannelSideStore.of(w);
+      store.resizeExpandedDock({1: saved.columns[1].width}, 240);
+      expect(store.conversationWidth, 240);
+      expect(client.patches.single.layout, saved);
+      client.patches.single.done.completeError(StateError('offline'));
+      await _settle();
+      expect((store.layout, store.conversationWidth), (saved, 260));
+      await expectDeviceWidths(saved, 260);
+    });
+
+    for (final newestSettlesFirst in [false, true]) {
+      test(
+        'resize rollback keeps the accepted older pair (newest settles first: $newestSettlesFirst)',
+        () async {
+          await boot();
+          w.sidebarOrder = orderWith(saved);
+          final store = ChannelSideStore.of(w);
+          store.resizeExpandedDock({1: 520}, 240);
+          final first = store.layout;
+          store.resizeColumn(1, 540, false, conversationWidth: 220);
+          expect(client.patches, hasLength(1));
+          store.resizeColumn(1, 560, true, conversationWidth: 200);
+          final second = store.layout;
+          expect(client.patches, hasLength(2));
+
+          void acceptOlder() => client.patches.first.done.complete({
+            'channelSideLayout': first.toJson(),
+          });
+          void refuseNewest() => client.patches.last.done.completeError(
+            const RaftApiException('no', status: 500),
+          );
+          if (newestSettlesFirst) {
+            refuseNewest();
+          } else {
+            acceptOlder();
+          }
+          await _settle();
+          expect((store.layout, store.conversationWidth), (second, 200));
+          if (newestSettlesFirst) {
+            acceptOlder();
+          } else {
+            refuseNewest();
+          }
+          await _settle();
+          expect((store.layout, store.conversationWidth), (first, 240));
+          await expectDeviceWidths(first, 240);
+        },
+      );
+    }
 
     test('overlapping saves: the layout shown is the newest one asked for until all settle', () async {
       await boot();
