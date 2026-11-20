@@ -80,7 +80,14 @@ void main() {
         final route = workspace.location.uri;
         final receipts = <Map<String, Object?>>[];
 
-        ({String first, double top, double pixels, double end, bool tail})
+        ({
+          String first,
+          double top,
+          double pixels,
+          double end,
+          bool tail,
+          double? tailGap,
+        })
         receipt(String phase) {
           final context = tester.element(timeline);
           final anchor = captureTimelineReadingAnchor(
@@ -91,7 +98,10 @@ void main() {
               .descendant(of: timeline, matching: find.byType(Scrollable))
               .first;
           final position = tester.state<ScrollableState>(scrollable).position;
-          final tail = paintedMessage(tester, _lastReply) != null;
+          final lastReply = paintedMessage(tester, _lastReply);
+          final tailGap = lastReply == null
+              ? null
+              : tester.getRect(scrollable).bottom - lastReply.bottom;
           expect(workspace.location.uri, route, reason: phase);
           final matchingTheme =
               Theme.of(context).brightness ==
@@ -104,7 +114,8 @@ void main() {
             'offset': anchor.top,
             'pixels': position.pixels,
             'max': position.maxScrollExtent,
-            'tailPainted': tail,
+            'tailPainted': lastReply != null,
+            'tailGap': tailGap,
             'outlineOpen': outline.evaluate().isNotEmpty,
             if (outlineScroll.evaluate().isNotEmpty) ...{
               'outlinePixels': outlinePosition().pixels,
@@ -117,7 +128,8 @@ void main() {
             top: anchor.top,
             pixels: position.pixels,
             end: position.maxScrollExtent,
-            tail: tail,
+            tail: lastReply != null,
+            tailGap: tailGap,
           );
         }
 
@@ -160,6 +172,9 @@ void main() {
         try {
           final latest = receipt('latest');
           expect(latest.tail, isTrue);
+          // The shared compact footer includes the trailing sentinel in its
+          // 12dp clearance. The regular desktop clearance remains 25dp.
+          expect(latest.tailGap, closeTo(phone ? 12 : 25, 0.01));
           expect(latest.end - latest.pixels, closeTo(0, 1));
           await open();
           expect(receipt('open-latest'), latest);

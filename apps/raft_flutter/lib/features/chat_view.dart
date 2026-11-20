@@ -3420,11 +3420,18 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         : channelFooterWidgets();
     final aboveChannelComposer =
         !thread && channelFooter == null && !selection.active;
+    final aboveCompactThreadComposer =
+        thread &&
+        channelFooter == null &&
+        !selection.active &&
+        widget.threadParentSlot == null &&
+        w.threadIdentity?.taskId == null &&
+        RaftAdaptiveWorkspace.compactOf(context);
     final currentTimeline = thread && _messages.state.threadLoading
         ? widget.threadParentSlot == null
               ? loadingBody
               : taskLoadingBody(loadingBody)
-        : buildTimeline(aboveChannelComposer);
+        : buildTimeline(aboveChannelComposer || aboveCompactThreadComposer);
     final historyWindow = thread
         ? _messages.threadWindow?.hasNewer == true
         : _messages.state.hasNewer;
