@@ -1,0 +1,127 @@
+{
+  "url": "https://tickets.example.org/123",
+  "app": {
+    "id": "tickets",
+    "name": "Tickets",
+    "icon": null
+  },
+  "messageId": "link-card-fixture",
+  "serverId": "visual-server",
+  "channelId": "fixture-channel",
+  "viewerId": "fixture-viewer",
+  "answer": {
+    "items": [
+      {
+        "kind": "v3",
+        "app": {
+          "id": "tickets",
+          "name": "Tickets",
+          "icon": null
+        },
+        "url": "https://tickets.example.org/123",
+        "ticket": "parity-fixture-ticket",
+        "actions": [
+          {
+            "action_id": "resolve",
+            "handle": "fixture-resolve"
+          },
+          {
+            "action_id": "assign",
+            "handle": "fixture-assign"
+          }
+        ],
+        "preview": {
+          "version": 3,
+          "items": [
+            {
+              "type": "inline",
+              "title": "Ticket 123"
+            },
+            {
+              "type": "card",
+              "placement": "block",
+              "title": "Printer ticket",
+              "business_revision": "first",
+              "card": {
+                "root": "root",
+                "elements": {
+                  "root": {
+                    "type": "Stack",
+                    "props": {},
+                    "children": [
+                      "status",
+                      "details",
+                      "resolve",
+                      "assign",
+                      "open"
+                    ]
+                  },
+                  "status": {
+                    "type": "Badge",
+                    "props": {
+                      "text": "Open",
+                      "tone": "warning"
+                    }
+                  },
+                  "details": {
+                    "type": "Text",
+                    "props": {
+                      "text": "Printer on 3rd floor is out of toner."
+                    }
+                  },
+                  "resolve": {
+                    "type": "Button",
+                    "props": {
+                      "label": "Resolve",
+                      "variant": "default",
+                      "action": {
+                        "kind": "execute",
+                        "action_id": "resolve",
+                        "undoWindowMs": 5000
+                      }
+                    }
+                  },
+                  "assign": {
+                    "type": "Button",
+                    "props": {
+                      "label": "Assign",
+                      "variant": "ghost",
+                      "action": {
+                        "kind": "execute",
+                        "action_id": "assign",
+                        "undoWindowMs": 5000
+                      }
+                    }
+                  },
+                  "open": {
+                    "type": "Button",
+                    "props": {
+                      "label": "Open link",
+                      "variant": "ghost",
+                      "action": {
+                        "kind": "navigate",
+                        "url": "https://tickets.example.org/123"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "prompt": {
+    "prompts": [
+      {
+        "url": "https://tickets.example.org/123",
+        "app": {
+          "id": "tickets",
+          "name": "Tickets",
+          "icon": null
+        }
+      }
+    ]
+  }
+}
