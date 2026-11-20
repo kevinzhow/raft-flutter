@@ -94,7 +94,7 @@ class _MobileServerTabState extends State<MobileServerTab> {
       w.client.origin,
       w.server?.json['avatarUrl'] as String?,
     );
-    return RaftMobileNavServerTab(
+    final tab = RaftMobileNavServerTab(
       key: const Key('mobile-tab-server'),
       label: name,
       semanticLabel: widget.otherServerUnread
@@ -114,6 +114,7 @@ class _MobileServerTabState extends State<MobileServerTab> {
         openPage: (page) => openPage(page, close),
       ),
     );
+    return AppPermissionUpdatesHost(workspace: w, child: tab);
   }
 }
 

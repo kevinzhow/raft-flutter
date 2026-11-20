@@ -59,6 +59,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   WorkspaceController get w => widget.controller;
   late SystemNotificationStore store;
   late AppPermissionUpdates appPermissionUpdates;
+  VoidCallback? releaseAppPermissionUpdates;
   StreamSubscription<RaftEvent>? events;
 
   /// Machines and agents the notices project from. Agent presence patches
@@ -111,9 +112,11 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         );
     unawaited(bind());
     appPermissionUpdates = AppPermissionUpdates.of(w);
+    releaseAppPermissionUpdates = widget.store == null
+        ? appPermissionUpdates.retain()
+        : null;
     appPermissionUpdates.addListener(appPermissionsChanged);
     appPermissionsChanged();
-    if (widget.store == null) unawaited(appPermissionUpdates.refresh());
     store.addListener(updated);
     w.addListener(changed);
     entities = WorkspaceEntitySelection(
@@ -142,13 +145,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       // while away are covered by the resume read and the 60 s poll above.
       final payload = e.payload;
       final ping = LiveEvent.read(e.name, payload);
-      if (widget.store == null &&
-          (e.name == 'connected' ||
-              (e.name == 'permission-updates:changed' &&
-                  payload is Map &&
-                  payload['serverId'] == w.client.serverId))) {
-        unawaited(appPermissionUpdates.refresh(changed: true));
-      }
       if (ping is ListChangedEvent &&
           ping.event == ListChangedEvent.jointInvites &&
           ping.serverId == w.client.serverId) {
@@ -191,7 +187,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     // freeing a seat); stops while hidden.
     seatPoll = RaftForegroundPeriodic(const Duration(minutes: 5), () {
       unawaited(store.refreshSeatJoinBlocks());
-      if (widget.store == null) unawaited(appPermissionUpdates.refresh());
     });
     WidgetsBinding.instance.addObserver(this);
   }
@@ -281,7 +276,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     unawaited(bind());
     if (old != next) {
       appPermissionsChanged();
-      if (widget.store == null) unawaited(appPermissionUpdates.refresh());
     }
   }
 
@@ -314,6 +308,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     entities = null;
     store.removeListener(updated);
     appPermissionUpdates.removeListener(appPermissionsChanged);
+    releaseAppPermissionUpdates?.call();
     events?.cancel();
     poll?.dispose();
     seatPoll?.dispose();
@@ -345,7 +340,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         unawaited(store.refreshSeatJoinBlocks());
         unawaited(store.refreshJointInvites());
         unawaited(store.refreshSecondFactorRecovery());
-        if (widget.store == null) unawaited(appPermissionUpdates.refresh());
       }
     }
   }

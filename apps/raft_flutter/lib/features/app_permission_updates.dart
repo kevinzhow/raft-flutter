@@ -1,4 +1,8 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
+import 'package:raft_client/raft_client.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
@@ -25,7 +29,11 @@ class AppPermissionUpdates extends ChangeNotifier {
   AppPermissionUpdateSummary _summary = (count: 0, needsAdminReview: false);
   int _ticket = 0;
   bool _disposed = false, _again = false;
+  int _consumers = 0;
   Future<void>? _inFlight;
+  StreamSubscription<RaftEvent>? _events;
+  RaftForegroundPeriodic? _poll;
+  AppLifecycleListener? _lifecycle;
 
   bool get allowed =>
       workspace.client.user != null &&
@@ -35,6 +43,54 @@ class AppPermissionUpdates extends ChangeNotifier {
       allowed && _authority == pageIdentity(workspace)
       ? _summary
       : (count: 0, needsAdminReview: false);
+
+  VoidCallback retain() {
+    if (_consumers++ == 0) _watch();
+    return () {
+      if (!_disposed && --_consumers == 0) _unwatch();
+    };
+  }
+
+  void _watch() {
+    workspace.addListener(_authorityChanged);
+    _events = workspace.client.events.listen((event) {
+      final payload = event.payload;
+      if (event.name == 'connected' ||
+          (event.name == 'permission-updates:changed' &&
+              payload is Map &&
+              payload['serverId'] == workspace.client.serverId)) {
+        _refreshWhileVisible(changed: true);
+      }
+    });
+    _poll = RaftForegroundPeriodic(
+      const Duration(minutes: 5),
+      _refreshWhileVisible,
+    );
+    _lifecycle = AppLifecycleListener(onShow: _refreshWhileVisible);
+    _refreshWhileVisible();
+  }
+
+  void _unwatch() {
+    workspace.removeListener(_authorityChanged);
+    unawaited(_events?.cancel());
+    _events = null;
+    _poll?.dispose();
+    _poll = null;
+    _lifecycle?.dispose();
+    _lifecycle = null;
+  }
+
+  void _authorityChanged() {
+    if (!allowed) {
+      if (_authority != null) unawaited(refresh());
+    } else if (_authority != pageIdentity(workspace)) {
+      _refreshWhileVisible();
+    }
+  }
+
+  void _refreshWhileVisible({bool changed = false}) {
+    if (_poll?.isRunning == true) unawaited(refresh(changed: changed));
+  }
 
   Future<void> refresh({bool changed = false}) {
     if (_disposed) return Future.value();
@@ -97,6 +153,50 @@ class AppPermissionUpdates extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    if (_consumers > 0) _unwatch();
     super.dispose();
   }
+}
+
+class AppPermissionUpdatesHost extends StatefulWidget {
+  const AppPermissionUpdatesHost({
+    super.key,
+    required this.workspace,
+    required this.child,
+  });
+
+  final WorkspaceController workspace;
+  final Widget child;
+
+  @override
+  State<AppPermissionUpdatesHost> createState() =>
+      _AppPermissionUpdatesHostState();
+}
+
+class _AppPermissionUpdatesHostState extends State<AppPermissionUpdatesHost> {
+  late VoidCallback release;
+
+  @override
+  void initState() {
+    super.initState();
+    release = AppPermissionUpdates.of(widget.workspace).retain();
+  }
+
+  @override
+  void didUpdateWidget(AppPermissionUpdatesHost oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspace != widget.workspace) {
+      release();
+      release = AppPermissionUpdates.of(widget.workspace).retain();
+    }
+  }
+
+  @override
+  void dispose() {
+    release();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

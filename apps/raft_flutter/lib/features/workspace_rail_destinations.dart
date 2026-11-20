@@ -9,12 +9,15 @@ import 'computers_rack/computer_attention_seen.dart';
 Widget listenWorkspaceRail(
   WorkspaceController workspace,
   Widget Function() build,
-) => ListenableBuilder(
-  listenable: Listenable.merge([
-    ArtifactSession.of(workspace),
-    AppPermissionUpdates.of(workspace),
-  ]),
-  builder: (_, _) => build(),
+) => AppPermissionUpdatesHost(
+  workspace: workspace,
+  child: ListenableBuilder(
+    listenable: Listenable.merge([
+      ArtifactSession.of(workspace),
+      AppPermissionUpdates.of(workspace),
+    ]),
+    builder: (_, _) => build(),
+  ),
 );
 
 List<RaftRailDestination> workspaceRailDestinations(

@@ -5,6 +5,26 @@ import 'app_global_server_selector_test.dart' show RootFixture;
 import 'support/server_tab.dart';
 
 void main() {
+  testWidgets('a cold Tasks route loads the server popover Apps dot', (
+    tester,
+  ) async {
+    const path = '/integrations/permission-updates';
+    final fixture = RootFixture();
+    fixture.overrides['GET $path'] = (_) => {
+      'count': 1,
+      'needsAdminReview': true,
+    };
+    await fixture.mount(tester, 'light', 390, uri: Uri.parse('/s/alpha/tasks'));
+    final summaryReads = fixture.adapter.calls.where(
+      (request) => request.path == path,
+    );
+    expect(summaryReads, hasLength(1));
+    await openServerPopover(tester, flush: fixture.flush);
+    expect(find.byKey(const Key('apps-attention-dot')), findsOneWidget);
+    expect(summaryReads, hasLength(1));
+    await fixture.close(tester);
+  });
+
   testWidgets('reviewing an app clears the bell notice and the Apps dot', (
     tester,
   ) async {
