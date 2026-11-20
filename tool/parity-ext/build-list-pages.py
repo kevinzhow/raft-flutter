@@ -81,6 +81,26 @@ NOTIFICATIONS = [
 FX = shared('fixtureData.json')
 _cindy = FX['agents']['cindy']
 _owner = FX['humans']['owner']
+_design = FX['channels']['design']
+_at = FX['times']['recentActivityAtIso']
+ARTIFACT_ACTIVITY = {
+    'kind': 'object',
+    'objectKind': 'artifact',
+    'objectId': 'art-visual-activity',
+    'summary': {'title': 'Activity review notes', 'kind': 'html', 'latestVersion': 3},
+    'home': {'kind': 'channel', 'label': _design['name'], 'channelId': _design['id']},
+    'latestEvent': {
+        'eventKind': 'comment', 'reason': 'following', 'at': _at,
+        'actor': {'type': 'agent', 'id': _cindy['id'], 'name': _cindy['displayName']},
+    },
+    'preview': {'text': 'Check the typography on the pinned version.', 'truncated': False},
+    'target': {'version': 2},
+    'unreadCount': 0,
+    'hasMention': False,
+    'isFollowing': True,
+    'lastActivityAt': _at,
+    'doneFrontierSeq': '9',
+}
 CHANNEL_ROSTER = {
     'agents': [{
         'id': _cindy['id'], 'serverId': FX['server']['id'], 'name': _cindy['name'],
@@ -106,7 +126,10 @@ FIXTURE = {
     'notifications': NOTIFICATIONS,
     'routes': {
         'GET /messages/search': SEARCH,
-        'GET /channels/saved': SAVED,
+        'GET /channels/saved': {
+            '$when': [{'query': {'offset': '0'}, 'answer': SAVED}],
+            '$default': {**SAVED, 'saved': [], 'hasMore': False},
+        },
         'GET /channels/inbox': ACTIVITY,
         'GET /tasks/server': {'tasks': TASKS['tasks']},
         'GET /channels/channel-design/members': CHANNEL_ROSTER,
@@ -123,6 +146,9 @@ FIXTURE = {
         'activity-empty': {'GET /channels/inbox': INBOX_EMPTY},
         'activity-loading': {'GET /channels/inbox': {'$pending': True}},
         'activity-error': {'GET /channels/inbox': {'$status': 500}},
+        'activity-artifact': {'GET /channels/inbox': {
+            **INBOX_EMPTY, 'items': [ARTIFACT_ACTIVITY], 'objectCount': 1,
+        }},
         # activity_conversation_list_v0 on (the app evaluates it; the Web host sets the flag from `flags`).
         'activity-conversation-list': {'POST /feature-flags/evaluate': {
             'evaluations': [{'key': 'activity_conversation_list_v0', 'enabled': True}]}},
@@ -216,23 +242,33 @@ add('search.desktop-channel-filter', 'Search page (desktop): channel filter drop
 
 
 # --------------------------------------------------------------------------- Activity (5.06 5.07 5.08)
-ACT_HINT = SRC + 'thread/ThreadsInbox.tsx'
+ACT_HINT = 'packages/web/src/features/thread/ThreadsInbox.tsx'
 ROW = '[data-visual-case] [data-testid="inbox-row"]'
+add('activity.desktop-list', 'Activity (desktop): header and list', 'panel', platform='desktop',
+    hint=ACT_HINT, props={'panel': 'activity', 'route': '/activity', 'w': 720},
+    selector='[data-visual-case]:has([data-testid="inbox-row"])',
+    interactions=[{'type': 'wait', 'ms': 850}])
+add('activity.phone-artifact', 'Activity (phone): Artifact comment on a previous version', 'panel',
+    platform='mobile', hint=ACT_HINT, props={'panel': 'activity', 'route': '/activity'},
+    route_set='activity-artifact', selector='[data-visual-case]:has([data-testid="object-card-line"])',
+    interactions=[{'type': 'wait', 'ms': 850}])
 for plat in ('phone', 'desktop'):
     platform = 'mobile' if plat == 'phone' else 'desktop'
-    base = {'panel': 'activity'}
+    base = {'panel': 'activity', 'route': '/activity'}
     if plat == 'phone':
         add('activity.phone-empty', 'Activity (phone): empty inbox', 'panel', platform=platform, hint=ACT_HINT,
             props={**base, 'state': 'empty'}, route_set='activity-empty')
         add('activity.phone-loading', 'Activity (phone): loading', 'panel', platform=platform, hint=ACT_HINT,
-            props={**base, 'state': 'loading'}, route_set='activity-loading')
+            props={**base, 'state': 'loading'}, route_set='activity-loading',
+            selector='[data-visual-case]:has([data-testid="inbox-loading-day-heading"])',
+            interactions=[{'type': 'wait', 'ms': 1250}])
         add('activity.phone-error', 'Activity (phone): failed to load', 'panel', platform=platform, hint=ACT_HINT,
             props={**base, 'state': 'empty'}, route_set='activity-error')
     add(f'activity.{plat}-filter-unread', f'Activity ({plat}): Unread filter', 'panel', platform=platform,
-        hint=ACT_HINT, props=base, interactions=[{'type': 'wait', 'ms': 850},
+        hint=ACT_HINT, props=base, interactions=[{'type': 'wait', 'ms': 850}, *click(tid('inbox-filter-button')),
                                                  *click(tid('inbox-filter-unread'))])
     add(f'activity.{plat}-filter-mentions', f'Activity ({plat}): Mentions filter', 'panel', platform=platform,
-        hint=ACT_HINT, props=base, interactions=[{'type': 'wait', 'ms': 850},
+        hint=ACT_HINT, props=base, interactions=[{'type': 'wait', 'ms': 850}, *click(tid('inbox-filter-button')),
                                                  *click(tid('inbox-filter-mentions'))])
     add(f'activity.{plat}-context-menu', f'Activity ({plat}): row context menu', 'panel', platform=platform,
         hint=ACT_HINT, props=base, interactions=[{'type': 'wait', 'ms': 850},
@@ -251,7 +287,11 @@ add('activity.desktop-conversation-list-pinned', 'Activity (desktop): conversati
 
 # --------------------------------------------------------------------------- Saved (5.09 5.10 5.11)
 SAVED_HINT = SRC + 'saved/SavedPanel.tsx'
-SAVED_ROW = '[data-visual-case] [role="button"]'
+SAVED_ROW = '[data-visual-case] [data-saved-row]'
+add('saved.phone-list', 'Saved (phone): first page and empty next offset', 'panel', platform='mobile',
+    hint=SAVED_HINT, props={'panel': 'saved', 'route': '/saved'},
+    selector='[data-visual-case]:has([data-saved-row])',
+    interactions=[{'type': 'wait', 'ms': 850}])
 add('saved.desktop-list', 'Saved (desktop): saved messages list', 'panel', platform='desktop', hint=SAVED_HINT,
     props={'panel': 'saved'}, interactions=[{'type': 'wait', 'ms': 850}])
 for plat in ('phone', 'desktop'):

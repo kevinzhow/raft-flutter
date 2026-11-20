@@ -1428,6 +1428,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     Offset at,
     Widget Function(BuildContext) builder, {
     String? rowKey,
+    Size? placementSize,
   }) async {
     if (!accepts(scope)) return null;
     ModalRoute<dynamic>? owned;
@@ -1449,6 +1450,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         context: context,
         anchor: at,
         builder: buildOwned,
+        placementSize: placementSize,
       );
     } finally {
       dialogs.remove(owned);
@@ -2870,9 +2872,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         visibleRows.isEmpty &&
         !(savedPage && historyHiddenCount > 0);
     return searching && !(widget.section == 'search' && !searchHomeNow)
-        // ConversationCardSkeleton: Inbox and Saved share the card
-        // placeholder list.
-        ? widget.section == 'activity' || widget.section == 'saved'
+        ? widget.section == 'activity'
+              ? const ActivityInboxLoadingList()
+              : widget.section == 'saved'
               ? const RaftActivityLoadingList()
               : widget.section == 'tasks'
               ? const RaftTaskLoadingList()
@@ -3021,7 +3023,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             padding: raftScrollPadding(
               context,
               widget.section == 'saved'
-                  ? RaftConversationCardRecipe(RaftTokens.of(context)).listInset
+                  ? RaftConversationCardRecipe(
+                      RaftTokens.of(context),
+                      saved: true,
+                    ).listInset
                   : const EdgeInsets.all(16),
             ),
             // SavedPanel loads the next page when its sentinel comes
@@ -3032,7 +3037,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             itemCount: shown.length + (hasMore ? 1 : 0),
             separatorBuilder: (_, _) => SizedBox(
               height: widget.section == 'saved'
-                  ? RaftConversationCardRecipe(RaftTokens.of(context)).listGap
+                  ? RaftConversationCardRecipe(
+                      RaftTokens.of(context),
+                      saved: true,
+                    ).listGap
                   : RaftConversationCardRecipe.gap,
             ),
             itemBuilder: (context, index) => index == shown.length
@@ -3624,7 +3632,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       },
       height: raftPageHeaderHeight(context),
       mobile: mobile,
-      leftInset: widget.section == 'activity' ? 12 : null,
+      leftInset: widget.section == 'activity'
+          ? RaftInteraction.of(context).touch
+                ? RaftLayoutMetrics.panelInset
+                : RaftTokens.of(context).size('css.page-inset', fallback: 16)
+          : null,
       bottomRule: widget.section == 'activity',
       iconBackground: widget.section == 'saved'
           ? RaftTokens.of(context).colors['primary-soft']
@@ -4007,7 +4019,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   /// ThreadsInbox `activity-context-menu` (`ContextMenuPopup`, inline width 184
   /// bounded by the current recipe's 240 minimum): Mark as
   /// Read / Mark as Unread (not for an unfollowed thread), Done and, for
-  /// threads, Unfollow (BellOff 14) / Follow (Bell 14).
+  /// threads, Unfollow / Follow. The list row uses `active` for the detail
+  /// pane only. Opening the pointer menu leaves that row state alone.
   Future<void> activityMenu(
     Map<String, dynamic> row,
     String scope,
@@ -4046,7 +4059,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           }
         },
       );
-    }, rowKey: rowKey(row));
+    }, placementSize: activityContextMenuPlacement);
   }
 
   /// Menu "Mark as read" reads the row's scope. A complete unread ACK projects
@@ -4195,7 +4208,6 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       selected: activityRowSelected(row),
       located: ActivityFirstUnread.of(w).highlights(rowKey(row)),
       canonical: widget.onActivityCanonical != null,
-      popupOpen: menuRowKey != null && menuRowKey == rowKey(row),
       open: () => openConversation(row, scope),
       onOpenObject: (r) => openActivityObject(r, scope),
       activate: (detail, height, {bool pointer = false}) =>

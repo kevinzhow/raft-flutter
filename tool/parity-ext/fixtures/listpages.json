@@ -61,58 +61,72 @@
    ]
   },
   "GET /channels/saved": {
-   "hasMore": true,
-   "total": 5,
-   "saved": [
+   "$when": [
     {
-     "messageId": "msg-saved-visual-1",
-     "channelId": "channel-design",
-     "channelName": "design",
-     "channelType": "channel",
-     "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
-     "senderType": "agent",
-     "senderId": "agent-cindy",
-     "senderName": "Cindy",
-     "createdAt": "2026-06-22T02:30:00.000Z",
-     "savedAt": "2026-06-22T03:00:00.000Z",
-     "parentChannelId": null,
-     "parentChannelName": null,
-     "parentChannelType": null,
-     "parentMessageId": null
-    },
-    {
-     "messageId": "msg-saved-visual-2",
-     "channelId": "thread-visual",
-     "channelName": "design",
-     "channelType": "thread",
-     "content": "Rename old visual cases under components.* before rerunning baseline.",
-     "senderType": "user",
-     "senderId": "visual-user",
-     "senderName": "artin",
-     "createdAt": "2026-06-22T01:40:00.000Z",
-     "savedAt": "2026-06-22T02:10:00.000Z",
-     "parentChannelId": "channel-design",
-     "parentChannelName": "design",
-     "parentChannelType": "channel",
-     "parentMessageId": "msg-parent-visual"
-    },
-    {
-     "messageId": "msg-saved-visual-3",
-     "channelId": "channel-design",
-     "channelName": "design",
-     "channelType": "channel",
-     "content": "Publish preflight is green — report goes live after the next full run.",
-     "senderType": "agent",
-     "senderId": "agent-product-ux",
-     "senderName": "Product UX Designer",
-     "createdAt": "2026-06-21T09:12:00.000Z",
-     "savedAt": "2026-06-21T10:00:00.000Z",
-     "parentChannelId": null,
-     "parentChannelName": null,
-     "parentChannelType": null,
-     "parentMessageId": null
+     "query": {
+      "offset": "0"
+     },
+     "answer": {
+      "hasMore": true,
+      "total": 5,
+      "saved": [
+       {
+        "messageId": "msg-saved-visual-1",
+        "channelId": "channel-design",
+        "channelName": "design",
+        "channelType": "channel",
+        "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+        "senderType": "agent",
+        "senderId": "agent-cindy",
+        "senderName": "Cindy",
+        "createdAt": "2026-06-22T02:30:00.000Z",
+        "savedAt": "2026-06-22T03:00:00.000Z",
+        "parentChannelId": null,
+        "parentChannelName": null,
+        "parentChannelType": null,
+        "parentMessageId": null
+       },
+       {
+        "messageId": "msg-saved-visual-2",
+        "channelId": "thread-visual",
+        "channelName": "design",
+        "channelType": "thread",
+        "content": "Rename old visual cases under components.* before rerunning baseline.",
+        "senderType": "user",
+        "senderId": "visual-user",
+        "senderName": "artin",
+        "createdAt": "2026-06-22T01:40:00.000Z",
+        "savedAt": "2026-06-22T02:10:00.000Z",
+        "parentChannelId": "channel-design",
+        "parentChannelName": "design",
+        "parentChannelType": "channel",
+        "parentMessageId": "msg-parent-visual"
+       },
+       {
+        "messageId": "msg-saved-visual-3",
+        "channelId": "channel-design",
+        "channelName": "design",
+        "channelType": "channel",
+        "content": "Publish preflight is green — report goes live after the next full run.",
+        "senderType": "agent",
+        "senderId": "agent-product-ux",
+        "senderName": "Product UX Designer",
+        "createdAt": "2026-06-21T09:12:00.000Z",
+        "savedAt": "2026-06-21T10:00:00.000Z",
+        "parentChannelId": null,
+        "parentChannelName": null,
+        "parentChannelType": null,
+        "parentMessageId": null
+       }
+      ]
+     }
     }
-   ]
+   ],
+   "$default": {
+    "hasMore": false,
+    "total": 5,
+    "saved": []
+   }
   },
   "GET /channels/inbox": {
    "hasMore": false,
@@ -535,6 +549,53 @@
   "activity-error": {
    "GET /channels/inbox": {
     "$status": 500
+   }
+  },
+  "activity-artifact": {
+   "GET /channels/inbox": {
+    "items": [
+     {
+      "kind": "object",
+      "objectKind": "artifact",
+      "objectId": "art-visual-activity",
+      "summary": {
+       "title": "Activity review notes",
+       "kind": "html",
+       "latestVersion": 3
+      },
+      "home": {
+       "kind": "channel",
+       "label": "design",
+       "channelId": "channel-design"
+      },
+      "latestEvent": {
+       "eventKind": "comment",
+       "reason": "following",
+       "at": "2026-06-19T12:24:00.000Z",
+       "actor": {
+        "type": "agent",
+        "id": "agent-cindy",
+        "name": "Cindy"
+       }
+      },
+      "preview": {
+       "text": "Check the typography on the pinned version.",
+       "truncated": false
+      },
+      "target": {
+       "version": 2
+      },
+      "unreadCount": 0,
+      "hasMention": false,
+      "isFollowing": true,
+      "lastActivityAt": "2026-06-19T12:24:00.000Z",
+      "doneFrontierSeq": "9"
+     }
+    ],
+    "hasMore": false,
+    "totalCount": 0,
+    "totalUnreadCount": 0,
+    "objectCount": 1
    }
   },
   "activity-conversation-list": {

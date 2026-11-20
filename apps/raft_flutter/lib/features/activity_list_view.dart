@@ -1,14 +1,16 @@
 // Source: packages/web/src/features/thread/ThreadsInbox.tsx:751-760 at v1.24.0.
 // The Activity list: one group per day under a heading that sticks under the
 // phone's pinned filter row (at the top on desktop), 2px between rows.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_day_groups.dart';
 
-/// Web `ThreadsInbox`'s list `pt-2 pb-1` on a phone, `py-1` on desktop.
-const double _phoneTop = 8, _desktopTop = 4, _bottom = 4;
+/// Web `ThreadsInbox` combines the scroller's padding with the list's own.
+const double _listInset = 8;
 
 /// `InboxItemListGroup` margin between two days.
 const double _groupGap = 6;
@@ -24,6 +26,53 @@ typedef ActivityRowBuilder = Widget Function(
   Map<String, dynamic> row,
   int index,
 );
+
+/// Web ActivityInboxSkeleton: a heading and ten compact rows, delayed by
+/// one second so a fast read goes straight to the actual list.
+class ActivityInboxLoadingList extends StatefulWidget {
+  const ActivityInboxLoadingList({super.key});
+
+  @override
+  State<ActivityInboxLoadingList> createState() =>
+      _ActivityInboxLoadingListState();
+}
+
+class _ActivityInboxLoadingListState extends State<ActivityInboxLoadingList> {
+  Timer? _delay;
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _delay = Timer(const Duration(seconds: 1), () {
+      setState(() => _visible = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _delay?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => !_visible
+      ? const SizedBox.expand()
+      : ListView(
+          padding: raftScrollPadding(
+            context,
+            const EdgeInsets.symmetric(vertical: _listInset),
+          ),
+          children: [
+            RaftInboxItemListGroup.loading(
+              children: [
+                // The day heading is the first child of the Web list group.
+                for (var i = 1; i <= 10; i++) RaftInboxItemSkeleton(index: i),
+              ],
+            ),
+          ],
+        );
+}
 
 /// The scroller of the Activity page. [groups] hold the rows in shown order; [phoneBar] is
 /// its first, pinned child on a phone. [indexOfKey] maps a row's list key to
@@ -61,10 +110,7 @@ class ActivityListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = raftScrollPadding(
       context,
-      EdgeInsets.only(
-        top: phoneBar != null ? _phoneTop : _desktopTop,
-        bottom: _bottom,
-      ),
+      const EdgeInsets.symmetric(vertical: _listInset),
     );
     var start = 0;
     final slivers = <Widget>[
@@ -94,6 +140,8 @@ class ActivityListView extends StatelessWidget {
                     ),
                   ),
                 ),
+              if (group.label.isNotEmpty)
+                const SliverToBoxAdapter(child: SizedBox(height: _rowGap)),
               SliverList.separated(
                 itemCount: group.rows.length,
                 separatorBuilder: (_, _) => const SizedBox(height: _rowGap),

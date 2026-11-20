@@ -1813,12 +1813,12 @@
     {
       "id": "activity.inbox",
       "title": "Activity inbox",
-      "webEntry": "packages/web/src/components/thread/ThreadsInbox.tsx",
+      "webEntry": "packages/web/src/features/thread/ThreadsInbox.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/resource_view.dart",
       "states": [
         {
           "state": "loading",
-          "variant": "ConversationCardSkeleton",
+          "variant": "ActivityInboxSkeleton after a slow first read",
           "web": "yes",
           "flutter": "yes",
           "parityCase": [
@@ -13101,6 +13101,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:activityList@111979/FUNCTION:bar@112201": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Mounts the Activity filter controls in the resource view."
       },
       "apps/raft_flutter/lib/features/resource_view.dart#class:ResourceView": {
         "role": "entry_composition",
@@ -24997,6 +25003,24 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/conversation_list_row.dart#class:_RenderSenderFaceBaseline": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Aligns the sender avatar to the baseline of the inline message preview."
+      },
+      "packages/raft_ui/lib/src/conversation_list_row.dart#class:_SenderFaceBaseline": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Aligns the sender avatar to the baseline of the inline message preview."
+      },
+      "packages/raft_ui/lib/src/conversation_list_row.dart#method:RaftListRowSender.face": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Aligns the sender avatar to the baseline of the inline message preview."
+      },
       "packages/raft_ui/lib/src/conversation_list_row.dart#class:RaftActivityListSection": {
         "role": "unresolved",
         "familyRefs": [],
@@ -33942,6 +33966,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/resource_cards.dart#local-function:CLASS:_RaftConversationCardState@8622/METHOD:build@10231/FUNCTION:surface@11203": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Builds the shared conversation card surface, including the Saved hover fill."
+      },
       "packages/raft_ui/lib/src/resource_cards.dart#class:RaftConversationCard": {
         "role": "unresolved",
         "familyRefs": [],
@@ -41405,7 +41435,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/message_context_menu.dart#local-function:CLASS:RaftMessageContextMenu@1047/METHOD:build@1595/FUNCTION:divider@1906": {
+      "packages/raft_ui/lib/src/message_context_menu.dart#local-function:CLASS:RaftMessageContextMenu@1047/METHOD:build@1706/FUNCTION:divider@2017": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -49217,7 +49247,7 @@
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/indicators.dart#local-function:CLASS:RaftProgressBar@2352/METHOD:build@6729/FUNCTION:inheritRoot@7857": {
+      "packages/raft_ui/lib/src/indicators.dart#local-function:CLASS:RaftProgressBar@2398/METHOD:build@6775/FUNCTION:inheritRoot@7903": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
@@ -50303,6 +50333,24 @@
         "owner": "WP-DS3 message family",
         "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_inboxSkeletonTextBar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Renders the recipe-backed title, body and timestamp bars for a loading row."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#local-function:CLASS:RaftInboxItemSkeleton@26303/METHOD:build@26452/FUNCTION:line@27648": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Renders the recipe-backed title, body and timestamp bars for a loading row."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#local-function:CLASS:_RaftInboxItemState@5439/METHOD:build@7836/FUNCTION:content@9042": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Builds the shared InboxItem content, including its menu-owner fill."
+      },
       "packages/raft_ui/lib/src/raft/inbox_item.dart#class:RaftInboxItem": {
         "role": "unresolved",
         "familyRefs": [],
@@ -50875,6 +50923,18 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#local-function:CLASS:ActivityInboxRow@3793/METHOD:_leading@7385/FUNCTION:badgeOf@7773": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Composes the Activity leading tile and its channel or thread mark."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#method:ActivityInboxRow._channelMark": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Composes the Activity leading tile and its channel or thread mark."
+      },
       "apps/raft_flutter/lib/features/activity_inbox_row.dart#class:ActivityInboxRow": {
         "role": "unresolved",
         "familyRefs": [],
@@ -50958,6 +51018,30 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_list_view.dart#class:ActivityInboxLoadingList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Owns the Activity slow-first-read delay and renders the recipe-backed loading group."
+      },
+      "apps/raft_flutter/lib/features/activity_list_view.dart#class:_ActivityInboxLoadingListState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Owns the Activity slow-first-read delay and renders the recipe-backed loading group."
+      },
+      "apps/raft_flutter/lib/features/activity_list_view.dart#method:ActivityInboxLoadingList.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Owns the Activity slow-first-read delay and renders the recipe-backed loading group."
+      },
+      "apps/raft_flutter/lib/features/activity_list_view.dart#method:_ActivityInboxLoadingListState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Activity and Saved",
+        "reason": "Owns the Activity slow-first-read delay and renders the recipe-backed loading group."
       },
       "apps/raft_flutter/lib/features/activity_list_view.dart#class:ActivityListView": {
         "role": "unresolved",
@@ -51463,7 +51547,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:scopedMenu@51252/FUNCTION:buildOwned@51459": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:scopedMenu@51252/FUNCTION:buildOwned@51484": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -66670,7 +66754,7 @@
         "owner": "WP-DS5 data-display family",
         "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/indicators.dart#local-function:CLASS:RaftProgressBar@2352/METHOD:build@6729/FUNCTION:inheritRoot@7857|state:group/progress:data-complete": {
+      "packages/raft_ui/lib/src/indicators.dart#local-function:CLASS:RaftProgressBar@2398/METHOD:build@6775/FUNCTION:inheritRoot@7903|state:group/progress:data-complete": {
         "applicability": "unknown",
         "owner": "WP-DS5 data-display family",
         "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
@@ -66794,6 +66878,21 @@
         "applicability": "unknown",
         "owner": "WP-DS3 message family",
         "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_resolve|state:data-popup-open": {
+        "applicability": "required",
+        "owner": "Activity inbox",
+        "reason": "The mounted Activity row uses this selector while it owns the context menu."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:RaftInboxItemSkeleton.build|state:nth-child(3n)": {
+        "applicability": "required",
+        "owner": "Activity inbox",
+        "reason": "This selector chooses the placeholder bar widths for the matching Activity loading row."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:RaftInboxItemSkeleton.build|state:nth-child(3n+2)": {
+        "applicability": "required",
+        "owner": "Activity inbox",
+        "reason": "This selector chooses the placeholder bar widths for the matching Activity loading row."
       },
       "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_resolve|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
         "applicability": "unknown",

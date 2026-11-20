@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+/// Web inboxContextMenuPosition.ts places the popup using these dimensions
+/// before the recipe's minimum width and its action rows determine the size.
+const activityContextMenuPlacement = Size(184, 96);
+
 /// Identifies a command offered by an Activity row menu.
 enum ActivityContextAction {
   toggleRead,
@@ -58,46 +62,60 @@ Widget buildActivityContextMenu(
   final mutable = row['kind'] == 'channel' || row['kind'] == 'dm';
   muteChannel = mutable ? muteChannel : null;
   final muted = muteChannel?.flag('activityMuted') == true;
-  return RaftSidebarContextMenu(
-    width: 184,
+  return RaftMessageContextMenu(
+    width: activityContextMenuPlacement.width,
     onDismiss: onDismiss,
-    entries: [
-      if (canToggleActivityRowRead(row))
-        RaftSidebarMenuItem(
-          label: raftText(context, unread ? 'Mark as read' : 'Mark as unread'),
-          glyph: unread
-              ? RaftGlyph.messageSquareCheck
-              : RaftGlyph.messageSquareDot,
-          itemKey: const ValueKey('activity-menu-toggle-read'),
-          onPressed: () => onAction(ActivityContextAction.toggleRead),
-        ),
-      RaftSidebarMenuItem(
-        label: raftText(context, 'Mark as Done'),
-        glyph: RaftGlyph.check,
-        itemKey: const ValueKey('activity-menu-done'),
-        onPressed: () => onAction(ActivityContextAction.done),
-      ),
-      // The message menu's Unfollow / Follow icons: the bell is Mute's.
-      if (thread)
-        RaftSidebarMenuItem(
-          label: raftText(context, following ? 'Unfollow' : 'Follow'),
-          glyph: following ? RaftGlyph.unfollowThread : RaftGlyph.followThread,
-          itemKey: const ValueKey('activity-menu-follow'),
-          onPressed: () => onAction(
-            following
-                ? ActivityContextAction.unfollow
-                : ActivityContextAction.follow,
+    sections: [
+      [
+        if (canToggleActivityRowRead(row))
+          RaftMessageContextMenuItem(
+            label: raftText(
+              context,
+              unread ? 'Mark as read' : 'Mark as unread',
+            ),
+            icon: raftMessageMenuIcon(
+              unread
+                  ? RaftGlyph.messageSquareCheck
+                  : RaftGlyph.messageSquareDot,
+            ),
+            key: const ValueKey('activity-menu-toggle-read'),
+            onPressed: () => onAction(ActivityContextAction.toggleRead),
           ),
+        RaftMessageContextMenuItem(
+          label: raftText(context, 'Mark as Done'),
+          icon: raftMessageMenuIcon(RaftGlyph.check),
+          key: const ValueKey('activity-menu-done'),
+          onPressed: () => onAction(ActivityContextAction.done),
         ),
-      if (canToggleActivityMute(muteChannel))
-        RaftSidebarMenuItem(
-          label: raftText(context, muted ? 'Unmute Activity' : 'Mute Activity'),
-          glyph: muted ? RaftGlyph.bell : RaftGlyph.bellOff,
-          itemKey: const ValueKey('activity-menu-mute'),
-          onPressed: () => onAction(
-            muted ? ActivityContextAction.unmute : ActivityContextAction.mute,
+        // The message menu's Unfollow / Follow icons: the bell is Mute's.
+        if (thread)
+          RaftMessageContextMenuItem(
+            label: raftText(context, following ? 'Unfollow' : 'Follow'),
+            icon: raftMessageMenuIcon(
+              following ? RaftGlyph.unfollowThread : RaftGlyph.followThread,
+            ),
+            key: const ValueKey('activity-menu-follow'),
+            onPressed: () => onAction(
+              following
+                  ? ActivityContextAction.unfollow
+                  : ActivityContextAction.follow,
+            ),
           ),
-        ),
+        if (canToggleActivityMute(muteChannel))
+          RaftMessageContextMenuItem(
+            label: raftText(
+              context,
+              muted ? 'Unmute Activity' : 'Mute Activity',
+            ),
+            icon: raftMessageMenuIcon(
+              muted ? RaftGlyph.bell : RaftGlyph.bellOff,
+            ),
+            key: const ValueKey('activity-menu-mute'),
+            onPressed: () => onAction(
+              muted ? ActivityContextAction.unmute : ActivityContextAction.mute,
+            ),
+          ),
+      ],
     ],
   );
 }

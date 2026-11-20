@@ -72,12 +72,7 @@ function parityExtLpBox(props: ParityExtLpProps) {
 
 function parityExtLpPrime(props: ParityExtLpProps) {
   primeDirectVisualStores(props.raw);
-  const state = props.params.get("state") ?? "results";
   const panel = props.params.get("panel");
-  const results = state === "results";
-  const routes = { ...(parityExtLpFixture.routes as Record<string, unknown>), ...((parityExtLpFixture.routeSets as Record<string, Record<string, unknown>>)[props.params.get("routeSet") ?? ""] ?? {}) };
-  const inbox = routes["GET /channels/inbox"] as typeof activityResultsFixture;
-  const saved = routes["GET /channels/saved"] as typeof savedMessagesFixture;
   if (panel === "activity") {
     // activity_conversation_list_v0 (and a sidebar-pinned channel) from the case props.
     setServerFeatureFlagForTests(fxServer.id, "activity_conversation_list_v0", (props.params.get("flags") ?? "").split(",").includes("list"));
@@ -86,22 +81,23 @@ function parityExtLpPrime(props: ParityExtLpProps) {
       useServerStore.setState((s) => ({ sidebarOrder: { ...s.sidebarOrder, pinned: [{ kind: "channel", id: pinnedChannel }] } }) as never);
     }
     useInboxStore.setState({
-      items: (results ? inbox.items : []) as never,
+      items: [],
       filter: (props.params.get("filter") ?? "all") as never,
-      loading: state === "loading",
+      loading: false,
+      loaded: false,
       loadingMore: false,
-      hasMore: false,
-      totalCount: results ? inbox.totalCount : 0,
-      totalUnreadCount: results ? inbox.totalUnreadCount : 0,
+      hasMore: true,
+      totalCount: 0,
+      totalUnreadCount: 0,
     });
   }
   if (panel === "saved") {
     useSavedStore.setState({
-      saved: (results ? saved.saved : []) as never,
-      savedIds: new Set(results ? saved.saved.map((s) => s.messageId) : []),
-      loading: state === "loading",
-      hasMore: results ? Boolean(saved.hasMore) : false,
-      total: results ? saved.total : 0,
+      saved: [],
+      savedIds: new Set(),
+      loading: false,
+      hasMore: false,
+      total: 0,
     });
   }
 }
@@ -115,7 +111,7 @@ function ParityExtLpPanel({ props }: { props: ParityExtLpProps }) {
   // Elegant, 62px Brutal); this host has no shell root. The page canvas is the document body,
   // `--layer-canvas-muted` (index.css `body`): the Tasks panel is `dark:bg-transparent` over it.
   const brutal = props.params.get("parityTheme") === "brutal-light";
-  const shell = { "--shell-header-height": "56px" } as Record<string, string>;
+  const shell = { "--shell-header-height": panel === "activity" && props.platform === "desktop" ? "44px" : "56px" } as Record<string, string>;
   return (
     <main className="min-h-screen bg-white p-0 font-display text-black">
       <div

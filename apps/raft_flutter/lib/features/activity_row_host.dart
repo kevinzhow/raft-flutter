@@ -13,7 +13,6 @@ class ActivityRowHost {
     required this.interval,
     required this.selected,
     required this.canonical,
-    required this.popupOpen,
     required this.open,
     required this.activate,
     required this.menu,
@@ -53,9 +52,6 @@ class ActivityRowHost {
   /// washes `info-soft`, held 1.2 s and faded out by 2 s. The page clears it
   /// after `raftLocatedDuration`.
   final bool located;
-
-  /// The row's menu is open.
-  final bool popupOpen;
 
   /// A second click upgrades to the canonical page (Activity master/detail).
   final bool canonical;

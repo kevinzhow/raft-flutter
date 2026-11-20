@@ -132,7 +132,7 @@ class SavedRowCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(
+                RaftCssText(
                   '${row['content'] ?? ''}',
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,

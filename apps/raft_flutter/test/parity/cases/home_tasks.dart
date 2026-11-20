@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/search_memory.dart';
+import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_flutter/features/mobile_workspace_navigation.dart';
 import 'package:raft_flutter/features/create_channel_dialog.dart';
@@ -438,11 +439,17 @@ Widget _resource(
 }) {
   final w = parityWorkspace(ctx, section: section);
   final now = parityNow(ctx);
+  if (section == 'activity') {
+    final previousClock = sourceTimeNow;
+    sourceTimeNow = () => now;
+    ctx.onDispose(() => sourceTimeNow = previousClock);
+  }
   final view = Scaffold(
     body: ResourceView(
       controller: w,
       section: section,
       clock: () => now,
+      mobileRoot: section == 'activity',
       onBack: () {},
       searchMemory: SearchMemoryStore(
         storage: ParityMemorySearchStorage(),
@@ -527,24 +534,38 @@ final ParityCase _saved = ParityCase(
       'ResourceView(section saved) in the React 342x620 box; /channels/saved '
       'answers savedMessagesFixture.json. Relative times use the fixture clock.',
   build: (ctx) => _resource(ctx, 'saved', width: 342, height: 620),
+  interact: (t, ctx) async {
+    await t.pump();
+    final saved = ctx.fixtures['savedMessagesFixture'] as Map;
+    for (final row in saved['saved'] as List) {
+      expect(find.byKey(ValueKey("saved-${row['messageId']}")), findsOneWidget);
+    }
+    expect(find.byType(RaftConversationCard), findsNWidgets(3));
+  },
   settle: const Duration(milliseconds: 850),
 );
 
 final ParityCase _activity = ParityCase(
   widgets: const [
     'raft_flutter:ResourceView(activity)',
-    'raft_ui:RaftPageHeader',
-    'raft_ui:RaftSegmentedControl',
+    'raft_ui:RaftMobileRootHeader',
+    'raft_ui:RaftInboxItem',
+    'raft_ui:RaftActivityFilterBar',
   ],
   notes:
       'ResourceView(section activity) in the React 342x620 box; /channels/inbox '
-      'answers activityResultsFixture.json. Relative times use the fixture clock. '
-      'Desktop pointer density matches the real Chromium host (hover:none is '
-      'false); the Android provider names the Widget capture, not a device.',
-  build: (ctx) => RaftDensityScope(
-    density: RaftDensity.desktop,
-    child: _resource(ctx, 'activity', width: 342, height: 620),
-  ),
+      'answers activityResultsFixture.json. The root header and row clock '
+      'match the 390x844 Web phone context.',
+  build: (ctx) => _resource(ctx, 'activity', width: 342, height: 620),
+  interact: (t, ctx) async {
+    await t.pump();
+    expect(find.byType(RaftMobileRootHeader), findsOneWidget);
+    expect(find.byType(RaftMobileBackButton), findsNothing);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('now'), findsOneWidget);
+    expect(find.text('6m'), findsNWidgets(2));
+    expect(find.byType(RaftInboxItem), findsNWidgets(3));
+  },
   settle: const Duration(milliseconds: 850),
 );
 

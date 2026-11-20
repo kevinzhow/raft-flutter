@@ -89,6 +89,7 @@ Future<dynamic> mountActivity(
   ActivityWorkspace w,
   ListEnv env, {
   bool dark = false,
+  bool settle = true,
   List<String>? opened,
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -113,7 +114,11 @@ Future<dynamic> mountActivity(
       ),
     ),
   );
-  await t.pumpAndSettle();
+  if (settle) {
+    await t.pumpAndSettle();
+  } else {
+    await t.pump();
+  }
   return t.state(find.byType(ResourceView));
 }
 

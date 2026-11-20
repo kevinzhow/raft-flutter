@@ -35,7 +35,15 @@ class ParityFixtureWorkspace extends WorkspaceController {
       return {'tasks': tasks, 'next_cursor': null};
     }
     if (path == '/messages/search') return _map(f['searchResultsFixture']);
-    if (path == '/channels/saved') return _map(f['savedMessagesFixture']);
+    if (path == '/channels/saved') {
+      final saved = _map(f['savedMessagesFixture']);
+      // The official Web provider serves these same three entries on the
+      // first page and closes the fixture window on the next offset.
+      if ((query?['offset'] as num? ?? 0) > 0) {
+        return {...saved, 'saved': [], 'hasMore': false};
+      }
+      return saved;
+    }
     if (path.startsWith('/channels/inbox')) {
       return ctx.id == 'components.home.activity.results'
           ? _map(f['activityResultsFixture'])
@@ -100,6 +108,8 @@ ParityFixtureWorkspace parityWorkspace(
           'name': owner['name'],
           'displayName': owner['displayName'],
           'email': owner['email'],
+          'preferredTimezone': owner['timezone'],
+          'preferredTimeFormat': owner['timeFormat'],
         });
   client.selectServer(server['id'] as String);
   final w = ParityFixtureWorkspace(client, ctx)

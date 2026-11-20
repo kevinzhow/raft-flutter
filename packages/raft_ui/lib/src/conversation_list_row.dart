@@ -2,6 +2,7 @@ import 'raft/list_row_action.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderProxyBox;
 import 'package:flutter/scheduler.dart';
 
 import 'hover_region.dart';
@@ -463,8 +464,11 @@ class RaftListRowSender {
   const RaftListRowSender._();
 
   static InlineSpan face(Widget face) => WidgetSpan(
-    alignment: PlaceholderAlignment.middle,
-    child: Padding(padding: const EdgeInsets.only(right: 4), child: face),
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: _SenderFaceBaseline(
+      child: Padding(padding: const EdgeInsets.only(right: 4), child: face),
+    ),
   );
 
   static InlineSpan name(BuildContext context, String name) => TextSpan(
@@ -474,4 +478,19 @@ class RaftListRowSender {
       color: RaftTokens.of(context).strong,
     ),
   );
+}
+
+class _SenderFaceBaseline extends SingleChildRenderObjectWidget {
+  const _SenderFaceBaseline({required super.child});
+
+  @override
+  RenderProxyBox createRenderObject(BuildContext context) =>
+      _RenderSenderFaceBaseline();
+}
+
+class _RenderSenderFaceBaseline extends RenderProxyBox {
+  // Web centers this inline-flex face on the preview with vertical-align: -2px.
+  @override
+  double computeDistanceToActualBaseline(TextBaseline baseline) =>
+      size.height - 2;
 }

@@ -12,8 +12,11 @@ import 'activity_list_row.dart' show activityRowMarkedUnread;
 import 'activity_row_host.dart';
 import 'activity_row_label.dart';
 import 'activity_row_time.dart';
+import 'agent_avatar_projection.dart';
 import 'agent_lounge.dart' show loungeAgentName;
+import 'public_page_live.dart';
 import 'sender_avatar_projection.dart';
+import 'sidebar_projection.dart' show sidebarExternalSectionChannel;
 
 /// Offers Done as a row semantics action on touch and a row button for pointer
 /// input. `mention_action` rows have no Done action.
@@ -120,10 +123,12 @@ class ActivityInboxRow extends StatelessWidget {
     BuildContext context,
     String name,
     SenderAvatarProjection avatar,
-    RaftAvatarSlotContext slot,
-  ) => RaftAvatarSlot(
+    RaftAvatarSlotContext slot, {
+    double? sizeOverride,
+  }) => RaftAvatarSlot(
     name: name,
     slot: slot,
+    sizeOverride: sizeOverride,
     agent: avatar.kind == 'agent',
     avatarUrl: avatar.uploadedUrl,
     content: RaftAvatarContent(
@@ -150,8 +155,9 @@ class ActivityInboxRow extends StatelessWidget {
   Widget? _peerFace(
     BuildContext context,
     WorkspaceController w,
-    RaftChannel? dm,
-  ) {
+    RaftChannel? dm, {
+    bool statusLight = false,
+  }) {
     if (dm == null) return null;
     final agent = dm.json['peerType'] == 'agent';
     final peerId = '${dm.json['peerId'] ?? ''}';
@@ -170,7 +176,28 @@ class ActivityInboxRow extends StatelessWidget {
           ? dm.json['peerAvatarUrl'] as String
           : null,
     );
-    return _slot(context, name, avatar, RaftAvatarSlotContext.panelHeader);
+    if (!agent || !statusLight || peerId.isEmpty) {
+      return _slot(context, name, avatar, RaftAvatarSlotContext.panelHeader);
+    }
+    final directory = w.services.entityDirectory;
+    return ListenableBuilder(
+      listenable: directory,
+      child: RaftAvatarContent(
+        name: name,
+        kind: RaftAvatarContentKind.agent,
+        pixelKey: avatar.pixelKey,
+        uploadedUrl: avatar.uploadedUrl,
+      ),
+      builder: (context, child) {
+        final peer = directory.agent(peerId) ?? host.agentFor(peerId);
+        return RaftMountedAvatarFrame(
+          name: name,
+          identity: RaftMountedAvatarIdentity.agent,
+          presence: agentRowPresence(peer ?? {'id': peerId}),
+          child: child,
+        );
+      },
+    );
   }
 
   /// The channel's kind icon (`ChannelIcon`): # for a channel, a lock for a
@@ -181,6 +208,21 @@ class ActivityInboxRow extends StatelessWidget {
     _ => RaftGlyph.hash,
   };
 
+  Widget Function(double, Color?)? _channelMark(
+    WorkspaceController w,
+    RaftChannel? channel,
+  ) {
+    if (channel == null) return null;
+    if (sidebarExternalSectionChannel(channel)) {
+      return (size, color) => RaftExternalChannelMark(size: size, color: color);
+    }
+    if (channelOnPublicPage(w, channel)) {
+      return (size, color) =>
+          RaftPublicChannelMark(size: size, color: color, tooltip: false);
+    }
+    return null;
+  }
+
   /// Web `ConversationAvatar`: the leading tile or face, and its corner badge.
   (Widget, Widget?) _leading(
     BuildContext context,
@@ -190,6 +232,8 @@ class ActivityInboxRow extends StatelessWidget {
     final kind = f.titleKind;
     final tile = kind == 'task' || kind == 'thread';
     final threadGlyph = kind == 'task' ? RaftGlyph.listTodo : RaftGlyph.thread;
+    final parentDm = _thread && row['parentChannelType'] == 'dm';
+    final channelMark = _channelMark(w, f.rowChannel);
     Widget badgeOf(RaftGlyph glyph) => RaftIcon(glyph, size: 10);
     final lounge = f.loungeAgentId;
     if (lounge != null && kind != 'dm' && f.threadDmChannel == null) {
@@ -220,19 +264,36 @@ class ActivityInboxRow extends StatelessWidget {
       );
     }
     if (kind == 'dm' && f.dmChannel != null) {
-      return (_peerFace(context, w, f.dmChannel)!, null);
+      return (
+        _peerFace(context, w, f.dmChannel, statusLight: f.appBadge == null)!,
+        null,
+      );
+    }
+    if (tile && parentDm) {
+      return (
+        const RaftIconTile(glyph: RaftGlyph.directMessage),
+        badgeOf(threadGlyph),
+      );
     }
     if (tile) {
       return (
         RaftIconTile(glyph: threadGlyph),
-        badgeOf(channelGlyph('${row['parentChannelType'] ?? ''}')),
+        channelMark?.call(10, null) ??
+            badgeOf(
+              channelGlyph(
+                f.rowChannel?.type ?? row['parentChannelType']?.toString(),
+              ),
+            ),
       );
     }
     return (
       RaftIconTile(
         glyph: kind == 'dm'
-            ? RaftGlyph.atSign
-            : channelGlyph('${row['channelType'] ?? ''}'),
+            ? RaftGlyph.directMessage
+            : channelGlyph(
+                f.rowChannel?.type ?? row['channelType']?.toString(),
+              ),
+        iconBuilder: kind == 'dm' ? null : channelMark,
       ),
       null,
     );
@@ -290,6 +351,7 @@ class ActivityInboxRow extends StatelessWidget {
               currentUser: w.client.user?.json,
             ),
             RaftAvatarSlotContext.compactList,
+            sizeOverride: t.size('size.avatar.sidebarList', fallback: 19),
           )
         : null;
 
@@ -437,7 +499,13 @@ class ActivityInboxRow extends StatelessWidget {
             timestampTooltip: time?.words,
             body:
                 f.hasPreview || f.senderLabel != null || f.threadPrefix != null
-                ? body
+                ? Builder(
+                    builder: (context) => RaftCssLineBox(
+                      style: DefaultTextStyle.of(context).style,
+                      textScaler: MediaQuery.textScalerOf(context),
+                      child: body,
+                    ),
+                  )
                 : null,
             marks: marks,
             actions: done.actions,

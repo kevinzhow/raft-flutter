@@ -98,7 +98,7 @@ void main() {
       await openMenu(tester);
       await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Mark as Done'));
       await tester.pumpAndSettle();
-      expect(find.byType(RaftSidebarContextMenu), findsNothing);
+      expect(find.byType(RaftMessageContextMenu), findsNothing);
       expect((state.rows as List).map((dynamic row) => row['id']), ['other']);
       expect(state.totalCount, 1);
       expect(state.activityAllCount, 1);
@@ -144,7 +144,7 @@ void main() {
             .single['unreadCount'],
         1,
       );
-      expect(find.byType(RaftSidebarContextMenu), findsNothing);
+      expect(find.byType(RaftMessageContextMenu), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -169,7 +169,7 @@ void main() {
       client.selectServer('s2');
       w.notifyListeners();
       await tester.pumpAndSettle();
-      expect(find.byType(RaftSidebarContextMenu), findsNothing);
+      expect(find.byType(RaftMessageContextMenu), findsNothing);
       stale();
       await tester.pumpAndSettle();
       expect(actions(), requests);

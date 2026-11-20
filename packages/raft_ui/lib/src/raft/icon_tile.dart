@@ -26,12 +26,14 @@ class RaftIconTile extends StatelessWidget {
   const RaftIconTile({
     super.key,
     required this.glyph,
+    this.iconBuilder,
     this.size = RaftIconTileSize.md,
     this.variant = RaftIconTileVariant.default_,
     this.semanticLabel,
   });
 
   final RaftGlyph glyph;
+  final Widget Function(double size, Color color)? iconBuilder;
   final RaftIconTileSize size;
   final RaftIconTileVariant variant;
 
@@ -78,7 +80,9 @@ class RaftIconTile extends StatelessWidget {
         child: Center(
           // Blink snaps the svg box to a device pixel (a 22px glyph in a 51px tile sits on a half pixel).
           child: RaftBlinkSnap(
-            child: RaftIcon(glyph, size: size.icon, color: foreground),
+            child:
+                iconBuilder?.call(size.icon, foreground) ??
+                RaftIcon(glyph, size: size.icon, color: foreground),
           ),
         ),
       ),

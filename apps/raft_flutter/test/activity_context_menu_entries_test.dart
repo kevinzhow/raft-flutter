@@ -41,11 +41,22 @@ Future<List<String>> _entries(
   return [for (final item in _items(tester)) item.label];
 }
 
-List<RaftSidebarMenuItem> _items(WidgetTester tester) => tester
-    .widget<RaftSidebarContextMenu>(find.byType(RaftSidebarContextMenu))
-    .entries
-    .whereType<RaftSidebarMenuItem>()
-    .toList();
+List<RaftMessageContextMenuItem> _items(WidgetTester tester) => tester
+    .widget<RaftMessageContextMenu>(find.byType(RaftMessageContextMenu))
+    .sections
+    .single;
+
+List<RaftGlyph> _glyphs(WidgetTester tester) => [
+  for (final item in _items(tester))
+    tester
+        .widget<RaftIcon>(
+          find.descendant(
+            of: find.byKey(item.key!),
+            matching: find.byType(RaftIcon),
+          ),
+        )
+        .glyph,
+];
 
 void main() {
   for (final dark in [false, true]) {
@@ -241,7 +252,7 @@ void main() {
         'icons: Unfollow / Follow use the thread marks, Mute the bell',
         (tester) async {
           await _entries(tester, threadRow(), dark: dark);
-          final glyphs = _items(tester).map((i) => i.glyph).toList();
+          final glyphs = _glyphs(tester);
           expect(glyphs, [
             RaftGlyph.messageSquareDot,
             RaftGlyph.check,
@@ -252,21 +263,21 @@ void main() {
             threadRow(extra: {'isFollowing': false}),
             dark: dark,
           );
-          expect(_items(tester).last.glyph, RaftGlyph.followThread);
+          expect(_glyphs(tester).last, RaftGlyph.followThread);
           await _entries(
             tester,
             channelRow(),
             dark: dark,
             mute: channelRecord('c', 'x'),
           );
-          expect(_items(tester).last.glyph, RaftGlyph.bellOff);
+          expect(_glyphs(tester).last, RaftGlyph.bellOff);
           await _entries(
             tester,
             channelRow(),
             dark: dark,
             mute: channelRecord('c', 'x', extra: {'activityMuted': true}),
           );
-          expect(_items(tester).last.glyph, RaftGlyph.bell);
+          expect(_glyphs(tester).last, RaftGlyph.bell);
         },
       );
     });

@@ -105,7 +105,7 @@ void main() {
               );
             }
             await tester.pumpAndSettle();
-            expect(find.byType(RaftSidebarContextMenu), findsOneWidget);
+            expect(find.byType(RaftMessageContextMenu), findsOneWidget);
             expect(
               tester
                   .widgetList<RaftMenuButtonItem>(
@@ -124,12 +124,15 @@ void main() {
               before,
               reason: 'opening sends no mutation',
             );
-            final rect = tester.getRect(find.byType(RaftSidebarContextMenu));
+            final rect = tester.getRect(find.byType(RaftMessageContextMenu));
             expect(rect.left, greaterThanOrEqualTo(0));
-            expect(
-              rect.right,
-              lessThanOrEqualTo(tester.view.physicalSize.width),
-            );
+            expect(rect.width, 240);
+            for (final label in labels) {
+              expect(
+                find.widgetWithText(RaftMenuButtonItem, label).hitTestable(),
+                findsOneWidget,
+              );
+            }
             expect(rect.top, greaterThanOrEqualTo(0));
             expect(
               rect.bottom,
@@ -141,7 +144,7 @@ void main() {
               await tester.sendKeyEvent(LogicalKeyboardKey.escape);
             }
             await tester.pumpAndSettle();
-            expect(find.byType(RaftSidebarContextMenu), findsNothing);
+            expect(find.byType(RaftMessageContextMenu), findsNothing);
             expect(opened, 0);
             expect(client.posts.length, before);
             expect(tester.takeException(), isNull);
