@@ -9,9 +9,14 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_day_groups.dart';
 
-// ThreadsInbox has 8px above the first group on both viewport paths. Its
-// list ends with 4px before the ScrollArea's 16px safe-bottom rhythm.
-const _listPadding = EdgeInsets.only(top: 8, bottom: 4 + 16);
+// ThreadsInbox combines the list's own insets with its ScrollArea padding.
+const double _listTopInset = 8;
+const double _listBottomInset = 4;
+const double _scrollAreaBottomInset = 16;
+const _listPadding = EdgeInsets.only(
+  top: _listTopInset,
+  bottom: _listBottomInset + _scrollAreaBottomInset,
+);
 
 /// `InboxItemListGroup` margin between two days.
 const double _groupGap = 6;
