@@ -11,6 +11,7 @@ import 'kbd.dart';
 import 'recipe_surface.dart';
 import 'recipes/search_trigger.g.dart';
 import 'shortcut_platform.dart';
+import 'server_switcher.dart';
 import 'space.dart';
 import 'status_bar.dart';
 import 'tap_slop.dart';
@@ -69,6 +70,9 @@ class RaftWorkspaceTopBar extends StatelessWidget {
     final trailingPadding = t.desktop
         ? 20 - (RaftLight.frameItemHeight - 20) / 2 + trailingInset
         : 8 + trailingInset;
+    final workspaceMinimumWidth = t.desktop && workspace is RaftServerSwitcher
+        ? (workspace as RaftServerSwitcher).topBarMinimumWidth(context)
+        : 0.0;
     final border = Border(
       bottom: BorderSide(color: t.colors['line-workspace-rail']!),
     );
@@ -106,6 +110,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
                     delegate: _WorkspaceTopBarLayout(
                       elasticSearch: t.desktop,
                       leadingPadding: leadingPadding,
+                      workspaceMinimumWidth: workspaceMinimumWidth,
                     ),
                     children: [
                       LayoutId(id: _TopBarSlot.leading, child: workspace),
@@ -152,6 +157,7 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
   _WorkspaceTopBarLayout({
     required this.elasticSearch,
     required this.leadingPadding,
+    required this.workspaceMinimumWidth,
   });
 
   /// The inner edge of either action region is 8px from the search field.
@@ -159,7 +165,7 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
   static const double _searchMaxWidth = 520;
 
   final bool elasticSearch;
-  final double leadingPadding;
+  final double leadingPadding, workspaceMinimumWidth;
 
   @override
   void performLayout(Size size) {
@@ -178,9 +184,12 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
     final navigationGap = elasticSearch && hasNavigation ? _innerGap : 0.0;
     final leadingInsets =
         leadingPadding + nav.width + _innerGap + navigationGap;
-    // Lay out the switcher at the base field width, so search growth cannot
-    // reduce the number of avatars it chooses to show.
-    final workspaceWidth = math.max(0.0, baseSide - leadingInsets);
+    // Size the strip against the preferred field width. The name button's
+    // non-truncating parts still need room when the strip no longer fits.
+    final workspaceWidth = math.max(
+      workspaceMinimumWidth,
+      baseSide - leadingInsets,
+    );
     final left = layoutChild(
       _TopBarSlot.leading,
       BoxConstraints(
@@ -192,20 +201,26 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
     final leadingDemand = leadingInsets + left.width;
     final remaining = baseSide - math.max(leadingDemand, right.width);
     final growth = elasticSearch
-        ? math.max(
-            0.0,
-            math.min(
-              remaining.floorToDouble(),
-              (_searchMaxWidth - searchBase) / 2,
-            ),
+        ? math.min(
+            remaining.floorToDouble(),
+            (_searchMaxWidth - searchBase) / 2,
           )
         : 0.0;
-    final side = baseSide - growth;
+    final centeredLeft = baseSide - growth;
+    final canCenter = centeredLeft < size.width / 2;
+    final searchLeft = elasticSearch && !canCenter
+        ? leadingDemand
+        : centeredLeft;
+    final searchWidth = elasticSearch && !canCenter
+        ? (size.width - leadingDemand - right.width)
+              .clamp(0.0, searchBase)
+              .toDouble()
+        : size.width - 2 * centeredLeft;
     final search = layoutChild(
       _TopBarSlot.search,
       BoxConstraints(
-        minWidth: size.width - 2 * side,
-        maxWidth: size.width - 2 * side,
+        minWidth: searchWidth,
+        maxWidth: searchWidth,
         maxHeight: size.height,
       ),
     );
@@ -216,12 +231,15 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
     if (hasNavigation) {
       positionChild(
         _TopBarSlot.navigation,
-        Offset(side - _innerGap - nav.width, (size.height - nav.height) / 2),
+        Offset(
+          searchLeft - _innerGap - nav.width,
+          (size.height - nav.height) / 2,
+        ),
       );
     }
     positionChild(
       _TopBarSlot.search,
-      Offset(side, (size.height - search.height) / 2),
+      Offset(searchLeft, (size.height - search.height) / 2),
     );
     positionChild(
       _TopBarSlot.trailing,
@@ -232,7 +250,8 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
   @override
   bool shouldRelayout(_WorkspaceTopBarLayout old) =>
       elasticSearch != old.elasticSearch ||
-      leadingPadding != old.leadingPadding;
+      leadingPadding != old.leadingPadding ||
+      workspaceMinimumWidth != old.workspaceMinimumWidth;
 }
 
 /// SearchTrigger is a button drawn as a field; opening it uses the application's

@@ -27,6 +27,7 @@ List<RaftServerMenuRow> serverMenuRows(
         server.json['avatarUrl'] as String?,
       ),
       current: server.id == w.server?.id,
+      publicPageLive: server.json['publicPageLive'] == true,
       activityUnreadCount: activityCountOf(server.id),
       pushMuted: serverUnread[server.id]?.pushMuted ?? false,
       onSelected: () => onSelect(server),

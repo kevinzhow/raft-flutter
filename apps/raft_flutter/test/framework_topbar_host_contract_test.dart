@@ -46,14 +46,15 @@ void main() {
         for (var i = 1; i <= 7; i++)
           RaftRecord({'id': 'extra-$i', 'name': '$longName $i'}),
       ];
-    await mountPage(t, w, false, width: 1280);
+    await mountPage(t, w, false, width: 1350);
 
     Finder avatar(int index) =>
         find.byKey(ValueKey('topbar-workspace-extra-$index'));
     try {
       for (final (width, visibleExtras) in [
-        (1280.0, 2),
-        (1150.0, 1),
+        (1350.0, 2),
+        (1280.0, 1),
+        (1150.0, 0),
         (1040.0, 0),
       ]) {
         t.view.physicalSize = Size(width, 900);
@@ -118,6 +119,16 @@ void main() {
       final target = find.byKey(const ValueKey('topbar-workspace-s3'));
       expect(other, findsOneWidget);
       expect(target, findsOneWidget);
+      final trigger = find.byKey(const Key('topbar-workspace'));
+      final currentAvatar = find.descendant(
+        of: trigger,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftStickerAvatar && widget.size == RaftAvatarSize.sm,
+        ),
+      );
+      expect(currentAvatar, findsOneWidget);
+      expect(t.getSize(currentAvatar), const Size.square(27));
       final mouse = await t.startGesture(
         t.getCenter(other),
         kind: PointerDeviceKind.mouse,
@@ -141,6 +152,97 @@ void main() {
       expect(t.getCenter(target).dx, lessThan(t.getCenter(other).dx));
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox.shrink());
+    }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+  }
+
+  for (final width in [768.0, 800.0, 856.0]) {
+    testWidgets('native caption room with three history buttons at $width', (
+      t,
+    ) async {
+      final (w, _) = await pageFixture(t);
+      final publicPage = width == 800;
+      final name = publicPage
+          ? 'مساحة عمل طويلة للتعاون مع الفريق'
+          : 'Ein sehr langer Arbeitsbereich für Zusammenarbeit';
+      final server = RaftRecord({
+        ...w.server!.json,
+        'name': name,
+        'publicPageLive': publicPage,
+      });
+      w
+        ..server = server
+        ..servers = [server];
+      const leadingInset = 88.0, trailingInset = 138.0;
+      try {
+        await mountPage(
+          t,
+          w,
+          false,
+          width: width,
+          builder: (context, child) => DesktopTitleBarScope(
+            leadingInset: leadingInset,
+            trailingInset: trailingInset,
+            // Keep the full history controls while real layout constraints
+            // shrink. The normal narrow-window host uses compact History.
+            child: MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(size: const Size(1040, 900)),
+              child: Directionality(
+                textDirection: publicPage
+                    ? TextDirection.rtl
+                    : TextDirection.ltr,
+                child: child!,
+              ),
+            ),
+          ),
+        );
+        expect(t.takeException(), isNull);
+        Finder control(String name) => find.byKey(Key('topbar-$name'));
+        Rect bounds(String name) => t.getRect(control(name));
+        final workspace = bounds('workspace');
+        final back = bounds('back');
+        final forward = bounds('forward');
+        final history = bounds('history');
+        final search = bounds('search');
+        final bell = bounds('notifications');
+        final first = publicPage ? history : back;
+        final last = publicPage ? back : history;
+        expect(workspace.left, greaterThanOrEqualTo(leadingInset));
+        expect(workspace.width, greaterThanOrEqualTo(77));
+        expect(workspace.right, lessThan(first.left));
+        expect(first.right, lessThan(forward.left));
+        expect(forward.right, lessThan(last.left));
+        expect(last.right, search.left - 8);
+        expect(search.width, lessThan(360));
+        expect(search.center.dx, width / 2);
+        expect(search.right, lessThan(bell.left));
+        expect(bell.right, lessThanOrEqualTo(width - trailingInset));
+        expect(find.bySemanticsLabel(name), findsOneWidget);
+        if (publicPage) {
+          final globe = t.getRect(
+            find.descendant(
+              of: control('workspace'),
+              matching: find.byKey(const ValueKey('public-page-globe')),
+            ),
+          );
+          expect(globe.left, greaterThan(workspace.left));
+          expect(globe.right, lessThan(workspace.right));
+        }
+
+        await t.tap(control('workspace'));
+        await t.pumpAndSettle();
+        final menu = find.byKey(const Key('server-switcher-menu'));
+        expect(menu, findsOneWidget);
+        await t.sendKeyEvent(LogicalKeyboardKey.escape);
+        await t.pumpAndSettle();
+        expect(menu, findsNothing);
+        await t.tap(control('search'));
+        await t.pumpAndSettle();
+        expect(find.byKey(const Key('quick-switcher-input')), findsOneWidget);
+        expect(t.takeException(), isNull);
+      } finally {
+        await t.pumpWidget(const SizedBox.shrink());
+      }
     }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
   }
   testWidgets(

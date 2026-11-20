@@ -1,5 +1,55 @@
 part of 'server_switcher.dart';
 
+class _DesktopWorkspaceButtonMetrics {
+  const _DesktopWorkspaceButtonMetrics(this.boxWidth, this.textStyle);
+
+  factory _DesktopWorkspaceButtonMetrics.of(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final root = RaftButtonRecipe.resolveProps(
+      {'variant': RaftButtonVariant.onFrame.css, 'size': RaftButtonSize.md.css},
+      states: t.recipeStates(responsive: true),
+      tokens: tokens,
+    )['root']!;
+    final stroke = t.themeValues?.geometry['stroke.control'];
+    final border = root.borderWidth;
+    return _DesktopWorkspaceButtonMetrics(
+      root.padding.horizontal +
+          (border.left > 0
+              ? raftControlBorderPx(context, stroke ?? border.left)
+              : 0) +
+          (border.right > 0
+              ? raftControlBorderPx(context, stroke ?? border.right)
+              : 0),
+      RaftControlTypography.of(
+        context,
+        root
+            .text(tokens, base: DefaultTextStyle.of(context).style)
+            .copyWith(fontFamilyFallback: t.fontFallback, locale: t.textLocale),
+      ),
+    );
+  }
+
+  static const labelGap = RaftSpace.x2;
+  static const chevronGap = RaftSpace.x1;
+  static const chevronSize = 16.0;
+  static const globe = RaftPublicPageGlobe(live: true);
+
+  final double boxWidth;
+  final TextStyle textStyle;
+
+  double chromeWidth({required bool hasLabel}) =>
+      boxWidth +
+      RaftAvatarSize.sm.extent +
+      (hasLabel ? labelGap : 0) +
+      chevronGap +
+      chevronSize;
+
+  double minimumWidth({required bool hasName, required bool publicPageLive}) =>
+      chromeWidth(hasLabel: hasName || publicPageLive) +
+      (publicPageLive ? globe.size + (hasName ? labelGap : 0) : 0);
+}
+
 /// AppTopBar/useStripLayout: reserve the longest name while avatars show;
 /// avatar capacity and ordering depend on the list and available width.
 class _TopBarServerTrigger extends StatefulWidget {
@@ -290,54 +340,77 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final desktop = t.desktop
+        ? _DesktopWorkspaceButtonMetrics.of(context)
+        : null;
+    final hasName = widget.workspaceName.isNotEmpty;
+    final hasLabel = hasName || widget.publicPageLive;
+    const globe = _DesktopWorkspaceButtonMetrics.globe;
+    const labelGap = _DesktopWorkspaceButtonMetrics.labelGap;
+    const chevronGap = _DesktopWorkspaceButtonMetrics.chevronGap;
     return LayoutBuilder(
       builder: (context, box) {
-        // Button padding and border, avatar, gaps, chevron and optional globe.
-        final fullButtonChrome =
-            22 +
-            RaftAvatarSize.sm.extent +
-            8 +
-            4 +
-            16 +
-            (widget.publicPageLive ? 21 : 0);
-        // At minimum window width, OS chrome and History can squeeze the
-        // switcher below the avatar and chevron's combined box.
-        final showFullButton = t.desktop && box.maxWidth >= fullButtonChrome;
+        final showFullButton =
+            desktop != null &&
+            box.maxWidth >=
+                desktop.minimumWidth(
+                  hasName: hasName,
+                  publicPageLive: widget.publicPageLive,
+                );
         final currentAvatarSize = showFullButton
             ? RaftAvatarSize.sm
             : RaftAvatarSize.xs;
-        final style = RaftTypography.body(
-          t,
-          size: 15,
-          line: 20,
-          weight: FontWeight.w700,
-        );
-        final subhead = t.typeSlot('subhead');
-        final singleNameStyle = t.desktop
-            ? style.copyWith(fontSize: subhead.fontSize, height: subhead.height)
-            : style;
-        double measure(String text, {TextStyle? textStyle}) {
+        final style =
+            desktop?.textStyle ??
+            RaftTypography.body(t, size: 15, line: 20, weight: FontWeight.w700);
+        double measure(String text) {
+          if (text.isEmpty) return 0;
           final painter = TextPainter(
-            text: TextSpan(text: text, style: textStyle ?? style),
+            text: TextSpan(text: text, style: style),
             textDirection: Directionality.of(context),
             textScaler: RaftChrome.boundedScalerOf(context),
+            locale: t.textLocale,
           )..layout();
           final width = painter.width.ceilToDouble();
           painter.dispose();
           return width;
         }
 
-        final widest = widget.rows.fold(
-          measure(widget.workspaceName),
-          (double max, row) => math.max(max, measure(row.name)),
+        double labelWidth(String name, bool publicPageLive) =>
+            measure(name) +
+            (desktop != null && publicPageLive
+                ? globe.size + (name.isNotEmpty ? labelGap : 0)
+                : 0);
+
+        final currentLabelWidth = labelWidth(
+          widget.workspaceName,
+          widget.publicPageLive,
         );
-        // Both used 1px borders + px10 + gap8 + Chevron16. The end region
-        // reserves its pl8; stripFreePx subtracts lead8, adds gap4, reserves line5.
-        final nameSlot = math.min(120.0, widest) + 46;
-        final free = math.max(0.0, box.maxWidth - nameSlot - 8 - 8 + 4 - 5);
-        final stripStride = t.desktop
-            ? RaftLayoutMetrics.desktopControl + RaftSpace.x1
-            : 36.0;
+        final widest = widget.rows.fold(
+          currentLabelWidth,
+          (max, row) => math.max(max, labelWidth(row.name, row.publicPageLive)),
+        );
+        // useStripLayout shares one label cap between the title and globe.
+        // Reserve the same slot regardless of which workspace is selected.
+        const stripLabelCap = 120.0, singleLabelCap = 160.0;
+        final nameSlot =
+            math.min(stripLabelCap, widest) +
+            (desktop?.chromeWidth(hasLabel: widest > 0) ?? 46);
+        const stripLead = RaftSpace.x2, stripGap = RaftSpace.x1;
+        const extraDividerWidth = stripGap + RaftSpace.hairline;
+        final stripStride =
+            (t.desktop ? RaftLayoutMetrics.desktopControl : 32) + stripGap;
+        // The desktop layout already reserves the gap before History.
+        final historyGap = desktop == null ? RaftSpace.x2 : 0.0;
+        final free = math.max(
+          0.0,
+          box.maxWidth -
+              nameSlot -
+              stripLead -
+              historyGap +
+              stripGap -
+              extraDividerWidth,
+        );
         final fit = math.min(widget.rows.length, (free / stripStride).floor());
         final n = fit >= 2 ? fit : 0;
         final current = widget.rows.indexWhere((row) => row.current);
@@ -354,11 +427,16 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
               !indices.contains(e.key) &&
               (e.value.activityUnreadCount ?? 0) > 0,
         );
-        final currentRow = widget.rows.where((r) => r.current).firstOrNull;
+        final currentRow = current < 0 ? null : widget.rows[current];
+        final label = Text(
+          widget.workspaceName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
         final name = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (n == 0) ...[
+            if (desktop != null || n == 0) ...[
               avatar(
                 currentRow ??
                     RaftServerMenuRow(
@@ -369,34 +447,44 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                       avatarUrl: widget.avatarUrl,
                       onSelected: widget.onPressed,
                     ),
-                hiddenUnread: hiddenUnread,
+                hiddenUnread: n == 0 && hiddenUnread,
                 size: currentAvatarSize,
               ),
               // CSS flex gap exists only between children; an unloaded
               // workspace has an avatar but no name to separate from it.
-              if (widget.workspaceName.isNotEmpty) const SizedBox(width: 8),
+              if (hasName || desktop != null && hasLabel)
+                const SizedBox(width: labelGap),
             ],
-            if (widget.workspaceName.isNotEmpty)
+            if (hasName || desktop != null && hasLabel)
               Flexible(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: n > 0 ? 120 : 160),
-                  child: Text(
-                    widget.workspaceName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  constraints: BoxConstraints(
+                    maxWidth: n > 0 ? stripLabelCap : singleLabelCap,
                   ),
+                  child: desktop != null && widget.publicPageLive
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (hasName) ...[
+                              Flexible(child: label),
+                              const SizedBox(width: labelGap),
+                            ],
+                            globe,
+                          ],
+                        )
+                      : label,
                 ),
               ),
-            if (widget.publicPageLive)
+            if (desktop == null && widget.publicPageLive)
               const Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: RaftPublicPageGlobe(live: true),
+                padding: EdgeInsetsDirectional.only(start: labelGap),
+                child: globe,
               ),
             if (n > 0 || showFullButton) ...[
-              SizedBox(width: t.desktop ? 4 : 8),
+              SizedBox(width: t.desktop ? chevronGap : labelGap),
               RaftIcon(
                 RaftGlyph.chevronDown,
-                size: 16,
+                size: _DesktopWorkspaceButtonMetrics.chevronSize,
                 color: t.desktop ? null : t.colors['foreground-on-frame-muted'],
               ),
             ],
@@ -414,17 +502,13 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                     ? nameSlot
                     : math.min(
                         box.maxWidth,
-                        math.min(
-                              160.0,
-                              measure(
-                                widget.workspaceName,
-                                textStyle: singleNameStyle,
-                              ),
-                            ) +
-                            (showFullButton ? fullButtonChrome : 49),
+                        math.min(singleLabelCap, currentLabelWidth) +
+                            (showFullButton
+                                ? desktop.chromeWidth(hasLabel: hasLabel)
+                                : 49),
                       ),
                 child: Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: widget.open
@@ -450,7 +534,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
               ),
               if (n > 0)
                 Padding(
-                  padding: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsetsDirectional.only(start: stripLead),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -459,7 +543,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                           if (outside && slot == indices.length - 1)
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
+                                horizontal: stripGap,
                               ),
                               child: SizedBox(
                                 width: 1,
@@ -470,7 +554,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                               ),
                             )
                           else
-                            const SizedBox(width: 4),
+                            const SizedBox(width: stripGap),
                         stripButton(
                           indices[slot],
                           n - (outside ? 1 : 0),

@@ -227,7 +227,7 @@ void main() {
             body: Align(
               alignment: Alignment.topLeft,
               child: SizedBox(
-                width: 150,
+                width: 180,
                 child: RaftServerSwitcher(
                   controller: menu,
                   workspaceName: 'C',

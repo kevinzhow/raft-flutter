@@ -18,8 +18,10 @@ void main() {
       testWidgets(
         '$platform/$dark top bar follows source geometry and actions',
         (t) async {
+          final desktop = platform == TargetPlatform.linux;
+          final wide = Size(desktop ? 944 : 856, 944);
           t.view.devicePixelRatio = 1;
-          t.view.physicalSize = const Size(856, 944);
+          t.view.physicalSize = wide;
           addTearDown(t.view.reset);
           final menu = RaftMenuController();
           addTearDown(menu.dispose);
@@ -63,45 +65,40 @@ void main() {
           await t.pumpAndSettle();
           final search = find.byKey(const Key('topbar-search'));
           final searchRect = t.getRect(search);
-          if (platform == TargetPlatform.linux) {
+          if (desktop) {
             expect(searchRect.top, 4.5);
             expect(searchRect.height, 34);
-            expect(searchRect.center.dx, 428);
+            expect(searchRect.center.dx, wide.width / 2);
             // The pointer field grows into the space left by both avatars.
             expect(searchRect.width, greaterThan(360));
           } else {
             expect(searchRect, const Rect.fromLTWH(248, 5.5, 360, 36));
           }
-          final leading = platform == TargetPlatform.linux ? 7.0 : 8.0;
+          final leading = desktop ? 7.0 : 8.0;
+          final nameButton = find.byKey(const Key('topbar-workspace'));
+          final current = find.byKey(const ValueKey('topbar-workspace-v'));
+          final other = find.byKey(const ValueKey('topbar-workspace-a'));
+          expect(t.getRect(nameButton).left, leading);
           expect(
-            t.getRect(find.byKey(const Key('topbar-workspace'))).left,
-            leading,
-          );
-          expect(
-            t.getSize(find.byKey(const ValueKey('topbar-workspace-v'))),
+            t.getSize(current),
             // Button md:pointer-fine: 34px with a mouse (the Web bar button is 28, DS4).
-            platform == TargetPlatform.linux
-                ? const Size(34, 34)
-                : const Size(32, 32),
+            desktop ? const Size(34, 34) : const Size(32, 32),
           );
           expect(
-            t.getRect(find.byKey(const ValueKey('topbar-workspace-v'))).left,
-            leading + 148,
+            t.getRect(current).left,
+            desktop
+                ? closeTo(t.getRect(nameButton).right + 8, 1)
+                : leading + 148,
           );
-          expect(
-            t.getRect(find.byKey(const ValueKey('topbar-workspace-a'))).left,
-            leading + (platform == TargetPlatform.linux ? 186 : 184),
-          );
+          expect(t.getRect(other).left, t.getRect(current).right + 4);
           await t.tapAt(Offset(t.getCenter(search).dx, 1));
           expect(searches, platform == TargetPlatform.android ? 1 : 0);
           await t.tap(search);
           expect(searches, platform == TargetPlatform.android ? 2 : 1);
-          final other = find.byKey(const ValueKey('topbar-workspace-a'));
           await t.tapAt(Offset(t.getCenter(other).dx, 1));
           expect(picks, platform == TargetPlatform.android ? 1 : 0);
           await t.tap(other);
           expect(picks, platform == TargetPlatform.android ? 2 : 1);
-          final nameButton = find.byKey(const Key('topbar-workspace'));
           await t.tapAt(
             Offset(
               t.getCenter(nameButton).dx,
@@ -134,7 +131,7 @@ void main() {
             findsNothing,
           );
           expect(t.getRect(search).center.dx, 384);
-          t.view.physicalSize = const Size(856, 944);
+          t.view.physicalSize = wide;
           await t.pumpAndSettle();
           expect(
             find.byKey(const ValueKey('topbar-workspace-a')),
@@ -208,7 +205,7 @@ void main() {
     t,
   ) async {
     t.view.devicePixelRatio = 1;
-    t.view.physicalSize = const Size(856, 944);
+    t.view.physicalSize = const Size(900, 944);
     addTearDown(t.view.reset);
     final menu = RaftMenuController();
     addTearDown(menu.dispose);

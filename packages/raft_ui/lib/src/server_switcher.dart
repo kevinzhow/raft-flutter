@@ -4,8 +4,10 @@ import 'sidebar_text.dart';
 import 'interaction.dart';
 import 'tap_slop.dart';
 import 'public_page_mark.dart';
+import 'control_typography.dart';
 import 'raft/button.dart';
 import 'raft/avatar.dart';
+import 'raft/css_box.dart' show raftControlBorderPx;
 
 import 'dart:math' as math;
 
@@ -27,6 +29,7 @@ import 'rail_attention.dart';
 import 'recipes/app_rail.g.dart';
 import 'recipes/avatar.g.dart';
 import 'recipes/badge.g.dart';
+import 'recipes/button_variants.g.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/popover.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -49,6 +52,7 @@ class RaftServerMenuRow {
     required this.onSelected,
     this.current = false,
     this.avatarUrl,
+    this.publicPageLive = false,
     this.onAuxiliary,
     this.onOpenWindow,
     this.activityUnreadCount,
@@ -56,6 +60,7 @@ class RaftServerMenuRow {
   });
   final String id, name, slug;
   final String? avatarUrl;
+  final bool publicPageLive;
   final VoidCallback onSelected;
   final VoidCallback? onAuxiliary, onOpenWindow;
   final bool current, pushMuted;
@@ -102,6 +107,15 @@ class RaftServerSwitcher extends StatefulWidget {
   /// The current server's public page is live: the mobile selector carries a
   /// globe after the name.
   final bool publicPageLive;
+
+  /// The desktop title bar reserves the button's non-truncating parts before
+  /// allocating its search field. The workspace name can use the rest.
+  double topBarMinimumWidth(BuildContext context) => topBar
+      ? _DesktopWorkspaceButtonMetrics.of(context).minimumWidth(
+          hasName: workspaceName.isNotEmpty,
+          publicPageLive: publicPageLive,
+        )
+      : 0;
 
   /// The current workspace's resolved public avatar (rail trigger); the
   /// initial shows while absent.
