@@ -423,4 +423,153 @@ void main() {
       expect(find.text('Copy'), findsNothing);
     },
   );
+
+  _testOn(
+    TargetPlatform.android,
+    'kept-alive off-screen message row survives selectable update without '
+    'singular-matrix crash',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      final showExtra = ValueNotifier<bool>(true);
+      addTearDown(showExtra.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(dark: false),
+          home: Scaffold(
+            body: CustomScrollView(
+              controller: controller,
+              scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+              slivers: [
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    if (index == 0) {
+                      return _KeepAliveRow(
+                        child: RaftMessageBody(
+                          content:
+                              'See https://example.org/x\n\nSecond paragraph',
+                          afterLinkBlockBuilder: (_, _) =>
+                              ValueListenableBuilder<bool>(
+                                valueListenable: showExtra,
+                                builder: (_, visible, _) => visible
+                                    ? const Text('extra selectable')
+                                    : const SizedBox.shrink(),
+                              ),
+                        ),
+                      );
+                    }
+                    return SizedBox(height: 300, child: Text('spacer $index'));
+                  }, childCount: 10),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+
+      // Establish a drag selection so _JoinedDelegate caches start/end edge
+      // locations before the row scrolls into the sliver keep-alive bucket.
+      final first = _rectOf(tester, 'See');
+      final second = _rectOf(tester, 'Second');
+      final drag = await tester.startGesture(
+        first.centerLeft,
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await drag.moveTo(second.centerRight);
+      await tester.pump();
+      await drag.up();
+      await tester.pump();
+
+      // Scroll the kept-alive row completely out of the viewport and cache
+      // extent so RenderSliverMultiBoxAdaptor.applyPaintTransform zeroes its
+      // transform matrix.
+      controller.jumpTo(1500);
+      await tester.pump();
+
+      // Remove a selectable child while the row is kept alive off-screen so
+      // MultiSelectableSelectionContainerDelegate schedules _updateSelectables
+      // -> didChangeSelectables -> _JoinedDelegate.handleSelectionEdgeUpdate.
+      showExtra.value = false;
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'zero-scaled message body survives selection edge updates without throwing',
+    (tester) async {
+      final scale = ValueNotifier<double>(1);
+      final content = ValueNotifier<String>('Alpha line\n\nBeta line');
+      addTearDown(scale.dispose);
+      addTearDown(content.dispose);
+
+      await tester.pumpWidget(
+        _host(
+          ValueListenableBuilder<double>(
+            valueListenable: scale,
+            builder: (_, s, _) => Transform.scale(
+              scale: s,
+              child: ValueListenableBuilder<String>(
+                valueListenable: content,
+                builder: (_, value, _) => RaftMessageBody(content: value),
+              ),
+            ),
+          ),
+        ),
+      );
+      for (var i = 0; i < 4; i++) {
+        await tester.pump();
+      }
+
+      final alpha = _rectOf(tester, 'Alpha');
+      final beta = _rectOf(tester, 'Beta');
+      final drag = await tester.startGesture(
+        alpha.centerLeft,
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await drag.moveTo(beta.centerRight);
+      await tester.pump();
+      await drag.up();
+      await tester.pump();
+
+      scale.value = 0;
+      content.value = 'Alpha line\n\nBeta line\n\nGamma line';
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    },
+  );
+}
+
+class _KeepAliveRow extends StatefulWidget {
+  const _KeepAliveRow({required this.child});
+  final Widget child;
+
+  @override
+  State<_KeepAliveRow> createState() => _KeepAliveRowState();
+}
+
+class _KeepAliveRowState extends State<_KeepAliveRow>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
 }

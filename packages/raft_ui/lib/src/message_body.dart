@@ -844,10 +844,11 @@ class _JoinedDelegate extends StaticSelectionContainerDelegate {
     // belongs to a later paragraph. Respect this block's vertical position so
     // the parent can clear inactive code selections. Keep normal child event
     // dispatch for cross-block selection and horizontal edge scrolling.
-    final point = MatrixUtils.transformPoint(
-      Matrix4.inverted(getTransformTo(null)),
-      event.globalPosition,
-    );
+    // A kept-alive off-screen sliver child or zero-scaled ancestor reports a
+    // singular paint transform; fall back to super's result when uninvertible.
+    final inverse = Matrix4.tryInvert(getTransformTo(null));
+    if (inverse == null) return result;
+    final point = MatrixUtils.transformPoint(inverse, event.globalPosition);
     if (point.dy < 0) return SelectionResult.previous;
     if (point.dy > containerSize.height) return SelectionResult.next;
     return result;

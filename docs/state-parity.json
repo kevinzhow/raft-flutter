@@ -5476,13 +5476,13 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36009/METHOD:build@36591/FUNCTION:failed@36747": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36218/METHOD:build@36800/FUNCTION:failed@36956": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@54837/METHOD:build@55333/FUNCTION:<anonymous>@55442/FUNCTION:control@56679": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@55046/METHOD:build@55542/FUNCTION:<anonymous>@55651/FUNCTION:control@56888": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
