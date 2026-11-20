@@ -92,9 +92,12 @@ void main() {
   testWidgets('a cold signed-in message link opens the unavailable view', (
     tester,
   ) async {
-    final root = RootFixture(
-      contentOverride: NativeContentCoordinator(ownsSystemIntegration: false),
+    final notifications = _FixtureNotifications();
+    final coordinator = NativeContentCoordinator(
+      ownsSystemIntegration: false,
+      notifications: notifications,
     );
+    final root = RootFixture(contentOverride: coordinator);
     root.overrides['GET /channels/ca'] = (_) => {
       'id': 'ca',
       'serverId': 'a',
@@ -134,6 +137,11 @@ void main() {
       expect(paintedMessage(tester, 'ma'), isNotNull);
     } finally {
       await root.close(tester);
+      await tester.runAsync(() async {
+        await coordinator.dockUnread.dispose();
+        await root.content.dispose();
+      });
+      notifications.dispose();
     }
   });
 }
