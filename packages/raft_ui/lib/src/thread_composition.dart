@@ -316,6 +316,10 @@ class RaftThreadOverflowAction extends StatelessWidget {
   final bool desktopBar;
   final VoidCallback? onPressed;
 
+  static bool opensFromPointer(BuildContext context) =>
+      RaftThreadHeader.usesDesktopBar(context) &&
+      !RaftFocusVisible.shared.keyboard;
+
   // ThreadOverflowMenu trigger: raft-ui PanelAction with EllipsisVertical
   // (Web ThreadOverflowMenu.tsx); the pack's `panelAction.surface` picks the
   // drawing (RaftPanelIconButton).

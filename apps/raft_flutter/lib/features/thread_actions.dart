@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -181,120 +182,150 @@ class _ThreadActionsState extends State<ThreadActions> {
       closeMenu();
       return;
     }
+    // The desktop Web menu gives pointer opens to the list, so the first
+    // arrow starts at an edge. Keyboard opens already focus Search.
+    final pointerOpen = RaftThreadOverflowAction.opensFromPointer(context);
     final overlay = Overlay.of(context);
     menu = OverlayEntry(
-      builder: (context) => Positioned.fill(
-        child: RaftAnchoredPopup(
-          anchorKey: menuAnchor,
-          alignRight: Directionality.of(context) == TextDirection.ltr,
-          gap: 4,
-          snapToPixel: true,
-          child: RaftBackDismiss(
-            routeContext: this.context,
-            onDismiss: closeMenu,
-            child: TapRegion(
-              groupId: menuGroup,
-              onTapOutside: (_) => closeMenu(),
-              child: RaftDismissScope(
+      builder: (context) {
+        final popup = RaftBackDismiss(
+          routeContext: this.context,
+          onDismiss: closeMenu,
+          child: TapRegion(
+            groupId: menuGroup,
+            onTapOutside: (_) => closeMenu(),
+            child: RaftDismissScope(
+              onDismiss: closeMenu,
+              takeFocus: true,
+              child: RaftMenuPanel(
+                kind: RaftMenuKind.dropdownMenu,
                 onDismiss: closeMenu,
-                takeFocus: true,
-                child: RaftMenuPanel(
-                  kind: RaftMenuKind.dropdownMenu,
-                  onDismiss: closeMenu,
-                  children: [
-                    if (widget.onFollowers != null)
-                      RaftMenuItem(
-                        kind: RaftMenuKind.dropdownMenu,
-                        label: raftText(context, 'Following agents'),
-                        onPressed: () {
-                          closeMenu();
-                          if (current) widget.onFollowers!();
-                        },
-                      ),
-                    if (widget.onSearch != null)
-                      RaftMenuItem(
-                        kind: RaftMenuKind.dropdownMenu,
-                        label: raftText(context, 'Search in thread'),
-                        glyph: RaftGlyph.search,
-                        autofocus: true,
-                        onPressed: () {
-                          closeMenu();
-                          if (current) widget.onSearch!();
-                        },
-                      ),
-                    if (outline?.hasReplies(widget.parentMessageId) == true)
-                      RaftMenuItem(
-                        kind: RaftMenuKind.dropdownMenu,
-                        key: const Key('thread-timeline-menu-item'),
-                        label: raftText(context, 'Timeline'),
-                        glyph: RaftGlyph.list,
-                        onPressed: () {
-                          closeMenu();
-                          openTimeline();
-                        },
-                      ),
-                    if (widget.onViewChannel != null)
-                      RaftMenuItem(
-                        kind: RaftMenuKind.dropdownMenu,
-                        label: raftText(context, 'View in channel'),
-                        glyph: RaftGlyph.mapPin,
-                        onPressed: () {
-                          closeMenu();
-                          if (current) widget.onViewChannel!();
-                        },
-                      ),
-                    if (following == true && w.threadChannelId != null)
-                      RaftMenuItem(
-                        kind: RaftMenuKind.dropdownMenu,
-                        key: const Key('thread-mark-unread'),
-                        label: raftText(context, 'Mark as unread'),
-                        glyph: RaftGlyph.messageSquareDot,
-                        onPressed: () {
-                          final id = w.threadChannelId;
-                          closeMenu();
-                          if (current && id != null) {
-                            unawaited(
-                              w.conversationReads.markOpenThreadUnread(id),
-                            );
-                          }
-                        },
-                      ),
+                children: [
+                  if (widget.onFollowers != null)
                     RaftMenuItem(
                       kind: RaftMenuKind.dropdownMenu,
-                      key: const Key('thread-follow-menu-item'),
-                      label: raftText(
-                        context,
-                        following == true ? 'Unfollow thread' : 'Follow thread',
-                      ),
-                      glyph: following == true
-                          ? RaftGlyph.unfollowThread
-                          : RaftGlyph.followThread,
-                      onPressed: following == null || busy
-                          ? null
-                          : () {
-                              closeMenu();
-                              toggle();
-                            },
+                      label: raftText(context, 'Following agents'),
+                      onPressed: () {
+                        closeMenu();
+                        if (current) widget.onFollowers!();
+                      },
                     ),
-                    if (error != null || loadError != null)
-                      RaftMenuItem(
-                        kind: RaftMenuKind.dropdownMenu,
-                        label: raftText(context, 'Retry'),
-                        glyph: RaftGlyph.refreshCw,
-                        onPressed: () {
-                          closeMenu();
-                          retry();
-                        },
-                      ),
-                  ],
-                ),
+                  if (widget.onSearch != null)
+                    RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
+                      label: raftText(context, 'Search in thread'),
+                      glyph: RaftGlyph.search,
+                      autofocus: !pointerOpen,
+                      onPressed: () {
+                        closeMenu();
+                        if (current) widget.onSearch!();
+                      },
+                    ),
+                  if (outline?.hasReplies(widget.parentMessageId) == true)
+                    RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
+                      key: const Key('thread-timeline-menu-item'),
+                      label: raftText(context, 'Timeline'),
+                      glyph: RaftGlyph.list,
+                      onPressed: () {
+                        closeMenu();
+                        openTimeline();
+                      },
+                    ),
+                  if (widget.onViewChannel != null)
+                    RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
+                      label: raftText(context, 'View in channel'),
+                      glyph: RaftGlyph.mapPin,
+                      onPressed: () {
+                        closeMenu();
+                        if (current) widget.onViewChannel!();
+                      },
+                    ),
+                  if (following == true && w.threadChannelId != null)
+                    RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
+                      key: const Key('thread-mark-unread'),
+                      label: raftText(context, 'Mark as unread'),
+                      glyph: RaftGlyph.messageSquareDot,
+                      onPressed: () {
+                        final id = w.threadChannelId;
+                        closeMenu();
+                        if (current && id != null) {
+                          unawaited(
+                            w.conversationReads.markOpenThreadUnread(id),
+                          );
+                        }
+                      },
+                    ),
+                  RaftMenuItem(
+                    kind: RaftMenuKind.dropdownMenu,
+                    key: const Key('thread-follow-menu-item'),
+                    label: raftText(
+                      context,
+                      following == true ? 'Unfollow thread' : 'Follow thread',
+                    ),
+                    glyph: following == true
+                        ? RaftGlyph.unfollowThread
+                        : RaftGlyph.followThread,
+                    onPressed: following == null || busy
+                        ? null
+                        : () {
+                            closeMenu();
+                            toggle();
+                          },
+                  ),
+                  if (error != null || loadError != null)
+                    RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
+                      label: raftText(context, 'Retry'),
+                      glyph: RaftGlyph.refreshCw,
+                      onPressed: () {
+                        closeMenu();
+                        retry();
+                      },
+                    ),
+                ],
               ),
             ),
           ),
-        ),
-      ),
+        );
+        return Positioned.fill(
+          child: RaftAnchoredPopup(
+            anchorKey: menuAnchor,
+            alignRight: Directionality.of(context) == TextDirection.ltr,
+            gap: 4,
+            snapToPixel: true,
+            child: pointerOpen
+                ? Focus(
+                    canRequestFocus: false,
+                    includeSemantics: false,
+                    onKeyEvent: focusMenuEdge,
+                    child: popup,
+                  )
+                : popup,
+          ),
+        );
+      },
     );
     overlay.insert(menu!);
+  }
+
+  KeyEventResult focusMenuEdge(FocusNode _, KeyEvent event) {
+    final scope = FocusManager.instance.primaryFocus;
+    if (scope is! FocusScopeNode || event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.arrowDown &&
+        key != LogicalKeyboardKey.arrowUp) {
+      return KeyEventResult.ignored;
+    }
+    final entries = scope.traversalDescendants;
+    if (entries.isEmpty) return KeyEventResult.ignored;
+    (key == LogicalKeyboardKey.arrowDown ? entries.first : entries.last)
+        .requestFocus();
+    return KeyEventResult.handled;
   }
 
   void jumpToOutlineRow(String id) {
