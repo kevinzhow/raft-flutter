@@ -57436,13 +57436,21 @@
         "owner": "Shared desktop chrome",
         "reason": "Projects safe-area insets for the mounted keyboard layout beside a rail."
       },
-      "packages/raft_ui/lib/src/server_switcher_top_bar.dart#local-function:CLASS:_TopBarServerTriggerState@864/METHOD:build@8949/FUNCTION:<anonymous>@9058/FUNCTION:measure@10018": {
+      "packages/raft_ui/lib/src/server_switcher_top_bar.dart#local-function:CLASS:_TopBarServerTriggerState@2580/METHOD:build@10665/FUNCTION:<anonymous>@11165/FUNCTION:measure@11688": {
         "role": "entry_composition",
         "familyRefs": [
           "workspace-shell"
         ],
         "owner": "Shared desktop chrome",
         "reason": "Measures names for the mounted workspace switcher and its quick-switch capacity."
+      },
+      "packages/raft_ui/lib/src/server_switcher_top_bar.dart#method:_DesktopWorkspaceButtonMetrics.minimumWidth": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Measures the fixed workspace switcher elements so caption insets and history controls leave usable space."
       },
       "packages/raft_ui/lib/src/workspace_shell.dart#local-function:CLASS:RaftWorkspaceRailAction@4573/METHOD:build@5355/FUNCTION:iconFor@5586": {
         "role": "entry_composition",
@@ -67023,6 +67031,11 @@
         "applicability": "required",
         "owner": "Shared desktop chrome",
         "reason": "The mounted pointer rail uses the responsive AppRail footer gap and bottom inset."
+      },
+      "packages/raft_ui/lib/src/server_switcher_top_bar.dart#class:_DesktopWorkspaceButtonMetrics|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "Shared desktop chrome",
+        "reason": "The desktop switcher measures the responsive frame button padding, border and name typography."
       },
       "packages/raft_ui/lib/src/workspace_top_bar.dart#method:RaftWorkspaceSearchTrigger.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "required",
