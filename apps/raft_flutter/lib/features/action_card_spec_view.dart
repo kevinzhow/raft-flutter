@@ -302,6 +302,10 @@ class ActionCardSpecTree extends StatelessWidget {
           : label;
     }
 
+    bool chip(CardJson ref) =>
+        (ref['kind'] == 'computer' || ref['kind'] == 'channel') &&
+        hasEntity(ref);
+
     InlineSpan reference(CardJson ref) {
       final label = name(ref);
       final resolved = hasEntity(ref);
@@ -362,12 +366,22 @@ class ActionCardSpecTree extends StatelessWidget {
       return RaftDescriptionEntry(
         copy(props['label']),
         plain,
-        detailsChild: RaftCssText.rich(
-          span,
-          style: style,
-          maxLines: maxLines,
-          overflow: maxLines == null ? null : TextOverflow.ellipsis,
-        ),
+        detailsChild: refs != null && refs.any(chip)
+            ? Transform.translate(
+                offset: Offset(refs.length == 1 ? -RaftSpace.x1_5 : 0, 0),
+                child: Text.rich(
+                  span,
+                  style: style,
+                  maxLines: maxLines,
+                  overflow: maxLines == null ? null : TextOverflow.ellipsis,
+                ),
+              )
+            : RaftCssText.rich(
+                span,
+                style: style,
+                maxLines: maxLines,
+                overflow: maxLines == null ? null : TextOverflow.ellipsis,
+              ),
       );
     }
 

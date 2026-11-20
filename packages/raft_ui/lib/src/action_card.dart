@@ -84,6 +84,7 @@ class RaftSpecActionCard extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(top: RaftMessageBodyMargin.collapse(context, 8)),
       child: RaftMessageEmbedFrame(
+        size: RaftMessageEmbedSize.item,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,

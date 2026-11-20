@@ -368,6 +368,13 @@ class _CandidateDetails extends StatelessWidget {
       RaftTypeScale.caption,
       color: ready ? tokens.ui.foregroundMuted : tokens.ui.foregroundDisabled,
     );
+    final body = tokens.scale(RaftTypeScale.body);
+    final bodySize = body.fontSize ?? RaftTypeScale.body.fontSize;
+    final metadataLine = RaftScaled.extent(
+      context,
+      bodySize * (body.height ?? 1.5),
+      fontSize: bodySize,
+    );
     final status = switch (candidate['status']) {
       'ready' => 'Ready',
       'pending' => 'Signing in',
@@ -388,22 +395,26 @@ class _CandidateDetails extends StatelessWidget {
             color: ready ? tokens.ui.foreground : tokens.ui.foregroundDisabled,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: RaftSpace.half),
-          child: Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: RaftSpace.x1_5,
-            children: [
-              if (isDefault)
-                const RaftBadge(
-                  label: 'Default',
-                  variant: RaftBadgeRecipeVariant.success,
-                ),
-              if (status != null)
-                RaftCssText(raftText(context, status), style: caption),
-            ],
+        if (isDefault || status != null)
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: metadataLine),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: RaftSpace.x1_5,
+                children: [
+                  if (isDefault)
+                    const RaftBadge(
+                      label: 'Default',
+                      variant: RaftBadgeRecipeVariant.success,
+                    ),
+                  if (status != null)
+                    RaftCssText(raftText(context, status), style: caption),
+                ],
+              ),
+            ),
           ),
-        ),
         Padding(
           padding: const EdgeInsets.only(top: RaftSpace.x1),
           child: RaftCssText(
