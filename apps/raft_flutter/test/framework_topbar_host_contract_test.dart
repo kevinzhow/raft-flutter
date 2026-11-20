@@ -10,6 +10,28 @@ import 'mounted_message_navigation_test.dart' show pageFixture, mountPage;
 // MainLayout shouldShowTopBar: a wide browser/tablet shell owns the bar; a
 // native desktop joins global actions to its window chrome; narrow layouts have no global row.
 void main() {
+  testWidgets('mounted pointer chrome follows the Web frame geometry', (
+    t,
+  ) async {
+    final (w, _) = await pageFixture(t);
+    await mountPage(t, w, false, width: 1280);
+
+    Rect bounds(String key) => t.getRect(find.byKey(Key(key)));
+    try {
+      final search = bounds('topbar-search');
+      expect(search, const Rect.fromLTWH(380, 4.5, 520, 34));
+      expect(bounds('topbar-history').right, search.left - 8);
+      expect(bounds('topbar-forward').right, bounds('topbar-history').left - 2);
+      expect(bounds('rail-chat'), const Rect.fromLTWH(6, 50, 36, 36));
+      expect(bounds('rail-activity').top, 90);
+      expect(bounds('rail-tasks').top, 130);
+      expect(bounds('rail-help').top, 818);
+      expect(bounds('rail-settings').top, 858);
+    } finally {
+      await t.pumpWidget(const SizedBox.shrink());
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
   for (final dark in [false, true]) {
     testWidgets('top bar pointer reorder saves Source order/$dark', (t) async {
       final (w, api) = await pageFixture(t);

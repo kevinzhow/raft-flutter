@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'css_pixel_snap.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'interaction.dart';
@@ -14,6 +15,7 @@ import 'status_bar.dart';
 import 'tap_slop.dart';
 import 'text_scaling.dart';
 import 'theme.dart';
+import 'tokens/raft_tokens.g.dart' show RaftDesktopMetrics, RaftLight;
 
 /// Global workspace actions occupy wide native desktop windows as well as
 /// browser/tablet layouts whose theme includes the workspace bar.
@@ -58,7 +60,14 @@ class RaftWorkspaceTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final width = MediaQuery.sizeOf(context).width;
+    final leadingPadding = t.desktop && leadingInset == 0
+        ? (RaftDesktopMetrics.railWidth - 1 - RaftDesktopMetrics.railItem) / 2 +
+              1
+        : 8.0 + leadingInset;
+    // The trailing frame glyph ends 20px from the window edge in AppTopBar.
+    final trailingPadding = t.desktop
+        ? 20 - (RaftLight.frameItemHeight - 20) / 2 + trailingInset
+        : 8 + trailingInset;
     final border = Border(
       bottom: BorderSide(color: t.colors['line-workspace-rail']!),
     );
@@ -94,26 +103,13 @@ class RaftWorkspaceTopBar extends StatelessWidget {
                   bottom: borderInset,
                   child: CustomMultiChildLayout(
                     delegate: _WorkspaceTopBarLayout(
-                      (width * .32).clamp(360.0, math.min(520.0, width)),
+                      elasticSearch: t.desktop,
+                      leadingPadding: leadingPadding,
                     ),
                     children: [
-                      LayoutId(
-                        id: _TopBarSlot.leading,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            left: 8 + leadingInset,
-                            right: 8,
-                          ),
-                          child: navigation == null
-                              ? workspace
-                              : Row(
-                                  children: [
-                                    Expanded(child: workspace),
-                                    navigation!,
-                                  ],
-                                ),
-                        ),
-                      ),
+                      LayoutId(id: _TopBarSlot.leading, child: workspace),
+                      if (navigation case final navigation?)
+                        LayoutId(id: _TopBarSlot.navigation, child: navigation),
                       LayoutId(
                         id: _TopBarSlot.search,
                         child: RaftWorkspaceSearchTrigger(
@@ -126,7 +122,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
                         child: Padding(
                           padding: EdgeInsets.only(
                             left: 8,
-                            right: 8 + trailingInset,
+                            right: trailingPadding,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -147,19 +143,47 @@ class RaftWorkspaceTopBar extends StatelessWidget {
   }
 }
 
-enum _TopBarSlot { leading, search, trailing }
+enum _TopBarSlot { leading, navigation, search, trailing }
 
 /// Keep search centred, allowing its width to shrink when window controls and
 /// working agents need more space. No fixed estimate of a translated label's width.
 class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
-  _WorkspaceTopBarLayout(this.preferredSearchWidth);
-  final double preferredSearchWidth;
+  _WorkspaceTopBarLayout({
+    required this.elasticSearch,
+    required this.leadingPadding,
+  });
+
+  /// The inner edge of either action region is 8px from the search field.
+  static const double _innerGap = 8;
+  static const double _searchMaxWidth = 520;
+  // Reserve room for the workspace button (name capped at 160px, avatar
+  // and chevron, and a public-page globe when present). At narrow widths
+  // the button and quick switch strip already adapt to the base field width.
+  static const double _workspaceRoom = 258;
+
+  final bool elasticSearch;
+  final double leadingPadding;
+
   @override
   void performLayout(Size size) {
     final right = layoutChild(_TopBarSlot.trailing, BoxConstraints.loose(size));
-    final side = math
-        .max((size.width - preferredSearchWidth) / 2, right.width)
-        .clamp(0.0, size.width / 2);
+    final hasNavigation = hasChild(_TopBarSlot.navigation);
+    final nav = hasNavigation
+        ? layoutChild(_TopBarSlot.navigation, BoxConstraints.loose(size))
+        : Size.zero;
+    final searchBase = (size.width * .32).clamp(
+      math.min(360.0, size.width),
+      _searchMaxWidth,
+    );
+    final baseSide = (size.width - searchBase) / 2;
+    final leadingRoom = leadingPadding + _workspaceRoom + nav.width + _innerGap;
+    final searchSide = elasticSearch
+        ? math.max(
+            (size.width - _searchMaxWidth) / 2,
+            math.min(baseSide, leadingRoom),
+          )
+        : baseSide;
+    final side = math.max(searchSide, right.width).clamp(0.0, size.width / 2);
     final search = layoutChild(
       _TopBarSlot.search,
       BoxConstraints(
@@ -168,14 +192,25 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
         maxHeight: size.height,
       ),
     );
+    final workspaceWidth = math.max(
+      0.0,
+      side - leadingPadding - nav.width - _innerGap,
+    );
     final left = layoutChild(
       _TopBarSlot.leading,
-      BoxConstraints(minWidth: side, maxWidth: side, maxHeight: size.height),
+      BoxConstraints.tightFor(width: workspaceWidth)
+          .copyWith(maxHeight: size.height),
     );
     positionChild(
       _TopBarSlot.leading,
-      Offset(0, (size.height - left.height) / 2),
+      Offset(leadingPadding, (size.height - left.height) / 2),
     );
+    if (hasNavigation) {
+      positionChild(
+        _TopBarSlot.navigation,
+        Offset(side - _innerGap - nav.width, (size.height - nav.height) / 2),
+      );
+    }
     positionChild(
       _TopBarSlot.search,
       Offset(side, (size.height - search.height) / 2),
@@ -188,7 +223,8 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
 
   @override
   bool shouldRelayout(_WorkspaceTopBarLayout old) =>
-      preferredSearchWidth != old.preferredSearchWidth;
+      elasticSearch != old.elasticSearch ||
+      leadingPadding != old.leadingPadding;
 }
 
 /// SearchTrigger is a button drawn as a field; opening it uses the application's
@@ -209,16 +245,17 @@ class RaftWorkspaceSearchTrigger extends StatelessWidget {
         final slots = RaftSearchTriggerRecipe.resolve(
           tokens: rt,
           states: t.recipeStates(
+            responsive: true,
             hovered: state.hovered,
             pressed: state.pressed,
             focusVisible: state.focusVisible,
           ),
         );
         final glyph = slots.root.target("& > svg:not([class*='size-'])")!;
-        return RaftRecipeBox(
+        final face = RaftRecipeBox(
           style: slots.root.withCssUsedBorderWidths(),
           tokens: rt,
-          height: t.desktop ? RaftLayoutMetrics.desktopControl : null,
+          height: t.desktop ? RaftDesktopMetrics.frameItemHeight : null,
           controlLabel: true,
           child: Row(
             spacing: slots.root.columnGap ?? 0,
@@ -244,6 +281,7 @@ class RaftWorkspaceSearchTrigger extends StatelessWidget {
             ],
           ),
         );
+        return t.desktop ? RaftCssPixelSnap(child: face) : face;
       },
     );
     return RaftInteraction.of(context).touch

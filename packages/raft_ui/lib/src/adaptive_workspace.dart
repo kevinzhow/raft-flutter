@@ -1023,10 +1023,15 @@ class RaftWorkspaceRail extends StatelessWidget {
       visualHeight: recipe.itemSize,
       density: RaftDensityScope.of(context),
     );
+    final pointerFrame = topBar && t.desktop;
     final nav = RaftAppRailRecipe.resolve(
       tokens: t.recipeTokens,
-      states: t.recipeStates(),
+      states: t.recipeStates(
+        responsive: pointerFrame,
+        extra: [if (topBar) 'first-child'],
+      ),
     ).nav;
+    final navPadding = nav.padding.resolve(Directionality.of(context));
     final headerHeight = RaftLayoutMetrics.shellHeaderHeight(
       t,
       MediaQuery.sizeOf(context).height,
@@ -1089,7 +1094,9 @@ class RaftWorkspaceRail extends StatelessWidget {
                     // A phone's 48 dp targets need the whole 56 dp column.
                     padding: EdgeInsets.fromLTRB(
                       phone ? 0 : t.size('space.railInline', fallback: 0),
-                      topBar
+                      pointerFrame
+                          ? navPadding.top
+                          : topBar
                           ? MediaQuery.sizeOf(context).height <= 600
                                 ? 4
                                 : 8
@@ -1097,18 +1104,20 @@ class RaftWorkspaceRail extends StatelessWidget {
                               MediaQuery.sizeOf(context).height <= 600
                                   ? 'space.railNavTopCompact'
                                   : 'space.railNavTop',
-                              fallback: nav.padding
-                                  .resolve(Directionality.of(context))
-                                  .top,
+                              fallback: navPadding.top,
                             ),
                       phone ? 0 : t.size('space.railInline', fallback: 0),
                       t.size('space.railNavBottom', fallback: 8),
                     ),
                     child: Column(
-                      spacing: t.size(
-                        'space.railItemGap',
-                        fallback: nav.rowGap ?? 0,
-                      ),
+                      spacing: pointerFrame
+                          ? t.themeOverrides?.geometry['space.railItemGap'] ??
+                                nav.rowGap ??
+                                0
+                          : t.size(
+                              'space.railItemGap',
+                              fallback: nav.rowGap ?? 0,
+                            ),
                       children: [
                         for (final d in destinations)
                           RaftMouseDoubleClick(

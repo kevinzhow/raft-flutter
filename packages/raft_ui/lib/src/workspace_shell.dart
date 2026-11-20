@@ -90,26 +90,37 @@ class RaftChatSidebarHeading extends StatelessWidget {
 
 /// LeftRail.tsx693–771: Bell, Help, optional workspace mode, Settings h11 slots.
 class RaftWorkspaceRailFooter extends StatelessWidget {
-  const RaftWorkspaceRailFooter({super.key, required this.children});
+  const RaftWorkspaceRailFooter({
+    super.key,
+    required this.children,
+    this.topBar = false,
+  });
   final List<Widget> children;
+  final bool topBar;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final pointerFrame = topBar && t.desktop;
     final footer = RaftAppRailRecipe.resolve(
       tokens: t.recipeTokens,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: pointerFrame),
     ).footer;
-    // Footer's own pb-2 is separate from LeftRail root's pb-2.
-    final short = MediaQuery.sizeOf(context).height <= 600;
+    final height = MediaQuery.sizeOf(context).height;
+    final bottom = height <= 600
+        ? 'space.railFooterBottomCompact'
+        : 'space.railFooterBottom';
+    final gap = footer.rowGap ?? 0;
+    final slot = pointerFrame
+        ? RaftRailRecipe(t, viewportHeight: height).itemSize
+        : t.size('size.railFooterSlot', fallback: RaftMetrics.railSlot);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         t.size('space.railInline', fallback: 0),
         0,
         t.size('space.railInline', fallback: 0),
-        t.size(
-          short ? 'space.railFooterBottomCompact' : 'space.railFooterBottom',
-          fallback: footer.padding.bottom,
-        ),
+        pointerFrame
+            ? t.themeOverrides?.geometry[bottom] ?? footer.padding.bottom
+            : t.size(bottom, fallback: footer.padding.bottom),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -117,16 +128,12 @@ class RaftWorkspaceRailFooter extends StatelessWidget {
           for (var i = 0; i < children.length; i++) ...[
             if (i > 0)
               SizedBox(
-                height: t.size(
-                  'space.railItemGap',
-                  fallback: footer.rowGap ?? 0,
-                ),
+                height: pointerFrame
+                    ? t.themeOverrides?.geometry['space.railItemGap'] ?? gap
+                    : t.size('space.railItemGap', fallback: gap),
               ),
             SizedBox(
-              height: t.size(
-                'size.railFooterSlot',
-                fallback: RaftMetrics.railSlot,
-              ),
+              height: slot,
               child: Center(child: children[i]),
             ),
           ],

@@ -2659,18 +2659,10 @@ class _WorkspaceViewState extends State<WorkspaceView>
         : content;
   }
 
-  Widget railIcon(RaftGlyph glyph) => RaftIcon(
-    glyph,
-    size: RaftRailRecipe(
-      RaftTokens.of(context),
-      viewportHeight: MediaQuery.sizeOf(context).height,
-    ).glyphSize,
-  );
-
   List<RaftRailDestination> get railDestinations => workspaceRailDestinations(
     w,
     tr: tr,
-    icon: railIcon,
+    desktopFrame: showWorkspaceTopBar && RaftTokens.of(context).desktop,
     chatAttention: hasChatAttention,
     activityAttention: hasActivityAttention,
   );
@@ -2703,6 +2695,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
           : workspaceServerMenu(),
       onWorkspace: () => showWorkspaceSwitcher(),
       footer: RaftWorkspaceRailFooter(
+        topBar: showWorkspaceTopBar,
         children: [
           if (!showWorkspaceTopBar)
             SystemNotificationBell(

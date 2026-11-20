@@ -224,7 +224,11 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
         )
       : child;
 
-  Widget avatar(RaftServerMenuRow row, {bool hiddenUnread = false}) {
+  Widget avatar(
+    RaftServerMenuRow row, {
+    bool hiddenUnread = false,
+    RaftAvatarSize size = RaftAvatarSize.xs,
+  }) {
     final t = RaftTokens.of(context);
     final initial = row.name.trim().isEmpty
         ? 'S'
@@ -238,8 +242,8 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
           initial,
           style: RaftTypography.body(
             t,
-            size: 11,
-            line: 11,
+            size: size.text,
+            line: size.text,
             weight: FontWeight.w700,
             color: foreground,
           ).copyWith(letterSpacing: -.11),
@@ -247,12 +251,12 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
       ),
     );
     return SizedBox.square(
-      dimension: 19,
+      dimension: size.extent,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           RaftStickerAvatar(
-            size: RaftAvatarSize.xs,
+            size: size,
             badgeOutlineColor: t.colors['layer-workspace-rail'],
             child: row.avatarUrl == null
                 ? fallback
@@ -288,15 +292,25 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
     final t = RaftTokens.of(context);
     return LayoutBuilder(
       builder: (context, box) {
+        // At minimum window width, OS chrome and History can squeeze the
+        // switcher below the avatar and chevron's combined box.
+        final showFullButton = t.desktop && box.maxWidth >= 78;
+        final currentAvatarSize = showFullButton
+            ? RaftAvatarSize.sm
+            : RaftAvatarSize.xs;
         final style = RaftTypography.body(
           t,
           size: 15,
           line: 20,
           weight: FontWeight.w700,
         );
-        double measure(String text) {
+        final subhead = t.typeSlot('subhead');
+        final singleNameStyle = t.desktop
+            ? style.copyWith(fontSize: subhead.fontSize, height: subhead.height)
+            : style;
+        double measure(String text, {TextStyle? textStyle}) {
           final painter = TextPainter(
-            text: TextSpan(text: text, style: style),
+            text: TextSpan(text: text, style: textStyle ?? style),
             textDirection: Directionality.of(context),
             textScaler: RaftChrome.boundedScalerOf(context),
           )..layout();
@@ -345,6 +359,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                       onSelected: widget.onPressed,
                     ),
                 hiddenUnread: hiddenUnread,
+                size: currentAvatarSize,
               ),
               // CSS flex gap exists only between children; an unloaded
               // workspace has an avatar but no name to separate from it.
@@ -366,12 +381,12 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                 padding: EdgeInsets.only(left: 8),
                 child: RaftPublicPageGlobe(live: true),
               ),
-            if (n > 0) ...[
-              const SizedBox(width: 8),
+            if (n > 0 || showFullButton) ...[
+              SizedBox(width: t.desktop ? 4 : 8),
               RaftIcon(
                 RaftGlyph.chevronDown,
                 size: 16,
-                color: t.colors['foreground-on-frame-muted'],
+                color: t.desktop ? null : t.colors['foreground-on-frame-muted'],
               ),
             ],
           ],
@@ -387,7 +402,22 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                     ? nameSlot
                     : math.min(
                         box.maxWidth,
-                        math.min(160.0, measure(widget.workspaceName)) + 49,
+                        math.min(
+                              160.0,
+                              measure(
+                                widget.workspaceName,
+                                textStyle: singleNameStyle,
+                              ),
+                            ) +
+                            (showFullButton
+                                // Button padding/border, avatar, gaps and chevron.
+                                ? 22 +
+                                      currentAvatarSize.extent +
+                                      8 +
+                                      4 +
+                                      16 +
+                                      (widget.publicPageLive ? 21 : 0)
+                                : 49),
                       ),
                 child: Align(
                   alignment: Alignment.centerLeft,

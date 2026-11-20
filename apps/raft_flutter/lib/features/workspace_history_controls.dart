@@ -149,6 +149,7 @@ class WorkspaceHistoryControls extends StatelessWidget {
     final back = visit(history.index - 1), forward = visit(history.index + 1);
     return Row(
       mainAxisSize: MainAxisSize.min,
+      spacing: RaftTokens.of(context).desktop ? 2 : 0,
       children: [
         if (!compact) ...[
           RaftIconButton(
@@ -178,7 +179,7 @@ class WorkspaceHistoryControls extends StatelessWidget {
             child: RaftIconButton(
               key: const Key('topbar-history'),
               uiVariant: RaftButtonVariant.onFrame,
-              glyph: RaftGlyph.clock,
+              glyph: RaftGlyph.history,
               tooltip: 'History',
               semanticLabel: raftText(context, 'History'),
               onPressed: open,
