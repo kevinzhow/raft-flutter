@@ -192,23 +192,31 @@ class _PendingMentionActionsState extends State<PendingMentionActions> {
     }
     final pixel = url.startsWith('pixel:') ? url.substring(6) : null;
     final agent = type == 'agent';
-    return RaftAvatar(
-      name: '${row['targetHandle']}',
-      size: 20,
-      kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
-      mountedContext: RaftMountedAvatarContext.compactList,
-      content: RaftAvatarContent(
-        name: '${row['targetHandle']}',
-        kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
-        pixelKey: pixel,
-        uploadedUrl: pixel == null
-            ? raftPublicAvatarUrl(w.client.origin, url)
-            : null,
-        fallback: RaftMountedAvatarFallback(
-          avatarContext: RaftMountedAvatarContext.compactList,
-          identity: agent
-              ? RaftMountedAvatarIdentity.agent
-              : RaftMountedAvatarIdentity.human,
+    final name = '${row['targetHandle']}';
+    final identity = agent
+        ? RaftMountedAvatarIdentity.agent
+        : RaftMountedAvatarIdentity.human;
+    const avatarContext = RaftMountedAvatarContext.compactList;
+    return Align(
+      alignment: Alignment.topLeft,
+      child: RaftMountedAvatarFrame(
+        name: name,
+        extent: RaftAvatarSize.xs.extent,
+        avatarContext: avatarContext,
+        identity: identity,
+        child: RaftAvatarContent(
+          name: name,
+          kind: agent
+              ? RaftAvatarContentKind.agent
+              : RaftAvatarContentKind.human,
+          pixelKey: pixel,
+          uploadedUrl: pixel == null
+              ? raftPublicAvatarUrl(w.client.origin, url)
+              : null,
+          fallback: RaftMountedAvatarFallback(
+            avatarContext: avatarContext,
+            identity: identity,
+          ),
         ),
       ),
     );
