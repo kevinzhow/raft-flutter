@@ -314,9 +314,11 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
     required this.viewportHeight,
     super.selected,
     this.pointerPressed = false,
+    this.accentSelection = false,
   }) : assert(role != RaftNavItemRole.generic);
   final RaftNavItemRole role;
   final bool pointerPressed;
+  final bool accentSelection;
   final double viewportWidth, viewportHeight;
   bool get compact =>
       viewportHeight <= 600 ||
@@ -417,7 +419,9 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
   @override
   double get insetHighlightAlpha => 0;
   @override
-  Color get foreground => role == RaftNavItemRole.saved && !active
+  Color get foreground => active && accentSelection
+      ? tokens.colors['foreground-sidebar-item-active']!
+      : role == RaftNavItemRole.saved && !active
       ? tokens.colors['foreground-sidebar-entry'] ?? tokens.muted
       : tokens.strong;
   @override
@@ -437,8 +441,11 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
   }
 
   @override
-  Color get background =>
-      !active ? Colors.transparent : tokens.colors['fill-muted']!;
+  Color get background => !active
+      ? Colors.transparent
+      : tokens.colors[accentSelection
+            ? 'layer-sidebar-item-active'
+            : 'fill-muted']!;
   @override
   Color backgroundFor({bool hovered = false}) {
     if (active || (!hovered && !pointerPressed)) {
@@ -824,6 +831,7 @@ class RaftNavItem extends StatelessWidget {
     required this.onTap,
     this.selected = false,
     this.unread = 0,
+    this.accentSelection = false,
     this.trailing,
     this.leading,
     this.description,
@@ -860,6 +868,7 @@ class RaftNavItem extends StatelessWidget {
   final double? glyphSize;
   final VoidCallback onTap;
   final bool selected;
+  final bool accentSelection;
   final int unread;
   final Widget? trailing, leading;
   final String? description, labelSuffix;
@@ -1487,6 +1496,7 @@ class RaftNavItem extends StatelessWidget {
           viewportHeight: viewportHeight ?? size.height,
           selected: selected,
           pointerPressed: pointerPressed,
+          accentSelection: accentSelection,
         );
         final saved =
             role == RaftNavItemRole.saved && count != null && count! > 0;
@@ -2928,10 +2938,16 @@ class _RaftComposerState extends State<RaftComposer> {
       final group = suggestionGroup(item);
       return group == 1 || group == 2;
     });
+    // The built-in list spans the composer column inside the padded host.
+    // Expanded and caller-provided lists have their own anchors.
+    final inset = link == null && widget.suggestionOverlay == null
+        ? recipe.hostInset
+        : EdgeInsets.zero;
+    final popupWidth = (width - inset.horizontal).clamp(0.0, width);
     return Positioned(
       left: 0,
       top: 0,
-      width: width,
+      width: popupWidth,
       child: CompositedTransformFollower(
         link: link ?? suggestionLink,
         showWhenUnlinked: false,
@@ -2940,8 +2956,9 @@ class _RaftComposerState extends State<RaftComposer> {
         // `bottom-full mb-2` resolves against the form's padding box, i.e.
         // inside its top border.
         offset: Offset(
-          0,
-          -recipe.suggestionBottomGap +
+          inset.left,
+          inset.top -
+              recipe.suggestionBottomGap +
               ((recipe.hostDecoration.border as Border?)?.top.width ?? 0),
         ),
         child: Align(
@@ -2950,7 +2967,7 @@ class _RaftComposerState extends State<RaftComposer> {
           heightFactor: 1,
           child: SizedBox(
             key: const ValueKey('composer-suggestions-slot'),
-            width: width,
+            width: popupWidth,
             child:
                 widget.suggestionOverlay ??
                 ConstrainedBox(
@@ -3711,15 +3728,12 @@ class _MentionSuggestionBody extends StatelessWidget {
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.ellipsis,
-      style: recipe.suggestionCode(highlighted: highlighted),
+      style: recipe.suggestionCode,
     );
     return LayoutBuilder(
       builder: (context, constraints) {
         final handlePainter = TextPainter(
-          text: TextSpan(
-            text: '@${s.name}',
-            style: recipe.suggestionCode(highlighted: highlighted),
-          ),
+          text: TextSpan(text: '@${s.name}', style: recipe.suggestionCode),
           textDirection: Directionality.of(context),
           textScaler: MediaQuery.textScalerOf(context),
           maxLines: 1,
@@ -3755,6 +3769,7 @@ class _MentionSuggestionBody extends StatelessWidget {
                     (hasServer ? 6 : 0))
                 .clamp(0.0, 192.0);
         final titleText = s.title?.isNotEmpty == true ? s.title! : s.name;
+        final titleMinimum = 64.0.clamp(0.0, titleMaximum);
         var serverWidth = 0.0;
         if (hasServer) {
           final titlePainter = TextPainter(
@@ -3765,7 +3780,7 @@ class _MentionSuggestionBody extends StatelessWidget {
           )..layout();
           final free =
               (constraints.maxWidth -
-                      titlePainter.width.clamp(0.0, titleMaximum) -
+                      titlePainter.width.clamp(titleMinimum, titleMaximum) -
                       badge.naturalWidth(context) -
                       handleWidth -
                       guestWidth -
@@ -3783,9 +3798,12 @@ class _MentionSuggestionBody extends StatelessWidget {
         }
         return Row(
           children: [
-            // `max-w-[12rem] flex-[0_1_auto]`: natural width, shrink-only.
+            // `min-w-16 max-w-[12rem] flex-[0_1_auto]`.
             ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: titleMaximum),
+              constraints: BoxConstraints(
+                minWidth: titleMinimum,
+                maxWidth: titleMaximum,
+              ),
               child: Text(
                 titleText,
                 maxLines: 1,
@@ -3841,12 +3859,16 @@ class _MentionSuggestionBody extends StatelessWidget {
   }
 }
 
-/// raft-ui `Badge appearance="soft" variant="muted"` with the
-/// mention option overrides `px-1 py-px text-[10px] leading-none`.
+/// The mention actor's soft muted Badge at the canonical size.
 class RaftActorTypeBadge extends StatelessWidget {
   const RaftActorTypeBadge({super.key, required this.label});
   final String label;
-  ({BoxDecoration decoration, TextStyle text, double? height, String label})
+  ({
+    BoxDecoration decoration,
+    TextStyle text,
+    double? height,
+    EdgeInsets padding,
+  })
   _resolved(BuildContext context) {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
@@ -3861,8 +3883,6 @@ class RaftActorTypeBadge extends StatelessWidget {
           .textStyle(resolver)
           .copyWith(
             fontFamily: t.headingFont,
-            fontSize: 10,
-            height: 1,
             leadingDistribution: TextLeadingDistribution.even,
           ),
     );
@@ -3870,19 +3890,22 @@ class RaftActorTypeBadge extends StatelessWidget {
       decoration: s.decoration(resolver),
       text: text,
       height: s.height,
-      label: label,
+      padding: s.padding,
     );
   }
 
   double naturalWidth(BuildContext context) {
     final style = _resolved(context);
     final painter = TextPainter(
-      text: TextSpan(text: style.label, style: style.text),
+      text: TextSpan(text: label, style: style.text),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
       maxLines: 1,
     )..layout();
-    final width = painter.width + 8 + style.decoration.padding.horizontal;
+    final width =
+        painter.width +
+        style.padding.horizontal +
+        style.decoration.padding.horizontal;
     painter.dispose();
     return width;
   }
@@ -3894,22 +3917,20 @@ class RaftActorTypeBadge extends StatelessWidget {
       // The recipe height is a minimum: a taller line box (Android Chinese
       // control profile, larger text) grows the badge instead of clipping.
       constraints: BoxConstraints(minHeight: style.height ?? 0),
-      // ds-allow: Web MessageInput.tsx mention option `px-1 py-px`
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: style.padding,
       decoration: style.decoration,
       // Centre without `alignment:`, which would fill a Row's height.
       child: Center(
         widthFactor: 1,
         heightFactor: 1,
-        child: Text(style.label, style: style.text),
+        child: Text(label, style: style.text),
       ),
     );
   }
 }
 
 /// raft-ui `Badge appearance="soft" variant="muted"` at its default
-/// size (the channel option's `archived` aside; the mention rows use the
-/// smaller [RaftActorTypeBadge]).
+/// size for the channel option's archived state.
 class RaftArchivedBadge extends StatelessWidget {
   const RaftArchivedBadge({super.key, required this.label});
   final String label;

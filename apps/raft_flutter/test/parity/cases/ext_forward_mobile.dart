@@ -104,6 +104,12 @@ class _HostState extends State<_Host> {
   }();
 
   @override
+  void dispose() {
+    w.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => ForwardComposerPage(
     controller: w,
     messages: [

@@ -3099,8 +3099,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }) {
     final selectable = selection.active && m.string('messageType') != 'system';
     final checked = selectable && selection.ids.contains(m.id);
-    // Web MessageMultiSelectCheckbox: circle, size lg, primary variant, in the
-    // row's flex line before the avatar (the row owns `mt-1.5` and the gap).
+    // MessageMultiSelectCheckbox uses the shared square indicator.
     final body = messageTile(
       m,
       parent: parent,
@@ -3111,7 +3110,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       selectionLeading: selectable
           ? RaftCheckbox(
               value: checked,
-              shape: RaftCheckboxShape.circle,
               semanticLabel: raftFormat(context, 'Select message by {name}', {
                 'name': m.author,
               }),
@@ -3133,13 +3131,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           )
         : body;
     if (!selectable) return child;
-    return Semantics(
+    return raftSelectableMessage(
+      context,
       selected: checked,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: capturingSelection ? null : () => selection.toggle(m.id),
-        child: AbsorbPointer(child: child),
-      ),
+      onTap: capturingSelection ? null : () => selection.toggle(m.id),
+      child: child,
     );
   }
 

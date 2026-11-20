@@ -396,7 +396,9 @@ class ComposerDirectory extends ChangeNotifier {
           id: id,
           name: name,
           title: value['displayName'] as String? ?? previous?.title,
-          detail: type == 'agent' && origin.external
+          detail:
+              (type == 'user' && id == w.client.user?.id) ||
+                  (type == 'agent' && origin.external)
               ? null
               : describe
               ? value['description'] as String? ?? previous?.detail

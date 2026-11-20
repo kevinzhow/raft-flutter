@@ -96,7 +96,7 @@ class WorkspaceHomeShortcuts extends StatelessWidget {
   }
 }
 
-class DraftsSidebarEntry extends StatelessWidget {
+class DraftsSidebarEntry extends StatefulWidget {
   const DraftsSidebarEntry({
     super.key,
     required this.controller,
@@ -107,23 +107,59 @@ class DraftsSidebarEntry extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<bool>(
-    key: ValueKey(pageIdentity(controller)),
-    initialData: cachedServerFlag(controller, _flagKey),
-    future: _draftsEnabled(controller),
-    builder: (_, flag) => flag.data == true
-        ? RaftNavItem(
-            key: const ValueKey('nav-drafts'),
-            label: raftText(context, 'Drafts'),
-            glyph: RaftGlyph.pencil,
-            role: RaftNavItemRole.saved,
-            precededByEntry: true,
-            viewportHeight: MediaQuery.sizeOf(context).height,
-            selected: controller.section == draftsSection,
-            onTap: onOpen,
-          )
-        : const SizedBox.shrink(),
-  );
+  State<DraftsSidebarEntry> createState() => _DraftsSidebarEntryState();
+}
+
+class _DraftsSidebarEntryState extends State<DraftsSidebarEntry> {
+  (WorkspaceController, String, int, Object, Object)? _request;
+  Future<List<_PlacedDraft>?>? _placed;
+
+  @override
+  Widget build(BuildContext context) {
+    final w = widget.controller;
+    final identity = pageIdentity(w);
+    return FutureBuilder<bool>(
+      key: ValueKey(identity),
+      initialData: cachedServerFlag(w, _flagKey),
+      future: _draftsEnabled(w),
+      builder: (context, flag) {
+        if (flag.data != true) return const SizedBox.shrink();
+        return ValueListenableBuilder<int>(
+          valueListenable: w.composer.draftMembership,
+          builder: (context, revision, _) {
+            final request = (w, identity, revision, w.channels, w.dms);
+            if (request != _request) {
+              _request = request;
+              _placed = _readPlacedDrafts(
+                w,
+                () =>
+                    mounted &&
+                    request == _request &&
+                    identity == pageIdentity(w),
+              );
+            }
+            return FutureBuilder<List<_PlacedDraft>?>(
+              future: _placed,
+              builder: (context, snapshot) => RaftNavItem(
+                key: const ValueKey('nav-drafts'),
+                label: raftText(context, 'Drafts'),
+                glyph: RaftGlyph.pencil,
+                role: RaftNavItemRole.saved,
+                precededByEntry: true,
+                viewportHeight: MediaQuery.sizeOf(context).height,
+                selected:
+                    !RaftAdaptiveWorkspace.compactOf(context) &&
+                    w.section == draftsSection,
+                accentSelection: true,
+                count: snapshot.data?.length,
+                onTap: widget.onOpen,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 class DraftsPage extends StatefulWidget {
@@ -151,80 +187,7 @@ class _DraftsPageState extends State<DraftsPage> {
       if (mounted && identity == pageIdentity(w)) widget.onUnavailable();
       return null;
     }
-    final principal = w.client.user?.id, server = w.server?.id;
-    if (!mounted ||
-        identity != pageIdentity(w) ||
-        principal == null ||
-        server == null) {
-      return null;
-    }
-    final cache = w.cache;
-    await w.composer.flushed;
-    final drafts = cache is WorkspaceDraftIndex
-        ? await (cache as WorkspaceDraftIndex).readDrafts(
-            w.client.origin,
-            principal,
-            server,
-          )
-        : [
-            for (final entry in w.drafts.entries)
-              if (entry.value.trim().isNotEmpty)
-                WorkspaceDraftEntry(entry.key, entry.value, null),
-          ];
-    final placed = <_PlacedDraft>[];
-    for (var i = 0; i < drafts.length; i += 3) {
-      if (!mounted || identity != pageIdentity(w)) return null;
-      final rows = await Future.wait(drafts.skip(i).take(3).map(_place));
-      placed.addAll(rows.nonNulls);
-    }
-    return mounted && identity == pageIdentity(w) ? placed : null;
-  }
-
-  Future<_PlacedDraft?> _place(WorkspaceDraftEntry entry) async {
-    final thread = entry.scope.startsWith('thread:');
-    final parentMessage = thread
-        ? entry.scope.substring('thread:'.length)
-        : null;
-    try {
-      var channelId = entry.scope;
-      if (parentMessage != null) {
-        final result = await w.query(
-          '/messages/context/${Uri.encodeComponent(parentMessage)}',
-          query: {'before': 0, 'after': 0},
-        );
-        final messages = result is Map ? result['messages'] : null;
-        final row = messages is List
-            ? messages
-                  .whereType<Map>()
-                  .where((m) => m['id'] == parentMessage)
-                  .firstOrNull
-            : null;
-        if (row?['channelId'] case final String id) {
-          channelId = id;
-        } else {
-          return null;
-        }
-      }
-      if (!mounted || identity != pageIdentity(w)) return null;
-      var channel = w.channelById(channelId);
-      if (channel == null) {
-        final result = await w.query(
-          '/channels/${Uri.encodeComponent(channelId)}',
-        );
-        if (result is! Map<String, dynamic> || result['id'] != channelId) {
-          return null;
-        }
-        channel = RaftChannel(result);
-      }
-      if (channel.type == 'thread' ||
-          channel.type == 'task' ||
-          !w.can('viewChannel', resource: channel)) {
-        return null;
-      }
-      return (entry: entry, channel: channel, parentMessage: parentMessage);
-    } on RaftApiException {
-      return null;
-    }
+    return _readPlacedDrafts(w, () => mounted && identity == pageIdentity(w));
   }
 
   @override
@@ -246,7 +209,6 @@ class _DraftsPageState extends State<DraftsPage> {
                 count == 1 ? '{count} draft' : '{count} drafts',
                 {'count': count},
               ),
-              inlineMeta: true,
               onBack: compact ? widget.onBack : null,
             ),
             Expanded(
@@ -314,6 +276,11 @@ class _DraftsPageState extends State<DraftsPage> {
       semanticLabel: '$title, ${raftText(context, 'Draft:')} $text, $time',
       title: Text(title),
       leading: RaftConversationAvatarTile(
+        channelGlyph: switch (row.channel.type) {
+          'private' => RaftGlyph.lock,
+          'joint' => RaftGlyph.gitBranch,
+          _ => RaftGlyph.hash,
+        },
         kind: row.parentMessage != null
             ? RaftConversationAvatarKind.thread
             : dm
@@ -348,6 +315,89 @@ class _DraftsPageState extends State<DraftsPage> {
         }
       },
     );
+  }
+}
+
+Future<List<_PlacedDraft>?> _readPlacedDrafts(
+  WorkspaceController w,
+  bool Function() current,
+) async {
+  final principal = w.client.user?.id, server = w.server?.id;
+  if (!current() || principal == null || server == null) {
+    return null;
+  }
+  final cache = w.cache;
+  await w.composer.flushed;
+  if (!current()) return null;
+  final drafts = cache is WorkspaceDraftIndex
+      ? await (cache as WorkspaceDraftIndex).readDrafts(
+          w.client.origin,
+          principal,
+          server,
+        )
+      : [
+          for (final entry in w.drafts.entries)
+            if (entry.value.trim().isNotEmpty)
+              WorkspaceDraftEntry(entry.key, entry.value, null),
+        ];
+  final placed = <_PlacedDraft>[];
+  for (var i = 0; i < drafts.length; i += 3) {
+    if (!current()) return null;
+    final rows = await Future.wait(
+      drafts.skip(i).take(3).map((entry) => _placeDraft(w, entry, current)),
+    );
+    placed.addAll(rows.nonNulls);
+  }
+  return current() ? placed : null;
+}
+
+Future<_PlacedDraft?> _placeDraft(
+  WorkspaceController w,
+  WorkspaceDraftEntry entry,
+  bool Function() current,
+) async {
+  final thread = entry.scope.startsWith('thread:');
+  final parentMessage = thread ? entry.scope.substring('thread:'.length) : null;
+  try {
+    var channelId = entry.scope;
+    if (parentMessage != null) {
+      final result = await w.query(
+        '/messages/context/${Uri.encodeComponent(parentMessage)}',
+        query: {'before': 0, 'after': 0},
+      );
+      final messages = result is Map ? result['messages'] : null;
+      final row = messages is List
+          ? messages
+                .whereType<Map>()
+                .where((m) => m['id'] == parentMessage)
+                .firstOrNull
+          : null;
+      if (row?['channelId'] case final String id) {
+        channelId = id;
+      } else {
+        return null;
+      }
+    }
+    if (!current()) return null;
+    var channel = w.channelById(channelId);
+    if (channel == null) {
+      final result = await w.query(
+        '/channels/${Uri.encodeComponent(channelId)}',
+      );
+      if (result is! Map<String, dynamic> || result['id'] != channelId) {
+        return null;
+      }
+      channel = RaftChannel(result);
+    }
+    if (!current() ||
+        channel.type == 'thread' ||
+        channel.type == 'task' ||
+        !w.can('viewChannel', resource: channel)) {
+      return null;
+    }
+    return (entry: entry, channel: channel, parentMessage: parentMessage);
+  } on RaftApiException {
+    return null;
   }
 }
 

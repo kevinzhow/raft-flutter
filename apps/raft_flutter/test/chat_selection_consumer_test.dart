@@ -145,6 +145,36 @@ void main() {
         }
         await t.pumpAndSettle();
         expect(find.text('2 selected'), findsOneWidget);
+        final checked = t
+            .widgetList<RaftCheckbox>(find.byType(RaftCheckbox))
+            .where(
+              (checkbox) =>
+                  checkbox.value == true &&
+                  (checkbox.semanticLabel?.startsWith('Select message by ') ??
+                      false),
+            );
+        expect(checked, hasLength(2));
+        expect(
+          checked.every(
+            (checkbox) => checkbox.shape == RaftCheckboxShape.square,
+          ),
+          isTrue,
+        );
+        final selectedInk = RaftTokens.of(
+          t.element(find.byType(RaftSelectionToolbar)),
+        ).colors['info-soft'];
+        expect(
+          find.byWidgetPredicate(
+            (widget) => widget is ColoredBox && widget.color == selectedInk,
+          ),
+          findsNWidgets(2),
+        );
+        final pill = find.byKey(
+          const ValueKey('message-selection-toolbar-pill'),
+        );
+        final toolbar = find.byType(RaftSelectionToolbar);
+        expect(t.getCenter(pill).dx, closeTo(t.getCenter(toolbar).dx, .01));
+        expect(t.getSize(pill).width, lessThan(t.getSize(toolbar).width));
         await t.tap(find.byTooltip('More'));
         await t.pumpAndSettle();
         await t.sendKeyEvent(LogicalKeyboardKey.escape);

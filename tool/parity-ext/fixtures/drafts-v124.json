@@ -1,0 +1,26 @@
+{
+  "sourceCommit": "1d689caf34442247cab70580d7feac1b8c302d60",
+  "draft": "Check the composer before the release.",
+  "routes": {
+    "POST /feature-flags/evaluate": {
+      "evaluations": [
+        {
+          "key": "drafts_section_v0",
+          "enabled": true
+        }
+      ]
+    },
+    "GET /channels": [
+      {
+        "id": "visual-private-drafts",
+        "serverId": "visual-server",
+        "type": "private",
+        "name": "release-review",
+        "description": "Release review notes",
+        "joined": true,
+        "createdAt": "2026-06-18T12:00:00.000Z"
+      }
+    ],
+    "GET /channels/dm": []
+  }
+}

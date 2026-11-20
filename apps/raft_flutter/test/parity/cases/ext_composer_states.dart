@@ -86,9 +86,17 @@ class _HostState extends State<_Host> {
   }
 
   Future<void> _open() async {
+    if (!mounted) return;
     final id = _state(widget.ctx)['selected'] as String;
     final channel = [...w.channels, ...w.dms].firstWhere((c) => c.id == id);
     await w.selectChannel(channel);
+  }
+
+  @override
+  void dispose() {
+    presentation.dispose();
+    w.dispose();
+    super.dispose();
   }
 
   @override
