@@ -118,12 +118,19 @@ void main() {
     );
 
     final viewport = channelViewport(t);
-    expect(viewport.position.maxScrollExtent, greaterThan(20));
-    final origin = viewport.offset;
-    final moved = (origin - 500).clamp(0.0, viewport.position.maxScrollExtent);
-    viewport.jumpTo(moved == origin ? origin + 200 : moved);
+    final position = viewport.position;
+    final origin = position.pixels;
+    // The timeline's center sliver is at the latest rows. History extends
+    // below zero, while the positive extent only covers the end spacing.
+    expect(origin, closeTo(position.maxScrollExtent, 1));
+    expect(origin - position.minScrollExtent, greaterThan(20));
+    final moved = (origin - 500).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    viewport.jumpTo(moved);
     await t.pump();
-    expect((viewport.offset - origin).abs(), greaterThan(20));
+    expect(origin - viewport.offset, greaterThan(20));
     final pixels = viewport.position.pixels;
     final (anchor, rect) = visibleAnchor(t);
 
