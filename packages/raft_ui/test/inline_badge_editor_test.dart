@@ -1,6 +1,7 @@
-import 'dart:ui' show Tristate, SemanticsRole;
+import 'dart:ui' show PointerDeviceKind, Tristate, SemanticsRole;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -11,11 +12,15 @@ const options = [
   RaftInlineBadgeOption(id: 'blocked', label: 'Unavailable', disabled: true),
   RaftInlineBadgeOption(id: 'done', label: 'Done'),
 ];
-Widget host(Widget child, {bool dark = false}) => MaterialApp(
+Widget host(
+  Widget child, {
+  bool dark = false,
+  RaftDensity density = RaftDensity.desktop,
+}) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: Scaffold(
     body: RaftDensityScope(
-      density: RaftDensity.desktop,
+      density: density,
       child: Align(
         alignment: Alignment.topLeft,
         child: Padding(
@@ -54,6 +59,96 @@ FocusNode node(WidgetTester tester, String label) => tester
     .focusNode!;
 
 void main() {
+  for (final density in RaftDensity.values) {
+    testWidgets(
+      'assigned person ellipsizes and opens near the edge at $density',
+      (tester) async {
+        final touch = density == RaftDensity.touch;
+        tester.view.physicalSize = const Size(856, 944);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        const badgeKey = ValueKey('assignee-test-badge');
+        final longName = List.filled(10, 'Workbench Assistant').join(' ');
+        await tester.pumpWidget(
+          host(
+            SizedBox(
+              width: 200,
+              child: RaftInlineBadgeEditor(
+                key: badgeKey,
+                personProperty: true,
+                indicator: RaftGlyph.chevronDown,
+                label: longName,
+                selectedId: 'todo',
+                options: options,
+                onSelect: (_) {},
+                background: Colors.transparent,
+                foreground: Colors.black,
+              ),
+            ),
+            density: density,
+          ),
+        );
+        final badge = find.byKey(badgeKey);
+        final rich = find.descendant(
+          of: badge,
+          matching: find.byType(RichText),
+        );
+        final paragraph = tester.renderObject<RenderParagraph>(rich);
+        expect(paragraph.didExceedMaxLines, isTrue);
+        final arrow = find.descendant(
+          of: badge,
+          matching: find.byType(RaftIcon),
+        );
+        final bounds = tester.getRect(badge);
+        final paintedBadge = find.descendant(
+          of: badge,
+          matching: find.byType(Container),
+        );
+        expect(tester.getSize(paintedBadge).height, 20);
+        expect(bounds.height, touch ? 20 : 22);
+        expect(tester.getRect(arrow).right, bounds.right - 6);
+        final target = find.descendant(
+          of: badge,
+          matching: find.byType(RaftTouchTarget),
+        );
+        if (touch) {
+          expect(
+            tester.renderObject<RenderBox>(target).semanticBounds.height,
+            48,
+          );
+          final targetBox = tester.renderObject<RenderBox>(target);
+          final hitRows = [
+            for (
+              var y = bounds.top.floor() - 15;
+              y < bounds.bottom.ceil() + 15;
+              y++
+            )
+              if (tester
+                  .hitTestOnBinding(Offset(bounds.center.dx, y + .5))
+                  .path
+                  .any((entry) => identical(entry.target, targetBox)))
+                y,
+          ];
+          expect(hitRows, isNotEmpty);
+          debugPrint(
+            'Assignee touch hit rows: ${hitRows.first}–${hitRows.last}',
+          );
+        } else {
+          expect(target, findsNothing);
+        }
+        await tester.tapAt(
+          Offset(tester.getCenter(arrow).dx, bounds.bottom - 1),
+          kind: touch ? PointerDeviceKind.touch : PointerDeviceKind.mouse,
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(RaftInlineBadgeMenu), findsOneWidget);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(find.byType(RaftInlineBadgeMenu), findsNothing);
+      },
+    );
+  }
+
   for (final theme in raftThemeMatrix([(false), (true)])) {
     final (dark) = theme;
     testWidgets(

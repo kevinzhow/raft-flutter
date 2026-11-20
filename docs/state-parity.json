@@ -41404,7 +41404,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@3205/METHOD:build@5039/FUNCTION:statusTrigger@6791": {
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@3249/METHOD:build@5083/FUNCTION:statusTrigger@6835": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -41420,7 +41420,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@3205/METHOD:build@5039/FUNCTION:trigger@8906": {
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@3249/METHOD:build@5083/FUNCTION:trigger@10121": {
         "role": "unresolved",
         "familyRefs": [
           "menu"

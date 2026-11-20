@@ -287,7 +287,26 @@ void main() {
         [t.getSize(assigneeAvatar), t.getSize(assigneeChevron)],
         const [Size.square(19), Size.square(14)],
       );
-      await t.tap(assignee.hitTestable());
+      final assigneeBadge = find.descendant(
+        of: assignee,
+        matching: find.byType(Container),
+      );
+      final assigneeBounds = t.getRect(assigneeBadge);
+      final assigneeLine = find.descendant(
+        of: assignee,
+        matching: find.byType(RaftCssLineBox),
+      );
+      expect(assigneeBounds.height, 20);
+      expect(t.getSize(assigneeLine).height, 22);
+      expect(t.getTopLeft(assigneeLine).dy, assigneeBounds.top);
+      expect(t.getCenter(assigneeChevron).dy, assigneeBounds.center.dy);
+      expect(t.getCenter(assigneeAvatar).dy, assigneeBounds.center.dy);
+      final hitBounds = t.getRect(assignee);
+      expect(hitBounds.height, 22);
+      await t.tapAt(
+        Offset(hitBounds.center.dx, hitBounds.top + .5),
+        kind: PointerDeviceKind.mouse,
+      );
       await settle(t);
       final peopleSearch = find.text('Search people and agents');
       expect(peopleSearch, findsOneWidget);

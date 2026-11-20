@@ -17,6 +17,7 @@ import 'raft/ui_tokens.dart';
 import 'panel_layout.dart' show RaftCssText, raftCssBaseline;
 import 'space.dart';
 import '../recipes.dart';
+import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
 
@@ -254,8 +255,44 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
       );
     }
 
+    Widget triggerLabel = RaftCssText(
+      widget.label,
+      maxLines: person ? 1 : null,
+      overflow: person ? TextOverflow.ellipsis : null,
+      style: label,
+    );
+    var personHitInset = 0.0;
+    if (person && t.desktop && !RaftScaled.grows(context)) {
+      final badgeHeight = RaftBadgeRecipe.resolve(
+        appearance: RaftBadgeRecipeAppearance.soft,
+        states: t.recipeStates(responsive: true),
+        tokens: rt,
+      ).root.height;
+      final lineHeight =
+          MediaQuery.textScalerOf(context).scale(label.fontSize!) *
+          label.height!;
+      if (badgeHeight != null && badgeHeight < lineHeight) {
+        // The top-aligned callout overflows the Badge in CSS. Keep the
+        // surrounding control's full callout height for hit testing.
+        personHitInset = (lineHeight - badgeHeight) / 2;
+        triggerLabel = SizedBox(
+          height: badgeHeight,
+          child: OverflowBox(
+            alignment: AlignmentDirectional.topStart,
+            fit: OverflowBoxFit.deferToChild,
+            minHeight: 0,
+            maxHeight: double.infinity,
+            child: triggerLabel,
+          ),
+        );
+      }
+    }
+
     Widget trigger(RaftInteractionState state) => Padding(
-      padding: EdgeInsets.only(top: person ? 0 : 2),
+      padding: EdgeInsets.only(
+        top: person ? personHitInset : 2,
+        bottom: personHitInset,
+      ),
       child: CustomPaint(
         foregroundPainter: state.focusVisible
             ? _BadgeFocusOutline(t.semantic.lineStrong, badgeRadius)
@@ -294,17 +331,7 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
             mainAxisSize: MainAxisSize.min,
             spacing: 4, // gap-1
             children: [
-              if (person)
-                Flexible(
-                  child: RaftCssText(
-                    widget.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: label,
-                  ),
-                )
-              else
-                RaftCssText(widget.label, style: label),
+              if (person) Flexible(child: triggerLabel) else triggerLabel,
               Opacity(
                 opacity: borderless ? 1 : .4,
                 child: RaftIcon(
