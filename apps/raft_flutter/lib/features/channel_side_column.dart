@@ -5,6 +5,7 @@
 // Beside the chat, floating over it or covering it.
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -82,7 +83,9 @@ class ChannelSideResize {
     required this.maxWidth,
     required this.onResize,
     required this.label,
+    this.fromPointerDown = false,
   });
+  final bool fromPointerDown;
   final int column;
   final double width, maxWidth;
 
@@ -188,6 +191,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                       'channel-side-column-resize-${widget.resize!.column}',
                     ),
                     vertical: true,
+                    fromPointerDown: widget.resize!.fromPointerDown,
                     label: widget.resize!.label,
                     value: widget.resize!.width.round(),
                     onDragStart: () => widget.resize!.width,
@@ -468,7 +472,10 @@ class _SeamHandle extends StatefulWidget {
     required this.onDrag,
     required this.onDragEnd,
     required this.onKey,
+    this.fromPointerDown = false,
   });
+
+  final bool fromPointerDown;
 
   /// A vertical bar (it resizes a width, col-resize) or a horizontal one.
   final bool vertical;
@@ -527,6 +534,9 @@ class _SeamHandleState extends State<_SeamHandle> {
           onExit: (_) => setState(() => hovered = false),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
+            dragStartBehavior: widget.fromPointerDown
+                ? DragStartBehavior.down
+                : DragStartBehavior.start,
             onHorizontalDragStart: v ? (_) => _begin() : null,
             onHorizontalDragUpdate: v ? (d) => _move(d.delta.dx) : null,
             onHorizontalDragEnd: v ? (_) => _end() : null,

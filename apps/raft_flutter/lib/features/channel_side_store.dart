@@ -158,8 +158,17 @@ class ChannelSideStore extends ChangeNotifier {
 
   /// A column's width as dragged; [commit] saves it (on release), otherwise it
   /// only shows.
-  void resizeColumn(int column, num width, bool commit) {
-    final next = _layout.resize(column, width);
+  void resizeColumn(int column, num width, bool commit) =>
+      _resizeColumns({column: width}, commit);
+
+  /// An expanded seam settles the visible columns together in one save.
+  void resizeColumns(Map<int, num> widths) => _resizeColumns(widths, true);
+
+  void _resizeColumns(Map<int, num> widths, bool commit) {
+    var next = _layout;
+    for (final entry in widths.entries) {
+      next = next.resize(entry.key, entry.value);
+    }
     if (!identical(next, _layout)) {
       _layout = next;
       notifyListeners();
