@@ -255,10 +255,9 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
           controller: discussion!,
           thread: true,
           hideThreadParent: header != null,
-          threadParentSlot: header,
-          threadEmptyState: v2 == null
-              ? null
-              : taskConversationEmpty(context, o.task),
+          threadParentSlot: v2 == null || header == null
+              ? header
+              : taskDiscussionSubject(context, o.task, header),
           onTask: widget.onTask,
           onViewBilling: widget.onViewBilling,
         ),

@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../../data/source_time_formatter.dart' show sourceTimeNow;
 import '../../data/workspace_controller.dart';
 import '../message_task_list.dart';
 import 'tasks_page_model.dart';
@@ -54,7 +55,7 @@ class TaskActivityTime extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final at = taskActivityAt(task);
-    final clock = now ?? DateTime.now();
+    final clock = now ?? sourceTimeNow();
     final locale = Localizations.maybeLocaleOf(context);
     final zh = locale?.languageCode == 'zh';
     final short = shortRelativeTime(at, clock, zh: zh);

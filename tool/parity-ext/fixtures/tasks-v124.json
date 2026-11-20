@@ -4,7 +4,7 @@
     "serverId": "visual-server",
     "name": "workbench",
     "type": "channel",
-    "createdAt": "2026-06-20T13:40:00.000Z",
+    "createdAt": "2026-06-17T12:30:00.000Z",
     "description": null,
     "joined": true
   },
@@ -14,11 +14,34 @@
     "name": "Workbench-Assistant",
     "displayName": "Workbench Assistant",
     "avatarUrl": "pixel:robot",
-    "createdAt": "2026-06-20T13:40:00.000Z",
+    "createdAt": "2026-06-17T12:30:00.000Z",
     "activity": "offline",
     "deletedAt": null
   },
   "routes": {
+    "GET /channels": [
+      {
+        "id": "channel-tasks-v124",
+        "serverId": "visual-server",
+        "name": "workbench",
+        "type": "channel",
+        "createdAt": "2026-06-17T12:30:00.000Z",
+        "description": null,
+        "joined": true
+      }
+    ],
+    "GET /channels/channel-tasks-v124": {
+      "id": "channel-tasks-v124",
+      "serverId": "visual-server",
+      "name": "workbench",
+      "type": "channel",
+      "createdAt": "2026-06-17T12:30:00.000Z",
+      "description": null,
+      "joined": true
+    },
+    "GET /channels/threads/followers": {
+      "threads": []
+    },
     "GET /tasks/server": {
       "$when": [
         {
@@ -48,9 +71,9 @@
                 "claimedByType": "user",
                 "claimedById": "visual-user",
                 "claimedByName": null,
-                "createdAt": "2026-06-20T13:40:00.000Z",
-                "updatedAt": "2026-06-20T13:40:00.000Z",
-                "lastActivityAt": "2026-06-20T13:40:00.000Z",
+                "createdAt": "2026-06-17T12:30:00.000Z",
+                "updatedAt": "2026-06-17T12:30:00.000Z",
+                "lastActivityAt": "2026-06-17T12:30:00.000Z",
                 "revision": 1
               }
             ],
@@ -84,9 +107,9 @@
                 "claimedByType": null,
                 "claimedById": null,
                 "claimedByName": null,
-                "createdAt": "2026-06-20T13:40:00.000Z",
-                "updatedAt": "2026-06-20T13:40:00.000Z",
-                "lastActivityAt": "2026-06-20T13:40:00.000Z",
+                "createdAt": "2026-06-17T12:30:00.000Z",
+                "updatedAt": "2026-06-17T12:30:00.000Z",
+                "lastActivityAt": "2026-06-17T12:30:00.000Z",
                 "revision": 1
               },
               {
@@ -110,9 +133,9 @@
                 "claimedByType": "agent",
                 "claimedById": "agent-tasks-v124",
                 "claimedByName": "Workbench Assistant",
-                "createdAt": "2026-06-20T13:40:00.000Z",
-                "updatedAt": "2026-06-20T13:40:00.000Z",
-                "lastActivityAt": "2026-06-20T13:40:00.000Z",
+                "createdAt": "2026-06-17T12:30:00.000Z",
+                "updatedAt": "2026-06-17T12:30:00.000Z",
+                "lastActivityAt": "2026-06-17T12:30:00.000Z",
                 "revision": 1,
                 "hostMessageId": "earlier-task-message"
               }
@@ -153,9 +176,9 @@
             "claimedByType": "user",
             "claimedById": "visual-user",
             "claimedByName": null,
-            "createdAt": "2026-06-20T13:40:00.000Z",
-            "updatedAt": "2026-06-20T13:40:00.000Z",
-            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "createdAt": "2026-06-17T12:30:00.000Z",
+            "updatedAt": "2026-06-17T12:30:00.000Z",
+            "lastActivityAt": "2026-06-17T12:30:00.000Z",
             "revision": 1
           },
           {
@@ -179,9 +202,9 @@
             "claimedByType": null,
             "claimedById": null,
             "claimedByName": null,
-            "createdAt": "2026-06-20T13:40:00.000Z",
-            "updatedAt": "2026-06-20T13:40:00.000Z",
-            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "createdAt": "2026-06-17T12:30:00.000Z",
+            "updatedAt": "2026-06-17T12:30:00.000Z",
+            "lastActivityAt": "2026-06-17T12:30:00.000Z",
             "revision": 1
           },
           {
@@ -205,9 +228,9 @@
             "claimedByType": "agent",
             "claimedById": "agent-tasks-v124",
             "claimedByName": "Workbench Assistant",
-            "createdAt": "2026-06-20T13:40:00.000Z",
-            "updatedAt": "2026-06-20T13:40:00.000Z",
-            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "createdAt": "2026-06-17T12:30:00.000Z",
+            "updatedAt": "2026-06-17T12:30:00.000Z",
+            "lastActivityAt": "2026-06-17T12:30:00.000Z",
             "revision": 1,
             "hostMessageId": "earlier-task-message"
           },
@@ -232,9 +255,9 @@
             "claimedByType": "agent",
             "claimedById": "agent-tasks-v124",
             "claimedByName": "Workbench Assistant",
-            "createdAt": "2026-06-20T13:40:00.000Z",
-            "updatedAt": "2026-06-20T13:40:00.000Z",
-            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "createdAt": "2026-06-17T12:30:00.000Z",
+            "updatedAt": "2026-06-17T12:30:00.000Z",
+            "lastActivityAt": "2026-06-17T12:30:00.000Z",
             "revision": 1
           },
           {
@@ -258,9 +281,9 @@
             "claimedByType": null,
             "claimedById": null,
             "claimedByName": null,
-            "createdAt": "2026-06-20T13:40:00.000Z",
-            "updatedAt": "2026-06-20T13:40:00.000Z",
-            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "createdAt": "2026-06-17T12:30:00.000Z",
+            "updatedAt": "2026-06-17T12:30:00.000Z",
+            "lastActivityAt": "2026-06-17T12:30:00.000Z",
             "revision": 1
           },
           {
@@ -284,9 +307,9 @@
             "claimedByType": "agent",
             "claimedById": "agent-tasks-v124",
             "claimedByName": "Workbench Assistant",
-            "createdAt": "2026-06-20T13:40:00.000Z",
-            "updatedAt": "2026-06-20T13:40:00.000Z",
-            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "createdAt": "2026-06-17T12:30:00.000Z",
+            "updatedAt": "2026-06-17T12:30:00.000Z",
+            "lastActivityAt": "2026-06-17T12:30:00.000Z",
             "revision": 1
           }
         ],
@@ -375,9 +398,9 @@
           "claimedByType": "user",
           "claimedById": "visual-user",
           "claimedByName": null,
-          "createdAt": "2026-06-20T13:40:00.000Z",
-          "updatedAt": "2026-06-20T13:40:00.000Z",
-          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "createdAt": "2026-06-17T12:30:00.000Z",
+          "updatedAt": "2026-06-17T12:30:00.000Z",
+          "lastActivityAt": "2026-06-17T12:30:00.000Z",
           "revision": 1
         },
         {
@@ -401,9 +424,9 @@
           "claimedByType": null,
           "claimedById": null,
           "claimedByName": null,
-          "createdAt": "2026-06-20T13:40:00.000Z",
-          "updatedAt": "2026-06-20T13:40:00.000Z",
-          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "createdAt": "2026-06-17T12:30:00.000Z",
+          "updatedAt": "2026-06-17T12:30:00.000Z",
+          "lastActivityAt": "2026-06-17T12:30:00.000Z",
           "revision": 1
         },
         {
@@ -427,9 +450,9 @@
           "claimedByType": "agent",
           "claimedById": "agent-tasks-v124",
           "claimedByName": "Workbench Assistant",
-          "createdAt": "2026-06-20T13:40:00.000Z",
-          "updatedAt": "2026-06-20T13:40:00.000Z",
-          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "createdAt": "2026-06-17T12:30:00.000Z",
+          "updatedAt": "2026-06-17T12:30:00.000Z",
+          "lastActivityAt": "2026-06-17T12:30:00.000Z",
           "revision": 1,
           "hostMessageId": "earlier-task-message"
         },
@@ -454,9 +477,9 @@
           "claimedByType": "agent",
           "claimedById": "agent-tasks-v124",
           "claimedByName": "Workbench Assistant",
-          "createdAt": "2026-06-20T13:40:00.000Z",
-          "updatedAt": "2026-06-20T13:40:00.000Z",
-          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "createdAt": "2026-06-17T12:30:00.000Z",
+          "updatedAt": "2026-06-17T12:30:00.000Z",
+          "lastActivityAt": "2026-06-17T12:30:00.000Z",
           "revision": 1
         },
         {
@@ -480,9 +503,9 @@
           "claimedByType": null,
           "claimedById": null,
           "claimedByName": null,
-          "createdAt": "2026-06-20T13:40:00.000Z",
-          "updatedAt": "2026-06-20T13:40:00.000Z",
-          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "createdAt": "2026-06-17T12:30:00.000Z",
+          "updatedAt": "2026-06-17T12:30:00.000Z",
+          "lastActivityAt": "2026-06-17T12:30:00.000Z",
           "revision": 1
         },
         {
@@ -506,15 +529,25 @@
           "claimedByType": "agent",
           "claimedById": "agent-tasks-v124",
           "claimedByName": "Workbench Assistant",
-          "createdAt": "2026-06-20T13:40:00.000Z",
-          "updatedAt": "2026-06-20T13:40:00.000Z",
-          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "createdAt": "2026-06-17T12:30:00.000Z",
+          "updatedAt": "2026-06-17T12:30:00.000Z",
+          "lastActivityAt": "2026-06-17T12:30:00.000Z",
           "revision": 1
         }
       ]
     },
     "GET /channels/channel-tasks-v124/members": {
-      "humans": [],
+      "humans": [
+        {
+          "id": "visual-user",
+          "userId": "visual-user",
+          "serverId": "visual-server",
+          "name": "artin",
+          "displayName": "artin",
+          "avatarUrl": null,
+          "role": "owner"
+        }
+      ],
       "agents": [
         {
           "id": "agent-tasks-v124",
@@ -522,7 +555,7 @@
           "name": "Workbench-Assistant",
           "displayName": "Workbench Assistant",
           "avatarUrl": "pixel:robot",
-          "createdAt": "2026-06-20T13:40:00.000Z",
+          "createdAt": "2026-06-17T12:30:00.000Z",
           "activity": "offline",
           "deletedAt": null
         }
@@ -535,7 +568,7 @@
         "name": "Workbench-Assistant",
         "displayName": "Workbench Assistant",
         "avatarUrl": "pixel:robot",
-        "createdAt": "2026-06-20T13:40:00.000Z",
+        "createdAt": "2026-06-17T12:30:00.000Z",
         "activity": "offline",
         "deletedAt": null
       }
@@ -562,9 +595,9 @@
         "claimedByType": "user",
         "claimedById": "visual-user",
         "claimedByName": null,
-        "createdAt": "2026-06-20T13:40:00.000Z",
-        "updatedAt": "2026-06-20T13:40:00.000Z",
-        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "createdAt": "2026-06-17T12:30:00.000Z",
+        "updatedAt": "2026-06-17T12:30:00.000Z",
+        "lastActivityAt": "2026-06-17T12:30:00.000Z",
         "revision": 1
       }
     },
@@ -583,7 +616,7 @@
       "name": "conversation-visual-task-4",
       "parentChannelId": "channel-tasks-v124",
       "parentTaskId": "visual-task-4",
-      "createdAt": "2026-06-20T13:40:00.000Z",
+      "createdAt": "2026-06-17T12:30:00.000Z",
       "joined": true
     },
     "GET /tasks/channel/channel-tasks-v124/number/16": {
@@ -608,9 +641,9 @@
         "claimedByType": null,
         "claimedById": null,
         "claimedByName": null,
-        "createdAt": "2026-06-20T13:40:00.000Z",
-        "updatedAt": "2026-06-20T13:40:00.000Z",
-        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "createdAt": "2026-06-17T12:30:00.000Z",
+        "updatedAt": "2026-06-17T12:30:00.000Z",
+        "lastActivityAt": "2026-06-17T12:30:00.000Z",
         "revision": 1
       }
     },
@@ -629,7 +662,7 @@
       "name": "conversation-visual-task-16",
       "parentChannelId": "channel-tasks-v124",
       "parentTaskId": "visual-task-16",
-      "createdAt": "2026-06-20T13:40:00.000Z",
+      "createdAt": "2026-06-17T12:30:00.000Z",
       "joined": true
     },
     "GET /tasks/channel/channel-tasks-v124/number/1": {
@@ -654,9 +687,9 @@
         "claimedByType": "agent",
         "claimedById": "agent-tasks-v124",
         "claimedByName": "Workbench Assistant",
-        "createdAt": "2026-06-20T13:40:00.000Z",
-        "updatedAt": "2026-06-20T13:40:00.000Z",
-        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "createdAt": "2026-06-17T12:30:00.000Z",
+        "updatedAt": "2026-06-17T12:30:00.000Z",
+        "lastActivityAt": "2026-06-17T12:30:00.000Z",
         "revision": 1,
         "hostMessageId": "earlier-task-message"
       }
@@ -676,7 +709,7 @@
       "name": "conversation-visual-task-1",
       "parentChannelId": "channel-tasks-v124",
       "parentTaskId": "visual-task-1",
-      "createdAt": "2026-06-20T13:40:00.000Z",
+      "createdAt": "2026-06-17T12:30:00.000Z",
       "joined": true
     },
     "GET /tasks/channel/channel-tasks-v124/number/15": {
@@ -701,9 +734,9 @@
         "claimedByType": "agent",
         "claimedById": "agent-tasks-v124",
         "claimedByName": "Workbench Assistant",
-        "createdAt": "2026-06-20T13:40:00.000Z",
-        "updatedAt": "2026-06-20T13:40:00.000Z",
-        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "createdAt": "2026-06-17T12:30:00.000Z",
+        "updatedAt": "2026-06-17T12:30:00.000Z",
+        "lastActivityAt": "2026-06-17T12:30:00.000Z",
         "revision": 1
       }
     },
@@ -722,7 +755,7 @@
       "name": "conversation-visual-task-15",
       "parentChannelId": "channel-tasks-v124",
       "parentTaskId": "visual-task-15",
-      "createdAt": "2026-06-20T13:40:00.000Z",
+      "createdAt": "2026-06-17T12:30:00.000Z",
       "joined": true
     },
     "GET /tasks/channel/channel-tasks-v124/number/7": {
@@ -747,9 +780,9 @@
         "claimedByType": null,
         "claimedById": null,
         "claimedByName": null,
-        "createdAt": "2026-06-20T13:40:00.000Z",
-        "updatedAt": "2026-06-20T13:40:00.000Z",
-        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "createdAt": "2026-06-17T12:30:00.000Z",
+        "updatedAt": "2026-06-17T12:30:00.000Z",
+        "lastActivityAt": "2026-06-17T12:30:00.000Z",
         "revision": 1
       }
     },
@@ -768,7 +801,7 @@
       "name": "conversation-visual-task-7",
       "parentChannelId": "channel-tasks-v124",
       "parentTaskId": "visual-task-7",
-      "createdAt": "2026-06-20T13:40:00.000Z",
+      "createdAt": "2026-06-17T12:30:00.000Z",
       "joined": true
     },
     "GET /tasks/channel/channel-tasks-v124/number/3": {
@@ -793,9 +826,9 @@
         "claimedByType": "agent",
         "claimedById": "agent-tasks-v124",
         "claimedByName": "Workbench Assistant",
-        "createdAt": "2026-06-20T13:40:00.000Z",
-        "updatedAt": "2026-06-20T13:40:00.000Z",
-        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "createdAt": "2026-06-17T12:30:00.000Z",
+        "updatedAt": "2026-06-17T12:30:00.000Z",
+        "lastActivityAt": "2026-06-17T12:30:00.000Z",
         "revision": 1
       }
     },
@@ -814,7 +847,7 @@
       "name": "conversation-visual-task-3",
       "parentChannelId": "channel-tasks-v124",
       "parentTaskId": "visual-task-3",
-      "createdAt": "2026-06-20T13:40:00.000Z",
+      "createdAt": "2026-06-17T12:30:00.000Z",
       "joined": true
     }
   }

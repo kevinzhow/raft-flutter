@@ -97,20 +97,45 @@ RaftTaskConversation taskConversation(
   );
 }
 
-Widget taskConversationEmpty(BuildContext context, Map<String, dynamic> task) {
+class _TaskDiscussionSubject extends StatelessWidget {
+  const _TaskDiscussionSubject({required this.head, required this.empty});
+
+  final Widget head, empty;
+
+  @override
+  Widget build(BuildContext context) => head;
+}
+
+Widget taskDiscussionSubject(
+  BuildContext context,
+  Map<String, dynamic> task,
+  Widget head,
+) {
   final host = task['hostMessageId'];
-  return RaftProductEmptyState(
-    key: const ValueKey('task-conversation-empty'),
-    title: raftText(context, 'No discussion in this task yet'),
-    description: host is String && host.isNotEmpty
-        ? raftText(
-            context,
-            "Its earlier discussion is in the replies of the message it came from. Write here to start the task's own.",
-          )
-        : null,
-    icon: (context, size, color) => RaftThreadIcon(size: size, color: color),
+  return _TaskDiscussionSubject(
+    head: head,
+    empty: RaftProductEmptyState(
+      key: const ValueKey('task-conversation-empty'),
+      title: raftText(context, 'No discussion in this task yet'),
+      description: host is String && host.isNotEmpty
+          ? raftText(
+              context,
+              "Its earlier discussion is in the replies of the message it came from. Write here to start the task's own.",
+            )
+          : null,
+      icon: (context, size, color) => RaftThreadIcon(size: size, color: color),
+    ),
   );
 }
+
+Widget threadEmptyContent(BuildContext context, Widget? subject) =>
+    subject is _TaskDiscussionSubject
+    ? subject.empty
+    : RaftProductEmptyState(
+        title: raftText(context, 'No replies yet'),
+        icon: (context, size, color) =>
+            RaftThreadIcon(size: size, color: color),
+      );
 
 /// A status or assignee write with the reason its popover collected (moving
 /// into Backlog, handing to someone else). False when the write failed.

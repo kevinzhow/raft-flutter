@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_navigation_history.dart';
+import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/message_task_actions.dart';
+import 'package:raft_flutter/features/tasks_page/tasks_page_store.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,6 +45,13 @@ Widget _build(ParityContext ctx) {
   SharedPreferences.setMockInitialValues({});
   final fixture = ctx.fixtures['ext:tasks-v124'] as Map;
   final base = ParityThreadFixture(ctx.fixtureData);
+  final previousClock = sourceTimeNow;
+  final clock = DateTime.fromMillisecondsSinceEpoch(
+    ctx.fixtureData['locale']['nowEpochMillis'] as int,
+    isUtc: true,
+  );
+  sourceTimeNow = () => clock;
+  ctx.onDispose(() => sourceTimeNow = previousClock);
   final routes = Map<String, dynamic>.from(fixture['routes'] as Map);
   routes['GET /servers/visual-server/members'] = base.serverMembers;
   final client = _TasksClient(user: base.authUser, routes: routes);
@@ -59,7 +68,11 @@ Widget _build(ParityContext ctx) {
     kind: RaftNavigationKind.replace,
   );
   TaskV2ConversationsFlag.of(workspace).markEnabled();
-  ctx.onDispose(workspace.dispose);
+  final tasks = TasksPageStore.of(workspace);
+  ctx.onDispose(() {
+    tasks.dispose();
+    workspace.dispose();
+  });
   return withAppServices(
     WorkspaceView(
       controller: workspace,
@@ -94,6 +107,16 @@ Future<void> _checkState(WidgetTester tester, ParityContext ctx) async {
     );
     expect(find.text('No replies yet'), findsNothing);
   } else {
+    if (ctx.props['platform'] == 'desktop') {
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('tasks-page-tab-all')),
+          matching: find.text('6'),
+        ),
+        findsOneWidget,
+      );
+    }
+    expect(find.text('2d ago'), findsWidgets);
     expect(
       find.byKey(const ValueKey('tasks-page-toolbar')).hitTestable(),
       findsOneWidget,

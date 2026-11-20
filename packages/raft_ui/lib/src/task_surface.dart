@@ -404,7 +404,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         taskNumber: task['taskNumber'],
         mobile: phone,
         onClose: phone ? widget.onBack ?? widget.onClose : widget.onClose,
-        bottomBorder: widget.inPlace ? RaftSidePanelFrame.headerRule(t) : null,
+        bottomBorder: widget.inPlace || widget.tasksPage
+            ? RaftSidePanelFrame.headerRule(t)
+            : null,
         detailsToggle: detailsPlacement == null ? null : detailsToggle(context),
         focusMode: widget.focusMode,
         compactPage: widget.tasksPage && phone,
@@ -416,7 +418,14 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             : (label) => ValueListenableBuilder<bool>(
                 valueListenable: headInView,
                 builder: (context, inView, _) => inView
-                    ? Text(label, key: const ValueKey('task-modal-bar-label'))
+                    ? Text(
+                        label,
+                        key: const ValueKey('task-modal-bar-label'),
+                        style: t.scale(
+                          RaftTypeScale.subhead,
+                          weight: FontWeight.w700,
+                        ),
+                      )
                     : RaftTaskBarSummary(
                         label: label,
                         status: '${task['status']}',
@@ -863,7 +872,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                 Text(
                   createdAt,
                   key: const ValueKey('task-modal-created-at'),
-                  style: detailsStyle(t),
+                  style: widget.tasksPage
+                      ? t.scale(RaftTypeScale.monoMeta, mono: true)
+                      : detailsStyle(t),
                 ),
               ),
             if (widget.conversation?.earlierDiscussion case final earlier?)

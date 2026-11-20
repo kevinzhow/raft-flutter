@@ -265,7 +265,6 @@ class _ScopeItem extends RaftFitItem {
         trailingGlyph: RaftGlyph.chevronDown,
         glyphSize: 14,
         physicalHeight: line,
-        fontWeight: FontWeight.w600,
         focusNode: focus,
         onPressed: toggle,
       ),

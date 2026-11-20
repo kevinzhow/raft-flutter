@@ -64,6 +64,7 @@ import 'copy_message_link.dart';
 import 'private_route_guard.dart';
 import 'message_selection.dart';
 import 'system_message_grouping.dart';
+import 'task_conversation_surface.dart' show threadEmptyContent;
 import 'task_handoff_notice.dart';
 import 'task_v2_mode.dart' show threadComposerHint;
 import 'copy_selection_links.dart';
@@ -110,7 +111,6 @@ class RaftChatView extends StatefulWidget {
     required this.controller,
     this.thread = false,
     this.threadParentSlot,
-    this.threadEmptyState,
     this.hideThreadParent = false,
     this.selectionHandle,
     this.viewportHandle,
@@ -130,7 +130,6 @@ class RaftChatView extends StatefulWidget {
 
   /// Source TaskModalHead is an independent task subject above the replies.
   final Widget? threadParentSlot;
-  final Widget? threadEmptyState;
   final bool hideThreadParent;
   final ChatSelectionHandle? selectionHandle;
   final ChatViewportHandle? viewportHandle;
@@ -3181,12 +3180,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       inset: true,
                     ),
                   )
-                : widget.threadEmptyState ??
-                      RaftProductEmptyState(
-                        title: raftText(context, 'No replies yet'),
-                        icon: (context, size, color) =>
-                            RaftThreadIcon(size: size, color: color),
-                      ),
+                : threadEmptyContent(context, widget.threadParentSlot),
           ),
       ];
     } else {

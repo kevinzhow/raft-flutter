@@ -12,7 +12,7 @@ SERVER = 'visual-server'
 OWNER = 'visual-user'
 CHANNEL = 'channel-tasks-v124'
 AGENT = 'agent-tasks-v124'
-STAMP = '2026-06-20T13:40:00.000Z'
+STAMP = '2026-06-17T12:30:00.000Z'
 
 
 def task(number, title, *, author=OWNER, assignee=None, status='todo', **details):
@@ -96,11 +96,16 @@ def counts(rows):
     }, 'relations': {}}
 
 
+owner = {'id': OWNER, 'userId': OWNER, 'serverId': SERVER, 'name': 'artin',
+         'displayName': 'artin', 'avatarUrl': None, 'role': 'owner'}
 routes = {
+    'GET /channels': [channel],
+    f'GET /channels/{CHANNEL}': channel,
+    'GET /channels/threads/followers': {'threads': []},
     'GET /tasks/server': lane_query(lambda rows: {'tasks': rows, 'next_cursor': None}),
     'GET /tasks/server/counts': lane_query(counts),
     f'GET /tasks/channel/{CHANNEL}': {'tasks': tasks},
-    f'GET /channels/{CHANNEL}/members': {'humans': [], 'agents': [agent]},
+    f'GET /channels/{CHANNEL}/members': {'humans': [owner], 'agents': [agent]},
     'GET /agents': [agent],
 }
 for row in tasks:

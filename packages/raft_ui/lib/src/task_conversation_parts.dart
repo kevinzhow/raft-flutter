@@ -299,6 +299,30 @@ class _RaftTaskHeadTextState extends State<RaftTaskHeadText> {
     final alwaysVisible =
         !widget.revealOnHover || !RaftInteraction.of(context).hover;
     final visible = alwaysVisible || hovered || focusWithin;
+    Widget pencil = RaftTaskHeadEditButton(
+      key: ValueKey(
+        field == RaftTaskHeadField.title
+            ? 'task-modal-title-edit'
+            : 'task-modal-description-edit',
+      ),
+      label: field == RaftTaskHeadField.title
+          ? 'Edit title'
+          : 'Edit description',
+      onPressed: widget.onEdit,
+    );
+    if (widget.revealOnHover) {
+      final size = RaftButtonMetrics.of(
+        RaftButtonSize.iconMd,
+        RaftButtonVariant.ghost,
+        RaftTokens.of(context),
+      ).height;
+      // The pencil hangs four pixels above and below the title's row.
+      pencil = Align(
+        widthFactor: 1,
+        heightFactor: (size - 8) / size,
+        child: pencil,
+      );
+    }
     final row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 4,
@@ -306,20 +330,7 @@ class _RaftTaskHeadTextState extends State<RaftTaskHeadText> {
         Expanded(child: widget.display),
         IgnorePointer(
           ignoring: !visible,
-          child: Opacity(
-            opacity: visible ? 1 : 0,
-            child: RaftTaskHeadEditButton(
-              key: ValueKey(
-                field == RaftTaskHeadField.title
-                    ? 'task-modal-title-edit'
-                    : 'task-modal-description-edit',
-              ),
-              label: field == RaftTaskHeadField.title
-                  ? 'Edit title'
-                  : 'Edit description',
-              onPressed: widget.onEdit,
-            ),
-          ),
+          child: Opacity(opacity: visible ? 1 : 0, child: pencil),
         ),
       ],
     );
