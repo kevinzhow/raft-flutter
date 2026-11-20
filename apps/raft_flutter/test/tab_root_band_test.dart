@@ -134,7 +134,7 @@ void main() {
         expect(box.color, tokens.colors['layer-frame']);
         expect(
           (box.border! as Border).bottom.color,
-          tokens.colors['line-muted'],
+          tokens.colors['line-seam'],
         );
         final field = t.getRect(
           find.descendant(of: head, matching: find.byType(RaftSearchInput)),
