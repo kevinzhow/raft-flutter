@@ -23,6 +23,7 @@ import 'recipe_surface.dart' show RaftRecipeBinding, RaftRecipeBox;
 import 'rich_card_tokens.dart';
 import 'text_measure.dart';
 import 'text_scaling.dart' show RaftScaled;
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 class RaftSpecActionCard extends StatelessWidget {
   const RaftSpecActionCard({
