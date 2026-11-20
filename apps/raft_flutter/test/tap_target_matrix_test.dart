@@ -16,6 +16,7 @@ import 'message_presentation_test.dart' show MessageAdapter;
 import 'task_surface_test.dart' show flush, modernTask, taskRoutes;
 import 'workspace_source_location_contract_test.dart' show pageFixture;
 import 'support/app_services_fixture.dart';
+import 'support/search_text.dart';
 
 // Tap-target matrix: every message container (host) x every element Web makes
 // interactive. Each cell taps the real widget and asserts the visible effect
@@ -274,7 +275,7 @@ Future<Ctx> mount(WidgetTester t, TapHost host) async {
     case TapSurface.searchChannel:
       await flush(t);
       await t.pump(const Duration(milliseconds: 500));
-      await t.tap(find.text('Search hit text'));
+      await t.tap(findSearchText('Search hit text'));
       await flush(t);
       await t.pumpAndSettle();
     case TapSurface.chatThreadPanel:

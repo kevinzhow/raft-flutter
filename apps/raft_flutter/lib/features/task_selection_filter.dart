@@ -30,6 +30,8 @@ class TaskSelectionFilter extends StatefulWidget {
     this.combobox = false,
     this.fit,
     this.leadingOf,
+    this.comboboxItems,
+    this.searchFilter = false,
   });
 
   /// The Tasks page's toolbar form (raft-ui `FitToolbarPicker`): the label
@@ -44,6 +46,8 @@ class TaskSelectionFilter extends StatefulWidget {
 
   /// MessageSearchPage's channel filter uses the public Combobox composition.
   final bool combobox;
+  final List<RaftComboboxItem>? comboboxItems;
+  final bool searchFilter;
   final String field;
   final String? tooltip, label;
   final RaftGlyph? glyph;
@@ -216,26 +220,11 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
         backgroundColor: WidgetStatePropertyAll(Colors.transparent),
         elevation: WidgetStatePropertyAll(0),
+        side: WidgetStatePropertyAll(BorderSide.none),
       ),
       menuChildren: [
         if (widget.combobox)
-          SizedBox(
-            width: width,
-            child: RaftComboboxPanel(
-              label: 'Channels',
-              options: widget.options,
-              glyph: RaftGlyph.hash,
-              enabled: widget.valid(),
-              onDismiss: menu.close,
-              onSelected: (id) {
-                if (!acceptsInteraction || !widget.options.containsKey(id)) {
-                  return;
-                }
-                widget.onToggle(id);
-                menu.close();
-              },
-            ),
-          )
+          SizedBox(width: width, child: _channelCombobox())
         else
           RaftSelectionPopover(
             key: ValueKey(
@@ -243,6 +232,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
             ),
             width: width,
             title: raftText(context, widget.field),
+            snapShadowToDevicePixels: widget.searchFilter,
             searchController: search,
             searchPlaceholder: raftText(context, 'Search…'),
             onSearchChanged: (value) {
@@ -301,7 +291,8 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
                   : null,
               valueSlot: widget.fit?.valueSlot,
               labelHidden: widget.fit?.labelHidden ?? false,
-              fitToolbar: widget.fit != null,
+              fitToolbar: widget.fit != null || widget.searchFilter,
+              snapToDevicePixels: widget.searchFilter,
               restyle: widget.fit?.restyle,
               glyph:
                   widget.glyph ??
@@ -319,6 +310,34 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
           ),
         ),
       ),
+    );
+  }
+
+  void _selectFromCombobox(String id) {
+    if (!acceptsInteraction || !widget.options.containsKey(id)) return;
+    widget.onToggle(id);
+    menu.close();
+  }
+
+  Widget _channelCombobox() {
+    if (widget.comboboxItems case final choices?) {
+      return RaftComboboxPanel.items(
+        label: 'Channels',
+        items: choices,
+        enabled: widget.valid(),
+        snapToDevicePixels: widget.searchFilter,
+        onDismiss: menu.close,
+        onSelected: _selectFromCombobox,
+      );
+    }
+    return RaftComboboxPanel(
+      label: 'Channels',
+      options: widget.options,
+      glyph: RaftGlyph.hash,
+      enabled: widget.valid(),
+      snapToDevicePixels: widget.searchFilter,
+      onDismiss: menu.close,
+      onSelected: _selectFromCombobox,
     );
   }
 }

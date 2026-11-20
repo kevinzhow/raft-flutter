@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 
 import 'control_typography.dart';
+import 'css_pixel_snap.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
@@ -36,6 +37,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
     this.valueSlot,
     this.labelHidden = false,
     this.fitToolbar = false,
+    this.snapToDevicePixels = false,
     this.restyle,
   });
 
@@ -57,6 +59,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
   /// FitToolbarPicker renders the chevron in an inline-flex span with no
   /// extra width around its icon.
   final bool fitToolbar;
+  final bool snapToDevicePixels;
 
   /// What is chosen, after the label (FitToolbarPicker's `value`): [valueSlot] gives its text style (a count is
   /// mono). [labelHidden] drops the label's text but keeps it, then the value, as the accessible name ("Assignee 1").
@@ -72,12 +75,13 @@ class RaftPickerTriggerButton extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final canActivate = enabled && onPressed != null;
-    final useExactLabelHeight =
+    final nativeLabel = RaftControlTypography.appliesIn(context);
+    final exactLabelHeight =
         Theme.of(context).platform == TargetPlatform.android &&
-        RaftControlTypography.appliesIn(context) &&
+        nativeLabel &&
         RaftScaled.grows(context);
-
-    final button = RaftInteractive(
+    final snapLabel = snapToDevicePixels && !nativeLabel;
+    final trigger = RaftInteractive(
       onPressed: canActivate ? onPressed : null,
       focusNode: focusNode,
       semanticLabel:
@@ -136,7 +140,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
                       ),
                     ),
                 ])
-                  if (useExactLabelHeight)
+                  if (snapLabel || exactLabelHeight)
                     RaftCssText(
                       text,
                       style: labelStyle,
@@ -158,6 +162,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
         );
       },
     );
+    final button = snapLabel ? RaftCssPixelSnap(child: trigger) : trigger;
     return tooltip == null
         ? button
         : RaftTooltip(message: raftText(context, tooltip!), child: button);

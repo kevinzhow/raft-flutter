@@ -5,7 +5,7 @@ import 'resource_filters.dart';
 import 'task_selection_filter.dart';
 
 /// Source MessageSearchPage filter chips: From, Scope, Channel, Time, Sort and
-/// "Clear All". The Search page and the Cmd/Ctrl+K overlay both render them
+/// "Clear all". The Search page and the Cmd/Ctrl+K overlay both render them
 /// (Source shows the same component in both); each owns the surrounding row
 /// and what a change does. The widget mutates [filters] in place, then calls
 /// [onChanged].
@@ -21,6 +21,9 @@ class SearchFilterBar extends StatelessWidget {
     required this.valid,
     required this.onChanged,
     this.channelLabel,
+    this.channelOptions,
+    this.channelGlyph,
+    this.scopeConversation,
   });
 
   final ResourceFilters filters;
@@ -28,6 +31,7 @@ class SearchFilterBar extends StatelessWidget {
 
   /// Channel and DM id -> label (`#name` / `@name`) the Channel filter lists.
   final Map<String, String> conversations;
+  final List<RaftComboboxItem>? channelOptions;
 
   /// Open filter menus; the owner closes them with its dialogs, and opening
   /// one closes the others.
@@ -44,6 +48,8 @@ class SearchFilterBar extends StatelessWidget {
   /// Label of the chip that replaces the Channel picker once a channel is
   /// chosen (Source: `#name` with an X; a click clears it).
   final String Function(String id)? channelLabel;
+  final RaftGlyph Function(String id)? channelGlyph;
+  final String? scopeConversation;
 
   static const timeRanges = {
     'any': 'Any time',
@@ -87,7 +93,9 @@ class SearchFilterBar extends StatelessWidget {
       selection: selected,
       valid: valid,
       closeOnSelect: single,
+      searchFilter: true,
       combobox: field == 'Channel',
+      comboboxItems: field == 'Channel' ? channelOptions : null,
       onToggle: (key) {
         if (!valid()) return;
         toggle(key);
@@ -112,34 +120,41 @@ class SearchFilterBar extends StatelessWidget {
       String label,
       Map<String, String> choices,
       void Function(String) changed,
-    ) => RaftDropdownMenu(
-      key: ValueKey('$scope:$title'),
-      tooltip: raftText(context, title),
-      label: choiceLabel(context, label),
-      glyph: title == 'Search Date Range'
-          ? RaftGlyph.calendarRange
-          : RaftGlyph.arrowDownUp,
-      trailingGlyph: RaftGlyph.chevronDown,
-      triggerStyle: RaftDropdownTriggerStyle.picker,
-      minimumTargetSize: RaftMetrics.buttonSm,
-      // activeFilterClass when the value differs from the default.
-      selected: title == 'Search Date Range'
-          ? filters.timeRange != 'any'
-          : filters.searchSort != 'relevance',
-      enabled: title != 'Sort Search Results' || !queryIsEmpty,
-      entries: [
-        for (final entry in choices.entries)
-          RaftMenuEntry(
-            label: choiceLabel(context, entry.value),
-            onPressed: () {
-              if (valid()) {
-                changed(entry.key);
-                onChanged();
-              }
-            },
-          ),
-      ],
-    );
+    ) {
+      final sort = title == 'Sort Search Results';
+      final localized = choiceLabel(context, label);
+      return RaftDropdownMenu(
+        key: ValueKey('$scope:$title'),
+        label: localized,
+        align: sort ? RaftDropdownAlign.end : RaftDropdownAlign.start,
+        enabled: !sort || !queryIsEmpty,
+        snapShadowToDevicePixels: true,
+        triggerBuilder: (_, focusNode, press) => RaftPickerTriggerButton(
+          label: localized,
+          focusNode: focusNode,
+          glyph: sort ? RaftGlyph.arrowDownUp : RaftGlyph.calendarRange,
+          fitToolbar: true,
+          snapToDevicePixels: true,
+          selected: sort
+              ? filters.searchSort != 'relevance'
+              : filters.timeRange != 'any',
+          onPressed: press,
+        ),
+        entries: [
+          for (final entry in choices.entries)
+            RaftMenuEntry(
+              label: choiceLabel(context, entry.value),
+              onPressed: () {
+                if (valid()) {
+                  changed(entry.key);
+                  onChanged();
+                }
+              },
+            ),
+        ],
+      );
+    }
+
     final scrolling = <Widget>[
       picker(
         'From',
@@ -169,11 +184,19 @@ class SearchFilterBar extends StatelessWidget {
         filters.scopes.clear,
         glyph: RaftGlyph.atSign,
       ),
-      if (filters.channelId != null && channelLabel != null)
+      if (scopeConversation case final conversation?)
+        RaftBadge(
+          label: raftFormat(context, 'In {conversation}', {
+            'conversation': conversation,
+          }),
+          appearance: RaftBadgeRecipeAppearance.soft,
+          variant: RaftBadgeRecipeVariant.information,
+        )
+      else if (filters.channelId != null && channelLabel != null)
         RaftTextButton(
           key: ValueKey('$scope:Channel'),
           label: channelLabel!(filters.channelId!),
-          glyph: RaftGlyph.hash,
+          glyph: channelGlyph?.call(filters.channelId!) ?? RaftGlyph.hash,
           trailingGlyph: RaftGlyph.x,
           variant: RaftControlVariant.primary,
           selected: true,
@@ -210,29 +233,49 @@ class SearchFilterBar extends StatelessWidget {
       sorts,
       (value) => filters.searchSort = value,
     );
-    final clearAll = // Button ghost xs "Clear All".
-    RaftTextButton(
-      label: 'Clear All',
-      variant: RaftControlVariant.ghost,
-      visualHeight: RaftMetrics.buttonXs,
-      minimumTargetSize: RaftMetrics.buttonXs,
+    final active = [
+      filters.sender != null,
+      filters.scopes.isNotEmpty,
+      scopeConversation == null && filters.channelId != null,
+      filters.timeRange != 'any',
+    ];
+    final clearAll = RaftButton(
+      label: 'Clear all',
+      uiVariant: RaftButtonVariant.ghost,
+      uiSize: RaftButtonSize.md,
+      snapBorderToDevicePixels: true,
       onPressed: () {
         if (valid()) {
+          final fixedChannel = scopeConversation == null
+              ? null
+              : filters.channelId;
           filters.clearSearchFilters();
+          filters.channelId = fixedChannel;
           onChanged();
         }
       },
     );
     // Web SearchFilterBar: one FitToolbar line. The chips are a scroll group
-    // with Clear All pinned at its end; Sort is its own first-line group.
+    // with Clear all pinned at its end; Sort is its own first-line group.
     return RaftFitToolbar(
       semanticLabel: raftText(context, 'Search filters'),
       children: [
         RaftFitGroup(
           firstLine: true,
           scroll: true,
-          end: filters.hasSearchFilter ? clearAll : null,
-          items: [for (final chip in scrolling) RaftFitChild(child: chip)],
+          showScrollbar: true,
+          end:
+              (scopeConversation == null
+                  ? filters.hasSearchFilter
+                  : filters.sender != null ||
+                        filters.scopes.isNotEmpty ||
+                        filters.timeRange != 'any')
+              ? clearAll
+              : null,
+          items: [
+            for (final (index, chip) in scrolling.indexed)
+              RaftFitChild(active: active[index], child: chip),
+          ],
         ),
         RaftFitGroup(firstLine: true, items: [RaftFitChild(child: sort)]),
       ],

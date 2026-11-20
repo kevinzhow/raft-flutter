@@ -54,6 +54,7 @@ abstract class RaftFitItem {
 
   bool get hasLabelForm => false;
   bool get hasPlusForm => false;
+  bool get active => false;
 
   /// The toolbar's More button: shown only while an item is in More.
   bool get isMore => false;
@@ -291,8 +292,15 @@ class RaftFitMore extends RaftFitItem {
 /// Any other control in a group (a segmented view switch): it has one form.
 /// It can go to More with its group's `moreOrder`, or with its own.
 class RaftFitChild extends RaftFitItem {
-  const RaftFitChild({required this.child, super.moreOrder, super.moreItem});
+  const RaftFitChild({
+    required this.child,
+    this.active = false,
+    super.moreOrder,
+    super.moreItem,
+  });
   final Widget child;
+  @override
+  final bool active;
 
   @override
   Widget buildForm(
@@ -320,10 +328,11 @@ class RaftFitGroup extends RaftFitNode {
     this.moreOrder,
     this.moreItem,
     this.scroll = false,
+    this.showScrollbar = false,
     this.end,
   });
   final List<RaftFitItem> items;
-  final bool firstLine, scroll;
+  final bool firstLine, scroll, showScrollbar;
   final int wrapOrder;
   final int? moreOrder;
   final List<RaftMenuEntry>? moreItem;
@@ -802,11 +811,15 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
         );
       }
       final group = node as RaftFitGroup;
+      final visibleItems = [
+        for (var index = 0; index < group.items.length; index++)
+          if (!plan.has('$id.$index', RaftFitStep.more) &&
+              (!group.items[index].isMore || plan.more.isNotEmpty))
+            index,
+      ];
       final leaves = <Widget>[
-        for (var j = 0; j < group.items.length; j++)
-          if (!plan.has('$id.$j', RaftFitStep.more) &&
-              (!group.items[j].isMore || plan.more.isNotEmpty))
-            leafWidget(group.items[j], '$id.$j'),
+        for (final index in visibleItems)
+          leafWidget(group.items[index], '$id.$index'),
       ];
       if (!group.scroll) {
         return KeyedSubtree(
@@ -830,6 +843,10 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
         height: height,
         gap: gap,
         end: group.end,
+        showScrollbar: group.showScrollbar,
+        activeItems: [
+          for (final index in visibleItems) group.items[index].active,
+        ],
         children: leaves,
       );
     }
@@ -1034,7 +1051,7 @@ class _FitSearchSlotState extends State<_FitSearchSlot> {
 // ---------------------------------------------------------------------------
 // Scroll group
 
-class _FitScrollGroup extends StatelessWidget {
+class _FitScrollGroup extends StatefulWidget {
   const _FitScrollGroup({
     super.key,
     required this.controller,
@@ -1042,48 +1059,182 @@ class _FitScrollGroup extends StatelessWidget {
     required this.height,
     required this.gap,
     required this.end,
+    required this.showScrollbar,
+    required this.activeItems,
     required this.children,
   });
   final ScrollController controller;
   final double width, height, gap;
   final Widget? end;
+  final bool showScrollbar;
+  final List<bool> activeItems;
   final List<Widget> children;
 
   @override
+  State<_FitScrollGroup> createState() => _FitScrollGroupState();
+}
+
+class _FitScrollGroupState extends State<_FitScrollGroup> {
+  final _content = GlobalKey();
+  int _active = -1;
+  double? _placed;
+  bool _scrolledByPerson = false;
+  bool _revealScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _active = widget.activeItems.indexOf(true);
+    _revealAfterLayout();
+  }
+
+  @override
+  void didUpdateWidget(_FitScrollGroup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final items = widget.activeItems;
+    var target = _active >= 0 && _active < items.length && items[_active]
+        ? _active
+        : items.indexOf(true);
+    var activated = false;
+    for (var index = 0; index < items.length; index++) {
+      if (items[index] &&
+          (index >= oldWidget.activeItems.length ||
+              !oldWidget.activeItems[index])) {
+        target = index;
+        activated = true;
+      }
+    }
+    if (activated) _scrolledByPerson = false;
+    if (target != _active || activated) {
+      _active = target;
+      _revealAfterLayout();
+    }
+  }
+
+  void _revealAfterLayout() {
+    if (_active < 0 || _revealScheduled || _scrolledByPerson) return;
+    _revealScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealScheduled = false;
+      if (!mounted || _active < 0 || _scrolledByPerson) return;
+      final content = _content.currentContext?.findRenderObject();
+      if (content is! RenderFlex || !widget.controller.hasClients) return;
+      final position = widget.controller.position;
+      if (!position.haveDimensions) return;
+      var child = content.firstChild;
+      for (var index = 0; index < _active && child != null; index++) {
+        child = content.childAfter(child);
+      }
+      if (child == null) return;
+      final viewport = RenderAbstractViewport.of(child);
+      final start = viewport.getOffsetToReveal(child, 0).offset - _fade;
+      final end = viewport.getOffsetToReveal(child, 1).offset + _fade;
+      final offset = position.pixels;
+      final wanted = start < end || offset > start
+          ? start
+          : offset < end
+          ? end
+          : offset;
+      _placed = wanted.clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      if (_placed != offset) position.jumpTo(_placed!);
+    });
+  }
+
+  double get _fade =>
+      _fitStyle(
+        context,
+        scroll: true,
+        pinned: widget.end != null,
+      ).scroller.length('scroll-padding-left') ??
+      24;
+
+  @override
   Widget build(BuildContext context) {
-    final fit = _fitStyle(context, scroll: true, pinned: end != null);
     // `scroll-px-6` and the `mask-fade-x` edge: 24px.
-    final fade = fit.scroller.length('scroll-padding-left') ?? 24;
-    final body = SizedBox(
-      height: height,
-      child: OverflowBox(
-        minHeight: height + 12,
-        maxHeight: height + 12,
-        child: RaftHorizontalScrollFade(
-          extent: fade,
-          child: SingleChildScrollView(
-            controller: controller,
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: gap,
-              children: children,
-            ),
+    final fade = _fade;
+    final scroller = NotificationListener<ScrollMetricsNotification>(
+      onNotification: (notification) {
+        if (notification.depth == 0 &&
+            notification.metrics.axis == Axis.horizontal &&
+            _active >= 0 &&
+            !_scrolledByPerson &&
+            !_revealScheduled) {
+          setState(_revealAfterLayout);
+        }
+        return false;
+      },
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.depth == 0 &&
+              notification.metrics.axis == Axis.horizontal &&
+              _active >= 0 &&
+              notification is ScrollUpdateNotification &&
+              (notification.metrics.pixels - (_placed ?? 0)).abs() > 1) {
+            _scrolledByPerson = true;
+          }
+          return false;
+        },
+        child: SingleChildScrollView(
+          controller: widget.controller,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            key: _content,
+            mainAxisSize: MainAxisSize.min,
+            spacing: widget.gap,
+            children: widget.children,
           ),
         ),
       ),
     );
+    final masked = RaftHorizontalScrollFade(extent: fade, child: scroller);
+    const thumbThickness = 5.0;
+    final body = SizedBox(
+      height: widget.height,
+      child: OverflowBox(
+        minHeight: widget.height + 12,
+        maxHeight: widget.height + 12,
+        child: widget.showScrollbar
+            ? RawScrollbar(
+                controller: widget.controller,
+                notificationPredicate: (notice) =>
+                    notice.depth == 0 && notice.metrics.axis == Axis.horizontal,
+                thickness: thumbThickness,
+                mainAxisMargin: 3,
+                crossAxisMargin: 3,
+                radius: const Radius.circular(thumbThickness / 2),
+                minThumbLength: 24,
+                timeToFade: const Duration(milliseconds: 600),
+                fadeDuration: const Duration(milliseconds: 400),
+                thumbColor: RaftTokens.of(context).ink.withValues(alpha: .42),
+                child: masked,
+              )
+            : masked,
+      ),
+    );
+    final end = widget.end;
+    final pinnedGap = widget.showScrollbar
+        ? widget.gap.clamp(0.0, widget.width)
+        : widget.gap;
     // One Row whether or not [end] is shown: when it appears (Clear All after
     // the first filter), the chips keep their elements and the chip that had
     // focus keeps it, instead of the scroller being re-parented.
     return SizedBox(
-      width: width,
+      width: widget.width,
       child: Row(
-        spacing: gap,
+        spacing: pinnedGap,
         children: [
           Expanded(child: body),
-          ?end,
+          if (widget.showScrollbar && end != null)
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: widget.width - pinnedGap),
+              child: end,
+            )
+          else
+            ?end,
         ],
       ),
     );

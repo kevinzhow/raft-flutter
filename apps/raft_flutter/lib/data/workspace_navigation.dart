@@ -485,6 +485,7 @@ class WorkspaceNavigation {
 
   static String? rootTabOf(RaftLocation location, Set<String> tabs) {
     if (location.hasOverlay ||
+        location.route == RaftRoute.search && location.searchDeferred ||
         {RaftRoute.search, RaftRoute.activity}.contains(location.route) &&
             location.content != null) {
       return null;

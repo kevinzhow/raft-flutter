@@ -15,6 +15,7 @@ import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/app_services_fixture.dart';
+import 'support/search_text.dart';
 
 // Activity/Search channel preview contract: one location owns the detail
 // title, rail highlight, master list, detail body and Back, and read admission
@@ -321,12 +322,12 @@ void main() {
         await t.pump(const Duration(milliseconds: 500));
         await t.pumpAndSettle();
         final master = t.state(find.byType(ResourceView));
-        await t.tap(find.text('Selected public hit'));
+        await t.tap(findSearchText('Selected public hit'));
         await t.pumpAndSettle();
         expectPreview('search', 'c', 'design');
         expect(w.location.messageId, 'hit');
         expect(t.state(find.byType(ResourceView)), same(master));
-        await t.tap(find.text('Other public hit'));
+        await t.tap(findSearchText('Other public hit'));
         await t.pumpAndSettle();
         expectPreview('search', 'c2', 'random');
         expect(w.location.messageId, 'hit2');

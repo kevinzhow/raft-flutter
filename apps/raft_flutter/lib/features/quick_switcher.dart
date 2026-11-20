@@ -7,11 +7,17 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/search_memory.dart';
+import '../data/workspace_controller.dart';
+import 'artifacts/artifact_models.dart';
 import 'quick_switcher_model.dart';
 import 'resource_cards.dart';
 import 'resource_filters.dart';
 import 'resource_search.dart';
+import 'search_app_results.dart';
+import 'search_continuation.dart';
+import 'search_continue_footer.dart';
 import 'search_filter_bar.dart';
+import 'search_sections.dart';
 import 'sender_avatar_projection.dart';
 
 /// One immutable view of the workspace the switcher reads. The host builds it
@@ -56,9 +62,15 @@ class QuickSwitcherSeed {
 /// Last message-search answer (Source `cachedSearchSnapshot`): reopening with
 /// the same request paints at once instead of waiting for the network.
 class QuickSwitcherSnapshot {
-  const QuickSwitcherSnapshot(this.authority, this.key, this.results);
+  const QuickSwitcherSnapshot(
+    this.authority,
+    this.key,
+    this.results, {
+    this.continuation = SearchContinuation.none,
+  });
   final String authority, key;
   final List<Map<String, dynamic>> results;
+  final SearchContinuation continuation;
 }
 
 enum QuickSwitcherFailure { requestFailed, queryTooBroad, searchTimeout }
@@ -96,6 +108,10 @@ class QuickSwitcher extends StatefulWidget {
     this.authority = '',
     this.clock,
     this.searchAnchor,
+    this.appSearchWorkspace,
+    this.onOpenArtifact,
+    this.entityExpansion,
+    this.onUpgrade,
   });
 
   /// Notifies when the workspace behind [data] changes.
@@ -105,16 +121,17 @@ class QuickSwitcher extends StatefulWidget {
   final void Function(SearchEntity entity, String query) onOpenEntity;
   final void Function(Map<String, dynamic> row, String query) onOpenMessage;
   final void Function(String query) onSearchAll;
+  final WorkspaceController? appSearchWorkspace;
+  final void Function(ArtifactCard card, String query)? onOpenArtifact;
+  final SearchEntityExpansion? entityExpansion;
+  final VoidCallback? onUpgrade;
   final QuickSwitcherSeed seed;
 
   /// Committed query and filters, for the saved Search state.
   final void Function(SearchStateSnapshot state)? onStateChanged;
 
   /// Message search (`GET /messages/search`) for the request [params].
-  final Future<List<Map<String, dynamic>>> Function(
-    Map<String, dynamic> params,
-  )?
-  searchMessages;
+  final Future<Object?> Function(Map<String, dynamic> params)? searchMessages;
   final QuickSwitcherSnapshot? Function()? snapshot;
   final void Function(QuickSwitcherSnapshot snapshot)? onSnapshot;
 
@@ -127,7 +144,7 @@ class QuickSwitcher extends StatefulWidget {
 
   /// Source OVERLAY_MESSAGE_PREVIEW_LIMIT and MAX_ENTITY_RESULTS.
   static const messagePreviewLimit = 5;
-  static const entityLimit = 50;
+  static const entityLimit = searchEntityLimit;
   static const debounce = Duration(milliseconds: 200);
 
   /// Source searchOverlayCardStyle fallback placement and size.
@@ -139,10 +156,17 @@ class QuickSwitcher extends StatefulWidget {
 }
 
 class _Row {
-  const _Row(this.key, {this.entity, this.message, this.all = false});
+  const _Row(
+    this.key, {
+    this.entity,
+    this.message,
+    this.artifact,
+    this.all = false,
+  });
   final String key;
   final SearchEntity? entity;
   final Map<String, dynamic>? message;
+  final ArtifactCard? artifact;
   final bool all;
 }
 
@@ -167,6 +191,10 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
   String? messagesKey;
   bool loading = false;
   QuickSwitcherFailure? failure;
+  SearchContinuation continuation = SearchContinuation.none;
+  late final entityExpansion =
+      widget.entityExpansion ?? SearchEntityExpansion();
+  SearchAppResults? appSearch;
 
   // Ranking is memoized per (catalog, query); a rebuild from an unrelated
   // workspace notification never re-ranks.
@@ -195,6 +223,13 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
       );
     }
     controller.addListener(textChanged);
+    if (widget.appSearchWorkspace case final workspace?) {
+      appSearch = SearchAppResults(
+        workspace,
+        controller,
+        previewLimit: QuickSwitcher.messagePreviewLimit,
+      )..addListener(searchAppsChanged);
+    }
     // Source: the field takes focus as the overlay mounts.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) focus.requestFocus();
@@ -207,6 +242,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
         cached.key == jsonEncode(params)) {
       messages = cached.results;
       messagesKey = cached.key;
+      continuation = cached.continuation;
     } else {
       fetch();
     }
@@ -215,6 +251,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
   @override
   void dispose() {
     debounceTimer?.cancel();
+    appSearch?.dispose();
     ticket++;
     for (final menu in filterMenus.toList()) {
       if (menu.isOpen) menu.close();
@@ -226,6 +263,8 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     scroll.dispose();
     super.dispose();
   }
+
+  void searchAppsChanged() => setState(() {});
 
   bool get composing =>
       controller.value.composing.isValid &&
@@ -294,10 +333,11 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     final search = widget.searchMessages;
     final params = requestParams();
     if (search == null || params == null) {
-      if (messages.isNotEmpty || loading || failure != null) {
+      if (messagesKey != null || loading || failure != null) {
         setState(() {
           messages = const [];
           messagesKey = null;
+          continuation = SearchContinuation.none;
           loading = false;
           failure = null;
         });
@@ -314,23 +354,19 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
       }
       return;
     }
+    setState(() {
+      messages = const [];
+      messagesKey = null;
+      continuation = SearchContinuation.none;
+      failure = null;
+      loading = true;
+    });
     Future<void> request() async {
       if (!mounted || mine != ticket) return;
-      setState(() {
-        loading = true;
-        failure = null;
-      });
       try {
         final found = await search(params);
         if (!mounted || mine != ticket) return;
-        setState(() {
-          messages = found;
-          messagesKey = key;
-          loading = false;
-        });
-        widget.onSnapshot?.call(
-          QuickSwitcherSnapshot(widget.authority, key, found),
-        );
+        acceptMessages(found, key);
       } catch (error) {
         if (!mounted || mine != ticket) return;
         setState(() {
@@ -348,16 +384,61 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     // Typing waits out the debounce; explicit retries start immediately.
   }
 
-  /// Source retrySearch: drop the failed set and ask again.
-  void retry() {
+  void acceptMessages(Object? answer, String key, {bool append = false}) {
+    final list = answer is Map ? answer['results'] : answer;
+    final byId = <Object?, Map<String, dynamic>>{
+      if (list is List)
+        for (final row in list.whereType<Map>())
+          row['id']: Map<String, dynamic>.from(row),
+    };
     setState(() {
-      messages = const [];
-      messagesKey = null;
+      messages = [
+        if (append) ...messages,
+        ...byId.values.where(
+          (row) =>
+              !append || !messages.any((shown) => shown['id'] == row['id']),
+        ),
+      ];
+      continuation = SearchContinuation.read(answer);
+      messagesKey = key;
       failure = null;
-      loading = true;
+      loading = false;
     });
-    fetch(retry: true);
+    widget.onSnapshot?.call(
+      QuickSwitcherSnapshot(
+        widget.authority,
+        key,
+        messages,
+        continuation: continuation,
+      ),
+    );
   }
+
+  Future<void> continueMessages() async {
+    final search = widget.searchMessages, cursor = continuation.cursor;
+    final key = messagesKey, params = requestParams();
+    if (search == null ||
+        cursor == null ||
+        key == null ||
+        params == null ||
+        loading) {
+      return;
+    }
+    final mine = ticket;
+    setState(() => failure = null);
+    try {
+      final page = await search(
+        {...params, 'cursor': cursor}..remove('offset'),
+      );
+      if (mounted && mine == ticket) acceptMessages(page, key, append: true);
+    } catch (error) {
+      if (mounted && mine == ticket) {
+        setState(() => failure = classifySearchFailure(error));
+      }
+    }
+  }
+
+  void retry() => fetch(retry: true);
 
   void filtersChanged() {
     setState(() => selectedKey = null);
@@ -381,6 +462,8 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
       widget.onSearchAll(text);
     } else if (row.entity != null) {
       widget.onOpenEntity(row.entity!, text);
+    } else if (row.artifact case final card?) {
+      widget.onOpenArtifact?.call(card, text);
     } else if (row.message != null) {
       widget.onOpenMessage(row.message!, text);
     }
@@ -457,6 +540,13 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
   List<SearchEntity> entityResults(List<SearchEntity> list) =>
       list.take(QuickSwitcher.entityLimit).toList();
 
+  String get entitySearchKey => '${widget.authority}\u0000$query';
+  bool get entitiesExpanded =>
+      entityExpansion.isExpanded(entitySearchKey, overlay: true);
+
+  void toggleEntities() =>
+      setState(() => entityExpansion.toggle(entitySearchKey, overlay: true));
+
   List<Map<String, dynamic>> get visibleMessages => [
     for (final m in messages.take(QuickSwitcher.messagePreviewLimit))
       if (m['id'] != null) m,
@@ -479,8 +569,9 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     return [
       if (exact != null) _Row(exact.key, entity: exact),
       const _Row(_allKey, all: true),
-      for (final entity in entities)
-        if (entity.key != exact?.key) _Row(entity.key, entity: entity),
+      for (final entity in entities) _Row(entity.key, entity: entity),
+      for (final card in appSearch?.hits ?? const <ArtifactCard>[])
+        _Row(SearchAppResults.keyOf(card), artifact: card),
       for (final message in visibleMessages)
         _Row('message:${message['id']}', message: message),
     ];
@@ -490,8 +581,13 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     final data = widget.data();
     if (restoringSender != null) resolveSender(data);
     final list = query.isEmpty ? const <SearchEntity>[] : rank(data);
-    final entities = entityResults(list);
     final exact = query.isEmpty ? null : findExactDestination(query, list);
+    final entities = entityResults(list)
+        .where((entity) => entity.key != exact?.key)
+        .toList(growable: false);
+    final shown = entitiesExpanded
+        ? entities
+        : entities.take(searchEntityPreviewCount).toList(growable: false);
     // The cursor returns to the top row whenever the query changes or an exact
     // destination surfaces from a later rerank (Source overlayCursorEpoch).
     final epoch = '$query\u0000${exact?.key ?? ''}';
@@ -499,7 +595,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
       cursorEpoch = epoch;
       selectedKey = null;
     }
-    final rows = buildRows(data, exact, entities);
+    final rows = buildRows(data, exact, shown);
     var selected = selectedKey == null
         ? 0
         : rows.indexWhere((r) => r.key == selectedKey);
@@ -529,7 +625,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
   }
 
   Widget _filters(BuildContext context, QuickSwitcherData data) {
-    final channels = quickSwitcherChannelOptions(data.channels);
+    final channels = searchChannelChoices(data.channels);
     return RaftQuickSwitcherFilterRow(
       child: SearchFilterBar(
         filters: filters,
@@ -538,14 +634,21 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
           agents: data.agents,
           currentUser: data.currentUser,
         ),
-        conversations: channels,
+        conversations: {
+          for (final channel in channels) channel.id: channel.label,
+        },
+        channelOptions: channels,
         menus: filterMenus,
         queryIsEmpty: query.isEmpty,
         scope: widget.authority,
         valid: () => mounted,
         onChanged: filtersChanged,
         channelLabel: (id) =>
-            channels[id] ?? '#${raftText(context, 'Channel')}',
+            channels.where((channel) => channel.id == id).firstOrNull?.label ??
+            raftText(context, 'Channel'),
+        channelGlyph: (id) =>
+            channels.where((channel) => channel.id == id).firstOrNull?.glyph ??
+            RaftGlyph.hash,
       ),
     );
   }
@@ -558,6 +661,20 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     SearchEntity? exact,
     List<SearchEntity> entities,
   ) {
+    final status = appSearch?.status ?? SearchAppStatus.idle;
+    final days = searchHistoryWindow(
+      data.plan,
+      widget.clock?.call() ?? DateTime.now(),
+    );
+    final upgrade = widget.onUpgrade;
+    final notice =
+        days != null &&
+            upgrade != null &&
+            failure == null &&
+            status != SearchAppStatus.failed &&
+            status != SearchAppStatus.timedOut
+        ? SearchHistoryWindowBanner(days: days, onUpgrade: upgrade)
+        : null;
     Widget entityRow(_Row row, {bool hint = false}) => KeyedSubtree(
       key: keyFor(row.key),
       child: _entityRow(
@@ -571,7 +688,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     );
     if (!hasIntent) {
       if (rows.isEmpty) {
-        return RaftQuickSwitcherEmpty(
+        final empty = RaftQuickSwitcherEmpty(
           key: const Key('quick-switcher-empty'),
           title: raftText(context, 'Search everything'),
           detail: raftText(
@@ -579,12 +696,21 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
             'Search channels, DMs, people, agents, and message history.',
           ),
         );
+        return notice == null
+            ? empty
+            : Column(
+                children: [
+                  notice,
+                  Expanded(child: empty),
+                ],
+              );
       }
       return RaftQuickSwitcherList(
         key: const Key('quick-switcher-recent'),
         controller: scroll,
         compact: true,
         children: [
+          ?notice,
           RaftQuickSwitcherSection(
             heading: raftText(context, 'Recent conversations'),
             glyph: RaftGlyph.clock3,
@@ -598,8 +724,16 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
         if (row.entity != null && row.entity!.key != exact?.key) row,
     ];
     final visible = visibleMessages;
-    final total = entities.length + messages.length;
-    final empty = !loading && total == 0 && failure == null;
+    final total =
+        entities.length +
+        (exact == null ? 0 : 1) +
+        (appSearch?.hits.length ?? 0) +
+        messages.length;
+    final empty =
+        !loading &&
+        total == 0 &&
+        failure == null &&
+        (status == SearchAppStatus.idle || status == SearchAppStatus.ready);
     // ignore: raft_lints/avoid_render_where_without_or_else -- rows always includes the 'all' row (built with `const _Row(_allKey, all: true)` in the same method).
     final allRow = rows.firstWhere((r) => r.all);
     final trimmed = query;
@@ -630,7 +764,15 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
             ),
           ],
         ),
-        if (empty)
+        ?notice,
+        if (total == 0 && continuation.pending)
+          SearchIncompleteEmpty(
+            key: ValueKey(messagesKey),
+            continuation: continuation,
+            onMore: continueMessages,
+            failure: failure != null,
+          )
+        else if (empty)
           RaftQuickSwitcherNoResults(
             key: const Key('quick-switcher-no-results'),
             title: trimmed.isEmpty
@@ -640,7 +782,9 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
                   }),
             detail: raftText(
               context,
-              trimmed.isEmpty
+              continuation.tooBroad
+                  ? searchTooBroadHint
+                  : trimmed.isEmpty
                   ? 'Try a different filter set.'
                   : 'Try different keywords or a shorter phrase.',
             ),
@@ -648,12 +792,25 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
         else ...[
           if (remaining.isNotEmpty)
             RaftQuickSwitcherSection(
-              heading: raftText(context, 'Server entities'),
+              heading:
+                  '${raftText(context, 'Server entities')}   ${entities.length}',
               children: [
-                RaftQuickSwitcherEntityScroll(
-                  children: [for (final row in remaining) entityRow(row)],
-                ),
+                for (final row in remaining) entityRow(row),
+                if (entities.length > searchEntityPreviewCount)
+                  SearchEntityToggle(
+                    key: const Key('search-entity-show-all'),
+                    count: entities.length,
+                    expanded: entitiesExpanded,
+                    onToggle: toggleEntities,
+                  ),
               ],
+            ),
+          if (appSearch case final search?)
+            SearchAppGroupSection(
+              results: search,
+              selectedKey: selectedRow?.key,
+              onOpen: (card) => widget.onOpenArtifact?.call(card, query),
+              wrapHit: (key, row) => KeyedSubtree(key: keyFor(key), child: row),
             ),
           // Source: the messages card always paints; its heading needs a
           // loading request or hits.
@@ -662,6 +819,11 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
                 ? raftText(context, 'Messages')
                 : null,
             children: [
+              if (continuation.relevanceFallback &&
+                  filters.searchSort != 'recent' &&
+                  !loading &&
+                  visible.isNotEmpty)
+                const SearchRelevanceFallback(),
               if (loading &&
                   entities.isEmpty &&
                   messages.isEmpty &&
@@ -837,25 +999,10 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     Offset at,
   ) async {
     setState(() => contextMenuKey = entity.key);
-    await showRaftMessageContextMenu<void>(
-      context: context,
-      anchor: at,
-      builder: (menuContext) => RaftMessageContextMenu(
-        onDismiss: () => Navigator.of(menuContext).pop(),
-        sections: [
-          [
-            RaftMessageContextMenuItem(
-              key: const Key('quick-switcher-open'),
-              label: raftText(context, 'Open'),
-              icon: raftMessageMenuIcon(RaftGlyph.folderOpen),
-              onPressed: () {
-                Navigator.of(menuContext).pop();
-                widget.onOpenEntity(entity, query);
-              },
-            ),
-          ],
-        ],
-      ),
+    await showSearchChannelMenu(
+      context,
+      at: at,
+      onOpen: () => widget.onOpenEntity(entity, query),
     );
     if (mounted) setState(() => contextMenuKey = null);
   }

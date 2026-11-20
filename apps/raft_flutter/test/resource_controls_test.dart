@@ -237,9 +237,10 @@ void main() {
   Future<void> menu(WidgetTester t, String title, String value) async {
     // The search filter chips are one sideways-scrolling strip (Web
     // FitToolbar): bring the chip into view first, as a user scrolls to it.
-    await t.ensureVisible(find.byTooltip(title));
+    final trigger = find.text(title);
+    await Scrollable.ensureVisible(t.element(trigger), alignment: 0.5);
     await t.pumpAndSettle();
-    await t.tap(find.byTooltip(title));
+    await t.tap(trigger.hitTestable());
     await t.pumpAndSettle();
     await t.tap(find.text(value).last);
     await t.pumpAndSettle();
@@ -250,14 +251,17 @@ void main() {
   ) async {
     await mount(t, 'search');
     expect(w.calls.where((r) => r.path == '/messages/search'), isEmpty);
-    await menu(t, 'Filter by Channel', '#General');
+    await menu(t, 'Channel', 'General');
     expect(w.calls.last.query!['q'], '');
     expect(w.calls.last.query!['channelId'], 'c');
     expect(find.text('Authorized match'), findsOneWidget);
-    await menu(t, 'Filter by Sender', 'Bob · Human');
+    await menu(t, 'From', 'Bob · Human');
     expect(w.calls.last.query!['senderId'], 'bob');
     expect(w.calls.last.query!.containsKey('senderType'), false);
-    await t.tap(find.byTooltip('Search Scope'));
+    final scope = find.text('Scope');
+    await Scrollable.ensureVisible(t.element(scope), alignment: 0.5);
+    await t.pumpAndSettle();
+    await t.tap(scope.hitTestable());
     await t.pumpAndSettle();
     expect(
       find.descendant(
@@ -270,12 +274,12 @@ void main() {
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await t.pumpAndSettle();
     expect(w.calls.last.query!['mentionTarget'], 'self');
-    await menu(t, 'Search Date Range', 'Today');
+    await menu(t, 'Any time', 'Today');
     expect(w.calls.last.query!['after'], isA<String>());
     await t.enterText(find.byType(TextField), 'hello');
     await t.testTextInput.receiveAction(TextInputAction.done);
     await t.pumpAndSettle();
-    await menu(t, 'Sort Search Results', 'Recent');
+    await menu(t, 'Relevant', 'Recent');
     expect(w.calls.last.query!['sort'], 'recent');
     expect(t.takeException(), isNull);
   });
@@ -351,9 +355,10 @@ void main() {
     await mount(t, 'search');
     await menu(
       t,
-      'Filter by Channel',
-      '#A very long accessible conversation name for the native filter menu',
+      'Channel',
+      'A very long accessible conversation name for the native filter menu',
     );
+    expect(find.text('Clear all'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
   testWidgets(

@@ -96,6 +96,15 @@ const popupSurfaces = <CloseSurface>[
     files: ['lib/features/thread_actions.dart'],
   ),
   CloseSurface(
+    'search-channel-result-menu',
+    kind: SurfaceKind.popup,
+    web: 'features/search/SearchChannelContextMenu.tsx: Escape and DismissBackdrop',
+    phone: {_esc, _scrim, _sys},
+    fold: {_esc, _scrim, _sys},
+    desktop: {_esc, _scrim, _sys},
+    files: ['lib/features/search_sections.dart'],
+  ),
+  CloseSurface(
     'message-context-menu',
     kind: SurfaceKind.popup,
     web: 'message/MessageItem.tsx:5103-5109 DismissBackdrop (outside press), scroll/resize close',

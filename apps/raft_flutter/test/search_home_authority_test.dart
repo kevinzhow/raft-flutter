@@ -249,13 +249,15 @@ void main() {
   });
   testWidgets('blank sort is disabled; committed query enables it', (t) async {
     await mount(t, initialQuery: '');
-    RaftDropdownMenu sort() => t
-        .widgetList<RaftDropdownMenu>(find.byType(RaftDropdownMenu))
-        .firstWhere((menu) => menu.glyph == RaftGlyph.arrowDownUp);
-    expect(sort().enabled, isFalse);
+    final sort = find.text('Relevant').hitTestable();
+    await t.tap(sort);
+    await t.pumpAndSettle();
+    expect(find.text('Recent'), findsNothing);
     await t.enterText(find.byType(TextField), 'Android');
     await t.pump(const Duration(milliseconds: 210));
-    expect(sort().enabled, isTrue);
+    await t.tap(sort);
+    await t.pumpAndSettle();
+    expect(find.text('Recent'), findsOneWidget);
   });
   testWidgets(
     'touch history removes only in edit mode and exits edit when emptied',

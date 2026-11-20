@@ -24,6 +24,7 @@ import 'activity_incremental_refresh_test.dart'
 import 'message_presentation_test.dart' show card, host;
 import 'task_snapshot_navigation_test.dart' show taskRow;
 import 'support/close_support.dart';
+import 'support/search_text.dart';
 import 'flutter_test_config.dart' show leakDebt;
 
 final _png = base64Decode(
@@ -216,22 +217,38 @@ void main() {
       home: const Scaffold(body: SizedBox.expand()),
     );
 
-    final cases = <(String, Widget Function(), String)>[
-      ('Activity', () => page('activity'), 'Channel 0'),
-      ('Saved', () => page('saved'), 'Saved body 0'),
-      ('server Tasks', () => page('tasks'), 'Task 12'),
-      ('channel Tasks', () => page('tasks', channelId: 'ch1'), 'Task 12'),
+    final cases = <(String, Widget Function(), Finder)>[
+      (
+        'Activity',
+        () => page('activity'),
+        find.textContaining('Channel 0', findRichText: true),
+      ),
+      (
+        'Saved',
+        () => page('saved'),
+        find.textContaining('Saved body 0', findRichText: true),
+      ),
+      (
+        'server Tasks',
+        () => page('tasks'),
+        find.textContaining('Task 12', findRichText: true),
+      ),
+      (
+        'channel Tasks',
+        () => page('tasks', channelId: 'ch1'),
+        find.textContaining('Task 12', findRichText: true),
+      ),
       (
         'Search with its query',
         () => page('search', initialQuery: 'body'),
-        'Search body 0',
+        findSearchText('Search body 0'),
       ),
     ];
-    for (final (label, build, text) in cases) {
+    for (final (label, build, content) in cases) {
       testWidgets('$label: the first frame of a revisit is final', (t) async {
         await t.pumpWidget(build());
         await t.pumpAndSettle();
-        expect(find.textContaining(text, findRichText: true), findsWidgets);
+        expect(content, findsWidgets);
         await t.pumpWidget(away);
         await t.pumpAndSettle();
 
@@ -241,7 +258,7 @@ void main() {
         expect(state.loading, isFalse, reason: 'first frame is not loading');
         expect(skeleton, findsNothing);
         expect(
-          find.textContaining(text, findRichText: true),
+          content,
           findsWidgets,
           reason: 'the cached rows are on screen at the first frame',
         );
@@ -250,7 +267,7 @@ void main() {
         w.hold!.complete();
         w.hold = null;
         await t.pumpAndSettle();
-        expect(find.textContaining(text, findRichText: true), findsWidgets);
+        expect(content, findsWidgets);
       });
     }
 
@@ -265,10 +282,8 @@ void main() {
             page('search', initialQuery: 'body', memory: memory),
           );
           await t.pumpAndSettle();
-          expect(
-            find.textContaining('Search body 0', findRichText: true),
-            findsWidgets,
-          );
+          final content = findSearchText('Search body 0');
+          expect(content, findsWidgets);
           await t.pumpWidget(away);
           await t.pumpAndSettle();
           await t.runAsync(memory.flush);
@@ -281,17 +296,11 @@ void main() {
           expect(state.query.text, 'body');
           expect(state.loading, isFalse);
           expect(skeleton, findsNothing);
-          expect(
-            find.textContaining('Search body 0', findRichText: true),
-            findsWidgets,
-          );
+          expect(content, findsWidgets);
           w.hold!.complete();
           w.hold = null;
           await t.pumpAndSettle();
-          expect(
-            find.textContaining('Search body 0', findRichText: true),
-            findsWidgets,
-          );
+          expect(content, findsWidgets);
         },
       );
     }

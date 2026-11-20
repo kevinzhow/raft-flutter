@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'raft/ui_tokens.dart';
+import 'raft_underline.dart';
 import 'settings_layout.dart';
 import 'separator.dart';
 import 'theme.dart';
@@ -16,15 +18,17 @@ class RaftSearchRecipe {
   // Current search results use flat groups (Web px-4 headings and summary),
   // while the generated framed recipe remains available to the older packs.
   EdgeInsets get flatSectionHeadingInset =>
-      const EdgeInsets.fromLTRB(16, 20, 16, 8);
+      const EdgeInsets.fromLTRB(20, 12, 20, 8);
+  EdgeInsets get flatSectionListEndInset => const EdgeInsets.only(bottom: 8);
   EdgeInsets get flatResultsInset => const EdgeInsets.only(bottom: 16);
-  EdgeInsets get flatSummaryInset => const EdgeInsets.fromLTRB(16, 8, 16, 0);
+  EdgeInsets get flatSummaryInset => const EdgeInsets.fromLTRB(20, 8, 20, 0);
   BoxDecoration get flatEntityIconSurface => BoxDecoration(
     color: t.colors['fill-muted'],
     borderRadius: BorderRadius.circular(t.size('radius.sticker', fallback: 4)),
   );
   Widget resultSeparator({required bool flat, required double framedGap}) =>
-      SizedBox(height: flat ? 0 : framedGap);
+      SizedBox(height: flat ? 2 : framedGap);
+  double entityContentGap({required bool flat}) => flat ? 2 : 0;
   EdgeInsets get viewportInset => mobile
       ? const EdgeInsets.fromLTRB(20, 12, 14, 12)
       : const EdgeInsets.all(12);
@@ -42,7 +46,21 @@ class RaftSearchRecipe {
   EdgeInsets get messageBodyInset => const EdgeInsets.fromLTRB(12, 0, 12, 10);
   EdgeInsets get entityInset => const EdgeInsets.all(12);
   Color get selectedLine => t.colors['primary-400']!;
-  Color get highlight => t.colors['primary-400']!.withValues(alpha: .7);
+  List<InlineSpan> match(String text) => [
+    const WidgetSpan(child: SizedBox(width: 2)),
+    RaftBackgroundSpan(
+      text: text,
+      background: t.ui['you'],
+      radius: t.size('radius.sticker', fallback: 4),
+      verticalInset: 1,
+      horizontalInset: 2,
+      style: TextStyle(color: t.ui.stickerInk),
+    ),
+    const WidgetSpan(child: SizedBox(width: 2)),
+  ];
+
+  TextStyle get strongEntityTitle =>
+      entityTitle.copyWith(fontWeight: FontWeight.w700);
   TextStyle get sender =>
       metadata.copyWith(color: t.muted, fontWeight: FontWeight.w500);
   TextStyle get timestamp => RaftTypography.body(

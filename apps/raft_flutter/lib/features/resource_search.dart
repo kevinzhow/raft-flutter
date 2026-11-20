@@ -5,14 +5,82 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart' as rui;
 
+import '../data/workspace_controller.dart';
 import 'activity_row_label.dart' show formatTaskConversationRef;
+import 'artifacts/artifact_models.dart';
 import 'quick_switcher.dart' show QuickSwitcherFailure;
 import 'sender_avatar_projection.dart';
 import 'resource_cards.dart';
 import 'resource_filters.dart';
+import 'search_app_results.dart';
 import 'search_continuation.dart';
 import 'search_continue_footer.dart';
+import 'search_highlight.dart';
 import 'search_ranking.dart';
+import 'search_sections.dart';
+
+export 'search_highlight.dart' show SearchHighlight;
+
+enum SearchQueryDestination { currentPage, everywhere }
+
+typedef SearchQueryCommit = void Function(
+  String query, {
+  SearchQueryDestination destination,
+});
+
+class SearchPageQuery extends TextEditingController {
+  final _anchors = <String, GlobalKey>{};
+  SearchAppResults? apps;
+  String? selectedKey;
+  int _selectedIndex = 0;
+
+  void bindApps(WorkspaceController? workspace, VoidCallback onChange) {
+    apps?.dispose();
+    apps = workspace == null
+        ? null
+        : (SearchAppResults(workspace, this)..addListener(onChange));
+  }
+
+  Widget anchor(String key, Widget child) =>
+      KeyedSubtree(key: _anchors.putIfAbsent(key, GlobalKey.new), child: child);
+
+  void clearSelection() {
+    selectedKey = null;
+    _selectedIndex = 0;
+    _anchors.clear();
+  }
+
+  String? activeKey(List<String> keys) {
+    if (keys.isEmpty) return null;
+    final index = keys.indexOf(selectedKey ?? '');
+    _selectedIndex = index < 0
+        ? _selectedIndex.clamp(0, keys.length - 1)
+        : index;
+    return selectedKey = keys[_selectedIndex];
+  }
+
+  void reveal(String key, List<String> keys, {required bool forwards}) {
+    selectedKey = key;
+    _anchors.removeWhere((id, _) => !keys.contains(id));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final anchor = _anchors[key]?.currentContext;
+      if (anchor == null || !anchor.mounted || selectedKey != key) return;
+      Scrollable.ensureVisible(
+        anchor,
+        alignmentPolicy: forwards
+            ? ScrollPositionAlignmentPolicy.keepVisibleAtEnd
+            : ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    apps?.dispose();
+    clearSelection();
+    super.dispose();
+  }
+}
 
 /// Source searchEntities identity: channel, durable computer, live agent, human.
 class SearchEntity {
@@ -167,63 +235,13 @@ List<SearchEntity> rankSearchEntities(
 /// the context endpoint continues to enforce history/membership admission.
 bool searchBeyondHistory(String? createdAt, String plan, DateTime now) {
   final created = createdAt == null ? null : DateTime.tryParse(createdAt);
-  if (created == null || plan != 'free') return false;
-  final trialStart = DateTime.utc(2026, 4, 18),
-      trialEnd = DateTime.utc(2026, 6, 23, 12);
-  if (!now.isBefore(trialStart) && now.isBefore(trialEnd)) return false;
-  return created.isBefore(now.subtract(const Duration(days: 30)));
+  final days = searchHistoryWindow(plan, now);
+  return days != null &&
+      created != null &&
+      created.isBefore(now.subtract(Duration(days: days)));
 }
 
-/// Literal query highlighting follows SearchHighlight; brackets are ordinary
-/// text and cannot alter a regular expression or expose another row.
-class SearchHighlight extends StatelessWidget {
-  const SearchHighlight({
-    super.key,
-    required this.text,
-    required this.query,
-    required this.style,
-  });
-  final String text, query;
-  final TextStyle style;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final tokens = query
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty);
-    final pattern = tokens.isEmpty
-        ? null
-        : RegExp(tokens.map(RegExp.escape).join('|'), caseSensitive: false);
-    final spans = <InlineSpan>[];
-    var start = 0;
-    for (final match in pattern?.allMatches(text) ?? const <RegExpMatch>[]) {
-      if (match.start > start) {
-        spans.add(TextSpan(text: text.substring(start, match.start)));
-      }
-      spans.add(
-        TextSpan(
-          text: match.group(0),
-          style: TextStyle(
-            backgroundColor: RaftSearchRecipe(t, mobile: false).highlight,
-            color: t.colors['primary-950'],
-          ),
-        ),
-      );
-      start = match.end;
-    }
-    spans.add(TextSpan(text: text.substring(start)));
-    return Text.rich(
-      TextSpan(children: spans),
-      style: style,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-}
-
-/// The 14px sender avatar of a message hit (Source `AvatarSlot
-/// context="preview-mini"`), shared by the Search page and the quick switcher.
+/// The compact-row sender avatar shared by the Search page and quick switcher.
 Widget searchHitSenderAvatar({
   required Map<String, dynamic> row,
   required String sender,
@@ -249,8 +267,7 @@ Widget searchHitSenderAvatar({
   );
   return RaftAvatar(
     name: sender,
-    size: 14,
-    mountedContext: RaftMountedAvatarContext.previewMini,
+    mountedContext: RaftMountedAvatarContext.compactRow,
     kind: type == 'agent'
         ? RaftAvatarKind.agent
         : type == 'external_projection'
@@ -264,16 +281,10 @@ Widget searchHitSenderAvatar({
           ? RaftAvatarContentKind.app
           : RaftAvatarContentKind.human,
       uploadedUrl: projection.uploadedUrl,
-      pixelKey: type == 'agent' ? projection.pixelKey ?? 'robot' : null,
-      fallback: RaftMountedAvatarFallback(
-        avatarContext: RaftMountedAvatarContext.previewMini,
-        identity: type == 'agent'
-            ? RaftMountedAvatarIdentity.agent
-            : type == 'external_projection'
-            ? RaftMountedAvatarIdentity.app
-            : RaftMountedAvatarIdentity.human,
-        initials: sender,
-      ),
+      pixelKey: projection.pixelKey,
+      fallback: type == 'user'
+          ? const Center(child: RaftIcon(RaftGlyph.user, size: 14))
+          : null,
     ),
   );
 }
@@ -376,6 +387,13 @@ class ResourceSearchResults extends StatelessWidget {
     this.dms = const [],
     this.currentUser,
     this.controller,
+    this.appSearch,
+    this.onArtifact,
+    this.entitiesExpanded = false,
+    this.onToggleEntities,
+    this.onEntityMenu,
+    this.historyNotice,
+    this.wrapResult,
   });
   final ScrollController? controller;
   final String query, origin, plan;
@@ -388,6 +406,13 @@ class ResourceSearchResults extends StatelessWidget {
   final String? selectedKey;
   final void Function(Map<String, dynamic>) onMessage;
   final void Function(SearchEntity) onEntity;
+  final SearchAppResults? appSearch;
+  final ValueChanged<ArtifactCard>? onArtifact;
+  final bool entitiesExpanded;
+  final VoidCallback? onToggleEntities;
+  final void Function(SearchEntity, Offset)? onEntityMenu;
+  final Widget? historyNotice;
+  final Widget Function(String key, Widget child)? wrapResult;
   final bool hasMore;
 
   /// Reads the next page; completes when it is accepted or has failed.
@@ -519,7 +544,7 @@ class ResourceSearchResults extends StatelessWidget {
                   : FontWeight.w400,
             )
           : slot.textStyle(rt);
-      return Text(
+      return RaftCssText(
         text,
         style: base.copyWith(
           // Unset family/line-height inherit the page (font-sans, 1.5).
@@ -529,12 +554,12 @@ class ResourceSearchResults extends StatelessWidget {
       );
     }
 
-    Widget section(String title, List<WidgetBuilder> children) {
+    Widget section(String title, List<WidgetBuilder> children, {int? count}) {
       final decoration = plain
           ? const BoxDecoration()
           : slots.section.decoration(rt);
       return SliverPadding(
-        padding: plain ? EdgeInsets.zero : slots.section.margin,
+        padding: plain ? recipe.flatSectionListEndInset : slots.section.margin,
         sliver: DecoratedSliver(
           decoration: decoration,
           sliver: SliverPadding(
@@ -548,9 +573,25 @@ class ResourceSearchResults extends StatelessWidget {
                     padding: plain
                         ? recipe.flatSectionHeadingInset
                         : slots.sectionHeading.padding,
-                    child: slotText(
-                      raftText(context, title),
-                      slots.sectionHeading,
+                    child: Row(
+                      spacing: RaftSpace.x2,
+                      children: [
+                        Flexible(
+                          child: slotText(
+                            raftText(context, title),
+                            slots.sectionHeading,
+                          ),
+                        ),
+                        if (count != null)
+                          RaftCssText(
+                            '$count',
+                            style: t.scale(
+                              RaftTypeScale.monoMeta,
+                              mono: true,
+                              color: t.ui.foregroundHint,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -575,12 +616,13 @@ class ResourceSearchResults extends StatelessWidget {
       VoidCallback open, {
       bool entity = false,
     }) {
-      return RaftSearchResultSurface(
+      final row = RaftSearchResultSurface(
         selected: selectedKey == key,
         entity: entity,
         onPressed: open,
         child: child,
       );
+      return wrapResult?.call(key, row) ?? row;
     }
 
     // Source groupMessageSearchResults: hits of one thread share a card, placed
@@ -598,6 +640,8 @@ class ResourceSearchResults extends StatelessWidget {
       (grouped[key] ??= []).add(row);
     }
     final messageGroups = grouped.values.toList(growable: false);
+    final appStatus = appSearch?.status ?? SearchAppStatus.idle;
+    final appCount = appSearch?.hits.length ?? 0;
     final dmRows = [for (final dm in dms) dm.json];
     Widget message(
       Map<String, dynamic> row, {
@@ -611,7 +655,8 @@ class ResourceSearchResults extends StatelessWidget {
               ? row['parentChannelArchivedAt']
               : row['channelArchivedAt']) !=
           null;
-      return RaftQuickSwitcherHit(
+      final key = 'message:${row['id']}';
+      final hit = RaftQuickSwitcherHit(
         key: ValueKey('search-message:${row['id']}'),
         where: searchSourceLabel(row, dmRows),
         threadLabel: thread ? raftText(context, 'Thread').toLowerCase() : null,
@@ -632,13 +677,17 @@ class ResourceSearchResults extends StatelessWidget {
         snippet: SearchHighlight(
           text: '${row['snippet'] ?? row['content'] ?? ''}',
           query: query,
-          style: RaftQuickSwitcherHit.snippetStyle(t),
+          style: RaftQuickSwitcherHit.snippetStyle(
+            t,
+            selected: selectedKey == key,
+          ),
         ),
-        selected: selectedKey == 'message:${row['id']}',
+        selected: selectedKey == key,
         nested: nested,
         first: first,
         onPressed: () => onMessage(row),
       );
+      return wrapResult?.call(key, hit) ?? hit;
     }
 
     Widget messageGroup(BuildContext context, List<Map<String, dynamic>> hits) {
@@ -702,99 +751,134 @@ class ResourceSearchResults extends StatelessWidget {
                           ? raftText(context, 'Searching…')
                           : searchResultCount(
                               context,
-                              entities.length + rows.length,
+                              entities.length + appCount + rows.length,
                             ),
                       slots.summary,
                     ),
                   ),
                 ),
               ),
+              if (historyNotice case final notice?)
+                SliverToBoxAdapter(child: notice),
               if (entities.isNotEmpty) ...[
-                section('Server entities', [
-                  for (final entity in entities)
-                    (_) => surface(
-                      entity.key,
-                      Row(
-                        children: [
-                          Container(
-                            width: plain ? 27 : 32,
-                            height: plain ? 27 : 32,
-                            alignment: Alignment.center,
-                            // SearchEntityResultIcon (searchEntity entityIcon).
-                            decoration: plain
-                                ? recipe.flatEntityIconSurface
-                                : rui.RaftSearchEntityRecipe.resolve(tokens: rt)
-                                      .entityIcon
-                                      .decoration(rt),
-                            child: RaftIcon(
-                              entity.kind == 'channel'
-                                  ? RaftGlyph.hash
-                                  : entity.kind == 'computer'
-                                  ? RaftGlyph.monitor
-                                  : entity.kind == 'agent'
-                                  ? RaftGlyph.bot
-                                  : RaftGlyph.user,
-                              size: plain ? 14 : 16,
+                section('Server entities', count: entities.length, [
+                  for (final entity in entities.take(
+                    entitiesExpanded || onToggleEntities == null
+                        ? entities.length
+                        : searchEntityPreviewCount,
+                  ))
+                    (_) => GestureDetector(
+                      onSecondaryTapDown:
+                          entity.kind == 'channel' && onEntityMenu != null
+                          ? (details) =>
+                                onEntityMenu!(entity, details.globalPosition)
+                          : null,
+                      child: surface(
+                        entity.key,
+                        Row(
+                          children: [
+                            Container(
+                              width: plain ? 27 : 32,
+                              height: plain ? 27 : 32,
+                              alignment: Alignment.center,
+                              // SearchEntityResultIcon (searchEntity entityIcon).
+                              decoration: plain
+                                  ? recipe.flatEntityIconSurface
+                                  : rui.RaftSearchEntityRecipe.resolve(
+                                      tokens: rt,
+                                    ).entityIcon.decoration(rt),
+                              child: RaftIcon(
+                                entity.kind == 'channel'
+                                    ? RaftGlyph.hash
+                                    : entity.kind == 'computer'
+                                    ? RaftGlyph.monitor
+                                    : entity.kind == 'agent'
+                                    ? RaftGlyph.bot
+                                    : RaftGlyph.user,
+                                size: plain ? 14 : 16,
+                                color: plain ? t.ui.foregroundMuted : null,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        entity.title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: plain
-                                            ? t.scale(
-                                                RaftTypeScale.body,
-                                                weight: FontWeight.w600,
-                                              )
-                                            : recipe.entityTitle.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _entityBadge(context, entity.kind),
-                                    if (entity.row['archivedAt'] != null) ...[
-                                      const SizedBox(width: 4),
-                                      _badge(context, 'Archived'),
-                                    ],
-                                  ],
-                                ),
-                                Text(
-                                  raftText(context, entity.subtitle),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: plain
-                                      ? t.scale(
-                                          RaftTypeScale.callout,
-                                          color: t.colors['foreground-muted'],
-                                        )
-                                      : recipe.metadata.copyWith(
-                                          fontWeight: FontWeight.w400,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: recipe.entityContentGap(flat: plain),
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: SearchHighlight(
+                                          text: entity.title,
+                                          query: query,
+                                          maxLines: 1,
+                                          style: plain
+                                              ? t.scale(
+                                                  RaftTypeScale.body,
+                                                  weight: FontWeight.w600,
+                                                )
+                                              : recipe.entityTitle.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                         ),
-                                ),
-                              ],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _entityBadge(context, entity.kind),
+                                      if (entity.row['archivedAt'] != null) ...[
+                                        const SizedBox(width: 4),
+                                        _badge(context, 'Archived'),
+                                      ],
+                                    ],
+                                  ),
+                                  Text(
+                                    raftText(context, entity.subtitle),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: plain
+                                        ? t.scale(
+                                            RaftTypeScale.callout,
+                                            color: t.colors['foreground-muted'],
+                                          )
+                                        : recipe.metadata.copyWith(
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        () => onEntity(entity),
+                        entity: true,
                       ),
-                      () => onEntity(entity),
-                      entity: true,
+                    ),
+                  if (onToggleEntities != null &&
+                      entities.length > searchEntityPreviewCount)
+                    (_) => SearchEntityToggle(
+                      key: const Key('search-entity-show-all'),
+                      count: entities.length,
+                      expanded: entitiesExpanded,
+                      onToggle: onToggleEntities!,
                     ),
                 ]),
               ],
+              if (appSearch case final search? when onArtifact != null)
+                SliverToBoxAdapter(
+                  child: SearchAppGroupSection(
+                    results: search,
+                    selectedKey: selectedKey,
+                    onOpen: onArtifact!,
+                    wrapHit: wrapResult,
+                  ),
+                ),
               // `showInitialSkeleton` needs no entity match; with one the
               // heading shows alone until the messages arrive. An incomplete
               // search with nothing found keeps its own empty state (and the
               // button) while the next page is read or fails.
-              if (rows.isEmpty && entities.isEmpty && continuation.pending)
+              if (rows.isEmpty &&
+                  entities.isEmpty &&
+                  appCount == 0 &&
+                  continuation.pending)
                 SliverToBoxAdapter(
                   child: SearchIncompleteEmpty(
                     continuation: continuation,
@@ -810,12 +894,19 @@ class ResourceSearchResults extends StatelessWidget {
               else if (failure != null && rows.isEmpty)
                 SliverToBoxAdapter(child: _failureCard(context)),
               if (rows.isNotEmpty)
-                section('Messages', [
+                section('Messages', count: rows.length, [
+                  if (continuation.relevanceFallback &&
+                      filters?.searchSort != 'recent' &&
+                      !loading)
+                    (_) => const SearchRelevanceFallback(),
                   for (final group in messageGroups)
                     (context) => messageGroup(context, group),
                 ]),
               if (rows.isEmpty &&
                   entities.isEmpty &&
+                  appCount == 0 &&
+                  (appStatus == SearchAppStatus.idle ||
+                      appStatus == SearchAppStatus.ready) &&
                   !loading &&
                   failure == null &&
                   !continuation.pending)
@@ -830,7 +921,9 @@ class ResourceSearchResults extends StatelessWidget {
                           : raftFormat(context, 'No results for "{query}"', {
                               'query': query.trim(),
                             }),
-                      detail: query.trim().isEmpty
+                      detail: continuation.tooBroad
+                          ? raftText(context, searchTooBroadHint)
+                          : query.trim().isEmpty
                           ? raftText(context, 'Try a different filter set.')
                           : raftText(
                               context,
@@ -840,7 +933,7 @@ class ResourceSearchResults extends StatelessWidget {
                   ),
                 ),
               if ((hasMore || continuation.pending) &&
-                  !(rows.isEmpty && entities.isEmpty))
+                  !(rows.isEmpty && entities.isEmpty && appCount == 0))
                 SliverToBoxAdapter(
                   child: SearchContinueFooter(
                     continuation: continuation,
@@ -864,8 +957,9 @@ class ResourceSearchResults extends StatelessWidget {
     };
     return RaftBadge(
       label: raftText(context, label),
-      appearance: RaftBadgeRecipeAppearance.soft,
+      appearance: RaftBadgeRecipeAppearance.outline,
       variant: RaftBadgeRecipeVariant.muted,
+      fontFamily: RaftTokens.of(context).monoFont,
     );
   }
 

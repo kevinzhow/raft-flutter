@@ -12,6 +12,8 @@ import '../data/recent_conversations.dart';
 import '../data/search_memory.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'artifacts/artifact_models.dart';
+import 'artifacts/artifact_viewer_page.dart' show openWorkspaceArtifact;
 import 'conversation_finder_model.dart';
 import 'private_route_guard.dart';
 import 'quick_switcher.dart';
@@ -19,7 +21,9 @@ import 'quick_switcher_model.dart';
 import 'rail_location_memory.dart';
 import 'resource_search.dart';
 import 'search_home.dart';
+import 'search_sections.dart';
 import 'task_content_slot.dart' show openTaskFromList;
+import 'workspace_web_billing.dart';
 
 /// Navigation the switcher asks of the workspace; each one mirrors what a
 /// click on the same destination does elsewhere in the app.
@@ -100,6 +104,7 @@ class QuickSwitcherHost {
   /// The mounted header registers its search box here. Removing that header
   /// removes the context, so a later opening falls back to centered placement.
   final searchKey = GlobalKey();
+  final searchTriggerFocus = FocusNode(debugLabel: 'Workspace search trigger');
   Rect? searchBarRect() {
     final context = searchKey.currentContext;
     if (context == null || !WorkspaceHostScope.showsTopBar(context)) {
@@ -131,6 +136,7 @@ class QuickSwitcherHost {
     close();
     w.removeListener(changed);
     recents.dispose();
+    searchTriggerFocus.dispose();
   }
 
   RecentConversationScope? get recentScope {
@@ -289,20 +295,50 @@ class QuickSwitcherHost {
           onStateChanged: saveState,
           snapshot: () => lastSearch,
           onSnapshot: (snapshot) => lastSearch = snapshot,
-          onClose: close,
+          onClose: dismiss,
           onOpenEntity: openEntity,
           onOpenMessage: openMessage,
           onSearchAll: searchAll,
           searchMessages: searchMessages,
+          entityExpansion: SearchEntityExpansion.of(searchMemory),
+          onUpgrade: () =>
+              openWebBillingOrToast(context, w, gate: WebBillingGate.history),
+          appSearchWorkspace: w,
+          onOpenArtifact: (card, query) {
+            close();
+            unawaited(remember(query: query));
+            unawaited(
+              openWorkspaceArtifact(
+                context,
+                w,
+                ArtifactLinkTarget(card.id),
+                seed: card,
+              ),
+            );
+          },
         ),
       ),
     );
     route = created;
     unawaited(
       navigator.push(created).whenComplete(() {
-        if (identical(route, created)) route = null;
+        if (identical(route, created)) {
+          route = null;
+          restoreTriggerFocus();
+        }
       }),
     );
+  }
+
+  void dismiss() {
+    close();
+    restoreTriggerFocus();
+  }
+
+  void restoreTriggerFocus() {
+    if (!_disposed && searchBarRect() != null) {
+      searchTriggerFocus.requestFocus();
+    }
   }
 
   void close() {
@@ -322,19 +358,11 @@ class QuickSwitcherHost {
     if (scope != null && !_disposed) searchMemory.saveState(scope, state);
   }
 
-  Future<List<Map<String, dynamic>>> searchMessages(
-    Map<String, dynamic> params,
-  ) async {
+  Future<Object?> searchMessages(Map<String, dynamic> params) async {
     final authority = directoryAuthority(w);
     final value = await w.query('/messages/search', query: params);
     if (_disposed || authority != directoryAuthority(w)) return const [];
-    final list = value is List
-        ? value
-        : (value is Map ? value['results'] : null);
-    return [
-      if (list is List)
-        for (final row in list.whereType<Map>()) Map<String, dynamic>.from(row),
-    ];
+    return value;
   }
 
   Future<void> remember({

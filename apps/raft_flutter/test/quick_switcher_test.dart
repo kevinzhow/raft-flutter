@@ -9,6 +9,8 @@ import 'package:raft_flutter/features/quick_switcher_model.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
+import 'support/search_text.dart';
+
 Map<String, dynamic> channel(
   String id,
   String name, {
@@ -438,7 +440,7 @@ void main() {
       await t.pump();
       await t.pump();
       expect(
-        find.textContaining('quarter plan', findRichText: true),
+        findSearchText('quarter plan', containing: true),
         findsNWidgets(5),
       );
       await key(t, LogicalKeyboardKey.arrowDown); // past "Search for"

@@ -26,9 +26,14 @@ List<String> highlighted(WidgetTester t) {
     ),
   );
   return (text.textSpan! as TextSpan).children!
-      .whereType<TextSpan>()
-      .where((span) => span.style?.backgroundColor != null)
-      .map((span) => span.text!)
+      .whereType<RaftBackgroundSpan>()
+      .where(
+        (span) =>
+            span.radius == 4 &&
+            span.verticalInset == 1 &&
+            span.horizontalInset == 2,
+      )
+      .map((span) => span.toPlainText(includePlaceholders: false))
       .toList();
 }
 
@@ -106,7 +111,10 @@ void main() {
                 matching: find.byType(Text),
               ),
             );
-            expect(rich.textSpan!.toPlainText(), row['snippet']);
+            expect(
+              rich.textSpan!.toPlainText(includePlaceholders: false),
+              row['snippet'],
+            );
             expect(rich.maxLines, 2);
             await t.tap(find.byKey(const ValueKey('search-message:m1')));
             expect(identical(opened, row), isTrue);
@@ -169,4 +177,30 @@ void main() {
       },
     );
   }
+
+  testWidgets('human message hit uses a person and outline thread glyph', (
+    t,
+  ) async {
+    await mount(t, false, [hit('m1')..['channelType'] = 'thread']);
+    final row = find.byKey(const ValueKey('search-message:m1'));
+    expect(
+      find.descendant(
+        of: row,
+        matching: find.byWidgetPredicate(
+          (widget) => widget is RaftIcon && widget.glyph == RaftGlyph.user,
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(find.descendant(of: row, matching: find.text('thread')), findsOne);
+    expect(
+      find.descendant(
+        of: row,
+        matching: find.byWidgetPredicate(
+          (widget) => widget is RaftThreadIcon && widget.outlined,
+        ),
+      ),
+      findsOneWidget,
+    );
+  });
 }

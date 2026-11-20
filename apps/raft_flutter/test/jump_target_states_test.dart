@@ -13,6 +13,7 @@ import 'chat_focus_receipt_test.dart' show paintedMessage;
 import 'message_presentation_test.dart' show fixture;
 import 'workspace_activity_activation_test.dart' show channelRow, message;
 import 'support/app_services_fixture.dart';
+import 'support/search_text.dart';
 
 /// ChatPanel.tsx:581-597: a jump to a message in another conversation moves
 /// through exactly one ordered progression - (resolving the channel) -> the
@@ -105,7 +106,7 @@ void main() {
               await tester.enterText(find.byType(TextField).first, 'public');
               await tester.pump(const Duration(milliseconds: 500));
               await tester.pumpAndSettle();
-              entry = find.text('Selected public hit');
+              entry = findSearchText('Selected public hit');
             } else {
               entry = find.byKey(ValueKey('activity-channel-$destination'));
             }

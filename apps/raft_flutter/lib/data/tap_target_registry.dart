@@ -265,6 +265,12 @@ abstract final class TapTargetRegistry {
     TapContainer('search-rows', 'features/resource_search.dart', [
       'RaftSearchResultSurface',
     ], 'desktop_preview_single_location_test.dart'),
+    TapContainer('search-everywhere', 'features/search_sections.dart', [
+      'RaftSearchResultSurface',
+    ], 'channel_search_keep_test.dart'),
+    TapContainer('search-artifact-rows', 'features/search_app_results.dart', [
+      'RaftSearchResultSurface',
+    ], 'search_app_groups_test.dart'),
     TapContainer('image-export', 'features/message_image_export.dart', [
       'RaftMessageTile',
     ], 'inert by design: off-screen render for the exported image'),

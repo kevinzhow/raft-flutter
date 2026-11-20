@@ -7,6 +7,8 @@ import 'package:raft_flutter/features/resource_search.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
+import 'support/search_text.dart';
+
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     for (final threaded in [false, true]) {
@@ -56,12 +58,12 @@ void main() {
             lessThan(30),
           );
           await t.scrollUntilVisible(
-            find.text('result 999', findRichText: true),
+            findSearchText('result 999'),
             3000,
             scrollable: find.byType(Scrollable),
             maxScrolls: 50,
           );
-          await t.tap(find.text('result 999', findRichText: true));
+          await t.tap(findSearchText('result 999'));
           expect(selected?['id'], 'hit-999');
           expect(t.takeException(), isNull);
         },

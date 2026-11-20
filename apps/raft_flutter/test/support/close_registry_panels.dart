@@ -132,6 +132,22 @@ const panelSurfaces = <CloseSurface>[
     fix: 'phone Back was missing; the desktop X was hidden (showClose false) and is shown for a directory detail',
   ),
   CloseSurface(
+    'conversation-search',
+    kind: SurfaceKind.page,
+    web: 'MainLayout.tsx ConversationSearchRoute and SearchPageHeader.tsx scoped Back',
+    phone: {_back, _esc, _sys},
+    none: {
+      'fold':
+          'A wide conversation header opens the channel-seeded quick switcher',
+      'desktop':
+          'A wide conversation header opens the channel-seeded quick switcher',
+    },
+    files: [
+      'lib/features/resource_view.dart',
+      'lib/features/workspace_view.dart',
+    ],
+  ),
+  CloseSurface(
     'search-agent-slot',
     kind: SurfaceKind.panel,
     web: 'MainLayout.tsx renderContentSlot: AgentById onBack=closeSlot, backButtonVisibility=always',

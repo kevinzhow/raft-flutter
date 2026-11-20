@@ -104,14 +104,13 @@ class RaftBackgroundSpan extends TextSpan {
     required this.background,
     this.radius = 0,
     this.verticalInset = 0,
+    this.horizontalInset = 0,
   });
 
   final Color background;
 
-  /// Corner radius and extra top/bottom height of the fill (raft-ui
-  /// `InlineCode`: `rounded-sticker` 4, `py-px`). The search `mark` stays
-  /// square.
-  final double radius, verticalInset;
+  /// Corner radius and paint insets of the fill.
+  final double radius, verticalInset, horizontalInset;
 
   @override
   RenderComparison compareTo(InlineSpan other) {
@@ -119,7 +118,8 @@ class RaftBackgroundSpan extends TextSpan {
     if (other is RaftBackgroundSpan &&
         (other.background != background ||
             other.radius != radius ||
-            other.verticalInset != verticalInset)) {
+            other.verticalInset != verticalInset ||
+            other.horizontalInset != horizontalInset)) {
       return base.index < RenderComparison.paint.index
           ? RenderComparison.paint
           : base;
@@ -133,11 +133,17 @@ class RaftBackgroundSpan extends TextSpan {
       other is RaftBackgroundSpan &&
       other.background == background &&
       other.radius == radius &&
-      other.verticalInset == verticalInset;
+      other.verticalInset == verticalInset &&
+      other.horizontalInset == horizontalInset;
 
   @override
-  int get hashCode =>
-      Object.hash(super.hashCode, background, radius, verticalInset);
+  int get hashCode => Object.hash(
+    super.hashCode,
+    background,
+    radius,
+    verticalInset,
+    horizontalInset,
+  );
 }
 
 /// A standalone `Text` with the unified underline. [underline] false is the
@@ -447,14 +453,12 @@ class _RenderRaftUnderlines extends RenderProxyBox {
           out.insertAll(index, [
             for (final r in rects)
               (
-                rect: span.verticalInset == 0
-                    ? r
-                    : Rect.fromLTRB(
-                        r.left,
-                        r.top - span.verticalInset,
-                        r.right,
-                        r.bottom + span.verticalInset,
-                      ),
+                rect: Rect.fromLTRB(
+                  r.left - span.horizontalInset,
+                  r.top - span.verticalInset,
+                  r.right + span.horizontalInset,
+                  r.bottom + span.verticalInset,
+                ),
                 paint: paint,
                 radius: span.radius,
               ),

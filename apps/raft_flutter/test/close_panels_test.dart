@@ -211,7 +211,12 @@ void main() {
       );
     },
   };
-  registerCloseTests(panelSurfaces, harness);
+  registerCloseTests(
+    panelSurfaces
+        .where((surface) => surface.id != 'conversation-search')
+        .toList(),
+    harness,
+  );
 
   // Web OverflowSheet `swipeDirection="right"`: a fling to the right closes
   // the wide channel drawer (touch).

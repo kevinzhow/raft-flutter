@@ -2065,6 +2065,7 @@ class RaftDropdownMenu extends StatefulWidget {
     this.header,
     this.surfaceKey,
     this.panelInset,
+    this.snapShadowToDevicePixels = false,
     this.openOnHover = false,
     this.openDelay = Duration.zero,
     this.closeDelay = const Duration(milliseconds: 120),
@@ -2085,6 +2086,7 @@ class RaftDropdownMenu extends StatefulWidget {
   /// Identifies the rendered popup surface without changing trigger identity.
   final Key? surfaceKey;
   final EdgeInsetsGeometry? panelInset;
+  final bool snapShadowToDevicePixels;
   final bool openOnHover;
   final Duration openDelay, closeDelay;
   final String label;
@@ -2538,6 +2540,8 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                                   kind: widget.kind,
                                   width: widget.width,
                                   padding: widget.panelInset,
+                                  snapShadowToDevicePixels:
+                                      widget.snapShadowToDevicePixels,
                                   onDismiss: () => close(),
                                   children: [
                                     if (widget.header != null) widget.header!,
@@ -2673,12 +2677,14 @@ class RaftMenuPanel extends StatelessWidget {
     this.onDismiss,
     this.width = 192,
     this.padding,
+    this.snapShadowToDevicePixels = false,
   });
   final List<Widget> children;
   final RaftMenuKind kind;
   final VoidCallback? onDismiss;
   final double width;
   final EdgeInsetsGeometry? padding;
+  final bool snapShadowToDevicePixels;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -2706,6 +2712,7 @@ class RaftMenuPanel extends StatelessWidget {
         child: RaftPopoverSurface(
           surfaceStyle: selection.root,
           padding: padding?.resolve(Directionality.of(context)),
+          snapShadowToDevicePixels: snapShadowToDevicePixels,
           child: RaftRecipeBox(
             style: selection.list,
             tokens: rt,
@@ -2732,6 +2739,7 @@ class RaftMenuPanel extends StatelessWidget {
         child: RaftPopoverSurface(
           surfaceStyle: currentPopover,
           padding: padding?.resolve(Directionality.of(context)),
+          snapShadowToDevicePixels: snapShadowToDevicePixels,
           child: DefaultTextStyle.merge(
             style: currentPopover.text(rt),
             child: items,

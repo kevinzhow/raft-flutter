@@ -5,6 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 import 'mobile_back_history_test.dart' show finishBackTransition;
+import 'support/search_text.dart';
 
 /// Phone-width path that used to revoke channel search after opening another
 /// channel. The search page and its Back control stay.
@@ -59,18 +60,21 @@ void main() {
     final field = find.byWidgetPredicate(
       (widget) =>
           widget is TextField &&
-          widget.decoration?.hintText?.startsWith(
-                'Search channels, DMs, messages…',
-              ) ==
-              true,
+          widget.decoration?.hintText == 'Search in #lab-alpha',
     );
+    expect(field.hitTestable(), findsOneWidget);
+    final badge = find.text('In #lab-alpha');
+    await Scrollable.ensureVisible(t.element(badge), alignment: 0.5);
+    await t.pumpAndSettle();
+    expect(badge.hitTestable(), findsOneWidget);
+    expect(find.text('Search #lab-alpha').hitTestable(), findsOneWidget);
     await t.enterText(field.hitTestable(), 'a');
     await t.pump(const Duration(milliseconds: 300));
     await f.flush(t);
-    expect(find.text('alpha message 5').hitTestable(), findsWidgets);
-    expect(find.text('lab-beta').hitTestable(), findsWidgets);
+    expect(findSearchText('alpha message 5').hitTestable(), findsWidgets);
+    expect(findSearchText('lab-beta').hitTestable(), findsNothing);
 
-    await _tap(t, find.text('alpha message 5'), 'alpha message');
+    await _tap(t, findSearchText('alpha message 5'), 'alpha message');
     await f.flush(t);
     expect(w.location.route, RaftRoute.channel, reason: '${w.location}');
     expect(w.location.entityId, 'alpha', reason: '${w.location}');
@@ -87,8 +91,14 @@ void main() {
     await f.flush(t);
     await finishBackTransition(t);
     expect(w.location.route, RaftRoute.search, reason: '${w.location}');
+    expect(field.hitTestable(), findsOneWidget);
 
-    await _tap(t, find.text('lab-beta'), 'beta');
+    await _tap(t, find.text('Search everywhere for “a”'), 'search everywhere');
+    await f.flush(t);
+    expect(w.location.query('channelId'), isNull);
+    expect(w.location.query('q'), 'a');
+
+    await _tap(t, findSearchText('lab-beta'), 'beta');
     await f.flush(t);
     expect(w.location.entityId, 'beta', reason: '${w.location}');
     expect(
@@ -111,7 +121,7 @@ void main() {
     expect(find.text('Channel is no longer available'), findsNothing);
     // Search is a tab root (v1.24): the bar is its way out, no Back.
     expect(find.byTooltip('Back').hitTestable(), findsNothing);
-    expect(field.hitTestable(), findsOneWidget);
+    expect(find.text('In #lab-alpha'), findsNothing);
     await f.close(t);
   });
 }

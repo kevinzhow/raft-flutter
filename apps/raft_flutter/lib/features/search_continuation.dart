@@ -11,6 +11,8 @@ class SearchContinuation {
     this.cursor,
     this.incomplete = false,
     this.searchedThrough,
+    this.tooBroad = false,
+    this.relevanceFallback = false,
   });
 
   static const none = SearchContinuation();
@@ -18,18 +20,25 @@ class SearchContinuation {
   /// `readSearchContinuation`: nothing without a cursor.
   factory SearchContinuation.read(Object? data) {
     final map = data is Map ? data : const {};
-    final cursor = map['nextCursor'];
-    if (cursor is! String || cursor.isEmpty) return none;
+    final rawCursor = map['nextCursor'];
+    final cursor = rawCursor is String && rawCursor.isNotEmpty
+        ? rawCursor
+        : null;
     final through = map['searchedThrough'];
     return SearchContinuation(
       cursor: cursor,
-      incomplete: map['incomplete'] == true,
-      searchedThrough: through is String ? DateTime.tryParse(through) : null,
+      incomplete: cursor != null && map['incomplete'] == true,
+      searchedThrough: cursor != null && through is String
+          ? DateTime.tryParse(through)
+          : null,
+      tooBroad: map['relaxedSkipped'] == 'too_broad',
+      relevanceFallback: map['relevanceFallback'] == 'too_broad',
     );
   }
 
   final String? cursor;
   final bool incomplete;
+  final bool tooBroad, relevanceFallback;
 
   /// The oldest message time the walk read.
   final DateTime? searchedThrough;
@@ -67,7 +76,7 @@ class SearchContinuations {
   bool accept(String view, Object? answer) {
     final key = _key(view), next = SearchContinuation.read(answer);
     _byView.remove(key);
-    if (next.cursor != null) {
+    if (next.cursor != null || next.tooBroad || next.relevanceFallback) {
       _byView[key] = next;
       while (_byView.length > maxViews) {
         _byView.remove(_byView.keys.first);

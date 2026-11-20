@@ -15,6 +15,7 @@ class WorkspaceBrowserHeader extends StatelessWidget {
   const WorkspaceBrowserHeader({
     super.key,
     required this.searchKey,
+    this.searchFocus,
     required this.workspace,
     required this.working,
     required this.controller,
@@ -23,6 +24,7 @@ class WorkspaceBrowserHeader extends StatelessWidget {
     required this.onFeedback,
   });
   final GlobalKey searchKey;
+  final FocusNode? searchFocus;
   final Widget workspace, working;
   final WorkspaceController controller;
   final VoidCallback onSearch, onBilling, onFeedback;
@@ -34,6 +36,7 @@ class WorkspaceBrowserHeader extends StatelessWidget {
     return RaftWorkspaceTopBar(
       key: const ValueKey('workspace-top-bar'),
       searchKey: searchKey,
+      searchFocus: searchFocus,
       leadingInset: native?.leadingInset ?? 0,
       trailingInset: native?.trailingInset ?? 0,
       onDragStart: native?.onDragStart,

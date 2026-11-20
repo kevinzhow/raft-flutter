@@ -16,6 +16,7 @@ import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/app_services_fixture.dart';
+import 'support/search_text.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -503,8 +504,9 @@ void main() {
       await t.enterText(find.byType(TextField).first, 'public');
       await t.pump(const Duration(milliseconds: 500));
       await t.pumpAndSettle();
-      expect(find.text('Selected public hit'), findsOneWidget);
-      await t.tap(find.text('Selected public hit'));
+      final hit = findSearchText('Selected public hit');
+      expect(hit, findsOneWidget);
+      await t.tap(hit);
       await t.pumpAndSettle();
       expect(find.byType(ResourceView), findsOneWidget);
       expect(t.state(find.byType(ResourceView)), same(masterState));
@@ -623,11 +625,11 @@ void main() {
       await t.enterText(find.byType(TextField).first, 'Person');
       await t.pump(const Duration(milliseconds: 500));
       await t.pumpAndSettle();
-      await t.tap(find.text('Person A'));
+      await t.tap(findSearchText('Person A'));
       await t.pump();
       expect(find.byType(MemberProfileView), findsNothing);
       expect(client.calls.where((c) => c.endsWith('/profile')), isEmpty);
-      await t.tap(find.text('Person B'));
+      await t.tap(findSearchText('Person B'));
       await t.pump();
       client.pendingDms['b']!.complete({'id': 'c'});
       await t.pumpAndSettle();

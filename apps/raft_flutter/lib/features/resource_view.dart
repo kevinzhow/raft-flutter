@@ -60,6 +60,7 @@ import 'activity_toolbar_mount.dart';
 import 'activity_undo.dart';
 import '../data/object_activity_api.dart';
 import 'activity_object_text.dart' show artifactActivityTarget;
+import 'artifacts/artifact_models.dart' show ArtifactCard, ArtifactLinkTarget;
 import 'artifacts/artifact_viewer_page.dart' show openWorkspaceArtifact;
 import 'activity_row_label.dart' show ActivityRowLookups;
 import 'activity_row_time.dart' show activityRowFormatter;
@@ -67,6 +68,8 @@ import '../data/source_time_formatter.dart' show sourceTimeNow;
 import 'create_task_dialog.dart';
 import 'desktop_navigation_policy.dart' show DesktopContentTarget;
 import 'search_home.dart';
+import 'search_app_results.dart';
+import 'search_sections.dart';
 import 'search_snapshot.dart';
 import 'task_content_slot.dart';
 import 'message_task_actions.dart' show TaskV2ConversationsFlag;
@@ -158,7 +161,7 @@ class ResourceView extends StatefulWidget {
 
   /// Source's committed query URL writer. IME composition stays in the input;
   /// embedded search consumers may omit URL ownership.
-  final ValueChanged<String>? onSearchQueryCommitted;
+  final SearchQueryCommit? onSearchQueryCommitted;
   final Future<void> Function(Map<String, dynamic>)? onActivityItem;
 
   /// Canonical navigation for a second pointer click on the same Activity item.
@@ -188,7 +191,7 @@ class ResourceView extends StatefulWidget {
 }
 
 class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
-  final query = TextEditingController();
+  final query = SearchPageQuery();
   String? lastPublishedQuery;
   TextEditingValue lastSearchEditingValue = TextEditingValue.empty;
   bool adoptingSearchQuery = false;
@@ -225,7 +228,6 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     activityGestureInterval = null;
   }
 
-  String? selectedSearchKey;
   List<Map<String, dynamic>> searchPeople = [],
       searchAgents = [],
       searchComputers = [];
@@ -299,6 +301,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     sort: advanced.searchSort,
   );
   void saveSearchState() {
+    if (scopedSearch) return;
     final personal = memoryScope;
     if (personal != null && memoryReadyKey == personal.key) {
       searchMemory.saveState(personal, currentSearchState);
@@ -438,13 +441,35 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   }
 
   Widget searchHome(String scope) {
+    if (searchScopeConversation case final conversation?) {
+      return Column(
+        children: [
+          ?searchHistoryNotice,
+          Expanded(
+            child: RaftProductEmptyState(
+              title: raftFormat(context, 'Search {conversation}', {
+                'conversation': conversation,
+              }),
+              description: raftText(
+                context,
+                'Finds messages in this conversation only.',
+              ),
+              icon: (_, size, color) =>
+                  RaftIcon(RaftGlyph.search, size: size, color: color),
+            ),
+          ),
+        ],
+      );
+    }
     final personal = memoryScope;
     final history = personal == null || memoryReadyKey != personal.key
         ? const <String>[]
         : searchMemory.current(personal).history;
-    return ResourceSearchHome(
+    final home = ResourceSearchHome(
       key: ValueKey('search-home-$scope'),
       controller: searchScroll,
+      wrapResult: wrapSearchResult,
+      selectedKey: activeSearchKey,
       history: history,
       frequent: frequentEntities,
       origin: w.client.origin,
@@ -467,6 +492,15 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       },
       onEntity: (entity) => openSearchEntity(entity, scope),
     );
+    final notice = searchHistoryNotice;
+    return notice == null
+        ? home
+        : Column(
+            children: [
+              notice,
+              Expanded(child: home),
+            ],
+          );
   }
 
   List<Map<String, dynamic>> rows = [];
@@ -1166,10 +1200,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         lanes[status] = lane.where(keep).toList();
       }
     }
-    if (selectedSearchKey case final key?
+    if (query.selectedKey case final key?
         when key.startsWith('message:') &&
             !rows.any((row) => 'message:${row['id']}' == key)) {
-      selectedSearchKey = null;
+      query.clearSelection();
     }
     acceptedActivityItems = acceptedActivityItems.where(keep).toList();
     activityGroups = activityGroups
@@ -1232,7 +1266,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     searchPeople = [];
     searchAgents = [];
     searchComputers = [];
-    selectedSearchKey = null;
+    query.clearSelection();
     restoringSenderKey = null;
     memoryReadyKey = null;
     initialSearchUnavailable = false;
@@ -1897,6 +1931,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       }
     }
     final restoredMemory = restoreSearchMemorySync();
+    bindSearchApps();
     if (restoredMemory) {
       lastPublishedQuery = query.text.trim();
       lastSearchEditingValue = query.value;
@@ -1988,6 +2023,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     if (!identical(oldWidget.controller, w) ||
         oldWidget.section != widget.section) {
       bindAuthors();
+      bindSearchApps();
     }
     if (!identical(oldWidget.controller, w)) {
       final section = oldWidget.section;
@@ -2022,7 +2058,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       adoptingSearchQuery = false;
       lastPublishedQuery = next;
       rows = [];
-      selectedSearchKey = null;
+      query.clearSelection();
       error = null;
       hasMore = false;
       saveSearchState();
@@ -2173,8 +2209,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         error = null;
         laneBusy.clear();
         laneGeneration++;
+        if (!append && widget.section == 'search') {
+          stashViewWindow();
+          rowsView = null;
+          hasMore = false;
+        }
         if (!append &&
-            ['search', 'saved', 'activity'].contains(widget.section) &&
+            ['saved', 'activity'].contains(widget.section) &&
             !(widget.section == 'activity' && activityFollowState.busy)) {
           stashViewWindow();
           rows = [];
@@ -2781,7 +2822,24 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     final fill = t.option('listGroup.frame', or: 'framed') == 'plain'
         ? BoxDecoration(color: t.canvas)
         : searchSlots(context).viewport.decoration(rui.RaftRecipeTokens(t));
-    return DecoratedBox(decoration: fill, child: results);
+    final commit = widget.onSearchQueryCommitted;
+    return DecoratedBox(
+      decoration: fill,
+      child: scopedSearch && commit != null
+          ? Column(
+              children: [
+                SearchEverywhereRow(
+                  query: query.text,
+                  onPressed: () => commit(
+                    query.text.trim(),
+                    destination: SearchQueryDestination.everywhere,
+                  ),
+                ),
+                Expanded(child: results),
+              ],
+            )
+          : results,
+    );
   }
 
   Widget resourceResultsPager(BuildContext context) {
@@ -2789,11 +2847,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     // Inside each pager page: a wrapper outside PageView would receive the
     // horizontal pager's notifications instead of this vertical list's.
     final results = RaftPullToRefresh(
-      enabled: mobileActivityRefresh,
+      enabled:
+          mobileActivityRefresh ||
+          widget.section == 'search' && RaftInteraction.of(context).touch,
       onRefresh: () => savedPage
           ? refreshSaved(scope)
           : accepts(scope) && filter == view
-          ? load(keep: true)
+          ? refreshResourceResults()
           : Future.value(),
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
@@ -2827,6 +2887,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   bool get mobileActivityRefresh =>
       (widget.section == 'activity' || savedPage) &&
       RaftInteraction.of(context).touch;
+
+  Future<void> refreshResourceResults() async {
+    await Future.wait([
+      load(keep: true),
+      if (query.apps case final apps?) apps.refresh(),
+    ]);
+  }
 
   /// SavedPanel `refreshSaved`: a phone pull loads the list again in place; a
   /// failure keeps the rows and says so in a warning toast.
@@ -2888,6 +2955,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             query: query.text,
             rows: rows,
             entities: currentSearchEntities,
+            entitiesExpanded: searchEntitiesExpanded,
+            onToggleEntities: toggleSearchEntities,
+            onEntityMenu: openSearchEntityMenu,
+            historyNotice: searchHistoryNotice,
             origin: w.client.origin,
             agents: rowAgents,
             members: rowPeople,
@@ -2895,14 +2966,17 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             currentUser: w.client.user?.json,
             plan: w.server?.string('plan', 'free') ?? 'free',
             now: widget.clock?.call() ?? DateTime.now(),
-            selectedKey: selectedSearchKey ?? firstSearchKey,
+            selectedKey: activeSearchKey,
+            wrapResult: wrapSearchResult,
             onMessage: (row) => openSearchMessage(row, scope),
             onEntity: (entity) => openSearchEntity(entity, scope),
+            appSearch: query.apps,
+            onArtifact: openSearchArtifact,
             hasMore: hasMore,
             onMore: () => load(append: true),
             filters: advanced,
             view: rowsView,
-            loading: searching,
+            loading: loading,
             failure: error == null ? null : searchFailureKind,
             onRetry: () => load(),
           )
@@ -3101,16 +3175,96 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     return ActivitySwipeScope(open: facets.open, child: list);
   }
 
-  List<SearchEntity> get currentSearchEntities => searchEntities(
-    query.text,
-    channels: [...w.channels, ...w.dms].map((c) => c.json).toList(),
-    computers: searchComputers,
-    agents: searchAgents,
-    people: searchPeople,
-    principal: w.client.user?.id,
-  );
+  bool get scopedSearch =>
+      widget.initialSearchDeferUntilQuery &&
+      widget.initialSearchChannelId != null;
+
+  String? get searchScopeConversation {
+    if (!scopedSearch) return null;
+    final id = widget.initialSearchChannelId;
+    final channel = [
+      ...w.channels,
+      ...w.dms,
+    ].where((row) => row.id == id).firstOrNull;
+    if (channel == null) return null;
+    final prefix = channel.type == 'dm' ? '@' : '#';
+    return '$prefix${channel.name}';
+  }
+
+  List<SearchEntity> get currentSearchEntities => scopedSearch
+      ? []
+      : searchEntities(
+          query.text,
+          channels: w.channels.map((c) => c.json).toList(),
+          computers: searchComputers,
+          agents: searchAgents,
+          people: searchPeople,
+          principal: w.client.user?.id,
+        ).take(searchEntityLimit).toList(growable: false);
+
+  String get entitySearchKey => '${memoryScope?.key}\u0000${query.text.trim()}';
+  SearchEntityExpansion get entityExpansion =>
+      SearchEntityExpansion.of(searchMemory);
+  bool get searchEntitiesExpanded =>
+      entityExpansion.isExpanded(entitySearchKey);
+  Iterable<SearchEntity> get visibleSearchEntities => searchEntitiesExpanded
+      ? currentSearchEntities
+      : currentSearchEntities.take(searchEntityPreviewCount);
+  void toggleSearchEntities() =>
+      setState(() => entityExpansion.toggle(entitySearchKey));
+
+  Widget? get searchHistoryNotice {
+    final days = searchHistoryWindow(
+      w.server?.string('plan', 'free') ?? 'free',
+      widget.clock?.call() ?? DateTime.now(),
+    );
+    final status = query.apps?.status;
+    if (days == null ||
+        searchFailureKind != null ||
+        status == SearchAppStatus.failed ||
+        status == SearchAppStatus.timedOut) {
+      return null;
+    }
+    return SearchHistoryWindowBanner(
+      days: days,
+      onUpgrade: () =>
+          openWebBillingOrToast(context, w, gate: WebBillingGate.history),
+    );
+  }
+
+  void openSearchEntityMenu(SearchEntity entity, Offset at) {
+    final scope = authority;
+    setState(() => query.selectedKey = entity.key);
+    unawaited(
+      showSearchChannelMenu(
+        context,
+        at: at,
+        onOpen: () => openSearchEntity(entity, scope),
+      ),
+    );
+  }
 
   bool get wide => !RaftAdaptiveWorkspace.compactOf(context);
+
+  void bindSearchApps() => query.bindApps(
+    widget.section == 'search' && !scopedSearch ? w : null,
+    searchAppsChanged,
+  );
+
+  void searchAppsChanged() => setState(() {});
+
+  void openSearchArtifact(ArtifactCard card) {
+    setState(() => query.selectedKey = SearchAppResults.keyOf(card));
+    rememberSearchOpen(authority, queryText: query.text);
+    unawaited(
+      openWorkspaceArtifact(
+        context,
+        w,
+        ArtifactLinkTarget(card.id),
+        seed: card,
+      ),
+    );
+  }
 
   Future<void> openSearchMessage(Map<String, dynamic> row, String scope) async {
     if (!accepts(scope) ||
@@ -3119,7 +3273,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     }
     final channel = row['channelId'], message = row['id'];
     if (channel is! String || message is! String) return;
-    setState(() => selectedSearchKey = 'message:$message');
+    setState(() => query.selectedKey = 'message:$message');
     final committed = query.text;
     rememberSearchOpen(scope, queryText: committed);
     if (openTaskFromList(w, row, wide: wide, focusedMessageId: message)) return;
@@ -3138,7 +3292,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         ].any((e) => e.key == entity.key))) {
       return;
     }
-    setState(() => selectedSearchKey = entity.key);
+    setState(() => query.selectedKey = entity.key);
     final committed = query.text;
     if (entity.kind == 'channel') {
       rememberSearchOpen(scope, entity: entity, queryText: committed);
@@ -3201,8 +3355,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     searchDebounce?.cancel();
     requestGeneration++;
     setState(() {
-      rows = [];
-      selectedSearchKey = null;
+      stashViewWindow();
+      rowsView = null;
+      if (atSearchHome) {
+        rows = [];
+        query.clearSelection();
+      }
       hasMore = false;
     });
     if (query.value.composing.isValid && !query.value.composing.isCollapsed) {
@@ -3231,14 +3389,14 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   /// Selectable results in order: destinations, then messages (Source
   /// `selectableResults`).
   List<String> get searchKeys => [
-    ...(atSearchHome ? frequentEntities : currentSearchEntities).map(
-      (e) => e.key,
-    ),
+    ...visibleSearchEntities.map((e) => e.key),
+    ...?query.apps?.hits.map(SearchAppResults.keyOf),
     ...rows.map((r) => 'message:${r['id']}'),
   ];
 
-  /// The cursor before any arrow key: the first selectable result.
-  String? get firstSearchKey => searchKeys.firstOrNull;
+  String? get activeSearchKey => query.activeKey(searchKeys);
+
+  Widget wrapSearchResult(String key, Widget child) => query.anchor(key, child);
 
   /// Re-tapping this page's phone tab scrolls its list to the top; Search
   /// focuses its field once it is there (Web `useTabRootScroll`). Activity's
@@ -3290,18 +3448,51 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       widget.onBack?.call();
       return KeyEventResult.handled;
     }
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
+      if (!queryFocus.hasFocus) return KeyEventResult.ignored;
+      if (event is KeyDownEvent && !HardwareKeyboard.instance.isShiftPressed) {
+        submitSearch(authority);
+      }
+      return KeyEventResult.handled;
+    }
     if (key != LogicalKeyboardKey.arrowDown &&
         key != LogicalKeyboardKey.arrowUp) {
       return KeyEventResult.ignored;
     }
     final keys = searchKeys;
     if (keys.isEmpty) return KeyEventResult.ignored;
-    final index = keys.indexOf(selectedSearchKey ?? keys.first);
+    final index = keys.indexOf(activeSearchKey ?? keys.first);
     final step = key == LogicalKeyboardKey.arrowDown ? 1 : -1;
-    setState(
-      () => selectedSearchKey = keys[(index + step).clamp(0, keys.length - 1)],
-    );
+    final next = keys[(index + step).clamp(0, keys.length - 1)];
+    setState(() => query.reveal(next, keys, forwards: step > 0));
     return KeyEventResult.handled;
+  }
+
+  void submitSearch(String scope) {
+    searchDebounce?.cancel();
+    final selected = activeSearchKey;
+    final entity =
+        (atSearchHome && !scopedSearch
+                ? frequentEntities
+                : visibleSearchEntities)
+            .where((entry) => entry.key == selected)
+            .firstOrNull;
+    final row = rows
+        .where((row) => 'message:${row['id']}' == selected)
+        .firstOrNull;
+    final artifact = query.apps?.hits
+        .where((card) => SearchAppResults.keyOf(card) == selected)
+        .firstOrNull;
+    if (entity != null) {
+      openSearchEntity(entity, scope);
+    } else if (artifact != null) {
+      openSearchArtifact(artifact);
+    } else if (row != null) {
+      openSearchMessage(row, scope);
+    } else {
+      load();
+    }
   }
 
   Widget searchHeader(String scope) {
@@ -3315,6 +3506,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       mobile: mobile,
     );
     final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
+    final conversation = searchScopeConversation;
     final row = Row(
       children: [
         if (!plain)
@@ -3334,7 +3526,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             controller: query,
             focusNode: queryFocus,
             // search.placeholder: the shortcut hint follows on desktop.
-            hint: mobile
+            hint: conversation != null
+                ? raftFormat(context, 'Search in {conversation}', {
+                    'conversation': conversation,
+                  })
+                : mobile
                 ? raftText(context, 'Search channels, DMs, messages…')
                 : '${raftText(context, 'Search channels, DMs, messages…')}   '
                       '${globalSearchShortcutLabel()}',
@@ -3345,29 +3541,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
               searchChanged('');
             },
             onChanged: searchChanged,
-            onSubmitted: (_) {
-              searchDebounce?.cancel();
-              final selected = selectedSearchKey ?? firstSearchKey;
-              final entity =
-                  (atSearchHome ? frequentEntities : currentSearchEntities)
-                      .where((e) => e.key == selected)
-                      .firstOrNull;
-              final row = rows
-                  .where((r) => 'message:${r['id']}' == selected)
-                  .firstOrNull;
-              if (entity != null) {
-                openSearchEntity(entity, scope);
-              } else if (row != null) {
-                openSearchMessage(row, scope);
-              } else {
-                load();
-              }
-            },
+            onSubmitted: (_) => submitSearch(scope),
           ),
         ),
       ],
     );
-    return mobile
+    return mobile || scopedSearch
         ? widget.mobileRoot
               // Web v1.24 TabRootBar `content`: the field in the frame band.
               ? RaftMobileRootHeader(
@@ -3380,6 +3559,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                   title: raftText(context, 'Search'),
                   background: plain ? t.canvas : null,
                   titleSlot: row,
+                  backKey: scopedSearch
+                      ? const Key('scoped-search-back')
+                      : null,
                   onBack: widget.onBack ?? () {},
                   backTooltip: raftText(context, 'Back'),
                 )
@@ -3421,7 +3603,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     );
     return Container(
       padding: plain
-          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+          ? const EdgeInsets.symmetric(horizontal: 20, vertical: 8)
           : row.padding,
       decoration: plain
           ? BoxDecoration(
@@ -3439,19 +3621,25 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           filters: advanced,
           senders: senders,
           conversations: {
-            for (final c in [
-              ...w.channels,
-              ...w.dms,
-            ].where((c) => c.type != 'thread'))
-              c.id: '${c.type == 'dm' ? '@' : '#'}${c.name}',
+            for (final c in w.channels.where((c) => c.type != 'thread'))
+              c.id: c.name,
           },
+          channelOptions: searchChannelChoices(w.channels.map((c) => c.json)),
+          scopeConversation: searchScopeConversation,
           menus: filterMenus,
           queryIsEmpty: query.text.trim().isEmpty,
           scope: scope,
           valid: () => accepts(scope),
           onChanged: load,
           channelLabel: (id) =>
-              '#${[...w.channels, ...w.dms].where((c) => c.id == id).firstOrNull?.name ?? raftText(context, 'Channel')}',
+              [
+                ...w.channels,
+                ...w.dms,
+              ].where((c) => c.id == id).firstOrNull?.name ??
+              raftText(context, 'Channel'),
+          channelGlyph: (id) => searchChannelGlyph(
+            w.channels.where((c) => c.id == id).firstOrNull?.json,
+          ),
         ),
       ),
     );

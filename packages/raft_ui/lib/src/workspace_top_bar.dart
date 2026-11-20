@@ -41,6 +41,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
     required this.onSearch,
     this.trailing = const [],
     this.searchKey,
+    this.searchFocus,
     this.leadingInset = 0,
     this.trailingInset = 0,
     this.navigation,
@@ -58,6 +59,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
 
   /// Lets the host publish the real search field bounds to its overlay.
   final Key? searchKey;
+  final FocusNode? searchFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +122,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
                         id: _TopBarSlot.search,
                         child: RaftWorkspaceSearchTrigger(
                           key: searchKey,
+                          focusNode: searchFocus,
                           onPressed: onSearch,
                         ),
                       ),
@@ -257,8 +260,13 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
 /// SearchTrigger is a button drawn as a field; opening it uses the application's
 /// existing global-search controller rather than a second editable search.
 class RaftWorkspaceSearchTrigger extends StatelessWidget {
-  const RaftWorkspaceSearchTrigger({super.key, required this.onPressed});
+  const RaftWorkspaceSearchTrigger({
+    super.key,
+    required this.onPressed,
+    this.focusNode,
+  });
   final VoidCallback onPressed;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -266,6 +274,7 @@ class RaftWorkspaceSearchTrigger extends StatelessWidget {
     final control = RaftInteractive(
       key: const Key('topbar-search'),
       semanticLabel: raftText(context, 'Search'),
+      focusNode: focusNode,
       onPressed: onPressed,
       builder: (context, state) {
         final rt = t.recipeTokens;

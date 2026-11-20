@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'css_pixel_snap.dart';
 import 'form_controls.dart';
 import 'icons.dart';
 
@@ -25,15 +26,18 @@ class RaftSearchInput extends StatelessWidget {
   final bool showEscape;
 
   @override
-  Widget build(BuildContext context) => RaftInputGroup(
-    leading: const RaftInputGroupAddon.icon(RaftGlyph.search),
-    controller: controller,
-    focusNode: focusNode,
-    hintText: hint,
-    onChanged: onChanged,
-    onSubmitted: onSubmitted,
-    clearLabel: clearLabel,
-    onClear: onClear,
-    kbd: showEscape ? 'Esc' : null,
+  Widget build(BuildContext context) => RaftCssPixelSnap(
+    child: RaftInputGroup(
+      snapBorderToDevicePixels: true,
+      leading: const RaftInputGroupAddon.icon(RaftGlyph.search),
+      controller: controller,
+      focusNode: focusNode,
+      hintText: hint,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      clearLabel: clearLabel,
+      onClear: onClear,
+      kbd: showEscape ? 'Esc' : null,
+    ),
   );
 }

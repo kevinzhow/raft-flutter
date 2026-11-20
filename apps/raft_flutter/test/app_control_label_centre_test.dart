@@ -160,6 +160,10 @@ final _filters = ResourceFilters()
   ..scopes.add('humans')
   ..channelId = 'c1';
 
+Finder _searchFilterControls() => find.byWidgetPredicate(
+  (widget) => widget is RaftPickerTriggerButton || widget is RaftButton,
+);
+
 final _cases = <_Case>[
   _Case(
     'Activity badges',
@@ -236,7 +240,7 @@ final _cases = <_Case>[
       onChanged: _noop,
       channelLabel: (id) => '#design',
     ),
-    () => find.byType(RaftControl),
+    _searchFilterControls,
     width: 1600,
   ),
   _Case(
@@ -251,7 +255,7 @@ final _cases = <_Case>[
       valid: () => true,
       onChanged: _noop,
     ),
-    () => find.byType(RaftControl),
+    _searchFilterControls,
     width: 1600,
   ),
   _Case(

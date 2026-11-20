@@ -288,6 +288,7 @@ class RaftButton extends StatelessWidget {
     this.disabledOpacity,
     this.surfaceBuilder,
     this.styleBuilder,
+    this.snapBorderToDevicePixels = false,
     this.legacyConstraints,
     this.legacyPadding,
   });
@@ -408,6 +409,7 @@ class RaftButton extends StatelessWidget {
     RaftSlotStyle,
   )?
   styleBuilder;
+  final bool snapBorderToDevicePixels;
 
   RaftButtonVariant get resolvedVariant =>
       uiVariant ??
@@ -558,7 +560,11 @@ class RaftButton extends StatelessWidget {
         ])
           if (width > 0)
             'border-$side-width': CssNum(
-              raftControlBorderPx(context, width),
+              raftControlBorderPx(
+                context,
+                width,
+                snapToDevicePixels: snapBorderToDevicePixels,
+              ),
               'px',
             ),
       },
