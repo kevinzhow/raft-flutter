@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' show SemanticsAction, Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -522,6 +526,137 @@ void main() {
     );
     await tester.pumpWidget(const SizedBox());
   });
+
+  for (final (platform, size) in [
+    (TargetPlatform.linux, const Size(390, 844)),
+    (TargetPlatform.android, const Size(856, 944)),
+    (TargetPlatform.android, const Size(944, 856)),
+  ]) {
+    testWidgets('held App Link actions stay in the keyboard path on $size', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final (workspace, transport) = (await tester.runAsync(
+        () => fixture('member'),
+      ))!;
+      addTearDown(workspace.dispose);
+      final cardFixture = jsonDecode(
+        File('../../tool/parity-ext/fixtures/app-links.json')
+            .readAsStringSync(),
+      ) as Map<String, dynamic>;
+      transport.routes['POST /feature-flags/evaluate'] = (_) => {
+        'evaluations': [
+          {'key': 'interactive_link_cards', 'enabled': true},
+        ],
+      };
+      transport.routes['POST /messages/m1/link-cards/read'] = (_) =>
+          cardFixture['answer'];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme().copyWith(platform: platform),
+          home: RaftToastHost(child: Scaffold(body: _message(workspace))),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final semantics = tester.ensureSemantics();
+      try {
+        final more = find.descendant(
+          of: find.byKey(const ValueKey('app-link-more-trigger')),
+          matching: find.byType(RaftButton),
+        );
+        final assign = find.widgetWithText(RaftButton, 'Assign');
+        final resolve = find.widgetWithText(RaftButton, 'Resolve');
+        final undo = find.byKey(const Key('toast-action'));
+        const description = 'Runs when the countdown ends';
+        final status = find.text(description);
+        FocusNode focusOf(Finder target) => tester
+            .widget<FocusableActionDetector>(
+              find.descendant(
+                of: target,
+                matching: find.byType(FocusableActionDetector),
+              ),
+            )
+            .focusNode!;
+        Future<void> key(LogicalKeyboardKey key) async {
+          await tester.sendKeyEvent(key);
+          await tester.pump();
+        }
+
+        Future<void> tabTo(Finder target) async {
+          for (var i = 0; i < 12 && !focusOf(target).hasPrimaryFocus; i++) {
+            await key(LogicalKeyboardKey.tab);
+          }
+          expect(
+            focusOf(target).hasPrimaryFocus,
+            isTrue,
+            reason: target.describeMatch(Plurality.one),
+          );
+        }
+
+        await tabTo(resolve);
+        await key(LogicalKeyboardKey.enter);
+        expect(status, findsOneWidget);
+        expect(undo, findsOneWidget);
+        await tabTo(more);
+        for (final button in [assign, resolve]) {
+          await key(LogicalKeyboardKey.tab);
+          expect(
+            focusOf(button).hasPrimaryFocus,
+            isTrue,
+            reason:
+                'Tab must reach ${button.describeMatch(Plurality.one)} while held',
+          );
+          final node = tester.getSemantics(button);
+          expect(node.hint, description);
+          expect(node.flagsCollection.isEnabled, Tristate.isFalse);
+          expect(node.flagsCollection.isFocused, Tristate.isTrue);
+          expect(
+            node.getSemanticsData().hasAction(SemanticsAction.tap),
+            isFalse,
+          );
+          await key(LogicalKeyboardKey.enter);
+          await key(LogicalKeyboardKey.space);
+          expect(focusOf(button).hasPrimaryFocus, isTrue);
+          expect(status, findsOneWidget);
+          expect(undo, findsOneWidget);
+        }
+        final moreSemantics = find.bySemanticsLabel('More actions');
+        expect(tester.getSemantics(moreSemantics).hint, description);
+        await tabTo(undo);
+        await key(LogicalKeyboardKey.enter);
+        expect(undo, findsNothing);
+        expect(status, findsNothing);
+        for (final button in [assign, resolve]) {
+          final node = tester.getSemantics(button);
+          expect(node.hint, isEmpty);
+          expect(node.flagsCollection.isEnabled, Tristate.isTrue);
+          expect(
+            node.getSemanticsData().hasAction(SemanticsAction.tap),
+            isTrue,
+          );
+        }
+        expect(tester.getSemantics(moreSemantics).hint, isEmpty);
+        await tabTo(resolve);
+        await key(LogicalKeyboardKey.space);
+        expect(undo, findsOneWidget);
+        await tabTo(undo);
+        await key(LogicalKeyboardKey.enter);
+        await tester.pump(const Duration(seconds: 6));
+        expect(status, findsNothing);
+        expect(
+          transport.calls.where(
+            (request) => request.path == '/link-cards/execute',
+          ),
+          isEmpty,
+        );
+      } finally {
+        semantics.dispose();
+        await tester.pumpWidget(const SizedBox());
+      }
+    });
+  }
 
   for (final touch in [false, true]) {
     testWidgets('hover availability follows input, touch=$touch', (

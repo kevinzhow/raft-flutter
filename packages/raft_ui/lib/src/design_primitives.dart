@@ -3331,7 +3331,9 @@ class RaftInteractive extends StatefulWidget {
     this.busy = false,
     this.focusNode,
     this.focusOnPointer = true,
+    this.focusableWhenDisabled = false,
     this.semanticLabel,
+    this.semanticHint,
     this.semanticRole,
     this.semanticValue,
     this.liveRegion = false,
@@ -3359,12 +3361,13 @@ class RaftInteractive extends StatefulWidget {
   final GestureLongPressCallback? onLongPress;
   final GestureTapDownCallback? onSecondaryTapDown;
   final bool? semanticContainer;
-  final bool busy, focusOnPointer, button, cancelOutsideRelease;
+  final bool busy, focusOnPointer, focusableWhenDisabled, button;
+  final bool cancelOutsideRelease;
   final bool expandTouchTarget;
   final bool? selected, checked, toggled;
   final bool inMutuallyExclusiveGroup, inertWhenDisabled;
   final FocusNode? focusNode;
-  final String? semanticLabel, tooltip;
+  final String? semanticLabel, semanticHint, tooltip;
   final SemanticsRole? semanticRole;
   final String? semanticValue;
   final bool liveRegion;
@@ -3393,6 +3396,8 @@ class _RaftInteractiveState extends State<RaftInteractive>
   final ownedFocus = FocusNode();
   FocusNode get node => widget.focusNode ?? ownedFocus;
   bool get enabled => widget.onPressed != null && !widget.busy;
+  bool get canFocus =>
+      enabled || widget.focusableWhenDisabled && !widget.inertWhenDisabled;
 
   @override
   void initState() {
@@ -3413,13 +3418,14 @@ class _RaftInteractiveState extends State<RaftInteractive>
   void didUpdateWidget(RaftInteractive oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!enabled) {
-      pressed = hovered = focused = tooltipKeyboardFocused = false;
+      pressed = hovered = false;
+      if (!canFocus) focused = tooltipKeyboardFocused = false;
       updateKeepAlive();
     }
   }
 
   void modeChanged() {
-    final next = enabled && node.hasFocus && RaftFocusVisible.shared.keyboard;
+    final next = canFocus && node.hasFocus && RaftFocusVisible.shared.keyboard;
     if (mounted && next != focused) {
       setState(() {
         focused = next;
@@ -3431,7 +3437,7 @@ class _RaftInteractiveState extends State<RaftInteractive>
   void focusChanged(bool hasFocus) {
     if (!mounted) return;
     setState(() {
-      focused = enabled && hasFocus && RaftFocusVisible.shared.keyboard;
+      focused = canFocus && hasFocus && RaftFocusVisible.shared.keyboard;
       tooltipKeyboardFocused = focused;
     });
   }
@@ -3462,6 +3468,7 @@ class _RaftInteractiveState extends State<RaftInteractive>
           (!touch &&
               context.findAncestorWidgetOfExactType<RaftTouchTarget>() == null),
       label: widget.semanticLabel,
+      hint: widget.semanticHint,
       value: widget.semanticValue,
       liveRegion: widget.liveRegion,
       excludeSemantics: widget.busy,
@@ -3479,7 +3486,7 @@ class _RaftInteractiveState extends State<RaftInteractive>
         onExit: (_) => setState(() => hovered = false),
         child: FocusableActionDetector(
           focusNode: node,
-          enabled: enabled,
+          enabled: canFocus,
           mouseCursor: enabled
               ? SystemMouseCursors.click
               : SystemMouseCursors.basic,
