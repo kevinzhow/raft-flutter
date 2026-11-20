@@ -164,6 +164,7 @@ void main() {
                     children: [
                       Expanded(
                         child: DesktopDirectoryView(
+                          key: const Key('presence-sidebar'),
                           controller: w,
                           onSelected: (_) {},
                         ),
@@ -181,6 +182,7 @@ void main() {
                         child: Column(
                           children: [
                             AnimatedBuilder(
+                              key: const Key('presence-mentions'),
                               animation: composer,
                               builder: (_, _) => Column(
                                 children: [
@@ -208,27 +210,60 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        void badges(RaftAvatarActivity expected) {
-          final values = t
-              .widgetList<RaftAvatar>(find.byType(RaftAvatar))
-              .map((a) => a.presence?.activity)
-              .whereType<RaftAvatarActivity>()
-              .toList();
-          expect(values, hasLength(lateSidebar ? 3 : 2));
-          expect(
-            values.every((value) => value == expected),
-            isTrue,
-            reason: '$values',
+        void expectPresence(RaftAvatarActivity expected, String profileText) {
+          final offline = expected == RaftAvatarActivity.offline;
+          for (final key in [
+            const Key('presence-sidebar'),
+            const Key('presence-mentions'),
+            if (lateSidebar) const Key('late-sidebar'),
+          ]) {
+            final avatar = find.descendant(
+              of: find.byKey(key),
+              matching: find.byType(RaftMountedAvatarFrame),
+            );
+            expect(avatar, findsOneWidget, reason: '$key agent avatar');
+            expect(
+              t.widget<RaftMountedAvatarFrame>(avatar).presence?.activity,
+              expected,
+              reason: '$key agent activity',
+            );
+            final badge = find.descendant(
+              of: avatar,
+              matching: find.byType(RaftAvatarBadge),
+            );
+            expect(badge, findsOneWidget, reason: '$key avatar badge');
+            expect(
+              t.widget<RaftAvatarBadge>(badge).presence,
+              offline ? RaftPresence.offline : RaftPresence.busy,
+              reason: '$key badge light',
+            );
+            expect(
+              t.getSize(badge).isEmpty,
+              isFalse,
+              reason: '$key badge size',
+            );
+          }
+          final profile = find.byKey(const Key('profile'));
+          final status = t.widget<RaftAgentStatusRow>(
+            find.descendant(
+              of: profile,
+              matching: find.byType(RaftAgentStatusRow),
+            ),
           );
+          expect(
+            status.light,
+            offline ? RaftAgentStatusLight.offline : RaftAgentStatusLight.busy,
+          );
+          expect(status.text.toLowerCase(), contains(profileText));
         }
 
-        badges(RaftAvatarActivity.working);
+        expectPresence(RaftAvatarActivity.working, 'running the original work');
         c.activity('offline', 20);
         await t.pumpAndSettle();
-        badges(RaftAvatarActivity.offline);
+        expectPresence(RaftAvatarActivity.offline, 'offline');
         rebuild(() => lateSidebar = true);
         await t.pumpAndSettle();
-        badges(RaftAvatarActivity.offline);
+        expectPresence(RaftAvatarActivity.offline, 'offline');
         w.row = {
           ...w.row,
           'activity': 'thinking',
@@ -237,16 +272,7 @@ void main() {
         };
         await w.entityDirectory.refresh(WorkspaceEntityKind.agents);
         await t.pumpAndSettle();
-        badges(RaftAvatarActivity.thinking);
-        // Web v1.24 AgentStatusBadge: the profile's status is the chip row
-        // under the name (RaftProfileIdentity.statusRow), not a text line.
-        final status = t.widget<RaftAgentStatusRow>(
-          find.descendant(
-            of: find.byKey(const Key('profile')),
-            matching: find.byType(RaftAgentStatusRow),
-          ),
-        );
-        expect(status.text.toLowerCase(), contains('thinking'));
+        expectPresence(RaftAvatarActivity.thinking, 'thinking');
         expect(t.takeException(), isNull);
         await t.pumpWidget(const SizedBox.shrink());
       },

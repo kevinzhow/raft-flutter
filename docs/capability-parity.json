@@ -528,7 +528,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/forward_composer_page.dart",
-     "needle": "Select Multiple"
+     "needle": "multi = true;"
     },
     {
      "file": "apps/raft_flutter/lib/features/forward_warnings.dart",
@@ -1579,7 +1579,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/forward_composer_page.dart",
-     "needle": "Select Multiple"
+     "needle": "checkbox: multi,"
     },
     {
      "file": "apps/raft_flutter/lib/features/forward_composer_page.dart",
