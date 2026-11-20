@@ -20,11 +20,11 @@
           "state": "empty",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "gapKind": "case-missing",
-          "size": "S",
-          "justification": "An official empty Drafts case has not been assigned."
+          "parityCase": [
+            "components.pages.drafts-v124.*.empty.*"
+          ],
+          "status": "covered",
+          "caseValidity": "react-checked"
         },
         {
           "state": "error",
@@ -24355,7 +24355,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/composer_pending_mentions.dart#local-function:CLASS:RaftPendingMentionActionStrip@1860/METHOD:_row@4594/FUNCTION:done@5447": {
+      "packages/raft_ui/lib/src/composer_pending_mentions.dart#local-function:CLASS:RaftPendingMentionActionStrip@1940/METHOD:_row@4605/FUNCTION:done@5485": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -24415,7 +24415,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.suggestionBackground": {
+      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.suggestionOption": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -29895,6 +29895,18 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/selection_toolbar_recipe.dart#method:RaftSelectionToolbarRecipe._slots": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "The selection toolbar and selected message paint use the mounted message selection contract."
+      },
+      "packages/raft_ui/lib/src/message_export.dart#function:raftSelectableMessage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "The selection toolbar and selected message paint use the mounted message selection contract."
       },
       "packages/raft_ui/lib/src/message_export.dart#class:RaftSelectionToolbar": {
         "role": "unresolved",
@@ -56479,6 +56491,18 @@
         "owner": "WP-COMPOSE",
         "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
       },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#class:_DraftsSidebarEntryState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "The Drafts sidebar entry mounts an authority-scoped local draft count."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#method:DraftsSidebarEntry.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "The Drafts sidebar entry mounts an authority-scoped local draft count."
+      },
       "apps/raft_flutter/lib/features/desktop_drafts_page.dart#class:DraftsPage": {
         "role": "unresolved",
         "familyRefs": [],
@@ -56515,7 +56539,7 @@
         "owner": "WP-COMPOSE",
         "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
       },
-      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#method:DraftsSidebarEntry.build": {
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#method:_DraftsSidebarEntryState.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
@@ -56647,25 +56671,25 @@
         "owner": "WP-COMPOSE",
         "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@35722/METHOD:build@36096/FUNCTION:bar@37205": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@36960/METHOD:build@37334/FUNCTION:bar@38443": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@35722/METHOD:build@36096/FUNCTION:text@37375": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@36960/METHOD:build@37334/FUNCTION:text@38613": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@26021/METHOD:build@26199/FUNCTION:bar@27134": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27259/METHOD:build@27437/FUNCTION:bar@28372": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@26021/METHOD:build@26199/FUNCTION:line@26397": {
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27259/METHOD:build@27437/FUNCTION:line@27635": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
@@ -56939,7 +56963,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:buildTimeline@113757/FUNCTION:timelineFor@117499": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:buildTimeline@113540/FUNCTION:timelineFor@117282": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -57320,25 +57344,25 @@
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27429/METHOD:_build@34434/FUNCTION:row@41572": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27687/METHOD:_build@34756/FUNCTION:row@41894": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27429/METHOD:_build@34434/FUNCTION:titleContent@37746": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27687/METHOD:_build@34756/FUNCTION:titleContent@38068": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27429/METHOD:_build@34434/FUNCTION:titleWithIndicators@40802": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27687/METHOD:_build@34756/FUNCTION:titleWithIndicators@41124": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27429/METHOD:_build@34434/FUNCTION:wrappedTitle@36605": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27687/METHOD:_build@34756/FUNCTION:wrappedTitle@36927": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
@@ -64632,12 +64656,12 @@
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.suggestionBackground|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.suggestionOption|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.suggestionBackground|state:data-highlighted=true": {
+      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.suggestionOption|state:data-highlighted=true": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."

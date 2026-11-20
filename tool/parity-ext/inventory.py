@@ -353,6 +353,8 @@ SECTIONS = [
         R('5.11', 'Saved item actions (copy link, copy Markdown, remove)', 'components/saved/SavedPanel.tsx', 'DP',
           d=['components.list-pages.saved.desktop-actions'], p=['components.list-pages.saved.phone-actions'], prio=3),
         R('5.12', 'Activity Done and Saved views, channel filter, sort, in-list search', 'components/thread/ThreadsInbox.tsx', 'DP', prio=2),
+        R('5.13', 'Drafts: empty and private conversation', 'components/drafts/DraftsPanel.tsx', 'DP',
+          d=['components.pages.drafts-v124.desktop.*'], p=['components.pages.drafts-v124.phone.*']),
     ]),
     ('6. Tasks', 'components/task', [
         R('6.01', 'Tasks page (desktop board / phone list)', 'components/task/TasksPanel.tsx', 'DP',

@@ -612,7 +612,9 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RaftForwardPageHeader(
+        RaftPanelHeaderBar(
+          leftPadding: 4,
+          background: RaftTokens.of(context).canvas,
           leading: multi
               ? RaftPanelAction(
                   glyph: RaftGlyph.undo2,
@@ -633,31 +635,34 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
                 ),
           title: raftText(context, 'Select destinations'),
           subtitle: selectedFrom,
-          trailing: multi
-              ? RaftForwardIconAction(
-                  glyph: RaftGlyph.check,
-                  accent: true,
-                  tooltip: raftText(context, 'Done'),
-                  onPressed: selected.isEmpty || locked
-                      ? null
-                      : () => setState(() => preview = true),
-                )
-              : RaftButton(
-                  tone: RaftButtonRecipeVariant.ghost,
-                  label: raftTextZh(context, 'Select multiple', '多选'),
-                  onPressed: locked
-                      ? null
-                      : () {
-                          searchFocus.unfocus();
-                          setState(() {
-                            selected.clear();
-                            multi = true;
-                          });
-                        },
-                ),
+          actions: [
+            multi
+                ? RaftForwardIconAction(
+                    glyph: RaftGlyph.check,
+                    accent: true,
+                    tooltip: raftText(context, 'Done'),
+                    onPressed: selected.isEmpty || locked
+                        ? null
+                        : () => setState(() => preview = true),
+                  )
+                : RaftButton(
+                    tone: RaftButtonRecipeVariant.ghost,
+                    label: raftTextZh(context, 'Select multiple', '多选'),
+                    onPressed: locked
+                        ? null
+                        : () {
+                            searchFocus.unfocus();
+                            setState(() {
+                              selected.clear();
+                              multi = true;
+                            });
+                          },
+                  ),
+          ],
         ),
         Expanded(
           child: RaftForwardTargetsBody(
+            pickerLayout: true,
             search: RaftForwardSearchInput(
               controller: search,
               focusNode: searchFocus,

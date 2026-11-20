@@ -56,7 +56,7 @@ class WorkspaceComposer {
   final ComposerRecordRead _read;
   final ComposerRecordWrite _write;
   final _text = <String, String>{};
-  final _signals = <String?, ValueNotifier<int>>{};
+  final _signals = <Object?, ValueNotifier<int>>{};
   late final WorkspaceSends sends;
   Map<String, ComposerSendAttempt> get attempts => sends.attempts;
   final shareTokens = <String, Set<String>>{};
@@ -68,6 +68,15 @@ class WorkspaceComposer {
 
   bool ownedBy(Object owner) => identical(owner, _owner);
   Future<void> get flushed => _pending;
+
+  /// Changes when a non-empty draft appears or is cleared, independent of its text edits.
+  ValueListenable<int> get draftMembership =>
+      _signals.putIfAbsent(#draftMembership, () => ValueNotifier<int>(0));
+
+  void _publishDraftMembership() {
+    final signal = _signals[#draftMembership];
+    if (signal != null) signal.value++;
+  }
 
   ValueListenable<int> changes(String? scope) =>
       _signals.putIfAbsent(scope, () => ValueNotifier<int>(0));
@@ -390,14 +399,19 @@ class _DraftMap extends MapBase<String, String> {
   Iterable<String> get keys => owner._text.keys;
   @override
   void operator []=(String key, String value) {
-    if (owner._closed || owner._text[key] == value) return;
+    final previous = owner._text[key];
+    if (owner._closed || previous == value) return;
     owner._text[key] = value;
+    if ((previous?.trim().isNotEmpty ?? false) != value.trim().isNotEmpty) {
+      owner._publishDraftMembership();
+    }
     owner._textChanged(key);
   }
 
   @override
   String? remove(Object? key) {
     final previous = owner._text.remove(key);
+    if (previous?.trim().isNotEmpty == true) owner._publishDraftMembership();
     if (previous != null && key is String) owner._textChanged(key);
     return previous;
   }

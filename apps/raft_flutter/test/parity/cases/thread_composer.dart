@@ -17,14 +17,13 @@ import 'dart:convert';
 // Flutter app cannot show go to [threadComposerUncovered] with an honest reason.
 //
 // React host (VisualTestingCases.tsx ComposerVisualCaseView): a
-// `<div data-visual-case>` of 342 x (height||100) with paddingTop
+// `<div data-visual-case>` of width 342 with optional height and paddingTop
 // composerOffsetTop, overflow hidden, containing <MessageInput>. Flutter's
 // MessageInput is RaftComposer as mounted by RaftChatView (chat_view.dart):
 // the same taskAction / attach / image-pick / hint / suggestions wiring is
 // reproduced in [_ComposerHost]; suggestions come from the real
 // ComposerDirectory over a WorkspaceController whose client answers the React
 // provider's API mocks (thread_composer/fake_workspace.dart).
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
@@ -61,8 +60,7 @@ final Map<String, ParityCase> threadComposerCases = {
   ),
   'components.thread.composer.member-suggestions': _composer(
     draft: '',
-    height: 320,
-    offsetTop: 210,
+    offsetTop: 250,
     type: '@',
     notes:
         'Suggestions come from the real ComposerDirectory over the React '
@@ -83,14 +81,13 @@ final Map<String, ParityCase> threadComposerCases = {
     readyImage: true,
     widgets: const [
       'raft_flutter:WorkspaceController.attachSelection',
-      'raft_ui:RaftComposerNotice',
+      'raft_ui:RaftComposerAttachments',
     ],
     notes:
         'React picks composer-preview.png (the PNG bytes react-provider.spec '
         'uploads); Flutter feeds the same bytes to the product selection path '
-        '(WorkspaceController.attachSelection). GET '
-        '/attachments/upload-capabilities has no usable maxBytes in both mocks, '
-        'so both refuse the batch with the warning banner.',
+        '(WorkspaceController.attachSelection). Both providers answer the '
+        'upload-capabilities and upload requests with a successful fixture.',
   ),
   'components.thread.composer.pending-mention-actions': _composer(
     draft: '@Android-Developer-4 please review the visual diff',
@@ -104,10 +101,9 @@ final Map<String, ParityCase> threadComposerCases = {
     notes:
         'React clicks Send; its sendMessage mock answers one '
         'pendingMentionActions row (agent Android-Developer-4, add+notify). '
-        'Flutter clicks the composer Send with a mouse: WorkspaceController.send '
+        'Flutter taps the composer Send in the phone fixture: WorkspaceController.send '
         'posts /v2/messages to the fake client, which returns the same receipt, '
-        'and RaftChatView\'s accessory PendingMentionActions renders the strip. '
-        'The mouse stays where Send was, so (like React) it hovers Ignore.',
+        'and RaftChatView\'s accessory PendingMentionActions renders the strip.',
   ),
   'components.thread.files.list': _files,
   'components.thread.header.states': _header,
@@ -122,7 +118,7 @@ String get _seed => 'Review the Android composer crop before release.';
 
 ParityCase _composer({
   required String? draft,
-  double height = 100,
+  double? height,
   double offsetTop = 0,
   String? type,
   bool tapTaskToggle = false,
@@ -148,45 +144,76 @@ ParityCase _composer({
         draft ?? (fx.messages['composerImagePreviewSeed'] as String? ?? '');
     // The app mounts RaftChatView under WorkspaceView's Scaffold; a
     // transparent Material stands in for that ancestor (TextField needs one).
+    final host = _ComposerHost(
+      fixture: fx,
+      draft: text,
+      readyImage: readyImage
+          ? (fx.files['image'] as Map)['filename'] as String
+          : null,
+      sendForPendingMentions: sendForPendingMentions,
+    );
     return Material(
       type: MaterialType.transparency,
-      child: ctx.frame(
-        width: 342,
-        height: height,
-        padding: EdgeInsets.only(top: offsetTop),
-        // CSS block flow + overflow:hidden: the composer keeps its natural
-        // height and the frame clips it.
-        child: OverflowBox(
-          alignment: Alignment.topLeft,
-          minHeight: 0,
-          maxHeight: double.infinity,
-          child: _ComposerHost(
-            fixture: fx,
-            draft: text,
-            readyImage: readyImage
-                ? (fx.files['image'] as Map)['filename'] as String
-                : null,
-            sendForPendingMentions: sendForPendingMentions,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: ctx.target(
+          ClipRect(
+            child: SizedBox(
+              width: 342,
+              height: height,
+              child: Padding(
+                padding: EdgeInsets.only(top: offsetTop),
+                child: height == null
+                    ? host
+                    : OverflowBox(
+                        alignment: Alignment.topLeft,
+                        minHeight: 0,
+                        maxHeight: double.infinity,
+                        child: host,
+                      ),
+              ),
+            ),
           ),
         ),
       ),
     );
   },
-  interact: (tapTaskToggle || type != null || sendForPendingMentions)
+  interact:
+      (tapTaskToggle || type != null || sendForPendingMentions || readyImage)
       ? (t, ctx) async {
+          if (readyImage) {
+            await t.pumpAndSettle();
+            final attachments = t.widget<RaftComposerAttachments>(
+              find.byType(RaftComposerAttachments),
+            );
+            final image = attachments.items.single;
+            expect(image.name, 'composer-preview.png');
+            expect(image.preview, isNotEmpty);
+            expect(image.status, RaftComposerAttachmentStatus.ready);
+            expect(find.text('Not checked'), findsNothing);
+            final thumbnail = find.byWidgetPredicate(
+              (widget) => widget is Image && widget.semanticLabel == image.name,
+            );
+            final element = t.element(thumbnail);
+            await t.runAsync(
+              () => precacheImage(
+                (element.widget as Image).image,
+                element,
+              ).timeout(const Duration(seconds: 5)),
+            );
+            await t.pump();
+            final raster = find.descendant(
+              of: thumbnail,
+              matching: find.byType(RawImage),
+            );
+            expect(t.widget<RawImage>(raster).image, isNotNull);
+          }
           if (sendForPendingMentions) {
-            // React: `click button[aria-label='Send']` with the mouse, which
-            // then stays at that point.
-            final at = t.getCenter(find.byTooltip('Send'));
-            final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
-            await mouse.addPointer(location: at);
-            await mouse.down(at);
-            await mouse.up();
+            // The official 390px browser case has a coarse pointer and no hover.
+            await t.tap(find.byTooltip('Send'));
             for (var i = 0; i < 6; i++) {
               await t.pump(const Duration(milliseconds: 40));
             }
-            // The pointer rests where Send was; the strip now lies under it.
-            await mouse.moveTo(at + const Offset(0, 0.01));
             await t.pump(const Duration(milliseconds: 40));
           }
           if (tapTaskToggle) {
@@ -223,9 +250,21 @@ class _ComposerHost extends StatefulWidget {
 
 class _ComposerHostState extends State<_ComposerHost> {
   late final WorkspaceController w = widget.fixture.composerWorkspace(
-    extraRoutes: widget.sendForPendingMentions
-        ? {'POST /v2/messages': widget.fixture.pendingMentionSendReceipt}
-        : const {},
+    extraRoutes: {
+      if (widget.sendForPendingMentions)
+        'POST /v2/messages': widget.fixture.pendingMentionSendReceipt,
+      if (widget.readyImage != null) ...{
+        'GET /attachments/upload-capabilities': {
+          'maxBytes': 100 * 1024 * 1024,
+          'monthlyUpload': null,
+        },
+        'POST /attachments/upload': {
+          'attachments': [
+            {'id': 'visual-upload-composer-preview'},
+          ],
+        },
+      },
+    },
   );
   late final ComposerDirectory directory = ComposerDirectory(w);
 

@@ -338,8 +338,14 @@ enum RaftConversationAvatarKind { channel, dm, thread }
 /// the peer's own face for a DM ([face]), and a `#` tile with a small thread
 /// mark for a thread.
 class RaftConversationAvatarTile extends StatelessWidget {
-  const RaftConversationAvatarTile({super.key, required this.kind, this.face});
+  const RaftConversationAvatarTile({
+    super.key,
+    required this.kind,
+    this.face,
+    this.channelGlyph = RaftGlyph.hash,
+  });
   final RaftConversationAvatarKind kind;
+  final RaftGlyph channelGlyph;
 
   /// The peer's avatar for a DM.
   final Widget? face;
@@ -370,7 +376,7 @@ class RaftConversationAvatarTile extends StatelessWidget {
               child: Center(
                 child: kind == RaftConversationAvatarKind.dm
                     ? RaftDirectMessageIcon(size: 16, color: muted)
-                    : RaftIcon(RaftGlyph.hash, size: 16, color: muted),
+                    : RaftIcon(channelGlyph, size: 16, color: muted),
               ),
             ),
           ),

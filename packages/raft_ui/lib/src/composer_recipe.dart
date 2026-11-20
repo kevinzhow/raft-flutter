@@ -209,12 +209,11 @@ class RaftComposerRecipe {
   /// `ComposerSuggestionIcon variant="auxiliary"`.
   Color get suggestionAuxiliary => tokens.ui.foregroundHint;
 
-  /// `ComposerSuggestionMeta variant="code"`: `text-xs font-mono`, bold with
-  /// the highlighted option.
-  TextStyle suggestionCode({bool highlighted = false}) => tokens.scale(
+  /// `ComposerSuggestionMeta variant="code"` inherits the option's weight.
+  TextStyle get suggestionCode => tokens.scale(
     tokens.typeSlot('mono-meta'),
     mono: true,
-    weight: highlighted ? FontWeight.w700 : FontWeight.w500,
+    weight: FontWeight.w500,
     color: tokens.ui.foregroundHint,
   );
 

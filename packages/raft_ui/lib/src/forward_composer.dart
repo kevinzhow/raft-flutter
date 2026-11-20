@@ -18,6 +18,7 @@ import 'design_primitives.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'form_controls.dart' show RaftTextInput;
 import 'icons.dart';
+import 'list_items.dart' show RaftSectionEyebrow;
 
 import 'localization.dart';
 import 'message_body.dart';
@@ -198,6 +199,7 @@ class RaftForwardTargetsBody extends StatelessWidget {
     this.itemCount,
     this.labelAction,
     this.leading = const [],
+    this.pickerLayout = false,
   });
 
   /// Share mode only: the progress bar and server chip row above the search,
@@ -209,6 +211,7 @@ class RaftForwardTargetsBody extends StatelessWidget {
   final List<Widget> rows;
   final IndexedWidgetBuilder? itemBuilder;
   final int? itemCount;
+  final bool pickerLayout;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -228,14 +231,22 @@ class RaftForwardTargetsBody extends StatelessWidget {
             Padding(padding: const EdgeInsets.only(bottom: 12), child: item),
           Padding(padding: const EdgeInsets.only(bottom: 12), child: search),
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(
+              bottom: pickerLayout ? 4 : 8,
+              left: pickerLayout ? 4 : 0,
+              right: pickerLayout ? 4 : 0,
+            ),
             child: SizedBox(
               height: 24,
               child: DefaultTextStyle.merge(
                 style: labelStyle,
                 child: Row(
                   children: [
-                    Expanded(child: Text(label, style: labelStyle)),
+                    Expanded(
+                      child: pickerLayout
+                          ? RaftSectionEyebrow(label)
+                          : Text(label, style: labelStyle),
+                    ),
                     ?labelAction,
                   ],
                 ),
@@ -252,7 +263,8 @@ class RaftForwardTargetsBody extends StatelessWidget {
               ),
               itemCount: itemCount ?? rows.length,
               itemBuilder: itemBuilder ?? (_, index) => rows[index],
-              separatorBuilder: (_, _) => const SizedBox(height: 6),
+              separatorBuilder: (_, _) =>
+                  SizedBox(height: pickerLayout ? 2 : 6),
             ),
           ),
         ],

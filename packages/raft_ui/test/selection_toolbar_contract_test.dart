@@ -58,11 +58,12 @@ void main() {
         expect(t.widget<RaftButton>(button('Copy link')).label, 'Copy link');
         expect(
           t.getSize(button('More')).height,
-          34,
-        ); // md:pointer-fine:h-control
+          28,
+        ); // MessageMultiSelectToolbar's compact action size.
         final count = t.widget<Text>(find.text('2 selected'));
-        expect(count.style!.fontSize, 12);
-        expect(count.style!.height, 16 / 12);
+        final controlText = tokens.typeSlot('control');
+        expect(count.style!.fontSize, controlText.fontSize);
+        expect(count.style!.height, controlText.height);
         expect(count.style!.fontWeight, FontWeight.w700);
         final surface = t.widget<Material>(
           find
@@ -72,7 +73,7 @@ void main() {
               )
               .first,
         );
-        expect(surface.color, tokens.colors['primary-soft']);
+        expect(surface.color, tokens.popover);
         update(() => width = 320);
         await t.pumpAndSettle();
 
@@ -263,7 +264,7 @@ void main() {
           expect(t.getRect(button(label)).top, closeTo(top, .01));
         }
 
-        expect(t.getRect(find.byType(RaftSelectionToolbar)).height, 49);
+        expect(t.getRect(find.byType(RaftSelectionToolbar)).height, 48);
         expect(t.takeException(), isNull);
       },
     );

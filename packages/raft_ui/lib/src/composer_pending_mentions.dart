@@ -3,6 +3,7 @@ import 'reduced_motion.dart';
 import 'package:flutter/material.dart';
 
 import 'banner.dart';
+import 'card.dart';
 import 'components.dart';
 import 'dialog_card.dart';
 import 'icons.dart';
@@ -13,7 +14,9 @@ import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
+import 'recipe_surface.dart';
 import 'theme.dart';
+import 'raft/ui_tokens.dart';
 import 'raft/css_box.dart';
 
 /// Local outcome of a pending mention action (Web
@@ -89,45 +92,46 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
           a.resolutionId,
     ];
     final hint = t.colors['foreground-hint'] ?? t.colors['foreground-muted']!;
-    return Container(
+    return RaftCard(
       key: const ValueKey('pending-mention-action-strip'),
-      // `rounded-lg border border-line-muted bg-layer-panel px-3 py-2
-      // shadow-raft-xs`.
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: t.colors['layer-panel'],
-        border: Border.all(color: t.colors['line-muted']!),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: t.themeShadows.xs.outer,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < actions.length; i++) ...[
-            if (i > 0) const SizedBox(height: 8),
-            _row(context, t, actions[i], channel, hint),
-          ],
-          if (addable.length > 1 && onAddAll != null)
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.only(top: 8),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: t.colors['line-hairline']!),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: LayoutBuilder(
+        builder: (context, bounds) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < actions.length; i++) ...[
+              if (i > 0) const SizedBox(height: 8),
+              _row(
+                context,
+                t,
+                actions[i],
+                channel,
+                hint,
+                wide: bounds.maxWidth >= 576,
+              ),
+            ],
+            if (addable.length > 1 && onAddAll != null)
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 8),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: t.colors['line-hairline']!),
+                  ),
+                ),
+                alignment: Alignment.centerRight,
+                child: _StripButton(
+                  variant: RaftButtonRecipeVariant.outline,
+                  glyph: RaftGlyph.userPlus,
+                  label: raftText(context, 'Add All'),
+                  onPressed: addable.any(executing.containsKey)
+                      ? null
+                      : () => onAddAll!(addable),
                 ),
               ),
-              alignment: Alignment.centerRight,
-              child: _StripButton(
-                variant: RaftButtonRecipeVariant.outline,
-                glyph: RaftGlyph.userPlus,
-                label: raftText(context, 'Add All'),
-                onPressed: addable.any(executing.containsKey)
-                    ? null
-                    : () => onAddAll!(addable),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -137,8 +141,9 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
     RaftTokens t,
     RaftPendingMention action,
     String channel,
-    Color hint,
-  ) {
+    Color hint, {
+    required bool wide,
+  }) {
     final local = state[action.resolutionId];
     final busy = executing.containsKey(action.resolutionId);
     final target = action.label;
@@ -184,10 +189,6 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
         ],
       ),
     );
-    // Web `sm:` is the viewport media query (640px), not the strip width:
-    // `sm:flex-row sm:items-center` keeps the buttons on the text row, below it
-    // the row stacks with `gap-2` and the status clamps to two lines.
-    final wide = MediaQuery.sizeOf(context).width >= 640;
     final info = Row(
       children: [
         RaftIcon(RaftGlyph.userX, size: 14, color: hint),
@@ -217,12 +218,10 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
                 target,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: t.headingFont,
-                  fontSize: 12,
-                  height: 16 / 12,
-                  fontWeight: FontWeight.w700,
-                  color: t.strong,
+                style: t.scale(
+                  t.typeSlot('footnote'),
+                  weight: FontWeight.w700,
+                  color: t.ui.foreground,
                 ),
               ),
               RaftCssText(
@@ -230,11 +229,9 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
                 key: const ValueKey('pending-mention-action-status'),
                 maxLines: wide ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: t.headingFont,
-                  fontSize: 11,
-                  height: 16 / 11,
-                  color: t.colors['foreground-muted'],
+                style: t.scale(
+                  t.typeSlot('caption'),
+                  color: t.ui.foregroundMuted,
                 ),
               ),
             ],
