@@ -94,6 +94,10 @@ column to restore the previous width. On a compact Tasks page the properties
 scroll with the discussion. Once they scroll away, the bar's summary opens them
 in a panel without moving the discussion. System Back dismisses that panel first.
 
+On touch, the Tasks head routes taps near the assigned-person badge to the
+Assignee picker. Visible neighbouring controls retain priority. Dismiss the
+picker to return to the same task, then use Back or close to return to the list.
+
 Activity and Search task pages keep their details toggle. It opens the
 properties panel on compact pages and collapses or restores the pinned
 properties in a wide detail slot. The task's Back or close control returns to

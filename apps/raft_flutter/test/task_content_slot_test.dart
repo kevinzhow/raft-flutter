@@ -304,6 +304,12 @@ void main() {
       final hitBounds = t.getRect(assignee);
       expect(hitBounds.height, 22);
       await t.tapAt(
+        Offset(hitBounds.center.dx, hitBounds.top - 10),
+        kind: PointerDeviceKind.mouse,
+      );
+      await settle(t);
+      expect(find.byType(RaftSelectionPopover), findsNothing);
+      await t.tapAt(
         Offset(hitBounds.center.dx, hitBounds.top + .5),
         kind: PointerDeviceKind.mouse,
       );
@@ -487,6 +493,82 @@ void main() {
     expect(w.location.query('task'), isNull);
     expect(card, findsOneWidget);
   });
+
+  for (final (size, platform) in [
+    (const Size(1280, 900), TargetPlatform.android),
+    (const Size(856, 944), TargetPlatform.android),
+    (const Size(944, 856), TargetPlatform.android),
+    (const Size(390, 844), TargetPlatform.android),
+    (const Size(390, 844), TargetPlatform.linux),
+  ]) {
+    final touch = platform == TargetPlatform.android;
+    final pointer = touch ? PointerDeviceKind.touch : PointerDeviceKind.mouse;
+    testWidgets('Tasks Assignee ${pointer.name} near the badge at $size', (
+      t,
+    ) async {
+      final compact = size.width == 390;
+      final w = await mountTasks(t, size, platform: platform, twoTasks: true);
+      final second = find.byKey(const ValueKey('tasks-page-row-cell-task-2'));
+      final close = find.byKey(
+        ValueKey(compact ? 'task-modal-mobile-back' : 'task-modal-close'),
+      );
+      await t.tap(card.hitTestable(), kind: pointer);
+      await settle(t);
+      if (compact) {
+        await t.tap(close.hitTestable(), kind: pointer);
+        await settle(t);
+      }
+      await t.tap(second.hitTestable(), kind: pointer);
+      await settle(t);
+      expect(w.location.query('task'), 'c1:task:task-2');
+      expect(slot, compact ? findsNothing : findsOneWidget);
+
+      final assignee = find.byKey(const ValueKey('task-properties-assignee'));
+      final bounds = t.getRect(assignee);
+      final target = find.descendant(
+        of: assignee,
+        matching: find.byType(RaftTouchTarget),
+      );
+      if (touch) {
+        expect(t.renderObject<RenderBox>(target).semanticBounds.height, 48);
+      } else {
+        expect(target, findsNothing);
+      }
+      final picker = find.byWidgetPredicate(
+        (w) => w is RaftSelectionPopover && w.title == 'Assignee',
+      );
+      final unassigned = find.descendant(
+        of: picker,
+        matching: find.text('Unassigned'),
+      );
+      expect(picker, findsNothing);
+      await t.tapAt(Offset(bounds.center.dx, bounds.top - 10), kind: pointer);
+      await settle(t);
+      if (!touch) {
+        expect(picker, findsNothing);
+        await t.tap(assignee.hitTestable(), kind: pointer);
+        await settle(t);
+      }
+      expect(unassigned.hitTestable(), findsOneWidget);
+      expect(w.location.query('task'), 'c1:task:task-2');
+      await t.tapAt(const Offset(10, 10), kind: pointer);
+      await settle(t);
+      expect(picker, findsNothing);
+      expect(w.location.query('task'), 'c1:task:task-2');
+
+      final status = find.byKey(const ValueKey('task-properties-status'));
+      await t.tap(status.hitTestable(), kind: pointer);
+      await settle(t);
+      expect(find.byType(RaftInlineBadgeMenu), findsOneWidget);
+      expect(picker, findsNothing);
+      await t.tapAt(const Offset(10, 10), kind: pointer);
+      await settle(t);
+      await t.tap(close.hitTestable(), kind: pointer);
+      await settle(t);
+      expect(w.location.query('task'), isNull);
+      expect(second.hitTestable(), findsOneWidget);
+    });
+  }
 
   for (final escape in [false, true]) {
     testWidgets(

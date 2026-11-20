@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 
 import 'interaction.dart';
 import 'system_inset.dart';
+import 'tap_slop.dart';
 import 'auth_page.dart';
 import 'agent_profile.dart' show RaftPanelSection, raftPanelRuleColor;
 import 'indicators.dart' show RaftSkeleton;
@@ -747,6 +748,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   }) {
     final t = RaftTokens.of(context), task = widget.task;
     final hasStatus = raftTaskStatusVocabulary.contains('${task['status']}');
+    final touchSlop = widget.tasksPage && RaftInteraction.of(context).touch;
     final inlineBadgePair =
         widget.tasksPage &&
         hasStatus &&
@@ -917,7 +919,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             property(
               context,
               'Assignee',
-              assignee(context),
+              assignee(context, touchSlop: touchSlop),
               hang: widget.conversation?.assigneeAvatar == null
                   ? RaftSpace.x1_5
                   : 0,
@@ -985,7 +987,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ColoredBox(color: t.panel, child: section),
+        ColoredBox(
+          color: t.panel,
+          child: touchSlop ? RaftTapSlopHost(child: section) : section,
+        ),
         if (divider)
           ColoredBox(
             color: widget.tasksPage && t.panel.a == 1
@@ -1234,7 +1239,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   /// Web assignee `InlineBadgeEditor`: a badge (`bg-layer-panel
   /// text-foreground-strong`, theme-brutal white/black) that opens the search
   /// page's SelectionPopover (`w-[240px]`, titled "Assignee").
-  Widget assignee(BuildContext context) {
+  Widget assignee(BuildContext context, {required bool touchSlop}) {
     final t = RaftTokens.of(context), task = widget.task;
     final assigned =
         task['claimedById'] != null && task['claimedByType'] != null;
@@ -1309,15 +1314,23 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               builder: (context, _) => assigneePanel(context, close),
             ),
     );
+    final trigger = touchSlop
+        ? RaftTapSlopAnchor(
+            minSize: assigned && enabled
+                ? const Size.square(RaftMetrics.touchTarget)
+                : Size.zero,
+            child: editor,
+          )
+        : editor;
     final avatar = widget.conversation?.assigneeAvatar;
     return avatar == null
-        ? editor
+        ? trigger
         : Row(
             mainAxisSize: MainAxisSize.min,
             spacing: RaftSpace.x1_5,
             children: [
               avatar,
-              Flexible(child: editor),
+              Flexible(child: trigger),
             ],
           );
   }
