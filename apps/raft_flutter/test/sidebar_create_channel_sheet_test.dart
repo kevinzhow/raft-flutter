@@ -66,6 +66,12 @@ void main() {
         expect(find.byType(CreateChannelDialog), findsNothing);
 
         await openSheet();
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(workspace.location.uri, home);
+        expect(find.byType(CreateChannelDialog), findsNothing);
+
+        await openSheet();
         final name = _key('create-channel-name');
         await tester.enterText(name, 'Invalid name');
         tester.view.viewInsets = const FakeViewPadding(bottom: 420);
@@ -119,4 +125,86 @@ void main() {
       }
     }, variant: TargetPlatformVariant.only(platform));
   }
+
+  testWidgets(
+    'dark Home keeps channel details when Back returns from Members',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        final (workspace, api) = await pageFixture(tester);
+        workspace
+          ..mobileNavigation = true
+          ..channel = null
+          ..section = 'home';
+        api.routes['POST /feature-flags/evaluate'] = (request) => {
+          'evaluations': [
+            for (final key in request.data['keys'] as List)
+              {'key': key, 'enabled': key == 'external_channels_v1'},
+          ],
+        };
+        api.routes['GET /channels/external-availability'] = (_) => {
+          'freeLimitReached': false,
+        };
+        api.routes['POST /channels'] = (_) => {
+          'id': 'created-review',
+          'name': 'review-notes',
+          'type': 'channel',
+          'joined': true,
+        };
+        await mountPage(tester, workspace, true, width: 390, height: 844);
+        addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
+        final home = workspace.location.uri;
+        final form = find.byType(CreateChannelDialog);
+        final head = _key('raft-form-sheet-head');
+        final name = _key('create-channel-name');
+        final description = find
+            .descendant(of: form, matching: find.byType(EditableText))
+            .at(1);
+        Finder action(String label) =>
+            find.descendant(of: head, matching: find.text(label)).hitTestable();
+        final writes = api.calls.where(
+          (call) => call.method == 'POST' && call.path == '/channels',
+        );
+
+        await tester.tap(find.bySemanticsLabel('Create Channel').hitTestable());
+        await tester.pumpAndSettle();
+        expect(form, findsOneWidget);
+        final initialHeader = tester.getRect(head);
+        await tester.enterText(name, 'review-notes');
+        await tester.enterText(description, 'Keep these details');
+        expect(action('Next'), findsOneWidget);
+        await tester.tap(action('Next'));
+        await tester.pumpAndSettle();
+        expect(find.text('Add people to #review-notes'), findsOneWidget);
+        expect(tester.getRect(head), initialHeader);
+        expect(writes, isEmpty);
+
+        final back = find.descendant(of: form, matching: find.text('Back'));
+        expect(back.hitTestable(), findsOneWidget);
+        await tester.tap(back);
+        await tester.pumpAndSettle();
+        expect(find.text('Add people to #review-notes'), findsNothing);
+        expect(find.text('review-notes'), findsOneWidget);
+        expect(find.text('Keep these details'), findsOneWidget);
+        expect(writes, isEmpty);
+        expect(workspace.location.uri, home);
+        await tester.tap(action('Next'));
+        await tester.pumpAndSettle();
+        expect(action('Create'), findsOneWidget);
+        await tester.tap(action('Create'));
+        await tester.pumpAndSettle();
+        expect(writes.single.data, containsPair('name', 'review-notes'));
+        expect(
+          writes.single.data,
+          containsPair('description', 'Keep these details'),
+        );
+        expect(form, findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      } finally {
+        semantics.dispose();
+      }
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
 }
