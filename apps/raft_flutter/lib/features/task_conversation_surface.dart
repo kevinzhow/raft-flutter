@@ -154,7 +154,8 @@ Widget taskDiscussionSubject(
               "Its earlier discussion is in the replies of the message it came from. Write here to start the task's own.",
             )
           : null,
-      icon: (context, size, color) => RaftThreadIcon(size: size, color: color),
+      icon: (context, size, color) =>
+          RaftIcon(RaftGlyph.thread, size: size, color: color),
     ),
   );
 }

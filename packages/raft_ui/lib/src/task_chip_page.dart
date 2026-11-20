@@ -407,6 +407,7 @@ class _PageRowContent extends StatelessWidget {
     final showAssignee = list.showAssignee && assigned;
     final unassigned = list.showAssignee && list.showUnassigned && !assigned;
     final statusLabel = raftText(context, raftTaskStatusLabel(task.status));
+    final compactStatus = list.showChannel && narrow;
     final titleStyle = t.scale(
       RaftTypeScale.callout,
       weight: FontWeight.w400,
@@ -448,12 +449,9 @@ class _PageRowContent extends StatelessWidget {
               RaftTaskReplyCount(task: task, style: lineMono),
           ],
         ),
-        Wrap(
+        _PageMetadata(
           key: const ValueKey('message-task-chip-meta'),
-          alignment: WrapAlignment.end,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 8,
-          runSpacing: 4,
+          alignBaselines: compactStatus,
           children: [
             if (channel != null)
               RaftCssText(
@@ -480,7 +478,7 @@ class _PageRowContent extends StatelessWidget {
                 child: RaftTaskStatusBadge(
                   status: raftTaskStatusOf(task.status),
                   label: statusLabel,
-                  labelHidden: list.showChannel && narrow,
+                  labelHidden: compactStatus,
                 ),
               ),
             ?task.time,

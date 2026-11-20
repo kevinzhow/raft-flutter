@@ -22,6 +22,7 @@ import 'tokens/tokens.dart';
 import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 
 part 'task_chip_page.dart';
+part 'task_chip_page_metadata.dart';
 
 /// One task row of [RaftTaskChipList]: facts the app resolved (the list never
 /// reads a store or requests anything).

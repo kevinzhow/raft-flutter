@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'task_typography_test.dart' show loadTaskFonts;
+
 const _rows = [
   RaftTaskChipRow(
     id: 'a',
@@ -413,6 +415,29 @@ void main() {
     final size = t.getSize(avatar);
     await t.pumpWidget(const SizedBox.shrink());
     expect(size, const Size.square(19));
+  });
+
+  testWidgets('phone metadata shares the compact status icon baseline', (
+    t,
+  ) async {
+    await loadTaskFonts(t);
+    await _mount(
+      t,
+      picks: _Picks(),
+      width: 358,
+      showChannel: true,
+      showUnassigned: true,
+      touch: true,
+    );
+    Rect bounds(String key) => t.getRect(
+      find.descendant(of: _row('b'), matching: find.byKey(ValueKey(key))),
+    );
+    final label = bounds('message-task-chip-unassigned');
+    final badge = bounds('message-task-chip-status');
+    await t.pumpWidget(const SizedBox.shrink());
+
+    expect(badge.width, 24);
+    expect(label.bottom, closeTo(badge.bottom, .01));
   });
 
   testWidgets('text scale 1x and 2x: rows grow with the text, nothing '

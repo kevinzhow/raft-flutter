@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import 'icons.dart';
 import 'mounted_task_chip.dart';
@@ -53,6 +54,11 @@ class RaftTaskStatusBadge extends StatelessWidget {
       decoration: TextDecoration.none,
       fontFamilyFallback: inherited.fontFamilyFallback,
     );
+    final border = Border.fromBorderSide(recipe.side());
+    final icon = RaftMessageTaskStatusIcon(
+      status: status,
+      color: recipe.iconForeground,
+    );
     final badge = Container(
       // The chip height is a minimum: a taller line box (Android Chinese
       // control profile, larger text) grows the pill instead of clipping.
@@ -61,16 +67,17 @@ class RaftTaskStatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: recipe.background,
         borderRadius: recipe.radius,
-        border: Border.fromBorderSide(recipe.side()),
+        border: labelHidden ? null : border,
       ),
+      // The compact badge's inset ring paints within the icon's padding.
+      foregroundDecoration: labelHidden
+          ? BoxDecoration(borderRadius: recipe.radius, border: border)
+          : null,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: recipe.gap,
         children: [
-          RaftMessageTaskStatusIcon(
-            status: status,
-            color: recipe.iconForeground,
-          ),
+          labelHidden ? _StatusIconBaseline(child: icon) : icon,
           if (!labelHidden)
             Flexible(
               child: RaftCssText(
@@ -92,6 +99,27 @@ class RaftTaskStatusBadge extends StatelessWidget {
       child: ExcludeSemantics(child: badge),
     );
   }
+}
+
+// A compact badge has no in-flow label. Its first flex item's baseline is
+// synthesized at the bottom of the SVG.
+class _StatusIconBaseline extends SingleChildRenderObjectWidget {
+  const _StatusIconBaseline({required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderStatusIconBaseline();
+}
+
+class _RenderStatusIconBaseline extends RenderProxyBox {
+  @override
+  double computeDistanceToActualBaseline(TextBaseline baseline) => size.height;
+
+  @override
+  double computeDryBaseline(
+    BoxConstraints constraints,
+    TextBaseline baseline,
+  ) => getDryLayout(constraints).height;
 }
 
 /// The Pencil 10 at 40% opacity the InlineBadgeEditor puts after the label.
