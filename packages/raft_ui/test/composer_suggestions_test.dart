@@ -20,6 +20,86 @@ const choices = [
   RaftComposerSuggestion(type: 'channel', id: 'channel-id', name: 'design'),
 ];
 void main() {
+  for (final (platform, viewport) in const [
+    (TargetPlatform.linux, Size(390, 844)),
+    (TargetPlatform.android, Size(856, 944)),
+    (TargetPlatform.android, Size(944, 856)),
+  ]) {
+    testWidgets('mounted mention groups have a separator and preserve picks '
+        'on $platform at $viewport', (tester) async {
+      await tester.binding.setSurfaceSize(viewport);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final sends = <List<Map<String, dynamic>>>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme().copyWith(platform: platform),
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: RaftComposer(
+                suggestions: [
+                  choices.first,
+                  const RaftComposerSuggestion(
+                    type: 'user',
+                    id: 'outside',
+                    name: 'outside',
+                    inChannel: false,
+                  ),
+                ],
+                onSend: (_) async => false,
+                onSendWithMentions: (_, mentions) async {
+                  sends.add(mentions);
+                  return true;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      try {
+        final editor = find.byType(EditableText);
+        await tester.enterText(editor, '@');
+        await tester.pump();
+        final inside = find.text('In this channel');
+        final outside = find.text('Not in this channel');
+        final separator = find.byType(RaftSeparator);
+        expect(inside, findsOneWidget);
+        expect(outside, findsOneWidget);
+        expect(separator, findsOneWidget);
+        expect(tester.getRect(separator).height, 1);
+        expect(
+          tester.getTopLeft(separator).dy,
+          greaterThan(tester.getBottomLeft(inside).dy),
+        );
+        expect(
+          tester.getBottomLeft(separator).dy,
+          lessThan(tester.getTopLeft(outside).dy),
+        );
+        final option = find.byKey(
+          const ValueKey('composer-suggestion-user-outside'),
+        );
+        expect(option.hitTestable(), findsOneWidget);
+        await tester.tap(option);
+        await tester.pump();
+        expect(
+          tester.widget<EditableText>(editor).controller.text,
+          '@outside ',
+        );
+        expect(tester.widget<EditableText>(editor).focusNode.hasFocus, isTrue);
+        expect(outside, findsNothing);
+        expect(sends, isEmpty);
+        await tester.tap(find.byTooltip('Send'));
+        await tester.pump();
+        expect(sends.single, [
+          {'type': 'user', 'id': 'outside', 'name': 'outside'},
+        ]);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      }
+    });
+  }
+
   test('structured identity appears only in visible exact handle, including adjacent Chinese text', () {
     expect(raftStructuredMentionAppears('草案@Mona', 'Mona'), isTrue);
     expect(raftStructuredMentionAppears('draft@Mona', 'Mona'), isTrue);
