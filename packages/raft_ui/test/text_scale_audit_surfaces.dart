@@ -1069,6 +1069,12 @@ final auditSurfaces = <AuditSurface>[
     Size(640, 480),
   ),
   AuditSurface(
+    'notificationTriggerPreview',
+    'Notification trigger',
+    notificationTriggerPreview,
+    Size(390, 400),
+  ),
+  AuditSurface(
     'sourceDesktopNotificationSettingsPreview',
     'Source notification settings (desktop)',
     sourceDesktopNotificationSettingsPreview,

@@ -50,8 +50,11 @@ void main() {
           find.ancestor(of: bell, matching: find.byType(RaftWorkspaceTopBar)),
           findsOneWidget,
         );
-        expect(t.getRect(bell).top, 3.5);
-        expect(t.getSize(bell), const Size(36, 36));
+        // Web v1.24 NotificationTrigger uses --frame-item-height. The
+        // fine-pointer foundation sets it to --control-height (34 px), and
+        // the mounted top bar centers it at y=4.5.
+        expect(t.getRect(bell).top, 4.5);
+        expect(t.getSize(bell), const Size(34, 34));
         // Web v1.24 uses the fine-pointer AppRail footer below the top bar.
         expect(t.getRect(help), const Rect.fromLTWH(6, 718, 36, 36));
         expect(t.getRect(settings), const Rect.fromLTWH(6, 758, 36, 36));
