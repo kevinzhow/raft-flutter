@@ -305,7 +305,9 @@ void main() {
         t,
       ) async {
         final (w, _) = await pageFixture(t);
+        w.servers = [w.server!];
         await mountPage(t, w, false, width: width);
+        addTearDown(() => t.pumpWidget(const SizedBox.shrink()));
         final bar = find.byKey(const ValueKey('workspace-top-bar'));
         final shows = width >= 768;
         expect(bar, shows ? findsOneWidget : findsNothing);

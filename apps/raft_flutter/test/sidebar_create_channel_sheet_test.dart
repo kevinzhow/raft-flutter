@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/create_channel_dialog.dart';
@@ -13,6 +14,9 @@ void main() {
     ) async {
       final semantics = tester.ensureSemantics();
       addTearDown(semantics.dispose);
+      final pointer = platform == TargetPlatform.android
+          ? PointerDeviceKind.touch
+          : PointerDeviceKind.mouse;
       final (workspace, api) = await pageFixture(tester);
       workspace
         ..mobileNavigation = true
@@ -29,7 +33,7 @@ void main() {
       final home = workspace.location.uri;
       final open = find.bySemanticsLabel('Create Channel');
       Future<void> openSheet() async {
-        await tester.tap(open);
+        await tester.tap(open, kind: pointer);
         await tester.pumpAndSettle();
         expect(workspace.location.uri, home);
         expect(find.byType(CreateChannelDialog), findsOneWidget);
@@ -53,7 +57,7 @@ void main() {
       expect(header.height, 56);
       expect(tester.getCenter(close).dx, lessThan(tester.getCenter(create).dx));
       expect(find.text('Cancel'), findsNothing);
-      await tester.tap(close);
+      await tester.tap(close, kind: pointer);
       await tester.pumpAndSettle();
       expect(workspace.location.uri, home);
       expect(find.byType(CreateChannelDialog), findsNothing);
@@ -68,11 +72,20 @@ void main() {
         of: find.byType(CreateChannelDialog),
         matching: find.byType(CustomScrollView),
       );
-      await tester.drag(formScroll, const Offset(0, -200));
+      if (pointer == PointerDeviceKind.touch) {
+        await tester.drag(formScroll, const Offset(0, -200));
+      } else {
+        await tester.sendEventToBinding(
+          PointerScrollEvent(
+            position: tester.getCenter(formScroll),
+            scrollDelta: const Offset(0, 200),
+          ),
+        );
+      }
       await tester.pumpAndSettle();
       expect(tester.getRect(head), initial);
       expect(create.hitTestable(), findsOneWidget);
-      await tester.tap(create);
+      await tester.tap(create, kind: pointer);
       await tester.pumpAndSettle();
       final validation = find.text(
         'Start with a letter, then letters, numbers, - or _',
@@ -88,7 +101,8 @@ void main() {
       await tester.enterText(name, 'review-notes');
       await tester.pump();
       expect(validation, findsNothing);
-      await tester.tap(create);
+      expect(create.hitTestable(), findsOneWidget);
+      await tester.tap(create, kind: pointer);
       await tester.pumpAndSettle();
       final requests = api.calls.where(
         (call) => call.method == 'POST' && call.path == '/channels',

@@ -354,33 +354,37 @@ class RaftSheet extends StatelessWidget {
     }
     final controller = RaftSheetScope.maybeOf(context)?.scrollController;
     final t = RaftTokens.of(context);
-    final handle = showHandle ? RaftSheetMetrics.handleBox(t) : 0.0;
+    final headerSlot = header == null
+        ? null
+        : SizedBox(height: headerExtent, child: header);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Keep the dialog's actions in the box layout. Revealing a focused
+        // field can change a pinned sliver's hit region even while it paints
+        // in the same place.
+        if (!showHandle && headerSlot != null)
+          _PointerDragArea(child: headerSlot),
         Expanded(
           child: CustomScrollView(
             controller: controller,
             slivers: [
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _PinnedHeader(
-                  extent: math.max(
-                    handle + headerExtent,
-                    RaftSheetMetrics.minDragTarget,
-                  ),
-                  color: RaftSheetMetrics.fill(t),
-                  child: _PointerDragArea(
-                    child: Column(
-                      children: [
-                        if (showHandle) const RaftSheetHandle(),
-                        if (header != null)
-                          SizedBox(height: headerExtent, child: header),
-                      ],
+              if (showHandle)
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _PinnedHeader(
+                    extent: math.max(
+                      RaftSheetMetrics.handleBox(t) + headerExtent,
+                      RaftSheetMetrics.minDragTarget,
+                    ),
+                    color: RaftSheetMetrics.fill(t),
+                    child: _PointerDragArea(
+                      child: Column(
+                        children: [const RaftSheetHandle(), ?headerSlot],
+                      ),
                     ),
                   ),
                 ),
-              ),
               SliverToBoxAdapter(
                 child: Padding(padding: padding, child: body),
               ),
