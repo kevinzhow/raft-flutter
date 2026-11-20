@@ -282,16 +282,11 @@ class RaftSpecActionCardContent {
     return TextSpan(
       style: style,
       children: [
-        // The Web separator is inline generated text. Keep the placeholder
-        // from introducing break points between the preceding word and date.
+        // Web adds inline margins around the separator with ::before.
         const TextSpan(text: wordJoiner),
-        WidgetSpan(
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x1),
-            child: RaftCssText('·', style: style),
-          ),
+        const TextSpan(
+          text: '·',
+          style: TextStyle(letterSpacing: RaftSpace.x1 * 2),
         ),
         TextSpan(text: '$wordJoiner$timestamp'),
       ],
