@@ -397,6 +397,23 @@ void main() {
     expect(metadata, closeTo(title, .01));
   });
 
+  testWidgets('a phone row uses the compact assignee avatar size', (t) async {
+    await _mount(
+      t,
+      picks: _Picks(),
+      width: 358,
+      showChannel: true,
+      touch: true,
+    );
+    final avatar = find.descendant(
+      of: _row('a'),
+      matching: find.byKey(const ValueKey('mounted-avatar-frame')),
+    );
+    final size = t.getSize(avatar);
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(size, const Size.square(19));
+  });
+
   testWidgets('text scale 1x and 2x: rows grow with the text, nothing '
       'overflows, the box and the title stay readable', (t) async {
     final p = _Picks();

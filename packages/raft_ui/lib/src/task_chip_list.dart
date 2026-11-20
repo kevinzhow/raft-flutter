@@ -11,6 +11,7 @@ import 'icons.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
 import 'panel_layout.dart' show RaftCssText;
+import 'raft/avatar.dart' show RaftAvatarSize;
 import 'raft/checkbox.dart';
 import 'raft/ui_tokens.dart';
 import 'space.dart';
@@ -381,11 +382,13 @@ class RaftTaskAssignee extends StatelessWidget {
     final name = task.assigneeIsViewer
         ? raftText(context, 'You')
         : task.assigneeName!;
+    final avatarSize = alignToPageRow ? RaftAvatarSize.xs : null;
     final avatar = RaftAvatar(
       name: task.assigneeName!,
       kind: task.assigneeIsAgent ? RaftAvatarKind.agent : RaftAvatarKind.human,
       imageUrl: task.assigneeAvatarUrl,
       mountedContext: RaftMountedAvatarContext.compactList,
+      uiSize: avatarSize,
       presence: task.assigneePresence,
       content: task.assigneeAvatarPixelKey == null
           ? null
@@ -423,7 +426,9 @@ class RaftTaskAssignee extends StatelessWidget {
         builder: (context, box) => Row(
           key: const ValueKey('message-task-chip-assignee'),
           mainAxisSize: MainAxisSize.min,
-          spacing: box.maxWidth < _avatarAndGap ? 0 : 6,
+          spacing: box.maxWidth < (avatarSize?.extent ?? 20) + _avatarGap
+              ? 0
+              : _avatarGap,
           children: [
             avatar,
             Flexible(child: label),
@@ -433,8 +438,7 @@ class RaftTaskAssignee extends StatelessWidget {
     );
   }
 
-  /// The avatar slot (20) and the gap after it (6).
-  static const _avatarAndGap = 26.0;
+  static const _avatarGap = 6.0;
 }
 
 /// The task row's metadata shares the title line height across font sizes.
