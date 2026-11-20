@@ -434,18 +434,11 @@ class _PageRowContent extends StatelessWidget {
             labelHidden: compactStatus,
           )
         : null;
-    const probeWeight = int.fromEnvironment('TASKS_TITLE_WEIGHT');
-    final titleStyle = t
-        .scale(
-          RaftTypeScale.callout,
-          weight: FontWeight.w400,
-          color: t.ui.foreground,
-        )
-        .copyWith(
-          fontVariations: probeWeight == 0
-              ? null
-              : [FontVariation('wght', probeWeight.toDouble())],
-        );
+    final titleStyle = t.scale(
+      RaftTypeScale.callout,
+      weight: FontWeight.w400,
+      color: t.ui.foreground,
+    );
     return _RowFlow(
       gap: 8,
       rowGap: 4,
