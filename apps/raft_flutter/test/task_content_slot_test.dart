@@ -316,6 +316,13 @@ void main() {
     await settle(t);
     expect(find.byType(SourceTaskSurface), findsOneWidget);
     expect(w.location.query('task'), 'c1:task:task-1');
+    final detail = find.byType(SourceTaskSurface);
+    final timeline = find.descendant(
+      of: detail,
+      matching: find.byKey(const ValueKey('current-timeline')),
+    );
+    final empty = find.byKey(const ValueKey('task-conversation-empty'));
+    expect(t.getRect(empty).bottom, t.getRect(timeline).bottom);
     await t.tap(find.byKey(const ValueKey('task-modal-mobile-back')));
     await settle(t);
     expect(find.byType(SourceTaskSurface), findsNothing);

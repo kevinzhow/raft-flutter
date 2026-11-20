@@ -54,9 +54,13 @@ class RaftInlineBadgeEditor extends StatefulWidget {
     this.tooltip,
     this.panelBuilder,
     this.indicator = RaftGlyph.pencil,
+    this.inlineProperty = false,
   });
   final String label, selectedId;
   final RaftGlyph indicator;
+
+  /// The inline task properties use the editable StatusChip recipe.
+  final bool inlineProperty;
 
   /// Replaces the plain option list with a caller panel (Web `searchable`:
   /// the same SelectionPopover as the search filters). It receives a close
@@ -171,13 +175,14 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
           );
     final inherited = DefaultTextStyle.of(context).style
         .merge(badge.textStyle(rt));
+    final inlineProperty = widget.inlineProperty;
     final label = inherited.copyWith(
       // Badge sets no family: inherit the caller's mounted shell style.
       fontFamily: inherited.fontFamily,
       decoration: TextDecoration.none,
       fontSize: 12, // text-xs
       height: 16 / 12,
-      fontWeight: FontWeight.w700, // font-bold
+      fontWeight: inlineProperty ? FontWeight.w600 : FontWeight.w700,
       color: widget.foreground,
       letterSpacing: badge.letterSpacing,
     );
@@ -189,7 +194,7 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
     ) {
       final chip = RaftMessageTaskChipRecipe(t, status);
       return Padding(
-        padding: const EdgeInsets.only(top: 2),
+        padding: EdgeInsets.only(top: inlineProperty ? 0 : 2),
         child: CustomPaint(
           foregroundPainter: state.focusVisible
               ? _BadgeFocusOutline(t.semantic.lineStrong, chip.radius)
@@ -199,8 +204,23 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
               RaftTaskStatusBadge(
                 status: status,
                 label: widget.label,
+                backdrop: inlineProperty ? t.panel : null,
                 trailing: t.option('task.status', or: 'symbol') == 'square'
-                    ? const RaftIcon(RaftGlyph.chevronDown, size: 12)
+                    ? inlineProperty
+                          // TaskStatusBadge trailing SVG uses -mx-0.5.
+                          ? const SizedBox(
+                              width: 8,
+                              height: 12,
+                              child: OverflowBox(
+                                minWidth: 12,
+                                maxWidth: 12,
+                                child: RaftIcon(
+                                  RaftGlyph.chevronDown,
+                                  size: 12,
+                                ),
+                              ),
+                            )
+                          : const RaftIcon(RaftGlyph.chevronDown, size: 12)
                     : RaftBadgeEditPencil(color: chip.iconForeground),
               ),
               if (state.hovered && widget.enabled)
@@ -233,18 +253,22 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
           // brutal Badge `h-5`; elegant has no fixed height (py-0.5 + 16px line).
           // The height is a minimum: a taller line box (Android Chinese control
           // profile, larger text) grows the capsule instead of being clipped.
-          constraints: BoxConstraints(minHeight: badge.height ?? 0),
+          constraints: BoxConstraints(
+            minHeight: inlineProperty ? 22 : badge.height ?? 0,
+          ),
           // px-2 py-0.5; with the brutal fixed h-5 the 16px line is centred
           // (items-center) and overflows into the padding, so only elegant keeps
           // the vertical inset in layout.
           padding: EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: badge.height == null ? 2 : 0,
+            horizontal: inlineProperty ? 6 : 8,
+            vertical: !inlineProperty && badge.height == null ? 2 : 0,
           ),
           decoration: BoxDecoration(
             color: widget.background,
             borderRadius: badgeRadius,
-            border: Border.all(color: Colors.transparent),
+            border: inlineProperty
+                ? null
+                : Border.all(color: Colors.transparent),
           ),
           foregroundDecoration: state.hovered && widget.enabled
               // Product InlineBadgeEditor: hover:brightness-90 in both families.
@@ -259,10 +283,14 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
             children: [
               RaftCssText(widget.label, style: label),
               Opacity(
-                opacity: .4,
+                opacity: inlineProperty ? 1 : .4,
                 child: RaftIcon(
                   widget.indicator,
-                  size: widget.indicator == RaftGlyph.chevronDown ? 12 : 10,
+                  size: inlineProperty
+                      ? 14
+                      : widget.indicator == RaftGlyph.chevronDown
+                      ? 12
+                      : 10,
                   color: widget.foreground!,
                 ),
               ),

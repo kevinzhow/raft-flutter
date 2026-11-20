@@ -64,12 +64,15 @@ class RaftTimelineCompositionRecipe {
     required Widget history,
     required Widget forward,
     Widget? footer,
+    bool reserveSentinels = true,
   }) => [
     ...header,
-    SliverToBoxAdapter(child: SizedBox(height: sentinelExtent)),
+    if (reserveSentinels)
+      SliverToBoxAdapter(child: SizedBox(height: sentinelExtent)),
     history,
     forward,
-    SliverToBoxAdapter(child: SizedBox(height: sentinelExtent)),
+    if (reserveSentinels)
+      SliverToBoxAdapter(child: SizedBox(height: sentinelExtent)),
     if (footer != null) SliverToBoxAdapter(child: footer),
   ];
 

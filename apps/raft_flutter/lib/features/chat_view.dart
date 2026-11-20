@@ -3311,6 +3311,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 header: header,
                 history: history,
                 forward: forward,
+                reserveSentinels: !taskPlaceholder,
                 footer: taskPlaceholder
                     ? null
                     : AgentTypingListEnd(controller: w, thread: widget.thread),

@@ -944,7 +944,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         ColoredBox(color: t.panel, child: section),
         if (divider)
           ColoredBox(
-            color: t.colors['line-hairline']!,
+            color: widget.tasksPage && t.panel.a == 1
+                ? raftChromeBlend(t.ui.lineHairline, t.panel)
+                : t.ui.lineHairline,
             child: SizedBox(height: t.border),
           ),
       ],
@@ -1130,6 +1132,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     }
     final editor = RaftInlineBadgeEditor(
       key: const ValueKey('task-properties-status'),
+      inlineProperty: widget.tasksPage,
       // Web `badgeStatus`: the trigger is the TaskStatusBadge, so `uppercase`
       // does not apply.
       label: label,
@@ -1205,6 +1208,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         widget.canAssign && !done && (!widget.busy || handoff != null);
     final editor = RaftInlineBadgeEditor(
       key: const ValueKey('task-properties-assignee'),
+      inlineProperty: widget.tasksPage && !assigned,
       label: label,
       selectedId: assigned
           ? '${task['claimedByType']}:${task['claimedById']}'
