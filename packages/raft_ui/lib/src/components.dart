@@ -31,6 +31,7 @@ import 'raft/ui_tokens.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
 import 'mounted_reaction_recipe.dart';
 import 'composer_recipe.dart';
+import 'focus_visible.dart';
 import 'system_inset.dart';
 import 'tap_slop.dart';
 import 'text_input_refresh.dart';
@@ -2255,6 +2256,7 @@ class RaftComposer extends StatefulWidget {
 
 class _RaftComposerState extends State<RaftComposer> {
   late final RaftMarkdownEditingController controller;
+  final focusVisibility = RaftFocusVisible.shared;
   final focus = FocusNode();
 
   // The expanded editor (see composer_expansion_state.dart): its own focus
@@ -2312,6 +2314,10 @@ class _RaftComposerState extends State<RaftComposer> {
 
   bool sending = false;
   bool composerFocused = false;
+  void focusRingChanged() {
+    if (composerFocused) rebuild();
+  }
+
   bool restoringDraft = false;
   RaftDeferredComposerDraft? deferredDraft;
   bool deferredFlushQueued = false;
@@ -2689,6 +2695,7 @@ class _RaftComposerState extends State<RaftComposer> {
   @override
   void initState() {
     super.initState();
+    focusVisibility.addRingListener(focusRingChanged);
     controller = RaftMarkdownEditingController(
       text: raftProgrammaticEditingText(widget.initialDraft),
     );
@@ -2856,6 +2863,7 @@ class _RaftComposerState extends State<RaftComposer> {
 
   @override
   void dispose() {
+    focusVisibility.removeRingListener(focusRingChanged);
     toastHost?.unavoid(toastAvoidKey);
     widget.handle?._release(this);
     RaftTextInputRefresh.release();
@@ -3362,7 +3370,9 @@ class _RaftComposerState extends State<RaftComposer> {
                           child: Container(
                             key: const ValueKey('composer-shell-slot'),
                             decoration: recipe.shellDecoration(
-                              focused: composerFocused,
+                              focused:
+                                  composerFocused &&
+                                  focusVisibility.ringVisible,
                             ),
                             // CSS's first-action negative margin must also be
                             // in the parent's hit bounds; a paint translation
