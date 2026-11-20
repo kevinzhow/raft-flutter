@@ -66473,6 +66473,11 @@
         "owner": "WP-DS1 form controls",
         "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
       },
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#method:_RaftInlineBadgeEditorState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "Tasks Tab visual parity",
+        "reason": "The desktop Tasks assignee control resolves the soft Badge height with responsive recipe states. This registers the source call without marking visual acceptance."
+      },
       "packages/raft_ui/lib/src/kbd.dart#method:RaftKbd.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "unknown",
         "owner": "WP-DS1 form controls",
