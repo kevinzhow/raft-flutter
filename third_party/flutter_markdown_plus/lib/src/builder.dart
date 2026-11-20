@@ -113,6 +113,7 @@ class MarkdownBuilder implements md.NodeVisitor {
     required this.listItemCrossAxisAlignment,
     this.fitContent = false,
     this.blockWrapper,
+    this.inlineTextWrapper,
     this.onSelectionChanged,
     this.onTapText,
     this.contextMenuBuilder,
@@ -156,6 +157,9 @@ class MarkdownBuilder implements md.NodeVisitor {
 
   /// Optional layout-neutral annotation of a completed top-level block.
   final Widget Function(md.Element element, Widget child)? blockWrapper;
+
+  /// Wraps a completed, merged inline text run.
+  final Widget Function(Text child)? inlineTextWrapper;
 
   /// Whether to allow the widget to fit the child content.
   final bool fitContent;
@@ -902,7 +906,10 @@ class MarkdownBuilder implements md.NodeVisitor {
       lastIsText = true;
     }
 
-    return mergedWidgets;
+    final wrap = inlineTextWrapper;
+    return wrap == null
+        ? mergedWidgets
+        : [for (final run in mergedWidgets) if (run is Text) wrap(run) else run];
   }
 
   TextAlign _textAlignForBlockTag(String? blockTag) {

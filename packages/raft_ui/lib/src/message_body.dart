@@ -31,7 +31,7 @@ import 'package:mermaid_core/mermaid_core.dart' as core;
 
 import 'package:re_highlight/re_highlight.dart';
 
-import 'panel_layout.dart' show raftTextMetricsCache;
+import 'panel_layout.dart' show RaftCssLineBox, raftTextMetricsCache;
 import 'raft_selection_area.dart';
 import 'text_selection_toolbar.dart';
 import 'viewport_breakpoints.dart';
@@ -1127,6 +1127,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
     final afterLink = markdown.afterLinkBlockBuilder;
     final seen = <String>{};
     final wrap = markdown.blockWrapper;
+    final linkBuilder = widget.builders['a'];
     final built =
         MarkdownBuilder(
           delegate: this,
@@ -1146,6 +1147,11 @@ class _RaftMarkdownState extends State<MarkdownWidget>
                   : entry.value,
           },
           paddingBuilders: markdown.paddingBuilderFactory(),
+          inlineTextWrapper:
+              linkBuilder is _MessageLinkBuilder &&
+                  linkBuilder.inlineLinkBuilder != null
+              ? _alignInlineLinks
+              : null,
           blockWrapper: afterLink == null
               ? wrap
               : (element, child) {
@@ -1186,6 +1192,20 @@ class _RaftMarkdownState extends State<MarkdownWidget>
             ? _joinBlock(_tightenListItemGaps(child, gap))
             : _tightenListItemGaps(child, gap),
     ];
+  }
+
+  Widget _alignInlineLinks(Text run) {
+    final span = run.textSpan;
+    if (span == null ||
+        span.visitChildren((child) => child is! _MessageInlineLinkSpan)) {
+      return run;
+    }
+    return RaftCssLineBox(
+      style: span.style ?? markdown.resolvedStyleSheet.p!,
+      textScaler: run.textScaler ?? MediaQuery.textScalerOf(context),
+      hasInlineWidgets: true,
+      child: run,
+    );
   }
 
   @override
@@ -1890,6 +1910,14 @@ class _DisplayMathBuilder extends MarkdownElementBuilder {
   );
 }
 
+class _MessageInlineLinkSpan extends WidgetSpan {
+  const _MessageInlineLinkSpan({required super.child})
+    : super(
+        alignment: PlaceholderAlignment.baseline,
+        baseline: TextBaseline.alphabetic,
+      );
+}
+
 /// Inline Markdown links need an explicit focus/action widget. The upstream
 /// recognizer alone is pointer-only and omits the link URL from Web semantics.
 class _MessageLinkBuilder extends MarkdownElementBuilder {
@@ -1980,9 +2008,7 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     final inlineLink = inlineLinkBuilder?.call(context, href);
     if (inlineLink != null) {
       return Text.rich(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
+        _MessageInlineLinkSpan(
           child: DefaultTextStyle.merge(
             style: base,
             child: raftMessageTapControlRegion(inlineLink),

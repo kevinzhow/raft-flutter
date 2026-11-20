@@ -29819,6 +29819,14 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/message_body.dart#method:_RaftMarkdownState._alignInlineLinks": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "app-link-card"
+        ],
+        "owner": "WP-LINK",
+        "reason": "Applies the shared CSS line box to a completed Markdown run containing an App Link widget."
+      },
       "packages/raft_ui/lib/src/message_body.dart#method:_RaftMarkdownState.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -42202,7 +42210,7 @@
         "owner": "task299 Markdown section comments",
         "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
       },
-      "third_party/flutter_markdown_plus/lib/src/builder.dart#local-function:CLASS:MarkdownBuilder@2866/METHOD:visitElementAfter@13211/FUNCTION:defaultChild@13525": {
+      "third_party/flutter_markdown_plus/lib/src/builder.dart#local-function:CLASS:MarkdownBuilder@2866/METHOD:visitElementAfter@13345/FUNCTION:defaultChild@13659": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -57719,31 +57727,31 @@
         "owner": "WP-LINK",
         "reason": "Layout and paint implementation of the SDK app-link card part."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13215/METHOD:build@18035/FUNCTION:anchoredOther@21176": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13231/METHOD:build@18051/FUNCTION:anchoredOther@21192": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13215/METHOD:build@18035/FUNCTION:compactProse@20699": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13231/METHOD:build@18051/FUNCTION:compactProse@20715": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13215/METHOD:build@18035/FUNCTION:selectable@21061": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13231/METHOD:build@18051/FUNCTION:selectable@21077": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36262/METHOD:build@36844/FUNCTION:failed@37000": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36278/METHOD:build@36860/FUNCTION:failed@37016": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@55107/METHOD:build@55603/FUNCTION:<anonymous>@55712/FUNCTION:control@56949": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@55771/METHOD:build@56267/FUNCTION:<anonymous>@56376/FUNCTION:control@57613": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

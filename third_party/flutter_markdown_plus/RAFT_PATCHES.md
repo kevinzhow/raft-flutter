@@ -7,3 +7,5 @@ The optional MarkdownScrollbarBuilder decorates the existing embedded table/pre 
 When updating upstream, compare against the published archive and reapply this small hook. Do not replace the table renderer or widget-tree traversal. The focused raft_ui markdown scrollbar contract tests cover null-hook defaults, table/code callback wiring, controller ownership and actual touch/pointer interactions.
 
 Inline span merging keeps TextSpan subclasses whole: `_getInlineSpansFromSpan` and `_mergeSimilarTextSpans` only flatten or merge spans whose runtime type is exactly `TextSpan`. raft_ui returns inline code as a `RaftBackgroundSpan` (a TextSpan subclass that paints the `bg-fill-muted` run below the selection highlight); the upstream merge rebuilt it as a plain TextSpan and the fill was lost. Covered by packages/raft_ui/test/markdown_inline_code_background_test.dart. Reapply when updating upstream.
+
+The optional `MarkdownBuilder.inlineTextWrapper` receives a completed inline text run after span merging. Raft uses it to align the line box for custom message link widgets without splitting the original paragraph. A null callback returns the original widgets.

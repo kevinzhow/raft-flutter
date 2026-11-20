@@ -1443,22 +1443,31 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
     super.key,
     required this.style,
     required this.textScaler,
+    this.hasInlineWidgets = false,
     required super.child,
   });
   final TextStyle style;
   final TextScaler textScaler;
+
+  /// Widget spans retain the paragraph's fractional layout baseline.
+  final bool hasInlineWidgets;
   bool _windowsChinese(BuildContext context) =>
       Theme.of(context).platform == TargetPlatform.windows &&
       RaftControlTypography.appliesIn(context);
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderCssLineBox(style, textScaler, _windowsChinese(context));
+  RenderObject createRenderObject(BuildContext context) => _RenderCssLineBox(
+    style,
+    textScaler,
+    _windowsChinese(context),
+    hasInlineWidgets,
+  );
   @override
   void updateRenderObject(BuildContext context, _RenderCssLineBox r) {
     r
       ..style = style
       ..textScaler = textScaler
-      ..windowsChinese = _windowsChinese(context);
+      ..windowsChinese = _windowsChinese(context)
+      ..hasInlineWidgets = hasInlineWidgets;
   }
 }
 
@@ -1502,10 +1511,23 @@ double _laidOutGlobalTop(RenderBox box) {
 }
 
 class _RenderCssLineBox extends RenderProxyBox {
-  _RenderCssLineBox(this._style, this._textScaler, this._windowsChinese);
+  _RenderCssLineBox(
+    this._style,
+    this._textScaler,
+    this._windowsChinese,
+    this._hasInlineWidgets,
+  );
   TextStyle _style;
   TextScaler _textScaler;
   bool _windowsChinese;
+  bool _hasInlineWidgets;
+
+  set hasInlineWidgets(bool value) {
+    if (value == _hasInlineWidgets) return;
+    _hasInlineWidgets = value;
+    markNeedsLayout();
+  }
+
   set windowsChinese(bool value) {
     if (value == _windowsChinese) return;
     _windowsChinese = value;
@@ -1555,7 +1577,11 @@ class _RenderCssLineBox extends RenderProxyBox {
     // 14.879 and paints at 15). Align the painted baseline, not the reported
     // one, or every snapped line lands up to half a pixel off Chromium's.
     final reported = c.getDistanceToBaseline(TextBaseline.alphabetic) ?? 0;
-    _flutterBaseline = (reported + 0.5).floorToDouble();
+    // SkParagraph lays out widget spans against the fractional baseline.
+    // Move the attached controls by the same amount as their layout baseline.
+    _flutterBaseline = _hasInlineWidgets
+        ? reported
+        : (reported + 0.5).floorToDouble();
   }
 
   // Inside a baseline query the child is asked with getDistanceToActualBaseline;
