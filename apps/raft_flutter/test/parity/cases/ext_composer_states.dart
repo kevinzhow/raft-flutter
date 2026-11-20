@@ -13,7 +13,7 @@
 // rectangle the React host marks.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart'
-    show addTearDown, closeTo, expect, find, findsOneWidget;
+    show addTearDown, closeTo, expect, find, findsOneWidget, isNull;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
@@ -181,6 +181,53 @@ final ParityCase _case = ParityCase(
       final fade = tester.getRect(find.byType(RaftMessageListEndFade));
       expect(fade.height, 16);
       expect(fade.bottom, composerTop);
+
+      final strip = find.byType(RaftPendingMentionActionStrip);
+      final avatar = find.descendant(
+        of: strip,
+        matching: find.byType(RaftMountedAvatarFrame),
+      );
+      final target = tester.widget<RaftMountedAvatarFrame>(avatar);
+      expect(target.name, 'Android-Developer-4');
+      expect(target.identity, RaftMountedAvatarIdentity.agent);
+      expect(target.presence, isNull);
+      final status = tester.widget<RaftCssText>(
+        find.descendant(
+          of: strip,
+          matching: find.byKey(const ValueKey('pending-mention-action-status')),
+        ),
+      );
+      expect(
+        status.data,
+        '@Android-Developer-4 was not notified because they are not in #design',
+      );
+
+      final slot = find.ancestor(
+        of: avatar,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is SizedBox && widget.width == 20 && widget.height == 20,
+        ),
+      );
+      final slotRect = tester.getRect(slot);
+      expect(slotRect.size, const Size(20, 20));
+      final frame = find.descendant(
+        of: avatar,
+        matching: find.byKey(const ValueKey('mounted-avatar-frame')),
+      );
+      expect(
+        tester.getRect(frame),
+        Rect.fromLTWH(slotRect.left, slotRect.top, 19, 19),
+        reason: 'The pending target uses the Web compact XS frame in its slot.',
+      );
+      final artwork = find.descendant(
+        of: avatar,
+        matching: find.byType(RaftPixelAvatar),
+      );
+      expect(
+        tester.getRect(artwork),
+        Rect.fromLTWH(slotRect.left + 1, slotRect.top + 1, 17, 17),
+      );
     }
   },
 );
