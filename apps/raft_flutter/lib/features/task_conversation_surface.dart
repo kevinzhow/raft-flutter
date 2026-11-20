@@ -137,6 +137,9 @@ Widget threadEmptyContent(BuildContext context, Widget? subject) =>
             RaftThreadIcon(size: size, color: color),
       );
 
+bool isTaskDiscussionSubject(Widget? subject) =>
+    subject is _TaskDiscussionSubject;
+
 /// A status or assignee write with the reason its popover collected (moving
 /// into Backlog, handing to someone else). False when the write failed.
 Future<bool> updateWithReason(

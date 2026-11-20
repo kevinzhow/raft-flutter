@@ -64,7 +64,8 @@ import 'copy_message_link.dart';
 import 'private_route_guard.dart';
 import 'message_selection.dart';
 import 'system_message_grouping.dart';
-import 'task_conversation_surface.dart' show threadEmptyContent;
+import 'task_conversation_surface.dart'
+    show isTaskDiscussionSubject, threadEmptyContent;
 import 'task_handoff_notice.dart';
 import 'task_v2_mode.dart' show threadComposerHint;
 import 'copy_selection_links.dart';
@@ -3161,6 +3162,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         ? _messages.state.threadLoading
         : activity.loading;
     final empty = rows.isEmpty;
+    final taskPlaceholder =
+        !loading && empty && isTaskDiscussionSubject(widget.threadParentSlot);
     const recipe = RaftTimelineCompositionRecipe();
     final List<Widget> header;
     if (widget.thread) {
@@ -3308,10 +3311,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 header: header,
                 history: history,
                 forward: forward,
-                footer: AgentTypingListEnd(
-                  controller: w,
-                  thread: widget.thread,
-                ),
+                footer: taskPlaceholder
+                    ? null
+                    : AgentTypingListEnd(controller: w, thread: widget.thread),
               ),
               hasOlder: widget.thread ? w.threadHasMore : activity.hasMore,
               loadingOlder: widget.thread
