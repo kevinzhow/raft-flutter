@@ -62,10 +62,10 @@ Widget forwardTargetIcon(
   bool agent = false,
   String? peerId,
   String? avatarUrl,
-  bool channelTile = false,
+  bool pickerLayout = false,
 }) {
   final person = type == 'dm' || type == 'human' || type == 'agent';
-  if (!person && channelTile) {
+  if (!person && pickerLayout) {
     return RaftIconTile(
       size: RaftIconTileSize.sm,
       glyph: switch (type) {
@@ -95,6 +95,9 @@ Widget forwardTargetIcon(
     agent: isAgent,
     pixelKey: projection.pixelKey,
     uploadedUrl: projection.uploadedUrl,
+    avatarContext: pickerLayout
+        ? RaftMountedAvatarContext.compactRow
+        : RaftMountedAvatarContext.compactList,
   );
 }
 
@@ -751,7 +754,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
                   ? '${r['channelType'] ?? 'channel'}'
                   : '$type',
               agent: r['subtitle'] == 'agent',
-              channelTile: true,
+              pickerLayout: true,
               peerId: r['id'] is String ? r['id'] as String : null,
               avatarUrl: r['avatarUrl'] is String
                   ? r['avatarUrl'] as String
@@ -792,7 +795,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
         w.client.origin,
         name: forwardTargetPickerLabel(c),
         type: c.type,
-        channelTile: true,
+        pickerLayout: true,
         agent: c.json['peerType'] == 'agent',
         peerId: c.json['peerId'] is String ? c.json['peerId'] as String : null,
         avatarUrl: c.json['peerAvatarUrl'] is String
