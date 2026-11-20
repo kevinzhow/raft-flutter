@@ -6,6 +6,54 @@ import 'package:raft_ui/raft_ui.dart';
 /// (Activity's counts), inside the same header height, never a Back.
 void main() {
   for (final theme in [raftTheme(), raftTheme(dark: true)]) {
+    testWidgets('root header seam in ${theme.brightness}', (t) async {
+      const headerKey = Key('root');
+      t.view.physicalSize = const Size(390, 844);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.resetPhysicalSize);
+      addTearDown(t.view.resetDevicePixelRatio);
+
+      // TabRootBar uses the same PanelSectionHeader with a title or with
+      // replacement content such as the Search field.
+      for (final header in [
+        const RaftMobileRootHeader(
+          key: headerKey,
+          title: 'Tasks',
+          subtitle: '6 tasks',
+        ),
+        const RaftMobileRootHeader(
+          key: headerKey,
+          title: 'Search',
+          content: Text('Search messages'),
+        ),
+      ]) {
+        await t.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: Align(alignment: Alignment.topCenter, child: header),
+            ),
+          ),
+        );
+
+        final root = find.byKey(headerKey);
+        final band = find.descendant(
+          of: root,
+          matching: find.byType(DecoratedBox),
+        );
+        final decoration =
+            t.widget<DecoratedBox>(band).decoration as BoxDecoration;
+        final tokens = RaftTokens.of(t.element(root));
+        expect(t.getSize(root), const Size(390, 56));
+        expect(decoration.color, tokens.colors['layer-frame']);
+        expect(
+          decoration.border,
+          Border(bottom: BorderSide(color: tokens.colors['line-seam']!)),
+          reason: header.title,
+        );
+      }
+    });
+
     testWidgets('root header subtitle line in ${theme.brightness}', (t) async {
       t.view.physicalSize = const Size(390, 844);
       t.view.devicePixelRatio = 1;

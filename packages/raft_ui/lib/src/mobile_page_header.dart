@@ -2,6 +2,7 @@ import 'raft/button.dart';
 
 import 'package:flutter/material.dart';
 
+import 'raft/ui_tokens.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
@@ -44,10 +45,11 @@ class RaftMobilePageHeader extends StatelessWidget
   static const height = 56.0;
   static const actionExtent = 48.0;
 
-  /// Web panelHeader bottom edge: brutal `border-b-2 border-black`; elegant
-  /// keeps the 1px muted divider the desktop header draws.
-  static BorderSide defaultBorder(RaftTokens t) =>
-      BorderSide(color: t.colors['line-muted']!, width: 1);
+  /// Web panelHeader's sectionHeader slot uses `border-b border-line-seam`.
+  static BorderSide defaultBorder(RaftTokens t) => BorderSide(
+    color: t.ui.lineSeam,
+    width: t.size('stroke.rule', fallback: 1),
+  );
 
   @override
   Size get preferredSize => Size.fromHeight(headerHeight ?? height);
