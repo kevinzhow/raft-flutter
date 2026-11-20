@@ -12,7 +12,6 @@ import 'panel_layout.dart' show RaftCssText;
 import 'agent_subagents.dart' show RaftDescriptionEntry;
 import 'raft/status.dart';
 import 'raft/ui_tokens.dart';
-import 'raft/button.dart';
 import 'localization.dart';
 import 'space.dart';
 import 'theme.dart';
@@ -31,6 +30,7 @@ class RaftSpecActionCard extends StatelessWidget {
     required this.body,
     this.icon,
     this.description,
+    this.descriptionSpan,
     this.completed = false,
     this.status,
     this.statusVariant = RaftStatusVariant.muted,
@@ -42,6 +42,7 @@ class RaftSpecActionCard extends StatelessWidget {
   final Widget body;
   final RaftGlyph? icon;
   final String? description, status;
+  final InlineSpan? descriptionSpan;
   final RaftStatusVariant statusVariant;
   final bool expanded, completed;
   final VoidCallback? onToggle;
@@ -60,7 +61,9 @@ class RaftSpecActionCard extends StatelessWidget {
     );
     final glyph = icon;
     final statusText = status;
-    final descriptionText = description;
+    final descriptionContent =
+        descriptionSpan ??
+        (description == null ? null : TextSpan(text: description));
     final titleStyle = raftSlotTextStyle(tokens, card.heading);
     final descriptionStyle = raftSlotTextStyle(
       tokens,
@@ -127,8 +130,8 @@ class RaftSpecActionCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (descriptionText != null)
-                            Text.rich(
+                          if (descriptionContent != null)
+                            RaftCssText.rich(
                               TextSpan(
                                 children: [
                                   if (completed)
@@ -145,7 +148,7 @@ class RaftSpecActionCard extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                  TextSpan(text: descriptionText),
+                                  descriptionContent,
                                 ],
                               ),
                               style: descriptionStyle,

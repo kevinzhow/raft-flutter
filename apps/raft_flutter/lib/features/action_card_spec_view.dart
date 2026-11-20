@@ -127,18 +127,7 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
     );
     final committedAt = DateTime.tryParse('${metadata['executedAt']}');
     final description = done
-        ? widget.completedOnCurrentPlan ??
-              [
-                if (by != null)
-                  raftFormat(
-                    context,
-                    question ? 'Answered by {name}' : 'Committed by {name}',
-                    {'name': by},
-                  ),
-                if (by != null && committedAt != null)
-                  '· ${widget.formatTimestamp(committedAt)}',
-                if (!expanded && headline != null) '→ $headline',
-              ].join(' ')
+        ? widget.completedOnCurrentPlan
         : expired && at != null
         ? raftFormat(
             context,
@@ -147,6 +136,44 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
           )
         : widget.blocked;
     final content = RaftSpecActionCardContent(context);
+    final completionLabel = raftText(
+      context,
+      question ? 'Answered by {name}' : 'Committed by {name}',
+    );
+    final completionCopy = completionLabel.split('{name}');
+    final resultSummary = !expanded && !question ? headline : null;
+    final descriptionSpan =
+        done &&
+            widget.completedOnCurrentPlan == null &&
+            (by != null || resultSummary != null)
+        ? TextSpan(
+            children: [
+              if (by != null) ...[
+                TextSpan(text: completionCopy.first),
+                TextSpan(
+                  text: by,
+                  style: TextStyle(
+                    color: content.tokens.ui.foreground,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (completionCopy.length > 1)
+                  TextSpan(text: completionCopy.skip(1).join(by)),
+                if (committedAt != null)
+                  TextSpan(
+                    text:
+                        '\u00a0·\u00a0${widget.formatTimestamp(committedAt).replaceAll(' ', '\u00a0')}',
+                    style: content.tokens.scale(
+                      RaftTypeScale.monoMeta,
+                      mono: true,
+                    ),
+                  ),
+              ],
+              if (resultSummary != null)
+                TextSpan(text: ' →\u00a0$resultSummary'),
+            ],
+          )
+        : null;
     final serverName = cardString(metadata['targetServerName']);
     final body = ActionCardSpecTree(
       root: card.body,
@@ -181,6 +208,7 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
       description: description == null || description.isEmpty
           ? null
           : description,
+      descriptionSpan: descriptionSpan,
       expanded: expanded,
       completed: done,
       onToggle: status == null || widget.onPress == null
