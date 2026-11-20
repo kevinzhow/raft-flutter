@@ -423,9 +423,8 @@ def prepare_react_provider():
         ('  testDir: "../visual-testing/tests",',
          f'  testDir: {json.dumps(str(REACT_GEN))},\n  testMatch: "react-provider.spec.ts",\n'
          f'  outputDir: {json.dumps(str(OUT / "playwright-test-results"))},'),
-        ('    deviceScaleFactor: 3,',
-         '    deviceScaleFactor: 3,\n'
-         '    // raft-flutter parity: Chromium text rasterization flags (see docs/parity.md "Text rendering").\n'
+        ('    launchOptions: { args: ["--font-render-hinting=none", "--force-device-scale-factor=3"] },',
+         '    // Flutter parity uses emulated DPR and its selected text profile.\n'
          '    launchOptions: { args: JSON.parse(process.env.PARITY_CHROMIUM_ARGS || "[]") },'),
         ('    url: `http://127.0.0.1:${port}`,',
          f'    cwd: {json.dumps(str(web))},\n    url: `http://127.0.0.1:${{port}}`,'),
