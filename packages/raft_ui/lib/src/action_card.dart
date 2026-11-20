@@ -81,8 +81,9 @@ class RaftSpecActionCard extends StatelessWidget {
           : inset.right + recipe.collapseTrigger.margin.right,
     );
     double centerFirstLine(TextStyle style) {
-      final lines = MediaQuery.textScalerOf(context)
-          .scale(style.fontSize ?? 14);
+      final lines = MediaQuery.textScalerOf(
+        context,
+      ).scale(style.fontSize ?? 14);
       return ((tile - lines * (style.height ?? 1)) / 2).clamp(0.0, tile);
     }
 
@@ -272,6 +273,7 @@ class RaftSpecActionCardContent {
   );
 
   TextSpan completionTime(String timestamp) {
+    const wordJoiner = '\u2060';
     final style = tokens.scale(
       RaftTypeScale.monoMeta,
       color: tokens.ui.foregroundMuted,
@@ -280,6 +282,9 @@ class RaftSpecActionCardContent {
     return TextSpan(
       style: style,
       children: [
+        // The Web separator is inline generated text. Keep the placeholder
+        // from introducing break points between the preceding word and date.
+        const TextSpan(text: wordJoiner),
         WidgetSpan(
           alignment: PlaceholderAlignment.baseline,
           baseline: TextBaseline.alphabetic,
@@ -288,7 +293,7 @@ class RaftSpecActionCardContent {
             child: RaftCssText('·', style: style),
           ),
         ),
-        TextSpan(text: timestamp),
+        TextSpan(text: '$wordJoiner$timestamp'),
       ],
     );
   }
