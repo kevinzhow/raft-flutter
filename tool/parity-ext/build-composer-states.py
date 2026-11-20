@@ -22,8 +22,8 @@ Ids: components.composer-states.<surface>.<platform>.<state>.<theme>. The compos
 screen of the screens-ext family (real LeftRail + Sidebar + ChatPanel on Web, real WorkspaceView in
 Flutter) at 1280x800 / 390x844; the capture is a window over the bottom of the screen
 (`composer-window` marker) so only the composer, its banner and the popover are compared. The send
-states type the draft and press Enter; the receipt is answered by `POST /v2/messages` in the
-fixture, identically for both providers.
+states use the Send button on phone and Enter on desktop. Both providers receive the fixture
+`POST /v2/messages` receipt.
 """
 import copy
 import json
@@ -123,6 +123,11 @@ cases = []
 
 def add(surface, platform, state, title, *, interactions, android, height, first_note=None):
     viewport = DESKTOP if platform == 'desktop' else MOBILE
+    selector = '[data-testid="composer-window"]'
+    if surface == 'pending-mention':
+        # The runner waits for the crop target. Enable it only after the send
+        # receipt mounts the action strip in the production composer.
+        selector = 'body:has([data-testid="pending-mention-action-strip"]) ' + selector
     for suffix, theme in THEMES.items():
         cid = f'{PREFIX}{surface}.{platform}.{state}.{suffix}'
         c = {
@@ -139,7 +144,7 @@ def add(surface, platform, state, title, *, interactions, android, height, first
                 'extCase': f'{surface}.{platform}.{state}', 'extKind': 'composer-states',
                 'extFixture': 'composer-states', 'parityTheme': theme, 'platform': platform,
                 'state': state, 'routeSet': f'cs-{state}', 'windowHeight': height}}],
-            'capture': {'selector': '[data-testid="composer-window"]', 'crop': 'element',
+            'capture': {'selector': selector, 'crop': 'element',
                         'contract': 'component-bounds', 'interactions': interactions,
                         'androidInteractions': android, 'androidKey': 'composer-window'},
             'reactPathHint': 'packages/web/src/components/message/MessageInput.tsx',
@@ -154,10 +159,10 @@ WAIT = {'type': 'wait', 'ms': 400}
 
 
 def type_and_send(draft, platform):
+    web_submit = ({'type': 'click', 'target': 'button[aria-label="Send"]'} if platform == 'mobile'
+                  else {'type': 'press', 'target': 'textarea', 'key': 'Enter'})
     web = [{'type': 'click', 'target': 'textarea'}, {'type': 'fill', 'target': 'textarea', 'value': draft},
-           {'type': 'press', 'target': 'textarea', 'key': 'Enter'}, WAIT]
-    # A phone keyboard's Enter is a newline in Flutter (Web's `(pointer: coarse)` branch), so the phone
-    # cases tap Send there; the Web side of both platforms presses Enter.
+           web_submit, WAIT]
     submit = ({'type': 'tap', 'key': 'composer-submit', 'scroll': False} if platform == 'mobile'
               else {'type': 'key', 'key': 'enter'})
     flutter = [{'type': 'tap', 'key': EDITOR, 'scroll': False}, {'type': 'enterText', 'key': EDITOR, 'text': draft},

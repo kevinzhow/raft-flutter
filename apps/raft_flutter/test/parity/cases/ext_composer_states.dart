@@ -12,7 +12,8 @@
 // the capture is a keyed overlay (`composer-window`) over the same bottom
 // rectangle the React host marks.
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart' show addTearDown;
+import 'package:flutter_test/flutter_test.dart'
+    show addTearDown, expect, find, findsOneWidget;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
@@ -152,6 +153,14 @@ final ParityCase _case = ParityCase(
       'over the composed channel / DM screen.',
   settle: const Duration(milliseconds: 1200),
   build: _build,
+  interact: (tester, ctx) async {
+    if (ctx.props['state'] == 'single' || ctx.props['state'] == 'multi') {
+      expect(
+        find.byType(RaftPendingMentionActionStrip).hitTestable(),
+        findsOneWidget,
+      );
+    }
+  },
 );
 
 const _states = {
