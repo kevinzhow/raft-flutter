@@ -132,7 +132,10 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.text('Access granted: openid · profile'), findsOneWidget);
+        expect(
+          find.text('Installing approves for this Server:'),
+          findsOneWidget,
+        );
         expect(find.text('Install and continue'), findsOneWidget);
         expect(
           find.text('Login with Raft'),
@@ -674,7 +677,8 @@ void main() {
       final api = waiting(setupUrl: 'https://setup.example.com/configure');
       await open(t, api, locale: const Locale('zh', 'CN'));
       expect(find.text('安装并继续'), findsOneWidget);
-      expect(find.text('将授予：openid · profile'), findsOneWidget);
+      expect(find.text('安装将为此服务器批准：'), findsOneWidget);
+      expect(find.text('登录权限'), findsOneWidget);
       expect(
         find.textContaining('还没有安装 Artifact Share。你可以在这里安装，继续就会以你的身份安装。'),
         findsOneWidget,

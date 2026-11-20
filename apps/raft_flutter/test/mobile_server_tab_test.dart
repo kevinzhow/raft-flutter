@@ -97,12 +97,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('mobile-server-tab-invite')), findsOneWidget);
-    for (final page in ['members', 'computers', 'settings']) {
+    for (final page in ['members', 'computers', 'apps', 'settings']) {
       expect(find.byKey(serverPageKey(page)), findsOneWidget, reason: page);
     }
-    // Artifacts and Apps have no Flutter page yet: not offered.
+    // This fixture leaves Artifacts disabled.
     expect(find.byKey(serverPageKey('artifacts')), findsNothing);
-    expect(find.byKey(serverPageKey('apps')), findsNothing);
     await f.close(t);
   });
 
@@ -112,6 +111,7 @@ void main() {
     expect(find.byKey(serverPageKey('settings')), findsOneWidget);
     expect(find.byKey(serverPageKey('members')), findsNothing);
     expect(find.byKey(serverPageKey('computers')), findsNothing);
+    expect(find.byKey(serverPageKey('apps')), findsNothing);
     expect(find.byKey(const Key('mobile-server-tab-invite')), findsNothing);
     await f.close(t);
   });
@@ -197,26 +197,34 @@ void main() {
   testWidgets('pages push with Back, and focus returns to the server tab', (
     t,
   ) async {
-    final f = await _mount(t, uri: '/s/alpha/tasks');
+    final f = await _mount(t, uri: '/s/alpha/tasks', role: 'member');
     final w = f.workspace(t);
     final focus = t
         .widget<RaftMobileNavServerTab>(find.byKey(serverTabKey))
         .focusNode!;
-    for (final page in ['members', 'computers', 'settings']) {
+    for (final page in ['members', 'computers', 'apps', 'settings']) {
       await openServerPage(t, page, flush: f.flush);
-      expect(w.location.route.name, page);
+      expect(w.location.route.name, page == 'apps' ? 'settings' : page);
+      if (page == 'apps') {
+        expect(w.location.settingsPath, ['applications']);
+      }
       expect(find.byKey(_bar), findsNothing, reason: page);
       expect(
         find
                 .byKey(const Key('server-page-mobile-back'))
                 .evaluate()
                 .isNotEmpty ||
-            find.byKey(const Key('mobile-detail-back')).evaluate().isNotEmpty,
+            find.byKey(const Key('mobile-detail-back')).evaluate().isNotEmpty ||
+            find.byKey(const Key('mobile-settings-back')).evaluate().isNotEmpty,
         isTrue,
         reason: page,
       );
       // Back returns to the tab root it was opened from, with its bar.
-      expect(await t.binding.handlePopRoute(), isTrue);
+      if (page == 'apps') {
+        await t.tap(find.byKey(const Key('mobile-settings-back')));
+      } else {
+        expect(await t.binding.handlePopRoute(), isTrue);
+      }
       await f.flush(t);
       await _settle(t);
       expect(w.location.route, RaftRoute.tasks, reason: page);

@@ -138,6 +138,7 @@ void main() {
           'name': 'Local Tool',
           'appType': 'server_local',
           'publishStatus': 'private',
+          'installationId': 'local-install',
           'category': 'Other',
         },
       ];
@@ -170,6 +171,8 @@ void main() {
       t,
     ) async {
       await mount(t);
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.pumpAndSettle();
       expect(find.text('Applications'), findsOneWidget);
       expect(find.text('Third-party apps for this server'), findsOneWidget);
       // Private-shared listings stay out of the marketplace; Installed holds
@@ -185,7 +188,7 @@ void main() {
       expect(find.text('100+ installs'), findsOneWidget);
       expect(find.text('Install'), findsOneWidget);
       expect(find.text('Installed'), findsNWidgets(2)); // tab + state badge
-      expect(find.text('Developer Tools · by Raft Labs'), findsOneWidget);
+      expect(find.text('Developer tools · by Raft Labs'), findsOneWidget);
       await t.enterText(
         find.byKey(const ValueKey('connected-apps-search')),
         'github',
@@ -210,6 +213,8 @@ void main() {
       a.routes['POST /integrations/marketplace/slack/install'] = (_) => {
         'ok': true,
       };
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('connected-app-slack')));
       await t.pumpAndSettle();
       expect(
@@ -268,6 +273,8 @@ void main() {
 
     testWidgets('members browse read-only', (t) async {
       final (_, a) = await mount(t, role: 'member');
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('connected-apps-register')),
         findsNothing,
@@ -283,13 +290,20 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Install to this server'), findsNothing);
       expect(
-        a.calls.where((c) => c.method != 'GET' && !c.path.startsWith('/auth')),
+        a.calls.where(
+          (call) =>
+              call.method != 'GET' &&
+              !call.path.startsWith('/auth') &&
+              !call.path.endsWith('/feature-flags/evaluate'),
+        ),
         isEmpty,
       );
     });
 
     testWidgets('list layout shows summaries', (t) async {
       await mount(t);
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.pumpAndSettle();
       expect(find.text('Slack Bridge description'), findsNothing);
       await t.tap(find.byKey(const ValueKey('connected-apps-view-list')));
       await t.pumpAndSettle();

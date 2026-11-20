@@ -295,6 +295,9 @@ Future<SurfaceProbe> fromIntegrations(
   if (installedTab) {
     await t.tap(find.byKey(const ValueKey('connected-apps-tab-installed')));
     await frames(t, 20);
+  } else if (tap == const ValueKey('connected-app-slack')) {
+    await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+    await frames(t, 20);
   }
   await t.tap(find.byKey(tap));
   await frames(t, 30);
@@ -931,6 +934,10 @@ void registerCloseDialogTests(TestPart part) {
     'runtime-provider-connect-dialog',
     'claude-limit-resets-dialog',
     'claude-limit-reset-confirm-dialog',
+    'connected-app-bot-remove-dialog',
+    'app-prompt-text-reject-dialog',
+    'link-preview-consents-dialog',
+    'link-preview-consents-revoke-dialog',
   };
   final surfaces = [
     for (final surface in dialogSurfaces)

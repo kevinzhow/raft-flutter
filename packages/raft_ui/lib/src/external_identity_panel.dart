@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
 import 'list_items.dart';
+import 'raft/ui_tokens.dart';
+import 'space.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart';
 
 class RaftExternalIdentityBody extends StatelessWidget {
   const RaftExternalIdentityBody({
@@ -16,6 +19,8 @@ class RaftExternalIdentityBody extends StatelessWidget {
     required this.avatar,
     this.fromLabel,
     this.workspaceName,
+    this.sourceLabel,
+    this.postedAs,
   });
   final String name, subtitle, projectionLabel;
 
@@ -24,6 +29,7 @@ class RaftExternalIdentityBody extends StatelessWidget {
 
   /// "From" eyebrow of the source row, shown only with a [workspaceName].
   final String? fromLabel, workspaceName;
+  final String? sourceLabel, postedAs;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +44,22 @@ class RaftExternalIdentityBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (workspaceName != null && workspaceName!.isNotEmpty)
+            if (sourceLabel != null)
+              Padding(
+                key: const Key('external-identity-source'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: RaftSpace.x5,
+                  vertical: RaftSpace.x3,
+                ),
+                child: Text(
+                  sourceLabel!,
+                  style: t.scale(
+                    RaftTypeScale.callout,
+                    weight: FontWeight.w600,
+                  ),
+                ),
+              )
+            else if (workspaceName != null && workspaceName!.isNotEmpty)
               Container(
                 key: const Key('external-identity-source'),
                 padding: const EdgeInsets.symmetric(
@@ -99,6 +120,19 @@ class RaftExternalIdentityBody extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: RaftTypography.mono(t, color: muted),
                           ),
+                          if (postedAs != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: RaftSpace.x1),
+                              child: Text(
+                                postedAs!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: t.scale(
+                                  RaftTypeScale.footnote,
+                                  color: muted,
+                                ),
+                              ),
+                            ),
                           const SizedBox(height: 8),
                           Text(
                             projectionLabel,

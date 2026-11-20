@@ -31,6 +31,9 @@ Map<String, dynamic> _fx(ParityContext ctx) =>
 /// `$status` fails with that status (the React provider spec does the same).
 MsRoutes _routes(ParityContext ctx) {
   final fx = _fx(ctx);
+  final apps = ctx.props['extFixture'] == 'apps'
+      ? ctx.fixtures['ext:apps'] as Map<String, dynamic>
+      : const <String, dynamic>{};
   final merged = {
     ...Map<String, dynamic>.from(fx['routes'] as Map),
     ...Map<String, dynamic>.from(
@@ -56,6 +59,10 @@ MsRoutes _routes(ParityContext ctx) {
                   as Map?)?[ctx.props['routeSet']]
               as Map?) ??
           const {},
+    ),
+    ...Map<String, dynamic>.from(apps['routes'] as Map? ?? const {}),
+    ...Map<String, dynamic>.from(
+      (apps['routeSets'] as Map?)?[ctx.props['routeSet']] as Map? ?? const {},
     ),
   };
   return {
@@ -85,6 +92,7 @@ Widget _page(ParityContext ctx) {
     'labs': 'server_labs_ui_v0',
     'providers': 'provider_connections_v0',
     'bridge': 'slack_bridge_v0',
+    'prompt-text': 'app_prompt_text_consent',
     'analytics': 'product_analytics_settings_v0',
     'raftbench': 'raftbench_overview_v0',
   };

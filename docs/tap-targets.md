@@ -97,6 +97,22 @@ restores the pinned properties above the conversation. The task's own
 Back or close affordance still returns to the originating surface.
 Legacy tasks and tasks without loaded properties have no details toggle.
 
+### Applications
+
+The mobile server popover's Apps cell dismisses the popover and opens
+Settings → Applications for the current server. Back returns to the previous
+page and focus returns to the server tab. Guests do not see the cell. The
+review dot follows the current server's pending admin review state.
+
+The notification bell's View updates action closes the bell and opens
+Applications on Installed. It opens the first app awaiting a permission
+review when one exists. Closing that dialog returns to Installed. Approving
+the update refreshes both the bell count and the Apps dot.
+
+The Installed card's Review permissions button opens the same detail dialog
+for that app. Closing returns to the card. After approval, the button goes
+away when the app has no pending permissions.
+
 ### Adding a container
 
 1. Build it, passing every handler it has (`null` where it has none).

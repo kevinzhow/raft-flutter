@@ -603,8 +603,9 @@ class RaftDialogDescription extends StatelessWidget {
 
 /// `DialogBody`: `min-w-0 flex-1 overflow-y-auto` with the recipe padding.
 class RaftDialogBody extends StatelessWidget {
-  const RaftDialogBody({super.key, required this.child});
+  const RaftDialogBody({super.key, required this.child, this.verticalPadding});
   final Widget child;
+  final double? verticalPadding;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -617,9 +618,13 @@ class RaftDialogBody extends StatelessWidget {
         child: child,
       );
     }
+    final padding = s.padding;
+    final scrollPadding = verticalPadding == null
+        ? padding
+        : padding.copyWith(top: verticalPadding, bottom: verticalPadding);
     return DefaultTextStyle.merge(
       style: s.text(t.recipeTokens),
-      child: SingleChildScrollView(padding: s.padding, child: child),
+      child: SingleChildScrollView(padding: scrollPadding, child: child),
     );
   }
 }

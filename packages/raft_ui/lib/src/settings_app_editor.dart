@@ -1067,7 +1067,7 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
                     semanticLabel: scope,
                     onChanged: (_) => onChanged(scope),
                   ),
-                  label,
+                  Flexible(child: label),
                 ],
               )
             : label,

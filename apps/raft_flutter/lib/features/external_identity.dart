@@ -56,15 +56,26 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = '${profile['displayName'] ?? ''}';
-    final subtitle = externalIdentitySubtitle(
-      context,
-      profile['provider'] as String?,
-      profile['actorKind'] as String?,
-    );
+    final postedName = profile['displayName'] as String? ?? '';
+    final provider = profile['provider'] as String?;
+    final actorKind = profile['actorKind'] as String?;
+    final bot = actorKind == 'bot';
+    final verifiedName = profile['profileDisplayName'] as String?;
+    final name = bot && verifiedName != null && verifiedName.isNotEmpty
+        ? verifiedName
+        : postedName;
+    final appName = bot ? profile['appName'] as String? : null;
+    final knownApp = appName != null && appName.isNotEmpty;
+    final providerLabel = externalProviderLabel(context, provider);
+    final subtitle = knownApp
+        ? externalActorKindLabel(context, actorKind)
+        : externalIdentitySubtitle(context, provider, actorKind);
     final avatarUrl = raftPublicAvatarUrl(
       controller.client.origin,
-      profile['avatarUrl'] as String?,
+      profile[bot && profile.containsKey('profileAvatarUrl')
+              ? 'profileAvatarUrl'
+              : 'avatarUrl']
+          as String?,
     );
     // AvatarSlot `type="app"`: the provider avatar, else bold initials.
     Widget avatar(RaftAvatarSlotContext slot) => RaftAvatarSlot(
@@ -79,7 +90,7 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
         fallback: RaftExternalInitials(name: name, large: slot.size >= 48),
       ),
     );
-    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final wide = !RaftAdaptiveWorkspace.compactOf(context);
     return RaftPanelTextScope(
       sans: true,
       child: Column(
@@ -110,6 +121,16 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
               name: name,
               subtitle: subtitle,
               projectionLabel: raftText(context, 'External identity'),
+              postedAs: bot && name != postedName
+                  ? raftFormat(context, 'Posted as {name}', {
+                      'name': postedName,
+                    })
+                  : null,
+              sourceLabel: knownApp && providerLabel != null
+                  ? raftFormat(context, 'From {workspace}', {
+                      'workspace': '$providerLabel · $appName',
+                    })
+                  : null,
               fromLabel: raftTextZh(context, 'From', '来自'),
               workspaceName: profile['workspaceName'] as String?,
               avatar: avatar(RaftAvatarSlotContext.profileTile),

@@ -3293,7 +3293,7 @@
     {
       "id": "settings.integrations",
       "title": "Settings: Applications (connected apps)",
-      "webEntry": "packages/web/src/components/settings/SettingsPanel.tsx (IntegrationsSection)",
+      "webEntry": "packages/web/src/features/apps/IntegrationsSection.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/integrations_views.dart",
       "states": [
         {
@@ -3308,14 +3308,153 @@
         },
         {
           "state": "loading",
-          "variant": "loading / load failed",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.apps.page.loading.*.*"
+          ],
+          "status": "gap",
+          "justification": "Web shows delayed list skeletons. Flutter shows a loading label.",
+          "size": "S",
+          "gapKind": "impl-diff"
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "partial",
+          "parityCase": [
+            "components.apps.page.error.*.*"
+          ],
+          "status": "gap",
+          "justification": "Web shows a Retry action when the Apps read fails. Flutter shows an error banner.",
+          "size": "S",
+          "gapKind": "impl-diff"
+        }
+      ]
+    },
+    {
+      "id": "settings.integrations.marketplace-pages",
+      "title": "Apps Marketplace pages",
+      "webEntry": "packages/web/src/components/apps/MarketplaceListingsTab.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/connected_app_marketplace.dart",
+      "states": [
+        {
+          "state": "loading",
           "web": "yes",
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web \"Loading…\" (settings.common.loading) and error Banner \"Failed to load connected apps\"; Flutter has the string; no case.",
+          "gapKind": "impl-diff",
           "size": "S",
-          "gapKind": "case-missing"
+          "justification": "Flutter uses a spinner on a cold listing read. Web renders collection skeletons after a delay."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The Marketplace empty fixture has no paired capture for v1.24."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The pagination retry is exercised by a widget test."
+        },
+        {
+          "state": "partial",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Both keep accepted rows when loading a subsequent page. The Flutter pagination test drives a failed append and a successful retry."
+        }
+      ]
+    },
+    {
+      "id": "settings.integrations.link-preview-choices",
+      "title": "Link preview consent choices",
+      "webEntry": "packages/web/src/components/settings/LinkPreviewConsents.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/link_preview_consents.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.apps.page.link-previews-loading.*.*"
+          ],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Members see the Apps collection while choices load. Guests see a placeholder while their choices load."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.apps.page.link-previews-empty.*.*"
+          ],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The row is hidden without choices. An open dialog can show an empty result."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.apps.page.link-previews-error.*.*"
+          ],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "A failed choice read provides a retry action."
+        }
+      ]
+    },
+    {
+      "id": "settings.integrations.prompt-text",
+      "title": "App prompt text review and confirmation",
+      "webEntry": "packages/web/src/components/settings/AppPromptTextPanels.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/connected_app_prompt_text_panel.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "On a cold read both wait for a revision before mounting the panel."
+        },
+        {
+          "state": "empty",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "Feature off and no review or confirmation due both omit the panel."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "A failed mutation shows the cause with the pending text or in the reason dialog."
         }
       ]
     },
@@ -58306,6 +58445,36 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Source-reviewed canonical control delegation only; current matched-state mounting and visual acceptance remain pending. Required conditions are registered separately; no visual PASS is asserted."
+      },
+      "screen:settings.integrations.marketplace-pages": {
+        "owner": "WP-APPS",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.integrations.marketplace-pages",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/integrations_views.dart#method:_IntegrationsState.section"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The Marketplace collection mounts in the Apps settings entry. Matched-state capture and visual acceptance remain pending."
+      },
+      "screen:settings.integrations.link-preview-choices": {
+        "owner": "WP-APPS",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.integrations.link-preview-choices",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/integrations_views.dart#method:_IntegrationsState.section"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The choices row opens Manage from Apps Settings. Matched-state capture and visual acceptance remain pending."
+      },
+      "screen:settings.integrations.prompt-text": {
+        "owner": "WP-APPS",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.integrations.prompt-text",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/integrations_views.dart#method:_IntegrationsState.openListing"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The review panel mounts in the app detail dialog. Matched-state capture and visual acceptance remain pending."
       },
       "screen:settings.providers": {
         "owner": "design-system alignment",

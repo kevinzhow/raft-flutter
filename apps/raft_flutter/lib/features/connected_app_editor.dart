@@ -13,14 +13,15 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../platform/file_selection.dart';
-
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
+import '../platform/file_selection.dart';
 import 'app_notifications_catalog.dart';
+import 'app_permission_updates.dart';
 import 'app_setup.dart';
 import 'app_when_to_use.dart';
+import 'connected_app_prompt_text_panel.dart';
 import 'integrations_views.dart';
 import 'management_support.dart';
 import 'second_factor_step_up.dart';
@@ -105,17 +106,21 @@ class ConnectedAppEditor extends StatefulWidget {
     required this.onSaved,
     required this.onClose,
     required this.onDenied,
+    this.onUpdated,
     this.app,
+    this.promptTextConsent,
   });
   final WorkspaceController controller;
 
   /// The app being edited; null registers a new one.
   final Map<String, dynamic>? app;
+  final Future<bool>? promptTextConsent;
   final ValueNotifier<ConnectedAppSecret?> secret;
 
   /// An app was created / changed / deleted: reload the lists. [created] is the
   /// new app's record on registration (the host opens My apps).
   final Future<void> Function({Map<String, dynamic>? created}) onSaved;
+  final ValueChanged<Map<String, dynamic>>? onUpdated;
   final VoidCallback onClose;
 
   /// A 401/403 on a mutation: the host drops its private rows and returns true.
@@ -623,6 +628,33 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     );
   }
 
+  Future<void> withdrawPublish() async {
+    final app = editing;
+    if (app == null || savingId != null || !live) return;
+    final id = '${app['id']}';
+    await guarded(
+      () async {
+        final updated = managementMap(
+          await w.client.post('$base/withdraw-publish'),
+        );
+        if (!live) return;
+        if (updated['id'] != id || updated['publishStatus'] != 'private') {
+          throw const FormatException('Invalid publish withdrawal response');
+        }
+        editing = updated;
+        final onUpdated = widget.onUpdated;
+        if (onUpdated == null) {
+          await widget.onSaved();
+        } else {
+          onUpdated(updated);
+        }
+        if (live) unawaited(loadShare());
+      },
+      'Failed to withdraw the publish request',
+      busy: (working) => savingId = working ? id : null,
+    );
+  }
+
   Future<void> confirmRegenerate() async {
     final app = editing!;
     final confirmed = await RaftConfirmDialog.show(
@@ -697,10 +729,10 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             ' stays listed, installable, and usable by existing connections. If approved, the source Server keeps its installation and access. Other Servers lose their installations, and their grants and tokens are revoked.',
           ),
         ),
-        confirmLabel: tr('Request offline review'),
+        confirmLabel: raftTextZh(context, 'Request', '申请'),
         loadingLabel: tr('Requesting...'),
         confirmGlyph: RaftGlyph.upload,
-        confirmVariant: RaftButtonRecipeVariant.danger,
+        confirmVariant: RaftButtonRecipeVariant.warning,
         onConfirm: () async {
           error = null;
           try {
@@ -1023,6 +1055,35 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     );
     return RaftAppEditorStack(
       children: [
+        if (app != null && widget.promptTextConsent != null)
+          FutureBuilder<bool>(
+            future: widget.promptTextConsent,
+            builder: (_, flag) => flag.data == true
+                ? ConnectedAppPromptTextPanel(
+                    key: ValueKey(('developer', app['id'])),
+                    workspace: w,
+                    clientId: app['id'] as String,
+                    service: app['clientId'] as String?,
+                    published:
+                        publishStatus == 'published' ||
+                        publishStatus == 'unpublish_requested',
+                    onPendingText: (text) {
+                      if (name.text == (app['name'] ?? '')) {
+                        name.text = text.name;
+                      }
+                      if (description.text == (app['description'] ?? '')) {
+                        description.text = text.description ?? '';
+                      }
+                      if (whenToUse.text == (app['whenToUse'] ?? '')) {
+                        whenToUse.text = text.whenToUse ?? '';
+                      }
+                    },
+                    onConfirmed: () => unawaited(
+                      AppPermissionUpdates.of(w).refresh(changed: true),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         RaftAppEditorProfileGrid(
           logo: RaftAppEditorField(
             label: 'Logo',
@@ -1416,6 +1477,19 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           ),
         if (app != null && hint != null)
           RaftAppEditorCallout(hint, tone: RaftAppEditorCalloutTone.warning),
+        if (status == 'publish_requested' || status == 'in_review')
+          RaftAppEditorBox(
+            child: RaftAppEditorActionRow(
+              title: 'Publish request',
+              description: 'Withdrawing returns the app to private. Its registration, credentials and installations stay, and you can request review again later.',
+              action: RaftSettingsRecipeButton(
+                key: const ValueKey('connected-app-withdraw-publish-button'),
+                label: 'Withdraw request',
+                size: small,
+                onPressed: savingId == null ? withdrawPublish : null,
+              ),
+            ),
+          ),
         if (app != null && shareable)
           RaftAppEditorBox(
             key: const ValueKey('connected-app-private-share-card'),

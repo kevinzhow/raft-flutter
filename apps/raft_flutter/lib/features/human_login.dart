@@ -275,6 +275,8 @@ class HumanLoginClient {
     this.allowedScopes,
     this.appNotificationGroups = const [],
     this.promptTextRevisionId,
+    this.whenToUse,
+    this.botHandle,
   });
 
   factory HumanLoginClient.fromJson(Map<dynamic, dynamic> json) {
@@ -285,6 +287,7 @@ class HumanLoginClient {
 
     final validation = json['scopeValidation'];
     final installation = json['installation'];
+    final bot = json['bot'];
     return HumanLoginClient(
       id: text('id'),
       clientId: text('clientId') ?? '',
@@ -327,6 +330,10 @@ class HumanLoginClient {
             ]
           : const [],
       promptTextRevisionId: text('promptTextRevisionId'),
+      whenToUse: text('whenToUse'),
+      botHandle: bot is Map && bot['handle'] is String
+          ? bot['handle'] as String
+          : null,
     );
   }
 
@@ -348,7 +355,15 @@ class HumanLoginClient {
   /// prompt-text revision.
   final List<String>? allowedScopes;
   final List<String> appNotificationGroups;
-  final String? promptTextRevisionId;
+  final String? promptTextRevisionId, whenToUse, botHandle;
+
+  AppInstallExpectation installExpectation({required bool promptTextConsent}) =>
+      AppInstallExpectation.of(
+        allowedScopes: allowedScopes,
+        groups: appNotificationGroups,
+        textRevisionId: promptTextRevisionId,
+        promptTextConsent: promptTextConsent,
+      );
 
   /// The same app with the set a 409 APP_PERMISSIONS_CHANGED reported as
   /// current (Web HumanLoginSetupPage.tsx:431-447), still waiting for the
@@ -357,11 +372,12 @@ class HumanLoginClient {
     required List<String> scopes,
     required List<String> groups,
     String? textRevisionId,
+    ({String name, String? description, String? whenToUse})? promptText,
   }) => HumanLoginClient(
     id: id,
     clientId: clientId,
-    name: name,
-    description: description,
+    name: promptText?.name ?? name,
+    description: promptText == null ? description : promptText.description,
     homepageUrl: homepageUrl,
     logoUrl: logoUrl,
     setupUrl: setupUrl,
@@ -376,6 +392,8 @@ class HumanLoginClient {
     allowedScopes: scopes,
     appNotificationGroups: groups,
     promptTextRevisionId: textRevisionId ?? promptTextRevisionId,
+    whenToUse: promptText == null ? whenToUse : promptText.whenToUse,
+    botHandle: botHandle,
   );
 
   /// The same app once it is installed on the server: Web sets
@@ -397,6 +415,7 @@ class HumanLoginClient {
     allowedScopes: allowedScopes,
     appNotificationGroups: appNotificationGroups,
     promptTextRevisionId: promptTextRevisionId,
+    whenToUse: whenToUse,
   );
 
   /// Web `initialsForApp`.
@@ -414,9 +433,10 @@ class HumanLoginClient {
 
 /// One server the app is available on (or could be installed on).
 class HumanLoginChoice {
-  const HumanLoginChoice(this.server, this.client);
+  const HumanLoginChoice(this.server, this.client, {this.botConflict});
   final HumanLoginServer server;
   final HumanLoginClient client;
+  final String? botConflict;
 
   /// Web `marketplaceServerRank`: ready first, then installable, then admin.
   int get rank => client.suspended
@@ -474,11 +494,32 @@ class HumanLoginLookup {
         ?.client;
   }
 
-  HumanLoginLookup replaced(HumanLoginChoice choice) => HumanLoginLookup([
+  HumanLoginLookup replaced(
+    HumanLoginChoice choice, {
+    bool allInstalling = false,
+  }) => HumanLoginLookup([
     for (final row in rows)
-      row.server.id == choice.server.id
-          ? HumanLoginRow(choice.server, choice.client)
-          : row,
+      if (row.server.id == choice.server.id)
+        HumanLoginRow(row.server, choice.client)
+      else if (row.client case final client?
+          when allInstalling &&
+              client.installRequired &&
+              client.id == choice.client.id)
+        HumanLoginRow(
+          row.server,
+          client.withPermissions(
+            scopes: effectiveAllowedOAuthScopes(choice.client.allowedScopes),
+            groups: choice.client.appNotificationGroups,
+            textRevisionId: choice.client.promptTextRevisionId,
+            promptText: (
+              name: choice.client.name,
+              description: choice.client.description,
+              whenToUse: choice.client.whenToUse,
+            ),
+          ),
+        )
+      else
+        row,
   ]);
 }
 
@@ -797,28 +838,29 @@ HumanLoginException _refused(
 /// Web's text.
 Future<HumanLoginChoice> installHumanLoginApp(
   HumanLoginApi api,
-  HumanLoginChoice choice,
-) async {
+  HumanLoginChoice choice, {
+  AppInstallExpectation? reviewed,
+  bool? bot,
+  Future<dynamic> Function(Future<dynamic> Function())? guard,
+}) async {
   final app = choice.client;
   final id = app.id;
   if (!app.canInstall || id == null || id.isEmpty) {
     throw const HumanLoginException(HumanLoginMessages.installFailed);
   }
-  bool consent;
+  final expected =
+      reviewed ??
+      app.installExpectation(
+        promptTextConsent: await api.promptTextConsent(choice.server.id),
+      );
+  final Object? result;
   try {
-    consent = await api.promptTextConsent(choice.server.id);
-  } on Object {
-    // Unknown counts as off, as Web's flag store before it loads.
-    consent = false;
-  }
-  final expected = AppInstallExpectation.of(
-    allowedScopes: app.allowedScopes,
-    groups: app.appNotificationGroups,
-    textRevisionId: app.promptTextRevisionId,
-    promptTextConsent: consent,
-  );
-  try {
-    await api.installMarketplaceApp(choice.server.id, id, expected.body);
+    Future<dynamic> install() => api.installMarketplaceApp(
+      choice.server.id,
+      id,
+      {...expected.body, 'bot': ?bot},
+    );
+    result = await (guard == null ? install() : guard(install));
   } on RaftApiException catch (error) {
     final stale = appInstallRefusal(
       error,
@@ -827,6 +869,21 @@ Future<HumanLoginChoice> installHumanLoginApp(
     );
     final current = appPermissionsChangedCurrent(error);
     if (stale != null && current != null) {
+      final revisionMoved =
+          expected.textRevisionId != null &&
+          current.textRevisionId != expected.textRevisionId;
+      final fields = revisionMoved ? error.details['current_text'] : null;
+      final text = fields is Map && fields['name'] is String
+          ? (
+              name: fields['name'] as String,
+              description: fields['description'] is String
+                  ? fields['description'] as String
+                  : null,
+              whenToUse: fields['when_to_use'] is String
+                  ? fields['when_to_use'] as String
+                  : null,
+            )
+          : null;
       throw HumanLoginPermissionsChanged(
         stale,
         HumanLoginChoice(
@@ -834,7 +891,8 @@ Future<HumanLoginChoice> installHumanLoginApp(
           app.withPermissions(
             scopes: current.scopes,
             groups: current.groups,
-            textRevisionId: current.textRevisionId,
+            textRevisionId: revisionMoved ? current.textRevisionId : null,
+            promptText: text,
           ),
         ),
       );
@@ -845,10 +903,22 @@ Future<HumanLoginChoice> installHumanLoginApp(
       HumanLoginMessages.installFailed,
       'login-with-raft install',
     );
+  } on SecondFactorStepUpCancelled {
+    rethrow;
   } on Object {
     throw const HumanLoginException(HumanLoginMessages.installFailed);
   }
-  return HumanLoginChoice(choice.server, choice.client.installed);
+  final warnings = result is Map ? result['warnings'] : null;
+  return HumanLoginChoice(
+    choice.server,
+    choice.client.installed,
+    botConflict:
+        bot == true &&
+            warnings is List &&
+            warnings.contains('app_bot_handle_conflict')
+        ? app.botHandle
+        : null,
+  );
 }
 
 /// Web `authorizeWithClient`: asks for the code and builds the URL the

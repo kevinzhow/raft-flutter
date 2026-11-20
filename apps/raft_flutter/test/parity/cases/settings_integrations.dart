@@ -71,35 +71,53 @@ final Map<String, ParityCase> settingsIntegrationsCases = {
         'privateShared': false,
         ...extra,
       };
+      final marketplace = [
+        listing(
+          'market_slack',
+          'client_slack_bridge',
+          'Slack Bridge',
+          'Mirror Slock activity into Slack channels.',
+          'Productivity & Collaboration',
+          extra: {
+            'dataAccessSummary': 'Messages and channel metadata',
+            'appNotificationGroups': ['server'],
+            'appNotificationEvents': ['server.plan_changed'],
+            'appNotificationReviewPending': true,
+            'appNotificationPendingRevisionId':
+                '00000000-0000-4000-8000-000000000001',
+            'appNotificationPendingGroups': ['server', 'agent'],
+            'appNotificationPendingEvents': ['server.plan_changed'],
+            'canReviewAppNotifications': true,
+          },
+        ),
+        listing(
+          'market_github',
+          'client_github_issues',
+          'GitHub Issues',
+          'Create issues from tasks and feedback.',
+          'Development',
+          installedAt: created as String?,
+        ),
+      ];
       final (w, _) = fixture.workspace({
-        'GET /integrations/marketplace': (_) => [
-          listing(
-            'market_slack',
-            'client_slack_bridge',
-            'Slack Bridge',
-            'Mirror Slock activity into Slack channels.',
-            'Productivity & Collaboration',
-            extra: {
-              'dataAccessSummary': 'Messages and channel metadata',
-              'appNotificationGroups': ['server'],
-              'appNotificationEvents': ['server.plan_changed'],
-              'appNotificationReviewPending': true,
-              'appNotificationPendingRevisionId':
-                  '00000000-0000-4000-8000-000000000001',
-              'appNotificationPendingGroups': ['server', 'agent'],
-              'appNotificationPendingEvents': ['server.plan_changed'],
-              'canReviewAppNotifications': true,
-            },
-          ),
-          listing(
-            'market_github',
-            'client_github_issues',
-            'GitHub Issues',
-            'Create issues from tasks and feedback.',
-            'Development',
-            installedAt: created as String?,
-          ),
-        ],
+        'GET /integrations/marketplace': (_) => marketplace,
+        'GET /integrations/marketplace/listings': (_) => {
+          'items': [
+            for (final app in marketplace)
+              {
+                'kind': 'app',
+                'id': 'app:${app['id']}',
+                'app': app,
+                'installed': app['installedAt'] != null,
+              },
+          ],
+          'total': marketplace.length,
+        },
+        'GET /mcp/apps': (_) => {'apps': []},
+        'GET /integrations/link-preview-consents': (_) => {
+          'allowed': [],
+          'declined': [],
+        },
         'GET /integrations/clients': (_) => [
           {
             ...listing(
@@ -133,9 +151,15 @@ final Map<String, ParityCase> settingsIntegrationsCases = {
     },
     interact: (t, ctx) async {
       await t.pump(const Duration(milliseconds: 400));
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.pump(const Duration(milliseconds: 400));
       await t.tap(find.byKey(const ValueKey('connected-app-market_slack')));
       await t.pump(const Duration(milliseconds: 400));
-      expect(find.text('PERMISSION UPDATE PENDING REVIEW'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('connected-app-detail')),
+        findsOneWidget,
+      );
+      expect(find.text('Permission update pending review'), findsOneWidget);
       expect(find.text('Approve update'), findsNothing);
     },
   ),

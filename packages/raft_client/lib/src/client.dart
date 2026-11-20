@@ -174,6 +174,7 @@ Map<String, dynamic> _errorDetails(Map? body, int? status) {
     'current_scopes',
     'current_groups',
     'current_text_revision_id',
+    'current_text',
     // Account deletion (routes/accountDeletion.ts): the 403 `scheduledFor`,
     // and the 409 `sole_owner_servers` list of servers to hand over first.
     'scheduledFor',

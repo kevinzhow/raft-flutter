@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/app_install_expectation.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'app_setup.dart';
@@ -140,9 +141,21 @@ class _PrivateAppInviteState extends State<PrivateAppInviteView> {
 
   Future<void> install() async {
     final target = server;
-    if (!live || loading || installing || target == null || target.installed) {
+    final reviewed = invite;
+    if (!live ||
+        loading ||
+        installing ||
+        target == null ||
+        reviewed == null ||
+        target.installed) {
       return;
     }
+    final expected = AppInstallExpectation.of(
+      allowedScopes: reviewed.app['allowedScopes'],
+      groups: reviewed.app['appNotificationGroups'],
+      textRevisionId: null,
+      promptTextConsent: false,
+    );
     final ticket = ++request;
     final operation = activeInstall = Object();
     setState(() {
@@ -159,7 +172,7 @@ class _PrivateAppInviteState extends State<PrivateAppInviteView> {
           () => widget.client.postForServer(
             target.id,
             '$path/install',
-            data: {'serverId': target.id},
+            data: {'serverId': target.id, ...expected.body},
           ),
           reason: StepUpReason.appAccess,
         ),

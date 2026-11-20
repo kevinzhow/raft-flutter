@@ -159,7 +159,11 @@ void main() {
       f.overrides['GET /integration-invites/test-invite'] = (_) =>
           privateInvite();
       f.overrides['POST /integration-invites/test-invite/install'] = (o) {
-        expect(o.data, {'serverId': 'b'});
+        expect(o.data, {
+          'serverId': 'b',
+          'expected_scopes': ['openid', 'profile'],
+          'expected_groups': <String>[],
+        });
         expect(o.headers['X-Server-Id'], 'b');
         return privateInvite(installed: true);
       };

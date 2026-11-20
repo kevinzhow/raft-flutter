@@ -201,7 +201,7 @@ class WorkspacePresentation {
       'computers': 'viewMachines',
       'members': 'viewMembers',
       'providers': 'manageExternalAuth',
-      'integrations': 'manageIntegrations',
+      'integrations': 'viewServerProfile',
       'im-bridges': 'manageIntegrations',
       'administration': 'viewServerSettings',
       'billing': 'viewBilling',

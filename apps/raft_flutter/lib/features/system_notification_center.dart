@@ -18,13 +18,16 @@ import '../data/system_notification_projection.dart';
 import '../data/system_notification_store.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import '../data/workspace_navigation.dart';
 import '../platform/system_bars.dart';
 import 'fleet_views.dart';
 import 'account_security_recovery.dart';
+import 'app_permission_updates.dart';
 import 'joint_invite_errors.dart';
 import 'source_feedback_view.dart';
 import 'workspace_web_billing.dart' show openWebBillingOrToast;
 import 'system_notification_copy.dart';
+import 'settings_link.dart';
 
 /// The mounted Web system-notification aggregator, separate from message Activity
 /// and operating-system notifications. All data and overlay actions are scoped.
@@ -55,6 +58,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     with WidgetsBindingObserver {
   WorkspaceController get w => widget.controller;
   late SystemNotificationStore store;
+  late AppPermissionUpdates appPermissionUpdates;
   StreamSubscription<RaftEvent>? events;
 
   /// Machines and agents the notices project from. Agent presence patches
@@ -85,6 +89,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     w.can('viewMachines'),
     w.can('viewAgents'),
     w.can('viewBilling'),
+    w.can('manageIntegrations'),
   ]);
   bool current(String scope) =>
       !disposed && mounted && authority == scope && w.client.user != null;
@@ -105,6 +110,10 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
           seatAddEnabled: seatAddEnabled,
         );
     unawaited(bind());
+    appPermissionUpdates = AppPermissionUpdates.of(w);
+    appPermissionUpdates.addListener(appPermissionsChanged);
+    appPermissionsChanged();
+    if (widget.store == null) unawaited(appPermissionUpdates.refresh());
     store.addListener(updated);
     w.addListener(changed);
     entities = WorkspaceEntitySelection(
@@ -131,7 +140,15 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       // Web v1.24 listChangedSocket: `joint-invites:changed` re-reads the
       // pending joint invites (pings within 100 ms read once). Pings lost
       // while away are covered by the resume read and the 60 s poll above.
-      final ping = LiveEvent.read(e.name, e.payload);
+      final payload = e.payload;
+      final ping = LiveEvent.read(e.name, payload);
+      if (widget.store == null &&
+          (e.name == 'connected' ||
+              (e.name == 'permission-updates:changed' &&
+                  payload is Map &&
+                  payload['serverId'] == w.client.serverId))) {
+        unawaited(appPermissionUpdates.refresh(changed: true));
+      }
       if (ping is ListChangedEvent &&
           ping.event == ListChangedEvent.jointInvites &&
           ping.serverId == w.client.serverId) {
@@ -172,10 +189,10 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     });
     // The 5-minute safety poll of the seat-join list (an agent taking or
     // freeing a seat); stops while hidden.
-    seatPoll = RaftForegroundPeriodic(
-      const Duration(minutes: 5),
-      () => unawaited(store.refreshSeatJoinBlocks()),
-    );
+    seatPoll = RaftForegroundPeriodic(const Duration(minutes: 5), () {
+      unawaited(store.refreshSeatJoinBlocks());
+      if (widget.store == null) unawaited(appPermissionUpdates.refresh());
+    });
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -262,7 +279,14 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     final next = authority;
     if (old != next) close(remove: true);
     unawaited(bind());
+    if (old != next) {
+      appPermissionsChanged();
+      if (widget.store == null) unawaited(appPermissionUpdates.refresh());
+    }
   }
+
+  void appPermissionsChanged() =>
+      store.setAppPermissionUpdates(appPermissionUpdates.summary.count);
 
   void updated() {
     if (!disposed && mounted) setState(() {});
@@ -289,6 +313,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     entities?.dispose();
     entities = null;
     store.removeListener(updated);
+    appPermissionUpdates.removeListener(appPermissionsChanged);
     events?.cancel();
     poll?.dispose();
     seatPoll?.dispose();
@@ -320,6 +345,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         unawaited(store.refreshSeatJoinBlocks());
         unawaited(store.refreshJointInvites());
         unawaited(store.refreshSecondFactorRecovery());
+        if (widget.store == null) unawaited(appPermissionUpdates.refresh());
       }
     }
   }
@@ -534,6 +560,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                   ? 'Upgrade'
                   : n.destination == SystemNoticeDestination.feedback
                   ? 'View Feedback'
+                  : n.destination ==
+                        SystemNoticeDestination.appPermissionUpdates
+                  ? 'View updates'
                   : 'View',
             ),
             primary: true,
@@ -602,6 +631,17 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
 
   Future<void> navigate(SystemNotice n, String captured) async {
     if (!live(n, captured)) return;
+    if (n.destination == SystemNoticeDestination.appPermissionUpdates) {
+      if (!w.can('manageIntegrations')) return;
+      close();
+      settingsLocationOpener(w, allowed: current(captured))(
+        WorkspaceNavigation.locationForSection(
+          w.location.serverSlug,
+          'integrations',
+        ).withQuery({'permission_updates': '1'}),
+      );
+      return;
+    }
     if (n.destination == SystemNoticeDestination.billing) {
       if (!w.can('viewBilling')) return;
       close();

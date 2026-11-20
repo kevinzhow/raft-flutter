@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/app_install_expectation.dart';
 import 'app_setup.dart' show appSetupDomain;
+import 'connected_app_consent.dart';
 import 'human_login.dart';
 
 /// The server part of Web `HumanLoginSetupPage` (pinned v1.21.23): the
@@ -330,13 +332,16 @@ class HumanLoginCommitZone extends StatelessWidget {
   const HumanLoginCommitZone({
     super.key,
     required this.row,
-    required this.scopes,
+    required this.permissions,
     required this.busy,
+    required this.joinsBot,
+    required this.onBotChanged,
     this.onFindAdmin,
   });
   final HumanLoginRow? row;
-  final List<String> scopes;
-  final bool busy;
+  final AppInstallExpectation? permissions;
+  final bool busy, joinsBot;
+  final ValueChanged<bool> onBotChanged;
 
   /// Web "Find a server admin" (HumanLoginSetupPage.tsx:746-753): only an
   /// owner or admin can install, so the member gets the way to them.
@@ -388,14 +393,35 @@ class HumanLoginCommitZone extends StatelessWidget {
               style: _body(t, color: t.ink),
             ),
           },
-          if (state == HumanLoginCommit.install)
-            Text(
-              raftFormat(context, 'Access granted: {scopes}', {
-                'scopes': scopes.join(' · '),
-              }),
-              key: const ValueKey('human-login-install-scopes'),
-              style: RaftTypography.mono(t, size: 12, line: 16, color: t.muted),
-            ),
+          if (state == HumanLoginCommit.install) ...[
+            if (permissions case final reviewed?) ...[
+              Text(
+                tr('Installing approves for this Server:'),
+                style: _body(t, color: t.ink, weight: FontWeight.w600),
+              ),
+              ConnectedAppPermissionSet(
+                key: const ValueKey('human-login-install-scopes'),
+                permissions: reviewed,
+              ),
+              if (reviewed.textRevisionId != null)
+                ConnectedAppInstallPromptText(
+                  text: ConnectedAppPromptText(
+                    name: client!.name,
+                    description: client.description,
+                    whenToUse: client.whenToUse,
+                    service: client.clientId,
+                  ),
+                ),
+            ],
+            if (client?.botHandle case final handle?)
+              ConnectedAppInstallBotOption(
+                app: appName,
+                handle: handle,
+                server: server!.name,
+                checked: joinsBot,
+                onChanged: busy ? null : onBotChanged,
+              ),
+          ],
           if (setupDomain != null)
             RaftAppSetupRequirement(
               domain: setupDomain,

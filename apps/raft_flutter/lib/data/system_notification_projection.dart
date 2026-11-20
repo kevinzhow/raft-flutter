@@ -10,6 +10,7 @@ enum SystemNoticeDestination {
   computers,
   feedback,
   jointInvite,
+  appPermissionUpdates,
 
   /// Web useSecondFactorRecoveryNotification: its action is Cancel reset.
   secondFactorRecovery,

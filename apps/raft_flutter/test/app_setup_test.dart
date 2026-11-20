@@ -264,6 +264,8 @@ void main() {
       addTearDown(t.view.reset);
       await t.pumpWidget(integHost(IntegrationsView(controller: w)));
       await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('connected-app-app1')));
       await t.pumpAndSettle();
     }

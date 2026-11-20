@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
 import 'slack_bridge_contract.dart';
+import 'slack_bridge_recovery.dart';
 import '../data/feature_flag_client_facts.dart';
 
 class IMBridgesView extends StatefulWidget {
@@ -20,6 +21,19 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
   SlackBridgeProjection? projection;
   bool enabled = false;
   static const base = '/slack-bridge/provisioning';
+  static const healthQuery = {
+    'deliveryHealth': '1',
+    'pairDeliveryHealth': '1',
+    'workspaceAdminHint': '1',
+    'confirmationHint': '1',
+    'privateAuthorizerHint': '1',
+    'attachmentSourceHealth': '1',
+    'inboundRecovery': '1',
+    'cardEditNotices': '1',
+  };
+
+  Future<SlackBridgeProjection> fetchProjection() async =>
+      SlackBridgeProjection.parse(await w.client.get(base, query: healthQuery));
   @override
   void initState() {
     super.initState();
@@ -112,7 +126,7 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
       return;
     }
     try {
-      final next = SlackBridgeProjection.parse(await w.client.get(base));
+      final next = await fetchProjection();
       if (accepts(generation, request)) adopt(next);
     } on RaftApiException catch (e) {
       if (e.status == 503) {
@@ -164,7 +178,7 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
   /// fresh view is adopted instead of redirecting.
   Future<void> reauthorize(String scope) async {
     checkScope(scope);
-    final next = SlackBridgeProjection.parse(await w.client.get(base));
+    final next = await fetchProjection();
     checkScope(scope);
     final a = next.oauthAuthority;
     if (a == null || next.stage == 'connect' || next.stage == 'oauth') {
@@ -181,9 +195,24 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
   Future<void> verifyAndEnable(String scope) async {
     final next = await update(() => w.client.post('$base/preflight'), scope);
     if (next.preflightPassed) {
-      await update(() => w.client.post('$base/enable'), scope);
+      await enableAndRead(scope);
     }
   }
+
+  Future<void> enableAndRead(String scope) async {
+    checkScope(scope);
+    SlackBridgeProjection.parse(await w.client.post('$base/enable'));
+    checkScope(scope);
+    final next = await fetchProjection();
+    checkScope(scope);
+    setState(() => adopt(next));
+  }
+
+  Future<void> recover(String action, Map<String, dynamic> payload) => run(
+    () =>
+        update(() => w.client.post('$base/$action', data: payload), authority),
+    refresh: false,
+  );
 
   // ------------------------------------------------------------ actions
 
@@ -232,7 +261,7 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
 
   Future<void> refresh() => run(() async {
     final scope = authority;
-    final next = SlackBridgeProjection.parse(await w.client.get(base));
+    final next = await fetchProjection();
     checkScope(scope);
     setState(() {
       if (editingMappings && next.stage == 'health') {
@@ -355,7 +384,7 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
   Future<void> enable() => run(() async {
     final scope = authority;
     if (projection?.preflightPassed == true) {
-      await update(() => w.client.post('$base/enable'), scope);
+      await enableAndRead(scope);
     } else {
       await verifyAndEnable(scope);
     }
@@ -467,6 +496,11 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         'degraded',
         _reasons[reason]!,
         'Reauthorize Slack',
+      ),
+      'delivery_blocked' => (
+        'degraded',
+        'Outgoing messages are waiting for recovery.',
+        'Retry stalled message',
       ),
       'verification_required' => (
         'unverified',
@@ -674,6 +708,35 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
             ? () => run(() => reauthorize(authority), refresh: false)
             : null,
       );
+      wizard = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: RaftSpace.x3,
+        children: [
+          wizard,
+          SlackBridgeRecovery(
+            bridge: p,
+            canManage: manage,
+            busy: busy,
+            showOutbound: stage == RaftSlackStage.health && !editingMappings,
+            onRefresh: refresh,
+            onRetry: (delivery) => recover('retry-delivery', {
+              'bindingId': delivery['bindingId'],
+              'bindingEpoch': delivery['bindingEpoch'],
+              'deliveryId': delivery['deliveryId'],
+              'expectedProviderAttempts': delivery['providerAttempts'],
+              'duplicateRiskAcknowledged': true,
+            }),
+            onReplay: (event) => recover('replay-inbound', {
+              'bindingId': event['bindingId'],
+              'bindingEpoch': event['bindingEpoch'],
+              if (event['eventId'] != null)
+                'eventId': event['eventId']
+              else
+                'reason': event['reason'],
+            }),
+          ),
+        ],
+      );
     }
     return ListView(
       primary: false,
@@ -701,6 +764,7 @@ const _surfaces = {
   'audience': 'Channel audience',
   'connection': 'Connection',
   'scope': 'OAuth scope',
+  'delivery': 'Message delivery',
 };
 const _reasons = {
   'healthy': 'The install, credential, bindings, and audience are verified.',
