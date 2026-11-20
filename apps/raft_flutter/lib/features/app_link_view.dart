@@ -260,7 +260,6 @@ class _AppLinkChipState extends State<AppLinkChip> {
   @override
   Widget build(BuildContext context) {
     final link = widget.link;
-    final gap = RaftScale.space(2);
     final width = RaftScale.container['sm'] ?? RaftScale.space(96);
     final touch = RaftInteraction.of(context).touch;
     final domain = Uri.parse(link.url).host;
@@ -271,7 +270,6 @@ class _AppLinkChipState extends State<AppLinkChip> {
     };
     final consent = link is AppLinkConsent;
     final hasHover =
-        consent ||
         link is AppLinkConnect ||
         link is AppLinkPreview && link.placement == AppLinkPlacement.hover;
     final chip = RaftAppLinkChip(
@@ -299,63 +297,82 @@ class _AppLinkChipState extends State<AppLinkChip> {
             })
           : label,
     );
-    if (!hasHover || touch && !consent) return chip;
+    if (link is AppLinkConsent) {
+      return RaftHoverCard(
+        controller: _hover,
+        closeOnTriggerPress: false,
+        openOnKeyboardFocus: false,
+        surface: false,
+        width: null,
+        // PopoverContent uses a 4px gap and 5px viewport collision padding.
+        sideOffset: RaftScale.spacing,
+        collisionPadding: 5,
+        child: chip,
+        card: (context) => _consentPopup(context, link, domain),
+      );
+    }
+    if (!hasHover || touch) return chip;
     return RaftHoverCard(
       controller: _hover,
-      closeOnTriggerPress: !consent,
-      openOnKeyboardFocus: !consent,
       width: width,
       child: chip,
-      card: (context) {
-        if (link is AppLinkConsent) {
-          return Column(
-            key: const ValueKey('app-link-consent-popover'),
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppLinkPrompt(
-                message: widget.message,
-                link: link,
-                embedded: false,
-              ),
-              Padding(
-                padding: EdgeInsets.all(gap),
-                child: Row(
-                  spacing: gap,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        domain,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: RaftTokens.of(context).scale(
-                          RaftTypeScale.footnote,
-                          color: RaftTokens.of(context).ui.foregroundMuted,
-                        ),
-                      ),
+      card: (context) => _LinkCard(
+        key: const ValueKey('app-link-hover-card'),
+        link: link,
+        message: widget.message,
+        openBrowser: widget.openBrowser,
+      ),
+    );
+  }
+
+  Widget _consentPopup(
+    BuildContext context,
+    AppLinkConsent link,
+    String domain,
+  ) {
+    final tokens = RaftTokens.of(context);
+    return RaftPopoverSurface.item(
+      key: const ValueKey('app-link-consent-popover'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppLinkPrompt(message: widget.message, link: link, embedded: false),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              RaftSpace.x3,
+              RaftSpace.x2,
+              RaftSpace.x3,
+              RaftSpace.x3,
+            ),
+            child: Row(
+              spacing: RaftSpace.x2,
+              children: [
+                Expanded(
+                  child: Text(
+                    domain,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.scale(
+                      RaftTypeScale.footnote,
+                      color: tokens.ui.foregroundMuted,
                     ),
-                    RaftButton(
-                      label: raftText(context, 'Open link'),
-                      uiVariant: RaftButtonVariant.ghost,
-                      button: false,
-                      onPressed: () {
-                        _hover.close();
-                        widget.openBrowser(link.url);
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          );
-        }
-        return _LinkCard(
-          key: const ValueKey('app-link-hover-card'),
-          link: link,
-          message: widget.message,
-          openBrowser: widget.openBrowser,
-        );
-      },
+                RaftButton(
+                  label: raftText(context, 'Open link'),
+                  uiVariant: RaftButtonVariant.ghost,
+                  button: false,
+                  onPressed: () {
+                    _hover.close();
+                    widget.openBrowser(link.url);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

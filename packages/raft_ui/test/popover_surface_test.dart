@@ -8,6 +8,44 @@ import 'package:raft_ui/src/theme.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
+  testWidgets('item width follows the recipe and the anchor constraint', (
+    t,
+  ) async {
+    for (final available in [500.0, 380.0]) {
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: Center(
+            child: SizedBox(
+              width: available,
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RaftPopoverSurface(
+                    key: ValueKey('default-popover'),
+                    child: SizedBox(width: 220, height: 36),
+                  ),
+                  RaftPopoverSurface.item(
+                    key: ValueKey('item-popover'),
+                    child: SizedBox(width: 220, height: 36),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(
+        t.getSize(find.byKey(const ValueKey('default-popover'))),
+        const Size(220, 36),
+      );
+      expect(
+        t.getSize(find.byKey(const ValueKey('item-popover'))),
+        Size(available < 400 ? available : 400, 36),
+      );
+    }
+  });
+
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
       '${dark ? 'dark' : 'light'} keeps source content layout and paint-only shadows',

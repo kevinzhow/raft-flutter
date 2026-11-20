@@ -176,6 +176,102 @@ void main() {
       expect(find.text('Printer ticket'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
+
+    testWidgets(
+      'consent popup keeps item placement and input on $platform at $size',
+      (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final (workspace, transport) = (await tester.runAsync(
+          () => fixture('member'),
+        ))!;
+        addTearDown(workspace.dispose);
+        transport.routes['POST /feature-flags/evaluate'] = (_) => {
+          'evaluations': [
+            {'key': 'interactive_link_cards', 'enabled': true},
+          ],
+        };
+        transport.routes['POST /messages/m1/link-cards/read'] = (_) => _prompt;
+        final opened = <String>[];
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme().copyWith(platform: platform),
+            home: Scaffold(body: _message(workspace, open: opened.add)),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final chip = find.byKey(const ValueKey('app-link-chip-$_url'));
+        final popup = find.byKey(const ValueKey('app-link-consent-popover'));
+        final outside = Offset(size.width - 2, size.height - 2);
+        if (platform == TargetPlatform.linux) {
+          final mouse = await tester.createGesture(
+            kind: PointerDeviceKind.mouse,
+          );
+          await mouse.addPointer(location: outside);
+          try {
+            await mouse.moveTo(tester.getCenter(chip));
+            await tester.pump(const Duration(milliseconds: 400));
+            await tester.pumpAndSettle();
+            expect(popup, findsOneWidget);
+            await mouse.moveTo(outside);
+            await tester.pump(const Duration(milliseconds: 140));
+            await tester.pumpAndSettle();
+          } finally {
+            await mouse.removePointer();
+          }
+        } else {
+          await tester.tap(chip);
+          await tester.pumpAndSettle();
+          expect(popup, findsOneWidget);
+          await tester.tapAt(outside);
+          await tester.pumpAndSettle();
+        }
+        expect(popup, findsNothing);
+
+        final triggerFocus = tester
+            .widget<FocusableActionDetector>(
+              find.descendant(
+                of: chip,
+                matching: find.byType(FocusableActionDetector),
+              ),
+            )
+            .focusNode!;
+        triggerFocus.requestFocus();
+        await tester.pumpAndSettle();
+        expect(popup, findsNothing);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        expect(popup, findsOneWidget);
+        expect(triggerFocus.hasPrimaryFocus, isTrue);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(popup, findsNothing);
+        expect(triggerFocus.hasPrimaryFocus, isTrue);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+
+        final openLink = find.widgetWithText(RaftButton, 'Open link');
+        final surface = tester.getRect(popup);
+        final action = tester.getRect(openLink);
+        final gap = surface.top - tester.getRect(chip).bottom;
+        await tester.tap(
+          openLink,
+          kind: platform == TargetPlatform.linux
+              ? PointerDeviceKind.mouse
+              : PointerDeviceKind.touch,
+        );
+        await tester.pumpAndSettle();
+        expect(popup, findsNothing);
+        expect(opened, [_url]);
+        await tester.pumpWidget(const SizedBox());
+
+        expect(gap, 4);
+        expect(surface.width, size.width < 410 ? size.width - 10 : 400);
+        expect(surface.right - action.right, 12);
+        expect(surface.bottom - action.bottom, 12);
+      },
+    );
   }
 
   testWidgets('decline leaves a plain link after returning to the message', (
