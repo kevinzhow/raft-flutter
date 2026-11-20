@@ -596,6 +596,9 @@ class _LinkCard extends StatelessWidget {
     final pending =
         phase == AppLinkPhase.pending || phase == AppLinkPhase.executing;
     final holding = phase == AppLinkPhase.holding;
+    final heldStatus = holding
+        ? raftText(context, 'Runs when the countdown ends')
+        : null;
     final menuWorking =
         working && overflow.any((entry) => entry.key.label == operation.label);
     final buttons = Wrap(
@@ -616,6 +619,7 @@ class _LinkCard extends StatelessWidget {
                 focusNode: focus,
                 onPressed: toggle,
                 semanticLabel: label,
+                semanticHint: heldStatus,
                 tooltip: label,
                 glyph: RaftGlyph.ellipsis,
                 uiVariant: RaftButtonVariant.ghost,
@@ -649,6 +653,7 @@ class _LinkCard extends StatelessWidget {
             entry.key,
             entry.value,
             working: working,
+            heldStatus: heldStatus,
           ),
       ],
     );
@@ -671,14 +676,8 @@ class _LinkCard extends StatelessWidget {
                   ),
                 Flexible(
                   child: RaftCssText(
-                    raftText(
-                      context,
-                      holding
-                          ? 'Runs when the countdown ends'
-                          : pending
-                          ? 'In progress'
-                          : 'Working…',
-                    ),
+                    heldStatus ??
+                        raftText(context, pending ? 'In progress' : 'Working…'),
                     // Web Text.Sans size="small" keeps text-sm leading-5.
                     style: tokens
                         .scale(
@@ -720,7 +719,9 @@ class _LinkCard extends StatelessWidget {
     RaftCardButton button,
     AppLinkAction action, {
     required bool working,
+    required String? heldStatus,
   }) {
+    final disabled = _blocked(button, action, operation);
     return RaftButton(
       label: _label(context, button, action),
       uiVariant: button.ghost
@@ -730,7 +731,11 @@ class _LinkCard extends StatelessWidget {
           ? RaftGlyph.arrowUpRight
           : null,
       tooltip: button.disabledReason,
-      disabled: _blocked(button, action, operation),
+      disabled: disabled,
+      focusableWhenDisabled: heldStatus != null,
+      semanticHint: heldStatus != null && disabled
+          ? button.disabledReason ?? heldStatus
+          : null,
       busy: working && operation.label == button.label,
       loadingLabel: raftText(context, 'Working…'),
       onPressed: () => _activate(context, preview, operation, button, action),

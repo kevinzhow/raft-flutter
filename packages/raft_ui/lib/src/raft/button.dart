@@ -261,9 +261,11 @@ class RaftButton extends StatelessWidget {
     this.expand = false,
     this.focusNode,
     this.focusOnPointer = true,
+    this.focusableWhenDisabled = false,
     this.focusRing = false,
     this.tooltip,
     this.semanticLabel,
+    this.semanticHint,
     this.button = true,
     this.semanticRole,
     this.selected,
@@ -380,8 +382,8 @@ class RaftButton extends StatelessWidget {
   final bool layoutTouchTarget, expandTouchTarget;
   final bool? semanticContainer;
   final FocusNode? focusNode;
-  final bool focusOnPointer, focusRing;
-  final String? tooltip, semanticLabel;
+  final bool focusOnPointer, focusableWhenDisabled, focusRing;
+  final String? tooltip, semanticLabel, semanticHint;
   final bool button, inMutuallyExclusiveGroup, inertWhenDisabled;
   final SemanticsRole? semanticRole;
   final bool? selected, checked, toggled;
@@ -451,9 +453,11 @@ class RaftButton extends StatelessWidget {
       busy: busy,
       focusNode: focusNode,
       focusOnPointer: focusOnPointer,
+      focusableWhenDisabled: focusableWhenDisabled,
       cancelOutsideRelease: true,
       tooltip: tooltip,
       semanticLabel: accessibleLabel,
+      semanticHint: semanticHint,
       semanticValue: busy && accessibleLabel != raftText(context, loadingLabel)
           ? raftText(context, loadingLabel)
           : null,

@@ -117,6 +117,8 @@ void main() {
               await t.sendKeyEvent(LogicalKeyboardKey.space);
               await t.pumpAndSettle();
               expect(count, 4, reason: 'Disabled and busy reject activation.');
+              expect(focus.canRequestFocus, isFalse);
+              expect(focus.hasFocus, isFalse);
               expect(
                 t
                     .getSemantics(button)

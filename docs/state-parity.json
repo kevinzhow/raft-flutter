@@ -57766,7 +57766,7 @@
         "owner": "WP-LINK",
         "reason": "Composes the item Popover surface and App Link consent controls under the existing trigger."
       },
-      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14426/METHOD:_press@23876/FUNCTION:update@24470": {
+      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14426/METHOD:_press@24115/FUNCTION:update@24709": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-LINK",
@@ -57981,7 +57981,7 @@
         "declarationRefs": [
           "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkMessageView",
           "apps/raft_flutter/lib/features/app_link_view.dart#function:showAppLinkConfirmation",
-          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14426/METHOD:_press@23876/FUNCTION:update@24470",
+          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14426/METHOD:_press@24115/FUNCTION:update@24709",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkPrompt._choose",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState._showNotice"
         ],
