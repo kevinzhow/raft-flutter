@@ -2049,11 +2049,12 @@
           "variant": "No discussion in this task yet",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "Flutter renders the EmptyState under the head (task_conversation_surface.dart taskConversationHead, widget test task_v2_conversation_test); no parity case exists for the v2 dialog yet.",
-          "size": "S",
-          "gapKind": "case-missing"
+          "parityCase": [
+            "components.pages.tasks-v124.desktop.detail-open.brutal",
+            "components.pages.tasks-v124.phone.detail-open.brutal"
+          ],
+          "status": "fixing",
+          "justification": "The task supplies its own EmptyState to the discussion timeline. The Tasks route mounts this state in the v1.24 detail-open cases."
         },
         {
           "state": "error",

@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import 'avatar_content.dart';
 import 'components.dart' show RaftAvatar, RaftAvatarKind;
 import 'design_primitives.dart';
 import 'interaction.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'raft/checkbox.dart';
 import 'raft/ui_tokens.dart';
 import 'task.dart' show raftTaskStatusLabel;
@@ -34,6 +36,7 @@ class RaftTaskChipRow {
     this.assigneeIsAgent = false,
     this.assigneeIsViewer = false,
     this.assigneeAvatarUrl,
+    this.assigneeAvatarPixelKey,
     this.ref,
     this.channelName,
     this.time,
@@ -54,7 +57,7 @@ class RaftTaskChipRow {
   /// Null: unassigned (no assignee slot at all).
   final String? assigneeName;
   final bool assigneeIsAgent, assigneeIsViewer;
-  final String? assigneeAvatarUrl;
+  final String? assigneeAvatarUrl, assigneeAvatarPixelKey;
 
   /// The Tasks page across channels: the task's conversation ref
   /// (`#design:#25`, `dm:@peer:#25`), shown instead of `#25` where the list is
@@ -375,6 +378,15 @@ class RaftTaskAssignee extends StatelessWidget {
       kind: task.assigneeIsAgent ? RaftAvatarKind.agent : RaftAvatarKind.human,
       imageUrl: task.assigneeAvatarUrl,
       mountedContext: RaftMountedAvatarContext.compactList,
+      content: task.assigneeAvatarPixelKey == null
+          ? null
+          : RaftAvatarContent(
+              name: task.assigneeName!,
+              kind: task.assigneeIsAgent
+                  ? RaftAvatarContentKind.agent
+                  : RaftAvatarContentKind.human,
+              pixelKey: task.assigneeAvatarPixelKey,
+            ),
     );
     final label = Text(
       name,

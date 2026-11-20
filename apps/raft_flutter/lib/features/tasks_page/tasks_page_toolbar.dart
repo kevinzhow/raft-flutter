@@ -256,8 +256,19 @@ class _ScopeItem extends RaftFitItem {
       key: probe ? null : const ValueKey('tasks-page-scope-select'),
       label: current,
       tooltip: probe ? null : label,
-      triggerStyle: RaftDropdownTriggerStyle.picker,
-      trailingGlyph: RaftGlyph.chevronDown,
+      triggerBuilder: (context, focus, toggle) => RaftButton(
+        label: current,
+        semanticLabel: '$label, $current',
+        tooltip: probe ? null : label,
+        uiVariant: RaftButtonVariant.outline,
+        uiSize: RaftButtonSize.md,
+        trailingGlyph: RaftGlyph.chevronDown,
+        glyphSize: 14,
+        physicalHeight: line,
+        fontWeight: FontWeight.w600,
+        focusNode: focus,
+        onPressed: toggle,
+      ),
       entries: [
         for (final value in TasksPageTab.values)
           RaftMenuEntry(
@@ -651,6 +662,7 @@ class _TasksPageToolbarState extends State<TasksPageToolbar> {
             ],
           ),
           RaftFitSearch(
+            minWidth: 144,
             semanticLabel: raftText(context, 'Search tasks'),
             hintText: raftText(context, 'Search tasks'),
             clearLabel: raftText(context, 'Clear search'),

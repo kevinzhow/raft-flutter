@@ -118,31 +118,27 @@ void main() {
   );
 
   testWidgets(
-    'Android Tasks card opens with a collapsed details drawer',
+    'Android Tasks card opens with an inline head and a single empty state',
     _disposeWorkspaceAfter((t) async {
       final w = await mountTasks(
         t,
         const Size(390, 844),
         platform: TargetPlatform.android,
       );
-      expect(card.hitTestable(), findsOneWidget);
-      await t.tap(card, kind: PointerDeviceKind.touch);
+      final toolbar = find.byKey(const ValueKey('tasks-page-toolbar'));
+      expect(t.getSize(toolbar).height, 89);
+      await t.tap(card.hitTestable(), kind: PointerDeviceKind.touch);
       await settle(t);
       expect(_task, findsOneWidget);
       expect(w.location.query('task'), 'c1:task:task-1');
-      expect(_title, findsNothing, reason: 'full-page details start collapsed');
-      expect(_toggle.hitTestable(), findsOneWidget);
-
-      await t.tap(_toggle, kind: PointerDeviceKind.touch);
-      await settle(t);
-      expect(t.widget<Text>(_titleInDrawer).data, v2Task['title']);
-      await t.tap(_toggle, kind: PointerDeviceKind.touch);
-      await settle(t);
+      expect(t.widget<Text>(_title.hitTestable()).data, v2Task['title']);
+      expect(t.getSize(_bar).height, 56);
+      expect(_toggle, findsNothing);
       expect(_drawer, findsNothing);
-      expect(_title, findsNothing);
-      expect(w.location.query('task'), 'c1:task:task-1');
+      expect(find.text('No discussion in this task yet'), findsOneWidget);
+      expect(find.text('No replies yet'), findsNothing);
 
-      await t.tap(_back, kind: PointerDeviceKind.touch);
+      await t.tap(_back.hitTestable(), kind: PointerDeviceKind.touch);
       await settle(t);
       expect(_task, findsNothing);
       expect(w.location.query('task'), isNull);

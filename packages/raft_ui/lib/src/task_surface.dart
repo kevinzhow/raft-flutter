@@ -88,6 +88,8 @@ class RaftTaskSurface extends StatefulWidget {
     this.legacyPresentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
     this.inPlace = false,
+    this.tasksPage = false,
+    this.focusMode,
     this.displayNameFor,
     this.onViewInThread,
     this.conversation,
@@ -123,7 +125,8 @@ class RaftTaskSurface extends StatefulWidget {
   /// Beside a list (Web TaskContentSlot, `TaskConversationPage
   /// presentation="modal" page`): the dialog's frameless page filling its
   /// column, with the desktop head and its ×.
-  final bool inPlace;
+  final bool inPlace, tasksPage;
+  final ({bool focused, VoidCallback toggle})? focusMode;
   final Future<void> Function() onRetry, onLoadAssignees;
   final Future<void> Function(String, dynamic) onUpdate;
 
@@ -148,7 +151,8 @@ class RaftTaskSurface extends StatefulWidget {
 enum _TaskDetailsPlacement { drawer, pinned }
 
 _TaskDetailsPlacement? _detailsPlacement(RaftTaskSurface surface) {
-  if (surface.legacy ||
+  if (surface.tasksPage ||
+      surface.legacy ||
       surface.conversation == null ||
       surface.unresolvedBody != null ||
       surface.error != null && !surface.loading) {
@@ -170,8 +174,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       : null;
   final popover = MenuController();
   final statusKey = GlobalKey(),
+      pullDownStatusKey = GlobalKey(),
       reasonPanelKey = GlobalKey<RaftTaskReasonPanelState>();
-  bool askBacklog = false;
+  GlobalKey? backlogAnchor;
 
   /// Task v2 on a phone: whether the head (a row of the conversation) is on
   /// screen, and the head pulled down from the bar once it is not.
@@ -354,6 +359,8 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             onInvoke: (_) {
               if (drawerOpen) {
                 closeDetailsDrawer();
+              } else if (headPanelOpen && !headInView.value) {
+                closeHeadPanel(restoreFocus: true);
               } else {
                 widget.onClose();
               }
@@ -399,6 +406,8 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         onClose: phone ? widget.onBack ?? widget.onClose : widget.onClose,
         bottomBorder: widget.inPlace ? RaftSidePanelFrame.headerRule(t) : null,
         detailsToggle: detailsPlacement == null ? null : detailsToggle(context),
+        focusMode: widget.focusMode,
+        compactPage: widget.tasksPage && phone,
         pageStatus: detailsPlacement == _TaskDetailsPlacement.drawer
             ? RaftTaskStatus(status: '${task['status']}')
             : null,
@@ -624,6 +633,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               child: discussion,
             );
     }
+    final inline = summarizes(MediaQuery.sizeOf(context).width < 768);
     final head = properties(context);
     if (buildDiscussion == null) {
       return SingleChildScrollView(
@@ -634,15 +644,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     }
     if (widget.conversation == null) return buildDiscussion(head);
     // Task v2: pinned above the conversation, but on a phone its first row.
-    return summarizes(MediaQuery.sizeOf(context).width < 768)
-        ? NotificationListener<ScrollNotification>(
-            onNotification: (_) {
-              headInView.remeasure();
-              return false;
-            },
-            child: buildDiscussion(
-              RaftTaskHeadInView(visibility: headInView, child: head),
-            ),
+    return inline
+        ? buildDiscussion(
+            RaftTaskHeadInView(visibility: headInView, child: head),
           )
         : raftTaskPinnedHead(
             head: head,
@@ -650,20 +654,22 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           );
   }
 
-  /// Task v2 on a phone (not a full page): the head scrolls with the
+  /// On compact Tasks pages and phone modals the head scrolls with the
   /// conversation and the bar summarises the task once it is out of view.
   bool summarizes(bool mobile) =>
       widget.conversation != null &&
       !widget.legacy &&
-      mobile &&
-      !widget.page &&
-      !widget.inPlace;
+      !widget.inPlace &&
+      (widget.page ? widget.tasksPage : mobile);
 
   /// Closes the pulled-down head; focus goes back to the bar unless a press
   /// outside closed it (Web `TaskHeadPullDown`).
   void closeHeadPanel({required bool restoreFocus}) {
     if (!headPanelOpen) return;
-    setState(() => headPanelOpen = false);
+    setState(() {
+      headPanelOpen = false;
+      if (backlogAnchor == pullDownStatusKey) backlogAnchor = null;
+    });
     if (restoreFocus) barFocus.requestFocus();
   }
 
@@ -684,7 +690,16 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           link: barLink,
           open: open,
           onClose: close,
-          panel: properties(context),
+          panel: open
+              ? RaftBackDismiss(
+                  onDismiss: close,
+                  child: properties(
+                    context,
+                    divider: !widget.tasksPage,
+                    inPullDown: true,
+                  ),
+                )
+              : const SizedBox.shrink(),
           child: build(
             (body) => raftTaskPullDownDismiss(
               open: open,
@@ -703,11 +718,16 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   /// optional description (`mb-3 text-sm text-foreground-muted`, collapsed to
   /// three lines) and `TaskProperties`: the History toggle block
   /// (`mb-4 border-b pb-3`) and the wrapping facts row.
-  Widget properties(BuildContext context) {
+  Widget properties(
+    BuildContext context, {
+    bool divider = true,
+    bool inPullDown = false,
+  }) {
     final t = RaftTokens.of(context), task = widget.task;
     final description = '${task['description'] ?? ''}'.trim();
     final section = RaftPanelSection(
       topBorder: false,
+      horizontal: widget.tasksPage && widget.inPlace ? 16 : 20,
       gap: 0,
       children: [
         Padding(
@@ -802,6 +822,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                 uiVariant: RaftButtonVariant.ghost,
                 uiSize: RaftButtonSize.sm,
                 label: 'Add a description',
+                padding: widget.tasksPage
+                    ? const EdgeInsets.only(right: 12)
+                    : null,
                 onPressed: () => setState(
                   () => editing = (
                     taskId: task['id'],
@@ -817,10 +840,14 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         Wrap(
           key: const ValueKey('task-properties'),
           spacing: 24,
-          runSpacing: 8,
+          runSpacing: widget.tasksPage ? 12 : 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            property(context, 'Status', status(context)),
+            property(
+              context,
+              'Status',
+              status(context, inPullDown: inPullDown),
+            ),
             property(context, 'Assignee', assignee(context)),
             if (widget.conversation?.source case final source?)
               property(context, 'Source', source),
@@ -884,10 +911,11 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ColoredBox(color: t.panel, child: section),
-        ColoredBox(
-          color: t.colors['line-hairline']!,
-          child: SizedBox(height: t.border),
-        ),
+        if (divider)
+          ColoredBox(
+            color: t.colors['line-hairline']!,
+            child: SizedBox(height: t.border),
+          ),
       ],
     );
   }
@@ -900,6 +928,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       field: field,
       value: value,
       display: display ?? const SizedBox.shrink(),
+      revealOnHover: widget.tasksPage,
       editing: editingField == field,
       onEdit: () => setState(() => editing = (taskId: id, field: field)),
       onClose: () => setState(() => editing = null),
@@ -1020,7 +1049,11 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     final t = RaftTokens.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
-      spacing: 8,
+      spacing: widget.tasksPage ? 12 : 8,
+      crossAxisAlignment: widget.tasksPage
+          ? CrossAxisAlignment.baseline
+          : CrossAxisAlignment.center,
+      textBaseline: widget.tasksPage ? TextBaseline.alphabetic : null,
       children: [
         RaftCssText(raftText(context, label), style: termStyle(t)),
         Flexible(child: value),
@@ -1028,7 +1061,8 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     );
   }
 
-  Widget status(BuildContext context) {
+  Widget status(BuildContext context, {bool inPullDown = false}) {
+    final anchor = inPullDown ? pullDownStatusKey : statusKey;
     final value = '${widget.task['status']}';
     if (!raftTaskStatusVocabulary.contains(value)) return Text(value);
     final label = raftText(context, raftTaskStatusLabel(value));
@@ -1069,7 +1103,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         if (next == 'backlog' &&
             value != 'backlog' &&
             widget.onUpdateWithReason != null) {
-          setState(() => askBacklog = true);
+          setState(() => backlogAnchor = anchor);
         } else {
           unawaited(widget.onUpdate('status', next));
         }
@@ -1079,8 +1113,8 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     if (widget.onUpdateWithReason == null) return editor;
     return RaftTaskReasonPopover(
       // Someone else may park the task meanwhile: nothing left to ask.
-      open: askBacklog && value != 'backlog',
-      anchorKey: statusKey,
+      open: backlogAnchor == anchor && value != 'backlog',
+      anchorKey: anchor,
       panelKey: reasonPanelKey,
       onSubmit: (reason) async {
         final ok = await widget.onUpdateWithReason!(
@@ -1088,11 +1122,11 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           'backlog',
           reason,
         );
-        if (ok && mounted) setState(() => askBacklog = false);
+        if (ok && mounted) setState(() => backlogAnchor = null);
         return ok;
       },
-      onDismiss: () => setState(() => askBacklog = false),
-      child: KeyedSubtree(key: statusKey, child: editor),
+      onDismiss: () => setState(() => backlogAnchor = null),
+      child: KeyedSubtree(key: anchor, child: editor),
     );
   }
 
@@ -1134,8 +1168,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               'Completed tasks cannot change assignees. Reopen the task first.',
             )
           : null,
-      background: t.panel,
+      background: widget.tasksPage ? Colors.transparent : t.panel,
       foreground: t.strong,
+      indicator: widget.tasksPage ? RaftGlyph.chevronDown : RaftGlyph.pencil,
       onSelect: (_) {},
       onOpenChanged: (open) {
         if (!open) {

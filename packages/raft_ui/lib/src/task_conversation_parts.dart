@@ -3,8 +3,10 @@
 // dialog adds to the task's properties. The app owns every command.
 import 'package:flutter/material.dart';
 
+import 'channel_header.dart' show raftConversationHeaderToggle;
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'interaction.dart';
 import 'localization.dart';
 import 'raft/button.dart';
 import 'raft/ui_tokens.dart';
@@ -81,10 +83,13 @@ class RaftTaskConversationBar extends StatelessWidget {
     this.detailsToggle,
     this.pageStatus,
     this.bottomBorder,
+    this.compactPage = false,
+    this.focusMode,
   });
   final RaftTaskConversation conversation;
   final Object? taskNumber;
-  final bool mobile;
+  final bool mobile, compactPage;
+  final ({bool focused, VoidCallback toggle})? focusMode;
   final VoidCallback onClose;
 
   /// A phone whose head has scrolled away: the bar names the task's state
@@ -121,7 +126,7 @@ class RaftTaskConversationBar extends StatelessWidget {
     final menuLabel = raftText(context, 'Task actions');
     return Container(
       key: const ValueKey('task-modal-bar'),
-      constraints: const BoxConstraints(minHeight: 44),
+      constraints: BoxConstraints(minHeight: compactPage ? 56 : 44),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         border:
@@ -223,6 +228,14 @@ class RaftTaskConversationBar extends StatelessWidget {
               ],
             ],
           ),
+          if (focusMode case final focus? when !mobile)
+            raftConversationHeaderToggle(
+              key: const Key('task-focus-mode'),
+              glyph: focus.focused ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
+              label: raftText(context, focus.focused ? 'Restore' : 'Expand'),
+              pressed: focus.focused,
+              onPressed: focus.toggle,
+            ),
           if (!mobile)
             RaftButton(
               key: const ValueKey('task-modal-close'),
@@ -242,7 +255,7 @@ class RaftTaskConversationBar extends StatelessWidget {
 
 /// The task head's title or description with its pencil, or its editor while
 /// it is edited (Web TaskModalHead with TaskHeadFieldEditor).
-class RaftTaskHeadText extends StatelessWidget {
+class RaftTaskHeadText extends StatefulWidget {
   const RaftTaskHeadText({
     super.key,
     required this.field,
@@ -252,45 +265,73 @@ class RaftTaskHeadText extends StatelessWidget {
     required this.onEdit,
     required this.onClose,
     this.onSave,
+    this.revealOnHover = false,
   });
   final RaftTaskHeadField field;
   final String value;
 
   /// The field as shown when not edited.
   final Widget display;
-  final bool editing;
+  final bool editing, revealOnHover;
   final VoidCallback onEdit, onClose;
   final Future<RaftTaskAmendOutcome> Function(String text)? onSave;
 
   @override
+  State<RaftTaskHeadText> createState() => _RaftTaskHeadTextState();
+}
+
+class _RaftTaskHeadTextState extends State<RaftTaskHeadText> {
+  bool hovered = false, focusWithin = false;
+
+  @override
   Widget build(BuildContext context) {
-    final save = onSave;
-    if (editing && save != null) {
+    final save = widget.onSave;
+    final field = widget.field;
+    if (widget.editing && save != null) {
       return RaftTaskHeadFieldEditor(
         field: field,
-        value: value,
+        value: widget.value,
         onSave: save,
-        onClose: onClose,
+        onClose: widget.onClose,
       );
     }
-    if (save == null) return display;
-    return Row(
+    if (save == null) return widget.display;
+    final alwaysVisible =
+        !widget.revealOnHover || !RaftInteraction.of(context).hover;
+    final visible = alwaysVisible || hovered || focusWithin;
+    final row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 4,
       children: [
-        Expanded(child: display),
-        RaftTaskHeadEditButton(
-          key: ValueKey(
-            field == RaftTaskHeadField.title
-                ? 'task-modal-title-edit'
-                : 'task-modal-description-edit',
+        Expanded(child: widget.display),
+        IgnorePointer(
+          ignoring: !visible,
+          child: Opacity(
+            opacity: visible ? 1 : 0,
+            child: RaftTaskHeadEditButton(
+              key: ValueKey(
+                field == RaftTaskHeadField.title
+                    ? 'task-modal-title-edit'
+                    : 'task-modal-description-edit',
+              ),
+              label: field == RaftTaskHeadField.title
+                  ? 'Edit title'
+                  : 'Edit description',
+              onPressed: widget.onEdit,
+            ),
           ),
-          label: field == RaftTaskHeadField.title
-              ? 'Edit title'
-              : 'Edit description',
-          onPressed: onEdit,
         ),
       ],
+    );
+    if (alwaysVisible) return row;
+    return MouseRegion(
+      onEnter: (_) => setState(() => hovered = true),
+      onExit: (_) => setState(() => hovered = false),
+      child: Focus(
+        canRequestFocus: false,
+        onFocusChange: (value) => setState(() => focusWithin = value),
+        child: row,
+      ),
     );
   }
 }

@@ -110,6 +110,7 @@ class RaftChatView extends StatefulWidget {
     required this.controller,
     this.thread = false,
     this.threadParentSlot,
+    this.threadEmptyState,
     this.hideThreadParent = false,
     this.selectionHandle,
     this.viewportHandle,
@@ -129,6 +130,7 @@ class RaftChatView extends StatefulWidget {
 
   /// Source TaskModalHead is an independent task subject above the replies.
   final Widget? threadParentSlot;
+  final Widget? threadEmptyState;
   final bool hideThreadParent;
   final ChatSelectionHandle? selectionHandle;
   final ChatViewportHandle? viewportHandle;
@@ -3179,11 +3181,12 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       inset: true,
                     ),
                   )
-                : RaftProductEmptyState(
-                    title: raftText(context, 'No replies yet'),
-                    icon: (context, size, color) =>
-                        RaftThreadIcon(size: size, color: color),
-                  ),
+                : widget.threadEmptyState ??
+                      RaftProductEmptyState(
+                        title: raftText(context, 'No replies yet'),
+                        icon: (context, size, color) =>
+                            RaftThreadIcon(size: size, color: color),
+                      ),
           ),
       ];
     } else {

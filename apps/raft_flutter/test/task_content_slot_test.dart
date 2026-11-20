@@ -49,6 +49,7 @@ Future<WorkspaceController> mountTasks(
   bool v2 = true,
   TargetPlatform? platform,
   List<Map<String, dynamic>> discussionMessages = const [],
+  bool twoTasks = false,
 }) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
@@ -60,6 +61,30 @@ Future<WorkspaceController> mountTasks(
   addTearDown(() => FlutterError.onError = previous);
   final (w, api) = await pageFixture(t, section: section);
   taskRoutes(api, v2Task);
+  final second = <String, dynamic>{
+    ...v2Task,
+    'id': 'task-2',
+    'messageId': 'task-2',
+    'title': 'Second task title',
+    'taskNumber': 9,
+    'conversationChannelId': 'second-conv',
+    'hostMessageId': 'earlier',
+  };
+  final tasks = [v2Task, if (twoTasks) second];
+  if (twoTasks) {
+    api.routes['GET /tasks/server'] = (request) => {
+      'tasks': request.queryParameters['relation'] == 'created_by_me'
+          ? tasks
+          : <dynamic>[],
+      'next_cursor': null,
+    };
+    api.routes['GET /tasks/channel/c1/number/9'] = (_) => {'task': second};
+    api.routes['GET /tasks/task-2/history'] = (_) => {'events': <dynamic>[]};
+    api.routes['GET /messages/channel/second-conv'] = (_) => {
+      'messages': <dynamic>[],
+    };
+    api.routes['POST /channels/second-conv/read'] = (_) => {};
+  }
   if (section == 'activity') {
     api.routes['GET /channels/inbox'] = (_) => {
       'items': [
@@ -83,9 +108,7 @@ Future<WorkspaceController> mountTasks(
       'totalUnreadCount': 0,
     };
   }
-  api.routes['GET /tasks/channel/c1'] = (_) => {
-    'tasks': [v2Task],
-  };
+  api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': tasks};
   api.routes['GET /messages/channel/task-conv'] = (_) => {
     'messages': discussionMessages,
   };
@@ -141,6 +164,67 @@ bool focusIn(Finder finder) {
 
 void main() {
   const desktop = Size(1280, 800);
+  testWidgets('Tasks detail shows its head and one empty discussion on open '
+      'and switch, then close returns to the list', (t) async {
+    try {
+      final w = await mountTasks(t, desktop, twoTasks: true);
+      final second = find.byKey(const ValueKey('tasks-page-row-cell-task-2'));
+      final title = find.byKey(const ValueKey('task-modal-title'));
+      final empty = find.text('No discussion in this task yet');
+      final replies = find.text('No replies yet');
+
+      await t.tap(card.hitTestable());
+      await settle(t);
+      expect(w.location.query('open'), 'task:task-1');
+      expect(title.hitTestable(), findsOneWidget);
+      expect(t.widget<Text>(title).data, v2Task['title']);
+      expect(empty.hitTestable(), findsOneWidget);
+      expect(replies, findsNothing);
+      expect(find.byType(RaftComposer), findsOneWidget);
+
+      final editor = find.descendant(
+        of: slot,
+        matching: find.byType(EditableText),
+      );
+      await t.enterText(editor, 'Draft stays with the task');
+      final expand = find.byKey(const ValueKey('task-focus-mode'));
+      final initialWidth = t.getSize(slot).width;
+      await t.tap(expand.hitTestable());
+      await settle(t);
+      expect(t.getSize(slot).width, greaterThan(initialWidth));
+      expect(
+        t.widget<EditableText>(editor).controller.text,
+        'Draft stays with the task',
+      );
+      expect(w.location.query('open'), 'task:task-1');
+      await t.tap(expand.hitTestable());
+      await settle(t);
+      expect(t.getSize(slot).width, initialWidth);
+      expect(
+        t.widget<EditableText>(editor).controller.text,
+        'Draft stays with the task',
+      );
+
+      await t.tap(second.hitTestable());
+      await settle(t);
+      expect(w.location.query('open'), 'task:task-2');
+      expect(title.hitTestable(), findsOneWidget);
+      expect(t.widget<Text>(title).data, 'Second task title');
+      expect(empty.hitTestable(), findsOneWidget);
+      expect(replies, findsNothing);
+
+      await t.tap(find.byKey(const ValueKey('task-modal-close')).hitTestable());
+      await settle(t);
+      expect(w.location.query('open'), isNull);
+      expect(title, findsNothing);
+      expect(empty, findsNothing);
+      expect(second.hitTestable(), findsOneWidget);
+      expect(focusIn(second), isTrue);
+    } finally {
+      await t.pumpWidget(const SizedBox());
+      await t.pump();
+    }
+  });
   testWidgets('desktop: a v2 task opens beside the Tasks list, × closes it '
       'and focus returns to its card', (t) async {
     final w = await mountTasks(t, desktop);

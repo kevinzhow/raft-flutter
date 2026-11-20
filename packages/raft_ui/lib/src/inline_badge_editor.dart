@@ -53,8 +53,10 @@ class RaftInlineBadgeEditor extends StatefulWidget {
     this.enabled = true,
     this.tooltip,
     this.panelBuilder,
+    this.indicator = RaftGlyph.pencil,
   });
   final String label, selectedId;
+  final RaftGlyph indicator;
 
   /// Replaces the plain option list with a caller panel (Web `searchable`:
   /// the same SelectionPopover as the search filters). It receives a close
@@ -259,8 +261,8 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
               Opacity(
                 opacity: .4,
                 child: RaftIcon(
-                  RaftGlyph.pencil,
-                  size: 10,
+                  widget.indicator,
+                  size: widget.indicator == RaftGlyph.chevronDown ? 12 : 10,
                   color: widget.foreground!,
                 ),
               ),

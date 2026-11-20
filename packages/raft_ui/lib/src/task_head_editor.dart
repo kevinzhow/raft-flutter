@@ -39,8 +39,7 @@ class RaftTaskAmendFailed extends RaftTaskAmendOutcome {
 }
 
 /// The pencil beside the title or the description: an icon button named by
-/// its tooltip (Web TaskHeadEditButton). Always shown: Web reveals it on hover
-/// with a mouse and always by touch.
+/// its tooltip (Web TaskHeadEditButton).
 class RaftTaskHeadEditButton extends StatelessWidget {
   const RaftTaskHeadEditButton({
     super.key,

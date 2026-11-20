@@ -97,41 +97,18 @@ RaftTaskConversation taskConversation(
   );
 }
 
-/// The head, then (while the conversation has no messages) its empty state:
-/// "No discussion in this task yet", and for a pre-v2 task where its earlier
-/// discussion is.
-Widget taskConversationHead(
-  BuildContext context,
-  TaskSurfaceController o,
-  Widget head,
-) {
-  final c = o.discussion;
-  final empty =
-      c != null &&
-      c.replies.isEmpty &&
-      (c.threadChannelId == null || !c.messageDomain.state.threadLoading);
-  if (!empty) return head;
-  final host = o.task['hostMessageId'];
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      head,
-      Padding(
-        key: const ValueKey('task-conversation-empty'),
-        // ds-allow: Web TaskConversation empty note p-6 (RaftSpace.x6 as a literal inset).
-        padding: const EdgeInsets.all(24),
-        child: RaftEmptyState(
-          title: raftText(context, 'No discussion in this task yet'),
-          detail: host is String && host.isNotEmpty
-              ? raftText(
-                  context,
-                  "Its earlier discussion is in the replies of the message it came from. Write here to start the task's own.",
-                )
-              : '',
-        ),
-      ),
-    ],
+Widget taskConversationEmpty(BuildContext context, Map<String, dynamic> task) {
+  final host = task['hostMessageId'];
+  return RaftProductEmptyState(
+    key: const ValueKey('task-conversation-empty'),
+    title: raftText(context, 'No discussion in this task yet'),
+    description: host is String && host.isNotEmpty
+        ? raftText(
+            context,
+            "Its earlier discussion is in the replies of the message it came from. Write here to start the task's own.",
+          )
+        : null,
+    icon: (context, size, color) => RaftThreadIcon(size: size, color: color),
   );
 }
 

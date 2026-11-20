@@ -374,9 +374,14 @@ class _PageRowContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final callout = t.scale(RaftTypeScale.callout);
     final mono = t
         .scale(RaftTypeScale.monoMeta, mono: true, color: t.ui.foregroundHint)
         .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+    final lineMono = mono.copyWith(
+      height: callout.fontSize! * callout.height! / mono.fontSize!,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
     final number = '#${task.number}';
     final lead = list.showChannel && !narrow && task.ref != null
         ? task.ref!
@@ -402,10 +407,10 @@ class _PageRowContent extends StatelessWidget {
       rowGap: 4,
       basis: 160,
       children: [
-        Text(
+        RaftCssText(
           lead,
           key: const ValueKey('message-task-chip-number'),
-          style: mono,
+          style: lineMono,
         ),
         Row(
           key: const ValueKey('message-task-chip-title-group'),
@@ -415,7 +420,7 @@ class _PageRowContent extends StatelessWidget {
           children: [
             Flexible(
               child: list.wrapTitle
-                  ? Text(
+                  ? RaftCssText(
                       task.title,
                       key: const ValueKey('message-task-chip-title'),
                       style: titleStyle,
@@ -430,7 +435,7 @@ class _PageRowContent extends StatelessWidget {
                     ),
             ),
             if (task.replyCount > 0 || task.unread)
-              RaftTaskReplyCount(task: task, style: mono),
+              RaftTaskReplyCount(task: task, style: lineMono),
           ],
         ),
         Wrap(
@@ -441,10 +446,10 @@ class _PageRowContent extends StatelessWidget {
           runSpacing: 4,
           children: [
             if (channel != null)
-              Text(
+              RaftCssText(
                 channel,
                 key: const ValueKey('message-task-chip-channel'),
-                style: mono,
+                style: lineMono,
               ),
             if (unassigned)
               Text(

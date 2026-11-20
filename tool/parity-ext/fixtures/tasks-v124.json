@@ -1,0 +1,821 @@
+{
+  "channel": {
+    "id": "channel-tasks-v124",
+    "serverId": "visual-server",
+    "name": "workbench",
+    "type": "channel",
+    "createdAt": "2026-06-20T13:40:00.000Z",
+    "description": null,
+    "joined": true
+  },
+  "agent": {
+    "id": "agent-tasks-v124",
+    "serverId": "visual-server",
+    "name": "Workbench-Assistant",
+    "displayName": "Workbench Assistant",
+    "avatarUrl": "pixel:robot",
+    "createdAt": "2026-06-20T13:40:00.000Z",
+    "activity": "offline",
+    "deletedAt": null
+  },
+  "routes": {
+    "GET /tasks/server": {
+      "$when": [
+        {
+          "query": {
+            "relation": "assigned_to_me"
+          },
+          "answer": {
+            "tasks": [
+              {
+                "id": "visual-task-4",
+                "channelId": "channel-tasks-v124",
+                "channelName": "workbench",
+                "channelType": "channel",
+                "taskNumber": 4,
+                "title": "移动端工作台需要保留讨论位置：检查 Android 和 Safari 的滚动行为、输入法焦点、列表回跳与历史记录。Compare viewport changes before and after switching between longer tasks. Close the pane, then reopen it to confirm the selected task and reading position remain stable.",
+                "status": "in_progress",
+                "messageId": "visual-task-4",
+                "conversationChannelId": "conversation-visual-task-4",
+                "conversationAnchored": true,
+                "conversationReplyCount": 0,
+                "sourceRecorded": true,
+                "hasDescription": false,
+                "description": null,
+                "createdByType": "user",
+                "createdById": "visual-human-designer",
+                "createdByName": "designer",
+                "claimedByType": "user",
+                "claimedById": "visual-user",
+                "claimedByName": null,
+                "createdAt": "2026-06-20T13:40:00.000Z",
+                "updatedAt": "2026-06-20T13:40:00.000Z",
+                "lastActivityAt": "2026-06-20T13:40:00.000Z",
+                "revision": 1
+              }
+            ],
+            "next_cursor": null
+          }
+        },
+        {
+          "query": {
+            "relation": "created_by_me"
+          },
+          "answer": {
+            "tasks": [
+              {
+                "id": "visual-task-16",
+                "channelId": "channel-tasks-v124",
+                "channelName": "workbench",
+                "channelType": "channel",
+                "taskNumber": 16,
+                "title": "Check the task detail layout",
+                "status": "todo",
+                "messageId": "visual-task-16",
+                "conversationChannelId": "conversation-visual-task-16",
+                "conversationAnchored": true,
+                "conversationReplyCount": 0,
+                "sourceRecorded": true,
+                "hasDescription": false,
+                "description": null,
+                "createdByType": "user",
+                "createdById": "visual-user",
+                "createdByName": "artin",
+                "claimedByType": null,
+                "claimedById": null,
+                "claimedByName": null,
+                "createdAt": "2026-06-20T13:40:00.000Z",
+                "updatedAt": "2026-06-20T13:40:00.000Z",
+                "lastActivityAt": "2026-06-20T13:40:00.000Z",
+                "revision": 1
+              },
+              {
+                "id": "visual-task-1",
+                "channelId": "channel-tasks-v124",
+                "channelName": "workbench",
+                "channelType": "channel",
+                "taskNumber": 1,
+                "title": "Investigate sidebar flicker when switching channels with the keyboard, restoring the active thread, changing the window width and returning to the Tasks list",
+                "status": "in_progress",
+                "messageId": "visual-task-1",
+                "conversationChannelId": "conversation-visual-task-1",
+                "conversationAnchored": true,
+                "conversationReplyCount": 0,
+                "sourceRecorded": true,
+                "hasDescription": true,
+                "description": "Compare the sidebar at normal and narrow widths. Keep an open thread and a draft in the composer while switching channels. Record the result after the sidebar settles and after returning to the list.",
+                "createdByType": "user",
+                "createdById": "visual-user",
+                "createdByName": "artin",
+                "claimedByType": "agent",
+                "claimedById": "agent-tasks-v124",
+                "claimedByName": "Workbench Assistant",
+                "createdAt": "2026-06-20T13:40:00.000Z",
+                "updatedAt": "2026-06-20T13:40:00.000Z",
+                "lastActivityAt": "2026-06-20T13:40:00.000Z",
+                "revision": 1,
+                "hostMessageId": "earlier-task-message"
+              }
+            ],
+            "next_cursor": null
+          }
+        },
+        {
+          "query": {
+            "relation": "from_my_message"
+          },
+          "answer": {
+            "tasks": [],
+            "next_cursor": null
+          }
+        }
+      ],
+      "$default": {
+        "tasks": [
+          {
+            "id": "visual-task-4",
+            "channelId": "channel-tasks-v124",
+            "channelName": "workbench",
+            "channelType": "channel",
+            "taskNumber": 4,
+            "title": "移动端工作台需要保留讨论位置：检查 Android 和 Safari 的滚动行为、输入法焦点、列表回跳与历史记录。Compare viewport changes before and after switching between longer tasks. Close the pane, then reopen it to confirm the selected task and reading position remain stable.",
+            "status": "in_progress",
+            "messageId": "visual-task-4",
+            "conversationChannelId": "conversation-visual-task-4",
+            "conversationAnchored": true,
+            "conversationReplyCount": 0,
+            "sourceRecorded": true,
+            "hasDescription": false,
+            "description": null,
+            "createdByType": "user",
+            "createdById": "visual-human-designer",
+            "createdByName": "designer",
+            "claimedByType": "user",
+            "claimedById": "visual-user",
+            "claimedByName": null,
+            "createdAt": "2026-06-20T13:40:00.000Z",
+            "updatedAt": "2026-06-20T13:40:00.000Z",
+            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "revision": 1
+          },
+          {
+            "id": "visual-task-16",
+            "channelId": "channel-tasks-v124",
+            "channelName": "workbench",
+            "channelType": "channel",
+            "taskNumber": 16,
+            "title": "Check the task detail layout",
+            "status": "todo",
+            "messageId": "visual-task-16",
+            "conversationChannelId": "conversation-visual-task-16",
+            "conversationAnchored": true,
+            "conversationReplyCount": 0,
+            "sourceRecorded": true,
+            "hasDescription": false,
+            "description": null,
+            "createdByType": "user",
+            "createdById": "visual-user",
+            "createdByName": "artin",
+            "claimedByType": null,
+            "claimedById": null,
+            "claimedByName": null,
+            "createdAt": "2026-06-20T13:40:00.000Z",
+            "updatedAt": "2026-06-20T13:40:00.000Z",
+            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "revision": 1
+          },
+          {
+            "id": "visual-task-1",
+            "channelId": "channel-tasks-v124",
+            "channelName": "workbench",
+            "channelType": "channel",
+            "taskNumber": 1,
+            "title": "Investigate sidebar flicker when switching channels with the keyboard, restoring the active thread, changing the window width and returning to the Tasks list",
+            "status": "in_progress",
+            "messageId": "visual-task-1",
+            "conversationChannelId": "conversation-visual-task-1",
+            "conversationAnchored": true,
+            "conversationReplyCount": 0,
+            "sourceRecorded": true,
+            "hasDescription": true,
+            "description": "Compare the sidebar at normal and narrow widths. Keep an open thread and a draft in the composer while switching channels. Record the result after the sidebar settles and after returning to the list.",
+            "createdByType": "user",
+            "createdById": "visual-user",
+            "createdByName": "artin",
+            "claimedByType": "agent",
+            "claimedById": "agent-tasks-v124",
+            "claimedByName": "Workbench Assistant",
+            "createdAt": "2026-06-20T13:40:00.000Z",
+            "updatedAt": "2026-06-20T13:40:00.000Z",
+            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "revision": 1,
+            "hostMessageId": "earlier-task-message"
+          },
+          {
+            "id": "visual-task-15",
+            "channelId": "channel-tasks-v124",
+            "channelName": "workbench",
+            "channelType": "channel",
+            "taskNumber": 15,
+            "title": "Review the onboarding checklist",
+            "status": "todo",
+            "messageId": "visual-task-15",
+            "conversationChannelId": "conversation-visual-task-15",
+            "conversationAnchored": true,
+            "conversationReplyCount": 0,
+            "sourceRecorded": true,
+            "hasDescription": false,
+            "description": null,
+            "createdByType": "user",
+            "createdById": "visual-human-designer",
+            "createdByName": "designer",
+            "claimedByType": "agent",
+            "claimedById": "agent-tasks-v124",
+            "claimedByName": "Workbench Assistant",
+            "createdAt": "2026-06-20T13:40:00.000Z",
+            "updatedAt": "2026-06-20T13:40:00.000Z",
+            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "revision": 1
+          },
+          {
+            "id": "visual-task-7",
+            "channelId": "channel-tasks-v124",
+            "channelName": "workbench",
+            "channelType": "channel",
+            "taskNumber": 7,
+            "title": "Update the keyboard shortcuts guide",
+            "status": "backlog",
+            "messageId": "visual-task-7",
+            "conversationChannelId": "conversation-visual-task-7",
+            "conversationAnchored": true,
+            "conversationReplyCount": 0,
+            "sourceRecorded": true,
+            "hasDescription": false,
+            "description": null,
+            "createdByType": "user",
+            "createdById": "visual-human-designer",
+            "createdByName": "designer",
+            "claimedByType": null,
+            "claimedById": null,
+            "claimedByName": null,
+            "createdAt": "2026-06-20T13:40:00.000Z",
+            "updatedAt": "2026-06-20T13:40:00.000Z",
+            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "revision": 1
+          },
+          {
+            "id": "visual-task-3",
+            "channelId": "channel-tasks-v124",
+            "channelName": "workbench",
+            "channelType": "channel",
+            "taskNumber": 3,
+            "title": "Review archived conversations",
+            "status": "closed",
+            "messageId": "visual-task-3",
+            "conversationChannelId": "conversation-visual-task-3",
+            "conversationAnchored": true,
+            "conversationReplyCount": 0,
+            "sourceRecorded": true,
+            "hasDescription": false,
+            "description": null,
+            "createdByType": "user",
+            "createdById": "visual-human-designer",
+            "createdByName": "designer",
+            "claimedByType": "agent",
+            "claimedById": "agent-tasks-v124",
+            "claimedByName": "Workbench Assistant",
+            "createdAt": "2026-06-20T13:40:00.000Z",
+            "updatedAt": "2026-06-20T13:40:00.000Z",
+            "lastActivityAt": "2026-06-20T13:40:00.000Z",
+            "revision": 1
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    "GET /tasks/server/counts": {
+      "$when": [
+        {
+          "query": {
+            "relation": "assigned_to_me"
+          },
+          "answer": {
+            "counts": {
+              "backlog": 0,
+              "todo": 0,
+              "in_progress": 1,
+              "done": 0,
+              "closed": 0
+            },
+            "relations": {}
+          }
+        },
+        {
+          "query": {
+            "relation": "created_by_me"
+          },
+          "answer": {
+            "counts": {
+              "backlog": 0,
+              "todo": 1,
+              "in_progress": 1,
+              "done": 0,
+              "closed": 0
+            },
+            "relations": {}
+          }
+        },
+        {
+          "query": {
+            "relation": "from_my_message"
+          },
+          "answer": {
+            "counts": {
+              "backlog": 0,
+              "todo": 0,
+              "in_progress": 0,
+              "done": 0,
+              "closed": 0
+            },
+            "relations": {}
+          }
+        }
+      ],
+      "$default": {
+        "counts": {
+          "backlog": 1,
+          "todo": 2,
+          "in_progress": 2,
+          "done": 0,
+          "closed": 1
+        },
+        "relations": {}
+      }
+    },
+    "GET /tasks/channel/channel-tasks-v124": {
+      "tasks": [
+        {
+          "id": "visual-task-4",
+          "channelId": "channel-tasks-v124",
+          "channelName": "workbench",
+          "channelType": "channel",
+          "taskNumber": 4,
+          "title": "移动端工作台需要保留讨论位置：检查 Android 和 Safari 的滚动行为、输入法焦点、列表回跳与历史记录。Compare viewport changes before and after switching between longer tasks. Close the pane, then reopen it to confirm the selected task and reading position remain stable.",
+          "status": "in_progress",
+          "messageId": "visual-task-4",
+          "conversationChannelId": "conversation-visual-task-4",
+          "conversationAnchored": true,
+          "conversationReplyCount": 0,
+          "sourceRecorded": true,
+          "hasDescription": false,
+          "description": null,
+          "createdByType": "user",
+          "createdById": "visual-human-designer",
+          "createdByName": "designer",
+          "claimedByType": "user",
+          "claimedById": "visual-user",
+          "claimedByName": null,
+          "createdAt": "2026-06-20T13:40:00.000Z",
+          "updatedAt": "2026-06-20T13:40:00.000Z",
+          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "revision": 1
+        },
+        {
+          "id": "visual-task-16",
+          "channelId": "channel-tasks-v124",
+          "channelName": "workbench",
+          "channelType": "channel",
+          "taskNumber": 16,
+          "title": "Check the task detail layout",
+          "status": "todo",
+          "messageId": "visual-task-16",
+          "conversationChannelId": "conversation-visual-task-16",
+          "conversationAnchored": true,
+          "conversationReplyCount": 0,
+          "sourceRecorded": true,
+          "hasDescription": false,
+          "description": null,
+          "createdByType": "user",
+          "createdById": "visual-user",
+          "createdByName": "artin",
+          "claimedByType": null,
+          "claimedById": null,
+          "claimedByName": null,
+          "createdAt": "2026-06-20T13:40:00.000Z",
+          "updatedAt": "2026-06-20T13:40:00.000Z",
+          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "revision": 1
+        },
+        {
+          "id": "visual-task-1",
+          "channelId": "channel-tasks-v124",
+          "channelName": "workbench",
+          "channelType": "channel",
+          "taskNumber": 1,
+          "title": "Investigate sidebar flicker when switching channels with the keyboard, restoring the active thread, changing the window width and returning to the Tasks list",
+          "status": "in_progress",
+          "messageId": "visual-task-1",
+          "conversationChannelId": "conversation-visual-task-1",
+          "conversationAnchored": true,
+          "conversationReplyCount": 0,
+          "sourceRecorded": true,
+          "hasDescription": true,
+          "description": "Compare the sidebar at normal and narrow widths. Keep an open thread and a draft in the composer while switching channels. Record the result after the sidebar settles and after returning to the list.",
+          "createdByType": "user",
+          "createdById": "visual-user",
+          "createdByName": "artin",
+          "claimedByType": "agent",
+          "claimedById": "agent-tasks-v124",
+          "claimedByName": "Workbench Assistant",
+          "createdAt": "2026-06-20T13:40:00.000Z",
+          "updatedAt": "2026-06-20T13:40:00.000Z",
+          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "revision": 1,
+          "hostMessageId": "earlier-task-message"
+        },
+        {
+          "id": "visual-task-15",
+          "channelId": "channel-tasks-v124",
+          "channelName": "workbench",
+          "channelType": "channel",
+          "taskNumber": 15,
+          "title": "Review the onboarding checklist",
+          "status": "todo",
+          "messageId": "visual-task-15",
+          "conversationChannelId": "conversation-visual-task-15",
+          "conversationAnchored": true,
+          "conversationReplyCount": 0,
+          "sourceRecorded": true,
+          "hasDescription": false,
+          "description": null,
+          "createdByType": "user",
+          "createdById": "visual-human-designer",
+          "createdByName": "designer",
+          "claimedByType": "agent",
+          "claimedById": "agent-tasks-v124",
+          "claimedByName": "Workbench Assistant",
+          "createdAt": "2026-06-20T13:40:00.000Z",
+          "updatedAt": "2026-06-20T13:40:00.000Z",
+          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "revision": 1
+        },
+        {
+          "id": "visual-task-7",
+          "channelId": "channel-tasks-v124",
+          "channelName": "workbench",
+          "channelType": "channel",
+          "taskNumber": 7,
+          "title": "Update the keyboard shortcuts guide",
+          "status": "backlog",
+          "messageId": "visual-task-7",
+          "conversationChannelId": "conversation-visual-task-7",
+          "conversationAnchored": true,
+          "conversationReplyCount": 0,
+          "sourceRecorded": true,
+          "hasDescription": false,
+          "description": null,
+          "createdByType": "user",
+          "createdById": "visual-human-designer",
+          "createdByName": "designer",
+          "claimedByType": null,
+          "claimedById": null,
+          "claimedByName": null,
+          "createdAt": "2026-06-20T13:40:00.000Z",
+          "updatedAt": "2026-06-20T13:40:00.000Z",
+          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "revision": 1
+        },
+        {
+          "id": "visual-task-3",
+          "channelId": "channel-tasks-v124",
+          "channelName": "workbench",
+          "channelType": "channel",
+          "taskNumber": 3,
+          "title": "Review archived conversations",
+          "status": "closed",
+          "messageId": "visual-task-3",
+          "conversationChannelId": "conversation-visual-task-3",
+          "conversationAnchored": true,
+          "conversationReplyCount": 0,
+          "sourceRecorded": true,
+          "hasDescription": false,
+          "description": null,
+          "createdByType": "user",
+          "createdById": "visual-human-designer",
+          "createdByName": "designer",
+          "claimedByType": "agent",
+          "claimedById": "agent-tasks-v124",
+          "claimedByName": "Workbench Assistant",
+          "createdAt": "2026-06-20T13:40:00.000Z",
+          "updatedAt": "2026-06-20T13:40:00.000Z",
+          "lastActivityAt": "2026-06-20T13:40:00.000Z",
+          "revision": 1
+        }
+      ]
+    },
+    "GET /channels/channel-tasks-v124/members": {
+      "humans": [],
+      "agents": [
+        {
+          "id": "agent-tasks-v124",
+          "serverId": "visual-server",
+          "name": "Workbench-Assistant",
+          "displayName": "Workbench Assistant",
+          "avatarUrl": "pixel:robot",
+          "createdAt": "2026-06-20T13:40:00.000Z",
+          "activity": "offline",
+          "deletedAt": null
+        }
+      ]
+    },
+    "GET /agents": [
+      {
+        "id": "agent-tasks-v124",
+        "serverId": "visual-server",
+        "name": "Workbench-Assistant",
+        "displayName": "Workbench Assistant",
+        "avatarUrl": "pixel:robot",
+        "createdAt": "2026-06-20T13:40:00.000Z",
+        "activity": "offline",
+        "deletedAt": null
+      }
+    ],
+    "GET /tasks/channel/channel-tasks-v124/number/4": {
+      "task": {
+        "id": "visual-task-4",
+        "channelId": "channel-tasks-v124",
+        "channelName": "workbench",
+        "channelType": "channel",
+        "taskNumber": 4,
+        "title": "移动端工作台需要保留讨论位置：检查 Android 和 Safari 的滚动行为、输入法焦点、列表回跳与历史记录。Compare viewport changes before and after switching between longer tasks. Close the pane, then reopen it to confirm the selected task and reading position remain stable.",
+        "status": "in_progress",
+        "messageId": "visual-task-4",
+        "conversationChannelId": "conversation-visual-task-4",
+        "conversationAnchored": true,
+        "conversationReplyCount": 0,
+        "sourceRecorded": true,
+        "hasDescription": false,
+        "description": null,
+        "createdByType": "user",
+        "createdById": "visual-human-designer",
+        "createdByName": "designer",
+        "claimedByType": "user",
+        "claimedById": "visual-user",
+        "claimedByName": null,
+        "createdAt": "2026-06-20T13:40:00.000Z",
+        "updatedAt": "2026-06-20T13:40:00.000Z",
+        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "revision": 1
+      }
+    },
+    "GET /tasks/visual-task-4/history": {
+      "events": []
+    },
+    "GET /messages/channel/conversation-visual-task-4": {
+      "messages": [],
+      "hasMore": false
+    },
+    "POST /channels/conversation-visual-task-4/read": {},
+    "GET /channels/conversation-visual-task-4": {
+      "id": "conversation-visual-task-4",
+      "serverId": "visual-server",
+      "type": "task",
+      "name": "conversation-visual-task-4",
+      "parentChannelId": "channel-tasks-v124",
+      "parentTaskId": "visual-task-4",
+      "createdAt": "2026-06-20T13:40:00.000Z",
+      "joined": true
+    },
+    "GET /tasks/channel/channel-tasks-v124/number/16": {
+      "task": {
+        "id": "visual-task-16",
+        "channelId": "channel-tasks-v124",
+        "channelName": "workbench",
+        "channelType": "channel",
+        "taskNumber": 16,
+        "title": "Check the task detail layout",
+        "status": "todo",
+        "messageId": "visual-task-16",
+        "conversationChannelId": "conversation-visual-task-16",
+        "conversationAnchored": true,
+        "conversationReplyCount": 0,
+        "sourceRecorded": true,
+        "hasDescription": false,
+        "description": null,
+        "createdByType": "user",
+        "createdById": "visual-user",
+        "createdByName": "artin",
+        "claimedByType": null,
+        "claimedById": null,
+        "claimedByName": null,
+        "createdAt": "2026-06-20T13:40:00.000Z",
+        "updatedAt": "2026-06-20T13:40:00.000Z",
+        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "revision": 1
+      }
+    },
+    "GET /tasks/visual-task-16/history": {
+      "events": []
+    },
+    "GET /messages/channel/conversation-visual-task-16": {
+      "messages": [],
+      "hasMore": false
+    },
+    "POST /channels/conversation-visual-task-16/read": {},
+    "GET /channels/conversation-visual-task-16": {
+      "id": "conversation-visual-task-16",
+      "serverId": "visual-server",
+      "type": "task",
+      "name": "conversation-visual-task-16",
+      "parentChannelId": "channel-tasks-v124",
+      "parentTaskId": "visual-task-16",
+      "createdAt": "2026-06-20T13:40:00.000Z",
+      "joined": true
+    },
+    "GET /tasks/channel/channel-tasks-v124/number/1": {
+      "task": {
+        "id": "visual-task-1",
+        "channelId": "channel-tasks-v124",
+        "channelName": "workbench",
+        "channelType": "channel",
+        "taskNumber": 1,
+        "title": "Investigate sidebar flicker when switching channels with the keyboard, restoring the active thread, changing the window width and returning to the Tasks list",
+        "status": "in_progress",
+        "messageId": "visual-task-1",
+        "conversationChannelId": "conversation-visual-task-1",
+        "conversationAnchored": true,
+        "conversationReplyCount": 0,
+        "sourceRecorded": true,
+        "hasDescription": true,
+        "description": "Compare the sidebar at normal and narrow widths. Keep an open thread and a draft in the composer while switching channels. Record the result after the sidebar settles and after returning to the list.",
+        "createdByType": "user",
+        "createdById": "visual-user",
+        "createdByName": "artin",
+        "claimedByType": "agent",
+        "claimedById": "agent-tasks-v124",
+        "claimedByName": "Workbench Assistant",
+        "createdAt": "2026-06-20T13:40:00.000Z",
+        "updatedAt": "2026-06-20T13:40:00.000Z",
+        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "revision": 1,
+        "hostMessageId": "earlier-task-message"
+      }
+    },
+    "GET /tasks/visual-task-1/history": {
+      "events": []
+    },
+    "GET /messages/channel/conversation-visual-task-1": {
+      "messages": [],
+      "hasMore": false
+    },
+    "POST /channels/conversation-visual-task-1/read": {},
+    "GET /channels/conversation-visual-task-1": {
+      "id": "conversation-visual-task-1",
+      "serverId": "visual-server",
+      "type": "task",
+      "name": "conversation-visual-task-1",
+      "parentChannelId": "channel-tasks-v124",
+      "parentTaskId": "visual-task-1",
+      "createdAt": "2026-06-20T13:40:00.000Z",
+      "joined": true
+    },
+    "GET /tasks/channel/channel-tasks-v124/number/15": {
+      "task": {
+        "id": "visual-task-15",
+        "channelId": "channel-tasks-v124",
+        "channelName": "workbench",
+        "channelType": "channel",
+        "taskNumber": 15,
+        "title": "Review the onboarding checklist",
+        "status": "todo",
+        "messageId": "visual-task-15",
+        "conversationChannelId": "conversation-visual-task-15",
+        "conversationAnchored": true,
+        "conversationReplyCount": 0,
+        "sourceRecorded": true,
+        "hasDescription": false,
+        "description": null,
+        "createdByType": "user",
+        "createdById": "visual-human-designer",
+        "createdByName": "designer",
+        "claimedByType": "agent",
+        "claimedById": "agent-tasks-v124",
+        "claimedByName": "Workbench Assistant",
+        "createdAt": "2026-06-20T13:40:00.000Z",
+        "updatedAt": "2026-06-20T13:40:00.000Z",
+        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "revision": 1
+      }
+    },
+    "GET /tasks/visual-task-15/history": {
+      "events": []
+    },
+    "GET /messages/channel/conversation-visual-task-15": {
+      "messages": [],
+      "hasMore": false
+    },
+    "POST /channels/conversation-visual-task-15/read": {},
+    "GET /channels/conversation-visual-task-15": {
+      "id": "conversation-visual-task-15",
+      "serverId": "visual-server",
+      "type": "task",
+      "name": "conversation-visual-task-15",
+      "parentChannelId": "channel-tasks-v124",
+      "parentTaskId": "visual-task-15",
+      "createdAt": "2026-06-20T13:40:00.000Z",
+      "joined": true
+    },
+    "GET /tasks/channel/channel-tasks-v124/number/7": {
+      "task": {
+        "id": "visual-task-7",
+        "channelId": "channel-tasks-v124",
+        "channelName": "workbench",
+        "channelType": "channel",
+        "taskNumber": 7,
+        "title": "Update the keyboard shortcuts guide",
+        "status": "backlog",
+        "messageId": "visual-task-7",
+        "conversationChannelId": "conversation-visual-task-7",
+        "conversationAnchored": true,
+        "conversationReplyCount": 0,
+        "sourceRecorded": true,
+        "hasDescription": false,
+        "description": null,
+        "createdByType": "user",
+        "createdById": "visual-human-designer",
+        "createdByName": "designer",
+        "claimedByType": null,
+        "claimedById": null,
+        "claimedByName": null,
+        "createdAt": "2026-06-20T13:40:00.000Z",
+        "updatedAt": "2026-06-20T13:40:00.000Z",
+        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "revision": 1
+      }
+    },
+    "GET /tasks/visual-task-7/history": {
+      "events": []
+    },
+    "GET /messages/channel/conversation-visual-task-7": {
+      "messages": [],
+      "hasMore": false
+    },
+    "POST /channels/conversation-visual-task-7/read": {},
+    "GET /channels/conversation-visual-task-7": {
+      "id": "conversation-visual-task-7",
+      "serverId": "visual-server",
+      "type": "task",
+      "name": "conversation-visual-task-7",
+      "parentChannelId": "channel-tasks-v124",
+      "parentTaskId": "visual-task-7",
+      "createdAt": "2026-06-20T13:40:00.000Z",
+      "joined": true
+    },
+    "GET /tasks/channel/channel-tasks-v124/number/3": {
+      "task": {
+        "id": "visual-task-3",
+        "channelId": "channel-tasks-v124",
+        "channelName": "workbench",
+        "channelType": "channel",
+        "taskNumber": 3,
+        "title": "Review archived conversations",
+        "status": "closed",
+        "messageId": "visual-task-3",
+        "conversationChannelId": "conversation-visual-task-3",
+        "conversationAnchored": true,
+        "conversationReplyCount": 0,
+        "sourceRecorded": true,
+        "hasDescription": false,
+        "description": null,
+        "createdByType": "user",
+        "createdById": "visual-human-designer",
+        "createdByName": "designer",
+        "claimedByType": "agent",
+        "claimedById": "agent-tasks-v124",
+        "claimedByName": "Workbench Assistant",
+        "createdAt": "2026-06-20T13:40:00.000Z",
+        "updatedAt": "2026-06-20T13:40:00.000Z",
+        "lastActivityAt": "2026-06-20T13:40:00.000Z",
+        "revision": 1
+      }
+    },
+    "GET /tasks/visual-task-3/history": {
+      "events": []
+    },
+    "GET /messages/channel/conversation-visual-task-3": {
+      "messages": [],
+      "hasMore": false
+    },
+    "POST /channels/conversation-visual-task-3/read": {},
+    "GET /channels/conversation-visual-task-3": {
+      "id": "conversation-visual-task-3",
+      "serverId": "visual-server",
+      "type": "task",
+      "name": "conversation-visual-task-3",
+      "parentChannelId": "channel-tasks-v124",
+      "parentTaskId": "visual-task-3",
+      "createdAt": "2026-06-20T13:40:00.000Z",
+      "joined": true
+    }
+  }
+}
