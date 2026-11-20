@@ -154,8 +154,17 @@ Widget taskDiscussionSubject(
               "Its earlier discussion is in the replies of the message it came from. Write here to start the task's own.",
             )
           : null,
-      icon: (context, size, color) =>
-          RaftIcon(RaftGlyph.thread, size: size, color: color),
+      icon: (context, size, color) {
+        final backdrop = RaftConversationSurfaceRecipe(RaftTokens.of(context))
+            .background(RaftConversationSurfaceRole.threadTimeline);
+        return RaftIcon(
+          RaftGlyph.thread,
+          size: size,
+          color: color.a < 1 && backdrop.a == 1
+              ? raftChromeBlend(color, backdrop)
+              : color,
+        );
+      },
     ),
   );
 }

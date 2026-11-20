@@ -41398,7 +41398,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2832/METHOD:build@4666/FUNCTION:statusTrigger@6117": {
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2964/METHOD:build@4798/FUNCTION:statusTrigger@6321": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -41414,7 +41414,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2832/METHOD:build@4666/FUNCTION:trigger@7527": {
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2964/METHOD:build@4798/FUNCTION:trigger@8436": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -55662,7 +55662,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:_historyDetail@53635/FUNCTION:badge@54032": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:_historyDetail@54501/FUNCTION:badge@54898": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -55674,7 +55674,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:assigneePanel@47776/FUNCTION:avatar@48135": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:assigneePanel@48642/FUNCTION:avatar@49001": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -57058,7 +57058,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4989/METHOD:buildTimeline@113851/FUNCTION:timelineFor@117528": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4989/METHOD:buildTimeline@113851/FUNCTION:timelineFor@117470": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",

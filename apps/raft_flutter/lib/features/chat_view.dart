@@ -3146,27 +3146,21 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }
 
   Widget buildTimeline() {
+    final thread = widget.thread;
     final timelineAdapter = adapter;
     final messages = timelineAdapter.messages;
     timelineKeys.progress
-      ..bind(
-        w,
-        thread: widget.thread,
-        visible: presentationActive,
-        changed: sync,
-      )
-      ..update(w, messages.map(source), systemStateAt, thread: widget.thread);
-    final dmReadId = dmReadStatusMessageId(w, rows, thread: widget.thread);
+      ..bind(w, thread: thread, visible: presentationActive, changed: sync)
+      ..update(w, messages.map(source), systemStateAt, thread: thread);
+    final dmReadId = dmReadStatusMessageId(w, rows, thread: thread);
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
-    final loading = widget.thread
-        ? _messages.state.threadLoading
-        : activity.loading;
+    final loading = thread ? _messages.state.threadLoading : activity.loading;
     final empty = rows.isEmpty;
     final taskPlaceholder =
         !loading && empty && isTaskDiscussionSubject(widget.threadParentSlot);
     const recipe = RaftTimelineCompositionRecipe();
     final List<Widget> header;
-    if (widget.thread) {
+    if (thread) {
       header = [
         threadTopSliver(loading: loading, showSummary: loading || !empty),
         if (!loading && empty)
@@ -3253,7 +3247,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       chatController: timelineAdapter,
       backgroundColor: RaftConversationSurfaceRecipe(RaftTokens.of(context))
           .background(
-            widget.thread
+            thread
                 ? RaftConversationSurfaceRole.threadTimeline
                 : RaftConversationSurfaceRole.channelTimeline,
           ),
@@ -3311,25 +3305,26 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 header: header,
                 history: history,
                 forward: forward,
-                reserveSentinels: !taskPlaceholder,
+                reserveSentinels:
+                    !taskPlaceholder || _messages.state.threadHistoryLimited,
                 footer: taskPlaceholder
                     ? null
-                    : AgentTypingListEnd(controller: w, thread: widget.thread),
+                    : AgentTypingListEnd(controller: w, thread: thread),
               ),
-              hasOlder: widget.thread ? w.threadHasMore : activity.hasMore,
-              loadingOlder: widget.thread
+              hasOlder: thread ? w.threadHasMore : activity.hasMore,
+              loadingOlder: thread
                   ? _messages.state.loadingOlder
                   : activity.loadingOlder,
               onLoadOlder: presentationActive ? activity.older : null,
-              hasNewer: widget.thread
+              hasNewer: thread
                   ? _messages.threadWindow?.hasNewer == true
                   : _messages.state.hasNewer,
               onLoadNewer: presentationActive
-                  ? () => _messages.newer(thread: widget.thread)
+                  ? () => _messages.newer(thread: thread)
                   : null,
               onRecenter: (index, alignment) =>
                   recenter(first: messages[index].id, alignment: alignment),
-              empty: widget.thread
+              empty: thread
                   ? null
                   : loading
                   ? Center(

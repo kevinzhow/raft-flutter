@@ -901,7 +901,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               property(
                 context,
                 'Created at',
-                Text(
+                RaftCssText(
                   createdAt,
                   key: const ValueKey('task-modal-created-at'),
                   style: widget.tasksPage
