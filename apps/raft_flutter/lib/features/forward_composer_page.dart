@@ -62,8 +62,19 @@ Widget forwardTargetIcon(
   bool agent = false,
   String? peerId,
   String? avatarUrl,
+  bool channelTile = false,
 }) {
   final person = type == 'dm' || type == 'human' || type == 'agent';
+  if (!person && channelTile) {
+    return RaftIconTile(
+      size: RaftIconTileSize.sm,
+      glyph: switch (type) {
+        'private' => RaftGlyph.lock,
+        'joint' => RaftGlyph.gitBranch,
+        _ => RaftGlyph.hash,
+      },
+    );
+  }
   if (!person) return raftForwardTargetIcon(name: name, type: type);
   final isAgent = agent || type == 'agent';
   final id = peerId ?? name;
@@ -603,7 +614,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
       children: [
         RaftForwardPageHeader(
           leading: multi
-              ? RaftForwardIconAction(
+              ? RaftPanelAction(
                   glyph: RaftGlyph.undo2,
                   tooltip: raftText(context, 'Cancel'),
                   onPressed: locked
@@ -613,8 +624,8 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
                           multi = false;
                         }),
                 )
-              : RaftForwardIconAction(
-                  glyph: RaftGlyph.arrowLeft,
+              : RaftPanelAction(
+                  glyph: RaftGlyph.x,
                   tooltip: raftText(context, 'Close Forward Target Selection'),
                   onPressed: locked
                       ? null
@@ -631,15 +642,18 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
                       ? null
                       : () => setState(() => preview = true),
                 )
-              : RaftForwardTextAction(
-                  label: raftText(context, 'Select Multiple'),
-                  onPressed: () {
-                    searchFocus.unfocus();
-                    setState(() {
-                      selected.clear();
-                      multi = true;
-                    });
-                  },
+              : RaftButton(
+                  tone: RaftButtonRecipeVariant.ghost,
+                  label: raftTextZh(context, 'Select multiple', '多选'),
+                  onPressed: locked
+                      ? null
+                      : () {
+                          searchFocus.unfocus();
+                          setState(() {
+                            selected.clear();
+                            multi = true;
+                          });
+                        },
                 ),
         ),
         Expanded(
@@ -720,6 +734,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
             w.dms.any((c) => c.json['peerId'] == r['id']));
     return RaftForwardTargetRow(
       key: ValueKey('forward-search-target-$type-${r['id']}'),
+      pickerLayout: true,
       icon: type == 'thread' || type == 'task'
           ? const RaftConversationAvatarTile(
               kind: RaftConversationAvatarKind.thread,
@@ -731,6 +746,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
                   ? '${r['channelType'] ?? 'channel'}'
                   : '$type',
               agent: r['subtitle'] == 'agent',
+              channelTile: true,
               peerId: r['id'] is String ? r['id'] as String : null,
               avatarUrl: r['avatarUrl'] is String
                   ? r['avatarUrl'] as String
@@ -766,10 +782,12 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
     final key = 'channel:${c.id}';
     return RaftForwardTargetRow(
       key: ValueKey('forward-target-${c.id}'),
+      pickerLayout: true,
       icon: forwardTargetIcon(
         w.client.origin,
         name: forwardTargetPickerLabel(c),
         type: c.type,
+        channelTile: true,
         agent: c.json['peerType'] == 'agent',
         peerId: c.json['peerId'] is String ? c.json['peerId'] as String : null,
         avatarUrl: c.json['peerAvatarUrl'] is String
