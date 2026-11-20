@@ -31,6 +31,7 @@ class RaftTaskConversation {
     this.source,
     this.createdAt,
     this.earlierDiscussion,
+    this.assigneeAvatar,
   });
 
   /// `#channel:#7` (Web formatTaskConversationRef).
@@ -66,6 +67,8 @@ class RaftTaskConversation {
   /// Earlier discussion (a pre-v2 task's host thread): its label (the reply
   /// count, or View) and the way there; null: no row.
   final ({String label, VoidCallback onOpen})? earlierDiscussion;
+
+  final Widget? assigneeAvatar;
 }
 
 /// The bar of the task dialog: the task's ref and "Task #7" (one line on a

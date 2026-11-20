@@ -44484,6 +44484,12 @@
         "owner": "Task conversation",
         "reason": "Supplies the task head and empty content to the shared discussion renderer."
       },
+      "apps/raft_flutter/lib/features/task_conversation_surface.dart#function:isTaskDiscussionSubject": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Task conversation",
+        "reason": "Selects the task discussion placeholder without the message timeline footer."
+      },
       "apps/raft_flutter/lib/features/task_conversation_surface.dart#function:threadEmptyContent": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -55632,7 +55638,7 @@
         "owner": "Raft Flutter component wiring",
         "reason": "Mounts RaftChatView under the task surface navigation receiver."
       },
-      "apps/raft_flutter/lib/features/task_surface.dart#local-function:CLASS:_SourceTaskSurfaceState@2103/METHOD:build@6515/FUNCTION:<anonymous>@6594/FUNCTION:timeline@8594": {
+      "apps/raft_flutter/lib/features/task_surface.dart#local-function:CLASS:_SourceTaskSurfaceState@2103/METHOD:build@6515/FUNCTION:<anonymous>@6594/FUNCTION:timeline@8637": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Raft Flutter component wiring",
@@ -55656,7 +55662,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6033/METHOD:_historyDetail@52564/FUNCTION:badge@52961": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:_historyDetail@53260/FUNCTION:badge@53657": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -55668,7 +55674,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6033/METHOD:assigneePanel@46705/FUNCTION:avatar@47064": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6084/METHOD:assigneePanel@47401/FUNCTION:avatar@47760": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -57040,7 +57046,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4960/METHOD:attachmentGallery@66279/FUNCTION:view@67433": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4989/METHOD:attachmentGallery@66308/FUNCTION:view@67462": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -57052,7 +57058,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4960/METHOD:buildTimeline@113822/FUNCTION:timelineFor@117392": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4989/METHOD:buildTimeline@113851/FUNCTION:timelineFor@117528": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -57064,7 +57070,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4960/METHOD:senderAvatar@78857/FUNCTION:avatar@81332": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4989/METHOD:senderAvatar@78886/FUNCTION:avatar@81361": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",

@@ -20,10 +20,14 @@ RaftTaskConversation taskConversation(
   TaskConversationFacts facts,
   SourceTimeFormatter formatter, {
   required bool compact,
+  required bool tasksPage,
   required VoidCallback onLeave,
 }) {
   final task = o.task;
   final w = o.parent;
+  final assignee = tasksPage ? taskAssigneeAvatarProjection(w, task) : null;
+  final assigneeName = '${task['claimedByName'] ?? ''}';
+  final agentAssignee = assignee?.kind == 'agent';
   final dm = task['channelType'] == 'dm'
       ? [...w.dms].where((c) => c.id == task['channelId']).firstOrNull
       : null;
@@ -94,6 +98,23 @@ RaftTaskConversation taskConversation(
         ? null
         : taskCreatedAtText(formatter, task['createdAt']),
     earlierDiscussion: earlier,
+    assigneeAvatar: assignee == null
+        ? null
+        : RaftAvatar(
+            name: assigneeName,
+            kind: agentAssignee ? RaftAvatarKind.agent : RaftAvatarKind.human,
+            imageUrl: assignee.uploadedUrl,
+            mountedContext: RaftMountedAvatarContext.compactList,
+            content: assignee.pixelKey == null
+                ? null
+                : RaftAvatarContent(
+                    name: assigneeName,
+                    kind: agentAssignee
+                        ? RaftAvatarContentKind.agent
+                        : RaftAvatarContentKind.human,
+                    pixelKey: assignee.pixelKey,
+                  ),
+          ),
   );
 }
 

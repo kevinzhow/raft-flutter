@@ -18,6 +18,7 @@ import 'recipes/card.g.dart';
 import 'recipes/recipe_router.dart'
     show raftPopoverSurfaceClasses, resolveRecipeClasses;
 import 'components.dart' show RaftAvatar, RaftAvatarKind;
+import 'collapsible.dart' show RaftShowMoreToggle;
 import 'list_items.dart';
 import 'mounted_avatar_recipe.dart';
 import 'recipes/recipe_runtime.dart' show RaftSlotStyle;
@@ -808,10 +809,17 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                         style: style,
                       ),
                       if (long)
-                        RaftTextButton(
-                          label: descriptionExpanded ? 'Collapse' : 'Show More',
-                          onPressed: () => setState(
-                            () => descriptionExpanded = !descriptionExpanded,
+                        Padding(
+                          padding: const EdgeInsets.only(top: RaftSpace.x1),
+                          child: RaftShowMoreToggle(
+                            label: raftText(
+                              context,
+                              descriptionExpanded ? 'Collapse' : 'Show more',
+                            ),
+                            expanded: descriptionExpanded,
+                            onPressed: () => setState(
+                              () => descriptionExpanded = !descriptionExpanded,
+                            ),
                           ),
                         ),
                     ],
@@ -1184,7 +1192,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     // A hand-off's write keeps its picker open (the reason step shows a failure).
     final enabled =
         widget.canAssign && !done && (!widget.busy || handoff != null);
-    return RaftInlineBadgeEditor(
+    final editor = RaftInlineBadgeEditor(
       key: const ValueKey('task-properties-assignee'),
       label: label,
       selectedId: assigned
@@ -1241,6 +1249,17 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               builder: (context, _) => assigneePanel(context, close),
             ),
     );
+    final avatar = widget.conversation?.assigneeAvatar;
+    return avatar == null
+        ? editor
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: RaftSpace.x1_5,
+            children: [
+              avatar,
+              Flexible(child: editor),
+            ],
+          );
   }
 
   Widget assigneePanel(BuildContext context, VoidCallback close) {

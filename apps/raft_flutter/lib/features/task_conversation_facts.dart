@@ -14,8 +14,27 @@ import '../data/raft_navigation_history.dart';
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'sender_avatar_projection.dart';
 import 'task_v2_mode.dart';
 import 'task_view_in_thread.dart';
+
+SenderAvatarProjection? taskAssigneeAvatarProjection(
+  WorkspaceController workspace,
+  Map<String, dynamic> task,
+) {
+  final id = task['claimedById'];
+  final type = task['claimedByType'];
+  if (id is! String || (type != 'agent' && type != 'user')) return null;
+  final directory = workspace.services.entityDirectory;
+  return projectSenderAvatar(
+    origin: workspace.client.origin,
+    senderId: id,
+    senderType: type as String,
+    agents: type == 'agent' ? [?directory.agent(id)] : const [],
+    members: type == 'user' ? [?directory.member(id)] : const [],
+    currentUser: workspace.client.user?.json,
+  );
+}
 
 /// Reads the two facts a task dialog shows that its task row does not carry:
 /// the source message (who said it, its first line, when) and the size of a

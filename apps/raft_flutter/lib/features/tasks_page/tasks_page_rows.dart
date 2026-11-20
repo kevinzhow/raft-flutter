@@ -9,7 +9,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../../data/workspace_controller.dart';
 import '../message_task_list.dart' show messageTaskChipRow;
-import '../sender_avatar_projection.dart' show projectSenderAvatar;
+import '../task_conversation_facts.dart' show taskAssigneeAvatarProjection;
 import '../task_v2_mode.dart' show formatTaskConversationRef;
 import 'task_card_facts.dart' show TaskActivityTime;
 
@@ -49,23 +49,7 @@ RaftTaskChipRow tasksPageChipRow(
 }) {
   final base = messageTaskChipRow(w, task);
   final channel = task['channelName'];
-  final assigneeId = task['claimedById'];
-  final assigneeType = task['claimedByType'];
-  final directory = w.services.entityDirectory;
-  final avatar = assigneeId is String && assigneeType is String
-      ? projectSenderAvatar(
-          origin: w.client.origin,
-          senderId: assigneeId,
-          senderType: assigneeType,
-          agents: base.assigneeIsAgent
-              ? [?directory.agent(assigneeId)]
-              : const [],
-          members: base.assigneeIsAgent
-              ? const []
-              : [?directory.member(assigneeId)],
-          currentUser: w.client.user?.json,
-        )
-      : null;
+  final avatar = taskAssigneeAvatarProjection(w, task);
 
   return RaftTaskChipRow(
     id: base.id,

@@ -224,6 +224,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
               facts,
               formatter,
               compact: widget.compact || widget.page,
+              tasksPage: widget.tasksPage,
               onLeave: widget.onClose,
             )
           : null;

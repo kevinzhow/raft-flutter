@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -81,6 +82,15 @@ Widget _build(ParityContext ctx) {
 }
 
 Future<void> _checkState(WidgetTester tester, ParityContext ctx) async {
+  if (ctx.props['platform'] == 'desktop') {
+    await tester.sendEventToBinding(
+      PointerHoverEvent(
+        device: 1,
+        kind: PointerDeviceKind.mouse,
+        position: Offset(ctx.width - 1, ctx.height - 1),
+      ),
+    );
+  }
   await tester.pump(const Duration(milliseconds: 500));
   final state = ctx.props['state'];
   final open =
@@ -109,6 +119,18 @@ Future<void> _checkState(WidgetTester tester, ParityContext ctx) async {
       findsOneWidget,
     );
     expect(find.text('No replies yet'), findsNothing);
+    if (state == 'detail-switch') {
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('task-properties')),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is RaftPixelAvatar && widget.avatarKey == 'robot',
+          ),
+        ),
+        findsOneWidget,
+      );
+    }
   } else {
     expect(
       find.byKey(const ValueKey('tasks-page-all-list')),
