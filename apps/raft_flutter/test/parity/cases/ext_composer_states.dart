@@ -44,11 +44,21 @@ WorkspaceController _workspace(ParityContext ctx) {
   final selected = state['selected'] as String;
   // Same directory the React host seeds (visualAgents / visualMembers).
   final ids = ParityIdentities(ctx);
+  final agents = ids.agents;
+  if (ctx.props['platform'] == 'mobile' && ctx.props['state'] == 'archived') {
+    // The pinned Web primeDirectVisualStores overrides the shared fixture
+    // activity for this agent in the archived suggestion's chat timeline.
+    final productUx = agents.singleWhere(
+      (agent) => agent['id'] == 'agent-product-ux',
+    );
+    productUx['activity'] = 'online';
+    productUx['activityDetail'] = 'Reviewing screenshots';
+  }
   final w = shellWorkspace(
     ctx,
     selected: selected,
     routes: {
-      'GET /agents': ids.agents,
+      'GET /agents': agents,
       'GET /servers/visual-server/members': ids.members,
       'GET /tasks/channel/$selected': {'tasks': <dynamic>[]},
       ...Map<String, dynamic>.from(state['routes'] as Map),
