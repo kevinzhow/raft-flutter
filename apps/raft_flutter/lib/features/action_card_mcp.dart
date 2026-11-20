@@ -245,105 +245,110 @@ class _ActionCardMcpPickerState extends State<ActionCardMcpPicker> {
     final name =
         cardString(pending['name'] ?? entry?['name']) ??
         raftText(context, 'Unnamed connection');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      spacing: RaftSpace.x2,
-      children: [
-        if (error != null) RaftErrorBanner(error, small: true),
-        if (pendingId != null) ...[
-          RaftActionNote(raftText(context, 'Ready to grant')),
-          RaftActionNote(
-            raftFormat(
-              context,
-              '{name} is signed in. {agent} can use it once you grant access.',
-              {'name': name, 'agent': widget.agent},
+    return Padding(
+      padding: const EdgeInsets.only(top: RaftSpace.x2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        spacing: RaftSpace.x2,
+        children: [
+          if (error != null) RaftErrorBanner(error, small: true),
+          if (pendingId != null) ...[
+            RaftActionNote(raftText(context, 'Ready to grant')),
+            RaftActionNote(
+              raftFormat(
+                context,
+                '{name} is signed in. {agent} can use it once you grant access.',
+                {'name': name, 'agent': widget.agent},
+              ),
             ),
-          ),
-        ] else if (candidates.isEmpty)
-          RaftActionNote(
-            raftFormat(context, '{app} has no connections yet.', {
-              'app': app['name'] ?? '',
-            }),
-          )
-        else
-          RaftRadioGroup<String>(
-            value: selected,
-            semanticLabel: raftText(context, 'Choose a connection'),
-            onChanged: _busy
-                ? null
-                : (id) => setState(() {
-                    _picked = id;
-                    _notice.clear();
-                  }),
-            children: [
-              for (final candidate in candidates)
-                if (cardString(candidate['connectionId']) case final String id)
-                  RaftRadioGroupItem(
-                    value: id,
-                    enabled: candidate['status'] == 'ready',
-                    gap: RaftSpace.x2,
-                    markInset: const EdgeInsets.only(top: RaftSpace.half),
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    child: _CandidateDetails(candidate),
-                  ),
-            ],
-          ),
-        if (canDefault && selected != null)
-          if (isDefault)
-            RaftCssText(
-              raftFormat(context, 'Server default: {name}', {'name': name}),
-              style: caption,
+          ] else if (candidates.isEmpty)
+            RaftActionNote(
+              raftFormat(context, '{app} has no connections yet.', {
+                'app': app['name'] ?? '',
+              }),
             )
           else
-            RaftCheckboxRow(
-              title: raftText(context, 'Make this the server default'),
-              value: makeDefault,
-              onChanged: _busy || forcedDefault
+            RaftRadioGroup<String>(
+              value: selected,
+              semanticLabel: raftText(context, 'Choose a connection'),
+              onChanged: _busy
                   ? null
-                  : (value) => setState(() => _makeDefault = value),
+                  : (id) => setState(() {
+                      _picked = id;
+                      _notice.clear();
+                    }),
+              children: [
+                for (final candidate in candidates)
+                  if (cardString(candidate['connectionId'])
+                      case final String id)
+                    RaftRadioGroupItem(
+                      value: id,
+                      enabled: candidate['status'] == 'ready',
+                      gap: RaftSpace.x2,
+                      markInset: const EdgeInsets.only(top: RaftSpace.half),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      child: _CandidateDetails(candidate),
+                    ),
+              ],
             ),
-        Wrap(
-          spacing: RaftSpace.x2,
-          runSpacing: RaftSpace.x2,
-          children: [
-            if (data['canAuthorizeNew'] == true)
-              if (pendingId != null)
-                RaftButton(
-                  label: 'Discard connection',
-                  uiVariant: RaftButtonVariant.outline,
-                  uiSize: RaftButtonSize.md,
-                  onPressed: _busy ? null : () => _discard(pendingId),
-                )
-              else if (app['authKind'] != 'headers')
-                RaftButton(
-                  label: 'Authorize new connection',
-                  tooltip: raftText(context, 'Open in browser'),
-                  uiVariant: RaftButtonVariant.outline,
-                  uiSize: RaftButtonSize.md,
-                  onPressed: _busy ? null : widget.onOpenWeb,
-                ),
-            if (candidates.isNotEmpty || pendingId != null)
-              RaftButton(
-                label: _busy
-                    ? 'Granting…'
-                    : raftFormat(context, 'Grant access to {agent}', {
-                        'agent': widget.agent,
-                      }),
-                uiVariant: RaftButtonVariant.outline,
-                uiSize: RaftButtonSize.md,
-                onPressed: _busy || selected == null
+          if (canDefault && selected != null)
+            if (isDefault)
+              RaftCssText(
+                raftFormat(context, 'Server default: {name}', {'name': name}),
+                style: caption,
+              )
+            else
+              RaftCheckboxRow(
+                title: raftText(context, 'Make this the server default'),
+                value: makeDefault,
+                onChanged: _busy || forcedDefault
                     ? null
-                    : () => _grant(
-                        selected,
-                        name,
-                        changeDefault: canDefault && makeDefault && !isDefault,
-                        followsDefault: isDefault,
-                      ),
+                    : (value) => setState(() => _makeDefault = value),
               ),
-          ],
-        ),
-      ],
+          Wrap(
+            spacing: RaftSpace.x2,
+            runSpacing: RaftSpace.x2,
+            children: [
+              if (data['canAuthorizeNew'] == true)
+                if (pendingId != null)
+                  RaftButton(
+                    label: 'Discard connection',
+                    uiVariant: RaftButtonVariant.outline,
+                    uiSize: RaftButtonSize.md,
+                    onPressed: _busy ? null : () => _discard(pendingId),
+                  )
+                else if (app['authKind'] != 'headers')
+                  RaftButton(
+                    label: 'Authorize new connection',
+                    tooltip: raftText(context, 'Open in browser'),
+                    uiVariant: RaftButtonVariant.outline,
+                    uiSize: RaftButtonSize.md,
+                    onPressed: _busy ? null : widget.onOpenWeb,
+                  ),
+              if (candidates.isNotEmpty || pendingId != null)
+                RaftButton(
+                  label: _busy
+                      ? 'Granting…'
+                      : raftFormat(context, 'Grant access to {agent}', {
+                          'agent': widget.agent,
+                        }),
+                  uiVariant: RaftButtonVariant.outline,
+                  uiSize: RaftButtonSize.md,
+                  onPressed: _busy || selected == null
+                      ? null
+                      : () => _grant(
+                          selected,
+                          name,
+                          changeDefault:
+                              canDefault && makeDefault && !isDefault,
+                          followsDefault: isDefault,
+                        ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:raft_flutter/data/workspace_entity_directory.dart';
 import 'package:raft_flutter/features/message_presentation.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../../fallback_text_style.dart';
 import '../parity_harness.dart';
 import 'thread_messages/chat_stage.dart' show ParityRaftClient;
 
@@ -86,77 +87,81 @@ ParityCase _actionCardCase(String name) {
         'content': '',
         'actionMetadata': (_fixture['cards'] as Map)[fixtureName],
       });
-      return Builder(
-        builder: (context) {
-          final tokens = RaftTokens.of(context);
-          final ui = tokens.ui;
-          return ColoredBox(
-            color: ui.layerCanvas,
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: ctx.target(
-                SizedBox(
-                  width: ctx.width,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 12,
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: ui.fillMuted,
-                            shape: BoxShape.circle,
+      return Material(
+        type: MaterialType.transparency,
+        child: Builder(
+          builder: (context) {
+            final tokens = RaftTokens.of(context);
+            final ui = tokens.ui;
+            return ColoredBox(
+              color: ui.layerCanvas,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: ctx.target(
+                  SizedBox(
+                    width: ctx.width,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 12,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: ui.fillMuted,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                spacing: 8,
-                                children: [
-                                  RaftCssText(
-                                    'Scout',
-                                    style: tokens.scale(
-                                      RaftTypeScale.callout,
-                                      weight: FontWeight.w600,
-                                      color: ui.foreground,
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  spacing: 8,
+                                  children: [
+                                    RaftCssText(
+                                      'Scout',
+                                      style: tokens.scale(
+                                        RaftTypeScale.callout,
+                                        weight: FontWeight.w600,
+                                        color: ui.foreground,
+                                      ),
                                     ),
-                                  ),
-                                  RaftCssText(
-                                    '09:41',
-                                    style: tokens.scale(
-                                      RaftTypeScale.caption,
-                                      color: ui.foregroundHint,
+                                    RaftCssText(
+                                      '09:41',
+                                      style: tokens.scale(
+                                        RaftTypeScale.caption,
+                                        color: ui.foregroundHint,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              ListenableBuilder(
-                                listenable: workspace.entityDirectory,
-                                builder: (context, _) => MessagePresentation(
-                                  controller: workspace,
-                                  message: message,
-                                  onExternalLink: (_) {},
+                                  ],
                                 ),
-                              ),
-                            ],
+                                ListenableBuilder(
+                                  listenable: workspace.entityDirectory,
+                                  builder: (context, _) => MessagePresentation(
+                                    controller: workspace,
+                                    message: message,
+                                    onExternalLink: (_) {},
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     },
     interact: (tester, ctx) async {
@@ -180,6 +185,7 @@ ParityCase _actionCardCase(String name) {
       if (name == 'question-single-undo') {
         expect(find.text('Undo'), findsOneWidget);
       }
+      expectNoFallbackTextStyle(name);
     },
   );
 }

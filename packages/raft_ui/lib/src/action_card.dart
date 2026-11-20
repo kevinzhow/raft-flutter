@@ -253,7 +253,10 @@ class RaftSpecActionCardContent {
     tokens: tokens.recipeTokens,
   );
 
-  TextStyle text(RaftSlotStyle slot) => raftSlotTextStyle(tokens, slot);
+  TextStyle text(RaftSlotStyle slot) => raftSlotTextStyle(
+    tokens,
+    slot,
+  ).copyWith(fontWeight: slot.fontWeight ?? FontWeight.w400);
 
   Widget column(List<Widget> children) => Column(
     mainAxisSize: MainAxisSize.min,

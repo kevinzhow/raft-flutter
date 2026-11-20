@@ -45,8 +45,9 @@ for platform, width in [('desktop', 640), ('phone', 390)]:
                 'viewport': {'width': width, 'height': 600, 'density': 2},
                 'theme': theme,
                 'locale': 'en',
+                # The pinned provider uses a coarse pointer at both fixture widths.
                 'variants': [{'id': 'default', 'name': 'Default', 'props': {
-                    'platform': platform,
+                    'platform': 'phone',
                     'parityTheme': theme,
                 }}],
                 'capture': {
