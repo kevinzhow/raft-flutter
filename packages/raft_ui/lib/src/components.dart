@@ -1853,9 +1853,7 @@ class RaftMessageTile extends StatelessWidget {
                         modelLabel!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        // The meta size class replaces the slot's `text-xs`
-                        // (tailwind-merge); `leading-none` stays.
-                        style: recipe.time,
+                        style: recipe.modelLabelStyle,
                       ),
                     ),
                   ),

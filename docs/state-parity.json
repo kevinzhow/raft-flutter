@@ -30124,6 +30124,12 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/message_row_recipe.dart#method:RaftMessageRowRecipe.modelLabelStyle": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Binds the generated messageItem metadata slot to the model label mounted by RaftMessageTile."
+      },
       "packages/raft_ui/lib/src/message_row_recipe.dart#method:RaftMessageRow.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -64420,6 +64426,11 @@
       "iconInlineEnd": "has:data-icon=inline-end"
     },
     "stateUses": {
+      "packages/raft_ui/lib/src/message_row_recipe.dart#method:RaftMessageRowRecipe.modelLabelStyle|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "design-system alignment",
+        "applicability": "required",
+        "reason": "The model caption uses the generated fine-pointer desktop line height and the phone line height."
+      },
       "apps/raft_flutter/lib/features/action_card_form.dart#method:_ActionCardFormViewState._choice|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
         "owner": "WP-ACTION",
         "applicability": "required"
