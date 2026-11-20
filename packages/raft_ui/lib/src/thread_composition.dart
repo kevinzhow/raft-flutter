@@ -10,6 +10,7 @@ import 'focus_visible.dart';
 import 'channel_header.dart' show raftConversationHeaderToggle;
 import 'conversation_surface.dart';
 import 'icons.dart';
+import 'interaction.dart' show RaftInteraction;
 import 'localization.dart';
 import 'panel_layout.dart';
 import 'recipe_surface.dart';
@@ -226,8 +227,13 @@ class RaftThreadHeader extends StatelessWidget {
               ],
             ),
           );
+    final desktopBar =
+        presentation == RaftThreadPresentation.side &&
+        !showBack &&
+        usesDesktopBar(context);
     final header = RaftPanelHeaderBar(
       title: threadLabel,
+      desktopBar: desktopBar,
       titleSlot: meta == null
           ? Align(alignment: AlignmentDirectional.centerStart, child: title)
           : inline
@@ -261,6 +267,7 @@ class RaftThreadHeader extends StatelessWidget {
             glyph: focused ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
             label: raftText(context, focused ? 'Restore' : 'Expand'),
             pressed: focused,
+            desktopBar: desktopBar,
             onPressed: toggleFocus,
           ),
         if (showClose && onClose != null)
@@ -268,6 +275,7 @@ class RaftThreadHeader extends StatelessWidget {
             key: closeKey,
             glyph: RaftGlyph.x,
             tooltip: closeLabel,
+            desktopBar: desktopBar,
             onPressed: onClose,
           ),
       ],
@@ -283,6 +291,16 @@ class RaftThreadHeader extends StatelessWidget {
       child: header,
     );
   }
+
+  static bool usesDesktopBar(BuildContext context) {
+    final placement = RaftThreadPlacement.maybeOf(context);
+    return placement != null &&
+        placement.split &&
+        !placement.foldedInSideRow &&
+        !RaftAdaptiveWorkspace.compactOf(context) &&
+        RaftTokens.of(context).desktop &&
+        !RaftInteraction.of(context).touch;
+  }
 }
 
 /// Slot action for an app-owned command menu, not a second follow state store.
@@ -292,19 +310,28 @@ class RaftThreadOverflowAction extends StatelessWidget {
     super.key,
     required this.label,
     this.onPressed,
+    this.desktopBar = false,
   });
   final String label;
+  final bool desktopBar;
   final VoidCallback? onPressed;
 
   // ThreadOverflowMenu trigger: raft-ui PanelAction with EllipsisVertical
   // (Web ThreadOverflowMenu.tsx); the pack's `panelAction.surface` picks the
   // drawing (RaftPanelIconButton).
   @override
-  Widget build(BuildContext context) => RaftPanelIconButton(
-    glyph: RaftGlyph.ellipsisVertical,
-    tooltip: label,
-    onPressed: onPressed,
-  );
+  Widget build(BuildContext context) => desktopBar
+      ? RaftPanelAction(
+          desktopBar: true,
+          glyph: RaftGlyph.ellipsisVertical,
+          tooltip: label,
+          onPressed: onPressed,
+        )
+      : RaftPanelIconButton(
+          glyph: RaftGlyph.ellipsisVertical,
+          tooltip: label,
+          onPressed: onPressed,
+        );
 }
 
 /// Web ThreadPanel `thread-search-bar`: a search icon, the query field, the

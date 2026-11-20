@@ -327,6 +327,7 @@ class _ThreadActionsState extends State<ThreadActions> {
             child: RaftThreadOverflowAction(
               key: const Key('thread-options'),
               label: raftText(context, 'Thread actions'),
+              desktopBar: RaftThreadHeader.usesDesktopBar(context),
               onPressed: current ? () => openMenu(openTimeline) : null,
             ),
           ),
