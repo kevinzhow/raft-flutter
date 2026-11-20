@@ -26,6 +26,7 @@ import 'rich_card_tokens.dart';
 import 'system_inset.dart';
 import 'status_bar.dart';
 import 'theme.dart';
+import 'token_geometry.dart';
 
 /// `fixed inset-0 z-40 flex flex-col bg-layer-canvas text-foreground-strong`.
 ///
@@ -557,12 +558,16 @@ class RaftForwardTargetRow extends StatefulWidget {
     required this.checkbox,
     this.checkboxDisabled = false,
     this.unavailable = false,
+    this.pickerLayout = false,
     this.trailing,
     this.onTap,
   });
   final Widget icon;
   final String label;
   final bool selected, checkbox, unavailable;
+
+  /// The flat ChannelPicker row mounted by the message-forward destination step.
+  final bool pickerLayout;
 
   /// Web `<Checkbox disabled>`: an unchecked row once ten are chosen.
   final bool checkboxDisabled;
@@ -580,7 +585,11 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
         ? null
         : widget.onTap;
     final t = RaftTokens.of(context);
-    final fill = widget.unavailable
+    final fill = widget.pickerLayout
+        ? (hovered && activate != null
+              ? t.colors['fill-subtle']!
+              : Colors.transparent)
+        : widget.unavailable
         ? t.colors['fill-muted']!.withValues(
             alpha: t.colors['fill-muted']!.a * .4,
           )
@@ -623,12 +632,20 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
             child: Opacity(
               opacity: widget.unavailable ? .5 : 1,
               child: Container(
-                // CSS `p-2` inside the border (Container adds the border inset).
-                padding: const EdgeInsets.all(8),
+                constraints: widget.pickerLayout
+                    ? const BoxConstraints(minHeight: 44)
+                    : null,
+                padding: widget.pickerLayout
+                    ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6)
+                    : const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: fill,
-                  border: Border.all(color: t.colors['line-muted']!),
-                  borderRadius: BorderRadius.circular(6),
+                  border: widget.pickerLayout
+                      ? null
+                      : Border.all(color: t.colors['line-muted']!),
+                  borderRadius: widget.pickerLayout
+                      ? t.corner('radius.control', fallback: 8)
+                      : BorderRadius.circular(6),
                 ),
                 child: Row(
                   children: [
@@ -644,10 +661,10 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: widget.pickerLayout ? 12 : 8),
                     ],
                     widget.icon,
-                    const SizedBox(width: 8),
+                    SizedBox(width: widget.pickerLayout ? 12 : 8),
                     Expanded(
                       child: Text(
                         widget.label,
@@ -657,7 +674,9 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
                           fontFamily: t.headingFont,
                           fontSize: 14,
                           height: 20 / 14,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: widget.pickerLayout && !widget.selected
+                              ? FontWeight.w500
+                              : FontWeight.w700,
                           color: t.strong,
                           leadingDistribution: TextLeadingDistribution.even,
                         ),

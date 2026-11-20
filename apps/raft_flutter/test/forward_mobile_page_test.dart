@@ -136,6 +136,40 @@ Future<(WorkspaceController, _Transport)> _open(
 }
 
 void main() {
+  testWidgets('destination picker mounts flat rows and a close action', (
+    t,
+  ) async {
+    final (_, transport) = await _open(t);
+    final row = find.byKey(const ValueKey('forward-target-c1'));
+    final tile = find.descendant(of: row, matching: find.byType(RaftIconTile));
+    final close = find.byTooltip('Close Forward Target Selection');
+    try {
+      expect(tile, findsOneWidget);
+      expect(t.widget<RaftIconTile>(tile).glyph, RaftGlyph.lock);
+      expect(t.getSize(row).height, 44);
+      expect(
+        t
+            .widget<RaftPanelAction>(
+              find.ancestor(of: close, matching: find.byType(RaftPanelAction)),
+            )
+            .glyph,
+        RaftGlyph.x,
+      );
+      final select = t.widget<RaftButton>(
+        find.widgetWithText(RaftButton, 'Select multiple'),
+      );
+      expect(select.tone, RaftButtonRecipeVariant.ghost);
+      await t.tap(close);
+      await t.pumpAndSettle();
+      expect(find.byType(ForwardComposerPage), findsNothing);
+      expect(find.text('Open'), findsOneWidget);
+      expect(transport.writes, isEmpty);
+    } finally {
+      await t.pumpWidget(const SizedBox.shrink());
+      await t.pumpAndSettle();
+    }
+  });
+
   for (final (name, dark) in [('light', false), ('dark', true)]) {
     group('phone forward page $name', () {
       testWidgets(
@@ -145,7 +179,7 @@ void main() {
           expect(find.byType(ForwardComposerPage), findsOneWidget);
           expect(find.text('Select destinations'), findsOneWidget);
           expect(find.text('1 selected from #general'), findsOneWidget);
-          expect(find.text('Select Multiple'), findsOneWidget);
+          expect(find.text('Select multiple'), findsOneWidget);
           expect(find.text('Recent'), findsOneWidget);
           expect(find.byType(RaftCheckbox), findsNothing);
           // @Cindy (newest), then #design; the source channel is a target too.
@@ -185,7 +219,7 @@ void main() {
         t,
       ) async {
         await _open(t, dark: dark);
-        await t.tap(find.text('Select Multiple'));
+        await t.tap(find.text('Select multiple'));
         await t.pumpAndSettle();
         expect(find.text('0 selected'), findsOneWidget);
         expect(find.byType(RaftCheckbox), findsNWidgets(3));

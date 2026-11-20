@@ -151,7 +151,7 @@ ParityCase _case(String state) => ParityCase(
         );
         await _pump(t, 24);
       case 'multi':
-        await t.tap(find.text('Select Multiple'));
+        await t.tap(find.text('Select multiple'));
         await _pump(t, 6);
         await _tapRow(t, 'channel-fm-general');
         await _tapRow(t, 'dm-fm-cindy');
