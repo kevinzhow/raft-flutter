@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-// Sidebar.tsx max-md rows: min-h-11 is retained in short phone windows.
-// Tall entry rows have py-2.5 (46px); max-height:600 resets py-0 (44px minimum).
+// SidebarHomeEntries and conversation rows use the 44px phone ListRow minimum.
 void main() {
   for (final height in [480.0, 844.0]) {
     for (final dark in [false, true]) {
@@ -36,11 +35,8 @@ void main() {
           ),
         );
         final controls = find.byType(RaftControl);
-        expect(t.widget<RaftControl>(controls.at(0)).visualHeight, 44);
-        expect(
-          t.widget<RaftControl>(controls.at(1)).visualHeight,
-          height <= 600 ? 44 : 46,
-        );
+        expect(t.getSize(controls.at(0)).height, 44);
+        expect(t.getSize(controls.at(1)).height, 44);
         final title = t.widget<Text>(find.text('engineering'));
         expect(title.style!.fontSize, 16);
         expect(title.style!.height, 24 / 16);

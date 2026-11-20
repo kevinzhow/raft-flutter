@@ -560,13 +560,20 @@ void registerFormWindowTests(TestPart part) {
       });
 
       testWidgets('a footer Cancel does not ask', (t) async {
-        await openForm(t, form, _phone);
+        // The narrow Create Channel header owns dismissal. Exercise the
+        // footer's Cancel path in the wide layout where it is shown.
+        final createChannel = form.id == 'create channel';
+        await openForm(t, form, createChannel ? _desktop : _phone);
         await typeSomething(t);
         final cancel = find.descendant(
           of: _window(),
           matching: find.text('Cancel'),
         );
-        if (cancel.evaluate().isEmpty) return;
+        if (createChannel) {
+          expect(cancel, findsOneWidget);
+        } else if (cancel.evaluate().isEmpty) {
+          return;
+        }
         await t.ensureVisible(cancel.first);
         await t.tap(cancel.first);
         await frames(t, 30);

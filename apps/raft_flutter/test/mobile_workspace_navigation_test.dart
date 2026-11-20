@@ -779,11 +779,12 @@ void main() {
         );
       }
 
-      expect(
-        groupRect('pinned').top -
-            tester.getRect(find.byKey(const Key('nav-saved'))).bottom,
-        RaftSpace.x1,
+      final savedControl = find.descendant(
+        of: find.byKey(const Key('nav-saved')),
+        matching: find.byType(RaftControl),
       );
+      // SidebarCellList has 8px after the last painted row, including its margin.
+      expect(groupRect('pinned').top - tester.getRect(savedControl).bottom, 8);
       expect(tester.getRect(section).top, groupRect('joint').bottom);
       expect(tester.getRect(disclosure).top - tester.getRect(section).top, 16);
       await tester.tap(disclosure);

@@ -129,8 +129,9 @@ Future<SurfaceProbe> inWorkspace(
   WidgetTester t,
   Size size,
   Type type,
-  void Function(BuildContext context, WorkspaceController w) open,
-) async {
+  void Function(BuildContext context, WorkspaceController w) open, {
+  Finder? dragTarget,
+}) async {
   ignoreOverflow();
   await t.pumpWidget(const SizedBox.shrink());
   final (w, _) = await mountWorkspace(t, size);
@@ -141,7 +142,7 @@ Future<SurfaceProbe> inWorkspace(
     isOpen: () => dialog.evaluate().isNotEmpty,
     x: find.descendant(of: dialog, matching: anyX),
     scrim: _corner,
-    dragHandle: _handle,
+    dragHandle: dragTarget ?? _handle,
   );
 }
 
@@ -468,6 +469,8 @@ void registerCloseDialogTests(TestPart part) {
       CreateChannelDialog,
       (context, w) =>
           unawaited(CreateChannelDialog.show(context, controller: w)),
+      // The narrow Web-style form header is the sheet's drag target.
+      dragTarget: find.byKey(const ValueKey('raft-form-sheet-head')),
     ),
     'create-task': (t, size) => inWorkspace(
       t,

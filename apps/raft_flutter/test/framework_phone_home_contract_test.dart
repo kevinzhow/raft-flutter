@@ -79,9 +79,7 @@ void main() {
         );
         await t.pumpWidget(const SizedBox.shrink());
       }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-      testWidgets('phone Home $height/$dark collapses adjacent entry margins', (
-        t,
-      ) async {
+      testWidgets('phone Home $height/$dark uses 44px entry rows', (t) async {
         final (w, _) = await pageFixture(t);
         w.setSection('home');
         await mountPage(
@@ -100,10 +98,8 @@ void main() {
         // neither (SidebarHomeEntries: Saved, Drafts, the assistant).
         expect(find.byKey(const Key('nav-search')), findsNothing);
         expect(find.byKey(const Key('nav-activity')), findsNothing);
-        final saved = t.getRect(control('nav-saved'));
-        // Source Sidebar.tsx's block-flow my-px: adjacent margins collapse
-        // to one pixel. Tall rows are 46, short rows are 44.
-        expect(saved.height, height <= 600 ? 44.0 : 46.0);
+        // SidebarHomeEntries uses the phone ListRow minimum in both heights.
+        expect(t.getSize(control('nav-saved')).height, 44);
         await t.pumpWidget(const SizedBox.shrink());
       }, variant: TargetPlatformVariant.only(TargetPlatform.android));
       testWidgets('phone Home $height/$dark places the full frame bell', (

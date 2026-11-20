@@ -120,15 +120,20 @@ void main() {
     testWidgets('$mode attention pixel rides the avatar and is labelled', (
       t,
     ) async {
-      final handle = t.ensureSemantics();
       await _pump(t, dark: dark, attention: true);
-      expect(
-        find.bySemanticsLabel(
-          'Dev Workspace, Other servers have unread messages',
-        ),
-        findsOneWidget,
+      const unread = 'Dev Workspace, Other servers have unread messages';
+      expect(find.bySemanticsLabel(unread), findsOneWidget);
+      final badge = find.descendant(
+        of: find.byType(RaftWorkspaceButton),
+        matching: find.byType(RaftAvatarBadge),
       );
-      final dot = t.getRect(find.byType(RaftAttentionDot));
+      expect(badge, findsOneWidget);
+      expect(
+        t.widget<RaftAvatarBadge>(badge).variant,
+        RaftStatusVariant.accent,
+      );
+      final dot = t.getRect(badge);
+      expect(dot.size, const Size.square(9));
       final avatar = t.getRect(
         find.descendant(
           of: find.byType(RaftWorkspaceButton),
@@ -137,10 +142,12 @@ void main() {
       );
       expect(dot.center.dx, greaterThan(avatar.center.dx));
       expect(dot.center.dy, greaterThan(avatar.center.dy));
+      expect(dot.right - avatar.right, greaterThan(0));
+      expect(dot.bottom - avatar.bottom, dot.right - avatar.right);
       await _pump(t, dark: dark);
-      expect(find.byType(RaftAttentionDot), findsNothing);
+      expect(badge, findsNothing);
+      expect(find.bySemanticsLabel(unread), findsNothing);
       expect(find.bySemanticsLabel('Dev Workspace'), findsOneWidget);
-      handle.dispose();
     });
 
     testWidgets('$mode open menu keeps the on-frame pressed fill', (t) async {
@@ -174,7 +181,6 @@ void main() {
       final focus = FocusNode();
       addTearDown(focus.dispose);
       var pressed = 0;
-      final handle = t.ensureSemantics();
       await _pump(t, dark: dark, focus: focus, onPressed: () => pressed++);
       focus.requestFocus();
       await t.pump();
@@ -187,7 +193,6 @@ void main() {
       );
       await t.tap(find.byKey(const Key('mobile-server-selector')));
       expect(pressed, 2);
-      handle.dispose();
     });
   }
 }
