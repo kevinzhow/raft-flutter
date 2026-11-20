@@ -57621,12 +57621,6 @@
         "owner": "Workspace side panels",
         "reason": "Mounts the chat or folded thread inside the clipped conversation region."
       },
-      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23870": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "WP-LINK",
-        "reason": "Source-reviewed message integration and component composition."
-      },
       "apps/raft_flutter/lib/features/message_link_unavailable.dart#class:MessageLinkUnavailable": {
         "role": "entry_composition",
         "familyRefs": [
@@ -57754,6 +57748,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23965": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
       }
     },
     "entries": {
@@ -57964,7 +57964,7 @@
         "declarationRefs": [
           "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkMessageView",
           "apps/raft_flutter/lib/features/app_link_view.dart#function:showAppLinkConfirmation",
-          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23870",
+          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14105/METHOD:_press@23371/FUNCTION:update@23965",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkPrompt._choose",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState._showNotice"
         ],

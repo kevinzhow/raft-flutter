@@ -128,6 +128,11 @@ RaftTypeStyle _desktopOf(RaftTypeStyle style) {
 extension RaftTokensUi on RaftTokens {
   RaftUiColors get ui => _uiCache[this] ??= RaftUiColors.fromMap(dark, colors);
 
+  /// The mono face for an inline span that inherits the surrounding type size,
+  /// weight and color.
+  TextStyle get monoFace =>
+      TextStyle(fontFamily: monoFont, fontFamilyFallback: const ['monospace']);
+
   /// A named style of the Raft type scale ([RaftTypeScale]) as a Flutter [TextStyle]:
   /// Space Grotesk (or Space Mono for [mono]), CSS half-leading, the scale's own weight and tracking unless
   /// overridden. `weight` follows CSS (`font-bold` is 700).

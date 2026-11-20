@@ -744,7 +744,11 @@ class _LinkCard extends StatelessWidget {
       'action': button.label,
     });
     final undo = raftText(context, 'Undo');
-    final countdown = raftText(context, '{seconds}s to undo');
+    final countdown = raftText(
+      context,
+      '{seconds}s to undo',
+    ).split('{seconds}');
+    final numberStyle = RaftTokens.of(context).monoFace;
     RaftToastHandle? handle;
     int? seconds;
     var holding = false;
@@ -753,15 +757,23 @@ class _LinkCard extends StatelessWidget {
         holding = true;
         if (seconds == operation.undoSeconds) return;
         seconds = operation.undoSeconds;
-        final description = countdown.replaceAll('{seconds}', '$seconds');
+        final description = TextSpan(
+          children: [
+            TextSpan(text: countdown.first),
+            for (final fragment in countdown.skip(1)) ...[
+              TextSpan(text: '$seconds', style: numberStyle),
+              TextSpan(text: fragment),
+            ],
+          ],
+        );
         if (handle?.isShown == true) {
-          handle?.updateDescription(description);
+          handle?.updateDescriptionSpan(description);
           return;
         }
         handle = toast?.show(
           title,
           duration: action is AppLinkExecute ? action.undoWindow : null,
-          description: description,
+          descriptionSpan: description,
           actionLabel: undo,
           onAction: operation.undo,
           tone: RaftToastRecipeTone.info,
