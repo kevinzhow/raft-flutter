@@ -37,7 +37,9 @@ class _MobileWorkspaceHeader extends StatelessWidget {
               Expanded(
                 child: Align(alignment: Alignment.centerLeft, child: leading),
               ),
-              const SizedBox(width: 8),
+              // TabRootBar puts a flexible spacer between the workspace and
+              // the actions, with one gap on each side of that spacer.
+              const SizedBox(width: RaftSpace.x2 * 2),
               ...actions,
             ],
           ),

@@ -69,6 +69,7 @@ class RaftCreateChannelDialogView extends StatelessWidget {
     this.twoStep = false,
     this.people = false,
     this.onBack,
+    this.problemKey,
     this.visibilityHint,
     this.visibilityNotice,
   });
@@ -90,12 +91,21 @@ class RaftCreateChannelDialogView extends StatelessWidget {
   final ValueChanged<String> onToggle;
   final VoidCallback onClose, onSubmit;
   final String? error;
+  final Key? problemKey;
 
   /// Extra banner under [error] (the archived-name collision).
   final Widget? notice;
 
   @override
   Widget build(BuildContext context) {
+    final sheet = RaftFormFrame.sheetOf(context);
+    final submit = submitting || !canContinue ? null : onSubmit;
+    final next = twoStep && !people || visibility == 'external';
+    final submitLabel = switch ((next, submitting)) {
+      (true, _) => 'Next',
+      (_, true) => 'Creating…',
+      _ => sheet ? 'Create' : 'Create Channel',
+    };
     // space-y-4 between the form's direct children.
     const gap = SizedBox(height: 16);
     return RaftModalBackdrop(
@@ -104,14 +114,31 @@ class RaftCreateChannelDialogView extends StatelessWidget {
             ? raftFormat(context, 'Add people to #{name}', {
                 'name': name.text.trim(),
               })
+            : sheet
+            ? 'Create channel'
             : 'Create Channel',
         onClose: onClose,
+        sheetCommit: RaftButton(
+          label: submitLabel,
+          uiVariant: RaftButtonVariant.primary,
+          uiSize: RaftButtonSize.md,
+          onPressed: submit,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (error != null) ...[RaftErrorBanner(error!), gap],
-            if (notice != null) ...[notice!, gap],
+            if (error != null) ...[
+              KeyedSubtree(key: problemKey, child: RaftErrorBanner(error!)),
+              gap,
+            ],
+            if (notice != null) ...[
+              KeyedSubtree(
+                key: error == null ? problemKey : null,
+                child: notice!,
+              ),
+              gap,
+            ],
             if (!people) ...[
               RaftProductFormField(
                 label: 'Name',
@@ -121,7 +148,7 @@ class RaftCreateChannelDialogView extends StatelessWidget {
                   controller: name,
                   placeholder: 'e.g. ai-research',
                   autofocus: true,
-                  onSubmitted: (_) => onSubmit(),
+                  onSubmitted: submit == null ? null : (_) => submit(),
                 ),
               ),
               gap,
@@ -193,6 +220,17 @@ class RaftCreateChannelDialogView extends StatelessWidget {
               gap,
               slackField!,
             ],
+            if (sheet && people) ...[
+              gap,
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: RaftButton(
+                  label: 'Back',
+                  uiVariant: RaftButtonVariant.ghost,
+                  onPressed: submitting ? null : onBack,
+                ),
+              ),
+            ],
           ],
         ),
         // Current Web: `flex flex-wrap justify-end gap-2 pt-1`, with two
@@ -215,14 +253,10 @@ class RaftCreateChannelDialogView extends StatelessWidget {
                     : raftExplicitClose(context, onClose),
               ),
               RaftButton(
-                label: twoStep && !people || visibility == 'external'
-                    ? 'Next'
-                    : submitting
-                    ? 'Creating…'
-                    : 'Create Channel',
+                label: submitLabel,
                 uiVariant: RaftButtonVariant.accent,
                 uiSize: RaftButtonSize.lg,
-                onPressed: submitting || !canContinue ? null : onSubmit,
+                onPressed: submit,
               ),
             ],
           ),

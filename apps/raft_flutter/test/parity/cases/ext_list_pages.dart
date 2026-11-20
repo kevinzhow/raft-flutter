@@ -284,19 +284,6 @@ Widget _shell(ParityContext ctx) {
 
 // ------------------------------------------------------------ create channel states
 
-Widget _createChannel(ParityContext ctx) {
-  final w = _workspace(ctx, 'chat');
-  // The React host paints a white page under the Modal scrim in every theme.
-  return Scaffold(
-    backgroundColor: Colors.white,
-    body: CreateChannelDialog(
-      controller: w,
-      prefilledName: ctx.props['name'] as String?,
-      prefilledDescription: ctx.props['description'] as String?,
-    ),
-  );
-}
-
 // ------------------------------------------------------------ phone computers (computers fixture)
 
 Map<String, dynamic> _cfx(ParityContext ctx) =>
@@ -705,7 +692,23 @@ Future<void> _interact(WidgetTester t, ParityContext ctx) async {
     case 'notification.desktop-center':
       await _tap(t, find.byType(RaftMobileNotificationButton), 500);
     case final k when k.startsWith('create-channel.'):
-      final submit = find.widgetWithText(RaftButton, 'Create Channel');
+      final host = t.element(find.byKey(const ValueKey('create-channel-host')));
+      final w = _workspace(ctx, 'chat');
+      unawaited(
+        showRaftForm<void>(
+          host,
+          builder: (_) => CreateChannelDialog(
+            controller: w,
+            prefilledName: ctx.props['name'] as String?,
+            prefilledDescription: ctx.props['description'] as String?,
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      final submit = find.widgetWithText(
+        RaftButton,
+        k.startsWith('create-channel.phone') ? 'Create' : 'Create Channel',
+      );
       expect(submit, findsOneWidget);
       await _tap(t, submit, 600);
       if (k.endsWith('-archived-name')) {
@@ -727,7 +730,10 @@ ParityCase _case() => ParityCase(
     'panel' => _panel(ctx),
     'notification' => _notification(ctx),
     'shell' => _shell(ctx),
-    'create-channel' => _createChannel(ctx),
+    'create-channel' => const Scaffold(
+      key: ValueKey('create-channel-host'),
+      backgroundColor: Colors.white,
+    ),
     'remove-member' => _removeMember(ctx),
     'add-members' => _addMembers(ctx),
     'create-joint' => _createJoint(ctx),

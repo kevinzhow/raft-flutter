@@ -323,6 +323,19 @@ void main() {
           final menu = find.byKey(const Key('server-switcher-menu'));
           expect(menu, findsOneWidget);
           expect(t.getTopLeft(menu).dy, greaterThanOrEqualTo(barHeight));
+          final current = find.byKey(const Key('server-menu-row-s1'));
+          expect(
+            t.getSize(current).height,
+            platform == TargetPlatform.android ? 48 : 40,
+          );
+          final avatar = find.descendant(
+            of: current,
+            matching: find.byType(RaftAvatarSlot),
+          );
+          expect(
+            t.getSize(avatar),
+            Size.square(platform == TargetPlatform.android ? 35 : 27),
+          );
           await t.sendKeyEvent(LogicalKeyboardKey.escape);
           await t.pumpAndSettle();
           expect(menu, findsNothing);

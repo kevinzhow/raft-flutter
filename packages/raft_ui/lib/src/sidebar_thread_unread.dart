@@ -62,7 +62,7 @@ class RaftSidebarThreadUnreadCount extends StatelessWidget {
           key: const ValueKey('sidebar-thread-unread'),
           mainAxisSize: MainAxisSize.min,
           children: [
-            RaftThreadIcon(size: 12, color: color),
+            RaftThreadIcon.outline(size: 12, color: color),
             const SizedBox(width: 2),
             Text(_capped(threads), style: style, textScaler: bounded),
           ],

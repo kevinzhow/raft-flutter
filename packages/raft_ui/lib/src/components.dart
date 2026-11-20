@@ -375,6 +375,9 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
       ? 6
       : 8;
   double get sourceHeight {
+    if (phoneSaved && !compact) {
+      return RaftLayoutMetrics.sidebarRowHeight(tokens, viewportWidth);
+    }
     final prefix = role == RaftNavItemRole.saved
         ? 'size.sidebarSaved'
         : 'size.sidebarEntry';

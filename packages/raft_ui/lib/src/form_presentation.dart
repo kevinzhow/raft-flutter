@@ -11,6 +11,7 @@ import 'design_primitives.dart';
 import 'icons.dart';
 import 'dialog_card.dart' show RaftCloseButton, RaftTextSteps, raftCssTextStyle;
 import 'presentation.dart';
+import 'raft/ui_tokens.dart' show RaftTokensUi;
 import 'settings_layout.dart' show RaftSpace;
 import 'sheet.dart';
 import 'system_inset.dart';
@@ -348,6 +349,7 @@ class RaftFormSheet extends StatelessWidget {
     this.titleGlyph,
     this.closeButton,
     this.commit,
+    this.showHandle = true,
   });
 
   /// The title as it is shown (already localized).
@@ -370,6 +372,9 @@ class RaftFormSheet extends StatelessWidget {
   /// Without it [footer] is drawn as before.
   final Widget? commit;
 
+  /// A narrow dialog uses its header as the sheet's drag target.
+  final bool showHandle;
+
   /// The close X of the head: the supplied [closeButton], else the scaffold's own.
   Widget _closeAction(BuildContext context) =>
       closeButton ??
@@ -381,12 +386,14 @@ class RaftFormSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final style = raftCssTextStyle(
-      family: t.headingFont,
-      step: RaftTextSteps.lg,
-      weight: FontWeight.w700,
-      color: t.ink,
-    );
+    final style = showHandle
+        ? raftCssTextStyle(
+            family: t.headingFont,
+            step: RaftTextSteps.lg,
+            weight: FontWeight.w700,
+            color: t.ink,
+          )
+        : t.scale(t.typeSlot('headline'));
     final text = title;
     final scaler = MediaQuery.textScalerOf(context);
     if (commit != null) {
@@ -476,18 +483,34 @@ class RaftFormSheet extends StatelessWidget {
     )..layout();
     final line = painter.height;
     painter.dispose();
+    final bar = showHandle
+        ? RaftMetrics.panelHeader
+        : RaftLayoutMetrics.shellHeaderHeight(
+            t,
+            MediaQuery.sizeOf(context).height,
+          );
     final extent = math.max(
-      RaftMetrics.panelHeader,
+      bar,
       math.max(line, _closeFace) + RaftSpace.x2 * 2 + 1,
     );
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final iconInset = showHandle
+        ? 0.0
+        : (t.size('css.bar-button-size', fallback: 44) -
+                  t.size('css.control-icon-size', fallback: 22)) /
+              2;
+    final headerPadding = EdgeInsetsDirectional.only(
+      start: RaftSpace.x4 - iconInset,
+      end: RaftSpace.x4,
+    );
     return RaftSheet(
+      showHandle: showHandle,
       header: Column(
         key: const ValueKey('raft-form-sheet-head'),
         children: [
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
+              padding: headerPadding,
               child: Row(
                 spacing: RaftSpace.x2,
                 children: [

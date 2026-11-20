@@ -64,6 +64,9 @@ class RaftAvatarContent extends StatelessWidget {
         image: imageProviderBuilder?.call(url) ?? RaftAvatarImageProvider(url),
         avatar: true,
         fit: BoxFit.cover,
+        filterQuality: kind == RaftAvatarContentKind.server
+            ? FilterQuality.none
+            : FilterQuality.medium,
         width: double.infinity,
         height: double.infinity,
         // Keep the previous frame while a replacement resolves; decoded

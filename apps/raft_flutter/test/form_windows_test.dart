@@ -121,7 +121,11 @@ final _forms = <_Form>[
         CreateChannelDialog.show(context, controller: w),
     routes: (api) =>
         api.routes['POST /channels'] = (_) => {'id': 'c9', 'name': 'made'},
-    submit: () => find.text('Create Channel').last,
+    submit: () => find.byWidgetPredicate(
+      (w) =>
+          w is RaftButton &&
+          const {'Create Channel', 'Create'}.contains(w.label),
+    ),
     submitted: (api, _) => _posted(api, 'POST', '/channels'),
   ),
   _Form(
@@ -473,7 +477,13 @@ void registerFormWindowTests(TestPart part) {
       Future<void> closeBy(WidgetTester t, String how) async {
         switch (how) {
           case 'drag':
-            await t.fling(handle, const Offset(0, 700), 2500);
+            await t.fling(
+              form.id == 'create channel'
+                  ? _key('raft-form-sheet-head')
+                  : handle,
+              const Offset(0, 700),
+              2500,
+            );
           case 'scrim':
             await t.tapAt(const Offset(200, 6));
           case 'esc':

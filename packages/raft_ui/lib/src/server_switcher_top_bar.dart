@@ -313,23 +313,18 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                 : RaftSizedImage.avatar(
                     row.avatarUrl!,
                     fit: BoxFit.cover,
+                    filterQuality: FilterQuality.none,
                     errorBuilder: (_, _, _) => fallback,
                   ),
           ),
           if ((!row.current && (row.activityUnreadCount ?? 0) > 0) ||
               hiddenUnread)
             Positioned(
-              right: -3.5,
-              top: -3.5,
-              child: Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: t.colors['layer-rail-attention'],
-                  borderRadius: BorderRadius.circular(2),
-                  border: Border.all(color: t.colors['line-rail-attention']!),
-                  boxShadow: [BoxShadow(color: t.canvas, spreadRadius: 1)],
-                ),
+              right: -size.badge / 2,
+              top: -size.badge / 2,
+              child: RaftAvatarBadge(
+                size: size,
+                variant: RaftStatusVariant.accent,
               ),
             ),
         ],

@@ -297,6 +297,7 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
     text: widget.prefilledDescription ?? '',
   );
   final search = TextEditingController();
+  final _problem = GlobalKey();
   late String visibility = widget.prefilledVisibility;
   late final authority = pageIdentity(w);
   late final twoStep =
@@ -529,6 +530,19 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
     }
   }
 
+  Future<void> _submitFromForm() async {
+    await submit();
+    if (!mounted || !RaftFormFrame.sheetOf(context)) return;
+    // The header action stays visible after the fields scroll. Bring a new
+    // validation error or archived-name notice back into view under it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _problem.currentContext;
+      if (target != null) {
+        unawaited(Scrollable.ensureVisible(target, alignment: .25));
+      }
+    });
+  }
+
   Future<void> _submitExternal(String channelName) async {
     RaftChannel? created;
     setState(() => submitting = true);
@@ -695,7 +709,8 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       isSelected: _memberSelected,
       onToggle: (key) => setState(() => _toggleMember(key)),
       onClose: close,
-      onSubmit: submit,
+      onSubmit: _submitFromForm,
+      problemKey: _problem,
       slackField: slack.available
           ? SlackChannelPairingField(
               pairing: slack,
