@@ -38216,7 +38216,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/thread_composition.dart#local-function:CLASS:RaftThreadHeader@4007/METHOD:build@5188/FUNCTION:title@6428": {
+      "packages/raft_ui/lib/src/thread_composition.dart#local-function:CLASS:RaftThreadHeader@4034/METHOD:build@5215/FUNCTION:title@6455": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

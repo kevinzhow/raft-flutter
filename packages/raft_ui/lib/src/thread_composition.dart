@@ -18,6 +18,7 @@ import 'side_panel_frame.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'tooltip.dart';
+import 'raft/button.dart';
 import 'raft/ui_tokens.dart';
 
 /// Mounted Web ThreadPanel presentation, independent of the host OS.
@@ -338,6 +339,7 @@ class RaftThreadSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final muted = t.ui.foregroundHint;
+    final closeLabel = raftText(context, 'Close thread search');
     final hint = raftText(
       context,
       task ? 'Search this task' : 'Search this thread',
@@ -470,18 +472,30 @@ class RaftThreadSearchBar extends StatelessWidget {
             minimumTargetSize: 28,
             onPressed: canStep ? () => onStep(1) : null,
           ),
-          RaftControl(
-            key: const Key('thread-search-close'),
-            recipe: _ThreadCloseRecipe(t),
-            tooltip: raftText(context, 'Close thread search'),
-            semanticLabel: raftText(context, 'Close thread search'),
-            onPressed: onClose,
-            visualWidth: 28,
-            visualHeight: 28,
-            minimumTargetSize: 28,
-            padding: EdgeInsets.zero,
-            child: const RaftIcon(RaftGlyph.x, size: 14),
-          ),
+          if (t.desktop)
+            RaftControl(
+              key: const Key('thread-search-close'),
+              recipe: _ThreadCloseRecipe(t),
+              tooltip: closeLabel,
+              semanticLabel: closeLabel,
+              onPressed: onClose,
+              visualWidth: 28,
+              visualHeight: 28,
+              minimumTargetSize: 28,
+              padding: EdgeInsets.zero,
+              child: const RaftIcon(RaftGlyph.x, size: 14),
+            )
+          else
+            RaftButton(
+              key: const Key('thread-search-close'),
+              uiVariant: RaftButtonVariant.ghost,
+              uiSize: RaftButtonSize.iconMd,
+              glyph: RaftGlyph.x,
+              glyphSize: 14,
+              foreground: t.muted,
+              tooltip: closeLabel,
+              onPressed: onClose,
+            ),
         ],
       ),
     );

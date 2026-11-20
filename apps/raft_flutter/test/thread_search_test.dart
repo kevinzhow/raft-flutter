@@ -11,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'message_presentation_test.dart' show fixture;
+import 'thread_overlay_history_test.dart'
+    show frames, openThreadFromBadge, overlayFixture, taskRow, threadTimeline;
 
 RaftMessage message(String id, String name, String text) =>
     RaftMessage({'id': id, 'senderName': name, 'content': text});
@@ -35,8 +37,17 @@ void main() {
     WidgetTester tester, {
     int replyCount = 3,
     ChatViewportHandle? viewport,
+    Size size = const Size(900, 900),
+    TargetPlatform platform = TargetPlatform.linux,
+    EdgeInsets safePadding = EdgeInsets.zero,
   }) async {
-    tester.view.physicalSize = const Size(900, 900);
+    tester.view.physicalSize = size;
+    tester.view.padding = FakeViewPadding(
+      left: safePadding.left,
+      top: safePadding.top,
+      right: safePadding.right,
+      bottom: safePadding.bottom,
+    );
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final (w, api) = (await tester.runAsync(() => fixture('member')))!;
@@ -75,12 +86,14 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
-        home: Scaffold(
-          body: RaftChatView(
-            controller: w,
-            thread: true,
-            viewportHandle: viewport,
+        theme: raftTheme().copyWith(platform: platform),
+        home: SafeArea(
+          child: Scaffold(
+            body: RaftChatView(
+              controller: w,
+              thread: true,
+              viewportHandle: viewport,
+            ),
           ),
         ),
       ),
@@ -163,6 +176,111 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     },
   );
+
+  for (final (size, platform, closeSize) in [
+    (const Size(390, 844), TargetPlatform.android, 32.0),
+    (const Size(390, 844), TargetPlatform.linux, 32.0),
+    (const Size(856, 944), TargetPlatform.android, 32.0),
+    (const Size(944, 856), TargetPlatform.android, 32.0),
+    (const Size(900, 900), TargetPlatform.linux, 28.0),
+  ]) {
+    testWidgets('mounted search Close at $size on ${platform.name}', (
+      tester,
+    ) async {
+      const safePadding = EdgeInsets.fromLTRB(12, 24, 16, 20);
+      final (w, _) = await mountThread(
+        tester,
+        replyCount: 60,
+        size: size,
+        platform: platform,
+        safePadding: safePadding,
+      );
+      w.threadSearch.open();
+      await tester.pumpAndSettle();
+      final bar = find.byKey(const Key('thread-search-bar'));
+      final input = find.byKey(const Key('thread-search-input'));
+      final close = find.byKey(const Key('thread-search-close'));
+      final box = tester.getRect(close);
+      final safeRect = safePadding.deflateRect(Offset.zero & size);
+      expect(box.size, Size.square(closeSize));
+      expect(safeRect.contains(box.topLeft), isTrue);
+      expect(safeRect.contains(box.bottomRight), isTrue);
+      expect(tester.widget<TextField>(input).focusNode!.hasFocus, isTrue);
+
+      await tester.enterText(input, 'reply-3');
+      await tester.pumpAndSettle();
+      final list = find.byKey(const Key('chat-list-thread'));
+      void expectCentered(String id) {
+        final row = find.byKey(ValueKey('message-wrapper-$id'));
+        expect(row.hitTestable(), findsOneWidget);
+        expect(tester.getCenter(row).dy, closeTo(tester.getCenter(list).dy, 1));
+      }
+
+      expect(find.text('1/11'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('thread-search-next')));
+      await tester.pumpAndSettle();
+      expect(find.text('2/11'), findsOneWidget);
+      expectCentered('reply-30');
+      await tester.tap(find.byKey(const Key('thread-search-previous')));
+      await tester.pumpAndSettle();
+      expect(find.text('1/11'), findsOneWidget);
+      await tester.tap(find.text('Back to bottom'));
+      await tester.pumpAndSettle();
+      final latest = find.byKey(const ValueKey('message-wrapper-reply-59'));
+      expect(latest.hitTestable(), findsOneWidget);
+
+      // Hit the outer edge of the button, away from its glyph.
+      await tester.tapAt(
+        tester.getRect(close).centerRight - const Offset(1, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(bar, findsNothing);
+      expect(latest.hitTestable(), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('phone search Close keeps the route and header Back returns', (
+    tester,
+  ) async {
+    final fixture = await overlayFixture(
+      tester,
+      width: 390,
+      task: taskRow('p1', threadChannelId: 't1'),
+    );
+    final channel = fixture.w.location;
+    await openThreadFromBadge(tester, fixture);
+    final thread = fixture.w.location;
+    final input = find.byKey(const Key('thread-search-input'));
+
+    Future<void> openSearch() async {
+      await tester.tap(find.byKey(const Key('thread-options')));
+      await frames(tester, count: 20);
+      await tester.tap(find.text('Search in thread'));
+      await frames(tester, count: 20);
+      expect(tester.widget<TextField>(input).focusNode!.hasFocus, isTrue);
+      expect(fixture.w.location, thread);
+    }
+
+    await openSearch();
+    await tester.tap(find.byKey(const Key('thread-search-close')));
+    await frames(tester);
+    expect(input, findsNothing);
+    expect(fixture.w.location, thread);
+    expect(threadTimeline(), findsOneWidget);
+
+    await openSearch();
+    await tester.tap(find.byKey(const Key('mobile-detail-back')));
+    await frames(tester, count: 35);
+    expect(fixture.w.location, channel);
+    expect(threadTimeline(), findsNothing);
+    expect(input, findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('search bar: open, query, count, next / previous, close', (
     tester,
