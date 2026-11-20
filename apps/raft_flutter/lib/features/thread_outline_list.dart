@@ -173,6 +173,8 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
   @override
   void initState() {
     super.initState();
+    // The Web drawer starts at the top. Its row key still anchors prepends.
+    if (widget.onClose != null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (compact) {

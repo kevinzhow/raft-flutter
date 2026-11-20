@@ -5285,7 +5285,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/thread_outline_list.dart#local-function:CLASS:_ThreadOutlineListState@4361/METHOD:build@7472/FUNCTION:<anonymous>@8062/FUNCTION:row@8223": {
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#local-function:CLASS:_ThreadOutlineListState@4361/METHOD:build@7589/FUNCTION:<anonymous>@8179/FUNCTION:row@8340": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-THREAD",

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/history_reading_anchor.dart';
+import 'package:raft_flutter/features/thread_outline_list.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'chat_focus_receipt_test.dart' show paintedMessage;
@@ -19,7 +20,7 @@ const _lastReply = 'timeline-reply-60';
 void main() {
   for (final dark in [false, true]) {
     testWidgets(
-      'Timeline preserves the mounted reader until parent selection '
+      'Timeline opens at its platform anchor and preserves the reader until selection '
       '(${dark ? 'dark' : 'light'})',
       (tester) async {
         final phone = defaultTargetPlatform == TargetPlatform.android;
@@ -69,6 +70,13 @@ void main() {
         final outline = find.byKey(
           Key(phone ? 'thread-timeline-sheet' : 'thread-timeline-popover'),
         );
+        final outlineScroll = find.descendant(
+          of: outline,
+          matching: find.byType(Scrollable),
+        );
+        final parentRow = find.byKey(_parentRow);
+        ScrollPosition outlinePosition() =>
+            tester.state<ScrollableState>(outlineScroll).position;
         final route = workspace.location.uri;
         final receipts = <Map<String, Object?>>[];
 
@@ -98,6 +106,11 @@ void main() {
             'max': position.maxScrollExtent,
             'tailPainted': tail,
             'outlineOpen': outline.evaluate().isNotEmpty,
+            if (outlineScroll.evaluate().isNotEmpty) ...{
+              'outlinePixels': outlinePosition().pixels,
+              'outlineMax': outlinePosition().maxScrollExtent,
+              'parentRowVisible': parentRow.hitTestable().evaluate().isNotEmpty,
+            },
           });
           return (
             first: anchor.messageKey,
@@ -120,6 +133,14 @@ void main() {
           await tester.tap(item);
           await tester.pumpAndSettle();
           expect(outline.hitTestable(), findsOneWidget);
+          if (phone) {
+            expect(
+              outlinePosition().extentBefore,
+              closeTo(0, 0.01),
+              reason: 'Every new Timeline drawer starts at the top',
+            );
+            expect(parentRow.hitTestable(), findsOneWidget);
+          }
         }
 
         Future<void> close() async {
@@ -142,10 +163,45 @@ void main() {
           expect(latest.end - latest.pixels, closeTo(0, 1));
           await open();
           expect(receipt('open-latest'), latest);
-          await close();
-          expect(receipt('close-latest'), latest);
+          final currentTick = find.descendant(
+            of: outline,
+            matching: find.byWidgetPredicate(
+              (w) => w is ThreadOutlineTick && w.current,
+            ),
+          );
+          final currentRow = find.ancestor(
+            of: currentTick,
+            matching: find.byType(RaftInteractive),
+          );
+          expect(currentTick, findsOneWidget);
+          expect(tester.widget<RaftInteractive>(currentRow).selected, isTrue);
+          final openingHeight = tester.getSize(outline).height;
+          if (phone) {
+            expect(currentRow.hitTestable(), findsNothing);
+            await tester.drag(outlineScroll, const Offset(0, -360));
+            await tester.pumpAndSettle();
+            expect(tester.getSize(outline).height, greaterThan(openingHeight));
+            expect(outlinePosition().extentBefore, closeTo(0, 0.01));
+            expect(receipt('drawer-expanded'), latest);
+
+            await tester.drag(outlineScroll, const Offset(0, -360));
+            await tester.pumpAndSettle();
+            expect(outlinePosition().extentBefore, greaterThan(100));
+            expect(parentRow.hitTestable(), findsNothing);
+            expect(tester.widget<RaftInteractive>(currentRow).selected, isTrue);
+            expect(receipt('drawer-scrolled'), latest);
+            await tester.binding.handlePopRoute();
+          } else {
+            expect(outlinePosition().extentBefore, greaterThan(100));
+            expect(currentRow.hitTestable(), findsOneWidget);
+            await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+          }
+          await tester.pumpAndSettle();
+          expect(outline, findsNothing);
+          expect(receipt(phone ? 'back' : 'escape'), latest);
           await open();
           expect(receipt('reopen-latest'), latest);
+          expect(tester.getSize(outline).height, closeTo(openingHeight, 0.01));
 
           tester.view.physicalSize = Size(size.width, size.height - 60);
           await tester.pumpAndSettle();
@@ -187,14 +243,10 @@ void main() {
           await open();
           expect(receipt('reopen-older'), older);
 
-          final parentRow = find.byKey(_parentRow);
           await tester.scrollUntilVisible(
             parentRow,
             -320,
-            scrollable: find.descendant(
-              of: outline,
-              matching: find.byType(Scrollable),
-            ),
+            scrollable: outlineScroll,
             maxScrolls: 24,
           );
           expect(receipt('outline-scrolled-to-parent'), older);
@@ -228,7 +280,22 @@ void main() {
           expect(titleJump.first, 'parent');
           await open();
           expect(receipt('after-legacy-open'), titleJump);
-          await close();
+          const replyId = 'timeline-reply-3';
+          final reply = find.byKey(
+            const ValueKey('thread-outline-row-$replyId'),
+          );
+          expect(reply.hitTestable(), findsOneWidget);
+          await tester.tap(reply);
+          await tester.pumpAndSettle();
+          expect(outline, findsNothing);
+          expect(paintedMessage(tester, replyId), isNotNull);
+          receipt('explicit-reply-selection');
+
+          await open();
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+          expect(outline, findsNothing);
+          expect(tester.takeException(), isNull);
         } finally {
           debugPrint(
             'TIMELINE_RECEIPT ${jsonEncode(receipts)}',
