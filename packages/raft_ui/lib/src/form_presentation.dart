@@ -11,6 +11,7 @@ import 'design_primitives.dart';
 import 'icons.dart';
 import 'dialog_card.dart' show RaftCloseButton, RaftTextSteps, raftCssTextStyle;
 import 'presentation.dart';
+import 'raft/blink_snap.dart';
 import 'raft/ui_tokens.dart' show RaftTokensUi;
 import 'settings_layout.dart' show RaftSpace;
 import 'sheet.dart';
@@ -503,6 +504,7 @@ class RaftFormSheet extends StatelessWidget {
       start: RaftSpace.x4 - iconInset,
       end: RaftSpace.x4,
     );
+    final seam = ColoredBox(color: t.colors['line-seam']!);
     return RaftSheet(
       showHandle: showHandle,
       header: Column(
@@ -537,7 +539,7 @@ class RaftFormSheet extends StatelessWidget {
             key: const ValueKey('raft-form-sheet-head-seam'),
             height: 1,
             width: double.infinity,
-            child: ColoredBox(color: t.colors['line-seam']!),
+            child: showHandle ? seam : RaftBlinkSnap(child: seam),
           ),
         ],
       ),

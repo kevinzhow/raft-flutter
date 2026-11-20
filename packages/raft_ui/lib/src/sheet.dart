@@ -8,7 +8,9 @@ import 'package:raft_theme/recipes/drawer.g.dart' as raft_drawer;
 
 import 'icons.dart';
 import 'localization.dart';
+import 'panel_layout.dart' show RaftSnappedDecoratedBox;
 import 'raft/button.dart' show RaftButton;
+import 'raft/css_box.dart' show RaftBorderSnap;
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/drawer.g.dart';
@@ -370,10 +372,13 @@ class RaftSheet extends StatelessWidget {
         // in the same place.
         if (!showHandle && headerSlot != null)
           _PointerDragArea(
-            child: ColoredBox(
-              // The narrow dialog header is a PanelHeader. Its canvas fill
-              // sits over the popover surface used by the rest of the sheet.
-              color: t.canvas,
+            child: RaftSnappedDecoratedBox(
+              // PanelHeader snaps its canvas edge and bottom border to the
+              // same paint grid while its controls keep their layout boxes.
+              decoration: BoxDecoration(color: t.canvas),
+              paintDevicePixelRatio: RaftBorderSnap.emulatedDeviceScaleFactor
+                  ? 1
+                  : null,
               child: RaftSurfaceBackgroundScope(
                 color: t.canvas.a == 1 ? t.canvas : null,
                 child: headerSlot,
