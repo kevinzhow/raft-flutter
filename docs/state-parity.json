@@ -41398,7 +41398,23 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2832/METHOD:build@4666/FUNCTION:statusTrigger@6117": {
+        "role": "unresolved",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
+      },
       "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2764/METHOD:build@4598/FUNCTION:trigger@7459": {
+        "role": "unresolved",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
+      },
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2832/METHOD:build@4666/FUNCTION:trigger@7527": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -44456,6 +44472,30 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
+      "apps/raft_flutter/lib/features/task_conversation_surface.dart#class:_TaskDiscussionSubject": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Task conversation",
+        "reason": "Supplies the task head and empty content to the shared discussion renderer."
+      },
+      "apps/raft_flutter/lib/features/task_conversation_surface.dart#function:taskDiscussionSubject": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Task conversation",
+        "reason": "Supplies the task head and empty content to the shared discussion renderer."
+      },
+      "apps/raft_flutter/lib/features/task_conversation_surface.dart#function:threadEmptyContent": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Task conversation",
+        "reason": "Supplies the task head and empty content to the shared discussion renderer."
+      },
+      "apps/raft_flutter/lib/features/task_conversation_surface.dart#method:_TaskDiscussionSubject.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Task conversation",
+        "reason": "Supplies the task head and empty content to the shared discussion renderer."
+      },
       "apps/raft_flutter/lib/features/task_handoff_notice.dart#function:_handoffCard": {
         "role": "unresolved",
         "familyRefs": [],
@@ -44593,6 +44633,24 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_conversation_parts.dart#class:_RaftTaskHeadTextState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Task detail head",
+        "reason": "Composes the task text and its edit control and reveals the control while hovered or focused."
+      },
+      "packages/raft_ui/lib/src/task_conversation_parts.dart#method:RaftTaskHeadText.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Task detail head",
+        "reason": "Composes the task text and its edit control and reveals the control while hovered or focused."
+      },
+      "packages/raft_ui/lib/src/task_conversation_parts.dart#method:_RaftTaskHeadTextState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Task detail head",
+        "reason": "Composes the task text and its edit control and reveals the control while hovered or focused."
       },
       "packages/raft_ui/lib/src/task_conversation_parts.dart#method:RaftTaskPropertyLink.build": {
         "role": "unresolved",
@@ -45723,6 +45781,30 @@
         "familyRefs": [],
         "owner": "Tasks page",
         "reason": "Positions the existing task content slot beside the Tasks list below the workspace header."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:TasksPageDetailFocus": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Shares the active Tasks column width mode with its detail controls and restores it when the selected task changes."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:TasksPageDetailFocus.maybeOf": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Shares the active Tasks column width mode with its detail controls and restores it when the selected task changes."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:TasksPageDetailFocus.updateShouldNotify": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Shares the active Tasks column width mode with its detail controls and restores it when the selected task changes."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:_TasksPageDetailDockState.didChangeDependencies": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Shares the active Tasks column width mode with its detail controls and restores it when the selected task changes."
       },
       "apps/raft_flutter/lib/features/task_content_slot.dart#method:TasksPageDetailDock.createState": {
         "role": "entry_composition",
@@ -55550,6 +55632,12 @@
         "owner": "Raft Flutter component wiring",
         "reason": "Mounts RaftChatView under the task surface navigation receiver."
       },
+      "apps/raft_flutter/lib/features/task_surface.dart#local-function:CLASS:_SourceTaskSurfaceState@2103/METHOD:build@6515/FUNCTION:<anonymous>@6594/FUNCTION:timeline@8594": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Raft Flutter component wiring",
+        "reason": "Mounts RaftChatView under the task surface navigation receiver."
+      },
       "apps/raft_flutter/lib/features/task_surface.dart#method:_SourceTaskSurfaceState.discussionWithProfile": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -55568,7 +55656,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6012/METHOD:_historyDetail@51957/FUNCTION:badge@52354": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5868/METHOD:assigneePanel@44238/FUNCTION:avatar@44597": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6012/METHOD:assigneePanel@46098/FUNCTION:avatar@46457": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -56940,13 +57040,31 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4960/METHOD:attachmentGallery@66279/FUNCTION:view@67433": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
       "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:buildTimeline@113757/FUNCTION:timelineFor@117499": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4960/METHOD:buildTimeline@113822/FUNCTION:timelineFor@117392": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
       "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:senderAvatar@78792/FUNCTION:avatar@81267": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4960/METHOD:senderAvatar@78857/FUNCTION:avatar@81332": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -57316,6 +57434,12 @@
         "reason": "SDK preview mounts the corresponding shared sidebar component."
       },
       "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78177/METHOD:build@79649/FUNCTION:message@83234": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78231/METHOD:build@79703/FUNCTION:message@83288": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
