@@ -211,4 +211,33 @@ void main() {
     });
     expect(backend.entries, hasLength(2));
   });
+
+  testWidgets('long options can wrap to two lines in the popup', (
+    tester,
+  ) async {
+    const label = 'First choices for second-factor authentication';
+    await _host(
+      tester,
+      false,
+      RaftSelectField<int>(
+        value: 1,
+        items: const [
+          RaftSelectItem(value: 1, label: 'One'),
+          RaftSelectItem(value: 2, label: label),
+        ],
+        onChanged: (_) {},
+      ),
+    );
+    await tester.tap(find.byType(RaftSelectField<int>));
+    await tester.pumpAndSettle();
+    final popup = find.byKey(const ValueKey('raft-select-popup'));
+    expect(
+      tester.getTopLeft(find.text(label)).dx - tester.getTopLeft(popup).dx,
+      14,
+    );
+    expect(
+      tester.getSize(find.text(label)).height,
+      greaterThan(tester.getSize(find.text('One').last).height),
+    );
+  });
 }

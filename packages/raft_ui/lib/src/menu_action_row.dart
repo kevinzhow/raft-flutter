@@ -155,9 +155,13 @@ class RaftMenuSlotRow extends StatelessWidget {
       ],
     );
 
+    final lineClamp = switch (itemText?['-webkit-line-clamp']) {
+      CssNum(value: final lines) => lines.toInt(),
+      _ => null,
+    };
     Widget text = DefaultTextStyle.merge(
-      maxLines: grows ? null : 1,
-      softWrap: grows,
+      maxLines: grows ? null : lineClamp ?? 1,
+      softWrap: grows || lineClamp != null,
       overflow: TextOverflow.ellipsis,
       child: labelChild ?? Text(label),
     );

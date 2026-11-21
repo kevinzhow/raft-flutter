@@ -363,7 +363,10 @@ class RaftConnectedAppsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (myAppsIntro != null)
-            Text(myAppsIntro!, style: _relaxed(t, text.muted)),
+            Text(
+              myAppsIntro!,
+              style: t.scale(RaftTypeScale.footnote, color: text.muted),
+            ),
           const SizedBox(height: 12),
           if (rows.isEmpty && empty != null)
             empty
@@ -503,7 +506,10 @@ class RaftConnectedAppsSection extends StatelessWidget {
                       SliverToBoxAdapter(
                         child: Text(
                           myAppsIntro!,
-                          style: _relaxed(t, text.muted),
+                          style: t.scale(
+                            RaftTypeScale.footnote,
+                            color: text.muted,
+                          ),
                         ),
                       ),
                     gap(12),

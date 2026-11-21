@@ -238,6 +238,6 @@ void main() {
     final actual = tester.widget<RaftSnappedDecoratedBox>(paint.first);
     final expected = RaftSheetMetrics.fill(tokens);
     await tester.pumpWidget(const SizedBox.shrink());
-    expect((actual.decoration as BoxDecoration).color, expected);
+    expect(actual.decoration.color, expected);
   });
 }

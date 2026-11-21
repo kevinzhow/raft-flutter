@@ -250,6 +250,14 @@ void main() {
     _routes(a, [Map<String, dynamic>.from(_app)]);
     a.routes['PATCH /integrations/clients/app-1'] = (o) => {..._app, ...o.data};
     await _mount(t, w);
+    final intro = find.textContaining('Raft Apps this server builds.');
+    final introStyle = t.widget<Text>(intro).style!;
+    expect(introStyle.fontSize! * introStyle.height!, 18);
+    final visibility = find.widgetWithText(RaftBadge, 'Private');
+    expect(
+      t.widget<RaftBadge>(visibility).appearance,
+      RaftBadgeRecipeAppearance.soft,
+    );
     await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
     await t.pumpAndSettle();
     expect(find.byKey(editor), findsOneWidget);

@@ -146,7 +146,7 @@ RaftConnectedAppBadge? _distributionBadge(
       tr('Offline requested'),
     ),
     'rejected' => RaftConnectedAppBadge.warning(tr('Rejected')),
-    _ => RaftConnectedAppBadge.outline(tr('Private')),
+    _ => RaftConnectedAppBadge.muted(tr('Private')),
   };
 }
 

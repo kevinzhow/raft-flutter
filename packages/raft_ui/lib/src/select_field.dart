@@ -525,6 +525,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
                       states: states,
                       tokens: rt,
                     );
+                    final listInsets = sel.list.padding + sel.listFrame.margin;
                     // The slots of the grouped / described / action rows.
                     final more = !needsExtras
                         ? null
@@ -537,7 +538,13 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
                           );
                     return RaftMenuPopupSlots(
                       content: sel.content,
-                      list: sel.list,
+                      list: sel.list.copyWith(
+                        properties: {
+                          ...sel.list.properties,
+                          'padding-left': CssNum(listInsets.left, 'px'),
+                          'padding-right': CssNum(listInsets.right, 'px'),
+                        },
+                      ),
                       item: sel.item,
                       itemIndicator: sel.itemIndicator,
                       itemLeading: sel.itemLeading,
