@@ -186,7 +186,7 @@ void main() {
         );
       });
 
-      testWidgets('inline replies: fill-muted block, no border or radius', (
+      testWidgets('inline replies: fill-muted, 10 dp radius, no border', (
         tester,
       ) async {
         await _pump(
@@ -217,7 +217,7 @@ void main() {
         final decoration = box.decoration! as BoxDecoration;
         expect(decoration.color, t.colors['fill-muted']);
         expect(decoration.border, isNull);
-        expect(decoration.borderRadius, isNull);
+        expect(decoration.borderRadius, BorderRadius.circular(10));
         expect(
           box.padding,
           const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

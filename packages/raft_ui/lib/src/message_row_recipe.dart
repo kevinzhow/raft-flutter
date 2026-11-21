@@ -26,6 +26,7 @@ import 'pointer_intent.dart';
 import 'viewport_breakpoints.dart';
 import 'css_border.dart';
 import 'text_scaling.dart' show RaftScaled;
+import 'thread_outline_metrics.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 import 'recipe_surface.dart'
@@ -1058,6 +1059,10 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
       searchMatch: widget.searchMatch,
       checked: widget.checked,
     );
+    final railFill =
+        widget.searchMatch && widget.rowContext == RaftMessageRowContext.thread
+        ? RaftThreadOutlineGutter.maybeOf(context)?.end ?? 0.0
+        : 0.0;
     // One widget shape whether or not the author is linkable: a mention
     // affordance that arrives after first paint never reflows the header.
     final author = _AuthorMenuGesture(
@@ -1267,6 +1272,16 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                       Stack(
                         clipBehavior: Clip.none,
                         children: [
+                          if (railFill > 0)
+                            // The sliver reserves this span for the outline.
+                            // Only fill paint crosses into it.
+                            PositionedDirectional(
+                              end: -railFill - recipe.borderWidth,
+                              top: -recipe.borderWidth,
+                              bottom: -recipe.borderWidth,
+                              width: railFill,
+                              child: ColoredBox(color: recipe.background),
+                            ),
                           Padding(
                             padding: recipe.padding,
                             child: Row(

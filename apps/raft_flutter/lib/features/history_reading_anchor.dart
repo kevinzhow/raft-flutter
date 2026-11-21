@@ -47,12 +47,17 @@ bool _painted(RenderObject row) {
 }
 
 /// Captures a visible row by key and its distance below the timeline top.
-ReadingAnchor? captureTimelineReadingAnchor(BuildContext context) {
+ReadingAnchor? captureTimelineReadingAnchor(
+  BuildContext context, {
+  String? threadParentKey,
+}) {
   ReadingAnchor? best;
   var bestTop = double.infinity;
   void visit(Element element) {
     final key = element.widget.key;
-    if (key is ValueKey<String> && key.value.startsWith('message-wrapper-')) {
+    if (key is ValueKey<String> &&
+        (key.value.startsWith('message-wrapper-') ||
+            threadParentKey != null && key.value == 'thread-outline-parent')) {
       final row = element.renderObject;
       final Object? clip = row == null
           ? null
@@ -71,7 +76,9 @@ ReadingAnchor? captureTimelineReadingAnchor(BuildContext context) {
             top < bestTop) {
           bestTop = top;
           best = ReadingAnchor(
-            key.value.substring('message-wrapper-'.length),
+            key.value == 'thread-outline-parent'
+                ? threadParentKey!
+                : key.value.substring('message-wrapper-'.length),
             top,
           );
         }

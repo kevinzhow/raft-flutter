@@ -1,11 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/thread_actions.dart';
 import 'package:raft_ui/raft_ui.dart';
+
+import 'thread_overlay_history_test.dart'
+    show frames, openThreadFromBadge, overlayFixture, taskRow;
 
 class _Workspace extends WorkspaceController {
   _Workspace(super.client);
@@ -16,6 +21,66 @@ class _Workspace extends WorkspaceController {
 }
 
 void main() {
+  testWidgets('desktop pointer-open first ArrowDown selects Search', (
+    tester,
+  ) async {
+    final fixture = await overlayFixture(
+      tester,
+      width: 1280,
+      task: taskRow('task-parent'),
+    );
+    await openThreadFromBadge(tester, fixture);
+    final route = fixture.w.location;
+    final trigger = find.byKey(const Key('thread-options'));
+    final menu = find.byType(RaftMenuPanel);
+
+    String? focusedCommand() => FocusManager.instance.primaryFocus?.context
+        ?.findAncestorWidgetOfExactType<RaftMenuItem>()
+        ?.label;
+
+    try {
+      await tester.tap(trigger, kind: PointerDeviceKind.mouse);
+      await frames(tester);
+      expect(menu, findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await frames(tester);
+      expect(focusedCommand(), 'Search in thread');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await frames(tester);
+      expect(menu, findsNothing);
+      final input = find.byKey(const Key('thread-search-input'));
+      expect(tester.widget<TextField>(input).focusNode!.hasFocus, isTrue);
+      expect(fixture.w.location, route);
+      await tester.tap(find.byKey(const Key('thread-search-close')));
+      await frames(tester);
+
+      await tester.tap(trigger, kind: PointerDeviceKind.mouse);
+      await frames(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await frames(tester);
+      expect(focusedCommand(), 'Follow thread');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await frames(tester);
+      expect(menu, findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await frames(tester);
+      expect(focusedCommand(), 'Search in thread');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await frames(tester);
+      expect(menu, findsNothing);
+      expect(fixture.w.location, route);
+    } finally {
+      if (menu.evaluate().isNotEmpty) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await frames(tester);
+      }
+      await tester.pumpWidget(const SizedBox());
+      await frames(tester);
+    }
+    expect(tester.takeException(), isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
   for (final revoke in [false, true]) {
     testWidgets(
       'cold thread menu receives the store first membership; revoked=$revoke',
@@ -67,10 +132,7 @@ void main() {
         } else {
           expect(t.widget<RaftMenuItem>(entry).onPressed, isNotNull);
           expect(t.widget<RaftMenuItem>(entry).label, 'Follow thread');
-          expect(
-            t.widget<RaftMenuItem>(entry).glyph,
-            RaftGlyph.messageCirclePlus,
-          );
+          expect(t.widget<RaftMenuItem>(entry).glyph, RaftGlyph.followThread);
           await t.tap(find.byKey(const Key('thread-options')));
           await t.pumpAndSettle();
           expect(entry, findsNothing);

@@ -59,6 +59,15 @@ THREAD = [
     message('t2', 'Jun', 'Only the rail on phones, everything else is great.', '2026-06-18T10:08:00.000Z'),
     message('t3', 'Wenyi', 'Noted, we will adjust it in the next pass.', '2026-06-18T10:11:00.000Z'),
 ]
+SINGLE_REPLY = message('t1', 'Jun', 'The new thread rail is clearer.', '2026-06-19T04:37:00.000Z')
+SINGLE_PARENT = {
+    **message('m4', 'Wenyi', 'Feedback on the new thread rail?', '2026-06-19T04:20:00.000Z',
+              thread='thread-1', replies=1),
+    'latestReplies': [{
+        'messageId': SINGLE_REPLY['id'], 'senderName': 'Jun', 'senderDisplayName': 'Jun',
+        'senderType': 'user', 'preview': SINGLE_REPLY['content'], 'createdAt': SINGLE_REPLY['createdAt'],
+    }],
+}
 CHANNELS = [
     {'id': 'pub-general', 'name': 'general', 'description': 'Announcements and community news'},
     {'id': 'pub-crit', 'name': 'design-crit', 'description': 'Share work in progress for feedback'},
@@ -91,6 +100,11 @@ def base_routes(joinable=True, channels=CHANNELS):
 
 
 ROUTE_SETS = {
+    'ps-thread-preview': {
+        **base_routes(joinable=False),
+        f'GET {BASE_PATH}/channels/pub-general/messages': {'messages': [SINGLE_PARENT]},
+        f'GET {BASE_PATH}/threads/thread-1/messages': {'messages': [SINGLE_REPLY]},
+    },
     'ps-joinable': base_routes(),
     'ps-viewonly': base_routes(joinable=False),
     'ps-empty-channels': base_routes(channels=[]),
@@ -156,6 +170,8 @@ SURFACES = [
          web=[wait(700)], android=[]),
     dict(name='page.thread', title='Public thread open (read only)', routeSet='ps-joinable',
          web=[wait(700), click(THREAD_BADGE), wait(500)], android=[tap('public-thread-open-m4')]),
+    dict(name='page.thread-preview', title='Public inline preview with one reply', routeSet='ps-thread-preview',
+         web=[wait(700)], android=[]),
     dict(name='page.settings-about', title='Public server settings: About', routeSet='ps-joinable',
          platforms=['desktop'], web=[wait(700), click('[data-testid="left-rail-settings"]'), wait(500)],
          android=[tap('public-rail-settings')]),
@@ -191,7 +207,10 @@ def make_cases():
                     props['authenticated'] = 'true'
                 web = list(s.get('web', []))
                 android = list(s.get('android', []))
-                if platform == 'mobile' and s['name'] == 'page.thread':
+                selector = f"[data-visual-case='{cid}']"
+                if s['name'] == 'page.thread-preview':
+                    selector = f'body:has([data-inline-thread-reply-time]) {selector}'
+                if platform == 'mobile' and s['name'] in ('page.thread', 'page.thread-preview'):
                     # Start at the supported /s/:slug/channel/:id route.
                     # The case still opens the thread by clicking its badge.
                     # v1.21.23 clears messages when reselecting the already
@@ -210,7 +229,7 @@ def make_cases():
                     'locale': 'en',
                     'variants': [{'id': 'default', 'name': 'Default', 'props': props}],
                     'capture': {
-                        'selector': f"[data-visual-case='{cid}']",
+                        'selector': selector,
                         'crop': 'element',
                         'contract': 'screen-route',
                         'interactions': web,

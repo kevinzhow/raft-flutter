@@ -72,6 +72,32 @@ class _WorkspaceThreadHeaderState extends State<WorkspaceThreadHeader> {
             final fold =
                 bounds.maxWidth < 360 ||
                 RaftThreadPlacement.maybeOf(context) == null;
+            final followers = threadId != null && !unresolved
+                ? ThreadAgentFollowersView(
+                    key: ValueKey('thread-followers-$threadId'),
+                    controller: w,
+                    threadChannelId: threadId,
+                    folded: fold,
+                    openRequest: followersRequest,
+                    onOpenAgent: (id) =>
+                        w.openProfile(RaftProfileKind.agent, id),
+                  )
+                : null;
+            final overflow =
+                !unresolved && parentId != null && channelId != null
+                ? ThreadActions(
+                    key: ValueKey('thread-menu-$parentId'),
+                    controller: w,
+                    parentMessageId: parentId,
+                    menuMode: true,
+                    onSearch: w.threadSearch.open,
+                    onViewChannel: openParent,
+                    onOutlineJump: widget.viewport.jumpToOutline,
+                    onFollowers: fold && showFollowers
+                        ? () => setState(() => followersRequest++)
+                        : null,
+                  )
+                : null;
             return RaftThreadHeader(
               key: Key(
                 widget.mobile
@@ -104,29 +130,22 @@ class _WorkspaceThreadHeaderState extends State<WorkspaceThreadHeader> {
                   : widget.viewport.jumpToBeginning,
               allowFocusMode: true,
               actions: [
-                if (threadId != null && !unresolved)
-                  ThreadAgentFollowersView(
-                    key: ValueKey('thread-followers-$threadId'),
-                    controller: w,
-                    threadChannelId: threadId,
-                    folded: fold,
-                    openRequest: followersRequest,
-                    onOpenAgent: (id) =>
-                        w.openProfile(RaftProfileKind.agent, id),
-                  ),
-                if (!unresolved && parentId != null && channelId != null)
-                  ThreadActions(
-                    key: ValueKey('thread-menu-$parentId'),
-                    controller: w,
-                    parentMessageId: parentId,
-                    menuMode: true,
-                    onSearch: w.threadSearch.open,
-                    onViewChannel: openParent,
-                    onOutlineJump: widget.viewport.jumpToOutline,
-                    onFollowers: fold && showFollowers
-                        ? () => setState(() => followersRequest++)
-                        : null,
-                  ),
+                if (RaftTokens.of(context).desktop &&
+                    followers != null &&
+                    overflow != null)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      followers,
+                      if (showFollowers && !fold)
+                        const SizedBox(width: RaftSpace.x1),
+                      overflow,
+                    ],
+                  )
+                else ...[
+                  ?followers,
+                  ?overflow,
+                ],
               ],
             );
           },

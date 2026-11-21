@@ -547,7 +547,9 @@ Future<Map<String, dynamic>> captureParityCase(
       await t.pump(const Duration(seconds: 1));
       await t.pump();
       await t.pumpWidget(const SizedBox.shrink());
-      await t.pump();
+      // Popping the phone detail route can mount the underlying composer
+      // for one frame. Drain its deferred one-shot work after disposal.
+      await t.pump(Duration.zero);
     } finally {
       ctx.dispose();
     }

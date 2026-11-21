@@ -16,9 +16,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:flutter_test/flutter_test.dart' show addTearDown;
+import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/history_reading_anchor.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +28,7 @@ import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 
 import '../parity_harness.dart';
+import 'fixture_when.dart';
 import 'home_tasks/fixture_workspace.dart';
 import 'thread_composer/fake_workspace.dart';
 import 'thread_messages/chat_stage.dart' show ParityIdentities;
@@ -54,10 +56,19 @@ class _ExtClient extends ParityFakeClient {
     int limit = 50,
     BigInt? before,
     BigInt? after,
-  }) {
-    final pending = _special('GET', '/messages/channel/$id');
+  }) async {
+    final path = '/messages/channel/$id';
+    final pending = _special('GET', path);
     if (pending != null) return pending as Future<Map<String, dynamic>>;
-    return super.messagePage(id, limit: limit, before: before, after: after);
+    requests.add('PAGE $path');
+    final answer = resolveFixtureWhen(routes['GET $path'], {
+      'limit': limit,
+      'before': ?before,
+      'after': ?after,
+    });
+    return answer is Map
+        ? Map<String, dynamic>.from(answer)
+        : {'messages': <dynamic>[], 'hasMore': false};
   }
 
   @override
@@ -107,7 +118,8 @@ WorkspaceController _workspace(ParityContext ctx) {
   final fx = _fx(ctx);
   final base = ParityThreadFixture(ctx.fixtureData);
   final ids = ParityIdentities(ctx);
-  final routeSet = (fx['routeSets'] as Map)[ctx.props['routeSet']] as Map? ?? {};
+  final routeSet =
+      (fx['routeSets'] as Map)[ctx.props['routeSet']] as Map? ?? {};
   final client = _ExtClient(
     user: base.authUser,
     routes: {
@@ -121,7 +133,10 @@ WorkspaceController _workspace(ParityContext ctx) {
   );
   final channels = [
     for (final c in fx['channels'] as List)
-      RaftChannel(Map<String, dynamic>.from(c as Map)),
+      RaftChannel({
+        ...Map<String, dynamic>.from(c as Map),
+        if (ctx.props['longChannelName'] case final String name) 'name': name,
+      }),
   ];
   final dms = [
     for (final c in fx['dms'] as List)
@@ -139,7 +154,11 @@ WorkspaceController _workspace(ParityContext ctx) {
 Rect _window(ParityContext ctx) {
   final h = (ctx.props['winH'] as num).toDouble();
   final y = (ctx.props['winY'] as num).toDouble();
-  final top = y < 0 ? ctx.height + y : y;
+  final paneInset =
+      ctx.props['longChannelName'] != null && ctx.props['platform'] == 'desktop'
+      ? 44.0
+      : 0.0;
+  final top = y < 0 ? ctx.height + y : paneInset + y;
   if (ctx.props['platform'] == 'mobile') {
     return Rect.fromLTWH(0, top, ctx.width, h);
   }
@@ -181,6 +200,14 @@ class _HostState extends State<_Host> {
         initialThreadChannelId: thread['threadChannelId'] as String,
       );
     }
+  }
+
+  @override
+  void dispose() {
+    final client = w.client;
+    w.dispose();
+    unawaited(client.dispose());
+    super.dispose();
   }
 
   @override
@@ -260,6 +287,83 @@ final ParityCase _case = ParityCase(
   build: _build,
 );
 
+Widget _buildDense(ParityContext ctx) {
+  if (ctx.props['platform'] != 'desktop') return _build(ctx);
+  // Mark the crop in the full viewport so popup collision still uses the
+  // real WorkspaceView and Navigator overlay coordinates.
+  return Stack(
+    children: [
+      Positioned.fill(child: _Host(ctx: ctx)),
+      Positioned.fromRect(
+        rect: _window(ctx),
+        child: ctx.target(const IgnorePointer(child: SizedBox.expand())),
+      ),
+    ],
+  );
+}
+
+final ParityCase _denseCase = ParityCase(
+  widgets: _case.widgets,
+  notes: 'Mounted workspace thread with 200 replies and a shared fixture.',
+  settle: _case.settle,
+  build: _buildDense,
+  interact: (tester, ctx) async {
+    await tester.pump(const Duration(milliseconds: 350));
+    final state = (ctx.props['extCase'] as String).split('.').last;
+    final target = switch (state) {
+      'dense-header' => find.byType(RaftThreadHeader),
+      'dense-menu' => find.byKey(const Key('thread-follow-menu-item')),
+      'dense-outline' => find.byKey(
+        Key(
+          ctx.props['platform'] == 'mobile'
+              ? 'thread-timeline-sheet'
+              : 'thread-timeline-popover',
+        ),
+      ),
+      'dense-search' => find.text('1/3'),
+      _ => throw StateError('Unknown dense thread state: $state'),
+    };
+    expect(target.hitTestable(), findsOneWidget);
+    final desktop = ctx.props['platform'] == 'desktop';
+    if (desktop) {
+      expect(
+        tester.getRect(find.byType(WorkspaceView)),
+        Offset.zero & Size(ctx.width, ctx.height),
+      );
+    }
+    final origin = desktop ? _window(ctx).topLeft : Offset.zero;
+    final rect = tester.getRect(target).shift(-origin);
+    final position = state == 'dense-outline'
+        ? _outlineBackground(tester)
+        : null;
+    ctx.captureEvidence['thread'] = {
+      'state': state,
+      'bounds': [rect.left, rect.top, rect.width, rect.height],
+      'background': ?position,
+    };
+  },
+);
+
+Map<String, Object> _outlineBackground(WidgetTester tester) {
+  final timeline = find.byKey(const Key('chat-list-thread'));
+  final anchor = captureTimelineReadingAnchor(
+    tester.element(timeline),
+    threadParentKey: 'msg-thread-parent',
+  )!;
+  final scrollable = find
+      .descendant(of: timeline, matching: find.byType(Scrollable))
+      .first;
+  final position = tester.state<ScrollableState>(scrollable).position;
+  expect(position.extentAfter, closeTo(0, 1));
+  expect(anchor.messageKey, startsWith('outline-reply-'));
+  return {
+    'first': anchor.messageKey,
+    'offset': anchor.top,
+    'pixels': position.pixels,
+    'max': position.maxScrollExtent,
+  };
+}
+
 const _scenes = {
   'thread': [
     'panel',
@@ -268,6 +372,10 @@ const _scenes = {
     'history-limited',
     'composer',
     'overflow-menu',
+    'dense-header',
+    'dense-menu',
+    'dense-outline',
+    'dense-search',
   ],
   'timeline': [
     'dates',
@@ -285,14 +393,14 @@ const _scenes = {
 // Desktop only: the inbox is a fixed 342x620 box on both providers.
 const _inboxStates = ['empty'];
 
-
 /// Every extension thread / timeline case, keyed by id (3 themes each).
 final Map<String, ParityCase> extThreadCases = {
   for (final MapEntry(key: scene, value: states) in _scenes.entries)
     for (final platform in const ['desktop', 'mobile'])
       for (final state in states)
         for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
-          'components.thread-ext.$scene.$platform.$state.$theme': _case,
+          'components.thread-ext.$scene.$platform.$state.$theme':
+              state.startsWith('dense-') ? _denseCase : _case,
   for (final state in _inboxStates)
     for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
       'components.thread-ext.inbox.desktop.$state.$theme': _case,

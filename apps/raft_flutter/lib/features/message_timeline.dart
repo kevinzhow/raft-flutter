@@ -5,7 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
-import 'package:raft_ui/raft_ui.dart' show raftText;
+import 'package:raft_ui/raft_ui.dart' show RaftThreadOutlineGutter, raftText;
 
 import 'message_preparation.dart';
 import 'timeline_scrollbar.dart';
@@ -525,6 +525,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       );
     }
     final forwardKey = ValueKey('timeline-forward-${widget.epoch}');
+    final gutter = RaftThreadOutlineGutter.maybeOf(context);
     final slivers = widget.slivers(historyList!, forwardList!);
     final behavior = ScrollConfiguration.of(context);
     final scrollbar = switch (behavior.getPlatform(context)) {
@@ -556,7 +557,16 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
             scrollCacheExtent: ScrollCacheExtent.pixels(
               widget.cacheExtent ?? nearbyCache,
             ),
-            slivers: slivers,
+            slivers: gutter == null
+                ? slivers
+                : [
+                    for (final sliver in slivers)
+                      SliverPadding(
+                        key: sliver.key,
+                        padding: gutter,
+                        sliver: sliver,
+                      ),
+                  ],
           ),
         ),
       ),
@@ -565,6 +575,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       list = RaftTimelineScrollbar(
         controller: widget.controller,
         driver: this,
+        endInset: gutter?.end ?? 0,
         child: list,
       );
     }

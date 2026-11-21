@@ -81,6 +81,89 @@
   }
  },
  "routeSets": {
+  "ps-thread-preview": {
+   "GET /public/servers/raft-design": {
+    "server": {
+     "id": "srv-public",
+     "name": "Raft Design",
+     "slug": "raft-design",
+     "avatarUrl": null
+    },
+    "channels": [
+     {
+      "id": "pub-general",
+      "name": "general",
+      "description": "Announcements and community news"
+     },
+     {
+      "id": "pub-crit",
+      "name": "design-crit",
+      "description": "Share work in progress for feedback"
+     },
+     {
+      "id": "pub-help",
+      "name": "help",
+      "description": null
+     }
+    ],
+    "canJoinAsGuest": false
+   },
+   "POST /public/servers/raft-design/join-as-guest": {
+    "ok": true
+   },
+   "GET /public/servers/raft-design/threads/thread-1/messages": {
+    "messages": [
+     {
+      "id": "t1",
+      "senderType": "user",
+      "sender": {
+       "displayName": "Jun",
+       "avatarUrl": null,
+       "description": null
+      },
+      "messageType": "chat",
+      "content": "The new thread rail is clearer.",
+      "createdAt": "2026-06-19T04:37:00.000Z",
+      "threadId": null,
+      "replyCount": 0
+     }
+    ]
+   },
+   "GET /public/servers/raft-design/channels/pub-general/messages": {
+    "messages": [
+     {
+      "id": "m4",
+      "senderType": "user",
+      "sender": {
+       "displayName": "Wenyi",
+       "avatarUrl": null,
+       "description": null
+      },
+      "messageType": "chat",
+      "content": "Feedback on the new thread rail?",
+      "createdAt": "2026-06-19T04:20:00.000Z",
+      "threadId": "thread-1",
+      "replyCount": 1,
+      "latestReplies": [
+       {
+        "messageId": "t1",
+        "senderName": "Jun",
+        "senderDisplayName": "Jun",
+        "senderType": "user",
+        "preview": "The new thread rail is clearer.",
+        "createdAt": "2026-06-19T04:37:00.000Z"
+       }
+      ]
+     }
+    ]
+   },
+   "GET /public/servers/raft-design/channels/pub-crit/messages": {
+    "messages": []
+   },
+   "GET /public/servers/raft-design/channels/pub-help/messages": {
+    "messages": []
+   }
+  },
   "ps-joinable": {
    "GET /public/servers/raft-design": {
     "server": {

@@ -6,15 +6,20 @@ import 'package:flutter/services.dart';
 import 'adaptive_workspace.dart'
     show RaftAdaptiveWorkspace, RaftThreadPlacement;
 import 'design_primitives.dart';
+import 'focus_visible.dart';
 import 'channel_header.dart' show raftConversationHeaderToggle;
 import 'conversation_surface.dart';
 import 'icons.dart';
+import 'interaction.dart' show RaftInteraction;
 import 'localization.dart';
 import 'panel_layout.dart';
+import 'recipe_surface.dart';
+import 'recipes/panel_header.g.dart' as recipes;
 import 'side_panel_frame.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'tooltip.dart';
+import 'raft/button.dart';
 import 'raft/ui_tokens.dart';
 
 /// Mounted Web ThreadPanel presentation, independent of the host OS.
@@ -162,14 +167,13 @@ class RaftThreadHeader extends StatelessWidget {
     final showClose = (showCloseOverride ?? (!folded && recipe.showClose));
     final toggleFocus = allowFocusMode ? placement?.toggleFocus : null;
     final focused = placement?.focused ?? false;
-    final inline =
-        !stackMeta && !grows && (viewportWidth ?? viewport.width) >= 768;
+    final width = viewportWidth ?? viewport.width;
+    final inline = !stackMeta && !grows && width >= 768;
     final titleStyle = tokens.scale(tokens.typeSlot('headline'));
-    final metaStyle = tokens.scale(
-      tokens.typeSlot('mono-meta'),
-      mono: true,
-      color: tokens.ui.foregroundHint,
-    );
+    final metaStyle = recipes.RaftPanelHeaderRecipe.resolve(
+      tokens: tokens.recipeTokens,
+      states: tokens.recipeStates(responsive: true),
+    ).meta.text(tokens.recipeTokens);
 
     final title = interactiveTitle && onJumpToStart != null
         ? RaftTooltip(
@@ -223,13 +227,20 @@ class RaftThreadHeader extends StatelessWidget {
               ],
             ),
           );
+    final desktopBar =
+        presentation == RaftThreadPresentation.side &&
+        !showBack &&
+        usesDesktopBar(context);
     final header = RaftPanelHeaderBar(
       title: threadLabel,
+      desktopBar: desktopBar,
       titleSlot: meta == null
           ? Align(alignment: AlignmentDirectional.centerStart, child: title)
           : inline
           ? Row(
               spacing: 8,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 title,
                 Flexible(child: meta),
@@ -256,6 +267,7 @@ class RaftThreadHeader extends StatelessWidget {
             glyph: focused ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
             label: raftText(context, focused ? 'Restore' : 'Expand'),
             pressed: focused,
+            desktopBar: desktopBar,
             onPressed: toggleFocus,
           ),
         if (showClose && onClose != null)
@@ -263,6 +275,7 @@ class RaftThreadHeader extends StatelessWidget {
             key: closeKey,
             glyph: RaftGlyph.x,
             tooltip: closeLabel,
+            desktopBar: desktopBar,
             onPressed: onClose,
           ),
       ],
@@ -278,6 +291,16 @@ class RaftThreadHeader extends StatelessWidget {
       child: header,
     );
   }
+
+  static bool usesDesktopBar(BuildContext context) {
+    final placement = RaftThreadPlacement.maybeOf(context);
+    return placement != null &&
+        placement.split &&
+        !placement.foldedInSideRow &&
+        !RaftAdaptiveWorkspace.compactOf(context) &&
+        RaftTokens.of(context).desktop &&
+        !RaftInteraction.of(context).touch;
+  }
 }
 
 /// Slot action for an app-owned command menu, not a second follow state store.
@@ -287,19 +310,32 @@ class RaftThreadOverflowAction extends StatelessWidget {
     super.key,
     required this.label,
     this.onPressed,
+    this.desktopBar = false,
   });
   final String label;
+  final bool desktopBar;
   final VoidCallback? onPressed;
+
+  static bool opensFromPointer(BuildContext context) =>
+      RaftThreadHeader.usesDesktopBar(context) &&
+      !RaftFocusVisible.shared.keyboard;
 
   // ThreadOverflowMenu trigger: raft-ui PanelAction with EllipsisVertical
   // (Web ThreadOverflowMenu.tsx); the pack's `panelAction.surface` picks the
   // drawing (RaftPanelIconButton).
   @override
-  Widget build(BuildContext context) => RaftPanelIconButton(
-    glyph: RaftGlyph.ellipsisVertical,
-    tooltip: label,
-    onPressed: onPressed,
-  );
+  Widget build(BuildContext context) => desktopBar
+      ? RaftPanelAction(
+          desktopBar: true,
+          glyph: RaftGlyph.ellipsisVertical,
+          tooltip: label,
+          onPressed: onPressed,
+        )
+      : RaftPanelIconButton(
+          glyph: RaftGlyph.ellipsisVertical,
+          tooltip: label,
+          onPressed: onPressed,
+        );
 }
 
 /// Web ThreadPanel `thread-search-bar`: a search icon, the query field, the
@@ -333,7 +369,8 @@ class RaftThreadSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final muted = t.muted;
+    final muted = t.ui.foregroundHint;
+    final closeLabel = raftText(context, 'Close thread search');
     final hint = raftText(
       context,
       task ? 'Search this task' : 'Search this thread',
@@ -357,20 +394,21 @@ class RaftThreadSearchBar extends StatelessWidget {
         children: [
           Expanded(
             child: ListenableBuilder(
-              listenable: focusNode,
+              listenable: Listenable.merge([
+                focusNode,
+                RaftFocusVisible.shared,
+              ]),
               builder: (context, _) {
-                final focused = focusNode.hasFocus;
+                final focused =
+                    focusNode.hasFocus && RaftFocusVisible.shared.keyboard;
                 return Container(
                   constraints: const BoxConstraints(minHeight: 32),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
-
                   decoration: BoxDecoration(
-                    color: t.panel,
-                    border: Border.all(
-                      color: t.colors['line-field']!,
-                      width: 1.5,
-                    ),
-                    boxShadow: focused ? t.themeShadows.sm.outer : const [],
+                    color: t.colors['layer-card'],
+                    borderRadius: BorderRadius.circular(t.radius),
+                    border: Border.all(color: t.ui.lineField, width: 1.5),
+                    boxShadow: focused ? t.focusShadows : const [],
                   ),
                   child: Row(
                     spacing: 8,
@@ -465,18 +503,29 @@ class RaftThreadSearchBar extends StatelessWidget {
             minimumTargetSize: 28,
             onPressed: canStep ? () => onStep(1) : null,
           ),
-          RaftControl(
-            key: const Key('thread-search-close'),
-            recipe: _ThreadCloseRecipe(t),
-            tooltip: raftText(context, 'Close thread search'),
-            semanticLabel: raftText(context, 'Close thread search'),
-            onPressed: onClose,
-            visualWidth: 28,
-            visualHeight: 28,
-            minimumTargetSize: 28,
-            padding: EdgeInsets.zero,
-            child: const RaftIcon(RaftGlyph.x, size: 14),
-          ),
+          if (t.desktop)
+            RaftControl(
+              key: const Key('thread-search-close'),
+              recipe: _ThreadCloseRecipe(t),
+              tooltip: closeLabel,
+              semanticLabel: closeLabel,
+              onPressed: onClose,
+              visualWidth: 28,
+              visualHeight: 28,
+              minimumTargetSize: 28,
+              padding: EdgeInsets.zero,
+              child: const RaftIcon(RaftGlyph.x, size: 14),
+            )
+          else
+            RaftButton(
+              key: const Key('thread-search-close'),
+              uiVariant: RaftButtonVariant.ghost,
+              uiSize: RaftButtonSize.iconMd,
+              glyph: RaftGlyph.x,
+              glyphSize: 14,
+              tooltip: closeLabel,
+              onPressed: onClose,
+            ),
         ],
       ),
     );
@@ -495,7 +544,7 @@ class _ThreadCloseRecipe extends _ThreadBackRecipe {
     bool pressed = false,
   }) => backgroundFor(hovered: hovered);
   @override
-  Color get foreground => tokens.muted;
+  Color get foreground => tokens.ink;
   @override
   Color backgroundFor({bool hovered = false}) =>
       (hovered) ? tokens.colors['fill-muted']! : background;

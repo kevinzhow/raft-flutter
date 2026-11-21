@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -52,6 +53,7 @@ class _ThreadActionsState extends State<ThreadActions> {
   String? get error => errorNotice.message;
   late final String authority;
   OverlayEntry? menu;
+  final menuAnchor = GlobalKey();
   final menuGroup = Object();
   ThreadOutline? outline;
 
@@ -174,26 +176,19 @@ class _ThreadActionsState extends State<ThreadActions> {
     menu = null;
   }
 
-  void openMenu(BuildContext anchor, VoidCallback openTimeline) {
+  void openMenu(VoidCallback openTimeline) {
     if (!current) return;
     if (menu != null) {
       closeMenu();
       return;
     }
-    final box = anchor.findRenderObject() as RenderBox?;
+    // The desktop Web menu gives pointer opens to the list, so the first
+    // arrow starts at an edge. Keyboard opens already focus Search.
+    final pointerOpen = RaftThreadOverflowAction.opensFromPointer(context);
     final overlay = Overlay.of(context);
-    final overlayBox = overlay.context.findRenderObject() as RenderBox?;
-    if (box == null || overlayBox == null) return;
-    final rect =
-        box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
     menu = OverlayEntry(
-      builder: (context) => Positioned(
-        left: (rect.right - 192).clamp(
-          8.0,
-          (overlayBox.size.width - 200).clamp(8.0, double.infinity),
-        ),
-        top: rect.bottom + 4,
-        child: RaftBackDismiss(
+      builder: (context) {
+        final popup = RaftBackDismiss(
           routeContext: this.context,
           onDismiss: closeMenu,
           child: TapRegion(
@@ -203,10 +198,12 @@ class _ThreadActionsState extends State<ThreadActions> {
               onDismiss: closeMenu,
               takeFocus: true,
               child: RaftMenuPanel(
+                kind: RaftMenuKind.dropdownMenu,
                 onDismiss: closeMenu,
                 children: [
                   if (widget.onFollowers != null)
                     RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
                       label: raftText(context, 'Following agents'),
                       onPressed: () {
                         closeMenu();
@@ -215,9 +212,10 @@ class _ThreadActionsState extends State<ThreadActions> {
                     ),
                   if (widget.onSearch != null)
                     RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
                       label: raftText(context, 'Search in thread'),
                       glyph: RaftGlyph.search,
-                      autofocus: true,
+                      autofocus: !pointerOpen,
                       onPressed: () {
                         closeMenu();
                         if (current) widget.onSearch!();
@@ -225,6 +223,7 @@ class _ThreadActionsState extends State<ThreadActions> {
                     ),
                   if (outline?.hasReplies(widget.parentMessageId) == true)
                     RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
                       key: const Key('thread-timeline-menu-item'),
                       label: raftText(context, 'Timeline'),
                       glyph: RaftGlyph.list,
@@ -235,6 +234,7 @@ class _ThreadActionsState extends State<ThreadActions> {
                     ),
                   if (widget.onViewChannel != null)
                     RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
                       label: raftText(context, 'View in channel'),
                       glyph: RaftGlyph.mapPin,
                       onPressed: () {
@@ -244,6 +244,7 @@ class _ThreadActionsState extends State<ThreadActions> {
                     ),
                   if (following == true && w.threadChannelId != null)
                     RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
                       key: const Key('thread-mark-unread'),
                       label: raftText(context, 'Mark as unread'),
                       glyph: RaftGlyph.messageSquareDot,
@@ -258,14 +259,15 @@ class _ThreadActionsState extends State<ThreadActions> {
                       },
                     ),
                   RaftMenuItem(
+                    kind: RaftMenuKind.dropdownMenu,
                     key: const Key('thread-follow-menu-item'),
                     label: raftText(
                       context,
                       following == true ? 'Unfollow thread' : 'Follow thread',
                     ),
                     glyph: following == true
-                        ? RaftGlyph.messageCircleOff
-                        : RaftGlyph.messageCirclePlus,
+                        ? RaftGlyph.unfollowThread
+                        : RaftGlyph.followThread,
                     onPressed: following == null || busy
                         ? null
                         : () {
@@ -275,6 +277,7 @@ class _ThreadActionsState extends State<ThreadActions> {
                   ),
                   if (error != null || loadError != null)
                     RaftMenuItem(
+                      kind: RaftMenuKind.dropdownMenu,
                       label: raftText(context, 'Retry'),
                       glyph: RaftGlyph.refreshCw,
                       onPressed: () {
@@ -286,10 +289,43 @@ class _ThreadActionsState extends State<ThreadActions> {
               ),
             ),
           ),
-        ),
-      ),
+        );
+        return Positioned.fill(
+          child: RaftAnchoredPopup(
+            anchorKey: menuAnchor,
+            alignRight: Directionality.of(context) == TextDirection.ltr,
+            gap: 4,
+            snapToPixel: true,
+            child: pointerOpen
+                ? Focus(
+                    canRequestFocus: false,
+                    includeSemantics: false,
+                    onKeyEvent: focusMenuEdge,
+                    child: popup,
+                  )
+                : popup,
+          ),
+        );
+      },
     );
     overlay.insert(menu!);
+  }
+
+  KeyEventResult focusMenuEdge(FocusNode _, KeyEvent event) {
+    final scope = FocusManager.instance.primaryFocus;
+    if (scope is! FocusScopeNode || event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.arrowDown &&
+        key != LogicalKeyboardKey.arrowUp) {
+      return KeyEventResult.ignored;
+    }
+    final entries = scope.traversalDescendants;
+    if (entries.isEmpty) return KeyEventResult.ignored;
+    (key == LogicalKeyboardKey.arrowDown ? entries.first : entries.last)
+        .requestFocus();
+    return KeyEventResult.handled;
   }
 
   void jumpToOutlineRow(String id) {
@@ -316,12 +352,14 @@ class _ThreadActionsState extends State<ThreadActions> {
       ? ThreadOutlineAnchor(
           outline: outline,
           onJump: jumpToOutlineRow,
-          builder: (anchor, openTimeline) => TapRegion(
+          builder: (_, openTimeline) => TapRegion(
+            key: menuAnchor,
             groupId: menuGroup,
             child: RaftThreadOverflowAction(
               key: const Key('thread-options'),
               label: raftText(context, 'Thread actions'),
-              onPressed: current ? () => openMenu(anchor, openTimeline) : null,
+              desktopBar: RaftThreadHeader.usesDesktopBar(context),
+              onPressed: current ? () => openMenu(openTimeline) : null,
             ),
           ),
         )
@@ -356,11 +394,10 @@ class _ThreadActionsState extends State<ThreadActions> {
                 RaftButton.text(
                   key: const Key('thread-follow-toggle'),
                   onPressed: following == null || busy ? null : toggle,
-                  icon: // Web ThreadOverflowMenu.tsx:110 MessageCircleOff/MessageCirclePlus.
-                  RaftIcon(
+                  icon: RaftIcon(
                     following == true
-                        ? RaftGlyph.messageCircleOff
-                        : RaftGlyph.messageCirclePlus,
+                        ? RaftGlyph.unfollowThread
+                        : RaftGlyph.followThread,
                     size: 18,
                   ),
                   label: Text(

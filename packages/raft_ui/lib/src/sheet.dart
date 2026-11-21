@@ -80,6 +80,20 @@ abstract final class RaftSheetMetrics {
       _popup(t).backgroundColor?.resolve(t.recipeTokens) ??
       t.colors['layer-popover']!;
 
+  static double snapOverlayOpacity(RaftTokens t) {
+    final overlay = RaftDrawerRecipe.resolve(
+      side: RaftDrawerRecipeSide.down,
+      axis: RaftDrawerRecipeAxis.y,
+      snapPoints: true,
+      states: t.recipeStates(),
+      tokens: t.recipeTokens,
+    ).overlay;
+    return switch (overlay['--drawer-overlay-min-opacity']) {
+      CssNum(:final value) => value,
+      _ => 0,
+    };
+  }
+
   /// The outer shadows: the ring and float shadow.
   static List<BoxShadow> shadows(RaftTokens t) =>
       _popup(t).boxShadow.toBoxShadows(t.recipeTokens);

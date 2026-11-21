@@ -103,6 +103,40 @@ void main() {
       },
     );
   }
+  testWidgets('preview fills its column up to the rounded 560px frame', (
+    tester,
+  ) async {
+    var openings = 0;
+    final surface = find.byType(RaftInlineThreadSurface);
+    final face = find.descendant(
+      of: surface,
+      matching: find.byType(AnimatedContainer),
+    );
+
+    await tester.pumpWidget(host(width: 720, onOpen: () => openings++));
+    final wide = tester.getRect(face);
+    expect(wide.width, 560);
+    expect(wide.left, tester.getRect(surface).left);
+    await tester.tapAt(Offset(wide.right + 40, wide.center.dy));
+    await tester.pump();
+    expect(openings, 0);
+    await tester.tap(find.text('Looks good'));
+    await tester.pump();
+    expect(openings, 1);
+
+    for (final dark in [false, true]) {
+      await tester.pumpWidget(host(dark: dark));
+      await tester.pumpAndSettle();
+      final paint =
+          tester.widget<AnimatedContainer>(face).decoration! as BoxDecoration;
+      final tokens = RaftTokens.of(tester.element(face));
+      expect(tester.getSize(face).width, 390);
+      expect(paint.borderRadius, BorderRadius.circular(10));
+      expect(paint.border, isNull);
+      expect(paint.color, tokens.colors['fill-muted']);
+    }
+  });
+
   testWidgets('whole surface has one enabled keyboard action', (tester) async {
     final focus = FocusNode();
     addTearDown(focus.dispose);

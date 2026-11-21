@@ -131,14 +131,14 @@ void main() {
 
         viewport.jumpTo(viewport.offset - 600);
         await tester.pumpAndSettle();
-        expect(find.text('Back to Bottom'), findsOneWidget);
+        expect(find.text('Back to bottom'), findsOneWidget);
         final timeline = tester.getRect(
           find.byKey(const ValueKey('current-timeline')),
         );
         final composer = tester.getRect(find.byType(RaftComposer));
         final control = tester.getRect(
           find.ancestor(
-            of: find.text('Back to Bottom'),
+            of: find.text('Back to bottom'),
             matching: find.byType(RaftTimelineBottomButtonBody),
           ),
         );

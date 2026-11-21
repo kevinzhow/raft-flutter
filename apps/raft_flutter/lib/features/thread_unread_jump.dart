@@ -439,7 +439,10 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
                     widget.thread ? '{count} New' : '{count} New Messages',
                     {'count': widget.bottomCount},
                   )
-                : raftText(context, 'Back to Bottom'),
+                : raftText(
+                    context,
+                    widget.thread ? 'Back to bottom' : 'Back to Bottom',
+                  ),
             onPressed: widget.onBottom,
           )
         : null;

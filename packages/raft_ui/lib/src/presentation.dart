@@ -162,6 +162,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     bool sheetFillsHeight = false,
     double Function(BuildContext)? sheetFixedHeight,
     double sheetInitialSize = RaftSheetMetrics.largeDetent,
+    double? drawerMaxSize,
     double sideWidth = 420,
     bool reduceMotion = false,
   }) : this._(
@@ -181,6 +182,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
          sheetFillsHeight: sheetFillsHeight,
          sheetFixedHeight: sheetFixedHeight,
          sheetInitialSize: sheetInitialSize,
+         drawerMaxSize: drawerMaxSize,
          sideWidth: sideWidth,
          reduceMotion: reduceMotion,
        );
@@ -202,9 +204,11 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     required this.sheetFillsHeight,
     required this.sheetFixedHeight,
     required this.sheetInitialSize,
+    required this.drawerMaxSize,
     required this.sideWidth,
     required bool reduceMotion,
-  }) : super(
+  }) : assert(drawerMaxSize == null || drawerMaxSize > sheetInitialSize),
+       super(
          builder: _sheetBuilder.call,
          capturedThemes: capturedThemes,
          barrierLabel: label ?? 'Dismiss',
@@ -294,6 +298,11 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
   final double Function(BuildContext)? sheetFixedHeight;
   final double sheetInitialSize;
 
+  /// Opts a scrolling sheet into the Drawer snap-point recipe. The extent is
+  /// measured against the available screen, including after a resize.
+  final double? drawerMaxSize;
+  late final _drawerExtent = ValueNotifier(sheetInitialSize);
+
   final contentKey = GlobalKey(debugLabel: 'presented content');
 
   /// The form the live width gives; a popover has no frame here.
@@ -330,7 +339,11 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
             )
           : _DetentSheet(
               initialSize: sheetInitialSize,
+              maxSize: drawerMaxSize ?? RaftSheetMetrics.largeDetent,
               closesOnDrag: dragDismissible,
+              onExtent: drawerMaxSize == null
+                  ? null
+                  : (size) => _drawerExtent.value = size,
               builder: (controller, drag) => surface(
                 RaftSheetScope(
                   scrollController: controller,
@@ -377,10 +390,35 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     );
     // A full page covers the window; a scrim under it would only cost a blur.
     return Builder(
-      builder: (context) => formOf(context) == RaftSurfaceForm.page
-          ? const SizedBox.shrink()
-          : barrier,
+      builder: (context) {
+        final form = formOf(context);
+        if (form == RaftSurfaceForm.page) return const SizedBox.shrink();
+        final maxSize = drawerMaxSize;
+        if (form != RaftSurfaceForm.sheet || maxSize == null) return barrier;
+        final minimum = RaftSheetMetrics.snapOverlayOpacity(
+          RaftTokens.of(context),
+        );
+        return ValueListenableBuilder<double>(
+          valueListenable: _drawerExtent,
+          child: barrier,
+          builder: (context, extent, child) => Opacity(
+            opacity:
+                (minimum +
+                        (1 - minimum) *
+                            (extent - sheetInitialSize) /
+                            (maxSize - sheetInitialSize))
+                    .clamp(minimum, 1),
+            child: child,
+          ),
+        );
+      },
     );
+  }
+
+  @override
+  void dispose() {
+    if (drawerMaxSize != null) _drawerExtent.dispose();
+    super.dispose();
   }
 
   @override
@@ -420,10 +458,13 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
 class _DetentSheet extends StatefulWidget {
   const _DetentSheet({
     required this.initialSize,
+    required this.maxSize,
     required this.builder,
     this.closesOnDrag = true,
+    this.onExtent,
   });
-  final double initialSize;
+  final double initialSize, maxSize;
+  final ValueChanged<double>? onExtent;
   final bool closesOnDrag;
   final Widget Function(ScrollController controller, RaftSheetPointerDrag drag)
   builder;
@@ -447,8 +488,8 @@ class _DetentSheetState extends State<_DetentSheet>
   double get minSize => widget.closesOnDrag ? _minSize : widget.initialSize;
 
   List<double> get snapSizes => [
-    if (widget.initialSize < RaftSheetMetrics.largeDetent) widget.initialSize,
-    RaftSheetMetrics.largeDetent,
+    if (widget.initialSize < widget.maxSize) widget.initialSize,
+    widget.maxSize,
   ];
 
   @override
@@ -459,7 +500,7 @@ class _DetentSheetState extends State<_DetentSheet>
     controller.jumpTo(
       (controller.size - dy / extentHeight).clamp(
         widget.closesOnDrag ? _minSize + .01 : minSize,
-        RaftSheetMetrics.largeDetent,
+        widget.maxSize,
       ),
     );
   }
@@ -483,7 +524,7 @@ class _DetentSheetState extends State<_DetentSheet>
       return;
     }
     final target = velocityDy < -700
-        ? RaftSheetMetrics.largeDetent
+        ? widget.maxSize
         : snapSizes.reduce(
             (a, b) => (a - size).abs() <= (b - size).abs() ? a : b,
           );
@@ -503,6 +544,14 @@ class _DetentSheetState extends State<_DetentSheet>
   }
 
   bool onExtent(DraggableScrollableNotification n) {
+    // Extent notifications arrive during layout. Repaint the sibling modal
+    // barrier after this frame's layout has finished.
+    final onExtent = widget.onExtent;
+    if (onExtent != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) onExtent(n.extent);
+      });
+    }
     if (!widget.closesOnDrag || n.extent > n.minExtent + .001) return false;
     close();
     return false;
@@ -542,7 +591,7 @@ class _DetentSheetState extends State<_DetentSheet>
           expand: false,
           initialChildSize: widget.initialSize,
           minChildSize: minSize,
-          maxChildSize: RaftSheetMetrics.largeDetent,
+          maxChildSize: widget.maxSize,
           snap: true,
           snapSizes: snapSizes,
           // The framework closes at the bottom with a raw pop; this sheet asks.
@@ -611,6 +660,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
   bool sheetFillsHeight = false,
   double Function(BuildContext)? sheetFixedHeight,
   double sheetInitialSize = RaftSheetMetrics.largeDetent,
+  double? drawerMaxSize,
 }) {
   final navigator = Navigator.of(context, rootNavigator: true);
   return RaftPresentedRoute<T>(
@@ -633,6 +683,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
     sheetFillsHeight: sheetFillsHeight,
     sheetFixedHeight: sheetFixedHeight,
     sheetInitialSize: sheetInitialSize,
+    drawerMaxSize: drawerMaxSize,
   );
 }
 

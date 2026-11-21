@@ -18,6 +18,9 @@
 // are answered by the provider spec for React and by the fake client for
 // Flutter).
 import { ThreadPanel as ParityExtThThreadPanel } from "../src/features/thread/ThreadPanel";
+import { planRow as parityExtThPlanRow } from "../src/components/layout/rowPlan";
+import { useRowPlanStore as parityExtThRowPlan } from "../src/components/layout/rowPlanStore";
+import { useThreadStore as parityExtThThreadStore } from "../src/store/threadStore";
 import parityExtThFixture from "virtual:parity-ext/thread";
 import type { CSSProperties as ParityExtThCSSProperties } from "react";
 
@@ -28,6 +31,8 @@ type ParityExtThProps = {
   channel: string;
   winY: number;
   winH: number;
+  longChannelName: string | null;
+  routeSet: string;
 };
 
 function parityExtThProps(): ParityExtThProps | null {
@@ -42,6 +47,8 @@ function parityExtThProps(): ParityExtThProps | null {
     channel: params.get("channel") ?? "channel-design",
     winY: Number(params.get("winY") ?? 0),
     winH: Number(params.get("winH") ?? 120),
+    longChannelName: params.get("longChannelName"),
+    routeSet: params.get("routeSet") ?? "",
   };
 }
 
@@ -52,11 +59,34 @@ function parityExtThTheme(): string {
 function parityExtThPrimeStores(props: ParityExtThProps) {
   primeDirectVisualStores(new URLSearchParams(window.location.search).get("case") ?? "");
   useChannelStore.setState({
-    channels: parityExtThFixture.channels as never,
+    channels: parityExtThFixture.channels.map((channel) =>
+      props.longChannelName && channel.id === props.channel
+        ? { ...channel, name: props.longChannelName }
+        : channel) as never,
     dmChannels: parityExtThFixture.dms as never,
     loading: false,
   });
   useMessageStore.setState({ currentChannelId: props.channel, currentUserId: fxOwner.id });
+  if (props.longChannelName) {
+    const thread = parityExtThFixture.thread;
+    const routes = (parityExtThFixture.routeSets as Record<string, Record<string, any>>)[props.routeSet];
+    const channelPage = routes[`GET /messages/channel/${thread.parentChannelId}`];
+    parityExtThThreadStore.setState({
+      openThreadChannelId: thread.threadChannelId,
+      openParentMessageId: thread.parentMessageId,
+      openParentChannelId: thread.parentChannelId,
+      summaries: channelPage.threadSummariesByParentMessageId,
+    });
+    if (props.platform === "desktop") {
+      const available = window.innerWidth - 56 - 240;
+      parityExtThRowPlan.setState({ plan: parityExtThPlanRow({
+        available, conversation: { saved: available - 400, contentMin: 360 },
+        thread: { saved: 400, contentMin: 360 },
+        columns: [{ key: "col:0", regions: ["thread"], mins: [360], saved: 400 }],
+        expanded: null, expandFold: false, wasFolded: false,
+      }) });
+    }
+  }
 }
 
 function ParityExtThView({ props }: { props: ParityExtThProps }) {
@@ -65,9 +95,11 @@ function ParityExtThView({ props }: { props: ParityExtThProps }) {
   const theme = parityExtThTheme();
   const brutal = theme === "brutal-light";
   // AppShell root sets the header height the PanelHeader recipe reads.
-  const shellVars = { ["--shell-header-height" as string]: "56px" } as ParityExtThCSSProperties;
+  const shellVars = { ["--shell-header-height" as string]: props.longChannelName ? "var(--header-height)" : "56px" } as ParityExtThCSSProperties;
   const mobile = props.platform === "mobile";
-  const viewportHeight = window.innerHeight;
+  // WorkspaceView's mounted desktop pane starts below its 44px window bar.
+  const paneInset = props.longChannelName && !mobile ? 44 : 0;
+  const viewportHeight = window.innerHeight - paneInset;
   // Desktop main column: viewport - LeftRail (brutal 64 / elegant 56) - 240 sidebar.
   const width = mobile
     ? 390
@@ -86,8 +118,8 @@ function ParityExtThView({ props }: { props: ParityExtThProps }) {
     );
   }
   return (
-    <main className="min-h-screen bg-white p-0 font-display text-black">
-      <div data-visual-case={caseId} style={{ ...shellVars, width, height: props.winH, overflow: "hidden", position: "relative" }}>
+    <main className="min-h-screen bg-white p-0 font-display text-black" style={{ paddingTop: paneInset }}>
+      <div data-visual-case={caseId} style={{ ...shellVars, width, height: props.winH, overflow: "hidden", position: "relative", marginLeft: props.longChannelName && !mobile ? "auto" : undefined }}>
         <div
           // The transform also makes the column the containing block of the
           // mobile page's `fixed` header, so a window cannot leak it.
@@ -101,6 +133,7 @@ function ParityExtThView({ props }: { props: ParityExtThProps }) {
           {props.surface === "thread" ? (
             <ParityExtThThreadPanel
               presentation="side"
+              allowExpand={props.longChannelName ? !mobile : undefined}
               threadIdentity={{ parentMessageId: t.parentMessageId, parentChannelId: t.parentChannelId, threadChannelId: t.threadChannelId }}
               onClose={() => undefined}
             />

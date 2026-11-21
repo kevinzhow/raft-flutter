@@ -33,6 +33,8 @@ import 'package:re_highlight/re_highlight.dart';
 
 import 'panel_layout.dart' show RaftCssLineBox, raftTextMetricsCache;
 import 'raft_selection_area.dart';
+import 'recipe_surface.dart';
+import 'recipes/message_item.g.dart';
 import 'text_selection_toolbar.dart';
 import 'viewport_breakpoints.dart';
 
@@ -2551,8 +2553,7 @@ List<(String, bool)>? _searchFragments(String text, String query) {
   return out;
 }
 
-/// Web `ThreadSearchFragmentHighlight`: `bg-primary-soft text-foreground-strong`,
-/// Brutal `bg-soft-signal/70 text-inherit`.
+/// Web MessageItemSearchMatch paints the query inside the active message.
 ///
 /// The fill is a [RaftBackgroundSpan] (painted below the selection highlight),
 /// never a [TextStyle.backgroundColor].
@@ -2563,12 +2564,22 @@ InlineSpan _searchMarkSpan(
   GestureRecognizer? recognizer,
 }) {
   final t = RaftTokens.of(context);
+  final tokens = t.recipeTokens;
+  final style = RaftMessageItemRecipe.resolve(
+    tokens: tokens,
+    states: t.recipeStates(),
+  ).searchMatch;
   return RaftBackgroundSpan(
     text: text,
     recognizer: recognizer,
     mouseCursor: recognizer == null ? null : SystemMouseCursors.click,
-    background: (t.colors['primary-soft'])!,
-    style: base.copyWith(backgroundColor: Colors.transparent, color: t.strong),
+    background: style.backgroundColor?.resolve(tokens) ?? Colors.transparent,
+    radius: style.borderRadius?.topLeft.x ?? 0,
+    verticalInset: style.padding.top,
+    style: base.copyWith(
+      backgroundColor: Colors.transparent,
+      color: style.text(tokens).color,
+    ),
   );
 }
 

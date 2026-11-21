@@ -1,3 +1,5 @@
+import 'package:raft_ui/raft_ui.dart' show RaftIdleTimer;
+
 import 'history_memory.dart';
 import 'message_history.dart';
 import 'message_history_pages.dart';
@@ -6,20 +8,34 @@ import 'workspace_message_windows.dart';
 
 /// Adapter for existing body owners. The pool stores no message authority.
 class MessageHistoryMemory {
+  static final _uncachedSamples = Expando<RaftIdleTimer>();
+
   static void sample(
     WorkspaceMessageHost host,
     Object owner,
-    void Function() capture,
-  ) {
+    void Function() capture, {
+    bool sampleWithoutStorage = false,
+  }) {
     final w = host.messageDomain;
-    return MessageHistoryPages.storage(w.device.cache)?.memory
-        .samplePosition(owner, capture);
+    final memory = MessageHistoryPages.storage(w.device.cache)?.memory;
+    if (memory != null) {
+      memory.samplePosition(owner, capture);
+    } else if (sampleWithoutStorage) {
+      // The visible thread row also drives the live outline without a cache.
+      final timer = _uncachedSamples[owner] ??= RaftIdleTimer(
+        yieldToAnimation: false,
+      );
+      if (!timer.isActive) {
+        timer.start(const Duration(milliseconds: 200), capture);
+      }
+    }
   }
 
   static void cancelSample(WorkspaceMessageHost host, Object owner) {
     final w = host.messageDomain;
-    return MessageHistoryPages.storage(w.device.cache)?.memory
-        .cancelSample(owner);
+    _uncachedSamples[owner]?.cancel();
+    _uncachedSamples[owner] = null;
+    MessageHistoryPages.storage(w.device.cache)?.memory.cancelSample(owner);
   }
 
   static void attach(WorkspaceMessageHost host, MessageHistoryStorage storage) {

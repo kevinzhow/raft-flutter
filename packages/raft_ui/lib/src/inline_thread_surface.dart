@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'message_row_recipe.dart' show RaftMessageSizeScope, RaftMessageSizeTier;
 import 'theme.dart';
 import 'recipe_surface.dart';
+import 'recipes/message_embed.g.dart';
+import 'recipes/recipe_runtime.dart' show RaftSlotStyle;
 import 'text_scaling.dart' show RaftScaled;
 
 /// Plain recipient-projected fields. Avatar resolution and clock formatting are
@@ -39,14 +41,19 @@ class RaftInlineThreadRecipe {
   /// (`getMessagePreviewSizeClass`, `getMessagePreviewTimeSizeClass`).
   final RaftMessageSizeTier sizeTier;
 
-  /// raft-ui 0.95.3 `messageReplies`: `mt-2 gap-1 px-2.5 py-2 bg-fill-muted`,
-  /// no border or radius.
+  /// raft-ui 0.95.3 `messageReplies`: `mt-2 gap-1 px-2.5 py-2 bg-fill-muted`
+  /// and `border-0` over the `messageEmbed` content frame.
   EdgeInsets get padding =>
       const EdgeInsets.symmetric(horizontal: 10, vertical: 8);
   double get topGap => 8;
   double get rowGap => 4;
   double get summaryBottomGap => 0;
-  BorderRadius get radius => BorderRadius.zero;
+  RaftSlotStyle get _frame => RaftMessageEmbedRecipe.resolve(
+    size: RaftMessageEmbedRecipeSize.content,
+    tokens: tokens.recipeTokens,
+  ).root;
+  BorderRadius get radius => _frame.borderRadius ?? BorderRadius.zero;
+  double? get maxWidth => _frame.maxWidth;
   Color get normal => tokens.colors['fill-muted']!;
 
   /// `hover:overlay-subtle`: the subtle fill laid over the block.
@@ -162,12 +169,14 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
       sizeTier: RaftMessageSizeScope.of(context),
     );
     final enabled = widget.onOpen != null;
+    final radius = recipe.radius;
     final content = AnimatedContainer(
       duration: MediaQuery.disableAnimationsOf(context)
           ? Duration.zero
           : const Duration(milliseconds: 150),
       padding: recipe.padding,
       decoration: RaftCssBoxDecoration(
+        borderRadius: radius,
         color: hovered ? widget.hoverBackground ?? recipe.hover : recipe.normal,
         boxShadow: hovered ? widget.hoverShadows : widget.normalShadows,
       ),
@@ -191,7 +200,7 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
         ),
       ),
     );
-    return Padding(
+    final surface = Padding(
       padding: EdgeInsets.only(top: recipe.topGap),
       child: Semantics(
         button: true,
@@ -235,7 +244,7 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
                       child: IgnorePointer(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            borderRadius: recipe.radius,
+                            borderRadius: radius,
                             border: Border.all(
                               color: t.colors['line-strong']!,
                               width: 1,
@@ -249,6 +258,17 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
             ),
           ),
         ),
+      ),
+    );
+    return Align(
+      alignment: AlignmentDirectional.topStart,
+      widthFactor: 1,
+      heightFactor: 1,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: recipe.maxWidth ?? double.infinity,
+        ),
+        child: surface,
       ),
     );
   }

@@ -188,7 +188,7 @@ void main() {
     }
 
     expect(_seen('The first reply'), isTrue);
-    expect(_seen('1 replies'), isTrue);
+    expect(find.text('1 reply'), findsOneWidget);
     await openFollowers();
     expect(followerRow('a1'), findsOneWidget);
     expect(followerRow('a2'), findsNothing);
@@ -246,8 +246,8 @@ void main() {
       reason: 'no stale parent message left',
     );
     expect(_seen('A newer reply'), isTrue, reason: 'new reply');
-    expect(_seen('2 replies'), isTrue, reason: 'new reply count');
-    expect(_seen('1 replies'), isFalse, reason: 'old reply count');
+    expect(find.text('2 replies'), findsOneWidget, reason: 'new reply count');
+    expect(find.text('1 reply'), findsNothing, reason: 'old reply count');
     await openFollowers();
     expect(followerRow('a1'), findsOneWidget);
     expect(followerRow('a2'), findsOneWidget);

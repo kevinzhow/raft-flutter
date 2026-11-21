@@ -1665,6 +1665,7 @@ class RaftMessageTile extends StatelessWidget {
     this.coarsePointer = false,
     this.popupOpen = false,
     this.highlighted = false,
+    this.searchMatch = false,
     this.compactSemantics = false,
     this.semanticsContent,
     this.semanticsActions = const [],
@@ -1709,6 +1710,7 @@ class RaftMessageTile extends StatelessWidget {
   /// Business adapters may supply a richer body without replacing message
   /// actions, thread controls, attachments, or reactions.
   final Widget? body, threadPreview, taskReference;
+  final bool searchMatch;
 
   /// Web v1.24 `TaskChipList`: the tasks created from this message (task
   /// v2), a block under the content, above the footer row.
@@ -1835,6 +1837,7 @@ class RaftMessageTile extends StatelessWidget {
       coarsePointer: coarsePointer,
       popupOpen: popupOpen,
       highlighted: highlighted,
+      searchMatch: searchMatch,
       toolbar: hoverToolbar,
       selectionLeading: selectionLeading,
       checked: checked,

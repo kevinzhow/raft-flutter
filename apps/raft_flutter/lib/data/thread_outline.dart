@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
@@ -41,6 +43,8 @@ class ThreadOutline extends ChangeNotifier {
   ThreadOutline({
     required this.channelId,
     required this.userId,
+    this.preferredTimezone,
+    this.preferredTimeFormat,
     required this._query,
     required this._isCurrent,
     required this._position,
@@ -48,20 +52,35 @@ class ThreadOutline extends ChangeNotifier {
 
   final String channelId;
   final String? userId;
+  final String? preferredTimezone, preferredTimeFormat;
   final Future<Object?> Function(String, {Map<String, dynamic>? query}) _query;
   final bool Function() _isCurrent;
   final ({String? jump, BigInt? reading}) Function() _position;
   List<ThreadOutlineItem> _items = const [];
   List<ThreadOutlineItem> get items => current ? _items : const [];
   bool _hasMore = false, _disposed = false;
+  BigInt? _visibleTop;
+  String? _leadingId;
+
+  void updateVisibleTop({BigInt? seq, String? leadingId}) {
+    if (!current || (_visibleTop == seq && _leadingId == leadingId)) return;
+    final previous = currentId;
+    _visibleTop = seq;
+    _leadingId = leadingId;
+    if (currentId != previous) notifyListeners();
+    unawaited(_loadToVisibleTop());
+  }
+
   String? get currentId {
     final (:jump, :reading) = _position();
     if (jump != null && items.any((item) => item.id == jump)) return jump;
-    if (reading != null) {
-      return items.reversed
-          .where((item) => item.seq <= reading)
-          .firstOrNull
-          ?.id;
+    final leading = _leadingId;
+    if (leading != null) {
+      return items.firstOrNull?.id == leading ? leading : null;
+    }
+    final top = _visibleTop ?? reading;
+    if (top != null) {
+      return items.reversed.where((item) => item.seq <= top).firstOrNull?.id;
     }
     return items.lastOrNull?.id;
   }
@@ -74,9 +93,27 @@ class ThreadOutline extends ChangeNotifier {
   bool hasReplies(String parentId) =>
       items.where((item) => item.id != parentId).take(4).length == 4;
 
-  Future<void> load() => _newestRead ??= _read(null).whenComplete(() {
-    _newestRead = null;
-  });
+  Future<void> load() =>
+      _newestRead ??= _read(null)
+          .then((_) => _loadToVisibleTop())
+          .whenComplete(() {
+            _newestRead = null;
+          });
+
+  Future<void> _loadToVisibleTop() async {
+    // The Web outline caps a single catch-up at ten pages.
+    for (
+      var page = 0;
+      page < 10 && current && _hasMore && items.isNotEmpty;
+      page++
+    ) {
+      final top = _leadingId == null ? _visibleTop : BigInt.zero;
+      final before = items.first.seq;
+      if (top == null || before <= top) return;
+      await loadOlder();
+      if (items.isEmpty || items.first.seq >= before) return;
+    }
+  }
 
   Future<void> loadOlder() {
     if (!_hasMore || items.isEmpty) return Future.value();
