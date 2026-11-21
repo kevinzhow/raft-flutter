@@ -664,6 +664,11 @@ void main() {
       expect(find.text('迁移完成'), findsOneWidget);
       expect(find.text('正在将工作区传输到 Target。'), findsOneWidget);
       expect(find.text('取消迁移'), findsOneWidget);
+      await tester.tap(find.widgetWithText(RaftButton, '取消迁移'));
+      await tester.pumpAndSettle();
+      expect(find.text('取消迁移？'), findsOneWidget);
+      expect(find.widgetWithText(RaftButton, '继续迁移'), findsOneWidget);
+      expect(find.widgetWithText(RaftButton, '取消迁移'), findsNWidgets(2));
     });
 
     testWidgets('the steps stack when the row does not fit', (tester) async {
@@ -685,9 +690,16 @@ void main() {
     }
 
     testWidgets('the dialog explains what cancelling does', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await mount(tester);
       await openCancel(tester);
-      expect(find.text('Cancel Migration'), findsNWidgets(3));
+      expect(find.text('Cancel migration?'), findsOneWidget);
+      expect(
+        find.widgetWithText(RaftButton, 'Cancel migration'),
+        findsOneWidget,
+      );
       expect(
         find.text(
           'Your agent stays where it is now, and Raft cleans up on both computers. Keep Source and Target online until it finishes.',
@@ -700,7 +712,11 @@ void main() {
         find.byKey(const ValueKey('agent-migration-cancel-confirm')),
         findsOneWidget,
       );
-      expect(find.widgetWithText(RaftButton, 'Keep Migrating'), findsOneWidget);
+      expect(find.widgetWithText(RaftButton, 'Keep migrating'), findsOneWidget);
+      final copy = find.byWidgetPredicate(
+        (widget) => widget is RaftButton && widget.glyph == RaftGlyph.copy,
+      );
+      expect(tester.getSize(copy).height, 32);
     });
 
     testWidgets('Continue keeps the migration and sends nothing', (
@@ -708,7 +724,7 @@ void main() {
     ) async {
       final (t, _) = await mount(tester);
       await openCancel(tester);
-      await tester.tap(find.widgetWithText(RaftButton, 'Keep Migrating'));
+      await tester.tap(find.widgetWithText(RaftButton, 'Keep migrating'));
       await tester.pumpAndSettle();
       expect(find.text('Cancel Migration'), findsOneWidget);
       expect(t.requests, isEmpty);
@@ -743,7 +759,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(t.requests, hasLength(3));
-      expect(find.text('Cancel Migration'), findsNWidgets(3));
+      expect(find.text('Cancel migration?'), findsOneWidget);
       expect(
         find.text(
           'The migration moved on before your request went through. Check the latest status and try again. (MIGRATION_REVISION_STALE)',
@@ -764,7 +780,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(t.requests, hasLength(1));
-      expect(find.text('Cancel Migration'), findsNWidgets(3));
+      expect(find.text('Cancel migration?'), findsOneWidget);
     });
   });
 

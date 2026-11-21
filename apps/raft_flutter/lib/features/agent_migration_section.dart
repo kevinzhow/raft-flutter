@@ -423,10 +423,10 @@ class _AgentMigrationSectionState
           // the source computer has to confirm.
           final hosted = isHostedMigration(current);
           return RaftConfirmDialog(
-            title: 'Cancel Migration',
+            title: 'Cancel migration?',
             surfaceKey: const ValueKey('migration-cancel-parity-surface'),
-            confirmLabel: 'Cancel Migration',
-            cancelLabel: 'Keep Migrating',
+            confirmLabel: 'Cancel migration',
+            cancelLabel: 'Keep migrating',
             loadingLabel: 'Canceling…',
             confirmVariant: RaftButtonRecipeVariant.warning,
             confirmKey: const ValueKey('agent-migration-cancel-confirm'),
@@ -454,7 +454,10 @@ class _AgentMigrationSectionState
                       {'source': source},
                     ),
                   ),
-                MigrationReference(migrationRef: '${current['migrationRef']}'),
+                MigrationReference(
+                  migrationRef: '${current['migrationRef']}',
+                  dialog: true,
+                ),
               ],
             ),
           );

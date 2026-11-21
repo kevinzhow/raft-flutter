@@ -8,6 +8,7 @@ const Map<String, String> zhCatalogRaftCopyDialogs = <String, String>{
   "Approve Agent Login": "批准 Agent 登录",
   "Cancel Conversion": "取消转换",
   "Cancel Migration": "取消迁移",
+  "Cancel migration?": "取消迁移？",
   "Cancel Upload": "取消上传",
   "Clear Cache": "清除缓存",
   "Confirm Action": "确认操作",
