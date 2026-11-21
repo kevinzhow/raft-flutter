@@ -87,7 +87,9 @@ class ChannelAccessLoss extends ChangeNotifier {
   Future<void> applyScopeChange(String channelId, String op) async {
     if (op == 'added') return clear(channelId);
     try {
-      await client.get('/channels/${Uri.encodeComponent(channelId)}');
+      await RaftClient.runFresh(
+        () => client.get('/channels/${Uri.encodeComponent(channelId)}'),
+      );
       clear(channelId);
     } catch (error) {
       noteReadError(channelId, error);

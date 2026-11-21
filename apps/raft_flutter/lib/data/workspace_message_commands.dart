@@ -151,20 +151,15 @@ class WorkspaceThreadCommands {
     m.state.threadLoading = cached == null;
     m.state.threadResolutionLoading = m.state.threadChannelId == null;
     m.state.threadParentLoading = m.state.threadParent == null;
-    if (taskId != null) taskConversationOpened(m);
     m.state.threadResolutionError = null;
     m.state.threadHasMore = cached?.hasMore ?? false;
     m.state.threadHistoryLimited = cached?.historyLimited ?? false;
     m.state.highlightedMessageId = focusedMessageId;
+    final heldTaskPage = taskId != null && taskConversationOpened(
+      m, request, seed: cached == null && focusedMessageId == null,
+    );
     m.context.changed();
-    Future<void> restoreCurrentDraft() async {
-      final scope = 'thread:$parentMessageId';
-      if (await m.drafts.composer.restoreText(scope, () => request.current)) {
-        m.context.changed();
-      }
-    }
-
-    unawaited(restoreCurrentDraft());
+    unawaited(ThreadVisit.restoreDraft(m, request, parentMessageId));
 
     Future<void> resolveParent() async {
       if (acceptedParent != null || taskId != null) return;
@@ -308,7 +303,7 @@ class WorkspaceThreadCommands {
           m.context.changed();
         }
         // A cached window stays readable when its revalidation fails.
-        if (request.current && cached == null) {
+        if (request.current && cached == null && !heldTaskPage) {
           // ThreadPanel's in-panel "Couldn't load this thread" + Retry; Web raises
           // no workspace-level error for it.
           m.state.threadResolutionError = userErrorText(

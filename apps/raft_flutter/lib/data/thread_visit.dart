@@ -41,4 +41,17 @@ abstract final class ThreadVisit {
     if (identity == null || m.state.threadVisit == null) return;
     m.state.threadVisit = request(m, identity.parentChannelId);
   }
+
+  static Future<void> restoreDraft(
+    WorkspaceMessages messages,
+    MessageWindowRequest visit,
+    String parentMessageId,
+  ) async {
+    if (await messages.drafts.composer.restoreText(
+      'thread:$parentMessageId',
+      () => visit.current,
+    )) {
+      messages.context.changed();
+    }
+  }
 }

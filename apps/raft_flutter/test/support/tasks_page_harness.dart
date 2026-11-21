@@ -253,8 +253,11 @@ class TasksClient extends RaftClient {
   final bus = StreamController<RaftEvent>.broadcast(sync: true);
   @override
   Stream<RaftEvent> get events => bus.stream;
-  void emit(String name, [dynamic payload]) =>
-      bus.add(RaftEvent(name, payload));
+  void emit(String name, [dynamic payload]) {
+    final event = RaftEvent(name, payload);
+    invalidateReadsForEvent(event);
+    bus.add(event);
+  }
 
   @override
   Future<void> dispose() async {

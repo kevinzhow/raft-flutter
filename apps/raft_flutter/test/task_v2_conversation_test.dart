@@ -49,11 +49,12 @@ class _Adapter implements HttpClientAdapter {
 
 /// A client whose socket events the test plays.
 class _Client extends RaftClient {
-  _Client(Dio transport)
+  _Client(Dio transport, {DateTime Function()? now})
     : super(
         origin: 'https://example.invalid',
         sessionStore: MemorySessionStore(),
         transport: transport,
+        governor: now == null ? null : RateLimitGovernor(now: now),
       );
   final stream = StreamController<RaftEvent>.broadcast(sync: true);
   @override
@@ -85,7 +86,9 @@ Map<String, dynamic> v2Task() => {
   'createdAt': '2026-11-14T10:00:00.000Z',
 };
 
-Future<(WorkspaceController, _Adapter, Map<String, dynamic>)> _fixture() async {
+Future<(WorkspaceController, _Adapter, Map<String, dynamic>)> _fixture([
+  DateTime Function()? now,
+]) async {
   final a = _Adapter();
   final task = v2Task();
   a.routes['POST /auth/login'] = (_) => (
@@ -154,7 +157,7 @@ Future<(WorkspaceController, _Adapter, Map<String, dynamic>)> _fixture() async {
       ],
     },
   );
-  final client = _Client(Dio()..httpClientAdapter = a);
+  final client = _Client(Dio()..httpClientAdapter = a, now: now);
   await client.login('fixture', 'fixture');
   client.selectServer('s1');
   final w = WorkspaceController(client);
@@ -285,6 +288,63 @@ void main() {
     await _close(t);
     await t.pumpWidget(const SizedBox());
   });
+
+  testWidgets(
+    'a reopened task shows its replies before the refresh completes',
+    (t) async {
+      var clock = DateTime.utc(2026, 11, 21);
+      final (w, a, task) = (await t.runAsync(() => _fixture(() => clock)))!;
+      addTearDown(w.dispose);
+      task['conversationChannelId'] = 'conv-7';
+      task['conversationReplyCount'] = 1;
+      const route = '/messages/channel/conv-7';
+      final pending = Completer<void>();
+      var reads = 0;
+      a.routes['GET $route'] = (_) async {
+        final read = ++reads;
+        if (read > 1) await pending.future;
+        return (
+          200,
+          {
+            'messages': [
+              {
+                'id': 'reply-1',
+                'channelId': 'conv-7',
+                'seq': '1',
+                'senderType': 'user',
+                'senderId': 'bob',
+                'senderName': 'Bob',
+                'content': read == 1 ? 'Held discussion reply' : 'Edited reply',
+                'createdAt': '2026-11-14T10:00:00.000Z',
+              },
+            ],
+          },
+        );
+      };
+      a.routes['POST /channels/conv-7/read'] = (_) => (200, {});
+      await _open(t, w);
+      expect(find.text('Held discussion reply'), findsOneWidget);
+      expect(reads, 1);
+      await _close(t);
+
+      clock = clock.add(const Duration(seconds: 7));
+      await t.tap(find.text('Ship task v2'));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 16));
+      expect(find.text('Held discussion reply'), findsOneWidget);
+      await _flush(t);
+      expect(reads, 2);
+      expect(find.text('Held discussion reply'), findsOneWidget);
+      expect(find.text('Edited reply'), findsNothing);
+
+      pending.complete();
+      await _flush(t);
+      expect(find.text('Edited reply'), findsOneWidget);
+      expect(find.text('Held discussion reply'), findsNothing);
+      await _close(t);
+      await t.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets('editing the title saves it with the revision; someone '
       "else's edit keeps the draft and says so", (t) async {

@@ -209,6 +209,12 @@ class MessageHistoryPages {
     final w = host.messageDomain;
     if (before == null && after == null) opened(w, id).ignore();
     if (!request.current) return const {'messages': <dynamic>[]};
+    Future<Map<String, dynamic>> readRemote() => w.transport.client.messagePage(
+      id,
+      before: before,
+      after: after,
+      limit: limit,
+    );
     return load(
       cache: w.device.cache,
       scope: scope(
@@ -220,13 +226,7 @@ class MessageHistoryPages {
       current: () => request.current && w.device.writable,
       held: () => w.ledger.messages(id),
       remote:
-          remote ??
-          () => w.transport.client.messagePage(
-            id,
-            before: before,
-            after: after,
-            limit: limit,
-          ),
+          remote ?? (gap ? () => RaftClient.runFresh(readRemote) : readRemote),
       before: before,
       after: after,
       limit: limit,
