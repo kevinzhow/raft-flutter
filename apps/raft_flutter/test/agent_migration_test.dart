@@ -707,7 +707,12 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Canceling is safe'), findsNothing);
-      expect(find.text('fixture-ref'), findsOneWidget);
+      final reference = find.text('fixture-ref');
+      expect(reference, findsOneWidget);
+      expect(
+        tester.widget<Text>(reference).style?.color,
+        RaftTokens.of(tester.element(reference)).ink,
+      );
       expect(
         find.byKey(const ValueKey('agent-migration-cancel-confirm')),
         findsOneWidget,
