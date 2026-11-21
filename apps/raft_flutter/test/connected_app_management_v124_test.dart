@@ -208,6 +208,10 @@ void main() {
     expect(enabled, findsOneWidget);
     final description = find.textContaining('Allow this app to post');
     expect(tester.widget<Text>(description).style?.fontSize, 12);
+    final identity = find.byKey(const ValueKey('connected-app-enable-bot'));
+    final hint = find.byKey(const ValueKey('connected-app-bot-editor-hint'));
+    expect(hint, findsOneWidget);
+    expect(tester.getTopLeft(hint).dy - tester.getBottomLeft(identity).dy, 8);
     await _tap(tester, installedLink);
     expect(editor, findsNothing);
     expect(
@@ -265,6 +269,12 @@ void main() {
       const ValueKey('connected-app-uninstall-confirm-button'),
     );
     expect(confirmation, findsOneWidget);
+    final appId = find.descendant(
+      of: confirmation,
+      matching: find.text('garden'),
+    );
+    expect(appId, findsOneWidget);
+    expect(tester.widget<Text>(appId).style?.fontWeight, FontWeight.w400);
     expect(requests, 0);
 
     await tester.tap(confirm);

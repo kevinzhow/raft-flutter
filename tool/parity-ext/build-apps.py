@@ -555,7 +555,7 @@ editor_identity_steps = (
     edit_local_app,
     (
         {'type': 'reveal', 'target': editor_identity_hint},
-        {'type': 'reveal', 'key': editor_installed_link},
+        {'type': 'reveal', 'key': 'connected-app-bot-editor-hint', 'scroll': 'fully-visible'},
     ),
 )
 share_input = 'connected-app-share-target-input'

@@ -1256,54 +1256,60 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           ),
         if (source is Map) sourceInstallation(managementMap(source)),
         const RaftSeparator(),
-        RaftCheckboxRow.caption(
-          key: const ValueKey('connected-app-enable-bot'),
-          title: tr('Post as the app'),
-          description: tr(
-            'Allow this app to post under its own name. A server admin must also add it during installation or from Installed apps before the app can get a key and post.',
-          ),
-          value: enableBot,
-          onChanged: submitting
-              ? null
-              : (value) => setState(() => enableBot = value),
-        ),
-        if (editing?['enableBot'] == true &&
-            enableBot &&
-            handle != null &&
-            openInstalledApp != null)
-          Padding(
-            padding: const EdgeInsetsDirectional.only(
-              start: RaftSpace.x4 + RaftSpace.x4,
+        RaftAppEditorStack(
+          gap: RaftSpace.x2,
+          children: [
+            RaftCheckboxRow.caption(
+              key: const ValueKey('connected-app-enable-bot'),
+              title: tr('Post as the app'),
+              description: tr(
+                'Allow this app to post under its own name. A server admin must also add it during installation or from Installed apps before the app can get a key and post.',
+              ),
+              value: enableBot,
+              onChanged: submitting
+                  ? null
+                  : (value) => setState(() => enableBot = value),
             ),
-            child: RaftCssText.rich(
-              TextSpan(
-                children: raftRichText(
-                  context,
-                  'Add @{handle} on this server → <link>Installed apps</link>',
-                  {
-                    'link': (label) => WidgetSpan(
-                      alignment: PlaceholderAlignment.baseline,
-                      baseline: TextBaseline.alphabetic,
-                      child: RaftTextLink(
-                        key: const ValueKey(
-                          'connected-app-bot-editor-installed',
+            if (editing?['enableBot'] == true &&
+                enableBot &&
+                handle != null &&
+                openInstalledApp != null)
+              Padding(
+                key: const ValueKey('connected-app-bot-editor-hint'),
+                padding: const EdgeInsetsDirectional.only(
+                  start: RaftSpace.x4 + RaftSpace.x4,
+                ),
+                child: RaftCssText.rich(
+                  TextSpan(
+                    children: raftRichText(
+                      context,
+                      'Add @{handle} on this server → <link>Installed apps</link>',
+                      {
+                        'link': (label) => WidgetSpan(
+                          alignment: PlaceholderAlignment.baseline,
+                          baseline: TextBaseline.alphabetic,
+                          child: RaftTextLink(
+                            key: const ValueKey(
+                              'connected-app-bot-editor-installed',
+                            ),
+                            label: label,
+                            onPressed: openInstalledApp,
+                            variant: RaftTextLinkVariant.strong,
+                            scale: RaftTypeScale.footnote,
+                          ),
                         ),
-                        label: label,
-                        onPressed: openInstalledApp,
-                        variant: RaftTextLinkVariant.strong,
-                        scale: RaftTypeScale.footnote,
-                      ),
+                      },
+                      values: {'handle': handle},
                     ),
-                  },
-                  values: {'handle': handle},
+                  ),
+                  style: tokens.scale(
+                    RaftTypeScale.footnote,
+                    color: tokens.ui.foregroundMuted,
+                  ),
                 ),
               ),
-              style: tokens.scale(
-                RaftTypeScale.footnote,
-                color: tokens.ui.foregroundMuted,
-              ),
-            ),
-          ),
+          ],
+        ),
       ],
     );
   }

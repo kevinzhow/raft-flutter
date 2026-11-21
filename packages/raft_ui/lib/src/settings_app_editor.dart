@@ -944,9 +944,11 @@ class RaftAppPermissionsTable extends StatelessWidget {
       tokens,
     ).text(tokens);
     const accessWidth = 144.0;
-    final accessColumnWidth = t.desktop && raftBreakpointWidth(context) >= 768
-        ? accessWidth
-        : accessWidth + RaftSpace.x1_5;
+    final accessColumnWidth =
+        accessWidth +
+        (t.desktop && raftBreakpointWidth(context) >= 768
+            ? RaftSpace.half
+            : RaftSpace.x1_5);
     String tr(String s) => raftText(context, s);
     Widget head(String label) => RaftRecipeBox(
       style: recipe.head,

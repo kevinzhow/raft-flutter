@@ -70,4 +70,45 @@ void main() {
     );
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('desktop permission table shows the complete access value', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 654,
+              child: RaftAppPermissionsTable(
+                rows: const [
+                  RaftAppPermissionRow(
+                    id: 'channel',
+                    label: 'Channel',
+                    summary: 'Public channel information',
+                    selected: false,
+                    accessLabel: 'Channel access',
+                    writeAccess: false,
+                  ),
+                ],
+                onChanged: (_, _) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.text('No access'),
+    );
+    final clipped = paragraph.didExceedMaxLines;
+    final details = '${paragraph.size.width}px for ${paragraph.text.style}';
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(clipped, isFalse, reason: details);
+  });
 }

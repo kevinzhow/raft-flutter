@@ -14,6 +14,7 @@ import 'card.dart' show RaftCard;
 
 import 'package:flutter/material.dart';
 
+import 'announcement_markdown.dart' show raftInlineCodeSpan;
 import 'raft_underline.dart';
 import 'system_inset.dart';
 import 'design_primitives.dart'
@@ -312,6 +313,16 @@ class RaftConnectedAppsSection extends StatelessWidget {
       (final String title, null) => _EmptyBox(title),
       _ => null,
     };
+    final review = switch (reviewNote) {
+      final copy? => Center(
+        child: RaftCssText(
+          copy,
+          textAlign: TextAlign.center,
+          style: t.scale(RaftTypeScale.footnote, color: t.muted),
+        ),
+      ),
+      null => null,
+    };
     final body = switch (tab) {
       RaftConnectedAppsTab.marketplace => Column(
         key: const ValueKey('connected-apps-marketplace-tab'),
@@ -330,14 +341,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
           if (marketplace.isNotEmpty && marketplaceFooter != null)
             const SizedBox(height: RaftSpace.x3),
           ?marketplaceFooter,
-          if (reviewNote != null) ...[
-            const SizedBox(height: 12),
-            RaftCssText(
-              reviewNote!,
-              textAlign: TextAlign.center,
-              style: t.scale(RaftTypeScale.footnote, color: t.muted),
-            ),
-          ],
+          if (review != null) ...[const SizedBox(height: 12), review],
         ],
       ),
       RaftConnectedAppsTab.installed => Column(
@@ -490,7 +494,14 @@ class RaftConnectedAppsSection extends StatelessWidget {
                         child: child,
                       ),
                     ),
-                  if (children.length > 1) gap(16),
+                  if (children.length > 1 &&
+                      (!standalone ||
+                          tab != RaftConnectedAppsTab.installed ||
+                          pending ||
+                          cards.isNotEmpty ||
+                          empty != null ||
+                          recommendation != null))
+                    gap(16),
                   if (recommendation case final app?) ...[
                     heading(raftTextZh(context, 'Recommended for you', '为你推荐')),
                     gap(8),
@@ -541,15 +552,9 @@ class RaftConnectedAppsSection extends StatelessWidget {
                     ],
                   ],
                   if (tab == RaftConnectedAppsTab.marketplace &&
-                      reviewNote != null) ...[
+                      review != null) ...[
                     gap(12),
-                    SliverToBoxAdapter(
-                      child: RaftCssText(
-                        reviewNote!,
-                        textAlign: TextAlign.center,
-                        style: t.scale(RaftTypeScale.footnote, color: t.muted),
-                      ),
-                    ),
+                    SliverToBoxAdapter(child: review),
                   ],
                 ],
               ),
@@ -2285,8 +2290,8 @@ class RaftConnectedAppParagraph extends StatelessWidget {
   }
 }
 
-/// ConfirmDialog message with an inline `<code className="font-mono
-/// font-bold">` value between the catalog prefix and suffix.
+/// ConfirmDialog message with an inline code value between the catalog
+/// prefix and suffix.
 class RaftInlineCodeMessage extends StatelessWidget {
   const RaftInlineCodeMessage({
     super.key,
@@ -2296,24 +2301,15 @@ class RaftInlineCodeMessage extends StatelessWidget {
   });
   final String prefix, code, suffix;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(text: prefix),
-          TextSpan(
-            text: code,
-            style: TextStyle(
-              fontFamily: t.monoFont,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          TextSpan(text: suffix),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Text.rich(
+    TextSpan(
+      children: [
+        TextSpan(text: prefix),
+        raftInlineCodeSpan(context, code),
+        TextSpan(text: suffix),
+      ],
+    ),
+  );
 }
 
 /// InstalledAppNotifications `approval_required` strip: `border-l-4

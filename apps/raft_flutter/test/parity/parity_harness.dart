@@ -730,21 +730,7 @@ Future<void> _androidInteractions(
         if (raw['scroll'] == 'if-needed') {
           await _revealForClick(t, target!.first);
         } else if (raw['scroll'] == 'fully-visible') {
-          final button = t.renderObject<RenderBox>(target!.first);
-          final viewport = RenderAbstractViewport.of(button) as RenderBox;
-          final position = button.localToGlobal(
-            Offset.zero,
-            ancestor: viewport,
-          );
-          final fullyVisible =
-              (Offset.zero & viewport.size).contains(position) &&
-              position.dy + button.size.height <= viewport.size.height;
-          if (!fullyVisible) {
-            await Scrollable.ensureVisible(
-              t.element(target.first),
-              alignment: 0.5,
-            );
-          }
+          await _revealIfClipped(t, target!.first);
           expect(target.first.hitTestable(), findsOneWidget);
         } else if (raw['scroll'] != false) {
           await t.ensureVisible(target!.first);
@@ -853,6 +839,8 @@ Future<void> _androidInteractions(
         await t.pump(const Duration(milliseconds: 300));
         if (raw['scroll'] == 'if-needed') {
           await _revealForClick(t, target!.first);
+        } else if (raw['scroll'] == 'fully-visible') {
+          await _revealIfClipped(t, target!.first);
         } else {
           await t.ensureVisible(target!.first);
         }
@@ -996,6 +984,18 @@ Future<void> _revealForClick(WidgetTester tester, Finder target) async {
   await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
   await tester.pump();
   expect(target.hitTestable(), findsOneWidget);
+}
+
+Future<void> _revealIfClipped(WidgetTester tester, Finder target) async {
+  final box = tester.renderObject<RenderBox>(target);
+  final viewport = RenderAbstractViewport.of(box) as RenderBox;
+  final position = box.localToGlobal(Offset.zero, ancestor: viewport);
+  final fullyVisible =
+      (Offset.zero & viewport.size).contains(position) &&
+      position.dy + box.size.height <= viewport.size.height;
+  if (!fullyVisible) {
+    await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
+  }
 }
 
 /// The widget a control-state interaction names without a ValueKey:
