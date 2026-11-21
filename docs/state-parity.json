@@ -55907,6 +55907,12 @@
         "familyRefs": [],
         "owner": "Artifact discussion"
       },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._discussionScroll": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Binds the report discussion to the presenting sheet so its drag and scroll share one controller."
+      },
       "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._entry": {
         "role": "entry_composition",
         "familyRefs": [],
