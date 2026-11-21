@@ -278,7 +278,6 @@ class _ThreadOutlineListState extends State<ThreadOutlineList> {
           own: item.senderId == outline.userId,
           current: item.id == currentId,
           compact: compact,
-          inDrawer: inDrawer,
           focusNode: compact
               ? rowFocus.putIfAbsent(
                   item.id,
@@ -424,14 +423,13 @@ class _OutlineRow extends StatelessWidget {
     required this.own,
     required this.current,
     required this.compact,
-    required this.inDrawer,
     this.focusNode,
     required this.onTap,
   });
 
   final ThreadOutlineItem item;
   final String time;
-  final bool own, current, compact, inDrawer;
+  final bool own, current, compact;
   final FocusNode? focusNode;
   final VoidCallback onTap;
 
@@ -456,11 +454,7 @@ class _OutlineRow extends StatelessWidget {
         ),
         padding: RaftThreadOutlineMetrics.rowPadding(compact),
         decoration: BoxDecoration(
-          color:
-              (current && !inDrawer) ||
-                  state.hovered ||
-                  state.focusVisible ||
-                  state.pressed
+          color: state.hovered || state.focusVisible || state.pressed
               ? t.colors['brand-soft']
               : null,
           borderRadius: RaftThreadOutlineMetrics.rowCorners(t),

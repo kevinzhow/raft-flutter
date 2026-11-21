@@ -523,7 +523,6 @@ class RaftThreadSearchBar extends StatelessWidget {
               uiSize: RaftButtonSize.iconMd,
               glyph: RaftGlyph.x,
               glyphSize: 14,
-              foreground: t.muted,
               tooltip: closeLabel,
               onPressed: onClose,
             ),
@@ -545,7 +544,7 @@ class _ThreadCloseRecipe extends _ThreadBackRecipe {
     bool pressed = false,
   }) => backgroundFor(hovered: hovered);
   @override
-  Color get foreground => tokens.muted;
+  Color get foreground => tokens.ink;
   @override
   Color backgroundFor({bool hovered = false}) =>
       (hovered) ? tokens.colors['fill-muted']! : background;

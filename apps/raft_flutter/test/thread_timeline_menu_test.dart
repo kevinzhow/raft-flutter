@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -79,19 +81,31 @@ void main() {
           matching: find.byType(RaftInteractive),
         );
         expect(t.widget<RaftInteractive>(row).selected, isTrue);
+        final currentLabel = find.descendant(
+          of: row,
+          matching: find.text('Outline reply 5'),
+        );
+        expect(t.widget<Text>(currentLabel).style?.fontWeight, FontWeight.w600);
         final touch = platform == TargetPlatform.android;
         final fill = RaftTokens.of(t.element(row)).colors['brand-soft'];
-        expect(
-          find.descendant(
-            of: row,
-            matching: find.byWidgetPredicate(
-              (widget) =>
-                  widget is Container &&
-                  (widget.decoration as BoxDecoration?)?.color == fill,
-            ),
+        final interactionFill = find.descendant(
+          of: row,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Container &&
+                (widget.decoration as BoxDecoration?)?.color == fill,
           ),
-          touch ? findsNothing : findsOneWidget,
         );
+        expect(interactionFill, findsNothing);
+        if (platform == TargetPlatform.linux && size.width == 960) {
+          final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+          await mouse.addPointer(location: t.getCenter(row));
+          await t.pumpAndSettle();
+          expect(interactionFill, findsOneWidget);
+          await mouse.removePointer();
+          await t.pumpAndSettle();
+          expect(interactionFill, findsNothing);
+        }
         expect(find.byType(RaftSheet), touch ? findsOneWidget : findsNothing);
         await t.tap(find.text('Outline reply 4'));
         await t.pumpAndSettle();

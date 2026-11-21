@@ -206,6 +206,18 @@ void main() {
       expect(safeRect.contains(box.topLeft), isTrue);
       expect(safeRect.contains(box.bottomRight), isTrue);
       expect(tester.widget<TextField>(input).focusNode!.hasFocus, isTrue);
+      final closeGlyph = find.descendant(
+        of: close,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is CustomPaint && widget.painter is RaftGlyphPainter,
+        ),
+      );
+      final painter = tester.widget<CustomPaint>(closeGlyph).painter!;
+      expect(
+        (painter as RaftGlyphPainter).color,
+        RaftTokens.of(tester.element(close)).ink,
+      );
 
       await tester.enterText(input, 'reply-3');
       await tester.pumpAndSettle();
