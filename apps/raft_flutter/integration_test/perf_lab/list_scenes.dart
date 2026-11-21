@@ -7,6 +7,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/app_link_models.dart';
+import 'package:raft_flutter/features/app_link_view.dart';
+import 'package:raft_flutter/features/artifacts/artifact_message_card.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/desktop_directory_view.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
@@ -20,6 +23,8 @@ import 'package:raft_flutter/features/tasks_page/tasks_page_store.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../../test/support/artifact_fake_client.dart'
+    show artifactCardJson, artifactId, artifactShort;
 import '../../test/support/tasks_page_harness.dart' show pageTask, TasksServer;
 import 'fixtures.dart';
 import 'probe.dart';
@@ -81,7 +86,23 @@ class ListScenes {
             ..setTab(TasksPageTab.all)
             ..setView(TasksPageView.board);
         }
+        await idle(const Duration(milliseconds: 600));
+        final richCards = {
+          if (find.byType(ArtifactMessageCard).evaluate().isNotEmpty)
+            'artifact',
+          if (find
+              .byWidgetPredicate(
+                (widget) =>
+                    widget is AppLinkChip && widget.link is AppLinkPreview,
+              )
+              .evaluate()
+              .isNotEmpty)
+            'app-preview',
+        };
         for (final workload in workloads) {
+          if (fixture.scroll case final scroll? when workload != 'idle') {
+            scroll.position.jumpTo(scroll.position.minScrollExtent);
+          }
           final scene = 'list-$surface-$workload';
           final record = await lab.measure(
             tester,
@@ -90,6 +111,7 @@ class ListScenes {
             () => _measure(fixture, workload),
             kind: workload == 'idle' ? 'idle' : 'continuous',
             evidence: (extras) => {
+              'mountedRichCardsBeforeMotion': richCards.toList(),
               'arrival': {
                 'arrived': extras['arrived'] == true && fixture.rows.isNotEmpty,
                 'requirement': 'A visible product row, accepted motion, and accepted live updates where required.',
@@ -135,10 +157,7 @@ class ListScenes {
         'reason': 'This fixture has no accepted live update replay.',
       };
     }
-    final scroll = before
-        .map((element) => Scrollable.maybeOf(element, axis: Axis.vertical))
-        .nonNulls
-        .firstOrNull;
+    final scroll = fixture.scroll;
     if (scroll == null) {
       throw StateError('The visible rows have no vertical list.');
     }
@@ -171,12 +190,15 @@ class ListScenes {
         if (axis != Axis.vertical) {
           throw StateError('Expected a vertical list.');
         }
-        final row = before.firstWhere(
-          (row) =>
-              identical(Scrollable.maybeOf(row, axis: Axis.vertical), scroll),
-        );
-        final visible = fixture.visibleRect(row);
-        final start = Offset(visible.left + 12, visible.center.dy);
+        final lane = [
+          for (final row in before)
+            if (identical(Scrollable.maybeOf(row, axis: Axis.vertical), scroll))
+              fixture.visibleRect(row),
+        ]..sort((left, right) => left.top.compareTo(right.top));
+        final first = lane.first;
+        final start = fixture.surface == 'tasks-board' && lane.length > 1
+            ? Offset(first.center.dx, (first.bottom + lane[1].top) / 2)
+            : Offset(first.left + 12, first.center.dy);
         await tester.flingFrom(start, Offset(0, forward ? -160 : 160), 2200);
         await idle(const Duration(milliseconds: 1700));
       } else {
@@ -251,14 +273,31 @@ class _ListFixture {
   }.contains(surface);
 
   static Future<_ListFixture> open(String surface, LabImages images) async {
-    const kinds = [...mixCycle, 'table', 'math', 'diagram', 'forwarded'];
-    final rows = List.generate(
-      rowCount,
-      (index) => kinds[index % kinds.length],
-    );
+    const kinds = [
+      ...mixCycle,
+      'table',
+      'math',
+      'diagram',
+      'forwarded',
+      'artifact',
+      'app-preview',
+    ];
+    final rows = List.generate(rowCount, (index) => kinds[index % kinds.length])
+      ..setRange(rowCount - 4, rowCount - 2, ['artifact', 'app-preview']);
     final feed = LabChannel('list-feed', rows);
     final thread = LabChannel('list-thread', rows);
     final conversation = LabChannel('list-discussion', rows);
+    for (final channel in [feed, thread, conversation]) {
+      for (final (index, kind) in rows.indexed) {
+        if (kind == 'artifact') {
+          channel.rows[index]['content'] =
+              'Lab artifact $index https://example.invalid/artifacts/$artifactShort';
+        } else if (kind == 'app-preview') {
+          channel.rows[index]['content'] =
+              'Ticket ${_ticketUrl(channel.rows[index]['id'] as String)}';
+        }
+      }
+    }
     final directory = [
       for (var index = 0; index < rowCount; index++)
         LabChannel('room-$index', const []),
@@ -333,6 +372,21 @@ class _ListFixture {
       },
     );
     api.routes.addAll({
+      'POST /feature-flags/evaluate': (_) => {
+        'evaluations': [
+          {'key': 'workspace_artifacts_v0', 'enabled': true},
+        ],
+      },
+      'POST /objects/summaries': (_) => {
+        'kind': 'artifact',
+        'summaries': [
+          {
+            'ref': {'id': artifactId},
+            'ok': true,
+            'summary': artifactCardJson(kind: 'csv', title: 'Lab artifact'),
+          },
+        ],
+      },
       'GET /agents': (_) => agentRows,
       'GET /servers/s1/members': (_) => people,
       'GET /tasks/server': (request) => tasks.answer(request).$2,
@@ -396,6 +450,21 @@ class _ListFixture {
           },
       ]),
     });
+    api.patterns.add((
+      (request) =>
+          request.method == 'GET' &&
+          request.path.endsWith('/app-link-previews'),
+      (request) => {
+        'previews': [
+          {
+            'url': _ticketUrl(request.uri.pathSegments.reversed.elementAt(1)),
+            'appName': 'Lab Tickets',
+            'title': 'Lab ticket preview',
+            'inline': {'title': 'Lab ticket'},
+          },
+        ],
+      },
+    ));
     switch (surface) {
       case 'chat':
         await workspace.selectChannel(main.record);
@@ -496,7 +565,7 @@ class _ListFixture {
       'activity' => 'activity-channel-room-',
       'tasks-list' => 'tasks-page-row-cell-',
       'tasks-board' => 'task-board-card-',
-      'search' => 'message:${feed.id}-',
+      'search' => 'search-message:${feed.id}-',
       'files' => 'channel-file-file-',
       'directory' => 'desktop-directory-',
       'apps' => 'connected-app-',
@@ -513,6 +582,13 @@ class _ListFixture {
         .where((row) => !visibleRect(row).isEmpty)
         .toList();
   }
+
+  ScrollableState? get scroll => rows
+      .map((element) => Scrollable.maybeOf(element, axis: Axis.vertical))
+      .nonNulls
+      .firstOrNull;
+
+  static String _ticketUrl(String id) => 'https://tickets.example.org/$id';
 
   Rect visibleRect(Element element) {
     final box = element.renderObject;
