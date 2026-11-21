@@ -79,6 +79,17 @@ void main() {
     find.ancestor(of: find.text('Verify'), matching: find.byType(RaftButton)),
   );
 
+  testWidgets('the verification code receives focus with Raft input paint', (
+    t,
+  ) async {
+    await open(t, server: (_) async {});
+    expect(t.widget<EditableText>(field()).focusNode.hasFocus, isTrue);
+    expect(find.byType(RaftDialogDescription), findsOneWidget);
+    expect(find.byType(RaftField), findsOneWidget);
+    final input = t.widget<RaftTextInput>(find.byType(RaftTextInput));
+    expect(input.focusRingFollowsInputModality, isTrue);
+  });
+
   testWidgets('Enter in the code field verifies', (t) async {
     final sent = await open(t, server: (_) async {});
     await t.enterText(field(), '123 456');
@@ -125,10 +136,7 @@ void main() {
     await t.enterText(field(), '000000');
     await pressEnter(t);
     expect(
-      find.descendant(
-        of: find.byType(TextFormField),
-        matching: find.text(_wrong),
-      ),
+      find.descendant(of: find.byType(RaftField), matching: find.text(_wrong)),
       findsOneWidget,
     );
     expect(find.byType(RaftErrorBanner), findsNothing);

@@ -6,6 +6,7 @@ import 'localization.dart';
 
 import 'components.dart';
 import 'dismiss_scope.dart';
+import 'form_controls.dart' show RaftField, RaftTextInput;
 import 'form_presentation.dart';
 import 'overlays/dialog.dart';
 import 'settings_layout.dart' show RaftSpace;
@@ -30,7 +31,7 @@ class RaftFormField {
     this.keyboardType,
     this.autofillHints,
     this.autocorrect = true,
-  });
+  }) : _code = false;
 
   /// A one-time code from an authenticator app (Web `AnswerField` kind
   /// totp: `inputMode="numeric"`, `autoComplete="one-time-code"`,
@@ -50,7 +51,8 @@ class RaftFormField {
        localizeChoices = true,
        keyboardType = TextInputType.number,
        autofillHints = const [AutofillHints.oneTimeCode],
-       autocorrect = false;
+       autocorrect = false,
+       _code = true;
 
   /// A code typed from a list (a backup code; Web `inputMode="text"`,
   /// `autoComplete="off"`, no capitals, no spell check).
@@ -68,10 +70,12 @@ class RaftFormField {
        localizeChoices = true,
        keyboardType = TextInputType.text,
        autofillHints = null,
-       autocorrect = false;
+       autocorrect = false,
+       _code = true;
 
   final String id, label, initial;
   final bool required, multiline, obscure, trim, localizeChoices;
+  final bool _code;
   final Map<String, String>? choices;
   final String? help;
   final String? Function(String)? validator;
@@ -112,6 +116,8 @@ class RaftFormDialog extends StatefulWidget {
     this.submitLabel = 'Save',
     this.cancelLabel = 'Cancel',
     this.description,
+    this.introduction,
+    this.dialogSize,
     this.destructive = false,
     this.extra,
     this.errorFallback,
@@ -147,6 +153,8 @@ class RaftFormDialog extends StatefulWidget {
   /// server text (`err.response?.data?.error || formatMessage(fallback)`).
   final String? errorFallback;
   final String? description;
+  final Widget? introduction;
+  final RaftDialogSize? dialogSize;
   final bool destructive;
   final Widget? extra;
   final List<RaftFormField> fields;
@@ -295,6 +303,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
   }
 
   Widget _field(RaftFormField field) {
+    if (field._code) return _codeField(field);
     final t = RaftTokens.of(context);
     final label = raftText(context, field.label);
     final decoration = InputDecoration(
@@ -387,21 +396,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
                       maxLines: field.multiline ? 8 : 1,
                       style: t.fieldStyle,
                       decoration: decoration,
-                      validator: (value) {
-                        final text = field.trim
-                            ? value?.trim() ?? ''
-                            : value ?? '';
-                        if (field.required && text.isEmpty) {
-                          return Localizations.localeOf(context).languageCode ==
-                                  'zh'
-                              ? '${label}为必填项。'
-                              : '${field.label} is required.';
-                        }
-                        final problem = field.validator?.call(text);
-                        return problem == null
-                            ? null
-                            : raftText(context, problem);
-                      },
+                      validator: (value) => _validate(field, value),
                     ),
             ),
           ),
@@ -409,6 +404,52 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
       ),
     );
   }
+
+  String? _validate(RaftFormField field, String? value) {
+    final text = field.trim ? value?.trim() ?? '' : value ?? '';
+    if (field.required && text.isEmpty) {
+      return Localizations.localeOf(context).languageCode == 'zh'
+          ? '${raftText(context, field.label)}为必填项。'
+          : '${field.label} is required.';
+    }
+    final problem = field.validator?.call(text);
+    return problem == null ? null : raftText(context, problem);
+  }
+
+  Widget _codeField(RaftFormField field) => Padding(
+    padding: const EdgeInsets.only(bottom: RaftSpace.x4),
+    child: FormField<String>(
+      validator: (_) => _validate(field, editors[field.id]?.text),
+      builder: (state) => RaftField(
+        label: raftText(context, field.label),
+        hint: field.help,
+        error: fieldErrors[field.id] ?? state.errorText,
+        child: RaftTextInput(
+          fieldKey: ValueKey('field-${field.id}'),
+          semanticLabel: raftText(context, field.label),
+          controller: editors[field.id],
+          enabled: !busy,
+          invalid: fieldErrors.containsKey(field.id) || state.hasError,
+          autofocus: field == widget.fields.first,
+          keyboardType: field.keyboardType,
+          autofillHints: field.autofillHints,
+          autocorrect: field.autocorrect,
+          focusRingFollowsInputModality: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            if (_canSubmit) submit();
+          },
+          onChanged: (value) {
+            state.didChange(value);
+            if (fieldErrors.remove(field.id) != null ||
+                widget.submitWhenFilled) {
+              setState(() {});
+            }
+          },
+        ),
+      ),
+    ),
+  );
 
   /// The fields, the description, the extra content and the error: the same
   /// widgets in the dialog and in the sheet. The form key moves them from one
@@ -420,10 +461,10 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.description != null)
+        if (widget.introduction != null || widget.description != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: Text(widget.description!),
+            child: widget.introduction ?? Text(widget.description!),
           ),
         for (final field in widget.fields) _field(field),
         if (widget.extra != null)
@@ -487,6 +528,15 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
                 overflowSpacing: RaftSpace.x2,
                 children: _actions(),
               ),
+            )
+          : widget.dialogSize != null
+          ? RaftDialog(
+              title: raftText(context, widget.title),
+              size: widget.dialogSize!,
+              onClose: () => Navigator.pop(context, false),
+              closeEnabled: !busy,
+              content: _form(),
+              actions: _actions(),
             )
           : RaftDialog.card(
               title: widget.title,

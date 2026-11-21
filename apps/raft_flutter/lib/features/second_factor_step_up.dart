@@ -227,7 +227,8 @@ class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
       // way starts empty, without the last failure.
       key: ValueKey('step-up-${current?.wire}'),
       title: "Verify it's you",
-      description: widget.description,
+      introduction: RaftDialogDescription(widget.description),
+      dialogSize: RaftDialogSize.sm,
       submitLabel: 'Verify',
       submitEnabled: current != null,
       // Web `disabled={!normalizeEnteredCode(value)}`.
@@ -257,15 +258,16 @@ class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
               runSpacing: RaftSpace.x1,
               children: [
                 for (final other in others)
-                  RaftAuthTextLink(
+                  RaftTextLink(
                     key: ValueKey('step-up-use-${other.wire}'),
+                    variant: RaftTextLinkVariant.muted,
                     label: raftText(
                       context,
                       other == SecondFactorMethod.backupCode
                           ? 'Use a backup code'
                           : 'Use authenticator code',
                     ),
-                    onTap: () => setState(() {
+                    onPressed: () => setState(() {
                       method = other;
                       signInAgain = false;
                     }),

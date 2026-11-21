@@ -102,4 +102,19 @@ void main() {
         .map((i) => i.glyph);
     expect(glyphs, [RaftGlyph.arrowUpRight]);
   });
+
+  testWidgets('the connected-app URL inherits the detail value weight', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        const RaftConnectedAppDetailRow(
+          label: 'Homepage',
+          child: RaftConnectedAppUrlLink(url: 'https://example.com/app'),
+        ),
+      ),
+    );
+    final label = tester.widget<Text>(find.text('https://example.com/app'));
+    expect(label.style?.fontWeight, FontWeight.w600);
+  });
 }

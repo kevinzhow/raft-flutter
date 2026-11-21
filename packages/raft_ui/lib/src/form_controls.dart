@@ -382,6 +382,7 @@ class RaftTextInput extends StatefulWidget {
     this.focusNode,
     this.autofocus = false,
     this.autofillHints,
+    this.autocorrect = true,
     this.inputFormatters,
     this.maxLength,
     this.semanticLabel,
@@ -402,7 +403,7 @@ class RaftTextInput extends StatefulWidget {
 
   final TextEditingController? controller;
   final String? initialValue, hintText, semanticLabel;
-  final bool readOnly, enabled, invalid, obscureText, autofocus;
+  final bool readOnly, enabled, invalid, obscureText, autofocus, autocorrect;
 
   /// Follow raft-ui's keyboard-only focus-ring paint while retaining editor focus.
   final bool focusRingFollowsInputModality;
@@ -673,8 +674,8 @@ class _RaftTextInputState extends State<RaftTextInput>
     readOnly: widget.readOnly,
     enabled: widget.enabled,
     obscureText: widget.obscureText,
-    enableSuggestions: !widget.obscureText,
-    autocorrect: !widget.obscureText,
+    enableSuggestions: widget.autocorrect && !widget.obscureText,
+    autocorrect: widget.autocorrect && !widget.obscureText,
     keyboardType:
         widget.keyboardType ?? (widget.numeric ? TextInputType.number : null),
     textInputAction: widget.textInputAction,

@@ -1377,9 +1377,8 @@ class _Summary extends StatelessWidget {
   }
 }
 
-/// ConnectedAppUrlLink: `inline-flex items-center gap-1.5 text-xs font-mono
-/// font-bold text-foreground-muted underline decoration-2 underline-offset-2`
-/// with the ExternalLink 12 icon.
+/// ConnectedAppUrlLink inherits the surrounding weight and uses `font-mono
+/// text-mono-meta` with the external link icon.
 class RaftConnectedAppUrlLink extends StatelessWidget {
   const RaftConnectedAppUrlLink({
     super.key,
@@ -1417,6 +1416,7 @@ class RaftConnectedAppUrlLink extends StatelessWidget {
                   style: t.scale(
                     RaftTypeScale.monoMeta,
                     mono: true,
+                    weight: DefaultTextStyle.of(context).style.fontWeight,
                     color: color,
                   ),
                 ),
