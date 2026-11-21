@@ -792,7 +792,9 @@ class RaftTimelineScrollController extends ScrollController {
   /// Keeps the latest end pinned from the next layout on.
   void followEnd() {
     for (final p in positions) {
-      (p as RaftTimelinePosition).followEnd = true;
+      (p as RaftTimelinePosition)
+        ..followStart = false
+        ..followEnd = true;
     }
   }
 
@@ -958,10 +960,12 @@ class RaftTimelinePosition extends ScrollPositionWithSingleContext {
         _StartAlignment() => lo,
         final _RowAlignment row => _rowTarget(row, view),
       };
+    } else if (followStart &&
+        !dragging &&
+        (!followEnd || !owner.bottomAnchored)) {
+      target = lo;
     } else if (followEnd && !dragging) {
       target = hi;
-    } else if (followStart && !dragging) {
-      target = lo;
     } else if (short && !dragging) {
       target = lo;
     }
@@ -977,7 +981,10 @@ class RaftTimelinePosition extends ScrollPositionWithSingleContext {
     if (pending != null && view != null) {
       owner._pending = null;
       followEnd = pending is _EndAlignment || (pixels - hi).abs() <= .5;
-      followStart = !owner.olderPending && (pixels - lo).abs() <= .5;
+      followStart =
+          pending is! _EndAlignment &&
+          !owner.olderPending &&
+          (pixels - lo).abs() <= .5;
     }
     return super.applyContentDimensions(lo, hi);
   }
