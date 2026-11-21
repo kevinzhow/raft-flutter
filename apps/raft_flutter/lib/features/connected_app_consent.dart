@@ -268,27 +268,32 @@ class ConnectedAppPromptTextBlock extends StatelessWidget {
       states: tokens.recipeStates(responsive: true),
       tokens: bindings,
     );
-    return RaftRecipeBox(
-      style: recipe.root,
-      tokens: bindings,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (title != null)
-            RaftRecipeBox(
-              style: recipe.header,
-              tokens: bindings,
-              child: RaftCssText(
-                raftText(context, title),
-                style: recipe.title.textStyle(bindings),
+    return Padding(
+      padding: recipe.root.margin,
+      child: RaftRecipeBox(
+        style: recipe.root,
+        tokens: bindings,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (title != null)
+              RaftRecipeBox(
+                style: recipe.header,
+                tokens: bindings,
+                height: recipe.root.length('--code-block-header-height'),
+                alignment: AlignmentDirectional.centerStart,
+                child: RaftCssText(
+                  raftText(context, title),
+                  style: recipe.title.textStyle(bindings),
+                ),
               ),
+            RaftRecipeBox(
+              style: recipe.body,
+              tokens: bindings,
+              child: Text(lines),
             ),
-          RaftRecipeBox(
-            style: recipe.body,
-            tokens: bindings,
-            child: Text(lines),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

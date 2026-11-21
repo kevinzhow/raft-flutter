@@ -590,6 +590,7 @@ void main() {
     await t.pumpAndSettle();
     final toggle = find.byKey(const ValueKey('app-notifications-enabled'));
     await t.ensureVisible(toggle);
+    expect(t.getSize(toggle).height, 20);
     expect(
       find.text(
         'Uses existing installation credentials and APIs. No login or webhook required.',

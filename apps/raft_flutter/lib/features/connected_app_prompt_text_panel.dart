@@ -256,7 +256,7 @@ class _ConnectedAppPromptTextPanelState
               _badge(pendingBadge),
               comparison,
             ],
-            if (message != null) RaftErrorBanner(message),
+            if (message != null) RaftErrorBanner(message, small: true),
             if (canReview)
               Wrap(
                 alignment: WrapAlignment.end,
@@ -342,8 +342,9 @@ class _ConnectedAppPromptTextPanelState
 
   Widget _badge(String label) => Align(
     alignment: AlignmentDirectional.centerStart,
-    child: RaftSettingsRecipeBadge(
+    child: RaftBadge(
       label: tr(label),
+      appearance: RaftBadgeRecipeAppearance.soft,
       variant: RaftBadgeRecipeVariant.warning,
     ),
   );

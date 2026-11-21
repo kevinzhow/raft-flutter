@@ -308,6 +308,15 @@ void main() {
     );
     await _tap(tester, find.byKey(const ValueKey('connected-app-garden')));
     final detail = find.byKey(const ValueKey('connected-app-detail'));
+    tester.view.physicalSize = const Size(600, 944);
+    await tester.pumpAndSettle();
+    final dangerRow = find.byType(RaftConnectedAppDangerRow);
+    final uninstall = find.byKey(
+      const ValueKey('connected-app-marketplace-uninstall'),
+    );
+    expect(tester.getSize(uninstall).width, tester.getSize(dangerRow).width);
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpAndSettle();
     await _tap(tester, find.text('Uninstall from this server'));
     expect(
       tester
@@ -378,6 +387,8 @@ void main() {
       final submitted = tester.getTopLeft(find.text('Submitted for review'));
       expect(submitted.dy, live.dy);
       expect(submitted.dx, greaterThan(live.dx));
+      final livePrompt = find.textContaining('- Garden Notes (service').first;
+      expect(tester.getTopLeft(livePrompt).dy - live.dy, greaterThan(32));
       await _tap(tester, find.text('Reject text update'));
       expect(client.posts[path], isNull);
       await tester.enterText(

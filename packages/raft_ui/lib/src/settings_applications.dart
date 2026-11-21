@@ -815,10 +815,6 @@ class _AppsScope extends RaftFitItem {
 TextStyle _relaxed(RaftTokens t, Color color) =>
     RaftTypography.inherited(t, size: 12, line: 12 * 1.625, color: color);
 
-/// The same line box inside a Dialog portal, whose text is Geist.
-TextStyle _relaxedDialog(RaftTokens t, Color color) =>
-    RaftTypography.body(t, size: 12, line: 12 * 1.625, color: color);
-
 /// ConnectedAppsErrorBanner: `Banner intent="warning" density="sm"`.
 class RaftConnectedAppsError extends StatelessWidget {
   const RaftConnectedAppsError(this.message, {super.key});
@@ -2196,7 +2192,7 @@ class RaftConnectedAppButton extends StatelessWidget {
 }
 
 /// Danger zone body: `flex-col gap-3 sm:flex-row sm:items-center
-/// sm:justify-between`, `text-xs leading-relaxed` copy and the action.
+/// sm:justify-between`, `text-footnote` copy and the action.
 class RaftConnectedAppDangerRow extends StatelessWidget {
   const RaftConnectedAppDangerRow({
     super.key,
@@ -2210,7 +2206,7 @@ class RaftConnectedAppDangerRow extends StatelessWidget {
     final t = RaftTokens.of(context);
     final copy = Text(
       description,
-      style: _relaxedDialog(t, RaftSettingsText(t).muted),
+      style: t.scale(RaftTypeScale.footnote, color: t.ui.foregroundMuted),
     );
     return raftBreakpointWidth(context) >= 640
         ? Row(
@@ -2221,7 +2217,7 @@ class RaftConnectedAppDangerRow extends StatelessWidget {
             ],
           )
         : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [copy, const SizedBox(height: 12), action],
           );
   }

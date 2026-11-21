@@ -1384,10 +1384,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           child: RaftAppEditorStack(
             gap: RaftSpace.x3,
             children: [
-              RaftCheckboxRow(
+              RaftCheckboxRow.field(
                 key: const ValueKey('app-notifications-enabled'),
                 title: tr('Enable webhook'),
-                dense: true,
                 description: app == null
                     ? tr('Save the app before enabling its webhook.')
                     : null,

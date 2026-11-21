@@ -10,6 +10,7 @@ import '../recipe_surface.dart'
     show RaftRecipeBinding, RaftRecipeBox, RaftSlotPaint;
 import '../recipes/checkbox.g.dart';
 import '../recipes/checkbox_indicator.g.dart';
+import '../recipes/field.g.dart' as field_recipe;
 import '../recipes/recipe_runtime.dart' show CssNum;
 import '../icons.dart';
 import '../theme.dart';
@@ -213,7 +214,16 @@ class RaftCheckboxRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.dense = false,
-  });
+  }) : _formField = false;
+
+  const RaftCheckboxRow.field({
+    super.key,
+    required this.title,
+    this.description,
+    required this.value,
+    required this.onChanged,
+  }) : dense = false,
+       _formField = true;
 
   /// Already localised by the caller (it may be a member's name).
   final String title;
@@ -225,12 +235,22 @@ class RaftCheckboxRow extends StatelessWidget {
 
   /// The compact row of the action card.
   final bool dense;
+  final bool _formField;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final ui = t.ui;
     final disabled = onChanged == null;
+    final field = _formField
+        ? field_recipe.RaftFieldRecipe.resolve(
+            states: t.recipeStates(
+              responsive: true,
+              extra: [if (disabled) 'group/field:data-disabled'],
+            ),
+            tokens: t.recipeTokens,
+          )
+        : null;
     final titleText = title;
     return RaftInteractive(
       onPressed: disabled ? null : () => onChanged!(!value),
@@ -238,12 +258,14 @@ class RaftCheckboxRow extends StatelessWidget {
       checked: value,
       semanticLabel: titleText,
       builder: (context, st) => Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: dense ? RaftSpace.x1 : RaftSpace.x2,
-        ),
+        padding: field != null
+            ? EdgeInsets.zero
+            : EdgeInsets.symmetric(
+                vertical: dense ? RaftSpace.x1 : RaftSpace.x2,
+              ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: RaftSpace.x3,
+          spacing: field?.item.columnGap ?? RaftSpace.x3,
           children: [
             // The 20px box centres on the first 20px title line.
             RaftRecipeBox(
@@ -267,22 +289,27 @@ class RaftCheckboxRow extends StatelessWidget {
                     titleText,
                     style: RaftControlTypography.of(
                       context,
-                      t.scale(
-                        RaftTypeScale.callout,
-                        weight: FontWeight.w600,
-                        color: disabled ? ui.foregroundDisabled : ui.foreground,
-                      ),
+                      field?.label.text(t.recipeTokens) ??
+                          t.scale(
+                            RaftTypeScale.callout,
+                            weight: FontWeight.w600,
+                            color: disabled
+                                ? ui.foregroundDisabled
+                                : ui.foreground,
+                          ),
                     ),
                   ),
                   if (description != null)
                     Text(
                       description!,
-                      style: t.scale(
-                        RaftTypeScale.footnote,
-                        color: disabled
-                            ? ui.foregroundDisabled
-                            : ui.foregroundMuted,
-                      ),
+                      style:
+                          field?.description.text(t.recipeTokens) ??
+                          t.scale(
+                            RaftTypeScale.footnote,
+                            color: disabled
+                                ? ui.foregroundDisabled
+                                : ui.foregroundMuted,
+                          ),
                     ),
                 ],
               ),

@@ -625,6 +625,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
   Future<void> openListing(Map<String, dynamic> opened) async {
     final source = authority;
     final promptTextFlag = _readInstallTextFlag();
+    final dangerRowKey = GlobalKey();
     var joinBot = true, installing = false;
     Map<String, dynamic>? reviewedOverride;
     // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the install retry starts; the local variable dies with the app detail modal.
@@ -962,6 +963,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                   RaftConnectedAppDetailSection(
                     title: 'Danger zone',
                     child: RaftConnectedAppDangerRow(
+                      key: dangerRowKey,
                       description: tr(
                         'Removing this app revokes its existing Login with Raft access for this server.',
                       ),
@@ -986,6 +988,17 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                                 );
                                 if (removed && modal.mounted) {
                                   close();
+                                } else if (modalError != null) {
+                                  await WidgetsBinding.instance.endOfFrame;
+                                  if (dangerRowKey.currentContext
+                                      case final row?) {
+                                    await Scrollable.ensureVisible(
+                                      row,
+                                      alignmentPolicy:
+                                          ScrollPositionAlignmentPolicy
+                                              .keepVisibleAtEnd,
+                                    );
+                                  }
                                 }
                               },
                       ),
