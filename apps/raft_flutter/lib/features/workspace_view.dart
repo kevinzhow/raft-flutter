@@ -3378,7 +3378,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final scope = mobileAuthority;
     final peer = dmPeer(c);
     final agent = peer.agent, name = peer.name;
-    final description = c.string('peerDescription');
+    final description = agent
+        ? '${peer.profile?['description'] ?? ''}'
+        : c.string('peerDescription');
     final source = peer.avatar;
     final reads = SidebarRowReads.of(w, c);
     return RaftNavItem(
@@ -3401,7 +3403,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       menuOpen: menuOpenRow == 'c:${c.id}',
       onContextMenu: (at) => sidebarMenus.openChannelMenu(at, c),
       contextMenuOnLongPress: !reorderable,
-      description: !agent && c.type == 'dm' && description.isNotEmpty
+      description: c.type == 'dm' && description.isNotEmpty
           ? description
           : null,
       // What a working agent is doing takes the place of its runtime.
