@@ -18,8 +18,8 @@ class MsFixtureClient extends RaftClient {
     this.routes,
     Map<String, dynamic> user, {
     this.fallback,
-    String origin = 'https://visual-fixture.invalid',
-  }) : super(origin: origin, sessionStore: MemorySessionStore()) {
+    super.origin = 'https://visual-fixture.invalid',
+  }) : super(sessionStore: MemorySessionStore()) {
     this.user = RaftRecord(user);
     selectServer('visual-server');
   }

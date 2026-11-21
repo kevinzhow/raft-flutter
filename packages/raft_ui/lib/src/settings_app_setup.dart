@@ -13,8 +13,7 @@ import 'icons.dart';
 import 'indicators.dart' show RaftBadge, RaftStatusDot, RaftStatusDotSize;
 import 'localization.dart';
 import 'recipes/badge.g.dart';
-import 'recipes/button_variants.g.dart'
-    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
+import 'recipes/button_variants.g.dart' show RaftButtonRecipeVariant;
 import 'settings_app_editor.dart' show RaftAppEditorField, RaftAppEditorStack;
 import 'settings_controls.dart';
 import 'settings_layout.dart';
