@@ -327,6 +327,10 @@ class LabRecorder {
 
     // Top-level (non-nested) framework blocks, mapped to frames by time.
     final sortedBlocks = [...blocks]..sort((a, b) => a.start.compareTo(b.start));
+    final pipelineBlocks = [
+      for (final block in blocks)
+        if (_pipelineWork.containsKey(block.name)) block,
+    ];
     final topLevel = <TimedBlock>[];
     var openEnd = -1.0;
     final inclusive = <String, double>{}, counts = <String, int>{};
@@ -361,7 +365,9 @@ class LabRecorder {
         if (block.end > busyEnd) busyEnd = block.end;
         cursor++;
       }
-      final work = phases ? _workCounts(blocks, b.toDouble(), limit.toDouble()) : const <String, int>{};
+      final work = phases
+          ? _workCounts(blocks, pipelineBlocks, b.toDouble(), limit.toDouble())
+          : const <String, int>{};
       frameRows.add({
         // UI thread busy time for this frame: build start to the end of its
         // last pipeline block (>= the engine build duration).
@@ -497,18 +503,25 @@ const _pipelineWork = {
 /// layout and render-object paint. Each event is attributed to the pipeline
 /// phase that contains it (`BUILD`, `LAYOUT`, `PAINT`), so a build is not
 /// counted as a layout when the names collide.
-Map<String, int> _workCounts(List<TimedBlock> blocks, double start, double end) {
+Map<String, int> _workCounts(
+  List<TimedBlock> blocks,
+  List<TimedBlock> pipelineBlocks,
+  double start,
+  double end,
+) {
   final counts = {'builds': 0, 'layouts': 0, 'paints': 0};
+  final phases = pipelineBlocks
+      .where((block) => block.start < end && block.end >= start)
+      .toList(growable: false);
   String? phaseAt(double t) {
     String? kind;
     var span = double.infinity;
-    for (final block in blocks) {
-      final name = _pipelineWork[block.name];
-      if (name == null || t < block.start || t > block.end) continue;
+    for (final block in phases) {
+      if (t < block.start || t > block.end) continue;
       final width = block.end - block.start;
       if (width < span) {
         span = width;
-        kind = name;
+        kind = _pipelineWork[block.name];
       }
     }
     return kind;
