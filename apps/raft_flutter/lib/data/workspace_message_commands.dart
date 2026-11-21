@@ -155,9 +155,13 @@ class WorkspaceThreadCommands {
     m.state.threadHasMore = cached?.hasMore ?? false;
     m.state.threadHistoryLimited = cached?.historyLimited ?? false;
     m.state.highlightedMessageId = focusedMessageId;
-    final heldTaskPage = taskId != null && taskConversationOpened(
-      m, request, seed: cached == null && focusedMessageId == null,
-    );
+    final heldTaskPage =
+        taskId != null &&
+        taskConversationOpened(
+          m,
+          request,
+          seed: cached == null && focusedMessageId == null,
+        );
     m.context.changed();
     unawaited(ThreadVisit.restoreDraft(m, request, parentMessageId));
 

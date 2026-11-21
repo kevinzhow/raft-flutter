@@ -180,7 +180,7 @@ void main() {
 
       await client.observeGet(path, onData: publish);
       expect(shown, [1]);
-      expect(wire.requests(path), 1);
+      expect(wire.requests(path), 2);
 
       now = now.add(const Duration(seconds: 11));
       wire.versions[path] = 2;
@@ -190,12 +190,12 @@ void main() {
       hold.complete();
       await refresh;
       expect(shown, [1, 1, 2]);
-      expect(wire.requests(path), 2);
+      expect(wire.requests(path), 3);
 
       now = now.add(const Duration(seconds: 11));
       await client.observeGet(path, onData: publish);
       expect(shown, [1, 1, 2, 2]);
-      expect(wire.requests(path), 3);
+      expect(wire.requests(path), 4);
     },
   );
 

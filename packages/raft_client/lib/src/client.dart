@@ -1485,7 +1485,7 @@ class RaftClient {
       final request = read ?? () => get(path, query: query);
       final current = prior == null
           ? await request()
-          : await runBackground(request);
+          : await runBackground(() => runRevalidating(request));
       if (_closed ||
           _authenticationGeneration != authentication ||
           _generation != workspace) {
@@ -1632,11 +1632,15 @@ class RaftClient {
 
   static const _sharedKey = #raftSharedReads;
   static const _freshKey = #raftFreshRead;
+  static const _revalidateKey = #raftRevalidateRead;
 
   /// Permission checks and sync reconciliation explicitly requiring a
   /// current server decision bypass response reuse and in-flight joining.
   static T runFresh<T>(T Function() body) =>
       runZoned(body, zoneValues: {_freshKey: true});
+
+  static T runRevalidating<T>(T Function() body) =>
+      runZoned(body, zoneValues: {_revalidateKey: true});
 
   /// Runs [body] so that identical GETs started inside it while one is in
   /// flight (same path, query, server, principal and credentials, started
@@ -1745,6 +1749,11 @@ class RaftClient {
     }
   }
 
+  void invalidateServerReads(String server) {
+    _invalidateReads(server, _allReads);
+    _singleFlight.clear();
+  }
+
   /// Admission, single-flight and the 429 wait around [_send].
   ///
   /// * Identical GETs in flight at the same moment (same path, query, server
@@ -1826,11 +1835,9 @@ class RaftClient {
         return send();
       }
       return withSession(() {
-        final cached = _getCache.peek(
-          readKey,
-          readKey.policy.age,
-          governor.now(),
-        );
+        final cached = Zone.current[_revalidateKey] == true
+            ? null
+            : _getCache.peek(readKey, readKey.policy.age, governor.now());
         if (cached != null) return Future.value(_cloneJson(cached.data));
         return _getCache
             .fetch(

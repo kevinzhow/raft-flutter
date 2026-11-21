@@ -572,9 +572,12 @@ class TaskSurfaceController extends ChangeNotifier {
     changed();
     try {
       final path = '/tasks/${task['id']}/history';
-      final data = cleanup
-          ? await RaftClient.runFresh(() => parent.query(path))
-          : await parent.query(path);
+      Future<dynamic> read() => parent.query(path);
+      final data = await (cleanup
+          ? RaftClient.runFresh(read)
+          : historyKnown
+          ? RaftClient.runRevalidating(read)
+          : read());
       if (!current || request != historyRevision) return;
       history = [
         for (final event in data['events'] as List)

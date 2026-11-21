@@ -43,7 +43,18 @@ class WorkspaceServerDirectory {
   final VoidCallback ensureIdentity;
   final bool Function(Object) quietFailure, staleScope;
   List<RaftRecord> servers = [];
-  RaftRecord? server;
+  RaftRecord? _server;
+  RaftRecord? get server => _server;
+  set server(RaftRecord? value) {
+    final previous = _server;
+    _server = value;
+    if (previous != null &&
+        (value?.id != previous.id ||
+            value?.string('role') != previous.string('role'))) {
+      client.invalidateServerReads(previous.id);
+    }
+  }
+
   int _membershipRevision = 0, _membershipRequest = 0;
   int planRevision = 0;
 
