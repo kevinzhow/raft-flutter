@@ -13,6 +13,7 @@ class _Wire implements HttpClientAdapter {
   final statuses = <String, int>{};
   final cacheControl = <String, String>{};
   final responses = <String, Object>{};
+  Completer<void>? writeHold;
   String account = 'alice';
 
   @override
@@ -31,6 +32,8 @@ class _Wire implements HttpClientAdapter {
         ifAbsent: () => 1,
       );
       if (holds[path] case final hold?) await hold.future;
+    } else if (writeHold case final hold?) {
+      await hold.future;
     }
     final body = switch (path) {
       '/auth/login' => {
@@ -237,6 +240,33 @@ void main() {
     await client.get(path);
     expect(wire.requests(path), 1);
   });
+
+  test(
+    'a pending write bypasses affected fresh reads until its reply',
+    () async {
+      const task = '/tasks/channel/main/number/3';
+      const files = '/channels/other/files';
+      await client.get(task);
+      await client.get(files);
+      wire.versions[task] = 2;
+      final hold = wire.writeHold = Completer<void>();
+      final update = client.patch(
+        '/tasks/task/status',
+        data: {'status': 'done'},
+      );
+      try {
+        expect((await client.get(task))['version'], 2);
+        await client.get(files);
+        expect(wire.requests(files), 1);
+      } finally {
+        hold.complete();
+        await update;
+      }
+      wire.versions[task] = 3;
+      expect((await client.get(task))['version'], 3);
+      expect(wire.requests(task), 3);
+    },
+  );
 
   for (final (event, affected, untouched) in [
     (
