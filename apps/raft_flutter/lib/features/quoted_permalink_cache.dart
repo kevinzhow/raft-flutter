@@ -86,10 +86,13 @@ class QuotedPermalinkCache {
   ) async {
     final QuotedPermalinkResult result;
     try {
-      final data = await w.client.get(
+      Future<dynamic> read() => w.client.get(
         '/messages/context/${link.messageId}',
         query: {'channelId': link.channelId},
       );
+      final data = await (_entries.containsKey(key)
+          ? RaftClient.runRevalidating(read)
+          : read());
       final rows = (data is Map ? data['messages'] as List? : null) ?? const [];
       final id =
           (data is Map ? data['targetMessageId'] : null) ?? link.messageId;

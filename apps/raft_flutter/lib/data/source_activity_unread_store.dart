@@ -916,19 +916,17 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   Future<void> _load(String authority, int revision, int request) async {
     final readGeneration = workspace.readState.generation;
     try {
-      // Shared with a mounted Activity page reconciling the same window.
-      Future<dynamic> read() => workspace.sharedQuery(
-        '/channels/inbox',
-        query: {
-          'filter': 'all',
-          'sort': 'desc',
-          'limit': _firstPageLimit,
-          'offset': 0,
-        },
+      final value = await RaftClient.runRevalidating(
+        () => workspace.sharedQuery(
+          '/channels/inbox',
+          query: {
+            'filter': 'all',
+            'sort': 'desc',
+            'limit': _firstPageLimit,
+            'offset': 0,
+          },
+        ),
       );
-      final value = await (_convergence.hasPending
-          ? RaftClient.runRevalidating(read)
-          : read());
       if (_disposed ||
           authority != scope ||
           request != _request ||

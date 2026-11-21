@@ -380,11 +380,13 @@ class RwFreshnessStore extends ChangeNotifier {
     _inFlight.add(surface);
     _attempts[surface] = (_attempts[surface] ?? 0) + 1;
     unawaited(
-      Future<void>.sync(refetch).catchError((_) {}).whenComplete(() {
-        _inFlight.remove(surface);
-        // Still out of date (no state change notified): the next one.
-        _schedule(surface);
-      }),
+      Future<void>.sync(() => RaftClient.runRevalidating(refetch))
+          .catchError((_) {})
+          .whenComplete(() {
+            _inFlight.remove(surface);
+            // Still out of date (no state change notified): the next one.
+            _schedule(surface);
+          }),
     );
   }
 

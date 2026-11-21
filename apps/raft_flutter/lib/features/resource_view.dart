@@ -2347,11 +2347,14 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             };
       final view = ResourceFilters.viewKey(path, params ?? const {});
       final sharedSerial = _services.activityUnreadIfBound?.windowSerial ?? 0;
+      Future<dynamic> read() => path == '/channels/inbox'
+          ? w.sharedQuery(path, query: params)
+          : w.query(path, query: params);
       var value =
           seed ??
-          (path == '/channels/inbox'
-              ? await w.sharedQuery(path, query: params)
-              : await w.query(path, query: params));
+          await (keep
+              ? RaftClient.runRevalidating<Future<dynamic>>(read)
+              : read());
       if (!accepts(scope, request)) return;
       if (widget.section == 'activity' && value is Map) {
         value = activityFollowState.window(value);

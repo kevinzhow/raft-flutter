@@ -1749,6 +1749,14 @@ class RaftClient {
     _singleFlight.clear();
   }
 
+  void invalidateChannelRosterReads(String channel) {
+    _invalidateReads(
+      serverId,
+      (policy) =>
+          policy.family == _ReadFamily.roster && policy.channel == channel,
+    );
+  }
+
   void checkServerReadAuthority(RaftRecord? previous, RaftRecord? next) {
     if (previous != null &&
         (next?.id != previous.id ||
@@ -1842,20 +1850,13 @@ class RaftClient {
             ? null
             : _getCache.peek(readKey, readKey.policy.age, governor.now());
         if (cached != null) return Future.value(_cloneJson(cached.data));
-        return _getCache
-            .fetch(
-              readKey,
-              governor.now,
-              singleFlightWindow,
-              transmit,
-              () => singleFlightJoins++,
-            )
-            .onError<RaftApiException>((error, trace) {
-              if (const {401, 403, 404, 410}.contains(error.status)) {
-                _getCache.invalidate((key) => key == readKey);
-              }
-              Error.throwWithStackTrace(error, trace);
-            });
+        return _getCache.fetch(
+          readKey,
+          governor.now,
+          singleFlightWindow,
+          transmit,
+          () => singleFlightJoins++,
+        );
       });
     }
 

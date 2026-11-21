@@ -250,7 +250,8 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     final before = _accepted && snapshotKey != null ? captureSnapshot() : null;
     _loadingRequest = request;
     try {
-      await loadData(request, generation);
+      Future<void> read() => loadData(request, generation);
+      await (_accepted ? RaftClient.runRevalidating(read) : read());
       if (!mounted ||
           request != _request ||
           generation != w.client.generation) {

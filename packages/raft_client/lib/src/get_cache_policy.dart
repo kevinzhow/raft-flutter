@@ -228,17 +228,37 @@ _ReadEffect _writeEffect(Uri uri, Object? body) {
       : segments) {
     ['feature-flags', 'evaluate'] ||
     ['attachments', 'urls'] ||
+    ['channels', 'saved', 'check'] ||
     ['objects', 'summaries'] ||
     ['messages', _, 'link-cards', 'read'] ||
     ['auth', 'me', 'timezone-observation'] => _noReads,
     ['channels', 'saved', ...] => (
       policy,
     ) => policy.family == _ReadFamily.saved,
-    ['channels', final id, 'read' || 'unread'] => (policy) => _readStateEffect(
+    ['channels', 'inbox', 'done' || 'undone' || 'read-all'] => (
+      policy,
+    ) => _readStateEffect(policy, null),
+    [
+      'channels',
+      final id,
+      'read' || 'unread' || 'read-all' || 'conversation-read-all',
+    ] =>
+      (policy) => _readStateEffect(policy, id),
+    ['channels', 'read-all'] => (policy) => _readStateEffect(policy, null),
+    ['tasks', 'channel', final id] => (policy) => _taskEffect(
       policy,
       id,
+      null,
+      null,
+      null,
     ),
-    ['channels', 'read-all'] => (policy) => _readStateEffect(policy, null),
+    ['tasks', 'convert-message'] => (policy) => _taskEffect(
+      policy,
+      channel,
+      null,
+      null,
+      null,
+    ),
     ['tasks', final id, ...] => (policy) => _taskEffect(
       policy,
       channel,
@@ -282,15 +302,21 @@ _ReadEffect _realtimeEffect(RaftEvent event) {
         attachments: event.name != 'message:reactions',
       );
     case 'task':
-      final task = payload is Map ? payload['task'] : null;
-      final id = _readId(task, 'id') ?? _readId(payload, 'taskId');
-      final scope = channel ?? _readId(task, 'channelId');
-      final number =
-          _readId(task, 'taskNumber') ?? _readId(payload, 'taskNumber');
-      final conversation =
-          _readId(task, 'conversationChannelId') ??
-          _readId(payload, 'conversationChannelId');
-      return (policy) => _taskEffect(policy, scope, id, number, conversation);
+      _ReadEffect effect(Object? task) {
+        final id = _readId(task, 'id') ?? _readId(payload, 'taskId');
+        final scope = channel ?? _readId(task, 'channelId');
+        final number =
+            _readId(task, 'taskNumber') ?? _readId(payload, 'taskNumber');
+        final conversation =
+            _readId(task, 'conversationChannelId') ??
+            _readId(payload, 'conversationChannelId');
+        return (policy) => _taskEffect(policy, scope, id, number, conversation);
+      }
+      if (payload case {'tasks': List tasks} when tasks.isNotEmpty) {
+        final effects = tasks.map(effect).toList();
+        return (policy) => effects.any((affects) => affects(policy));
+      }
+      return effect(payload is Map ? payload['task'] : null);
     case 'thread':
       final thread = _readId(payload, 'threadChannelId');
       final parent = _readId(payload, 'parentMessageId');
@@ -334,8 +360,12 @@ _ReadEffect _realtimeEffect(RaftEvent event) {
       final id = _readId(payload, 'artifactId') ?? _readId(payload, 'id');
       return (policy) => _artifactEffect(policy, id);
     case 'read':
+    case 'read_state':
+    case 'scope_read':
     case 'unread':
-      return (policy) => _readStateEffect(policy, channel);
+    case 'notification_prefs':
+      final scope = channel ?? _readId(payload, 'scopeId');
+      return (policy) => _readStateEffect(policy, scope);
     case 'saved':
       return (policy) => policy.family == _ReadFamily.saved;
     case 'presence':
@@ -347,18 +377,13 @@ _ReadEffect _realtimeEffect(RaftEvent event) {
     case 'channel':
       final row = payload is Map ? payload['channel'] : null;
       final changed = channel ?? _readId(row, 'id');
-      final authorityChanged = row is Map
-          ? row['joined'] == false ||
-                row.containsKey('channelCapabilities') ||
-                row.containsKey('type')
-          : false;
       if (event.name == 'channel:updated' &&
           changed != null &&
-          !authorityChanged) {
-        return (policy) =>
-            policy.family == _ReadFamily.channelIndex ||
-            policy.family == _ReadFamily.channel &&
-                _possibly(policy.channel, changed);
+          row is Map &&
+          row.keys.every(
+            const {'id', 'serverId', 'name', 'description'}.contains,
+          )) {
+        return (policy) => _possibly(policy.channel, changed);
       }
       return _allReads;
     default:

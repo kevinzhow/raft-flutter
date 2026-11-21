@@ -371,7 +371,9 @@ class ReadReceipts extends ChangeNotifier {
   ) async {
     final version = _detailVersions[scopeId];
     try {
-      final data = await (detail ?? w.client.get('/channels/$scopeId'));
+      final data =
+          await (detail ??
+              RaftClient.runFresh(() => w.client.get('/channels/$scopeId')));
       if (_disposed ||
           _scope() != epoch ||
           _detailVersions[scopeId] != version) {

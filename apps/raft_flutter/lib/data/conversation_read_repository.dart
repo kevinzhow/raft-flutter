@@ -547,7 +547,9 @@ class ConversationReadRepository {
     if (client.serverId != serverId || client.user?.id != principal) return;
     final requestGeneration = _readState().generation;
     try {
-      final value = await client.get('/channels/unread', query: {'summary': 1});
+      final value = await RaftClient.runRevalidating(
+        () => client.get('/channels/unread', query: {'summary': 1}),
+      );
       if (client.serverId != serverId || client.user?.id != principal) return;
       final counts = value is Map ? value['channels'] ?? value : {};
       if (counts is Map) {

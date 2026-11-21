@@ -44,12 +44,17 @@ class _Client extends RaftClient {
     required super.sessionStore,
     required super.transport,
   });
-  final forwarded = StreamController<RaftEvent>.broadcast(sync: true);
+  final _events = StreamController<RaftEvent>.broadcast(sync: true);
   @override
-  Stream<RaftEvent> get events => forwarded.stream;
+  Stream<RaftEvent> get events => _events.stream;
+  void emit(RaftEvent event) {
+    invalidateReadsForEvent(event);
+    _events.add(event);
+  }
+
   @override
   Future<void> dispose() async {
-    await forwarded.close();
+    await _events.close();
     await super.dispose();
   }
 }

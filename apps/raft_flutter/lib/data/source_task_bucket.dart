@@ -40,9 +40,12 @@ Future<dynamic> readSourceTaskBucket(
   final pending = _pendingTaskBuckets[client] ??= {};
   if (pending[key] case final request?) return request;
   late final Future<dynamic> request;
-  request = w.transport
-      .query('/tasks/channel/${Uri.encodeComponent(channelId)}')
-      .whenComplete(() {
+  request =
+      RaftClient.runFresh(
+        () => w.transport.query(
+          '/tasks/channel/${Uri.encodeComponent(channelId)}',
+        ),
+      ).whenComplete(() {
         if (identical(pending[key], request)) pending.remove(key);
       });
   pending[key] = request;

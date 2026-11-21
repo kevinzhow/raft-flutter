@@ -277,8 +277,12 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final tickets = {
       for (final part in wanted) part: _tickets[part] = ++_ticket,
     };
+    Future<dynamic> readMembers() => w.query('/channels/$id/members');
     Future<dynamic> fetch(String part) => switch (part) {
-      'members' => w.query('/channels/$id/members'),
+      'members' =>
+        parts != _parts || known.contains('members')
+            ? RaftClient.runRevalidating(readMembers)
+            : readMembers(),
       'sidebar' => w.query('/servers/$serverId/sidebar-order'),
       'display' => w.query('/channels/$id/message-display-settings'),
       _ => w.query('/channels/$id/notification-settings'),

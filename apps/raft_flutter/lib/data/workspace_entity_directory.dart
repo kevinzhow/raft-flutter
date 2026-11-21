@@ -778,7 +778,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     final existing = _pending[kind];
     if (existing != null && !force) return existing;
     final epoch = _epoch;
-    _requested.add(kind);
+    final revalidate = !_requested.add(kind) || force;
     final ticket = _tickets[kind] = (_tickets[kind] ?? 0) + 1;
     if (kind == WorkspaceEntityKind.agents) _agentRequests++;
     bool current() => _accepts(scope, epoch) && _tickets[kind] == ticket;
@@ -800,13 +800,18 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     late final Future<void> pending;
     pending = (() async {
       try {
+        Future<dynamic> read() => query(switch (kind) {
+          WorkspaceEntityKind.agents => '/agents',
+          WorkspaceEntityKind.computers =>
+            '/servers/${scope.serverId}/machines',
+          WorkspaceEntityKind.members => '/servers/${scope.serverId}/members',
+        });
         final value = await Future.sync(
-          () => query(switch (kind) {
-            WorkspaceEntityKind.agents => '/agents',
-            WorkspaceEntityKind.computers =>
-              '/servers/${scope.serverId}/machines',
-            WorkspaceEntityKind.members => '/servers/${scope.serverId}/members',
-          }),
+          () => existing != null
+              ? RaftClient.runFresh(read)
+              : revalidate
+              ? RaftClient.runRevalidating(read)
+              : read(),
         );
         if (!current()) return;
         final raw = kind == WorkspaceEntityKind.computers && value is Map

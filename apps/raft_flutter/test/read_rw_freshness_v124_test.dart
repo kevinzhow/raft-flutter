@@ -163,7 +163,7 @@ void main() {
       expect(store[RwSurface.inbox].freshness, RwFreshness.fresh);
       adapter.answers.clear();
       adapter.queue('/channels/inbox', 503, _overloaded, {'retry-after': '1'});
-      unawaited(read('/channels/inbox'));
+      unawaited(RaftClient.runRevalidating(() => read('/channels/inbox')));
       async.elapse(const Duration(seconds: 2));
       expect(store[RwSurface.inbox].freshness, RwFreshness.unavailable);
       expect(store[RwSurface.inbox].code, 'rw_overloaded');
