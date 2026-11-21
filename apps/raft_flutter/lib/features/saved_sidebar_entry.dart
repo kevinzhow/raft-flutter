@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
@@ -194,7 +195,7 @@ class SavedCountStore extends ChangeNotifier {
       reload |= _channels != null;
       _channels = channels;
     }
-    if (reload) unawaited(_load());
+    if (reload) unawaited(RaftClient.runRevalidating(_load));
   }
 
   Future<void> _load() async {

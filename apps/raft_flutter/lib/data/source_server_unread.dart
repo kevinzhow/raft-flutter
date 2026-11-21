@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:raft_client/raft_client.dart' show RaftEvent;
+import 'package:raft_client/raft_client.dart' show RaftClient, RaftEvent;
 import 'package:raft_sync/raft_sync.dart' show readNotificationPrefsUpdate;
 import 'package:raft_ui/raft_ui.dart' show RaftForegroundPeriodic;
 
@@ -132,7 +132,9 @@ class SourceServerUnreadStore extends ChangeNotifier {
     _startedAt = clock();
     _reading++;
     try {
-      final response = await workspace.query('/servers/unread-summary');
+      final response = await RaftClient.runRevalidating(
+        () => workspace.query('/servers/unread-summary'),
+      );
       if (_disposed || authority != scope || ticket != _request) return;
       final next = <String, SourceServerUnread>{};
       if (response is List) {

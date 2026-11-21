@@ -25,6 +25,7 @@ class _Wire implements HttpClientAdapter {
     final server = options.headers['X-Server-Id'];
     final path = options.uri.path.substring('/api'.length);
     final version = versions[path] ?? 1;
+    final status = statuses['${options.method} $path'] ?? 200;
     if (options.method == 'GET') {
       reads.update(
         '$server ${options.uri.path}',
@@ -52,7 +53,7 @@ class _Wire implements HttpClientAdapter {
     };
     return ResponseBody.fromString(
       jsonEncode(body),
-      statuses['${options.method} $path'] ?? 200,
+      status,
       headers: {
         Headers.contentTypeHeader: ['application/json'],
         if (cacheControl[path] case final header?) 'cache-control': [header],
@@ -93,17 +94,25 @@ void main() {
     '/channels/conversation',
     '/channels/unread',
     '/channels/main/members',
+    '/channels/main/agents',
     '/channels/main/files',
     '/channels/inbox',
+    '/channels/inbox/done',
+    '/channels/inbox/unfollowed',
     '/channels/saved',
+    '/channels/threads/followed',
     '/agents',
     '/servers/s1/members',
     '/servers/s1/members/person/profile',
     '/tasks/channel/main/number/3',
+    '/tasks/channel/main',
     '/tasks/task/history',
     '/tasks/server',
     '/tasks/server/counts',
     '/messages/channel/conversation',
+    '/channels/main/threads/m1',
+    '/messages/context/m1',
+    '/messages/m1/reactions/viewer',
     '/messages/search',
     '/artifacts/conversations/main',
     '/artifacts/artifact-id/details',
@@ -241,6 +250,88 @@ void main() {
     expect(wire.requests(path), 1);
   });
 
+  for (final (method, path, data, affected, untouched)
+      in <(String, String, Map<String, String>?, String, String?)>[
+        (
+          'POST',
+          '/channels/saved',
+          null,
+          '/channels/saved',
+          '/channels/unread',
+        ),
+        ('POST', '/channels/main/read', null, '/channels/inbox', '/agents'),
+        (
+          'POST',
+          '/channels/inbox/read-all',
+          null,
+          '/channels/unread',
+          '/agents',
+        ),
+        (
+          'POST',
+          '/tasks/channel/main',
+          null,
+          '/tasks/channel/main',
+          '/tasks/channel/other',
+        ),
+        (
+          'POST',
+          '/v2/messages',
+          {'channelId': 'main'},
+          '/messages/channel/main',
+          '/messages/channel/other',
+        ),
+        (
+          'PATCH',
+          '/messages/m1',
+          {'channelId': 'main'},
+          '/messages/m1/reactions/viewer',
+          '/messages/m2/reactions/viewer',
+        ),
+        ('PATCH', '/agents/a1', null, '/agents', '/messages/channel/main'),
+        (
+          'POST',
+          '/artifacts/save-attachment',
+          null,
+          '/artifacts/conversations/main',
+          '/agents',
+        ),
+        (
+          'PATCH',
+          '/artifacts/a1',
+          null,
+          '/artifacts/a1/details',
+          '/artifacts/a2/details',
+        ),
+        (
+          'DELETE',
+          '/integrations/marketplace/a1/install',
+          null,
+          '/integrations/marketplace',
+          '/channels/main',
+        ),
+        (
+          'PUT',
+          '/mcp/servers/a1',
+          null,
+          '/integrations/overview',
+          '/channels/main',
+        ),
+        ('PATCH', '/channels/main', null, '/channels/main/files', null),
+      ]) {
+    test('$method $path invalidates $affected', () async {
+      await client.get(affected);
+      if (untouched != null) await client.get(untouched);
+      wire.versions[affected] = 2;
+      await client.request(method, path, data: data);
+      expect((await client.get(affected))['version'], 2);
+      if (untouched != null) {
+        await client.get(untouched);
+        expect(wire.requests(untouched), 1);
+      }
+    });
+  }
+
   test(
     'a pending write bypasses affected fresh reads until its reply',
     () async {
@@ -294,6 +385,17 @@ void main() {
       '/tasks/channel/main/number/4',
     ),
     (
+      const RaftEvent('task:created', {
+        'channelId': 'main',
+        'tasks': [
+          {'id': 't1', 'taskNumber': 2},
+          {'id': 't2', 'taskNumber': 3},
+        ],
+      }),
+      '/tasks/channel/main/number/3',
+      '/tasks/channel/main/number/4',
+    ),
+    (
       const RaftEvent('task:deleted', {'taskId': 't1', 'channelId': 'main'}),
       '/tasks/t1/history',
       '/tasks/t2/history',
@@ -309,9 +411,16 @@ void main() {
       '/artifacts/a2/details',
     ),
     (
-      const RaftEvent('channel:updated', {'channelId': 'main'}),
+      const RaftEvent('channel:updated', {
+        'channel': {'id': 'main', 'name': 'Renamed'},
+      }),
       '/channels/main',
       '/channels/other',
+    ),
+    (
+      const RaftEvent('channel:updated', {'channelId': 'main'}),
+      '/messages/channel/main',
+      '/auth/me',
     ),
     (
       const RaftEvent('channel:members-updated', {'channelId': 'main'}),
@@ -319,9 +428,23 @@ void main() {
       '/auth/me',
     ),
     (
-      const RaftEvent('read:updated', {'channelId': 'main'}),
+      const RaftEvent('read_state:updated', {'scopeId': 'main'}),
       '/channels/unread',
       '/tasks/t2/history',
+    ),
+    (
+      const RaftEvent('scope_read:updated', {'scopeId': 'main'}),
+      '/channels/main',
+      '/channels/other',
+    ),
+    (
+      const RaftEvent('read_state:updated_bulk', {
+        'scopes': [
+          {'scopeId': 'main'},
+        ],
+      }),
+      '/channels/inbox',
+      '/agents',
     ),
     (
       const RaftEvent('message:read', {'channelId': 'main'}),
@@ -368,6 +491,32 @@ void main() {
     expect(wire.requests(path), 2);
   });
 
+  test(
+    'an invalidated older refusal cannot evict a current response',
+    () async {
+      const path = '/channels/main';
+      wire.statuses['GET $path'] = 404;
+      final hold = wire.holds[path] = Completer<void>();
+      final rejected = expectLater(
+        client.get(path),
+        throwsA(isA<RaftApiException>()),
+      );
+      while (wire.requests(path) == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      client.invalidateReadsForEvent(
+        const RaftEvent('channel:updated', {'channelId': 'main'}),
+      );
+      wire.statuses.remove('GET $path');
+      wire.holds.remove(path);
+      wire.versions[path] = 2;
+      expect((await client.get(path))['version'], 2);
+      hold.complete();
+      await rejected;
+      expect(client.peekGet(path), containsPair('version', 2));
+    },
+  );
+
   test('an event fences publication of an older observed refresh', () async {
     const path = '/tasks/channel/main/number/3';
     await client.get(path);
@@ -399,11 +548,21 @@ void main() {
 
   test('read-only POST routes keep unrelated snapshots warm', () async {
     const task = '/tasks/channel/main/number/3';
+    const saved = '/channels/saved';
     await client.get(task);
+    await client.get(saved);
     await client.post('/objects/summaries', data: {'refs': []});
     await client.post('/messages/m1/link-cards/read');
+    await client.post(
+      '/channels/saved/check',
+      data: {
+        'messageIds': ['m1'],
+      },
+    );
     await client.get(task);
+    await client.get(saved);
     expect(wire.requests(task), 1);
+    expect(wire.requests(saved), 1);
   });
 
   test(
@@ -418,6 +577,14 @@ void main() {
       ];
       wire.responses['/messages/channel/main'] = {
         'messages': ['x' * (384 * 1024)],
+      };
+      wire.responses['/channels/private-receipts'] = {
+        'peerReadStates': [
+          {'peerId': 'fixture', 'maxReadSeq': 7},
+        ],
+      };
+      wire.responses['/channels/private-summary'] = {
+        'peerReadSummary': {'peerCount': 1},
       };
       for (final path in wire.responses.keys.followedBy(['/channels/main'])) {
         await client.get(path);

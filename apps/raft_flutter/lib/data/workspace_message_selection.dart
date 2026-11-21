@@ -166,7 +166,7 @@ class WorkspaceMessageSelection {
           : m.messages.map((m) => m.json).toList();
       final retainedHasMore = m.state.hasMore;
       m.transport.client.joinChannel(next.id);
-      final fresh = await MessageHistoryPages.read(m, request, next.id);
+      final fresh = await MessageHistoryPages.readTail(m, request, next.id);
       if (!request.current) return;
       m.acceptFreshTail(
         next.id,
@@ -256,7 +256,7 @@ class WorkspaceMessageSelection {
     try {
       final retained = m.messages.map((m) => m.json).toList();
       final retainedHasMore = m.state.hasMore;
-      final fresh = await MessageHistoryPages.read(m, request, id);
+      final fresh = await MessageHistoryPages.readTail(m, request, id);
       if (!request.current) return;
       m.acceptFreshTail(
         id,

@@ -190,9 +190,17 @@ class MessageHistoryPages {
       ),
       focused: true,
       target: target,
-      remote: () => w.transport.client.messageContext(id, target),
+      remote: () => RaftClient.runRevalidating(
+        () => w.transport.client.messageContext(id, target),
+      ),
     );
   }
+
+  static Future<Map<String, dynamic>> readTail(
+    WorkspaceMessageHost host,
+    MessageWindowRequest request,
+    String id,
+  ) => read(host, request, id, revalidate: true);
 
   static Future<Map<String, dynamic>> read(
     WorkspaceMessageHost host,
@@ -204,6 +212,7 @@ class MessageHistoryPages {
     int limit = 50,
     bool localFirst = true,
     bool gap = false,
+    bool revalidate = false,
     Future<Map<String, dynamic>> Function()? remote,
   }) async {
     final w = host.messageDomain;
@@ -226,7 +235,13 @@ class MessageHistoryPages {
       current: () => request.current && w.device.writable,
       held: () => w.ledger.messages(id),
       remote:
-          remote ?? (gap ? () => RaftClient.runFresh(readRemote) : readRemote),
+          remote ??
+          () {
+            if (gap) return RaftClient.runFresh(readRemote);
+            return revalidate
+                ? RaftClient.runRevalidating(readRemote)
+                : readRemote();
+          },
       before: before,
       after: after,
       limit: limit,

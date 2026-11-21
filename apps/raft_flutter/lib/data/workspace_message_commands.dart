@@ -168,9 +168,11 @@ class WorkspaceThreadCommands {
     Future<void> resolveParent() async {
       if (acceptedParent != null || taskId != null) return;
       try {
-        final page = await m.transport.client.get(
-          '/messages/context/$parentMessageId',
-          query: threadParentQuery(parentChannelId),
+        final page = await RaftClient.runFresh(
+          () => m.transport.client.get(
+            '/messages/context/$parentMessageId',
+            query: threadParentQuery(parentChannelId),
+          ),
         );
         if (!request.current) return;
         final rows = acceptedWindowRows(page['messages'], parentChannelId);
@@ -251,6 +253,7 @@ class WorkspaceThreadCommands {
           request,
           m.state.threadChannelId!,
           thread: true,
+          revalidate: cached != null || heldTaskPage,
         );
         if (!request.current) return;
         final boundary = m.messageWindows.acceptThreadPage(

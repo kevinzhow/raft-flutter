@@ -89,6 +89,7 @@ class _GetCache {
       return pending.future.then(RaftClient._cloneJson);
     }
     if (pending == null && _flights.length >= _maxEntries * 2) {
+      _remove(key);
       return send((_) {});
     }
     bool retain = false;
@@ -103,6 +104,13 @@ class _GetCache {
             }
           }
           return body;
+        })
+        .onError<RaftApiException>((error, trace) {
+          if (identical(_flights[key]?.future, flight) &&
+              const {401, 403, 404, 410}.contains(error.status)) {
+            invalidate((candidate) => candidate == key);
+          }
+          Error.throwWithStackTrace(error, trace);
         })
         .whenComplete(() {
           if (identical(_flights[key]?.future, flight)) _flights.remove(key);
@@ -157,7 +165,9 @@ class _GetCache {
 }
 
 bool _eligibleResponse(Response<dynamic> response) {
-  if (response.statusCode != 200 || response.headers['set-cookie'] != null) {
+  if (response.statusCode != 200 ||
+      response.headers['set-cookie'] != null ||
+      response.headers['x-raft-stale'] != null) {
     return false;
   }
   final directives = response.headers['cache-control'] ?? const <String>[];
@@ -218,6 +228,8 @@ int _jsonSize(Object? value, int limit) {
                 'recoverycodes',
                 'setuptoken',
                 'ticket',
+                'peerreadstates',
+                'peerreadsummary',
               }.contains(key.toLowerCase())) {
         return limit + 1;
       }

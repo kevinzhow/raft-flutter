@@ -303,7 +303,9 @@ class TaskSurfaceController extends ChangeNotifier {
     changed();
     try {
       final id = task['channelId'] as String;
-      final data = await parent.query('/channels/${Uri.encodeComponent(id)}');
+      final data = await RaftClient.runFresh(
+        () => parent.query('/channels/${Uri.encodeComponent(id)}'),
+      );
       if (!current || request != parentRevision) return false;
       if (data is! Map ||
           data['id'] != id ||

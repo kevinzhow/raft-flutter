@@ -72,7 +72,7 @@ void main() {
     final reads = api.calls
         .where((call) => call.path == '/channels/c1/members')
         .length;
-    (w.client as dynamic).forwarded.add(
+    (w.client as dynamic).emit(
       const RaftEvent('channel:members-updated', {'channelId': 'other'}),
     );
     await t.pumpAndSettle();
@@ -81,7 +81,7 @@ void main() {
       hasLength(reads),
     );
     localJoined = false;
-    (w.client as dynamic).forwarded.add(
+    (w.client as dynamic).emit(
       const RaftEvent('channel:members-updated', {'channelId': 'c1'}),
     );
     await t.pumpAndSettle();

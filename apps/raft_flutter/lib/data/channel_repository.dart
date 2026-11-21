@@ -87,10 +87,9 @@ class ChannelRepository {
     final read = ++_channelReadSeq;
     var readCompleted = false;
     try {
-      final lists = await Future.wait([
-        client.channels(),
-        client.channels(dm: true),
-      ]);
+      final lists = await RaftClient.runFresh(
+        () => Future.wait([client.channels(), client.channels(dm: true)]),
+      );
       readCompleted = true;
       if (generation != _generation() || _isDisposed()) return;
       // A list read that started later has already been applied.
@@ -309,7 +308,7 @@ class ChannelRepository {
     RaftChannel? fresh;
     var lostAccess = false;
     try {
-      final data = await client.get('/channels/$id');
+      final data = await RaftClient.runFresh(() => client.get('/channels/$id'));
       if (!current() || data is! Map || data['id'] != id) return;
       fresh = RaftChannel(Map<String, dynamic>.from(data));
       if (fresh.type == 'thread') return;

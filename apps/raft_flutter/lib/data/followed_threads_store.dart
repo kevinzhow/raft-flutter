@@ -194,7 +194,9 @@ class FollowedThreadsStore extends ChangeNotifier {
       return existing;
     }
     // `_load` always suspends before its `finally`, so this is set first.
-    return _pending = _load(scope, _epoch);
+    return _pending = RaftClient.runRevalidating<Future<void>>(
+      () => _load(scope, _epoch),
+    );
   }
 
   Future<void> _load(WorkspaceEntityScope scope, int epoch) async {
