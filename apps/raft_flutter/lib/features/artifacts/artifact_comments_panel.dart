@@ -42,6 +42,12 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
   ArtifactReviewDraft? _editDraft;
 
   ArtifactCommentStore get store => widget.store;
+
+  ScrollController get _discussionScroll =>
+      (widget.insert == null
+          ? null
+          : RaftSheetScope.maybeOf(context)?.scrollController) ??
+      _scroll;
   bool get _canComment => widget.data.capabilities.comment;
   bool _own(ArtifactComment comment) =>
       comment.author.type == 'user' &&
@@ -102,8 +108,10 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
       _editDraft = null;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _scroll.hasClients) {
-        _scroll.jumpTo(_scroll.position.maxScrollExtent);
+      if (!mounted) return;
+      final scroll = _discussionScroll;
+      if (scroll.hasClients) {
+        scroll.jumpTo(scroll.position.maxScrollExtent);
       }
     });
   }
@@ -534,7 +542,8 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
     final unresolved = threads.where((thread) => !thread.resolved).toList();
     final resolved = threads.where((thread) => thread.resolved).toList();
     return ListView(
-      controller: _scroll,
+      // The report sheet's handle needs its scroll position to move detents.
+      controller: _discussionScroll,
       padding: const EdgeInsets.all(RaftSpace.x3),
       children: [
         if (store.reviewId != null) ...[
