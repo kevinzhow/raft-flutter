@@ -57,19 +57,21 @@ class MessageHistoryReconciliation {
         limit: limit,
         localFirst: false,
         reason: reason,
-        remote: () async => target == null
-            ? w.transport.client.messagePage(
-                scope.channel,
-                before: before,
-                after: after,
-                limit: limit,
-              )
-            : Map<String, dynamic>.from(
-                await w.transport.client.get(
-                  '/messages/context/$target',
-                  query: {'channelId': scope.channel},
+        remote: () => RaftClient.runFresh(
+          () async => target == null
+              ? w.transport.client.messagePage(
+                  scope.channel,
+                  before: before,
+                  after: after,
+                  limit: limit,
+                )
+              : Map<String, dynamic>.from(
+                  await w.transport.client.get(
+                    '/messages/context/$target',
+                    query: {'channelId': scope.channel},
+                  ),
                 ),
-              ),
+        ),
       );
       if (!current() || page is! MessageHistoryPage) return false;
       var durable = true;

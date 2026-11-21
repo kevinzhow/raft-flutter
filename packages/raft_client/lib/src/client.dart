@@ -23,6 +23,8 @@ import 'proxy/transport_stub.dart'
 import 'session_policy.dart';
 
 part 'channel_read_dispatch.dart';
+part 'get_cache.dart';
+part 'get_cache_policy.dart';
 part 'shared_session.dart';
 
 abstract interface class SessionStore {
@@ -508,6 +510,7 @@ class RaftClient {
   static const rwOverloadDefaultRetryAfter = Duration(seconds: 2);
   static const rwOverloadMaxRetryAfter = Duration(seconds: 10);
   final Map<String, ({Future<dynamic> flight, DateTime at})> _singleFlight = {};
+  final _getCache = _GetCache();
 
   /// A read already in flight is joined only while it is this young: one that
   /// has stalled longer is not shared with a fresh attempt (a retry must not
@@ -548,7 +551,12 @@ class RaftClient {
   final List<Duration> recoveryBackoff;
   final Dio http;
   Session? _session;
-  RaftRecord? user;
+  RaftRecord? _user;
+  RaftRecord? get user => _user;
+  set user(RaftRecord? next) {
+    if (_user?.id != next?.id) _getCache.clear();
+    _user = next;
+  }
 
   /// Server v1.24 enterprise SSO enforcement: a Server that requires its
   /// single sign-on refuses every request of this session with 403
@@ -578,9 +586,21 @@ class RaftClient {
     _emit(const RaftEvent(accountDeletionEventName, null));
   }
 
-  String? serverId;
+  String? _serverId;
+  String? get serverId => _serverId;
+  set serverId(String? next) {
+    if (next != _serverId) _getCache.clear();
+    _serverId = next;
+  }
+
   int _generation = 0;
-  int _authenticationGeneration = 0;
+  int _authenticationEpoch = 0;
+  int get _authenticationGeneration => _authenticationEpoch;
+  set _authenticationGeneration(int next) {
+    _getCache.clear();
+    _authenticationEpoch = next;
+  }
+
   int get generation => _generation;
 
   /// Account authority lifetime, independent of the selected workspace.
@@ -696,6 +716,13 @@ class RaftClient {
   }
 
   void _emit(RaftEvent event) {
+    if (const {
+      'account:updated',
+      'auth:sso-required',
+      accountDeletionEventName,
+    }.contains(event.name)) {
+      _getCache.clear();
+    }
     if (!_closed) _events.add(event);
   }
 
@@ -1419,6 +1446,63 @@ class RaftClient {
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       request('GET', path, query: query);
 
+  /// A retained response for immediate display under the current authority.
+  /// Callers must still perform the normal read to revalidate it.
+  Object? peekGet(String path, {Map<String, dynamic>? query}) {
+    final entry = _retainedGet(path, query);
+    return entry == null ? null : _cloneJson(entry.data);
+  }
+
+  _GetEntry? _retainedGet(String path, Map<String, dynamic>? query) {
+    if (sharedSessionAuthority != null || Zone.current[_freshKey] == true) {
+      return null;
+    }
+    final key = _getKey(
+      path,
+      query,
+      currentRequestHeaders,
+      workspaceScoped: true,
+    );
+    return key == null
+        ? null
+        : _getCache.peek(key, key.policy.age, governor.now(), stale: true);
+  }
+
+  /// Publishes a retained display snapshot synchronously and then publishes
+  /// the revalidated value only if it changed. The caller owns its UI lifetime.
+  /// A failed refresh leaves transient/offline content in place. Authority
+  /// failures still reach the caller so it can retire the displayed data.
+  Future<void> observeGet(
+    String path, {
+    Map<String, dynamic>? query,
+    required void Function(dynamic) onData,
+    Future<dynamic> Function()? read,
+  }) async {
+    final authentication = _authenticationGeneration;
+    final workspace = _generation;
+    final prior = _retainedGet(path, query);
+    if (prior != null) onData(_cloneJson(prior.data));
+    final dynamic current;
+    try {
+      final request = read ?? () => get(path, query: query);
+      current = prior == null ? await request() : await runBackground(request);
+    } on RaftApiException catch (error) {
+      final status = error.status;
+      if (prior != null &&
+          !error.staleScope &&
+          (status == null || status == 408 || status == 429 || status >= 500)) {
+        return;
+      }
+      rethrow;
+    }
+    if (_closed ||
+        _authenticationGeneration != authentication ||
+        _generation != workspace) {
+      throw const RaftApiException.staleScope();
+    }
+    if (prior == null || !_equalReadJson(prior.data, current)) onData(current);
+  }
+
   /// Read an account-owned resource without attaching the active workspace.
   Future<dynamic> getForAccount(String path) => _accountRequest('GET', path);
 
@@ -1542,6 +1626,12 @@ class RaftClient {
       Zone.current[_headersKey] as Map<String, String>? ?? const {};
 
   static const _sharedKey = #raftSharedReads;
+  static const _freshKey = #raftFreshRead;
+
+  /// Permission checks and sync reconciliation explicitly requiring a
+  /// current server decision bypass response reuse and in-flight joining.
+  static T runFresh<T>(T Function() body) =>
+      runZoned(body, zoneValues: {_freshKey: true});
 
   /// Runs [body] so that identical GETs started inside it while one is in
   /// flight (same path, query, server, principal and credentials, started
@@ -1557,6 +1647,98 @@ class RaftClient {
   /// retried after a 429. Subclasses and fakes of the client need no change.
   static T runBackground<T>(T Function() body) =>
       runZoned(body, zoneValues: {_priorityKey: RequestPriority.background});
+
+  _GetKey? _getKey(
+    String path,
+    Map<String, dynamic>? query,
+    Map<String, dynamic>? headers, {
+    required bool workspaceScoped,
+  }) {
+    final principal = user?.id;
+    if (_closed ||
+        _session == null ||
+        principal == null ||
+        principal.isEmpty ||
+        ssoRequired != null ||
+        accountDeletion.active ||
+        Zone.current[_bytesKey] == true ||
+        !path.startsWith('/') ||
+        path.startsWith('//')) {
+      return null;
+    }
+    final supplied = {
+      for (final header in {...http.options.headers, ...?headers}.entries)
+        header.key.toLowerCase(): header.value,
+    };
+    if (supplied.keys.any(
+      (name) => !const {
+        'content-type',
+        'accept-language',
+        'x-server-id',
+      }.contains(name),
+    )) {
+      return null;
+    }
+    final url = Options(method: 'GET')
+        .compose(http.options, path, queryParameters: query)
+        .uri;
+    if (url.origin != Uri.parse(origin).origin ||
+        url.pathSegments.any(
+          (part) => part.contains('/') || part.contains('\\') || part.isEmpty,
+        )) {
+      return null;
+    }
+    final policy = _getPolicy(url);
+    if (policy == null) return null;
+    return (
+      principal: principal,
+      server: _readServer(headers, workspaceScoped),
+      method: 'GET',
+      url: url,
+      language: supplied['accept-language']?.toString(),
+      workspaceScoped: workspaceScoped,
+      policy: policy,
+    );
+  }
+
+  String? _readServer(Map<String, dynamic>? headers, bool workspaceScoped) {
+    if (workspaceScoped && serverId != null) return serverId;
+    return _serverHeader(headers) ?? _serverHeader(http.options.headers);
+  }
+
+  static String? _serverHeader(Map<String, dynamic>? headers) {
+    if (headers == null) return null;
+    for (final entry in headers.entries) {
+      if (entry.key.toLowerCase() == 'x-server-id') {
+        return entry.value?.toString();
+      }
+    }
+    return null;
+  }
+
+  void _invalidateReads(
+    String? server,
+    _ReadEffect effect, {
+    bool flightsOnly = false,
+  }) {
+    _getCache.invalidate(
+      (key) =>
+          (server == null || key.server == null || key.server == server) &&
+          effect(key.policy),
+      flightsOnly: flightsOnly,
+    );
+  }
+
+  /// Also used for events recovered by a replay transport. Call before
+  /// publishing the event to presentation listeners.
+  void invalidateReadsForEvent(RaftEvent event) {
+    final effect = _realtimeEffect(event);
+    final namedServer = _readId(event.payload, 'serverId');
+    _invalidateReads(serverId, effect);
+    if (namedServer != null && namedServer != serverId) {
+      _invalidateReads(namedServer, effect);
+    }
+  }
 
   /// Admission, single-flight and the 429 wait around [_send].
   ///
@@ -1591,30 +1773,74 @@ class RaftClient {
     // Runtime-form reads and create/save advertise the client capabilities
     // (Web `runtimeFormV2ClientCapabilityParams`): one place for create and edit.
     query = runtimeFormRequestQuery(method, path, data, query);
-    Future<dynamic> transmit() => _sendPaced(
-      method,
-      path,
-      data: data,
-      query: query,
-      authorized: authorized,
-      retried: retried,
-      cancellation: cancellation,
-      onSendProgress: onSendProgress,
-      headers: headers,
-      acceptServerExit: acceptServerExit,
-      receiveTimeout: receiveTimeout,
-      workspaceScoped: workspaceScoped,
-      priority: level,
-    );
-    Future<dynamic> send() {
-      if (!authorized || sharedSessionAuthority == null) return transmit();
+    Future<dynamic> transmit([void Function(Response<dynamic>)? onResponse]) =>
+        _sendPaced(
+          method,
+          path,
+          data: data,
+          query: query,
+          authorized: authorized,
+          retried: retried,
+          cancellation: cancellation,
+          onSendProgress: onSendProgress,
+          headers: headers,
+          acceptServerExit: acceptServerExit,
+          receiveTimeout: receiveTimeout,
+          workspaceScoped: workspaceScoped,
+          priority: level,
+          onResponse: onResponse,
+        );
+    Future<T> withSession<T>(Future<T> Function() run) {
+      if (!authorized || sharedSessionAuthority == null) return run();
       final authentication = _authenticationGeneration, workspace = _generation;
       return _ensureSharedSession().then((_) {
         if (authentication != _authenticationGeneration ||
             workspaceScoped && workspace != _generation) {
           throw const RaftApiException.staleScope();
         }
-        return transmit();
+        return run();
+      });
+    }
+
+    Future<dynamic> send([void Function(Response<dynamic>)? onResponse]) =>
+        withSession(() => transmit(onResponse));
+
+    final ordinaryGet =
+        method == 'GET' &&
+        data == null &&
+        cancellation == null &&
+        onSendProgress == null &&
+        receiveTimeout == null &&
+        !retried;
+    final readKey = ordinaryGet && authorized
+        ? _getKey(path, query, headers, workspaceScoped: workspaceScoped)
+        : null;
+    if (readKey != null) {
+      if (Zone.current[_freshKey] == true) {
+        _getCache.invalidate((key) => key == readKey);
+        return send();
+      }
+      return withSession(() {
+        final cached = _getCache.peek(
+          readKey,
+          readKey.policy.age,
+          governor.now(),
+        );
+        if (cached != null) return Future.value(_cloneJson(cached.data));
+        return _getCache
+            .fetch(
+              readKey,
+              governor.now,
+              singleFlightWindow,
+              transmit,
+              () => singleFlightJoins++,
+            )
+            .onError<RaftApiException>((error, trace) {
+              if (const {401, 403, 404, 410}.contains(error.status)) {
+                _getCache.invalidate((key) => key == readKey);
+              }
+              Error.throwWithStackTrace(error, trace);
+            });
       });
     }
 
@@ -1623,17 +1849,27 @@ class RaftClient {
     // channel membership, ...), and a read started after such a change must
     // not be answered by one started before it.
     final shared =
-        method == 'GET' &&
-        cancellation == null &&
-        onSendProgress == null &&
-        !retried &&
+        ordinaryGet &&
+        Zone.current[_freshKey] != true &&
         Zone.current[_sharedKey] == true;
     if (!shared) {
       if (method == 'GET') return send();
       // Read-after-write: a read started once a write has been sent must not
       // join a read that began before it (it would return the old state).
       _singleFlight.clear();
-      return send().whenComplete(_singleFlight.clear);
+      if (!authorized ||
+          !const {'POST', 'PUT', 'PATCH', 'DELETE'}.contains(method)) {
+        return send().whenComplete(_singleFlight.clear);
+      }
+      final server = _readServer(headers, workspaceScoped);
+      final effect = _writeEffect(Uri.parse(path), data);
+      _invalidateReads(server, effect, flightsOnly: true);
+      return send((response) {
+        final status = response.statusCode;
+        if (status != null && status >= 200 && status < 300) {
+          _invalidateReads(server, effect);
+        }
+      }).whenComplete(_singleFlight.clear);
     }
     final query_ = query == null || query.isEmpty
         ? ''
@@ -1684,6 +1920,7 @@ class RaftClient {
     Duration? receiveTimeout,
     bool workspaceScoped = true,
     RequestPriority priority = RequestPriority.foreground,
+    void Function(Response<dynamic>)? onResponse,
   }) async {
     final limits = ServerRateLimits.forRequest(method, path);
     final authentication = _authenticationGeneration;
@@ -1728,6 +1965,7 @@ class RaftClient {
           acceptServerExit: acceptServerExit,
           receiveTimeout: receiveTimeout,
           workspaceScoped: workspaceScoped,
+          onResponse: onResponse,
         );
       } on RaftApiException catch (e) {
         final wait = e.retryAfter;
@@ -1797,6 +2035,7 @@ class RaftClient {
     bool acceptServerExit = false,
     Duration? receiveTimeout,
     bool workspaceScoped = true,
+    void Function(Response<dynamic>)? onResponse,
   }) async {
     final authentication = _authenticationGeneration;
     int generation() => workspaceScoped ? _generation : 0;
@@ -1869,6 +2108,7 @@ class RaftClient {
         throw const RaftApiException.staleScope(
           'The account or server changed. Try again.',
         );
+      onResponse?.call(response);
       return response.data;
     } on DioException catch (e) {
       if (authorized &&
@@ -1918,6 +2158,7 @@ class RaftClient {
           acceptServerExit: acceptServerExit,
           receiveTimeout: receiveTimeout,
           workspaceScoped: workspaceScoped,
+          onResponse: onResponse,
         );
       }
       final body = e.response?.data;
@@ -2195,10 +2436,14 @@ class RaftClient {
     );
     _socket = socket;
     socket.onAny((String event, [dynamic payload]) {
-      if (epoch == _generation) _emit(RaftEvent.fromSocket(event, payload));
+      if (epoch != _generation) return;
+      final decoded = RaftEvent.fromSocket(event, payload);
+      invalidateReadsForEvent(decoded);
+      _emit(decoded);
     });
     socket.onConnect((_) {
       if (epoch != _generation) return;
+      _getCache.clear();
       _socketRetries = 0;
       _emit(const RaftEvent('connected', null));
     });

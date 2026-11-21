@@ -512,12 +512,32 @@ class TaskSurfaceController extends ChangeNotifier {
     changed();
     try {
       if (task['channelId'] != null && task['taskNumber'] != null) {
+        final path =
+            '/tasks/channel/${task['channelId']}/number/${task['taskNumber']}';
         try {
-          final full = await parent.query(
-            '/tasks/channel/${task['channelId']}/number/${task['taskNumber']}',
-          );
-          if (!accepts()) return;
-          task = Map<String, dynamic>.from(full['task']);
+          if (cleanup) {
+            final full = await RaftClient.runFresh(() => parent.query(path));
+            if (!accepts()) return;
+            task = Map<String, dynamic>.from(full['task']);
+          } else {
+            await parent.client.observeGet(
+              path,
+              read: () => parent.query(path),
+              onData: (full) {
+                if (!accepts()) return;
+                task = Map<String, dynamic>.from(full['task']);
+                loading = false;
+                openDiscussion();
+                if ((conversation
+                        ? directTaskConversationChannelId(task)
+                        : null)
+                    case final id?) {
+                  bindConversation(id);
+                }
+                changed();
+              },
+            );
+          }
         } on RaftApiException catch (e) {
           if (!accepts()) return;
           // Deleted-channel terminal cleanup needs the independent history
@@ -551,7 +571,10 @@ class TaskSurfaceController extends ChangeNotifier {
     historyError = null;
     changed();
     try {
-      final data = await parent.query('/tasks/${task['id']}/history');
+      final path = '/tasks/${task['id']}/history';
+      final data = cleanup
+          ? await RaftClient.runFresh(() => parent.query(path))
+          : await parent.query(path);
       if (!current || request != historyRevision) return;
       history = [
         for (final event in data['events'] as List)

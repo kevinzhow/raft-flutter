@@ -283,27 +283,28 @@ void main() {
   });
 
   group('single-flight', () {
+    const uncachedPath = '/fixture/uncached';
     test('identical reads in flight share one request; bodies are copies', () async {
       final (client, server, _, _) = await _client();
       await _signIn(client, server);
       server.delay = const Duration(milliseconds: 20);
       final results = await Future.wait([
         for (var i = 0; i < 5; i++)
-          RaftClient.runShared(() => client.get('/agents')),
+          RaftClient.runShared(() => client.get(uncachedPath)),
       ]);
-      expect(server.seen.where((s) => s == 'GET /agents'), hasLength(1));
+      expect(server.seen.where((s) => s == 'GET $uncachedPath'), hasLength(1));
       expect(client.singleFlightJoins, 4);
       (results[0]['rows'] as List).add(99);
       expect((results[1]['rows'] as List), [1, 2, 3]);
       // Different query: a different question.
       await Future.wait([
-        RaftClient.runShared(() => client.get('/agents', query: {'a': 1})),
-        RaftClient.runShared(() => client.get('/agents', query: {'a': 2})),
+        RaftClient.runShared(() => client.get(uncachedPath, query: {'a': 1})),
+        RaftClient.runShared(() => client.get(uncachedPath, query: {'a': 2})),
       ]);
-      expect(server.seen.where((s) => s == 'GET /agents'), hasLength(3));
+      expect(server.seen.where((s) => s == 'GET $uncachedPath'), hasLength(3));
       // Once finished, a later read asks again (no stale reuse).
-      await RaftClient.runShared(() => client.get('/agents'));
-      expect(server.seen.where((s) => s == 'GET /agents'), hasLength(4));
+      await RaftClient.runShared(() => client.get(uncachedPath));
+      expect(server.seen.where((s) => s == 'GET $uncachedPath'), hasLength(4));
       await client.dispose();
     });
 
@@ -311,8 +312,8 @@ void main() {
       final (client, server, _, _) = await _client();
       await _signIn(client, server);
       server.delay = const Duration(milliseconds: 20);
-      await Future.wait([client.get('/agents'), client.get('/agents')]);
-      expect(server.seen.where((s) => s == 'GET /agents'), hasLength(2));
+      await Future.wait([client.get(uncachedPath), client.get(uncachedPath)]);
+      expect(server.seen.where((s) => s == 'GET $uncachedPath'), hasLength(2));
       await client.dispose();
     });
 

@@ -25,7 +25,9 @@ Future<void> authorizeTaskConversation(
 }) async {
   final detail =
       channelDetail ??
-      await client.get('/channels/${Uri.encodeComponent(conversationId)}');
+      await RaftClient.runFresh<Future<dynamic>>(
+        () => client.get('/channels/${Uri.encodeComponent(conversationId)}'),
+      );
   if (!current() ||
       detail is! Map ||
       detail['id'] != conversationId ||
@@ -40,13 +42,39 @@ Future<void> authorizeTaskConversation(
 /// A task conversation has no parent to resolve. One that does not exist yet
 /// (created lazily, like a thread before its first reply) opens empty with
 /// its composer ready: there is nothing to look up either.
-void taskConversationOpened(WorkspaceMessages m) {
+bool taskConversationOpened(
+  WorkspaceMessages m,
+  MessageWindowRequest request, {
+  required bool seed,
+}) {
   m.state.threadParent = null;
   m.state.threadParentLoading = false;
-  if (m.state.threadChannelId == null) {
+  final id = m.state.threadChannelId;
+  if (id == null) {
     m.state.threadLoading = false;
     m.state.threadResolutionLoading = false;
+    return false;
   }
+  if (!seed || !request.current) return false;
+  final retained = m.transport.client.peekGet(
+    '/messages/channel/$id',
+    query: {'limit': 50},
+  );
+  if (retained is! Map<String, dynamic> || retained['messages'] is! List) {
+    return false;
+  }
+  final boundary = m.messageWindows.acceptThreadPage(
+    request,
+    id,
+    retained,
+    focused: false,
+    retainOlder: false,
+    retainedHasMore: false,
+  );
+  m.state.threadHasMore = boundary.more;
+  m.state.threadHistoryLimited = boundary.limited;
+  m.state.threadLoading = false;
+  return true;
 }
 
 /// The open thread's channel, created on the first durable send: a task's

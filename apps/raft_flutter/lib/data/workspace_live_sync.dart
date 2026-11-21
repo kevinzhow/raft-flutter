@@ -193,30 +193,38 @@ class WorkspaceLiveSync {
       isTransient: isTransientSyncError,
       loaders: {
         SyncListSnapshot.channels: SyncSnapshotLoader(
-          load: (_) => s.directory.refreshChannels(quietErrors: true),
+          load: (_) => RaftClient.runFresh(
+            () => s.directory.refreshChannels(quietErrors: true),
+          ),
         ),
         // The rows carry the member count; open rosters re-read on their
         // own `channel:members-updated`.
         SyncListSnapshot.channelMembers: SyncSnapshotLoader(
-          load: (_) => s.directory.refreshChannels(quietErrors: true),
+          load: (_) => RaftClient.runFresh(
+            () => s.directory.refreshChannels(quietErrors: true),
+          ),
         ),
         SyncListSnapshot.serverMembers: SyncSnapshotLoader(
-          load: (_) => refresh(WorkspaceEntityKind.members),
+          load: (_) =>
+              RaftClient.runFresh(() => refresh(WorkspaceEntityKind.members)),
         ),
         SyncListSnapshot.agents: SyncSnapshotLoader(
-          load: (_) => refresh(WorkspaceEntityKind.agents),
+          load: (_) =>
+              RaftClient.runFresh(() => refresh(WorkspaceEntityKind.agents)),
         ),
         SyncListSnapshot.machines: SyncSnapshotLoader(
           load: (_) => refresh(WorkspaceEntityKind.computers),
         ),
         SyncListSnapshot.inbox: SyncSnapshotLoader(
-          load: (_) => s.activityUnreadIfBound?.refresh(),
+          load: (_) =>
+              RaftClient.runFresh(() => s.activityUnreadIfBound?.refresh()),
         ),
         SyncListSnapshot.unread: SyncSnapshotLoader(
-          load: (_) => s.directory.refreshUnread(),
+          load: (_) => RaftClient.runFresh(() => s.directory.refreshUnread()),
         ),
         SyncListSnapshot.followedThreads: SyncSnapshotLoader(
-          load: (_) => refreshFollowedThreads?.call(),
+          load: (_) =>
+              RaftClient.runFresh(() => refreshFollowedThreads?.call()),
         ),
         SyncListSnapshot.sidebarOrder: SyncSnapshotLoader(
           load: (_) => s.directory.loadSidebar(),
@@ -226,8 +234,12 @@ class WorkspaceLiveSync {
               s.entries.recoverMembership(coalesce: true, quietErrors: true),
         ),
       },
-      refreshChannel: s.directory.refreshChannel,
+      refreshChannel: (id) =>
+          RaftClient.runFresh(() => s.directory.refreshChannel(id)),
       notifyChannelMembers: (id) {
+        client.invalidateReadsForEvent(
+          RaftEvent('channel:members-updated', {'channelId': id}),
+        );
         s.directory.channelRealtime('channel:members-updated', {
           'channelId': id,
         });
@@ -236,7 +248,9 @@ class WorkspaceLiveSync {
       // RFC 082 §4.4: a message changed in place while away; same path as
       // its live `message:updated`.
       applyMessage: (row) {
-        if (s.messages.consumeMessageEvent(RaftEvent('message:updated', row))) {
+        final event = RaftEvent('message:updated', row);
+        client.invalidateReadsForEvent(event);
+        if (s.messages.consumeMessageEvent(event)) {
           s.context.changed();
         }
       },
