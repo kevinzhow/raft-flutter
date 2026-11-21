@@ -80,8 +80,38 @@ class RaftTaskPageList extends StatelessWidget {
     this.selection,
     this.wrapTitle = true,
     this.rowWrap,
-  });
+  }) : _count = null,
+       _taskAt = null,
+       _indexOf = null,
+       _timeRevision = null;
+
+  const RaftTaskPageList.sliver({
+    super.key,
+    required int count,
+    required RaftTaskChipRow Function(int index) taskAt,
+    required int? Function(String id) indexOf,
+    Object? Function(Widget? time)? timeRevision,
+    required this.onOpen,
+    this.showStatus = true,
+    this.showChannel = false,
+    this.showAssignee = true,
+    this.showUnassigned = false,
+    this.unassignedLabel,
+    this.currentTaskId,
+    this.selection,
+    this.wrapTitle = true,
+    this.rowWrap,
+  }) : tasks = const [],
+       _count = count,
+       _taskAt = taskAt,
+       _indexOf = indexOf,
+       _timeRevision = timeRevision;
+
   final List<RaftTaskChipRow> tasks;
+  final int? _count;
+  final RaftTaskChipRow Function(int index)? _taskAt;
+  final int? Function(String id)? _indexOf;
+  final Object? Function(Widget?)? _timeRevision;
 
   /// Wraps each row (its id and the row), for what the app marks a row with
   /// (the task slot's focus return). The row's key stays on the row.
@@ -112,6 +142,7 @@ class RaftTaskPageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_count case final count?) return _buildSliver(context, count);
     if (tasks.isEmpty) return const SizedBox.shrink();
     final t = RaftTokens.of(context);
     final radius = t.size('radius.container', fallback: 10);
@@ -121,11 +152,7 @@ class RaftTaskPageList extends StatelessWidget {
             box.maxWidth.isFinite && box.maxWidth < raftTaskPageNarrowWidth;
         return DecoratedBox(
           key: const ValueKey('tasks-page-list'),
-          decoration: BoxDecoration(
-            color: t.ui.layerCard,
-            border: Border.all(color: _pageListHairline(t)),
-            borderRadius: BorderRadius.circular(radius),
-          ),
+          decoration: _decoration(t, radius),
           child: Padding(
             padding: const EdgeInsets.all(RaftSpace.hairline),
             child: ClipRRect(
@@ -134,16 +161,7 @@ class RaftTaskPageList extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   for (var i = 0; i < tasks.length; i++)
-                    _wrapped(
-                      tasks[i].id,
-                      _PageRow(
-                        key: ValueKey('tasks-page-row-${tasks[i].id}'),
-                        task: tasks[i],
-                        divider: i > 0,
-                        narrow: narrow,
-                        list: this,
-                      ),
-                    ),
+                    _row(tasks[i], i, narrow),
                 ],
               ),
             ),
@@ -152,10 +170,146 @@ class RaftTaskPageList extends StatelessWidget {
       },
     );
   }
+
+  BoxDecoration _decoration(RaftTokens tokens, double radius) => BoxDecoration(
+    color: tokens.ui.layerCard,
+    border: Border.all(color: _pageListHairline(tokens)),
+    borderRadius: BorderRadius.circular(radius),
+  );
+
+  Widget _row(
+    RaftTaskChipRow task,
+    int index,
+    bool narrow, {
+    RaftTaskPageList Function()? currentList,
+  }) {
+    final row = _PageRow(
+      key: ValueKey('tasks-page-row-${task.id}'),
+      task: task,
+      divider: index > 0,
+      narrow: narrow,
+      list: this,
+      currentList: currentList,
+    );
+    return rowWrap?.call(task.id, row) ?? row;
+  }
+
+  Widget _buildSliver(BuildContext context, int count) {
+    if (count == 0) return const SliverToBoxAdapter();
+    final tokens = RaftTokens.of(context);
+    final radius = tokens.size('radius.container', fallback: 10);
+    Widget? rows;
+    bool? narrow;
+    return DecoratedSliver(
+      key: const ValueKey('tasks-page-list'),
+      decoration: _decoration(tokens, radius),
+      sliver: SliverPadding(
+        padding: const EdgeInsets.all(RaftSpace.hairline),
+        sliver: SliverLayoutBuilder(
+          builder: (context, constraints) {
+            final nextNarrow =
+                constraints.crossAxisExtent + 2 * RaftSpace.hairline <
+                raftTaskPageNarrowWidth;
+            if (narrow == nextNarrow) return rows!;
+            narrow = nextNarrow;
+            return rows = SliverList.builder(
+              itemCount: count,
+              findChildIndexCallback: (key) =>
+                  key is ValueKey<String> ? _indexOf!(key.value) : null,
+              itemBuilder: (context, index) {
+                final task = _taskAt!(index);
+                final row = _StablePageRow(
+                  task: task,
+                  index: index,
+                  narrow: nextNarrow,
+                  list: this,
+                );
+                final corner = Radius.circular(radius - 1);
+                return KeyedSubtree(
+                  key: ValueKey(task.id),
+                  child: index == 0 || index == count - 1
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.vertical(
+                            top: index == 0 ? corner : Radius.zero,
+                            bottom: index == count - 1 ? corner : Radius.zero,
+                          ),
+                          child: row,
+                        )
+                      : row,
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
-extension on RaftTaskPageList {
-  Widget _wrapped(String id, Widget row) => rowWrap?.call(id, row) ?? row;
+class _StablePageRow extends StatefulWidget {
+  const _StablePageRow({
+    required this.task,
+    required this.index,
+    required this.narrow,
+    required this.list,
+  });
+
+  final RaftTaskChipRow task;
+  final int index;
+  final bool narrow;
+  final RaftTaskPageList list;
+
+  Object get revision => (
+    task.id,
+    task.number,
+    task.title,
+    task.status,
+    task.replyCount,
+    task.unread,
+    task.assigneeName,
+    task.assigneeIsAgent,
+    task.assigneeIsViewer,
+    task.assigneeAvatarUrl,
+    task.assigneeAvatarPixelKey,
+    task.assigneePresence,
+    task.ref,
+    task.channelName,
+    list._timeRevision?.call(task.time) ?? task.time,
+    index > 0,
+    narrow,
+    list.showStatus,
+    list.showChannel,
+    list.showAssignee,
+    list.showUnassigned,
+    list.unassignedLabel,
+    list.wrapTitle,
+    list.currentTaskId == task.id,
+    list.selection?.selecting,
+    list.selection?.isSelected(task.id),
+  );
+
+  @override
+  State<_StablePageRow> createState() => _StablePageRowState();
+}
+
+class _StablePageRowState extends State<_StablePageRow> {
+  Object? _revision;
+  Widget? _child;
+
+  @override
+  Widget build(BuildContext context) {
+    final revision = widget.revision;
+    if (revision != _revision) {
+      _revision = revision;
+      _child = widget.list._row(
+        widget.task,
+        widget.index,
+        widget.narrow,
+        currentList: () => widget.list,
+      );
+    }
+    return _child!;
+  }
 }
 
 class _PageRow extends StatefulWidget {
@@ -165,10 +319,12 @@ class _PageRow extends StatefulWidget {
     required this.divider,
     required this.narrow,
     required this.list,
+    this.currentList,
   });
   final RaftTaskChipRow task;
   final bool divider, narrow;
   final RaftTaskPageList list;
+  final RaftTaskPageList Function()? currentList;
 
   @override
   State<_PageRow> createState() => _PageRowState();
@@ -198,7 +354,8 @@ class _PageRowState extends State<_PageRow> {
     }
   }
 
-  RaftTaskRowSelection? get _selection => widget.list.selection;
+  RaftTaskPageList get _actions => widget.currentList?.call() ?? widget.list;
+  RaftTaskRowSelection? get _selection => _actions.selection;
 
   /// A click (a tap, Enter, Space) on the row: selects while selecting, with
   /// Cmd/Ctrl or Shift; else opens.
@@ -215,7 +372,7 @@ class _PageRowState extends State<_PageRow> {
         return;
       }
     }
-    widget.list.onOpen(widget.task);
+    _actions.onOpen(widget.task);
   }
 
   void _longPress() {
@@ -233,7 +390,7 @@ class _PageRowState extends State<_PageRow> {
     final sel = _selection;
     final touch = RaftInteraction.of(context).touch;
     final selected = sel?.isSelected(task.id) ?? false;
-    final current = list.currentTaskId == task.id;
+    final current = _actions.currentTaskId == task.id;
     final selecting = sel?.selecting ?? false;
 
     final base = selected || current ? t.colors['fill-cell-selected'] : null;
@@ -281,7 +438,7 @@ class _PageRowState extends State<_PageRow> {
                               'Select #{taskNumber} {title}',
                               {'taskNumber': task.number, 'title': task.title},
                             ),
-                            onChanged: (_) => sel.onSelect(
+                            onChanged: (_) => _selection?.onSelect(
                               task,
                               range: HardwareKeyboard.instance.isShiftPressed,
                             ),
