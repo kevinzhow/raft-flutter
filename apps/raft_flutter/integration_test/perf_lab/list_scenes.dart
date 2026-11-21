@@ -21,6 +21,7 @@ import 'package:raft_flutter/features/tasks_page/tasks_page.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page_model.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page_store.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../../test/support/artifact_fake_client.dart'
@@ -74,10 +75,13 @@ class ListScenes {
       final fixture = await _ListFixture.open(surface, images);
       try {
         await tester.pumpWidget(
-          MaterialApp(
-            key: ValueKey(surface),
-            theme: raftTheme(dark: dark),
-            home: Scaffold(body: fixture.body),
+          AppServicesScope(
+            services: const AppServices.updatesDisabledForTestOrPreview(),
+            child: MaterialApp(
+              key: ValueKey(surface),
+              theme: raftTheme(dark: dark),
+              home: Scaffold(body: fixture.body),
+            ),
           ),
         );
         if (surface == 'tasks-board') {
@@ -108,7 +112,11 @@ class ListScenes {
             tester,
             theme,
             scene,
-            () => _measure(fixture, workload),
+            () async {
+              final observations = await _measure(fixture, workload);
+              if (tester.takeException() case final Object error) throw error;
+              return observations;
+            },
             kind: workload == 'idle' ? 'idle' : 'continuous',
             evidence: (extras) => {
               'mountedRichCardsBeforeMotion': richCards.toList(),
@@ -251,6 +259,7 @@ class _ListFixture {
   _ListFixture(this.surface, this.workspace, this.api, this.client, this.feed);
 
   static const rowCount = 320;
+  static const directoryAgentCount = 240;
   final String surface;
   final WorkspaceController workspace;
   final LabAdapter api;
@@ -328,7 +337,7 @@ class _ListFixture {
     LabImages images,
   ) async {
     final people = [
-      for (var index = 0; index < rowCount ~/ 2; index++)
+      for (var index = 0; index < rowCount - directoryAgentCount; index++)
         {
           'id': 'person-$index',
           'userId': 'person-$index',
@@ -338,7 +347,7 @@ class _ListFixture {
         },
     ];
     agentRows = [
-      for (var index = 0; index < rowCount ~/ 2; index++)
+      for (var index = 0; index < directoryAgentCount; index++)
         {
           'id': 'agent-$index',
           'name': 'Agent $index',
@@ -567,7 +576,7 @@ class _ListFixture {
       'tasks-board' => 'task-board-card-',
       'search' => 'search-message:${feed.id}-',
       'files' => 'channel-file-file-',
-      'directory' => 'desktop-directory-',
+      'directory' => 'desktop-directory-agent-',
       'apps' => 'connected-app-',
       'saved' => 'saved-${feed.id}-',
       'sidebar' => 'sidebar-channel-room-',
@@ -576,7 +585,10 @@ class _ListFixture {
     return find
         .byWidgetPredicate((widget) {
           final key = widget.key;
-          return key is ValueKey<String> && key.value.startsWith(prefix);
+          return key is ValueKey<String> &&
+              (key.value.startsWith(prefix) ||
+                  surface == 'directory' &&
+                      key.value.startsWith('desktop-directory-human-'));
         })
         .evaluate()
         .where((row) => !visibleRect(row).isEmpty)
