@@ -540,13 +540,15 @@ class _TasksPageState extends State<TasksPage> {
 
     // The body: counts failed / loading / empty / no match / list / board.
     final Widget? message;
-    Widget? scrollBody;
+    Widget? scrollSliver;
     final searchEmpty = counts.searching && hits == 0;
     if (counts.failed) {
       message = _CountsFailed(onRetry: () => store.retryFailedCounts(plan));
     } else if (counts.shown == null && !counts.searching) {
       message = null;
-      scrollBody = board ? const _BoardSkeleton() : TasksListSkeleton(tab: tab);
+      scrollSliver = SliverToBoxAdapter(
+        child: board ? const _BoardSkeleton() : TasksListSkeleton(tab: tab),
+      );
     } else if ((counts.searching ? searchEmpty : counts.shown == 0) &&
         (narrowed || tab == TasksPageTab.all)) {
       message = narrowed
@@ -568,10 +570,10 @@ class _TasksPageState extends State<TasksPage> {
             );
     } else if (board) {
       message = null;
-      scrollBody = null;
+      scrollSliver = null;
     } else {
       message = null;
-      scrollBody = TasksListView(
+      scrollSliver = TasksListView(
         controller: w,
         store: store,
         tab: tab,
@@ -589,7 +591,7 @@ class _TasksPageState extends State<TasksPage> {
     }
 
     Widget content;
-    if (board && message == null && scrollBody == null) {
+    if (board && message == null && scrollSliver == null) {
       // Searching, the columns are not counted: each shows what it has read.
       content = counts.columns != null || counts.searching
           ? TasksBoardView(
@@ -630,19 +632,8 @@ class _TasksPageState extends State<TasksPage> {
           if (mobile) PinnedHeaderSliver(child: toolbar),
           SliverPadding(
             // ds-allow: Web page content `px-(--surface-inset) py-4`, `pb-24` under the bar
-            padding: EdgeInsets.fromLTRB(
-              inset,
-              mobile ? 0 : 16,
-              inset,
-              16 + bottom,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Padding(
-                // ds-allow: Web page content `py-4`
-                padding: EdgeInsets.only(top: mobile ? 16 : 0),
-                child: scrollBody,
-              ),
-            ),
+            padding: EdgeInsets.fromLTRB(inset, 16, inset, 16 + bottom),
+            sliver: scrollSliver,
           ),
         ],
       );

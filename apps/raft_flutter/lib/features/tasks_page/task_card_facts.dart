@@ -52,6 +52,16 @@ class TaskActivityTime extends StatelessWidget {
   /// Test seam: the clock.
   final DateTime? now;
 
+  Object get revision {
+    final at = taskActivityAt(task);
+    final clock = now ?? sourceTimeNow();
+    return (
+      at,
+      shortRelativeTime(at, clock, zh: false),
+      isStaleTask(task, clock),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final at = taskActivityAt(task);

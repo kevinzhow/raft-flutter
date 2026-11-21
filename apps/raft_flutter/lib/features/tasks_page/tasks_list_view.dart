@@ -7,11 +7,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../../data/workspace_controller.dart';
 import '../task_content_slot.dart' show TaskSlotRow;
+import 'task_card_facts.dart' show TaskActivityTime;
 import 'tasks_page_model.dart';
 import 'tasks_page_rows.dart';
 import 'tasks_page_store.dart';
@@ -76,12 +78,13 @@ class _LoadMoreSentinelState extends State<LoadMoreSentinel> {
   /// Whether the end is within the margin of the viewport it scrolls in.
   bool get _near {
     final box = context.findRenderObject();
-    final scrollable = Scrollable.maybeOf(context);
-    final viewport = scrollable?.context.findRenderObject();
     if (box is! RenderBox || !box.attached) return false;
-    if (viewport is! RenderBox) return true;
-    final top = box.localToGlobal(Offset.zero, ancestor: viewport).dy;
-    return top <= viewport.size.height + loadAheadMargin;
+    final position = _position;
+    final viewport = RenderAbstractViewport.maybeOf(box);
+    if (position == null || viewport == null) return true;
+    final offset = viewport.getOffsetToReveal(box, 0).offset;
+    return offset <=
+        position.pixels + position.viewportDimension + loadAheadMargin;
   }
 
   void _check() {
@@ -351,38 +354,43 @@ class TasksListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final groups = tasksListGroups(tab, filters, sort, doneSince);
     if (tab == TasksPageTab.all) {
-      return Semantics(
-        container: true,
-        label: raftText(context, 'Every task'),
-        child: KeyedSubtree(
-          key: const ValueKey('tasks-page-all-list'),
-          child: _rows(groups.first, total, assignee: true),
-        ),
+      return SliverMainAxisGroup(
+        key: const ValueKey('tasks-page-all-list'),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Semantics(
+              container: true,
+              label: raftText(context, 'Every task'),
+            ),
+          ),
+          _rows(groups.first, total, assignee: true),
+        ],
       );
     }
-    return Column(
+    return SliverMainAxisGroup(
       key: const ValueKey('tasks-page-mine'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      // ds-allow: Web `flex flex-col gap-9` between the 我的 sections
-      spacing: 36,
-      children: [
+      slivers: [
         for (final (i, section) in MineSection.values.indexed)
-          KeyedSubtree(
+          SliverMainAxisGroup(
             key: ValueKey('tasks-page-section-${section.name}'),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TasksSectionHeading(
+            slivers: [
+              if (i > 0)
+                const SliverToBoxAdapter(
+                  // ds-allow: Web `gap-9` between the sections
+                  child: SizedBox(height: 36),
+                ),
+              SliverToBoxAdapter(
+                child: TasksSectionHeading(
                   section: section,
                   total: sections?[section],
                 ),
-                _rows(
-                  groups[i],
-                  sections?[section],
-                  assignee: section != MineSection.assigned,
-                ),
-              ],
-            ),
+              ),
+              _rows(
+                groups[i],
+                sections?[section],
+                assignee: section != MineSection.assigned,
+              ),
+            ],
           ),
       ],
     );
@@ -446,17 +454,19 @@ class _TasksLaneRowsState extends State<TasksLaneRows> {
     final total = widget.total;
     if (view.tasks.isNotEmpty) {
       final selection = widget.selection;
-      final rows = [
-        for (final task in view.tasks)
-          tasksPageChipRow(widget.controller, task),
-      ];
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        // ds-allow: Web `gap-2` between a list and its more / loading rows
-        spacing: 8,
-        children: [
-          RaftTaskPageList(
-            tasks: rows,
+      final indexes = {
+        for (final (index, task) in view.tasks.indexed)
+          task['id'] as String: index,
+      };
+      return SliverMainAxisGroup(
+        slivers: [
+          RaftTaskPageList.sliver(
+            count: view.tasks.length,
+            taskAt: (index) =>
+                tasksPageChipRow(widget.controller, view.tasks[index]),
+            indexOf: (id) => indexes[id],
+            timeRevision: (time) =>
+                time is TaskActivityTime ? time.revision : time,
             wrapTitle: true,
             rowWrap: (id, row) => KeyedSubtree(
               key: ValueKey('slot-row-$id'),
@@ -479,33 +489,48 @@ class _TasksLaneRowsState extends State<TasksLaneRows> {
             ),
           ),
           if (view.hasMore)
+            SliverPadding(
+              // ds-allow: Web `gap-2` between the list, sentinel and skeleton
+              padding: const EdgeInsets.only(top: 8),
+              sliver: SliverToBoxAdapter(
+                child: LoadMoreSentinel(
+                  onLoadMore: () => store.loadMore(widget.lanes),
+                  loading: view.loading,
+                  failed: view.failed,
+                ),
+              ),
+            ),
+          if (view.loading)
+            const SliverPadding(
+              // ds-allow: Web `gap-2` between the list, sentinel and skeleton
+              padding: EdgeInsets.only(top: 8),
+              sliver: SliverToBoxAdapter(child: TasksRowsSkeleton(rows: 2)),
+            ),
+        ],
+      );
+    }
+    if ((total == null || total > 0) && !view.loaded) {
+      return SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          // ds-allow: Web `gap-2` between the loading board's cards
+          spacing: 8,
+          children: [
+            if (!view.failed) TasksRowsSkeleton(rows: math.min(total ?? 3, 3)),
             LoadMoreSentinel(
               onLoadMore: () => store.loadMore(widget.lanes),
               loading: view.loading,
               failed: view.failed,
             ),
-          if (view.loading) const TasksRowsSkeleton(rows: 2),
-        ],
+          ],
+        ),
       );
     }
-    if ((total == null || total > 0) && !view.loaded) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        // ds-allow: Web `gap-2` between the loading board's cards
-        spacing: 8,
-        children: [
-          if (!view.failed) TasksRowsSkeleton(rows: math.min(total ?? 3, 3)),
-          LoadMoreSentinel(
-            onLoadMore: () => store.loadMore(widget.lanes),
-            loading: view.loading,
-            failed: view.failed,
-          ),
-        ],
-      );
-    }
-    return RaftTaskLaneEmpty(
-      key: const ValueKey('tasks-page-list-empty'),
-      label: raftText(context, 'No tasks'),
+    return SliverToBoxAdapter(
+      child: RaftTaskLaneEmpty(
+        key: const ValueKey('tasks-page-list-empty'),
+        label: raftText(context, 'No tasks'),
+      ),
     );
   }
 }
