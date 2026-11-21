@@ -2625,7 +2625,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/data/channel_repository.dart",
-     "needle": "final data = await client.get('/channels/$id');"
+     "needle": "RaftClient.runFresh(() => client.get('/channels/$id'))"
     }
    ],
    "justification": "",
@@ -3436,7 +3436,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/data/channel_repository.dart",
-     "needle": "client.channels(dm: true),"
+     "needle": "client.channels(dm: true)"
     }
    ],
    "justification": "",
