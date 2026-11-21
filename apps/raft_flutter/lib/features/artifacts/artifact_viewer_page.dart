@@ -1162,6 +1162,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         if (widget.inCollection && !widget.page)
           RaftPanelAction(
             key: const ValueKey('artifact-viewer-open-external'),
+            responsiveRecipe: true,
             glyph: RaftGlyph.arrowUpRight,
             tooltip: tr('Open in browser'),
             onPressed: () => unawaited(this.actions.openInBrowser(data.card)),
@@ -1219,6 +1220,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
             width: 220,
             entries: [_reportEntry(context)],
             triggerBuilder: (context, focus, onPressed) => RaftPanelAction(
+              responsiveRecipe: true,
               glyph: RaftGlyph.chevronDown,
               tooltip: tr('Comment actions'),
               focusNode: focus,
@@ -1248,6 +1250,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           triggerBuilder: (context, focus, onPressed) => widget.inCollection
               ? RaftPanelAction(
                   key: const ValueKey('artifact-viewer-menu-trigger'),
+                  responsiveRecipe: true,
                   glyph: RaftGlyph.ellipsisVertical,
                   tooltip: more,
                   focusNode: focus,
@@ -1315,6 +1318,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           if (!widget.page)
             RaftPanelAction(
               key: closeKey,
+              responsiveRecipe: true,
               glyph: RaftGlyph.x,
               tooltip: tr('Close'),
               onPressed: close,

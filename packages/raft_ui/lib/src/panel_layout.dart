@@ -208,6 +208,7 @@ class RaftPanelAction extends StatelessWidget {
     this.ghostSize,
     this.desktopBar = false,
     this.focusNode,
+    this.responsiveRecipe = false,
   });
   final RaftGlyph glyph;
   final String tooltip;
@@ -215,6 +216,9 @@ class RaftPanelAction extends StatelessWidget {
   final RaftButtonSize? ghostSize;
   final bool desktopBar;
   final FocusNode? focusNode;
+
+  /// Use the responsive PanelAction recipe for headers with its edge spacing.
+  final bool responsiveRecipe;
 
   /// Minimum touch target for touch input. Web's boxed action is
   /// 24x28 (Brutal) / 32x32 (Elegant); the visual and layout stay as Web
@@ -226,7 +230,7 @@ class RaftPanelAction extends StatelessWidget {
         RaftTokens.of(context).option('panelAction.surface', or: 'outline') ==
         'ghost';
     final control = ghost
-        ? (desktopBar || ghostSize != null
+        ? (!responsiveRecipe || desktopBar || ghostSize != null
               ? RaftButton(
                   label: '',
                   glyph: glyph,
@@ -674,6 +678,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
                 tooltip: backTooltip,
                 onPressed: onBack,
                 minHitExtent: RaftMetrics.touchTarget,
+                responsiveRecipe: columnMargin != null,
               ),
               SizedBox(width: gap),
             ],

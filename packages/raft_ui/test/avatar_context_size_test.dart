@@ -119,10 +119,11 @@ void main() {
           expect(meta.left - title.right, 8);
         }
         expect(t.getSize(find.byType(RaftAvatarSlot)), const Size.square(35));
-        expect(
-          t.getSize(find.byType(RaftPanelAction).first),
-          Size.square(actionExtent),
-        );
+        final actions = find.byType(RaftPanelAction);
+        expect(actions, findsExactly(2));
+        for (var index = 0; index < 2; index++) {
+          expect(t.getSize(actions.at(index)), Size.square(actionExtent));
+        }
         await t.tap(find.bySemanticsLabel('Back to members'));
         await t.tap(find.bySemanticsLabel('Close profile'));
         expect([back, close], [1, 1]);

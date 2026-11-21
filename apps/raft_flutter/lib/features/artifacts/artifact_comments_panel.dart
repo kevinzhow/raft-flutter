@@ -623,6 +623,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
                 if (compactReport)
                   RaftPanelAction(
                     key: const ValueKey('artifact-comments-close'),
+                    responsiveRecipe: true,
                     glyph: RaftGlyph.x,
                     tooltip: closeLabel,
                     minHitExtent: RaftMetrics.touchTarget,
