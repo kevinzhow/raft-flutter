@@ -287,11 +287,26 @@ final ParityCase _case = ParityCase(
   build: _build,
 );
 
+Widget _buildDense(ParityContext ctx) {
+  if (ctx.props['platform'] != 'desktop') return _build(ctx);
+  // Mark the crop in the full viewport so popup collision still uses the
+  // real WorkspaceView and Navigator overlay coordinates.
+  return Stack(
+    children: [
+      Positioned.fill(child: _Host(ctx: ctx)),
+      Positioned.fromRect(
+        rect: _window(ctx),
+        child: ctx.target(const IgnorePointer(child: SizedBox.expand())),
+      ),
+    ],
+  );
+}
+
 final ParityCase _denseCase = ParityCase(
   widgets: _case.widgets,
   notes: 'Mounted workspace thread with 200 replies and a shared fixture.',
   settle: _case.settle,
-  build: _build,
+  build: _buildDense,
   interact: (tester, ctx) async {
     await tester.pump(const Duration(milliseconds: 350));
     final state = (ctx.props['extCase'] as String).split('.').last;
@@ -309,7 +324,15 @@ final ParityCase _denseCase = ParityCase(
       _ => throw StateError('Unknown dense thread state: $state'),
     };
     expect(target.hitTestable(), findsOneWidget);
-    final rect = tester.getRect(target);
+    final desktop = ctx.props['platform'] == 'desktop';
+    if (desktop) {
+      expect(
+        tester.getRect(find.byType(WorkspaceView)),
+        Offset.zero & Size(ctx.width, ctx.height),
+      );
+    }
+    final origin = desktop ? _window(ctx).topLeft : Offset.zero;
+    final rect = tester.getRect(target).shift(-origin);
     final position = state == 'dense-outline'
         ? _outlineBackground(tester)
         : null;
