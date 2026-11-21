@@ -175,6 +175,10 @@ void main() {
         findsOneWidget,
       );
       final approve = find.text('Approve update');
+      final banner = tester.widget<RaftBanner>(
+        find.ancestor(of: approve, matching: find.byType(RaftBanner)).first,
+      );
+      expect(banner.action, isA<RaftButton>());
       await tester.ensureVisible(approve);
       await tester.pumpAndSettle();
       await tester.tap(approve);

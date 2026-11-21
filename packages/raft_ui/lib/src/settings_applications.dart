@@ -332,15 +332,10 @@ class RaftConnectedAppsSection extends StatelessWidget {
           ?marketplaceFooter,
           if (reviewNote != null) ...[
             const SizedBox(height: 12),
-            Text(
+            RaftCssText(
               reviewNote!,
               textAlign: TextAlign.center,
-              style: RaftTypography.inherited(
-                t,
-                size: 12,
-                line: 16,
-                color: t.muted,
-              ),
+              style: t.scale(RaftTypeScale.footnote, color: t.muted),
             ),
           ],
         ],
@@ -549,15 +544,10 @@ class RaftConnectedAppsSection extends StatelessWidget {
                       reviewNote != null) ...[
                     gap(12),
                     SliverToBoxAdapter(
-                      child: Text(
+                      child: RaftCssText(
                         reviewNote!,
                         textAlign: TextAlign.center,
-                        style: RaftTypography.inherited(
-                          t,
-                          size: 12,
-                          line: 16,
-                          color: t.muted,
-                        ),
+                        style: t.scale(RaftTypeScale.footnote, color: t.muted),
                       ),
                     ),
                   ],

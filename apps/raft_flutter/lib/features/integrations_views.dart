@@ -1054,8 +1054,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     bool fromBotLink = false,
   }) async {
     final source = authority;
-    // ignore: raft_lints/avoid_imperative_notice_state -- The installed detail owns this notice. A fresh permissions read or approval clears it.
-    String? modalError;
+    final modalError = CauseNotice(scope: () => authority);
     await showRaftDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -1076,8 +1075,10 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                   canManage: true,
                   groupLabel: (g) => _groupLabel(modal, g),
                   onError: (message) {
-                    if (modal.mounted && modalError != message) {
-                      setModal(() => modalError = message);
+                    if (modal.mounted &&
+                        source == authority &&
+                        modalError.message != message) {
+                      setModal(() => modalError.raise(message));
                     }
                   },
                   onUpdated: () async {
@@ -1101,7 +1102,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             byline: app.developer,
             closeLabel: tr('Close installed app details'),
             onClose: close,
-            error: modalError,
+            error: modalError.message,
             sections: [
               if (awaitingApproval && !hasBot) ?permissions,
               if (hasBot)
@@ -2065,18 +2066,12 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
                 ],
               ],
             ),
-            footer: widget.canManage
-                ? Padding(
-                    padding: const EdgeInsets.only(top: RaftSpace.x2),
-                    child: Align(
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: RaftButton(
-                        label: tr(saving ? 'Approving...' : 'Approve update'),
-                        tone: RaftButtonRecipeVariant.outline,
-                        size: RaftButtonRecipeSize.md,
-                        onPressed: saving ? null : () => approve(reviewed),
-                      ),
-                    ),
+            action: widget.canManage
+                ? RaftButton(
+                    label: tr(saving ? 'Approving...' : 'Approve update'),
+                    tone: RaftButtonRecipeVariant.outline,
+                    size: RaftButtonRecipeSize.md,
+                    onPressed: saving ? null : () => approve(reviewed),
                   )
                 : null,
           ),

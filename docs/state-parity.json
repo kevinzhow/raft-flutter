@@ -59244,7 +59244,7 @@
         "owner": "WP-APPS",
         "reason": "Composes the shared progress and native login controls."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@49499/FUNCTION:page@49615": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@49481/FUNCTION:page@49597": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59400,19 +59400,19 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@28026/METHOD:build@28351/FUNCTION:head@29125": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@28076/METHOD:build@28401/FUNCTION:head@29595": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@22996/METHOD:build@23700/FUNCTION:chip@24015": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23046/METHOD:build@23750/FUNCTION:chip@24065": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@22996/METHOD:build@23700/FUNCTION:group@24993": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23046/METHOD:build@23750/FUNCTION:group@25043": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59436,43 +59436,43 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@62236/METHOD:build@62745/FUNCTION:scopeRow@63322": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@62006/METHOD:build@62515/FUNCTION:scopeRow@63092": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5829/METHOD:build@8437/FUNCTION:gap@14491": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5829/METHOD:build@8437/FUNCTION:gap@14401": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5829/METHOD:build@8437/FUNCTION:heading@14589": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5829/METHOD:build@8437/FUNCTION:heading@14499": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29690/METHOD:build@29912/FUNCTION:block@29991": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29460/METHOD:build@29682/FUNCTION:block@29761": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29690/METHOD:build@29912/FUNCTION:line@30110": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29460/METHOD:build@29682/FUNCTION:line@29880": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@28250/METHOD:build@28616/FUNCTION:placeholder@29007": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@28020/METHOD:build@28386/FUNCTION:placeholder@28777": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@57444/METHOD:build@57553/FUNCTION:chip@57829": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@57214/METHOD:build@57323/FUNCTION:chip@57599": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59705,19 +59705,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:addon@38804": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:addon@38852": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:box@38494": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:box@38542": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:resolve@37174": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:resolve@37222": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -59791,13 +59791,13 @@
         "owner": "WP-APPS",
         "reason": "Opens the webhook signing-secret warning from the Apps editor; a mounted behavior test checks its confirm action."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@50293/FUNCTION:appTile@51176": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@50275/FUNCTION:appTile@51158": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Projects an Apps Marketplace tile with its independent bot action."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@39176/METHOD:build@39385/FUNCTION:label@39596": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@38946/METHOD:build@39155/FUNCTION:label@39366": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59832,6 +59832,12 @@
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Uses the Field and Input recipes for verification codes."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:field@41204": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Input",
+        "reason": "Builds the canonical InputGroup control with its fitted toolbar hint."
       }
     },
     "entries": {
@@ -69732,37 +69738,37 @@
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:resolve@37174|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:resolve@37222|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:resolve@37174|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:resolve@37222|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:resolve@37174|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:resolve@37222|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:resolve@37174|state:focus-within": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:resolve@37222|state:focus-within": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:resolve@37174|state:has:focus-visible": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:resolve@37222|state:has:focus-visible": {
         "applicability": "required",
         "owner": "WP-SEARCH",
         "reason": "The generated InputGroup paints its focus shadow when the enabled editor holds focus. Search exercises the recipe in both themes."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:resolve@37174|state:has:data-slot=input-group-control+data-invalid": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:resolve@37222|state:has:data-slot=input-group-control+data-invalid": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35602/METHOD:_buildRecipe@36988/FUNCTION:resolve@37174|state:has:data-slot=input-group-control+disabled": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35650/METHOD:_buildRecipe@37036/FUNCTION:resolve@37222|state:has:data-slot=input-group-control+disabled": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."

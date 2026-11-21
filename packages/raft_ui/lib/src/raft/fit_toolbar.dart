@@ -1101,6 +1101,7 @@ class _FitSearchSlotState extends State<_FitSearchSlot> {
           focusNode: _fieldFocus,
           autofocus: autofocus,
           hintText: search.hintText,
+          fitHint: true,
           semanticLabel: search.semanticLabel,
           onChanged: search.onChanged,
           clearLabel: search.clearLabel,

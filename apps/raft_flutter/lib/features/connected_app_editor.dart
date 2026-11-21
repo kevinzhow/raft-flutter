@@ -1256,14 +1256,13 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           ),
         if (source is Map) sourceInstallation(managementMap(source)),
         const RaftSeparator(),
-        RaftCheckboxRow(
+        RaftCheckboxRow.caption(
           key: const ValueKey('connected-app-enable-bot'),
           title: tr('Post as the app'),
           description: tr(
             'Allow this app to post under its own name. A server admin must also add it during installation or from Installed apps before the app can get a key and post.',
           ),
           value: enableBot,
-          dense: true,
           onChanged: submitting
               ? null
               : (value) => setState(() => enableBot = value),

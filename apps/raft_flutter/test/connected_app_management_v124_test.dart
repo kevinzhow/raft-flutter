@@ -206,6 +206,8 @@ void main() {
     await _tap(tester, myApps);
     await _tap(tester, edit);
     expect(enabled, findsOneWidget);
+    final description = find.textContaining('Allow this app to post');
+    expect(tester.widget<Text>(description).style?.fontSize, 12);
     await _tap(tester, installedLink);
     expect(editor, findsNothing);
     expect(
@@ -621,6 +623,8 @@ void main() {
       find.byKey(const ValueKey('connected-apps-tab-marketplace')),
     );
     expect(find.text('Irrigation'), findsOneWidget);
+    final reviewNote = find.textContaining('Raft reviews every third-party');
+    expect(tester.widget<Text>(reviewNote).style?.fontSize, 13);
     expect(find.text('Add @sprinkler to Garden'), findsOneWidget);
     await _tap(tester, find.text('Add @sprinkler to Garden'));
     expect(client.posts[botPath], [

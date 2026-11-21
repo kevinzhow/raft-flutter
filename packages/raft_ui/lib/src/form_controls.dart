@@ -1043,6 +1043,7 @@ class RaftInputGroup extends StatefulWidget {
     this.size,
     this.snapBorderToDevicePixels = false,
     this.useEmbeddedControlRecipe = false,
+    this.fitHint = false,
   });
 
   /// Key of the inline-end clear button (a test's or a focus lookup's handle).
@@ -1052,6 +1053,7 @@ class RaftInputGroup extends StatefulWidget {
   final RaftInputGroupRecipeSize? size;
   final bool snapBorderToDevicePixels;
   final bool useEmbeddedControlRecipe;
+  final bool fitHint;
   final RaftInputGroupAddon? leading, trailing;
 
   /// `variant="container"` addons are a muted block with a hairline seam (`SlugInput`); the default ones sit on
@@ -1238,7 +1240,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
     final placeholder =
         control.target('::placeholder')?.color?.resolve(rt) ??
         t.semantic.foregroundPlaceholder;
-    final field = TextField(
+    Widget field(String? hint) => TextField(
       contextMenuBuilder: RaftTextSelectionToolbar.editableText,
       autofillHints: null,
       key: widget.fieldKey,
@@ -1260,9 +1262,54 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       strutStyle: StrutStyle.fromTextStyle(style, forceStrutHeight: true),
       cursorColor: style.color,
       decoration: _bare(
-        hintText: widget.hintText,
+        hintText: hint,
         hintStyle: style.copyWith(color: placeholder),
       ),
+    );
+    final hint = widget.hintText;
+    final controlField = widget.fitHint && hint != null
+        ? LayoutBuilder(
+            builder: (context, constraints) => field(
+              _fitInputHint(context, hint, style, constraints.maxWidth),
+            ),
+          )
+        : field(hint);
+    final row = Row(
+      crossAxisAlignment: widget.fitHint && hint != null
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.stretch,
+      children: [
+        if (widget.leading != null) addon(widget.leading!, start),
+        Expanded(
+          child: Padding(
+            padding: padding,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: widget.snapBorderToDevicePixels
+                  ? RaftCssLineBox(
+                      style: style,
+                      textScaler: MediaQuery.textScalerOf(context),
+                      child: controlField,
+                    )
+                  : controlField,
+            ),
+          ),
+        ),
+        if (trailing != null || actions.isNotEmpty)
+          box(
+            end.addon,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: end.addon.columnGap ?? 0,
+              children: [?trailing?.child, ...actions],
+            ),
+            padding: embeddedClear && !container
+                ? end.addon.padding.copyWith(
+                    right: end.addon.padding.right + clearMargin,
+                  )
+                : null,
+          ),
+      ],
     );
     final box0 = RaftRecipeBox(
       style: start.root,
@@ -1285,43 +1332,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
           boxShadow: widget.flat ? const [] : d.boxShadow,
         );
       },
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (widget.leading != null) addon(widget.leading!, start),
-            Expanded(
-              child: Padding(
-                padding: padding,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: widget.snapBorderToDevicePixels
-                      ? RaftCssLineBox(
-                          style: style,
-                          textScaler: MediaQuery.textScalerOf(context),
-                          child: field,
-                        )
-                      : field,
-                ),
-              ),
-            ),
-            if (trailing != null || actions.isNotEmpty)
-              box(
-                end.addon,
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: end.addon.columnGap ?? 0,
-                  children: [?trailing?.child, ...actions],
-                ),
-                padding: embeddedClear && !container
-                    ? end.addon.padding.copyWith(
-                        right: end.addon.padding.right + clearMargin,
-                      )
-                    : null,
-              ),
-          ],
-        ),
-      ),
+      child: widget.fitHint && hint != null ? row : IntrinsicHeight(child: row),
     );
     return Semantics(label: widget.semanticLabel, child: hoverRegion(box0));
   }
@@ -1376,6 +1387,57 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       onKeyEvent: _escapeClears,
       child: group,
     );
+  }
+}
+
+final _hintWords = RegExp(r'[\p{L}\p{N}\p{M}]+', unicode: true);
+final _unspacedHintScript = RegExp(
+  r'[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]',
+  unicode: true,
+);
+
+String _fitInputHint(
+  BuildContext context,
+  String hint,
+  TextStyle style,
+  double width,
+) {
+  final painter = TextPainter(
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    locale: Localizations.maybeLocaleOf(context),
+    maxLines: 1,
+  );
+  bool fits(String text) {
+    painter
+      ..text = TextSpan(text: text, style: style)
+      ..layout();
+    return painter.width <= width;
+  }
+
+  try {
+    if (fits(hint)) return hint;
+    final wordEnds = _hintWords
+        .allMatches(hint)
+        .map((match) => match.end)
+        .toSet();
+    final graphemes = hint.characters.toList();
+    var cut = hint.length;
+    String? fallback;
+    for (var index = graphemes.length - 1; index > 0; index--) {
+      cut -= graphemes[index].length;
+      final candidate = '${hint.substring(0, cut).trimRight()}…';
+      if (!fits(candidate)) continue;
+      if (wordEnds.contains(cut) ||
+          (_unspacedHintScript.hasMatch(graphemes[index - 1]) &&
+              _unspacedHintScript.hasMatch(graphemes[index]))) {
+        return candidate;
+      }
+      fallback ??= candidate;
+    }
+    return fallback ?? (fits('…') ? '…' : '');
+  } finally {
+    painter.dispose();
   }
 }
 

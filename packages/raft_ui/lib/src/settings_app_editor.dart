@@ -18,6 +18,7 @@ import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart' show RaftButtonRecipeSize;
 import 'recipes/form_section.g.dart';
 import 'recipes/recipe_router.dart' show resolveRecipeClasses;
+import 'recipes/recipe_runtime.dart' show CssNum;
 import 'recipes/table.g.dart';
 import 'raft/badge.dart' show RaftBadge;
 import 'select_field.dart';
@@ -919,6 +920,19 @@ class RaftAppPermissionsTable extends StatelessWidget {
     final tokens = t.recipeTokens;
     final states = t.recipeStates(responsive: true);
     final recipe = RaftTableRecipe.resolve(states: states, tokens: tokens);
+    final bodyCell = recipe.cell.copyWith(
+      properties: {
+        ...recipe.cell.properties,
+        'border-bottom-width': const CssNum(0, 'px'),
+      },
+    );
+    final dividedRow = recipe.row.copyWith(
+      properties: {
+        ...recipe.row.properties,
+        for (final entry in recipe.cell.properties.entries)
+          if (entry.key.startsWith('border-bottom-')) entry.key: entry.value,
+      },
+    );
     final labelStyle = resolveRecipeClasses(
       const ['text-subhead', 'font-semibold', 'text-foreground'],
       states,
@@ -957,15 +971,15 @@ class RaftAppPermissionsTable extends StatelessWidget {
                 ],
               ),
             ),
-            for (final row in rows)
+            for (final (index, row) in rows.indexed)
               RaftRecipeBox(
-                style: recipe.row,
+                style: index == rows.length - 1 ? recipe.row : dividedRow,
                 tokens: tokens,
                 child: Row(
                   children: [
                     Expanded(
                       child: RaftRecipeBox(
-                        style: recipe.cell,
+                        style: bodyCell,
                         tokens: tokens,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -980,7 +994,7 @@ class RaftAppPermissionsTable extends StatelessWidget {
                     SizedBox(
                       width: accessColumnWidth,
                       child: RaftRecipeBox(
-                        style: recipe.cell,
+                        style: bodyCell,
                         tokens: tokens,
                         child: RaftSelectField<bool>(
                           key: ValueKey('app-permission-${row.id}'),

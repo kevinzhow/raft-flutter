@@ -56,6 +56,18 @@ void main() {
       isFalse,
       reason: '${paragraph.size.width}px for ${paragraph.text.style}',
     );
+    final cells = find.byWidgetPredicate(
+      (widget) =>
+          widget is RaftRecipeBox &&
+          widget.style.classes.contains('wrap-anywhere'),
+    );
+    expect(cells, findsNWidgets(2));
+    expect(
+      tester
+          .widgetList<RaftRecipeBox>(cells)
+          .map((cell) => cell.style.length('border-bottom-width')),
+      everyElement(0),
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

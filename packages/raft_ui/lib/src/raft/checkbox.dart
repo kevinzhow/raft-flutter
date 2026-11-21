@@ -214,7 +214,8 @@ class RaftCheckboxRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.dense = false,
-  }) : _formField = false;
+  }) : _formField = false,
+       _caption = false;
 
   const RaftCheckboxRow.field({
     super.key,
@@ -223,7 +224,18 @@ class RaftCheckboxRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
   }) : dense = false,
-       _formField = true;
+       _formField = true,
+       _caption = false;
+
+  const RaftCheckboxRow.caption({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.value,
+    required this.onChanged,
+  }) : dense = false,
+       _formField = false,
+       _caption = true;
 
   /// Already localised by the caller (it may be a member's name).
   final String title;
@@ -236,6 +248,7 @@ class RaftCheckboxRow extends StatelessWidget {
   /// The compact row of the action card.
   final bool dense;
   final bool _formField;
+  final bool _caption;
 
   @override
   Widget build(BuildContext context) {
@@ -258,7 +271,7 @@ class RaftCheckboxRow extends StatelessWidget {
       checked: value,
       semanticLabel: titleText,
       builder: (context, st) => Padding(
-        padding: field != null
+        padding: field != null || _caption
             ? EdgeInsets.zero
             : EdgeInsets.symmetric(
                 vertical: dense ? RaftSpace.x1 : RaftSpace.x2,
@@ -268,22 +281,29 @@ class RaftCheckboxRow extends StatelessWidget {
           spacing: field?.item.columnGap ?? RaftSpace.x3,
           children: [
             // The 20px box centres on the first 20px title line.
-            RaftRecipeBox(
-              style: RaftCheckboxRecipe.resolve(
-                states: t.recipeStates(
-                  responsive: true,
-                  focusVisible: st.focusVisible,
-                  extra: [if (disabled) 'data-disabled'],
-                ),
+            Padding(
+              padding: EdgeInsets.only(top: _caption ? RaftSpace.half : 0),
+              child: RaftRecipeBox(
+                style: RaftCheckboxRecipe.resolve(
+                  states: t.recipeStates(
+                    responsive: true,
+                    focusVisible: st.focusVisible,
+                    extra: [if (disabled) 'data-disabled'],
+                  ),
+                  tokens: t.recipeTokens,
+                ).root,
                 tokens: t.recipeTokens,
-              ).root,
-              tokens: t.recipeTokens,
-              applyText: false,
-              child: RaftCheckboxIndicator(checked: value, disabled: disabled),
+                applyText: false,
+                child: RaftCheckboxIndicator(
+                  checked: value,
+                  disabled: disabled,
+                ),
+              ),
             ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: _caption ? RaftSpace.half : 0,
                 children: [
                   Text(
                     titleText,
@@ -291,7 +311,9 @@ class RaftCheckboxRow extends StatelessWidget {
                       context,
                       field?.label.text(t.recipeTokens) ??
                           t.scale(
-                            RaftTypeScale.callout,
+                            _caption
+                                ? RaftTypeScale.subhead
+                                : RaftTypeScale.callout,
                             weight: FontWeight.w600,
                             color: disabled
                                 ? ui.foregroundDisabled
@@ -305,7 +327,9 @@ class RaftCheckboxRow extends StatelessWidget {
                       style:
                           field?.description.text(t.recipeTokens) ??
                           t.scale(
-                            RaftTypeScale.footnote,
+                            _caption
+                                ? RaftTypeScale.caption
+                                : RaftTypeScale.footnote,
                             color: disabled
                                 ? ui.foregroundDisabled
                                 : ui.foregroundMuted,

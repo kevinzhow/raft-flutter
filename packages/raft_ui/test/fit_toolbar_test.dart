@@ -200,6 +200,34 @@ void main() {
       await t.pump(const Duration(milliseconds: 300));
     }
 
+    testWidgets('search fits the placeholder before cutting a word', (
+      tester,
+    ) async {
+      final width = ValueNotifier<double>(150);
+      addTearDown(width.dispose);
+      await mount(
+        tester,
+        ValueListenableBuilder(
+          valueListenable: width,
+          builder: (_, width, child) => SizedBox(width: width, child: child),
+          child: const RaftFitToolbar(
+            children: [
+              RaftFitSearch(
+                semanticLabel: 'Search connected apps',
+                hintText: 'Search apps…',
+              ),
+            ],
+          ),
+        ),
+      );
+      String? placeholder() =>
+          tester.widget<TextField>(find.byType(TextField)).decoration!.hintText;
+      expect(placeholder(), 'Search…');
+      width.value = 300;
+      await tester.pumpAndSettle();
+      expect(placeholder(), 'Search apps…');
+    });
+
     RaftFitToolbar toolbar({
       String query = '',
       ValueChanged<String>? onQuery,
