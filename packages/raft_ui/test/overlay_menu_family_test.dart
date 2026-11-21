@@ -7,7 +7,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/focus_visible.dart';
 
 const _sizes = <(String, Size, TargetPlatform)>[
   ('856x944 Android', Size(856, 944), TargetPlatform.android),

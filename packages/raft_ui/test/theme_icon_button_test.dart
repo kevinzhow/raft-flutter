@@ -6,7 +6,6 @@ import 'package:raft_theme/raft_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/tap_slop.dart';
 import 'package:raft_ui/test_themes.dart';
 
 import 'control_paint.dart';
