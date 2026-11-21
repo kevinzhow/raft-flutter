@@ -14,8 +14,36 @@ import '../data/raft_navigation_history.dart';
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'agent_avatar_projection.dart';
+import 'sender_avatar_projection.dart';
 import 'task_v2_mode.dart';
 import 'task_view_in_thread.dart';
+
+({SenderAvatarProjection avatar, RaftAvatarPresence? presence})?
+taskAssigneeAvatarProjection(
+  WorkspaceController workspace,
+  Map<String, dynamic> task, {
+  DateTime? now,
+}) {
+  final id = task['claimedById'];
+  final type = task['claimedByType'];
+  if (id is! String || (type != 'agent' && type != 'user')) return null;
+  final directory = workspace.services.entityDirectory;
+  final agent = type == 'agent' ? directory.agent(id) : null;
+  return (
+    avatar: projectSenderAvatar(
+      origin: workspace.client.origin,
+      senderId: id,
+      senderType: type as String,
+      agents: [?agent],
+      members: type == 'user' ? [?directory.member(id)] : const [],
+      currentUser: workspace.client.user?.json,
+    ),
+    presence: type != 'agent'
+        ? null
+        : agentRowPresence(agent ?? const {}, now: now ?? sourceTimeNow()),
+  );
+}
 
 /// Reads the two facts a task dialog shows that its task row does not carry:
 /// the source message (who said it, its first line, when) and the size of a

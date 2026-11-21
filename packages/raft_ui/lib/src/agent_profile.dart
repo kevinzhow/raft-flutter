@@ -564,18 +564,19 @@ class RaftPanelSection extends StatelessWidget {
     required this.children,
     this.topBorder = true,
     this.vertical = 16,
+    this.horizontal = 20,
     this.gap = 12,
   });
   final List<Widget> children;
   final bool topBorder;
-  final double vertical, gap;
+  final double vertical, horizontal, gap;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final content = Padding(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
+        left: horizontal,
+        right: horizontal,
         top: vertical + (topBorder ? 1 : 0),
         bottom: vertical,
       ),

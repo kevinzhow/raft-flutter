@@ -30,10 +30,12 @@ class RaftPickerTriggerButton extends StatelessWidget {
     this.invalid = false,
     this.enabled = true,
     this.tooltip,
+    this.semanticLabel,
     this.focusNode,
     this.value,
     this.valueSlot,
     this.labelHidden = false,
+    this.fitToolbar = false,
     this.restyle,
   });
 
@@ -49,8 +51,12 @@ class RaftPickerTriggerButton extends StatelessWidget {
 
   /// `data-has-value`: a filter is applied.
   final bool selected, invalid, enabled;
-  final String? tooltip;
+  final String? tooltip, semanticLabel;
   final FocusNode? focusNode;
+
+  /// FitToolbarPicker renders the chevron in an inline-flex span with no
+  /// extra width around its icon.
+  final bool fitToolbar;
 
   /// What is chosen, after the label (FitToolbarPicker's `value`): [valueSlot] gives its text style (a count is
   /// mono). [labelHidden] drops the label's text but keeps it, then the value, as the accessible name ("Assignee 1").
@@ -74,10 +80,12 @@ class RaftPickerTriggerButton extends StatelessWidget {
     final button = RaftInteractive(
       onPressed: canActivate ? onPressed : null,
       focusNode: focusNode,
-      semanticLabel: [
-        raftText(context, label),
-        if (value != null && value!.isNotEmpty) value!,
-      ].join(' '),
+      semanticLabel:
+          semanticLabel ??
+          [
+            raftText(context, label),
+            if (value != null && value!.isNotEmpty) value!,
+          ].join(' '),
       builder: (context, st) {
         var style = RaftPickerTriggerButtonRecipe.resolve(
           states: t.recipeStates(
@@ -141,7 +149,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
                   inlineIndicator
                       ? indicator
                       : SizedBox.square(
-                          dimension: 16,
+                          dimension: fitToolbar ? 14 : 16,
                           child: Center(child: indicator),
                         ),
               ],

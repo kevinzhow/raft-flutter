@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'task_typography_test.dart' show loadTaskFonts;
+
 const _rows = [
   RaftTaskChipRow(
     id: 'a',
@@ -45,6 +47,7 @@ Future<void> _mount(
   WidgetTester t, {
   required _Picks picks,
   double width = 900,
+  double? viewportWidth,
   bool dark = false,
   bool touch = false,
   bool selecting = false,
@@ -53,9 +56,11 @@ Future<void> _mount(
   bool showChannel = false,
   bool showUnassigned = false,
   double textScale = 1,
+  TextDirection direction = TextDirection.ltr,
   List<RaftTaskChipRow> rows = _rows,
 }) async {
-  t.view.physicalSize = Size(width + 40, 900);
+  final viewport = Size(viewportWidth ?? width + 40, 900);
+  t.view.physicalSize = viewport;
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.resetPhysicalSize);
   addTearDown(t.view.resetDevicePixelRatio);
@@ -83,13 +88,16 @@ Future<void> _mount(
       theme: raftTheme(dark: dark),
       home: MediaQuery(
         data: MediaQueryData(
-          size: Size(width + 40, 900),
+          size: viewport,
           textScaler: TextScaler.linear(textScale),
         ),
         child: Scaffold(
           body: Align(
             alignment: Alignment.topLeft,
-            child: SizedBox(width: width, child: list),
+            child: SizedBox(
+              width: width,
+              child: Directionality(textDirection: direction, child: list),
+            ),
           ),
         ),
       ),
@@ -305,8 +313,7 @@ void main() {
     t,
   ) async {
     final p = _Picks();
-    await _mount(t, picks: p);
-    final tokens = raftTheme().extension<RaftTokens>()!;
+    await _mount(t, picks: p, dark: true);
     BoxDecoration of(String id) =>
         t
                 .widget<DecoratedBox>(
@@ -316,7 +323,9 @@ void main() {
             as BoxDecoration;
     expect((of('a').border! as Border).top.style, BorderStyle.none);
     final second = (of('b').border! as Border).top;
-    expect(second.color, tokens.colors['line-hairline']);
+    // Pinned Elegant Dark paints line-hairline over the card at RGB 57/57/55.
+    const line = Color(0xff393937);
+    expect(second.color.toARGB32(), line.toARGB32());
     expect(second.width, 1);
   });
 
@@ -348,6 +357,41 @@ void main() {
     );
     expect(meta.top, greaterThanOrEqualTo(title.bottom));
     expect(meta.right, t.getRect(_row('a')).right - 12);
+  });
+
+  testWidgets('desktop clipped column keeps trailing metadata on one line', (
+    t,
+  ) async {
+    await loadTaskFonts(t);
+    await _mount(
+      t,
+      picks: _Picks(),
+      width: 328,
+      viewportWidth: 1280,
+      showChannel: true,
+      rows: const [
+        RaftTaskChipRow(
+          id: 'a',
+          number: 11,
+          title: 'Review the focus mode layout',
+          status: 'todo',
+          channelName: 'workbench',
+          assigneeName: 'Workbench Assistant',
+          time: Text('2d ago'),
+        ),
+      ],
+    );
+    final channel = find.byKey(const ValueKey('message-task-chip-channel'));
+    final time = find.text('2d ago');
+    final channelBounds = t.getRect(channel);
+    final timeBounds = t.getRect(time);
+    final status = t.getRect(find.byType(RaftTaskStatusBadge));
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(timeBounds.top, lessThan(channelBounds.bottom));
+    expect(timeBounds.left, greaterThan(channelBounds.right));
+    expect(status.height, 22);
+    expect(channelBounds.top - status.top, 1);
+    expect(channelBounds.bottom - status.bottom, 1);
   });
 
   testWidgets('across channels: the number names its channel where the list '
@@ -382,6 +426,120 @@ void main() {
     await _mount(t, picks: p);
     expect(find.text('Unassigned'), findsNothing);
   });
+
+  testWidgets('page metadata labels use the same line height as the title', (
+    t,
+  ) async {
+    await _mount(t, picks: _Picks(), showUnassigned: true);
+    final row = _row('b');
+    Size box(String key) => t.getSize(
+      find.descendant(of: row, matching: find.byKey(ValueKey(key))),
+    );
+    final metadata = box('message-task-chip-unassigned').height;
+    final title = box('message-task-chip-title').height;
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(metadata, closeTo(title, .01));
+  });
+
+  testWidgets('a phone row uses the compact assignee avatar and caption', (
+    t,
+  ) async {
+    await _mount(
+      t,
+      picks: _Picks(),
+      width: 358,
+      showChannel: true,
+      touch: true,
+    );
+    final avatar = find.descendant(
+      of: _row('a'),
+      matching: find.byKey(const ValueKey('mounted-avatar-frame')),
+    );
+    final size = t.getSize(avatar);
+    final captionWeight = t.widget<Text>(find.text('Bob')).style!.fontWeight;
+    final placeholder = find.descendant(
+      of: avatar,
+      matching: find.byWidgetPredicate(
+        (widget) => widget is RaftIcon && widget.glyph == RaftGlyph.user,
+      ),
+    );
+    expect(placeholder, findsOneWidget);
+    final iconSize = t.getSize(placeholder);
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(size, const Size.square(19));
+    expect(iconSize, const Size.square(12));
+    expect(captionWeight, FontWeight.w500);
+  });
+
+  testWidgets('phone metadata shares the compact status icon baseline', (
+    t,
+  ) async {
+    await loadTaskFonts(t);
+    await _mount(
+      t,
+      picks: _Picks(),
+      width: 358,
+      showChannel: true,
+      showUnassigned: true,
+      touch: true,
+    );
+    Rect bounds(String key) => t.getRect(
+      find.descendant(of: _row('b'), matching: find.byKey(ValueKey(key))),
+    );
+    final label = bounds('message-task-chip-unassigned');
+    final badge = bounds('message-task-chip-status');
+    await t.pumpWidget(const SizedBox.shrink());
+
+    expect(badge.width, 24);
+    expect(label.bottom, closeTo(badge.bottom, .01));
+  });
+
+  testWidgets(
+    '2x RTL compact metadata wraps in reading order and stays tappable',
+    (t) async {
+      await loadTaskFonts(t);
+      final picks = _Picks();
+      await _mount(
+        t,
+        picks: picks,
+        width: 300,
+        showChannel: true,
+        showUnassigned: true,
+        textScale: 2,
+        direction: TextDirection.rtl,
+        touch: true,
+      );
+      final row = _row('b');
+      Rect bounds(String field) => t.getRect(
+        find.descendant(
+          of: row,
+          matching: find.byKey(ValueKey('message-task-chip-$field')),
+        ),
+      );
+      final cell = t.getRect(row);
+      final meta = bounds('meta');
+      final channel = bounds('channel');
+      final label = bounds('unassigned');
+      final badge = bounds('status');
+      expect(meta.left, greaterThanOrEqualTo(cell.left));
+      expect(meta.right, lessThanOrEqualTo(cell.right));
+      expect(meta.bottom, lessThanOrEqualTo(cell.bottom));
+      void expectBefore(Rect first, Rect second) {
+        if (first.top < second.bottom && second.top < first.bottom) {
+          expect(first.left, greaterThanOrEqualTo(second.right));
+        } else {
+          expect(first.bottom, lessThanOrEqualTo(second.top));
+        }
+      }
+
+      expectBefore(channel, label);
+      expectBefore(label, badge);
+      await t.longPress(_open('b'));
+      expect(picks.picked, [('b', false)]);
+      expect(picks.opened, isEmpty);
+      await t.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
   testWidgets('text scale 1x and 2x: rows grow with the text, nothing '
       'overflows, the box and the title stay readable', (t) async {

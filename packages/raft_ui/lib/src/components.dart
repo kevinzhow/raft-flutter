@@ -203,7 +203,7 @@ class RaftAvatar extends StatelessWidget {
   final Widget? content;
 
   /// Explicit mounted AvatarSlot role; null preserves generic sizing/paint.
-  /// When provided, the role determines the outer extent (36 or20).
+  /// The role supplies the default extent when [uiSize] is omitted.
   final RaftMountedAvatarContext? mountedContext;
   final RaftAvatarPresence? presence;
   final bool deactivated;
@@ -229,6 +229,7 @@ class RaftAvatar extends StatelessWidget {
         name: name,
         avatarContext: mountedRole,
         identity: identity,
+        extent: uiSize?.extent,
         presence: presence,
         deactivated: deactivated,
         muted: muted,

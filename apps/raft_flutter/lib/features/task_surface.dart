@@ -10,6 +10,7 @@ import 'chat_view.dart';
 import 'mobile_route_gate.dart';
 import 'panel_width_store.dart';
 import 'profile_side_panel.dart';
+import 'task_content_slot.dart' show TasksPageDetailFocus;
 import 'task_conversation_facts.dart';
 import 'task_conversation_surface.dart';
 import 'task_surface_controller.dart';
@@ -30,6 +31,7 @@ class SourceTaskSurface extends StatefulWidget {
     this.page = false,
     this.compact = false,
     this.inPlace = false,
+    this.tasksPage = false,
   });
   final TaskSurfaceController owner;
 
@@ -52,7 +54,7 @@ class SourceTaskSurface extends StatefulWidget {
   final bool page;
 
   /// Beside a list (Web TaskContentSlot): the dialog's frameless page.
-  final bool inPlace;
+  final bool inPlace, tasksPage;
   @override
   State<SourceTaskSurface> createState() => _SourceTaskSurfaceState();
 }
@@ -222,6 +224,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
               facts,
               formatter,
               compact: widget.compact || widget.page,
+              tasksPage: widget.tasksPage,
               onLeave: widget.onClose,
             )
           : null;
@@ -253,7 +256,9 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
           controller: discussion!,
           thread: true,
           hideThreadParent: header != null,
-          threadParentSlot: header,
+          threadParentSlot: v2 == null || header == null
+              ? header
+              : taskDiscussionSubject(context, o.task, header),
           onTask: widget.onTask,
           onViewBilling: widget.onViewBilling,
         ),
@@ -263,6 +268,8 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         conversation: v2,
         page: widget.page,
         inPlace: widget.inPlace,
+        tasksPage: widget.tasksPage && v2 != null,
+        focusMode: TasksPageDetailFocus.maybeOf(context),
         task: o.task,
         history: o.history,
         assignees: o.assignees,
@@ -312,11 +319,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
             : timeline(),
         discussionBuilder: discussion == null
             ? null
-            : (head) => timeline(
-                header: v2 == null
-                    ? head
-                    : taskConversationHead(context, o, head),
-              ),
+            : (head) => timeline(header: head),
       );
     },
   );

@@ -100,10 +100,6 @@ void main() {
           isTrue,
         );
         expect(t.getTopLeft(slot).dy, t.getBottomLeft(topBar).dy);
-        expect(
-          t.getRect(target).right,
-          lessThanOrEqualTo(t.getRect(slot).left + 1),
-        );
         final seam = find.ancestor(
           of: slot,
           matching: find.byWidgetPredicate(
@@ -116,7 +112,14 @@ void main() {
           ),
         );
         expect(seam, findsOneWidget);
-        expect(t.getTopLeft(seam), t.getTopLeft(slot));
+        final dock = t.getRect(seam);
+        final content = t.getRect(slot);
+        // Web TasksRoute includes its leading border in the saved 400px dock.
+        expect(dock.width, 400);
+        expect(dock.right, desktop.width);
+        expect(content.topLeft, dock.topLeft + const Offset(1, 0));
+        expect(content.bottomRight, dock.bottomRight);
+        expect(t.getRect(target).right, lessThanOrEqualTo(dock.left));
         expect(
           find
               .descendant(

@@ -3,16 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import 'avatar_content.dart';
 import 'components.dart' show RaftAvatar, RaftAvatarKind;
 import 'design_primitives.dart';
 import 'interaction.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
+import 'mounted_task_chip.dart';
+import 'panel_layout.dart' show RaftCssText, raftCssBaseline;
+import 'raft/avatar.dart' show RaftAvatarSize;
 import 'raft/checkbox.dart';
 import 'raft/ui_tokens.dart';
+import 'space.dart';
 import 'task.dart' show raftTaskStatusLabel;
 import 'task_status_badge.dart';
+import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'tokens/tokens.dart';
 import 'viewport_breakpoints.dart' show raftBreakpointWidth;
@@ -34,6 +40,8 @@ class RaftTaskChipRow {
     this.assigneeIsAgent = false,
     this.assigneeIsViewer = false,
     this.assigneeAvatarUrl,
+    this.assigneeAvatarPixelKey,
+    this.assigneePresence,
     this.ref,
     this.channelName,
     this.time,
@@ -54,7 +62,8 @@ class RaftTaskChipRow {
   /// Null: unassigned (no assignee slot at all).
   final String? assigneeName;
   final bool assigneeIsAgent, assigneeIsViewer;
-  final String? assigneeAvatarUrl;
+  final String? assigneeAvatarUrl, assigneeAvatarPixelKey;
+  final RaftAvatarPresence? assigneePresence;
 
   /// The Tasks page across channels: the task's conversation ref
   /// (`#design:#25`, `dm:@peer:#25`), shown instead of `#25` where the list is
@@ -362,30 +371,70 @@ class RaftTaskReplyCount extends StatelessWidget {
 /// Web `TaskAssignee`: the assignee's avatar and name (You for the viewer),
 /// as the compact task rows and a board card's foot show them.
 class RaftTaskAssignee extends StatelessWidget {
-  const RaftTaskAssignee({super.key, required this.task});
+  const RaftTaskAssignee({
+    super.key,
+    required this.task,
+    this.alignToPageRow = false,
+  });
   final RaftTaskChipRow task;
+  final bool alignToPageRow;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final name = task.assigneeIsViewer
         ? raftText(context, 'You')
         : task.assigneeName!;
+    final avatarSize = alignToPageRow ? RaftAvatarSize.xs : null;
+    final pageHuman = alignToPageRow && !task.assigneeIsAgent;
     final avatar = RaftAvatar(
       name: task.assigneeName!,
       kind: task.assigneeIsAgent ? RaftAvatarKind.agent : RaftAvatarKind.human,
       imageUrl: task.assigneeAvatarUrl,
       mountedContext: RaftMountedAvatarContext.compactList,
+      uiSize: avatarSize,
+      presence: task.assigneePresence,
+      content: pageHuman || task.assigneeAvatarPixelKey != null
+          ? RaftAvatarContent(
+              name: task.assigneeName!,
+              kind: task.assigneeIsAgent
+                  ? RaftAvatarContentKind.agent
+                  : RaftAvatarContentKind.human,
+              uploadedUrl: pageHuman ? task.assigneeAvatarUrl : null,
+              pixelKey: task.assigneeAvatarPixelKey,
+              fallback: pageHuman
+                  ? Center(
+                      child: RaftIcon(
+                        RaftGlyph.user,
+                        size: RaftAvatarSize.xs.icon,
+                        color: t.ui.stickerInk,
+                      ),
+                    )
+                  : null,
+            )
+          : null,
     );
-    final label = Text(
-      name,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: t.scale(
-        RaftTypeScale.caption,
-        weight: task.assigneeIsViewer ? FontWeight.w600 : FontWeight.w400,
-        color: task.assigneeIsViewer ? t.ui.foreground : t.ui.foregroundMuted,
-      ),
+    final style = t.scale(
+      RaftTypeScale.caption,
+      weight: task.assigneeIsViewer
+          ? FontWeight.w600
+          : alignToPageRow
+          ? null
+          : FontWeight.w400,
+      color: task.assigneeIsViewer ? t.ui.foreground : t.ui.foregroundMuted,
     );
+    final label = alignToPageRow
+        ? RaftCssText(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: raftCompactTaskRowTextStyle(t, style),
+          )
+        : Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          );
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 192),
       // A box with no room for the gap after the avatar drops the gap (the
@@ -394,7 +443,9 @@ class RaftTaskAssignee extends StatelessWidget {
         builder: (context, box) => Row(
           key: const ValueKey('message-task-chip-assignee'),
           mainAxisSize: MainAxisSize.min,
-          spacing: box.maxWidth < _avatarAndGap ? 0 : 6,
+          spacing: box.maxWidth < (avatarSize?.extent ?? 20) + _avatarGap
+              ? 0
+              : _avatarGap,
           children: [
             avatar,
             Flexible(child: label),
@@ -404,8 +455,16 @@ class RaftTaskAssignee extends StatelessWidget {
     );
   }
 
-  /// The avatar slot (20) and the gap after it (6).
-  static const _avatarAndGap = 26.0;
+  static const _avatarGap = 6.0;
+}
+
+/// The task row's metadata shares the title line height across font sizes.
+TextStyle raftCompactTaskRowTextStyle(RaftTokens tokens, TextStyle style) {
+  final callout = tokens.scale(RaftTypeScale.callout);
+  return style.copyWith(
+    height: callout.fontSize! * callout.height! / style.fontSize!,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
 }
 
 /// The accessible label of a row's reply count (Web `task.chip.*`).

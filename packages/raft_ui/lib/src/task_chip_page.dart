@@ -22,6 +22,31 @@ class RaftTaskRowSelection {
 
 /// Tailwind `inset-ring-2`: the keyboard focus ring of a row.
 const double _focusRingWidth = 2;
+const double _pageRowEndInset = 12;
+
+// The compact badge's baseline is the bottom of its centred status SVG.
+double _compactStatusBaselineInset(
+  RaftTokens tokens,
+  RaftMessageTaskStatus status,
+  TextStyle mono,
+) {
+  final recipe = RaftMessageTaskChipRecipe(tokens, status);
+  if (!recipe.squareStatus) return 0;
+  final icon = RaftMessageTaskStatusIcon.pixelOf(tokens);
+  final badgeDescent = (recipe.chipHeight - icon) / 2;
+  final monoDescent = mono.fontSize! * mono.height! - raftCssBaseline(mono);
+  return (monoDescent - badgeDescent).clamp(0.0, double.infinity);
+}
+
+Color _pageListHairline(RaftTokens t, [Color? fill]) {
+  final line = t.ui.lineHairline;
+  final card = t.ui.layerCard;
+  if (card.a != 1 || line.a == 0 || line.a == 1) return line;
+  return raftChromeBlend(
+    line,
+    fill == null ? card : Color.alphaBlend(fill, card),
+  );
+}
 
 /// The list's own width under which a row is narrow (Web `@max-md/tasks`,
 /// 28rem of the page's `@container/tasks`): the channel moves into the
@@ -98,26 +123,29 @@ class RaftTaskPageList extends StatelessWidget {
           key: const ValueKey('tasks-page-list'),
           decoration: BoxDecoration(
             color: t.ui.layerCard,
-            border: Border.all(color: t.ui.lineHairline),
+            border: Border.all(color: _pageListHairline(t)),
             borderRadius: BorderRadius.circular(radius),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius - 1),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < tasks.length; i++)
-                  _wrapped(
-                    tasks[i].id,
-                    _PageRow(
-                      key: ValueKey('tasks-page-row-${tasks[i].id}'),
-                      task: tasks[i],
-                      divider: i > 0,
-                      narrow: narrow,
-                      list: this,
+          child: Padding(
+            padding: const EdgeInsets.all(RaftSpace.hairline),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radius - 1),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < tasks.length; i++)
+                    _wrapped(
+                      tasks[i].id,
+                      _PageRow(
+                        key: ValueKey('tasks-page-row-${tasks[i].id}'),
+                        task: tasks[i],
+                        divider: i > 0,
+                        narrow: narrow,
+                        list: this,
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -293,7 +321,7 @@ class _PageRowState extends State<_PageRow> {
             color: fill,
             border: Border(
               top: widget.divider
-                  ? BorderSide(color: t.ui.lineHairline)
+                  ? BorderSide(color: _pageListHairline(t, fill))
                   : BorderSide.none,
             ),
           ),
@@ -330,7 +358,7 @@ class _PageRowState extends State<_PageRow> {
                             padding: EdgeInsetsDirectional.fromSTEB(
                               sel == null ? 12 : 8,
                               vertical,
-                              12,
+                              _pageRowEndInset,
                               vertical,
                             ),
                             child: _PageRowContent(
@@ -377,6 +405,7 @@ class _PageRowContent extends StatelessWidget {
     final mono = t
         .scale(RaftTypeScale.monoMeta, mono: true, color: t.ui.foregroundHint)
         .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+    final lineMono = raftCompactTaskRowTextStyle(t, mono);
     final number = '#${task.number}';
     final lead = list.showChannel && !narrow && task.ref != null
         ? task.ref!
@@ -392,6 +421,19 @@ class _PageRowContent extends StatelessWidget {
     final showAssignee = list.showAssignee && assigned;
     final unassigned = list.showAssignee && list.showUnassigned && !assigned;
     final statusLabel = raftText(context, raftTaskStatusLabel(task.status));
+    final compactStatus = list.showChannel && narrow;
+    final scaled = RaftScaled.grows(context);
+    final desktopLayout =
+        MediaQuery.sizeOf(context).width >= RaftLayoutMetrics.desktopBreakpoint;
+    final singleLineMeta = narrow && desktopLayout && !scaled;
+    final status = raftTaskStatusOf(task.status);
+    final statusBadge = list.showStatus
+        ? RaftTaskStatusBadge(
+            status: status,
+            label: statusLabel,
+            labelHidden: compactStatus,
+          )
+        : null;
     final titleStyle = t.scale(
       RaftTypeScale.callout,
       weight: FontWeight.w400,
@@ -401,11 +443,12 @@ class _PageRowContent extends StatelessWidget {
       gap: 8,
       rowGap: 4,
       basis: 160,
+      wrapTrailing: !singleLineMeta,
       children: [
-        Text(
+        RaftCssText(
           lead,
           key: const ValueKey('message-task-chip-number'),
-          style: mono,
+          style: lineMono,
         ),
         Row(
           key: const ValueKey('message-task-chip-title-group'),
@@ -415,10 +458,14 @@ class _PageRowContent extends StatelessWidget {
           children: [
             Flexible(
               child: list.wrapTitle
-                  ? Text(
+                  ? RaftCssText(
                       task.title,
                       key: const ValueKey('message-task-chip-title'),
                       style: titleStyle,
+                      strutStyle: StrutStyle.fromTextStyle(
+                        titleStyle,
+                        forceStrutHeight: true,
+                      ),
                       softWrap: true,
                     )
                   : Text(
@@ -430,42 +477,54 @@ class _PageRowContent extends StatelessWidget {
                     ),
             ),
             if (task.replyCount > 0 || task.unread)
-              RaftTaskReplyCount(task: task, style: mono),
+              RaftTaskReplyCount(task: task, style: lineMono),
           ],
         ),
         Wrap(
           key: const ValueKey('message-task-chip-meta'),
           alignment: WrapAlignment.end,
-          crossAxisAlignment: WrapCrossAlignment.center,
+          // Give the desktop pixel badge the text line's descent so their
+          // bottom alignment matches the source flex baseline.
+          crossAxisAlignment: compactStatus && !scaled
+              ? WrapCrossAlignment.end
+              : WrapCrossAlignment.center,
           spacing: 8,
           runSpacing: 4,
           children: [
             if (channel != null)
-              Text(
+              RaftCssText(
                 channel,
                 key: const ValueKey('message-task-chip-channel'),
-                style: mono,
+                style: lineMono,
               ),
             if (unassigned)
-              Text(
+              RaftCssText(
                 unassignedLabel(list),
                 key: const ValueKey('message-task-chip-unassigned'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: t.scale(
-                  RaftTypeScale.caption,
-                  color: t.ui.foregroundHint,
+                style: raftCompactTaskRowTextStyle(
+                  t,
+                  t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
                 ),
               ),
-            if (showAssignee) RaftTaskAssignee(task: task),
-            if (list.showStatus)
+            if (showAssignee)
+              RaftTaskAssignee(task: task, alignToPageRow: true),
+            if (statusBadge != null)
               KeyedSubtree(
                 key: const ValueKey('message-task-chip-status'),
-                child: RaftTaskStatusBadge(
-                  status: raftTaskStatusOf(task.status),
-                  label: statusLabel,
-                  labelHidden: list.showChannel && narrow,
-                ),
+                child: compactStatus && singleLineMeta
+                    ? Padding(
+                        padding: EdgeInsets.only(
+                          bottom: _compactStatusBaselineInset(
+                            t,
+                            status,
+                            lineMono,
+                          ),
+                        ),
+                        child: statusBadge,
+                      )
+                    : statusBadge,
               ),
             ?task.time,
           ],
@@ -489,19 +548,26 @@ class _RowFlow extends MultiChildRenderObjectWidget {
     required this.gap,
     required this.rowGap,
     required this.basis,
+    required this.wrapTrailing,
   });
   final double gap, rowGap, basis;
+  final bool wrapTrailing;
 
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderRowFlow(gap: gap, rowGap: rowGap, basis: basis);
+  RenderObject createRenderObject(BuildContext context) => _RenderRowFlow(
+    gap: gap,
+    rowGap: rowGap,
+    basis: basis,
+    wrapTrailing: wrapTrailing,
+  );
 
   @override
   void updateRenderObject(BuildContext context, _RenderRowFlow renderObject) {
     renderObject
       ..gap = gap
       ..rowGap = rowGap
-      ..basis = basis;
+      ..basis = basis
+      ..wrapTrailing = wrapTrailing;
   }
 }
 
@@ -515,11 +581,14 @@ class _RenderRowFlow extends RenderBox
     required double gap,
     required double rowGap,
     required double basis,
+    required bool wrapTrailing,
   }) : _gap = gap,
        _rowGap = rowGap,
-       _basis = basis;
+       _basis = basis,
+       _wrapTrailing = wrapTrailing;
 
   double _gap, _rowGap, _basis;
+  bool _wrapTrailing;
   set gap(double v) {
     if (v == _gap) return;
     _gap = v;
@@ -535,6 +604,12 @@ class _RenderRowFlow extends RenderBox
   set basis(double v) {
     if (v == _basis) return;
     _basis = v;
+    markNeedsLayout();
+  }
+
+  set wrapTrailing(bool value) {
+    if (value == _wrapTrailing) return;
+    _wrapTrailing = value;
     markNeedsLayout();
   }
 
@@ -576,7 +651,12 @@ class _RenderRowFlow extends RenderBox
 
     final loose = BoxConstraints(maxWidth: width);
     final leadSize = measure(lead, loose);
-    final trailSize = measure(trail, loose);
+    final trailConstraints = BoxConstraints(
+      // The compact desktop flex group is shrink-0. In a clipped column it
+      // stays on one line, beyond the row's edge if necessary.
+      maxWidth: _wrapTrailing ? width + _pageRowEndInset : double.infinity,
+    );
+    final trailSize = measure(trail, trailConstraints);
     final fits =
         leadSize.width + _gap + _basis + _gap + trailSize.width <= width + .5;
     final titleWidth =
@@ -598,7 +678,7 @@ class _RenderRowFlow extends RenderBox
         : titleSize.height - titleBase;
     double trailBase = 0;
     if (fits) {
-      trailBase = baseline(trail, loose, trailSize);
+      trailBase = baseline(trail, trailConstraints, trailSize);
       if (trailBase > ascent) ascent = trailBase;
       final d = trailSize.height - trailBase;
       if (d > descent) descent = d;
@@ -621,7 +701,7 @@ class _RenderRowFlow extends RenderBox
         );
       } else {
         (trail.parentData as _RowFlowParentData).offset = Offset(
-          width - trailSize.width,
+          (width - trailSize.width).clamp(0.0, width),
           lineHeight + _rowGap,
         );
       }

@@ -301,6 +301,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
                   : null,
               valueSlot: widget.fit?.valueSlot,
               labelHidden: widget.fit?.labelHidden ?? false,
+              fitToolbar: widget.fit != null,
               restyle: widget.fit?.restyle,
               glyph:
                   widget.glyph ??

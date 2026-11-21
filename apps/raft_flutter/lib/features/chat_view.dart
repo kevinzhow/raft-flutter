@@ -64,6 +64,8 @@ import 'copy_message_link.dart';
 import 'private_route_guard.dart';
 import 'message_selection.dart';
 import 'system_message_grouping.dart';
+import 'task_conversation_surface.dart'
+    show isTaskDiscussionSubject, threadEmptyContent;
 import 'task_handoff_notice.dart';
 import 'task_v2_mode.dart' show threadComposerHint;
 import 'copy_selection_links.dart';
@@ -3150,6 +3152,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
     final loading = thread ? _messages.state.threadLoading : activity.loading;
     final empty = rows.isEmpty;
+    final taskPlaceholder =
+        !loading && empty && isTaskDiscussionSubject(widget.threadParentSlot);
     const recipe = RaftTimelineCompositionRecipe();
     final List<Widget> header;
     if (thread) {
@@ -3169,11 +3173,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       inset: true,
                     ),
                   )
-                : RaftProductEmptyState(
-                    title: raftText(context, 'No replies yet'),
-                    icon: (context, size, color) =>
-                        RaftThreadIcon(size: size, color: color),
-                  ),
+                : threadEmptyContent(context, widget.threadParentSlot),
           ),
       ];
     } else {
@@ -3299,11 +3299,15 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 header: header,
                 history: history,
                 forward: forward,
-                footer: AgentTypingListEnd(
-                  controller: w,
-                  thread: thread,
-                  aboveComposer: aboveComposer,
-                ),
+                reserveSentinels:
+                    !taskPlaceholder || _messages.state.threadHistoryLimited,
+                footer: taskPlaceholder
+                    ? null
+                    : AgentTypingListEnd(
+                        controller: w,
+                        thread: thread,
+                        aboveComposer: aboveComposer,
+                      ),
               ),
               hasOlder: thread ? w.threadHasMore : activity.hasMore,
               loadingOlder: thread

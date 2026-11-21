@@ -105,6 +105,30 @@ class TaskSlotScope extends InheritedWidget {
       old.onEscape != onEscape;
 }
 
+class TasksPageDetailFocus extends InheritedWidget {
+  const TasksPageDetailFocus({
+    super.key,
+    required this.focused,
+    required this.toggle,
+    required super.child,
+  });
+
+  final bool focused;
+  final VoidCallback toggle;
+
+  static ({bool focused, VoidCallback toggle})? maybeOf(BuildContext context) {
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<TasksPageDetailFocus>();
+    return scope == null
+        ? null
+        : (focused: scope.focused, toggle: scope.toggle);
+  }
+
+  @override
+  bool updateShouldNotify(TasksPageDetailFocus old) =>
+      old.focused != focused || old.toggle != toggle;
+}
+
 /// The Tasks route's content row. The slot takes its width from the list,
 /// inside the same workspace chrome.
 class TasksPageDetailDock extends StatefulWidget {
@@ -118,10 +142,25 @@ class TasksPageDetailDock extends StatefulWidget {
 
 class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
   double preferredWidth = taskSlotWidth.value;
+  String? focusedTask;
+  String? currentTask;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final next = TaskSlotScope.maybeOf(context)?.taskId;
+    if (next != currentTask) focusedTask = null;
+    currentTask = next;
+  }
+
+  void toggleFocus() {
+    setState(() => focusedTask = focusedTask == null ? currentTask : null);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final open = TaskSlotScope.maybeOf(context)?.taskId != null;
+    final open = currentTask != null;
+    final focused = open && focusedTask == currentTask;
     return LayoutBuilder(
       builder: (context, constraints) {
         final minWidth = math.min(taskSlotWidth.min, constraints.maxWidth);
@@ -129,7 +168,13 @@ class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
           minWidth,
           taskSlotWidth.max,
         );
-        final width = preferredWidth.clamp(minWidth, maxWidth).toDouble();
+        final width = focused
+            ? math.max(minWidth, constraints.maxWidth - 160)
+            : preferredWidth.clamp(minWidth, maxWidth).toDouble();
+        final seam = RaftPanelEdge.side(
+          RaftTokens.of(context),
+          RaftPanelEdgeStyle.attachedPanel,
+        )!;
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -137,13 +182,22 @@ class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
               textDirection: TextDirection.ltr,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: widget.child),
+                Expanded(child: ClipRect(child: widget.child)),
                 if (open)
                   SizedBox(
                     width: width,
                     child: RaftSidePanelFrame(
                       placement: RaftSidePanelPlacement.docked,
-                      child: const TaskContentSlot(),
+                      // TasksRoute's border-l consumes space inside the
+                      // saved column width. The frame owns the seam paint.
+                      child: Padding(
+                        padding: EdgeInsets.only(left: seam.width),
+                        child: TasksPageDetailFocus(
+                          focused: focused,
+                          toggle: toggleFocus,
+                          child: const TaskContentSlot(),
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -160,11 +214,10 @@ class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
                   label: 'Resize panel',
                   value: width,
                   reversed: true,
-                  onChanged: (value) => setState(
-                    () => preferredWidth = value
-                        .clamp(minWidth, maxWidth)
-                        .toDouble(),
-                  ),
+                  onChanged: (value) => setState(() {
+                    focusedTask = null;
+                    preferredWidth = value.clamp(minWidth, maxWidth).toDouble();
+                  }),
                   onChangeEnd: () => taskSlotWidth.save(preferredWidth),
                 ),
               ),
@@ -191,6 +244,7 @@ class TaskContentSlot extends StatelessWidget {
     }
 
     final surface = scope.surface;
+    final focus = TasksPageDetailFocus.maybeOf(context);
     return Focus(
       canRequestFocus: false,
       skipTraversal: true,
@@ -206,7 +260,11 @@ class TaskContentSlot extends StatelessWidget {
         if (_isField(focused!)) return KeyEventResult.skipRemainingHandlers;
         // The Tasks page's selection ends first (its own Escape).
         if (TasksSelectionEscape.pending) return KeyEventResult.handled;
-        (scope.onEscape ?? close)();
+        if (focus?.focused == true && scope.onEscape == null) {
+          focus!.toggle();
+        } else {
+          (scope.onEscape ?? close)();
+        }
         return KeyEventResult.handled;
       },
       child: KeyedSubtree(

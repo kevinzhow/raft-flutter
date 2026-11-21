@@ -4,7 +4,9 @@
 // `?task=<channel>:task:<id>`, its × and Escape close it and focus goes back
 // to the task's card. On a phone it is the task's page, its Back returning to
 // the list. Activity / Search open the same slot in their detail column.
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
@@ -49,6 +51,7 @@ Future<WorkspaceController> mountTasks(
   bool v2 = true,
   TargetPlatform? platform,
   List<Map<String, dynamic>> discussionMessages = const [],
+  bool twoTasks = false,
 }) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
@@ -60,6 +63,37 @@ Future<WorkspaceController> mountTasks(
   addTearDown(() => FlutterError.onError = previous);
   final (w, api) = await pageFixture(t, section: section);
   taskRoutes(api, v2Task);
+  final second = <String, dynamic>{
+    ...v2Task,
+    'id': 'task-2',
+    'messageId': 'task-2',
+    'title': 'Second task title',
+    'description': List.filled(
+      18,
+      'Review open comments before closing.',
+    ).join('\n'),
+    'taskNumber': 9,
+    'conversationChannelId': 'second-conv',
+    'hostMessageId': 'earlier',
+    'claimedByType': 'agent',
+    'claimedById': 'workbench-agent',
+    'claimedByName': 'Workbench Assistant',
+  };
+  final tasks = [v2Task, if (twoTasks) second];
+  if (twoTasks) {
+    api.routes['GET /tasks/server'] = (request) => {
+      'tasks': request.queryParameters['relation'] == 'created_by_me'
+          ? tasks
+          : <dynamic>[],
+      'next_cursor': null,
+    };
+    api.routes['GET /tasks/channel/c1/number/9'] = (_) => {'task': second};
+    api.routes['GET /tasks/task-2/history'] = (_) => {'events': <dynamic>[]};
+    api.routes['GET /messages/channel/second-conv'] = (_) => {
+      'messages': <dynamic>[],
+    };
+    api.routes['POST /channels/second-conv/read'] = (_) => {};
+  }
   if (section == 'activity') {
     api.routes['GET /channels/inbox'] = (_) => {
       'items': [
@@ -83,9 +117,7 @@ Future<WorkspaceController> mountTasks(
       'totalUnreadCount': 0,
     };
   }
-  api.routes['GET /tasks/channel/c1'] = (_) => {
-    'tasks': [v2Task],
-  };
+  api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': tasks};
   api.routes['GET /messages/channel/task-conv'] = (_) => {
     'messages': discussionMessages,
   };
@@ -141,6 +173,220 @@ bool focusIn(Finder finder) {
 
 void main() {
   const desktop = Size(1280, 800);
+  testWidgets('Tasks detail shows its head and one empty discussion on open '
+      'and switch, then close returns to the list', (t) async {
+    try {
+      await t.runAsync(() {
+        final font = FontLoader('packages/raft_ui/SpaceGrotesk')
+          ..addFont(
+            rootBundle.load('packages/raft_ui/assets/fonts/SpaceGrotesk.ttf'),
+          );
+        return font.load();
+      });
+      final w = await mountTasks(
+        t,
+        desktop,
+        platform: TargetPlatform.linux,
+        twoTasks: true,
+      );
+      final second = find.byKey(const ValueKey('tasks-page-row-cell-task-2'));
+      final title = find.byKey(const ValueKey('task-modal-title'));
+      final empty = find.text('No discussion in this task yet');
+      final replies = find.text('No replies yet');
+
+      await t.tap(card.hitTestable());
+      await settle(t);
+      expect(w.location.query('open'), 'task:task-1');
+      expect(title.hitTestable(), findsOneWidget);
+      expect(t.widget<Text>(title).data, v2Task['title']);
+      expect(empty.hitTestable(), findsOneWidget);
+      expect(replies, findsNothing);
+      expect(find.byType(RaftComposer), findsOneWidget);
+
+      final editor = find.descendant(
+        of: slot,
+        matching: find.byType(EditableText),
+      );
+      await t.enterText(editor, 'Draft stays with the task');
+      final expand = find.byKey(const ValueKey('task-focus-mode'));
+      final initialWidth = t.getSize(slot).width;
+      final listHeader = find.byKey(const Key('page-header-surface'));
+      final listToolbar = find.byKey(const Key('tasks-page-toolbar'));
+      final initialListWidth = t.getSize(listHeader).width;
+
+      void expectDockSeam() {
+        final detail = t.getRect(slot);
+        expect(detail.left - t.getRect(listHeader).right, 1);
+        expect(detail.right, desktop.width);
+      }
+
+      expectDockSeam();
+      await t.tap(expand.hitTestable());
+      await settle(t);
+      expect(t.getSize(slot).width, greaterThan(initialWidth));
+      expect(t.getSize(listHeader).width, 160);
+      expect(t.getSize(listToolbar).width, 360);
+      expectDockSeam();
+      expect(
+        t.widget<EditableText>(editor).controller.text,
+        'Draft stays with the task',
+      );
+      expect(w.location.query('open'), 'task:task-1');
+      final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: t.getCenter(title));
+      await t.pump();
+      final titleEdit = find.byKey(const ValueKey('task-modal-title-edit'));
+      expect(titleEdit.hitTestable(), findsOneWidget);
+      await mouse.moveTo(t.getCenter(titleEdit));
+      await mouse.down(t.getCenter(titleEdit));
+      await mouse.up();
+      await t.pump();
+      final titleInput = find.descendant(
+        of: find.byKey(const ValueKey('task-head-title-input')),
+        matching: find.byType(EditableText),
+      );
+      await t.enterText(titleInput, 'Temporary title edit');
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(t);
+      expect(titleInput, findsNothing);
+      expect(t.widget<Text>(title).data, v2Task['title']);
+      expect(w.location.query('open'), 'task:task-1');
+      await mouse.removePointer();
+      await t.tap(expand.hitTestable());
+      await settle(t);
+      expect(t.getSize(slot).width, initialWidth);
+      expect(t.getSize(listHeader).width, initialListWidth);
+      expectDockSeam();
+      expect(
+        t.widget<EditableText>(editor).controller.text,
+        'Draft stays with the task',
+      );
+
+      await t.tap(second.hitTestable());
+      await settle(t);
+      expect(w.location.query('open'), 'task:task-2');
+      expectDockSeam();
+      expect(title.hitTestable(), findsOneWidget);
+      expect(t.widget<Text>(title).data, 'Second task title');
+      expect(empty.hitTestable(), findsOneWidget);
+      expect(replies, findsNothing);
+
+      final assignee = find.byKey(const ValueKey('task-properties-assignee'));
+      final assigneeChevron = find.descendant(
+        of: assignee,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftIcon && widget.glyph == RaftGlyph.chevronDown,
+        ),
+      );
+      final assigneeAvatar = find.descendant(
+        of: find.byKey(const ValueKey('task-properties')),
+        matching: find.byKey(const ValueKey('mounted-avatar-frame')),
+      );
+      expect(
+        [t.getSize(assigneeAvatar), t.getSize(assigneeChevron)],
+        const [Size.square(19), Size.square(14)],
+      );
+      final assigneeBadge = find.descendant(
+        of: assignee,
+        matching: find.byType(Container),
+      );
+      final assigneeBounds = t.getRect(assigneeBadge);
+      final assigneeLine = find.descendant(
+        of: assignee,
+        matching: find.byType(RaftCssLineBox),
+      );
+      expect(assigneeBounds.height, 20);
+      expect(t.getSize(assigneeLine).height, 22);
+      expect(t.getTopLeft(assigneeLine).dy, assigneeBounds.top);
+      expect(t.getCenter(assigneeChevron).dy, assigneeBounds.center.dy);
+      expect(t.getCenter(assigneeAvatar).dy, assigneeBounds.center.dy);
+      final hitBounds = t.getRect(assignee);
+      expect(hitBounds.height, 22);
+      await t.tapAt(
+        Offset(hitBounds.center.dx, hitBounds.top - 10),
+        kind: PointerDeviceKind.mouse,
+      );
+      await settle(t);
+      expect(find.byType(RaftSelectionPopover), findsNothing);
+      await t.tapAt(
+        Offset(hitBounds.center.dx, hitBounds.top + .5),
+        kind: PointerDeviceKind.mouse,
+      );
+      await settle(t);
+      final peopleSearch = find.text('Search people and agents');
+      expect(peopleSearch, findsOneWidget);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(t);
+      expect(peopleSearch, findsNothing);
+      expect(w.location.query('open'), 'task:task-2');
+
+      final bar = t.getRect(find.byKey(const ValueKey('task-modal-bar')));
+      final close = find.byKey(const ValueKey('task-modal-close'));
+      final more = find.byKey(const ValueKey('task-overflow-trigger'));
+      expect(
+        [
+          more,
+          expand,
+          close,
+        ].map((action) => t.getRect(action).translate(-bar.right, -bar.top)),
+        const [
+          Rect.fromLTWH(-103, 7.5, 28, 28),
+          Rect.fromLTWH(-71, 7.5, 28, 28),
+          Rect.fromLTWH(-39, 7.5, 28, 28),
+        ],
+      );
+      expect(
+        t.getTopLeft(find.byKey(const ValueKey('task-modal-bar-label'))).dx,
+        bar.left + 16,
+      );
+      await t.tap(more.hitTestable());
+      await settle(t);
+      final viewInChannel = find.text('View in channel');
+      expect(viewInChannel.hitTestable(), findsOneWidget);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(t);
+      expect(viewInChannel, findsNothing);
+      expect(w.location.query('open'), 'task:task-2');
+
+      final head = find.byKey(const ValueKey('task-conversation-head'));
+      final titleParagraph = t.renderObject<RenderParagraph>(
+        find.descendant(of: title, matching: find.byType(RichText)),
+      );
+      final baseline = titleParagraph.getDryBaseline(
+        titleParagraph.constraints,
+        TextBaseline.alphabetic,
+      )!;
+      expect(
+        titleParagraph.localToGlobal(Offset(0, baseline.roundToDouble())).dy,
+        t.getTopLeft(head).dy + 33,
+      );
+      final timeline = find.byKey(const ValueKey('current-timeline'));
+      final composer = find.byType(RaftComposer);
+      final composerTop = t.getTopLeft(composer).dy;
+      final toggle = find.text('Show more').hitTestable();
+      expect(toggle, findsOneWidget);
+      await t.tap(toggle);
+      await settle(t);
+      expect(
+        t.getSize(head).height,
+        closeTo(t.getSize(slot).height * .45, .01),
+      );
+      expect(t.getTopLeft(timeline).dy, t.getBottomLeft(head).dy);
+      expect(t.getTopLeft(composer).dy, composerTop);
+
+      await t.tap(close.hitTestable());
+      await settle(t);
+      expect(w.location.query('open'), isNull);
+      expect(title, findsNothing);
+      expect(empty, findsNothing);
+      expect(second.hitTestable(), findsOneWidget);
+      expect(focusIn(second), isTrue);
+    } finally {
+      await t.pumpWidget(const SizedBox());
+      await t.pump();
+    }
+  });
   testWidgets('desktop: a v2 task opens beside the Tasks list, × closes it '
       'and focus returns to its card', (t) async {
     final w = await mountTasks(t, desktop);
@@ -232,12 +478,97 @@ void main() {
     await settle(t);
     expect(find.byType(SourceTaskSurface), findsOneWidget);
     expect(w.location.query('task'), 'c1:task:task-1');
+    final detail = find.byType(SourceTaskSurface);
+    expect(t.getRect(detail).left, 0);
+    expect(t.getSize(detail).width, 390);
+    final timeline = find.descendant(
+      of: detail,
+      matching: find.byKey(const ValueKey('current-timeline')),
+    );
+    final empty = find.byKey(const ValueKey('task-conversation-empty'));
+    expect(t.getRect(empty).bottom, t.getRect(timeline).bottom);
     await t.tap(find.byKey(const ValueKey('task-modal-mobile-back')));
     await settle(t);
     expect(find.byType(SourceTaskSurface), findsNothing);
     expect(w.location.query('task'), isNull);
     expect(card, findsOneWidget);
   });
+
+  for (final (size, platform) in [
+    (const Size(1280, 900), TargetPlatform.android),
+    (const Size(856, 944), TargetPlatform.android),
+    (const Size(944, 856), TargetPlatform.android),
+    (const Size(390, 844), TargetPlatform.android),
+    (const Size(390, 844), TargetPlatform.linux),
+  ]) {
+    final touch = platform == TargetPlatform.android;
+    final pointer = touch ? PointerDeviceKind.touch : PointerDeviceKind.mouse;
+    testWidgets('Tasks Assignee ${pointer.name} near the badge at $size', (
+      t,
+    ) async {
+      final compact = size.width == 390;
+      final w = await mountTasks(t, size, platform: platform, twoTasks: true);
+      final second = find.byKey(const ValueKey('tasks-page-row-cell-task-2'));
+      final close = find.byKey(
+        ValueKey(compact ? 'task-modal-mobile-back' : 'task-modal-close'),
+      );
+      await t.tap(card.hitTestable(), kind: pointer);
+      await settle(t);
+      if (compact) {
+        await t.tap(close.hitTestable(), kind: pointer);
+        await settle(t);
+      }
+      await t.tap(second.hitTestable(), kind: pointer);
+      await settle(t);
+      expect(w.location.query('task'), 'c1:task:task-2');
+      expect(slot, compact ? findsNothing : findsOneWidget);
+
+      final assignee = find.byKey(const ValueKey('task-properties-assignee'));
+      final bounds = t.getRect(assignee);
+      final target = find.descendant(
+        of: assignee,
+        matching: find.byType(RaftTouchTarget),
+      );
+      if (touch) {
+        expect(t.renderObject<RenderBox>(target).semanticBounds.height, 48);
+      } else {
+        expect(target, findsNothing);
+      }
+      final picker = find.byWidgetPredicate(
+        (w) => w is RaftSelectionPopover && w.title == 'Assignee',
+      );
+      final unassigned = find.descendant(
+        of: picker,
+        matching: find.text('Unassigned'),
+      );
+      expect(picker, findsNothing);
+      await t.tapAt(Offset(bounds.center.dx, bounds.top - 10), kind: pointer);
+      await settle(t);
+      if (!touch) {
+        expect(picker, findsNothing);
+        await t.tap(assignee.hitTestable(), kind: pointer);
+        await settle(t);
+      }
+      expect(unassigned.hitTestable(), findsOneWidget);
+      expect(w.location.query('task'), 'c1:task:task-2');
+      await t.tapAt(const Offset(10, 10), kind: pointer);
+      await settle(t);
+      expect(picker, findsNothing);
+      expect(w.location.query('task'), 'c1:task:task-2');
+
+      final status = find.byKey(const ValueKey('task-properties-status'));
+      await t.tap(status.hitTestable(), kind: pointer);
+      await settle(t);
+      expect(find.byType(RaftInlineBadgeMenu), findsOneWidget);
+      expect(picker, findsNothing);
+      await t.tapAt(const Offset(10, 10), kind: pointer);
+      await settle(t);
+      await t.tap(close.hitTestable(), kind: pointer);
+      await settle(t);
+      expect(w.location.query('task'), isNull);
+      expect(second.hitTestable(), findsOneWidget);
+    });
+  }
 
   for (final escape in [false, true]) {
     testWidgets(

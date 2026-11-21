@@ -65,6 +65,33 @@ void main() {
   });
 
   group('giving way', () {
+    testWidgets('the phone scope leaves room for search beside it', (t) async {
+      final (w, _) = (await t.runAsync(() => tasksFixture(tasks: data())))!;
+      addTearDown(w.dispose);
+      await mountPage(
+        t,
+        w,
+        size: const Size(390, 844),
+        platform: TargetPlatform.android,
+      );
+      final scope = key('tasks-page-scope-select');
+      final search = key('tasks-page-search');
+      await t.tap(scope);
+      await settleTasks(t, rounds: 3);
+      await t.tap(find.text('All').last);
+      await settleTasks(t);
+      final label = find.descendant(of: scope, matching: find.text('All'));
+      final scopeBounds = t.getRect(scope);
+      final labelWidth = t.getSize(label).width;
+      final searchLeft = t.getTopLeft(search).dx;
+      await t.pumpWidget(const SizedBox());
+
+      // FitToolbarPicker has two 10px insets, a 6px gap and a 14px chevron.
+      expect(scopeBounds.width - labelWidth, closeTo(40, .01));
+      expect(scopeBounds.height, 32);
+      expect(searchLeft - scopeBounds.right, 8);
+    });
+
     testWidgets('wide: every word shows', (t) async {
       final (w, _) = (await t.runAsync(() => tasksFixture(tasks: data())))!;
       addTearDown(w.dispose);
@@ -85,7 +112,17 @@ void main() {
         expect(hasWord(word), isTrue, reason: word);
       }
       expect(key('tasks-page-more'), findsNothing);
+      final create = key('tasks-page-new-task');
+      final button = t.getRect(create);
+      final icon = t.getRect(
+        find.descendant(of: create, matching: find.byType(RaftIcon)),
+      );
+      final label = t.getRect(
+        find.descendant(of: create, matching: find.text('New task')),
+      );
       await t.pumpWidget(const SizedBox());
+      expect(icon.left - button.left, closeTo(13, .01));
+      expect(button.right - label.right, closeTo(13, .01));
     });
 
     testWidgets('a fold (856x944, touch): the toolbar keeps its controls on '

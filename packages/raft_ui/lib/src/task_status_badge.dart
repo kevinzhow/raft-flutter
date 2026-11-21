@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'icons.dart';
 import 'mounted_task_chip.dart';
 import 'panel_layout.dart' show RaftCssText;
+import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'theme.dart';
 
 /// The app's task-status id (`in_progress`) as the closed raft-ui status set.
@@ -32,10 +33,12 @@ class RaftTaskStatusBadge extends StatelessWidget {
     required this.label,
     this.trailing,
     this.labelHidden = false,
+    this.backdrop,
   });
   final RaftMessageTaskStatus status;
   final String label;
   final Widget? trailing;
+  final Color? backdrop;
 
   /// The label is the accessible name only (Web `sr-only` on the label, the
   /// Tasks page's narrow list): the badge shows its pixel and takes no gap.
@@ -53,24 +56,34 @@ class RaftTaskStatusBadge extends StatelessWidget {
       decoration: TextDecoration.none,
       fontFamilyFallback: inherited.fontFamilyFallback,
     );
+    final border = Border.fromBorderSide(recipe.side());
+    final fill = recipe.background;
+    final background = backdrop?.a == 1 && fill.a > 0 && fill.a < 1
+        ? raftChromeBlend(fill, backdrop!)
+        : fill;
+    final icon = RaftMessageTaskStatusIcon(
+      status: status,
+      color: recipe.iconForeground,
+    );
     final badge = Container(
       // The chip height is a minimum: a taller line box (Android Chinese
       // control profile, larger text) grows the pill instead of clipping.
       constraints: BoxConstraints(minHeight: recipe.chipHeight),
       padding: recipe.padding,
       decoration: BoxDecoration(
-        color: recipe.background,
+        color: background,
         borderRadius: recipe.radius,
-        border: Border.fromBorderSide(recipe.side()),
+        border: labelHidden ? null : border,
       ),
+      // The compact badge's inset ring paints within the icon's padding.
+      foregroundDecoration: labelHidden
+          ? BoxDecoration(borderRadius: recipe.radius, border: border)
+          : null,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: recipe.gap,
         children: [
-          RaftMessageTaskStatusIcon(
-            status: status,
-            color: recipe.iconForeground,
-          ),
+          icon,
           if (!labelHidden)
             Flexible(
               child: RaftCssText(

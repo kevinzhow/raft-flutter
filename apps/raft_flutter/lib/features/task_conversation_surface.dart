@@ -20,10 +20,14 @@ RaftTaskConversation taskConversation(
   TaskConversationFacts facts,
   SourceTimeFormatter formatter, {
   required bool compact,
+  required bool tasksPage,
   required VoidCallback onLeave,
 }) {
   final task = o.task;
   final w = o.parent;
+  final assignee = tasksPage ? taskAssigneeAvatarProjection(w, task) : null;
+  final assigneeName = '${task['claimedByName'] ?? ''}';
+  final agentAssignee = assignee?.avatar.kind == 'agent';
   final dm = task['channelType'] == 'dm'
       ? [...w.dms].where((c) => c.id == task['channelId']).firstOrNull
       : null;
@@ -94,46 +98,89 @@ RaftTaskConversation taskConversation(
         ? null
         : taskCreatedAtText(formatter, task['createdAt']),
     earlierDiscussion: earlier,
+    assigneeAvatar: assignee == null
+        ? null
+        : ListenableBuilder(
+            listenable: w.services.entityDirectory,
+            builder: (context, _) {
+              final current = taskAssigneeAvatarProjection(w, task);
+              if (current == null) return const SizedBox.shrink();
+              return RaftAvatar(
+                name: assigneeName,
+                kind: agentAssignee
+                    ? RaftAvatarKind.agent
+                    : RaftAvatarKind.human,
+                imageUrl: current.avatar.uploadedUrl,
+                presence: current.presence,
+                uiSize: RaftAvatarSize.xs,
+                mountedContext: RaftMountedAvatarContext.compactList,
+                content: current.avatar.pixelKey == null
+                    ? null
+                    : RaftAvatarContent(
+                        name: assigneeName,
+                        kind: agentAssignee
+                            ? RaftAvatarContentKind.agent
+                            : RaftAvatarContentKind.human,
+                        pixelKey: current.avatar.pixelKey,
+                      ),
+              );
+            },
+          ),
   );
 }
 
-/// The head, then (while the conversation has no messages) its empty state:
-/// "No discussion in this task yet", and for a pre-v2 task where its earlier
-/// discussion is.
-Widget taskConversationHead(
+class _TaskDiscussionSubject extends StatelessWidget {
+  const _TaskDiscussionSubject({required this.head, required this.empty});
+
+  final Widget head, empty;
+
+  @override
+  Widget build(BuildContext context) => head;
+}
+
+Widget taskDiscussionSubject(
   BuildContext context,
-  TaskSurfaceController o,
+  Map<String, dynamic> task,
   Widget head,
 ) {
-  final c = o.discussion;
-  final empty =
-      c != null &&
-      c.replies.isEmpty &&
-      (c.threadChannelId == null || !c.messageDomain.state.threadLoading);
-  if (!empty) return head;
-  final host = o.task['hostMessageId'];
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      head,
-      Padding(
-        key: const ValueKey('task-conversation-empty'),
-        // ds-allow: Web TaskConversation empty note p-6 (RaftSpace.x6 as a literal inset).
-        padding: const EdgeInsets.all(24),
-        child: RaftEmptyState(
-          title: raftText(context, 'No discussion in this task yet'),
-          detail: host is String && host.isNotEmpty
-              ? raftText(
-                  context,
-                  "Its earlier discussion is in the replies of the message it came from. Write here to start the task's own.",
-                )
-              : '',
-        ),
-      ),
-    ],
+  final host = task['hostMessageId'];
+  return _TaskDiscussionSubject(
+    head: head,
+    empty: RaftProductEmptyState(
+      key: const ValueKey('task-conversation-empty'),
+      title: raftText(context, 'No discussion in this task yet'),
+      description: host is String && host.isNotEmpty
+          ? raftText(
+              context,
+              "Its earlier discussion is in the replies of the message it came from. Write here to start the task's own.",
+            )
+          : null,
+      icon: (context, size, color) {
+        final backdrop = RaftConversationSurfaceRecipe(RaftTokens.of(context))
+            .background(RaftConversationSurfaceRole.threadTimeline);
+        return RaftIcon(
+          RaftGlyph.thread,
+          size: size,
+          color: color.a < 1 && backdrop.a == 1
+              ? raftChromeBlend(color, backdrop)
+              : color,
+        );
+      },
+    ),
   );
 }
+
+Widget threadEmptyContent(BuildContext context, Widget? subject) =>
+    subject is _TaskDiscussionSubject
+    ? subject.empty
+    : RaftProductEmptyState(
+        title: raftText(context, 'No replies yet'),
+        icon: (context, size, color) =>
+            RaftThreadIcon(size: size, color: color),
+      );
+
+bool isTaskDiscussionSubject(Widget? subject) =>
+    subject is _TaskDiscussionSubject;
 
 /// A status or assignee write with the reason its popover collected (moving
 /// into Backlog, handing to someone else). False when the write failed.

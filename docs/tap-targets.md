@@ -87,15 +87,22 @@ existing native verification path.
 
 ### Task conversation details
 
-The task title-bar details toggle targets the current task's properties. The
-shared task surface handles it for modern task pages opened from Activity,
-Search, and Tasks. On narrow pages the toggle opens the scrollable panel
-anchored below the title bar. It closes from the same control, Escape, an
-outside press, or system Back. The task stays visible at its prior reading
-position with its draft. On wide task slots the same control collapses or
-restores the pinned properties above the conversation. The task's own
-Back or close affordance still returns to the originating surface.
-Legacy tasks and tasks without loaded properties have no details toggle.
+On the Tasks route, a desktop task opens with its properties pinned above the
+conversation. Expand widens the task column while keeping the list, reading
+position, and draft. Activate the control again or press Escape in the detail
+column to restore the previous width. On a compact Tasks page the properties
+scroll with the discussion. Once they scroll away, the bar's summary opens them
+in a panel without moving the discussion. System Back dismisses that panel first.
+
+On touch, the Tasks head routes taps near the assigned-person badge to the
+Assignee picker. Visible neighbouring controls retain priority. Dismiss the
+picker to return to the same task, then use Back or close to return to the list.
+
+Activity and Search task pages keep their details toggle. It opens the
+properties panel on compact pages and collapses or restores the pinned
+properties in a wide detail slot. The task's Back or close control returns to
+the originating surface. Legacy tasks and tasks without loaded properties have
+no details toggle.
 
 ### Compact Artifact comment composer
 

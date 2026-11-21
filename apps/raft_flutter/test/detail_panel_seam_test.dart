@@ -366,8 +366,18 @@ void main() {
       await settle(t);
       expect(find.byType(SourceTaskSurface), findsOneWidget);
       final slot = find.byKey(const ValueKey('task-content-slot'));
-      final x = t.getRect(slot).left.round();
-      final tokens = tokensOf(t, slot);
+      final dock = find.ancestor(
+        of: slot,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftSidePanelFrame &&
+              widget.placement == RaftSidePanelPlacement.docked,
+        ),
+      );
+      expect(dock, findsOneWidget);
+      // The TasksRoute dock paints its border before the inset slot content.
+      final x = t.getRect(dock).left.round();
+      final tokens = tokensOf(t, dock);
       expectSeam(
         await shoot(t),
         x,

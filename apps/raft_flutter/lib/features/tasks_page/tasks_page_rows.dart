@@ -9,6 +9,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../../data/workspace_controller.dart';
 import '../message_task_list.dart' show messageTaskChipRow;
+import '../task_conversation_facts.dart' show taskAssigneeAvatarProjection;
 import '../task_v2_mode.dart' show formatTaskConversationRef;
 import 'task_card_facts.dart' show TaskActivityTime;
 
@@ -48,6 +49,8 @@ RaftTaskChipRow tasksPageChipRow(
 }) {
   final base = messageTaskChipRow(w, task);
   final channel = task['channelName'];
+  final assignee = taskAssigneeAvatarProjection(w, task, now: now);
+
   return RaftTaskChipRow(
     id: base.id,
     number: base.number,
@@ -58,7 +61,9 @@ RaftTaskChipRow tasksPageChipRow(
     assigneeName: base.assigneeName,
     assigneeIsAgent: base.assigneeIsAgent,
     assigneeIsViewer: base.assigneeIsViewer,
-    assigneeAvatarUrl: base.assigneeAvatarUrl,
+    assigneeAvatarUrl: assignee?.avatar.uploadedUrl,
+    assigneeAvatarPixelKey: assignee?.avatar.pixelKey,
+    assigneePresence: assignee?.presence,
     ref: formatTaskConversationRef(task, dmPeerName: _dmPeer(w, task)),
     channelName: channel is String && channel.isNotEmpty ? channel : null,
     time: TaskActivityTime(task: task, now: now),

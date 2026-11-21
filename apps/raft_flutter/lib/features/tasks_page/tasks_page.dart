@@ -23,6 +23,7 @@ import '../../data/server_task_window.dart';
 import '../../data/workspace_controller.dart';
 import '../create_task_dialog.dart';
 import '../page_layout.dart';
+import '../task_content_slot.dart' show taskSlotListMin;
 import 'tasks_batch.dart';
 import 'tasks_board_view.dart';
 import 'tasks_list_view.dart';
@@ -667,20 +668,64 @@ class _TasksPageState extends State<TasksPage> {
         children: [
           header,
           Expanded(
-            child: Stack(
-              children: [
-                Positioned.fill(child: content),
-                if (selected.isNotEmpty)
-                  RaftSelectionBarDock(
-                    child: TasksSelectionBar(
-                      controller: w,
-                      tasks: selected,
-                      runBatch: _runBatch,
-                      onClear: selection.clear,
-                      onGone: _returnFocus,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Web row rule 2: the header takes the column width. Its
+                // body keeps the readable minimum and fades at the cut.
+                final clipped =
+                    !mobile && constraints.maxWidth < taskSlotListMin;
+                final fade = t.size('css.fade-edge', fallback: RaftSpace.x6);
+                final fadeWidth = fade
+                    .clamp(0.0, constraints.maxWidth)
+                    .toDouble();
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: OverflowBox(
+                        alignment: AlignmentDirectional.topStart,
+                        minWidth: clipped ? taskSlotListMin : null,
+                        maxWidth: clipped ? taskSlotListMin : null,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(child: content),
+                            if (selected.isNotEmpty)
+                              RaftSelectionBarDock(
+                                child: TasksSelectionBar(
+                                  controller: w,
+                                  tasks: selected,
+                                  runBatch: _runBatch,
+                                  onClear: selection.clear,
+                                  onGone: _returnFocus,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-              ],
+                    if (clipped)
+                      PositionedDirectional(
+                        end: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: fadeWidth,
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: AlignmentDirectional.centerStart,
+                                end: AlignmentDirectional.centerEnd,
+                                colors: [
+                                  t.canvas.withValues(alpha: 0),
+                                  t.canvas,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ],

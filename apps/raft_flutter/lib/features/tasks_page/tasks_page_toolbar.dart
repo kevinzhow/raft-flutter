@@ -256,8 +256,14 @@ class _ScopeItem extends RaftFitItem {
       key: probe ? null : const ValueKey('tasks-page-scope-select'),
       label: current,
       tooltip: probe ? null : label,
-      triggerStyle: RaftDropdownTriggerStyle.picker,
-      trailingGlyph: RaftGlyph.chevronDown,
+      triggerBuilder: (context, focus, toggle) => RaftPickerTriggerButton(
+        label: current,
+        semanticLabel: '$label, $current',
+        tooltip: probe ? null : label,
+        fitToolbar: true,
+        focusNode: focus,
+        onPressed: toggle,
+      ),
       entries: [
         for (final value in TasksPageTab.values)
           RaftMenuEntry(
@@ -318,6 +324,7 @@ class _ViewItem extends RaftFitItem {
       child: RaftSegmentedControl<TasksPageView>(
         value: view,
         label: label,
+        iconsOnly: iconOnly,
         visualHeight: line,
         minimumTargetSize: line,
         onChanged: onChanged,
@@ -325,7 +332,7 @@ class _ViewItem extends RaftFitItem {
           for (final value in TasksPageView.values)
             RaftSegmentedOption(
               value: value,
-              label: iconOnly ? '' : name(value),
+              label: name(value),
               tooltip: iconOnly ? name(value) : null,
               glyph: value == TasksPageView.list
                   ? RaftGlyph.layoutList

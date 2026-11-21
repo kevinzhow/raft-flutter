@@ -19,21 +19,14 @@ import 'task.dart' show RaftTaskStatus;
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
 
-/// Whether the head is on screen, with the way to re-measure it (a scroll of
-/// the messages under it calls [remeasure]).
+/// Whether the task head's inline row intersects the discussion viewport.
 class RaftTaskHeadVisibility extends ValueNotifier<bool> {
   RaftTaskHeadVisibility() : super(true);
-  VoidCallback? _measure;
-
-  /// After the frame: a scroll notification comes before the layout it causes.
-  void remeasure() =>
-      WidgetsBinding.instance.addPostFrameCallback((_) => _measure?.call());
 }
 
 /// Web `TaskHeadInView`: the head as a timeline row, reporting whether any of
 /// it is on screen. Out of view is read from the head's edge against the
-/// viewport that holds it; leaving the tree reports it back in view, so the
-/// bar never keeps a summary for a head that is no longer a row.
+/// viewport that holds it, including timelines with a center sliver.
 class RaftTaskHeadInView extends StatefulWidget {
   const RaftTaskHeadInView({
     super.key,
@@ -48,44 +41,56 @@ class RaftTaskHeadInView extends StatefulWidget {
 }
 
 class _RaftTaskHeadInViewState extends State<RaftTaskHeadInView> {
+  ScrollPosition? position;
+  bool measurementPending = false;
+
   @override
-  void initState() {
-    super.initState();
-    widget.visibility._measure = measure;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final next = Scrollable.maybeOf(context)?.position;
+    if (next != position) {
+      position?.removeListener(schedule);
+      position = next;
+      position?.addListener(schedule);
+    }
     schedule();
   }
 
   @override
   void didUpdateWidget(RaftTaskHeadInView old) {
     super.didUpdateWidget(old);
-    widget.visibility._measure = measure;
     schedule();
   }
 
   @override
   void dispose() {
-    final visibility = widget.visibility;
-    visibility._measure = null;
-    // Not while the tree is being torn down: the notifier may be disposed.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        visibility.value = true;
-      } catch (_) {}
-    });
+    position?.removeListener(schedule);
     super.dispose();
   }
 
-  void schedule() =>
-      WidgetsBinding.instance.addPostFrameCallback((_) => measure());
+  void schedule() {
+    if (measurementPending) return;
+    measurementPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      measurementPending = false;
+      if (mounted) measure();
+    });
+  }
 
   void measure() {
-    if (!mounted) return;
     final box = context.findRenderObject();
-    final viewport = box == null ? null : RenderAbstractViewport.maybeOf(box);
-    if (box is! RenderBox || !box.attached || viewport is! RenderBox) return;
-    final bottom = box.localToGlobal(Offset(0, box.size.height)).dy;
-    final top = (viewport as RenderBox).localToGlobal(Offset.zero).dy;
-    widget.visibility.value = bottom > top;
+    if (box is! RenderBox || !box.attached || !box.hasSize) return;
+    final viewport = RenderAbstractViewport.maybeOf(box);
+    final scroll = position;
+    if (viewport == null || scroll == null || !scroll.hasContentDimensions) {
+      return;
+    }
+    // A centered viewport stops painting skipped slivers. Its reveal offset
+    // still locates the inline head even when it lies before that paint range.
+    final leading = viewport.getOffsetToReveal(box, 0).offset;
+    widget.visibility.value =
+        scroll.pixels < leading + box.size.height &&
+        scroll.pixels + scroll.viewportDimension > leading;
   }
 
   @override
@@ -363,21 +368,28 @@ Widget raftTaskPullDownDismiss({
   ),
 );
 
-/// Off a phone: the head pinned above the conversation, at most 45% of it.
-Widget raftTaskPinnedHead({required Widget? head, required Widget child}) =>
-    LayoutBuilder(
-      builder: (context, constraints) => Column(
-        children: [
-          if (head != null)
-            ConstrainedBox(
-              key: const ValueKey('task-conversation-head'),
-              constraints: BoxConstraints(
-                maxHeight: constraints.maxHeight * .45,
-              ),
-              child: SingleChildScrollView(child: head),
+/// Off a phone the head is pinned above the conversation. In the Tasks
+/// column the 45% cap resolves against the frame, including its bar.
+Widget raftTaskPinnedHead({
+  required Widget? head,
+  required Widget child,
+  double? frameHeight,
+}) => LayoutBuilder(
+  builder: (context, constraints) => Column(
+    children: [
+      if (head != null)
+        ConstrainedBox(
+          key: const ValueKey('task-conversation-head'),
+          constraints: BoxConstraints(
+            maxHeight: ((frameHeight ?? constraints.maxHeight) * .45).clamp(
+              0.0,
+              constraints.maxHeight,
             ),
+          ),
+          child: SingleChildScrollView(child: head),
+        ),
 
-          Expanded(child: child),
-        ],
-      ),
-    );
+      Expanded(child: child),
+    ],
+  ),
+);
