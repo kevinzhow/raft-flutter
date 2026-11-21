@@ -18,6 +18,13 @@ class _GetEntry {
   final int size;
 }
 
+class _GetObservation {
+  _GetObservation(this.key);
+
+  final _GetKey key;
+  bool invalidated = false;
+}
+
 class _GetCache {
   static const _maxEntries = 128;
   static const _maxPayloadSize = 384 * 1024;
@@ -26,7 +33,18 @@ class _GetCache {
 
   final _entries = <_GetKey, _GetEntry>{};
   final _flights = <_GetKey, ({Future<dynamic> future, DateTime started})>{};
+  final _observations = <_GetObservation>{};
   int _size = 0;
+
+  _GetObservation? observe(_GetKey? key) {
+    if (key == null) return null;
+    final observation = _GetObservation(key);
+    _observations.add(observation);
+    return observation;
+  }
+
+  void unobserve(_GetObservation? observation) =>
+      _observations.remove(observation);
 
   _GetEntry? peek(
     _GetKey key,
@@ -87,6 +105,11 @@ class _GetCache {
   void invalidate(bool Function(_GetKey) affects, {bool flightsOnly = false}) {
     _flights.removeWhere((key, _) => affects(key));
     if (flightsOnly) return;
+    _observations.removeWhere((observation) {
+      if (!affects(observation.key)) return false;
+      observation.invalidated = true;
+      return true;
+    });
     _entries.removeWhere((key, entry) {
       if (!affects(key)) return false;
       _size -= entry.size;
@@ -95,6 +118,10 @@ class _GetCache {
   }
 
   void clear() {
+    for (final observation in _observations) {
+      observation.invalidated = true;
+    }
+    _observations.clear();
     _flights.clear();
     _entries.clear();
     _size = 0;
