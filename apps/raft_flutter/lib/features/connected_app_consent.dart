@@ -28,7 +28,12 @@ class ConnectedAppPermissionSet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
+    final detailsStyle = tokens.scale(RaftTypeScale.callout);
     String tr(String text) => raftText(context, text);
+    Widget code(String value) => Text.rich(
+      raftInlineCodeSpan(context, value, within: detailsStyle),
+      style: detailsStyle,
+    );
     Widget lines(
       List<String> values,
       List<String> additions,
@@ -84,7 +89,7 @@ class ConnectedAppPermissionSet extends StatelessWidget {
           detailsChild: lines(
             permissions.scopes,
             newScopes,
-            (scope) => Text.rich(raftInlineCodeSpan(context, scope)),
+            code,
             (scope) =>
                 integrationScopeCopy[scope] ??
                 (scope == 'agent:action_request:write'
@@ -101,7 +106,7 @@ class ConnectedAppPermissionSet extends StatelessWidget {
             (group) {
               final label = appNotificationGroupLabels[group];
               if (label == null) {
-                return Text.rich(raftInlineCodeSpan(context, group));
+                return code(group);
               }
               return Text(
                 group == 'agent_reminder_write'

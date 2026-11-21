@@ -228,6 +228,57 @@ void main() {
       expect(placeholder(), 'Search apps…');
     });
 
+    testWidgets('Select toolbar triggers inset the chevron by 10px', (
+      tester,
+    ) async {
+      const choices = [RaftSelectItem(value: 'all', label: 'All types')];
+      await mount(
+        tester,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RaftSelectField(
+              toolbarPicker: true,
+              value: 'all',
+              items: choices,
+              onChanged: (_) {},
+            ),
+            RaftFitToolbar(
+              children: [
+                RaftFitGroup(
+                  items: [
+                    RaftFitSelect(
+                      label: 'All types',
+                      selection: 'all',
+                      items: choices,
+                      onChanged: (_) {},
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        size: const Size(390, 844),
+      );
+      final triggers = find.byType(RaftPickerTriggerButton);
+      expect(triggers, findsNWidgets(2));
+      for (var index = 0; index < 2; index++) {
+        final trigger = triggers.at(index);
+        final chevron = find.descendant(
+          of: trigger,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is RaftIcon && widget.glyph == RaftGlyph.chevronDown,
+          ),
+        );
+        expect(
+          tester.getTopRight(trigger).dx - tester.getTopRight(chevron).dx,
+          10,
+        );
+      }
+    });
+
     RaftFitToolbar toolbar({
       String query = '',
       ValueChanged<String>? onQuery,

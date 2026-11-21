@@ -362,6 +362,7 @@ void main() {
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();
     await _tap(tester, find.text('Uninstall from this server'));
+    final dangerBeforeFailure = tester.getRect(dangerRow);
     expect(
       tester
           .widgetList<RaftDialogBarrier>(find.byType(RaftDialogBarrier))
@@ -388,6 +389,7 @@ void main() {
       find.text('Uninstall from this server').hitTestable(),
       findsOneWidget,
     );
+    expect(tester.getRect(dangerRow), dangerBeforeFailure);
   });
 
   testWidgets(

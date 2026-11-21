@@ -978,6 +978,10 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                         onPressed: saving
                             ? null
                             : () async {
+                                final scroll = Scrollable.of(
+                                  dangerRowKey.currentContext!,
+                                ).position;
+                                final distanceFromEnd = scroll.extentAfter;
                                 final removed = await confirmUninstall(
                                   listing,
                                   onError: (message) {
@@ -992,11 +996,16 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                                   await WidgetsBinding.instance.endOfFrame;
                                   final row = dangerRowKey.currentContext;
                                   if (row != null && row.mounted) {
-                                    await Scrollable.ensureVisible(
-                                      row,
-                                      alignmentPolicy:
-                                          ScrollPositionAlignmentPolicy
-                                              .keepVisibleAtEnd,
+                                    final position = Scrollable.of(row)
+                                        .position;
+                                    position.jumpTo(
+                                      (position.maxScrollExtent -
+                                              distanceFromEnd)
+                                          .clamp(
+                                            position.minScrollExtent,
+                                            position.maxScrollExtent,
+                                          )
+                                          .toDouble(),
                                     );
                                   }
                                 }
@@ -2040,14 +2049,19 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
                     ),
                     style: style,
                   ),
-                  Text(
-                    tr('Approving the update approves all of this:'),
-                    style: style,
-                  ),
-                  ConnectedAppPermissionSet(
-                    permissions: reviewed,
-                    newScopes: managementStrings(s['new_scopes']),
-                    newGroups: newly,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        tr('Approving the update approves all of this:'),
+                        style: style,
+                      ),
+                      ConnectedAppPermissionSet(
+                        permissions: reviewed,
+                        newScopes: managementStrings(s['new_scopes']),
+                        newGroups: newly,
+                      ),
+                    ],
                   ),
                 ],
                 if (needsText) ...[

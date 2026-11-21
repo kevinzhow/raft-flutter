@@ -313,6 +313,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
                 onPressed: onPressed,
                 focusNode: triggerFocus,
                 invalid: widget.invalid,
+                fitToolbar: true,
               )
             : RaftInteractive(
                 onPressed: onPressed,

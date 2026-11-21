@@ -202,6 +202,7 @@ class RaftFitPicker extends RaftFitItem {
   final List<RaftMenuEntry>? menuEntries;
 
   bool get _hasValue => value != null && value!.isNotEmpty;
+  bool get _fitIndicator => false;
 
   @override
   bool get hasLabelForm => glyph != null;
@@ -229,6 +230,7 @@ class RaftFitPicker extends RaftFitItem {
         value: value,
         valueSlot: fit.pickerValue,
         labelHidden: gone,
+        fitToolbar: _fitIndicator,
         focusNode: focusNode,
         onPressed: press,
         restyle: gone
@@ -300,6 +302,9 @@ class RaftFitSelect<T> extends RaftFitPicker {
 
   @override
   bool get hasPopup => true;
+
+  @override
+  bool get _fitIndicator => true;
 
   @override
   Widget buildPopup(

@@ -65,9 +65,11 @@ void main() {
       ),
     );
     final label = tester.getTopLeft(find.text('Login scopes'));
-    final scope = tester.getTopLeft(find.text('openid', findRichText: true));
+    final scopeName = find.text('openid', findRichText: true);
+    final scope = tester.getTopLeft(scopeName);
     expect(scope.dx, label.dx + RaftSpace.x1);
     expect(scope.dy, greaterThan(label.dy));
+    expect(tester.widget<RichText>(scopeName).text.style?.fontSize, 12.25);
   });
 
   testWidgets(

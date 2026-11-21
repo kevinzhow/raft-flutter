@@ -58044,7 +58044,7 @@
         "owner": "Artifact discussion",
         "reason": "Binds the generated Composer slots used by compact Artifact comments."
       },
-      "packages/raft_ui/lib/src/announcement_markdown.dart#local-function:CLASS:_MarkdownBlocks@5459/METHOD:blocks@5957/FUNCTION:flushInline@6184": {
+      "packages/raft_ui/lib/src/announcement_markdown.dart#local-function:CLASS:_MarkdownBlocks@5517/METHOD:blocks@6015/FUNCTION:flushInline@6242": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Shared Markdown renderer",
@@ -59130,7 +59130,7 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "apps/raft_flutter/lib/features/connected_app_consent.dart#local-function:CLASS:ConnectedAppPermissionSet@531/METHOD:build@842/FUNCTION:lines@981": {
+      "apps/raft_flutter/lib/features/connected_app_consent.dart#local-function:CLASS:ConnectedAppPermissionSet@531/METHOD:build@842/FUNCTION:lines@1185": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59244,7 +59244,7 @@
         "owner": "WP-APPS",
         "reason": "Composes the shared progress and native login controls."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@49481/FUNCTION:page@49597": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@50018/FUNCTION:page@50134": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59639,13 +59639,13 @@
         "owner": "task289 scoped source registration",
         "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitMore@9809/METHOD:buildForm@9999/FUNCTION:trigger@10151": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitMore@9926/METHOD:buildForm@10116/FUNCTION:trigger@10268": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitPicker@6158/METHOD:buildForm@6751/FUNCTION:trigger@7135": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitPicker@6158/METHOD:buildForm@6786/FUNCTION:trigger@7170": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
@@ -59669,19 +59669,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@13857/METHOD:_live@22809/FUNCTION:leafWidget@25541": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@13974/METHOD:_live@22926/FUNCTION:leafWidget@25658": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@13857/METHOD:_live@22809/FUNCTION:slotWidget@26273": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@13974/METHOD:_live@22926/FUNCTION:slotWidget@26390": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@13857/METHOD:build@18887/FUNCTION:probe@19058": {
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@13974/METHOD:build@19004/FUNCTION:probe@19175": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
@@ -59791,7 +59791,7 @@
         "owner": "WP-APPS",
         "reason": "Opens the webhook signing-secret warning from the Apps editor; a mounted behavior test checks its confirm action."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@50275/FUNCTION:appTile@51158": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@50812/FUNCTION:appTile@51695": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59838,6 +59838,12 @@
         "familyRefs": [],
         "owner": "Input",
         "reason": "Builds the canonical InputGroup control with its fitted toolbar hint."
+      },
+      "apps/raft_flutter/lib/features/connected_app_consent.dart#local-function:CLASS:ConnectedAppPermissionSet@531/METHOD:build@842/FUNCTION:code@1043": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-APPS",
+        "reason": "Uses the canonical InlineCode recipe in permission rows."
       }
     },
     "entries": {

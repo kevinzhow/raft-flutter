@@ -51,12 +51,15 @@ class RaftCssBlock {
 /// The raft-ui InlineCode (the same recipe the announcement and message
 /// markdown draw `code` with) as a span, for copy that names a command or a
 /// value inline (Web `<InlineCode>` in a formatted message).
-InlineSpan raftInlineCodeSpan(BuildContext context, String text) =>
-    _MarkdownBlocks(
-      context,
-      null,
-      const [],
-    )._inlineCode(text, DefaultTextStyle.of(context).style);
+InlineSpan raftInlineCodeSpan(
+  BuildContext context,
+  String text, {
+  TextStyle? within,
+}) => _MarkdownBlocks(context, null, const [])._inlineCode(
+  text,
+  within ?? DefaultTextStyle.of(context).style,
+  resolveRelativeSize: within != null,
+);
 
 class RaftAnnouncementMarkdown extends StatefulWidget {
   const RaftAnnouncementMarkdown(this.data, {super.key, this.onLink})
@@ -459,15 +462,25 @@ class _MarkdownBlocks {
   /// The plain raft-ui InlineCode (the Web `code` component adds no classes).
   ///
   /// `inline-flex`: an atomic box whose line box is its own line height.
-  InlineSpan _inlineCode(String text, TextStyle parent) {
+  InlineSpan _inlineCode(
+    String text,
+    TextStyle parent, {
+    bool resolveRelativeSize = false,
+  }) {
     final tokens = RaftRecipeTokens(t);
     final root = RaftInlineCodeRecipe.resolve(
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: tokens,
     ).root;
+    final relativeSize = switch (root['font-size']) {
+      CssNum(unit: 'em', :final value) when resolveRelativeSize =>
+        (parent.fontSize ?? 14) * value,
+      _ => null,
+    };
     final style = root
         .textStyle(tokens)
         .copyWith(
+          fontSize: relativeSize,
           leadingDistribution: TextLeadingDistribution.even,
           fontFamilyFallback: parent.fontFamilyFallback,
         );
