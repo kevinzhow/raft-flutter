@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/features/tasks_page/tasks_page_toolbar.dart';
 
 import 'support/tasks_page_harness.dart';
 
@@ -38,14 +39,23 @@ void main() {
     expect(rebuilt, isEmpty);
   });
 
-  testWidgets('a task edit leaves unrelated mounted rows alone', (
+  testWidgets('a task edit leaves its toolbar and unrelated agent row alone', (
     tester,
   ) async {
     final (workspace, _) = (await tester.runAsync(
       () => tasksFixture(
         tasks: [
           for (var number = 100; number < 160; number++)
-            pageTask('task-$number', claimedBy: meId),
+            pageTask(
+              'task-$number',
+              extra: number == 157
+                  ? {
+                      'claimedByType': 'agent',
+                      'claimedById': 'fixture-agent',
+                      'claimedByName': 'Fixture agent',
+                    }
+                  : const {},
+            ),
         ],
       ),
     ))!;
@@ -56,20 +66,22 @@ void main() {
       size: const Size(390, 640),
       platform: TargetPlatform.android,
     );
-    final held = find.byKey(const ValueKey('tasks-page-row-task-154'));
+    final held = find.byKey(const ValueKey('tasks-page-row-task-157'));
     expect(held.hitTestable(), findsOneWidget);
     final retained = tester.element(held);
-    final rebuilt = <Key>[];
+    final toolbar = tester.element(find.byType(TasksPageToolbar));
+    final rebuilt = <String>[];
     final previous = debugOnRebuildDirtyWidget;
     debugOnRebuildDirtyWidget = (element, _) {
-      if (identical(element, retained)) rebuilt.add(element.widget.key!);
+      if (identical(element, retained) || identical(element, toolbar)) {
+        rebuilt.add(element.widget.toStringShort());
+      }
     };
     addTearDown(() => debugOnRebuildDirtyWidget = previous);
     (workspace.client as TasksClient).emit('task:updated', {
       'serverId': 's1',
       'task': pageTask(
         'task-159',
-        claimedBy: meId,
         extra: {'title': 'Edited task for the visible list'},
       ),
     });

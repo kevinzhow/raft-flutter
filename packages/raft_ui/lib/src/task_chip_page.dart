@@ -271,7 +271,15 @@ class _StablePageRow extends StatefulWidget {
     task.assigneeIsViewer,
     task.assigneeAvatarUrl,
     task.assigneeAvatarPixelKey,
-    task.assigneePresence,
+    switch (task.assigneePresence) {
+      final presence? => (
+        presence.activity,
+        presence.external,
+        presence.online,
+        presence.label,
+      ),
+      null => null,
+    },
     task.ref,
     task.channelName,
     list._timeRevision?.call(task.time) ?? task.time,
