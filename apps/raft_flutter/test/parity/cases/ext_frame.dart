@@ -15,7 +15,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart'
     show addTearDown, expect, find, findsNothing, findsOneWidget, isTrue;
-import 'package:raft_client/raft_client.dart';
+import 'package:raft_client/raft_client.dart' show Session;
 import 'package:raft_flutter/app_root.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
