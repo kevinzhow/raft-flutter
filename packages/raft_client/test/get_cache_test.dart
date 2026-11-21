@@ -1,131 +1,22 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:test/test.dart';
 
-class _Wire implements HttpClientAdapter {
-  final reads = <String, int>{};
-  final versions = <String, int>{};
-  final holds = <String, Completer<void>>{};
-  final statuses = <String, int>{};
-  final cacheControl = <String, String>{};
-  final responses = <String, Object>{};
-  Completer<void>? writeHold;
-  String account = 'alice';
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? stream,
-    Future<void>? cancellation,
-  ) async {
-    final server = options.headers['X-Server-Id'];
-    final path = options.uri.path.substring('/api'.length);
-    final version = versions[path] ?? 1;
-    final status = statuses['${options.method} $path'] ?? 200;
-    if (options.method == 'GET') {
-      reads.update(
-        '$server ${options.uri.path}',
-        (n) => n + 1,
-        ifAbsent: () => 1,
-      );
-      if (holds[path] case final hold?) await hold.future;
-    } else if (writeHold case final hold?) {
-      await hold.future;
-    }
-    final body = switch (path) {
-      '/auth/login' => {
-        'accessToken': 'access-for-$account',
-        'refreshToken': 'refresh-for-$account',
-        'user': {'id': account},
-      },
-      _ =>
-        responses[path] ??
-            {
-              'server': server,
-              'version': version,
-              'query': options.uri.query,
-              'rows': ['original'],
-            },
-    };
-    return ResponseBody.fromString(
-      jsonEncode(body),
-      status,
-      headers: {
-        Headers.contentTypeHeader: ['application/json'],
-        if (cacheControl[path] case final header?) 'cache-control': [header],
-      },
-    );
-  }
-
-  int requests(String path, [String server = 's1']) =>
-      reads['$server /api$path'] ?? 0;
-
-  @override
-  void close({bool force = false}) {}
-}
+import 'support/get_cache_harness.dart';
 
 void main() {
-  late _Wire wire;
+  late GetCacheWire wire;
   late RaftClient client;
   late DateTime now;
 
   setUp(() async {
     now = DateTime.utc(2026, 11, 21);
-    wire = _Wire();
-    client = RaftClient(
-      origin: 'https://example.invalid',
-      sessionStore: MemorySessionStore(),
-      transport: Dio()..httpClientAdapter = wire,
-      governor: RateLimitGovernor(now: () => now),
-    );
-    await client.login('fixture', 'local-only');
-    client.selectServer('s1');
+    wire = GetCacheWire();
+    client = await openGetCacheClient(wire, () => now);
   });
 
   tearDown(() => client.dispose());
-
-  for (final path in [
-    '/channels',
-    '/channels/dm',
-    '/channels/conversation',
-    '/channels/unread',
-    '/channels/main/members',
-    '/channels/main/agents',
-    '/channels/main/files',
-    '/channels/inbox',
-    '/channels/inbox/done',
-    '/channels/inbox/unfollowed',
-    '/channels/saved',
-    '/channels/threads/followed',
-    '/agents',
-    '/servers/s1/members',
-    '/servers/s1/members/person/profile',
-    '/tasks/channel/main/number/3',
-    '/tasks/channel/main',
-    '/tasks/task/history',
-    '/tasks/server',
-    '/tasks/server/counts',
-    '/messages/channel/conversation',
-    '/channels/main/threads/m1',
-    '/messages/context/m1',
-    '/messages/m1/reactions/viewer',
-    '/messages/search',
-    '/artifacts/conversations/main',
-    '/artifacts/artifact-id/details',
-    '/integrations/marketplace',
-    '/integrations/overview',
-  ]) {
-    test('revisiting $path reuses the accepted response', () async {
-      final first = await client.get(path);
-      expect(wire.requests(path), 1);
-      expect(await client.get(path), first);
-      expect(wire.requests(path), 1);
-    });
-  }
 
   test(
     'identical pending reads share transport and return independent bodies',

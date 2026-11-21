@@ -55625,7 +55625,7 @@
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@3373/METHOD:membersStrip@55745/FUNCTION:tile@55951": {
+      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@3373/METHOD:membersStrip@55918/FUNCTION:tile@56124": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -55709,7 +55709,7 @@
         "owner": "Raft Flutter component wiring",
         "reason": "Places the existing ProfileSidePanel and side-panel frame inside the task discussion. Uses the configured profile width."
       },
-      "apps/raft_flutter/lib/features/management_support.dart#local-function:CLASS:ManagementState@3881/METHOD:_scopedRoute@12363/FUNCTION:scoped@13076": {
+      "apps/raft_flutter/lib/features/management_support.dart#local-function:CLASS:ManagementState@3881/METHOD:_scopedRoute@12449/FUNCTION:scoped@13162": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -58985,7 +58985,7 @@
         "owner": "Shared desktop chrome",
         "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:activityList@114289/FUNCTION:bar@114511": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:activityList@114402/FUNCTION:bar@114624": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "Activity and Saved",
