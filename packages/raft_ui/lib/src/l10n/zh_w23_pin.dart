@@ -522,6 +522,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
       "Raft 会停止把 Agent 迁到云端。Agent 和它的工作区留在 {source} 上，并在那里继续工作。",
   "Canceling finishes once {source} confirms. Keep it online until then.":
       "{source} 确认后取消才会完成，在此之前请让它保持在线。",
+  "Your agent stays where it is now, and Raft cleans up on both computers. Keep {source} and {target} online until it finishes.": "你的 Agent 会留在现在所在的计算机上，Raft 会清理两台计算机上的残留。在完成之前请保持 {source} 和 {target} 在线。",
   "Moving to the cloud": "正在迁移到云端",
   "Moved to the cloud": "已迁移到云端",
   "Move to the cloud canceled": "迁移到云端已取消",

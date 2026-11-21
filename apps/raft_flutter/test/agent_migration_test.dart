@@ -688,20 +688,14 @@ void main() {
       await mount(tester);
       await openCancel(tester);
       expect(find.text('Cancel Migration'), findsNWidgets(3));
-      expect(find.text('Canceling is safe'), findsOneWidget);
-      expect(
-        find.textContaining(
-          'Raft will stop the migration from Source to Target and clean up on both computers.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('fixture-ref'), findsOneWidget);
       expect(
         find.text(
-          'Canceling finishes only after both computers confirm. Keep both computers online until then.',
+          'Your agent stays where it is now, and Raft cleans up on both computers. Keep Source and Target online until it finishes.',
         ),
         findsOneWidget,
       );
+      expect(find.text('Canceling is safe'), findsNothing);
+      expect(find.text('fixture-ref'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('agent-migration-cancel-confirm')),
         findsOneWidget,

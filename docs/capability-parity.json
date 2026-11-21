@@ -6617,7 +6617,7 @@
    "status": "covered",
    "webEntry": "AgentMigrationSection / MigrationProgressPanel > 'Cancel' action (AgentMigrationCancelDialog)",
    "gate": "agent has a computer + canManageAgent (agent_migration_v0 is retired in Web 1.24)",
-   "flutterEntry": "agent_migration_section.dart cancel() ('Cancel migration?')",
+   "flutterEntry": "agent_migration_section.dart cancel() (v1.24 computer-to-computer and hosted cancellation copy)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",

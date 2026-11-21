@@ -467,7 +467,7 @@ void main() {
       await mount(tester);
       await tester.tap(find.widgetWithText(RaftButton, 'Cancel'));
       await tester.pumpAndSettle();
-      expect(find.text('Canceling is safe'), findsOneWidget);
+      expect(find.text('Canceling is safe'), findsNothing);
       expect(
         find.text(
           'Raft will stop moving the agent to the cloud. The agent and its workspace stay on Source, and it goes back to work there.',
