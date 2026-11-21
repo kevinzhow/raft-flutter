@@ -43,18 +43,7 @@ class WorkspaceServerDirectory {
   final VoidCallback ensureIdentity;
   final bool Function(Object) quietFailure, staleScope;
   List<RaftRecord> servers = [];
-  RaftRecord? _server;
-  RaftRecord? get server => _server;
-  set server(RaftRecord? value) {
-    final previous = _server;
-    _server = value;
-    if (previous != null &&
-        (value?.id != previous.id ||
-            value?.string('role') != previous.string('role'))) {
-      client.invalidateServerReads(previous.id);
-    }
-  }
-
+  RaftRecord? server;
   int _membershipRevision = 0, _membershipRequest = 0;
   int planRevision = 0;
 
@@ -456,6 +445,7 @@ class WorkspaceServerDirectory {
     ];
     if (server?.id == id) {
       if (server?.string('role') != role) {
+        client.invalidateServerReads(id);
         messages.invalidateAllReplyAuthority();
       }
       server = RaftRecord({...server!.json, 'role': role});
@@ -471,10 +461,10 @@ class WorkspaceServerDirectory {
     final id = payload is Map ? payload['serverId'] : null;
     final plan = payload is Map ? payload['plan'] : null;
     if (id is String && id.isNotEmpty && plan is String) {
-      RaftRecord patch(RaftRecord value) =>
-          value.id == id ? RaftRecord({...value.json, 'plan': plan}) : value;
-      servers = servers.map(patch).toList();
-      if (server != null) server = patch(server!);
+      patchServerRows(
+        (value) =>
+            value.id == id ? RaftRecord({...value.json, 'plan': plan}) : value,
+      );
       device.save(
         'servers',
         '',
@@ -494,11 +484,11 @@ class WorkspaceServerDirectory {
       return;
     }
     if (context.disposed) return;
-    RaftRecord patch(RaftRecord value) => value.id == serverId
-        ? RaftRecord({...value.json, 'avatarUrl': avatarUrl})
-        : value;
-    servers = servers.map(patch).toList();
-    if (server != null) server = patch(server!);
+    patchServerRows(
+      (value) => value.id == serverId
+          ? RaftRecord({...value.json, 'avatarUrl': avatarUrl})
+          : value,
+    );
     device.save('servers', '', servers.map((s) => s.json).toList(), server: '');
     context.changed();
   }
@@ -541,7 +531,9 @@ class WorkspaceServerDirectory {
         await entries.selectServer(current.first);
       }
       if (server != null) {
-        server = current.where((s) => s.id == server!.id).firstOrNull;
+        final next = current.where((s) => s.id == server!.id).firstOrNull;
+        client.checkServerReadAuthority(server, next);
+        server = next;
         if (!presentation.canVisitSection(section)) section = 'chat';
       }
       context.changed();

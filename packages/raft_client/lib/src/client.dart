@@ -1724,18 +1724,13 @@ class RaftClient {
     return null;
   }
 
-  void _invalidateReads(
-    String? server,
-    _ReadEffect effect, {
-    bool flightsOnly = false,
-  }) {
-    _getCache.invalidate(
+  bool Function(_GetKey) _affectedReads(String? server, _ReadEffect effect) =>
       (key) =>
           (server == null || key.server == null || key.server == server) &&
-          effect(key.policy),
-      flightsOnly: flightsOnly,
-    );
-  }
+          effect(key.policy);
+
+  void _invalidateReads(String? server, _ReadEffect effect) =>
+      _getCache.invalidate(_affectedReads(server, effect));
 
   /// Also used for events recovered by a replay transport. Call before
   /// publishing the event to presentation listeners.
@@ -1751,6 +1746,14 @@ class RaftClient {
   void invalidateServerReads(String server) {
     _invalidateReads(server, _allReads);
     _singleFlight.clear();
+  }
+
+  void checkServerReadAuthority(RaftRecord? previous, RaftRecord? next) {
+    if (previous != null &&
+        (next?.id != previous.id ||
+            next?.string('role') != previous.string('role'))) {
+      invalidateServerReads(previous.id);
+    }
   }
 
   /// Admission, single-flight and the 429 wait around [_send].
@@ -1872,15 +1875,20 @@ class RaftClient {
           !const {'POST', 'PUT', 'PATCH', 'DELETE'}.contains(method)) {
         return send().whenComplete(_singleFlight.clear);
       }
-      final server = _readServer(headers, workspaceScoped);
-      final effect = _writeEffect(Uri.parse(path), data);
-      _invalidateReads(server, effect, flightsOnly: true);
+      final affected = _affectedReads(
+        _readServer(headers, workspaceScoped),
+        _writeEffect(Uri.parse(path), data),
+      );
+      final finishWrite = _getCache.beginWrite(affected);
       return send((response) {
         final status = response.statusCode;
         if (status != null && status >= 200 && status < 300) {
-          _invalidateReads(server, effect);
+          _getCache.invalidate(affected);
         }
-      }).whenComplete(_singleFlight.clear);
+      }).whenComplete(() {
+        finishWrite();
+        _singleFlight.clear();
+      });
     }
     final query_ = query == null || query.isEmpty
         ? ''
@@ -2624,7 +2632,7 @@ class RaftClient {
   /// Account-wide unread summary survives a selected-server switch while
   /// retaining the account request's principal and authentication fences.
   Future<dynamic> accountUnreadSummary() =>
-      _accountRequest('GET', '/servers/unread-summary');
+      runRevalidating(() => _accountRequest('GET', '/servers/unread-summary'));
 
   Future<List<RaftChannel>> channels({bool dm = false}) async => (await get(
     dm ? '/channels/dm' : '/channels',

@@ -78,7 +78,11 @@ class WorkspaceSession
   List<RaftRecord> get servers => _serverDirectory.servers;
   set servers(List<RaftRecord> value) => _serverDirectory.servers = value;
   RaftRecord? get server => _serverDirectory.server;
-  set server(RaftRecord? value) => _serverDirectory.server = value;
+  set server(RaftRecord? value) {
+    transport.client.checkServerReadAuthority(server, value);
+    _serverDirectory.server = value;
+  }
+
   bool connected = false;
   // ignore: raft_lints/avoid_unreleased_resource -- The composition root disposes this notifier at the original ordered disposal stage.
   final resumes = ValueNotifier<int>(0);

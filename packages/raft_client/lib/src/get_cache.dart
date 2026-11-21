@@ -34,7 +34,14 @@ class _GetCache {
   final _entries = <_GetKey, _GetEntry>{};
   final _flights = <_GetKey, ({Future<dynamic> future, DateTime started})>{};
   final _observations = <_GetObservation>{};
+  final _writes = <bool Function(_GetKey)>{};
   int _size = 0;
+
+  void Function() beginWrite(bool Function(_GetKey) affects) {
+    _writes.add(affects);
+    _flights.removeWhere((key, _) => affects(key));
+    return () => _writes.remove(affects);
+  }
 
   _GetObservation? observe(_GetKey? key) {
     if (key == null) return null;
@@ -59,7 +66,9 @@ class _GetCache {
       _remove(key);
       return null;
     }
-    if (!stale && age >= maxAge) return null;
+    if (!stale && (age >= maxAge || _writes.any((affects) => affects(key)))) {
+      return null;
+    }
     _entries
       ..remove(key)
       ..[key] = entry;
@@ -102,9 +111,8 @@ class _GetCache {
     return flight.then(RaftClient._cloneJson);
   }
 
-  void invalidate(bool Function(_GetKey) affects, {bool flightsOnly = false}) {
+  void invalidate(bool Function(_GetKey) affects) {
     _flights.removeWhere((key, _) => affects(key));
-    if (flightsOnly) return;
     _observations.removeWhere((observation) {
       if (!affects(observation.key)) return false;
       observation.invalidated = true;
@@ -122,6 +130,7 @@ class _GetCache {
       observation.invalidated = true;
     }
     _observations.clear();
+    _writes.clear();
     _flights.clear();
     _entries.clear();
     _size = 0;
