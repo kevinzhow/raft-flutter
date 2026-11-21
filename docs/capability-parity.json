@@ -17506,7 +17506,7 @@
    "status": "covered",
    "webEntry": "ServerSwitcherMenu.tsx (desktop LeftRail flyout and mobile Home pill; PATCH /servers/order on drag)",
    "gate": "Join Community only if not joined; Invite human needs inviteMembers",
-   "flutterEntry": "workspace_view.dart server menu (RaftServerMenuRow rows, onReorder -> reorderMenuServers, Join Community, Switch or Create Server, Invite human)",
+   "flutterEntry": "workspace_view.dart server menu (RaftServerMenuRow rows, onReorder -> reorderMenuServers, Join Community, Switch or Create Server, Invite human). The desktop workspace strip keeps the drag origin at 40% opacity.",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",

@@ -681,7 +681,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                 children: [
                   Opacity(
                     opacity: dragging && picked == index
-                        ? .3
+                        ? .4
                         : !dragging && dragRow?.id == row.id
                         ? 0
                         : 1,

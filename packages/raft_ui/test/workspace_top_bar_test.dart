@@ -312,9 +312,9 @@ void main() {
       await pointer.moveBy(const Offset(0, 7));
       await t.pump();
       expect(
-        find.byWidgetPredicate((w) => w is Opacity && w.opacity == .3),
+        find.byWidgetPredicate((w) => w is Opacity && w.opacity == .4),
         findsOneWidget,
-        reason: 'WorkspaceStripSortableAvatar uses opacity-30 after distance6',
+        reason: 'The drag origin is at 40% opacity after distance6',
       );
       await pointer.cancel();
       await t.pumpAndSettle();
