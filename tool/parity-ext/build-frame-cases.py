@@ -69,6 +69,20 @@ def build_fixture():
     }
     route_sets['fr-activity'] = {**route_sets['fr-mobile'], **screens['routeSets']['scr-activity']}
     route_sets['fr-bell'] = {'GET /servers/visual-server/machines': {'machines': []}}
+    sidebar_order = 'GET /servers/visual-server/sidebar-order'
+    avatar_order = {
+        **route_sets['fr-mobile'][sidebar_order],
+        'pinned': [],
+        'sectionOrder': ['system:dms', 'system:pinned', 'system:joint', 'system:channels'],
+    }
+    route_sets['fr-avatar-reset'] = {
+        **route_sets['fr-mobile'],
+        sidebar_order: avatar_order,
+    }
+    route_sets['fr-topbar-drag'] = {
+        **route_sets['fr-mobile'],
+        'GET /servers': shell['servers'],
+    }
     doc = {'name': 'frame cases', 'scope': 'tool/parity-ext/build-frame-cases.py (generated; derived from shell.json and screens.json)',
            'routes': shell['routes'], 'routeSets': route_sets}
     (FIXTURES / 'frame.json').write_text(json.dumps(doc, indent=1) + '\n')
@@ -102,6 +116,8 @@ SPECS = [
     whole('phone', 'home', 'Phone Home tab (sidebar list + tab bar)', 'home', '', 'mobile', LAYOUT + ' (mobileShowSidebarInline)'),
     part('phone', 'tabbar', 'Phone tab bar (Home active)', 'home', '', 'mobile', LAYOUT + ' (MobileTabBar)',
          (0, PHONE['height'] - TAB_H, PHONE['width'], TAB_H)),
+    whole('phone', 'agent-avatar-reset', 'Phone agent DM after avatar reset', 'home', '', 'mobile',
+          SRC + 'layout/dmPeerAvatar.ts', {'avatarReset': True, 'routeSet': 'fr-avatar-reset'}),
     # tablet: >= 768 uses the desktop frame (top bar, rail, sidebar) in a narrower window
     whole('tablet', 'home', 'Tablet window, no conversation', 'home', '', 'mobile', LAYOUT),
     whole('tablet', 'channel', 'Tablet window, channel open', 'channel', '/channel/shell-design', 'default', LAYOUT,
@@ -113,6 +129,10 @@ SPECS = [
           {'routeSet': 'fr-channel'}),
     part('desktop', 'topbar', 'Desktop top bar (workspace strip, search, actions)', 'home', '', 'mobile',
          SRC + 'topbar/AppTopBar.tsx', (0, 0, DESKTOP['width'], TOP_H)),
+    part('desktop', 'topbar-drag', 'Desktop top bar during workspace reorder', 'home', '', 'mobile',
+         SRC + 'topbar/WorkspaceStrip.tsx', (0, 0, DESKTOP['width'], TOP_H), {'routeSet': 'fr-topbar-drag'}),
+    whole('desktop', 'agent-avatar-reset', 'Desktop agent DM after avatar reset', 'home', '', 'mobile',
+          SRC + 'layout/dmPeerAvatar.ts', {'avatarReset': True, 'routeSet': 'fr-avatar-reset'}),
     part('desktop', 'rail', 'Desktop left rail', 'home', '', 'mobile', SRC + 'layout/LeftRail.tsx',
          (0, TOP_H, RAIL_W, DESKTOP['height'] - TOP_H)),
     part('desktop', 'sidebar', 'Desktop sidebar column', 'home', '', 'mobile', SRC + 'layout/Sidebar.tsx',
@@ -131,6 +151,8 @@ def build_cases():
     cases = []
     for s in SPECS:
         vp = VIEWPORTS[s['platform']]
+        if s['platform'] == 'desktop' and s['key'] in ('topbar-drag', 'agent-avatar-reset'):
+            vp = {**vp, 'height': 900}
         for suffix, theme in THEMES.items():
             props = {'extCase': f'{s["platform"]}.{s["key"]}', 'extKind': 'frame', 'parityTheme': theme,
                      'platform': 'mobile' if s['platform'] == 'phone' else 'desktop', 'frameWidth': s['platform'], 'scene': s['scene'], 'route': s['route'], 'preset': s['preset'],
@@ -142,6 +164,21 @@ def build_cases():
                 capture = {'selector': '[data-testid="frame-crop"]', 'crop': 'element', 'contract': 'component-bounds',
                            'androidKey': 'frame-crop'}
             capture['interactions'] = [{'type': 'wait', 'ms': 1200}]
+            if s['key'] == 'agent-avatar-reset':
+                capture.update({
+                    'selector': '[data-sidebar-channel-id="shell-dm-cindy"]',
+                    'androidKey': 'sidebar-channel-shell-dm-cindy',
+                    'androidInteractions': [{'type': 'wait', 'ms': 300}],
+                })
+            if s['key'] == 'topbar-drag':
+                strip = '[data-testid="desktop-workspace-strip"]'
+                origin = f'{strip} [data-workspace-id="shell-server-acme"]'
+                destination = f'{strip} [data-workspace-id="shell-server-side"]'
+                capture['interactions'] += [
+                    {'type': 'hold', 'target': origin},
+                    {'type': 'hover', 'target': destination},
+                    {'type': 'reveal', 'target': f'{origin}[data-drag-origin]'},
+                ]
             ds4 = next((item for item in DS4 if item[:2] == (s['platform'], s['key'])), None)
             if ds4:
                 _, key, web, flutter, clicks = ds4

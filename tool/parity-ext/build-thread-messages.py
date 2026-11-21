@@ -42,6 +42,7 @@ fixture = {
         'content': 'Captured the visual baselines.',
         'createdAt': '2026-06-22T02:30:00.000Z',
     },
+    'quotedMentions': '> Quoted @artin <@artin>\n\nOutside @artin',
     'bundles': {
         'single': {
             'kind': 'forwarded-bundle', 'version': 1,
@@ -143,6 +144,8 @@ cases = []
 def add(platform, surface, title, *, props, height, width=None, selector=None, android_key=None,
         interactions=(), notes=None):
     viewport = DESKTOP if platform == 'desktop' else MOBILE
+    if platform == 'desktop' and surface == 'quoted-mentions':
+        viewport = {**viewport, 'height': 900}
     for suffix, theme in THEMES.items():
         cid = f'{PREFIX}{surface}.{platform}.{suffix}'
         c = {
@@ -175,6 +178,10 @@ def add(platform, surface, title, *, props, height, width=None, selector=None, a
 ROW = '#message-msg-parity-ext-hover'
 HOVER_ROW = {'type': 'hover', 'target': ROW}
 BTN = lambda name: f'{ROW} [data-message-affordance="{name}"]'
+
+for platform, width in [('desktop', 440), ('mobile', 390)]:
+    add(platform, 'quoted-mentions', 'quoted mentions', props={'state': 'quoted-mentions'},
+        height=190, width=width)
 
 # ---- hover toolbar and reaction picker (desktop; the toolbar is fine-pointer only) ----
 add('desktop', 'toolbar', 'hover toolbar on a hovered row', props={'state': 'toolbar'}, height=112,

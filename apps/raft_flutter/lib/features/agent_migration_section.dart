@@ -424,6 +424,7 @@ class _AgentMigrationSectionState
           final hosted = isHostedMigration(current);
           return RaftConfirmDialog(
             title: 'Cancel Migration',
+            surfaceKey: const ValueKey('migration-cancel-parity-surface'),
             confirmLabel: 'Cancel Migration',
             cancelLabel: 'Keep Migrating',
             loadingLabel: 'Canceling…',

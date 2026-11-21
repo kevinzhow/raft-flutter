@@ -11,10 +11,11 @@
 // as the React marker.
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart'
     show addTearDown, expect, find, findsNothing, findsOneWidget, isTrue;
-import 'package:raft_client/raft_client.dart' show Session;
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/app_root.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
@@ -77,11 +78,17 @@ WorkspaceController _workspace(ParityContext ctx) {
   final ids = ParityIdentities(ctx);
   final scenes = (ctx.fixtures['ext:screens'] as Map)['scenes'] as Map;
   final frame = ctx.fixtures['ext:frame'] as Map;
-  return shellWorkspace(
+  final avatarReset = ctx.props['avatarReset'] == true;
+  final workspace = shellWorkspace(
     ctx,
     selected: selected,
     routes: {
-      'GET /agents': ids.agents,
+      'GET /agents': [
+        for (final agent in ids.agents)
+          avatarReset && agent['id'] == 'agent-cindy'
+              ? {...agent, 'avatarUrl': null}
+              : agent,
+      ],
       'GET /servers/visual-server/members': ids.members,
       if (ctx.props['routeSet'] == 'fr-bell')
         ...Map<String, dynamic>.from(
@@ -101,6 +108,20 @@ WorkspaceController _workspace(ParityContext ctx) {
       ..._tabBarRoutes(ctx),
     },
   );
+  if (avatarReset) {
+    final routes = (frame['routeSets'] as Map)['fr-avatar-reset'] as Map;
+    workspace.sidebarOrder = Map<String, dynamic>.from(
+      routes['GET /servers/visual-server/sidebar-order'] as Map,
+    );
+    workspace.dms = [
+      for (final dm in workspace.dms)
+        if (dm.id == 'shell-dm-cindy')
+          RaftChannel({...dm.json, 'peerAvatarUrl': 'pixel:owl'})
+        else
+          dm,
+    ];
+  }
+  return workspace;
 }
 
 class _Host extends StatefulWidget {
@@ -143,6 +164,9 @@ class _HostState extends State<_Host> {
       // accepted unread count, and the Activity page can reuse that window.
       await w.services.activityUnread.refresh();
       return;
+    }
+    if (widget.ctx.props['avatarReset'] == true) {
+      await w.entityDirectory.refresh(WorkspaceEntityKind.agents);
     }
     if (widget.ctx.props['scene'] == 'activity') {
       w.setSection('activity');
@@ -386,6 +410,40 @@ final ParityCase _case = ParityCase(
       }
       return;
     }
+    if (ctx.props['avatarReset'] == true) {
+      final row = find.byKey(const ValueKey('sidebar-channel-shell-dm-cindy'));
+      expect(row, findsOneWidget);
+      final avatar = find.descendant(
+        of: row,
+        matching: find.byType(RaftPixelAvatar),
+      );
+      expect(avatar, findsOneWidget);
+      expect(t.widget<RaftPixelAvatar>(avatar).avatarKey, 'robot');
+    }
+    if (ctx.props['extCase'] == 'desktop.topbar-drag') {
+      final origin = find.byKey(
+        const ValueKey('topbar-strip-item-shell-server-acme'),
+      );
+      final destination = find.byKey(
+        const ValueKey('topbar-strip-item-shell-server-side'),
+      );
+      final pointer = await t.startGesture(
+        t.getCenter(origin),
+        kind: PointerDeviceKind.mouse,
+      );
+      addTearDown(pointer.cancel);
+      await pointer.moveTo(t.getCenter(destination));
+      await t.pump();
+      expect(
+        find.descendant(
+          of: origin,
+          matching: find.byWidgetPredicate(
+            (widget) => widget is Opacity && widget.opacity == .4,
+          ),
+        ),
+        findsOneWidget,
+      );
+    }
     if ((ctx.props['extCase'] as String?)?.endsWith('.bell-open') == true) {
       expect(find.byType(RaftNotificationCenter), findsOneWidget);
       expect(
@@ -445,12 +503,15 @@ final ParityCase _case = ParityCase(
 const _keys = [
   'phone.home',
   'phone.tabbar',
+  'phone.agent-avatar-reset',
   'tablet.home',
   'tablet.channel',
   'tablet.topbar',
   'desktop.home',
   'desktop.channel',
   'desktop.topbar',
+  'desktop.topbar-drag',
+  'desktop.agent-avatar-reset',
   'desktop.rail',
   'desktop.sidebar',
   'phone.bell-open',

@@ -68,7 +68,7 @@ function ParityExtMsgRowView({ p }: { p: ParityExtMsgProps }) {
     senderType: "agent",
     senderId: fxCindy.id,
     senderName: fxCindy.displayName,
-    content: m.content,
+    content: p.state === "quoted-mentions" ? parityExtMsgFixture.quotedMentions : m.content,
     threadId: null,
     createdAt: m.createdAt,
   };
@@ -77,7 +77,7 @@ function ParityExtMsgRowView({ p }: { p: ParityExtMsgProps }) {
     <main className="min-h-screen bg-white p-0 font-display text-black">
       <div
         data-visual-case={p.caseId}
-        className={parityExtMsgPanelClass}
+        className={p.state === "quoted-mentions" ? "bg-layer-canvas" : parityExtMsgPanelClass}
         style={{ width: p.boxWidth ?? 440, height: p.boxHeight ?? 112, padding: "32px 16px 0", boxSizing: "border-box" }}
       >
         <MessageItem
@@ -153,7 +153,7 @@ function ParityExtMsgSosView({ p }: { p: ParityExtMsgProps }) {
 function parityExtThreadMessageElement() {
   const p = parityExtMsgProps();
   if (!p) return null;
-  if (p.state.startsWith("toolbar") || p.state.startsWith("picker")) return <ParityExtMsgRowView p={p} />;
+  if (p.state === "quoted-mentions" || p.state.startsWith("toolbar") || p.state.startsWith("picker")) return <ParityExtMsgRowView p={p} />;
   if (p.state === "forward") return <ParityExtMsgForwardView p={p} />;
   if (p.state === "mermaid") return <ParityExtMsgMermaidView p={p} />;
   if (p.state === "banner") return <ParityExtMsgBannerView p={p} />;

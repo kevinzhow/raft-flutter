@@ -1,0 +1,1 @@
+{"notice": {"migrationRef": "fixture-ref", "revision": 2, "state": "in_transit", "sourceMachineId": "c1", "targetMachineId": "c2"}, "machines": [{"id": "c1", "name": "Source", "status": "online", "isComputer": true}, {"id": "c2", "name": "Target", "status": "online", "isComputer": true}]}

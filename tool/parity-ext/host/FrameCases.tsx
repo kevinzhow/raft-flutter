@@ -14,6 +14,7 @@
 // the top bar, the rail or the tab bar are scored on their own: a frame regression must not
 // drag every page score down with it.
 import parityExtFrShell from "virtual:parity-ext/shell";
+import parityExtFrFixture from "virtual:parity-ext/frame";
 import { useEffect as parityExtFrUseEffect, useState as parityExtFrUseState } from "react";
 import { prefetchServerFeatureFlags as parityExtFrLoadFlags } from "../src/store/serverFeatureFlags";
 import { NavigationDepthTracker as ParityExtFrNavigationDepth } from "../src/hooks/useAppNavigate";
@@ -63,6 +64,18 @@ function parityExtFrPrimeStores(p: ParityExtFrProps) {
     raw: p.raw, platform: "desktop", surface: "frame", preset: p.preset, theme: "raft", extra: 0,
   } as never);
   if (p.sidePanels) setServerFeatureFlagForTests(fxServer.id, "task_v2_conversations_v0", true);
+  if (p.raw.includes(".agent-avatar-reset.")) {
+    const order = parityExtFrFixture.routeSets["fr-avatar-reset"]["GET /servers/visual-server/sidebar-order"];
+    useServerStore.setState((state) => ({ sidebarOrder: { ...state.sidebarOrder, ...order } }));
+    useChannelStore.setState((state) => ({
+      dmChannels: state.dmChannels.map((dm) =>
+        dm.id === "shell-dm-cindy" ? { ...dm, peerAvatarUrl: "pixel:owl" } : dm),
+    }));
+    useAgentStore.setState((state) => ({
+      agents: state.agents.map((agent) =>
+        agent.id === "agent-cindy" ? { ...agent, avatarUrl: null } : agent),
+    }));
+  }
   void parityExtFrShell;
 }
 

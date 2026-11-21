@@ -86,6 +86,11 @@ STATES = {
                   receipt=receipt(CHANNEL, MULTI, pendingMentionActions=[
                       pending(f'cs-sent-{CHANNEL}', 'Android-Developer-4', 1),
                       pending(f'cs-sent-{CHANNEL}', 'QA-Engineer-2', 2)])),
+    'lounge-excluded': dict(scene='dm-agent', draft=SINGLE, send=True,
+                            receipt=receipt(DM, SINGLE, pendingMentionActions=[{
+                                **pending(f'cs-sent-{DM}', 'Android-Developer-4', 1),
+                                'reason': 'lounge_agent_excluded', 'availableActions': [],
+                            }])),
     'agent-stopped': dict(scene='dm-agent', draft=STOPPED, send=True,
                           receipt=receipt(DM, STOPPED, deliveryWarnings=[
                               {'targetType': 'agent', 'targetId': 'agent-cindy', 'reason': 'agent_stopped'}])),
@@ -104,7 +109,7 @@ for key, s in STATES.items():
     routes = copy.deepcopy(scene['routes'])
     if s.get('receipt'):
         routes['POST /v2/messages'] = s['receipt']
-    states[key] = {'selected': scene['selected'], 'draft': s['draft'], 'routes': routes,
+    states[key] = {'selected': scene['selected'], 'scene': s['scene'], 'draft': s['draft'], 'routes': routes,
                    'patch': s.get('patch') or {}, 'extraChannels': s.get('extraChannels') or []}
     route_sets[f'cs-{key}'] = routes
 
@@ -128,6 +133,14 @@ def add(surface, platform, state, title, *, interactions, android, height, first
         # The runner waits for the crop target. Enable it only after the send
         # receipt mounts the action strip in the production composer.
         selector = 'body:has([data-testid="pending-mention-action-strip"]) ' + selector
+    if state == 'lounge-excluded':
+        if platform == 'desktop':
+            viewport = {**viewport, 'height': 900}
+        selector = '[data-testid="pending-mention-action-strip"]'
+        interactions = [*interactions, {
+            'type': 'reveal',
+            'target': '[data-testid="pending-mention-action-status"]:has-text("can only read")',
+        }]
     for suffix, theme in THEMES.items():
         cid = f'{PREFIX}{surface}.{platform}.{state}.{suffix}'
         c = {
@@ -146,7 +159,8 @@ def add(surface, platform, state, title, *, interactions, android, height, first
                 'state': state, 'routeSet': f'cs-{state}', 'windowHeight': height}}],
             'capture': {'selector': selector, 'crop': 'element',
                         'contract': 'component-bounds', 'interactions': interactions,
-                        'androidInteractions': android, 'androidKey': 'composer-window'},
+                        'androidInteractions': android,
+                        'androidKey': 'pending-mention-action-strip' if state == 'lounge-excluded' else 'composer-window'},
             'reactPathHint': 'packages/web/src/components/message/MessageInput.tsx',
             'androidCaseHint': f"apps/raft_flutter/test/parity/cases/ext_composer_states.dart '{surface}.{platform}.{state}'",
             'tolerance': {'pixelRatio': 0.02, 'layoutDp': 1, 'ignoreAntialiasing': True},
@@ -189,6 +203,7 @@ for platform in ('desktop', 'mobile'):
     # 3.22 pending-mention strip: one agent, then two (Add all footer).
     send_case('pending-mention', platform, 'single', 'Pending-mention strip, one agent', 270)
     send_case('pending-mention', platform, 'multi', 'Pending-mention strip, two agents (Add all)', 340)
+    send_case('pending-mention', platform, 'lounge-excluded', 'Read-only Lounge mention receipt', 270)
     # 3.24 composer warnings.
     send_case('warning', platform, 'agent-stopped', 'Agent stopped delivery warning (DM)', 240)
     send_case('warning', platform, 'unresolved', 'Unresolved mentions warning', 250)
