@@ -95,6 +95,7 @@ import 'sidebar_projection.dart';
 import 'sidebar_reorder.dart';
 import 'sidebar_sort_menu.dart';
 import 'agent_avatar_projection.dart';
+import 'agent_metadata_projection.dart' show agentRowAmbientDisplay;
 import 'desktop_drafts_page.dart';
 import 'saved_sidebar_entry.dart' show SavedCountStore;
 import 'system_notification_center.dart';
@@ -3330,7 +3331,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
   ({
     bool agent,
     String name,
-    String description,
     Map<String, dynamic>? profile,
     SenderAvatarProjection avatar,
   })
@@ -3353,9 +3353,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
         : peerName.isNotEmpty
         ? peerName
         : c.name;
-    final description = profile == null
-        ? c.string('peerDescription')
-        : '${profile['description'] ?? ''}';
     final avatar = projectSenderAvatar(
       origin: w.client.origin,
       senderId: c.string('peerId'),
@@ -3369,13 +3366,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
           {'userId': c.string('peerId'), 'avatarUrl': c.json['peerAvatarUrl']},
       ],
     );
-    return (
-      agent: agent,
-      name: name,
-      description: description,
-      profile: profile,
-      avatar: avatar,
-    );
+    return (agent: agent, name: name, profile: profile, avatar: avatar);
   }
 
   RaftNavItem channelItem(
@@ -3387,7 +3378,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final scope = mobileAuthority;
     final peer = dmPeer(c);
     final agent = peer.agent, name = peer.name;
-    final description = peer.description;
+    final description = c.string('peerDescription');
     final source = peer.avatar;
     final reads = SidebarRowReads.of(w, c);
     return RaftNavItem(
@@ -3397,15 +3388,20 @@ class _WorkspaceViewState extends State<WorkspaceView>
               name,
               agent,
               source,
-              presence: agent && peer.profile != null
-                  ? agentRowPresence(peer.profile!)
+              presence:
+                  agent &&
+                      c.string('peerId').isNotEmpty &&
+                      peer.profile?['managedByAppInstallId'] == null
+                  ? agentAvatarPresence(
+                      agentRowAmbientDisplay(peer.profile ?? const {}),
+                    )
                   : null,
             )
           : sidebarChannelLeading(c),
       menuOpen: menuOpenRow == 'c:${c.id}',
       onContextMenu: (at) => sidebarMenus.openChannelMenu(at, c),
       contextMenuOnLongPress: !reorderable,
-      description: c.type == 'dm' && description.isNotEmpty
+      description: !agent && c.type == 'dm' && description.isNotEmpty
           ? description
           : null,
       // What a working agent is doing takes the place of its runtime.

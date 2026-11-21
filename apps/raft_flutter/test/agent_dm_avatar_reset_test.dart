@@ -20,6 +20,7 @@ void main() {
       'peerType': 'agent',
       'peerId': 'agent1',
       'peerName': 'Cindy',
+      'peerDescription': 'Old description from DM discovery',
       'peerAvatarUrl': 'pixel:owl',
     });
     workspace.dms = [dm];
@@ -32,18 +33,53 @@ void main() {
       of: row,
       matching: find.byType(RaftPixelAvatar),
     );
-    expect(tester.widget<RaftPixelAvatar>(pixel).avatarKey, 'owl');
-
-    api.routes['GET /agents'] = (_) => [
-      {'id': 'agent1', 'name': 'Cindy', 'avatarUrl': null},
-    ];
-    await tester.runAsync(
-      () => workspace.entityDirectory.refresh(WorkspaceEntityKind.agents),
+    final frame = find.descendant(
+      of: row,
+      matching: find.byType(RaftMountedAvatarFrame),
     );
-    await frames(tester, () {});
-    await tester.pumpAndSettle();
-    final avatarAfterReset = tester.widget<RaftPixelAvatar>(pixel).avatarKey;
-    await retire(tester);
-    expect(avatarAfterReset, 'robot');
+    try {
+      expect(
+        find.descendant(
+          of: row,
+          matching: find.text('Old description from DM discovery'),
+        ),
+        findsNothing,
+      );
+      expect(
+        tester.widget<RaftMountedAvatarFrame>(frame).presence?.light,
+        RaftPresence.offline,
+      );
+      expect(tester.widget<RaftPixelAvatar>(pixel).avatarKey, 'owl');
+
+      api.routes['GET /agents'] = (_) => [
+        {
+          'id': 'agent1',
+          'name': 'Cindy',
+          'description': 'Current agent description',
+          'avatarUrl': null,
+          'status': 'active',
+          'activity': 'working',
+        },
+      ];
+      await tester.runAsync(
+        () => workspace.entityDirectory.refresh(WorkspaceEntityKind.agents),
+      );
+      await frames(tester, () {});
+      await tester.pumpAndSettle();
+      expect(tester.widget<RaftPixelAvatar>(pixel).avatarKey, 'robot');
+      expect(
+        find.descendant(
+          of: row,
+          matching: find.text('Current agent description'),
+        ),
+        findsNothing,
+      );
+      expect(
+        tester.widget<RaftMountedAvatarFrame>(frame).presence?.light,
+        RaftPresence.busy,
+      );
+    } finally {
+      await retire(tester);
+    }
   }, variant: TargetPlatformVariant({TargetPlatform.linux}));
 }
