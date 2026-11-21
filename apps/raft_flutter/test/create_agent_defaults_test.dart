@@ -107,38 +107,69 @@ void main() {
       'reminders',
     };
 
-    test('every word pair is a valid, unreserved agent name', () {
-      final pairs = [
+    test('every name and pair is a valid, unreserved agent name', () {
+      final candidates = [
+        ...agentClassicNames,
         for (final a in agentNameAdjectives)
-          for (final n in agentNameNouns) '$a-$n',
+          for (final n in agentClassicNames) '$a-$n',
       ];
-      expect(pairs, hasLength(90 * 90));
-      for (final name in pairs) {
+      expect(agentClassicNames, hasLength(136));
+      expect(agentNameAdjectives, hasLength(90));
+      // Same lists as Web v1.24 shared agentNameGenerator.ts.
+      expect(agentClassicNames.first, 'Ada');
+      expect(agentClassicNames.last, 'Zoe');
+      expect(agentNameAdjectives.first, 'Amber');
+      expect(agentNameAdjectives.last, 'Zesty');
+      expect(agentClassicNames, isNot(contains('Cindy')));
+      for (final name in candidates) {
         expect(
           name.length <= 32 && nameRule.hasMatch(name),
           isTrue,
           reason: name,
         );
-        expect(reserved.contains(name), isFalse);
+        expect(reserved.contains(name.toLowerCase()), isFalse);
       }
     });
 
-    test('avoids taken names (case-insensitive) while a pair is free', () {
-      final all = [
-        for (final a in agentNameAdjectives)
-          for (final n in agentNameNouns) '$a-$n',
-      ];
-      final free = all.last;
-      final taken = [
-        for (final n in all.take(all.length - 1)) ' ${n.toUpperCase()} ',
+    test('first name, then Adjective-Name, then a number, never taken', () {
+      // A free first name while one is left (case-insensitive, trimmed).
+      final lastName = agentClassicNames.last;
+      final takenNames = [
+        for (final n in agentClassicNames.take(agentClassicNames.length - 1))
+          ' ${n.toUpperCase()} ',
       ];
       for (var i = 0; i < 5; i++) {
-        expect(suggestAgentName(exclude: taken, random: math.Random(i)), free);
+        expect(
+          suggestAgentName(exclude: takenNames, random: math.Random(i)),
+          lastName,
+        );
       }
-      // Every pair taken: the server's uniqueness check decides.
+      // Every first name taken: an adjective pair, e.g. Swift-Leo.
+      final pair = suggestAgentName(
+        exclude: agentClassicNames,
+        random: math.Random(3),
+      );
+      final parts = pair.split('-');
+      expect(agentNameAdjectives, contains(parts.first));
+      expect(agentClassicNames, contains(parts.last));
+      // Every name and pair taken: the first free number.
+      final everything = [
+        ...agentClassicNames,
+        for (final a in agentNameAdjectives)
+          for (final n in agentClassicNames) '$a-$n',
+      ];
+      final numbered = suggestAgentName(
+        exclude: everything,
+        random: math.Random(1),
+      );
+      expect(numbered, matches(RegExp(r'^[A-Za-z]+-[A-Za-z]+2$')));
+      final base = numbered.substring(0, numbered.length - 1);
       expect(
-        all,
-        contains(suggestAgentName(exclude: all, random: math.Random(1))),
+        suggestAgentName(
+          exclude: [...everything, '${base}2'],
+          random: math.Random(1),
+        ),
+        '${base}3',
       );
     });
   });
@@ -264,12 +295,12 @@ void main() {
       await w.services.entityDirectory.refresh(WorkspaceEntityKind.agents);
       await open(t);
       final first = nameValue(t);
-      expect(first, matches(RegExp(r'^[a-z]+-[a-z]+$')));
+      expect(agentClassicNames, contains(first));
       expect(find.byKey(const Key('create-agent-random-name')), findsOneWidget);
       await t.tap(find.byKey(const Key('create-agent-random-name')));
       await t.pump();
       final second = nameValue(t);
-      expect(second, matches(RegExp(r'^[a-z]+-[a-z]+$')));
+      expect(agentClassicNames, contains(second));
       expect(second, isNot(first));
     });
 
@@ -277,19 +308,19 @@ void main() {
       w
         ..machines = [_machine('mbp', 'Studio Mac')]
         ..agents = [
-          for (final a in agentNameAdjectives.take(89))
-            for (final n in agentNameNouns)
-              {'id': '$a-$n', 'name': '$a-$n', 'status': 'active'},
-          {'id': 'gone', 'name': 'zesty-zebra', 'deletedAt': '2026-10-01'},
+          for (final n in agentClassicNames.take(agentClassicNames.length - 1))
+            {'id': n, 'name': n.toLowerCase(), 'status': 'active'},
+          {'id': 'gone', 'name': 'Zoe', 'deletedAt': '2026-10-01'},
         ];
       await w.services.entityDirectory.refresh(WorkspaceEntityKind.agents);
       await open(t);
-      // Only the last adjective's pairs are free (zesty-*); a deleted agent
-      // does not hold its name.
-      expect(nameValue(t), startsWith('zesty-'));
+      // Only Zoe is free; a deleted agent does not hold its name.
+      expect(nameValue(t), 'Zoe');
+      // Rolling again skips the current Zoe too, so it falls back to a pair.
       await t.tap(find.byKey(const Key('create-agent-random-name')));
       await t.pump();
-      expect(nameValue(t), startsWith('zesty-'));
+      expect(nameValue(t), matches(RegExp(r'^[A-Za-z]+-[A-Za-z]+$')));
+      expect(nameValue(t), isNot('Zoe'));
     });
 
     testWidgets('a prefilled name, even an empty one, is kept', (t) async {

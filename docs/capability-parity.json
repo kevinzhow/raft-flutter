@@ -7390,7 +7390,7 @@
    "kind": "ui",
    "id": "ui:agents.create-random-name",
    "area": "agents-computers-runtimes",
-   "capability": "Create Agent starts with a suggested adjective-noun name and a dice button ('Suggest a random name') that rolls another, avoiding names already taken",
+   "capability": "Create Agent starts with a suggested classic first name (Leo; then Swift-Leo, then Swift-Leo2) and a dice button ('Suggest a random name') that rolls another, avoiding names already taken",
    "background": false,
    "status": "covered",
    "webEntry": "CreateAgentDialog name StableField labelAccessory (Dices, data-testid create-agent-random-name) + shared suggestAgentName",
@@ -7406,7 +7406,7 @@
      "needle": "String suggestAgentName("
     }
    ],
-   "justification": "Word lists copied from shared agentNameGenerator.ts (90 x 90 pairs); the taken names come from the agent directory, deleted agents do not hold their name.",
+   "justification": "Name and adjective lists copied from shared agentNameGenerator.ts v1.24 (136 names, 90 adjectives, same order); the taken names come from the agent and member directories, deleted agents do not hold their name.",
    "impact": "",
    "size": ""
   },

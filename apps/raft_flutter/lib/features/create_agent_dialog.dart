@@ -206,7 +206,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     remembered = widget.onboarding
         ? null
         : CreateAgentLastConfig.read(w.server?.id);
-    // A fresh create starts with a suggested `adjective-noun` name; a prefill
+    // A fresh create starts with a suggested first name like `Leo`; a prefill
     // (even an empty one) keeps what the caller gave.
     name.text = widget.onboarding
         ? 'Cindy'
