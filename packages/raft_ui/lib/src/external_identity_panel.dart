@@ -37,7 +37,7 @@ class RaftExternalIdentityBody extends StatelessWidget {
     final strong = t.ui.foreground;
     final muted = t.ui.foregroundMuted;
     return ColoredBox(
-      color: t.canvas,
+      color: t.colors['layer-profile-content']!,
       child: SingleChildScrollView(
         key: const Key('external-identity-body'),
         child: Column(

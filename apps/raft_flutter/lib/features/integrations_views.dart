@@ -658,6 +658,14 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             final saving = installing || savingId == id;
             final botHandle =
                 managementMap(listing['bot'])['handle'] as String?;
+            final installedBot = installed
+                ? managementMap(
+                    projection.installed
+                        .where((app) => app.id == id)
+                        .firstOrNull
+                        ?.source['bot'],
+                  )
+                : const <String, dynamic>{};
             final reviewed = AppInstallExpectation.of(
               allowedScopes: listing['allowedScopes'],
               groups: listing['appNotificationGroups'],
@@ -824,6 +832,33 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                                     tr('Not configured'),
                               ),
                       ),
+                      if (botHandle != null)
+                        RaftConnectedAppDetailRow(
+                          label: 'Posts as',
+                          child: Column(
+                            crossAxisAlignment:
+                                raftBreakpointWidth(modal) >= 640
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            spacing: RaftSpace.x2,
+                            children: [
+                              RaftConnectedAppMonoValue('@$botHandle'),
+                              if (installedBot['grant'] == 'pending')
+                                ConnectedAppBot(
+                                  workspace: w,
+                                  clientId: id,
+                                  appName: '${listing['name'] ?? ''}',
+                                  offer: installedBot,
+                                  marketplaceHint: true,
+                                  onChanged: (bot) {
+                                    _updateBot(id, bot);
+                                    setModal(() {});
+                                  },
+                                  onViewProfile: (_) {},
+                                ),
+                            ],
+                          ),
+                        ),
                       RaftConnectedAppDetailRow(
                         label: 'Redirect / callback',
                         child: RaftConnectedAppMonoValue(
@@ -1044,6 +1079,11 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                 workspace: w,
                 clientId: app.id,
                 appName: app.name,
+                logo: RaftAppLogo(
+                  initials: integrationInitials(app.name),
+                  logoUrl: app.logoUrl,
+                  size: RaftAppLogoSize.sm,
+                ),
                 offer: offeredBot,
                 onChanged: (bot) => _updateBot(app.id, bot),
                 fromBotLink: fromBotLink,
@@ -1514,172 +1554,163 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             _ => null,
           };
     final actionError = appActionNotice.message;
-    return Semantics(
-      liveRegion: error != null || actionError != null,
-      child: RaftConnectedAppsSection(
-        standalone: widget.standalone,
-        scrollable: scrollable,
-        onRetry: actionError == null ? _refreshApps : null,
-        onRefresh: widget.standalone ? _refreshApps : null,
-        typeFilter: _toolbarFilter(
-          'apps-filter-type',
-          RaftGlyph.shapes,
-          listingType,
-          const [
-            ('all', 'All types'),
-            ('app', 'Raft apps'),
-            ('mcp', 'MCP apps'),
-          ],
-          (type) => listingType = type,
-          20,
-        ),
-        sortFilter: shownTab == RaftConnectedAppsTab.marketplace
-            ? _toolbarFilter(
-                'apps-filter-sort',
-                RaftGlyph.arrowDownUp,
-                listingSort,
-                const [
-                  ('installs', 'Most installed'),
-                  ('published', 'Newest'),
-                  ('name', 'Name'),
-                ],
-                (sort) => listingSort = sort,
-                10,
-              )
-            : null,
-        onClearFilters: narrowed ? _clearFilters : null,
-        onBrowseMarketplace:
-            canManage &&
-                shownTab == RaftConnectedAppsTab.installed &&
-                p.installed.isEmpty &&
-                mcpApps.isEmpty
-            ? () {
-                _clearFilters();
-                selectTab(RaftConnectedAppsTab.marketplace);
-              }
-            : null,
-        adminNote: canManage
-            ? null
-            : tr(
-                'Only server owners and admins can install, edit, or remove apps.',
-              ),
-        loading: cold,
-        marketplaceLoading: !listingPage.loaded && !listingPage.failed,
-        notice: updateCount == 0 && !botLinkNotice.isActive
-            ? null
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: RaftSpace.x4,
-                children: [
-                  if (updateCount > 0)
-                    RaftBanner(
-                      live: false,
-                      size: RaftBannerRecipeSize.sm,
-                      description: raftFormat(
-                        context,
-                        canManage
-                            ? updateCount == 1
-                                  ? '{count} installed app has new permissions awaiting your review.'
-                                  : '{count} installed apps have new permissions awaiting your review.'
-                            : updateCount == 1
-                            ? '{count} installed app needs an administrator to approve new permissions.'
-                            : '{count} installed apps need an administrator to approve new permissions.',
-                        {'count': updateCount},
-                      ),
-                      action: RaftSettingsRecipeButton(
-                        label: tr('View updates'),
-                        variant: RaftButtonRecipeVariant.outline,
-                        onPressed: showUpdates,
-                      ),
-                    ),
-                  if (botLinkNotice.message case final message?)
-                    RaftBanner(
-                      key: const ValueKey(
-                        'connected-apps-bot-link-not-installed',
-                      ),
-                      description: tr(message),
-                      status: RaftBannerRecipeStatus.info,
-                      size: RaftBannerRecipeSize.sm,
-                      closeLabel: tr('Close'),
-                      onClose: () => setState(botLinkNotice.clear),
-                    ),
-                ],
-              ),
-        onRegister: canManage ? openEditor : null,
-        tab: shownTab,
-        counts: (
-          marketplace: widget.standalone ? marketplaceTotal : null,
-          installed: p.installed.length + mcpApps.length,
-          myApps: p.registered.length,
-        ),
-        onTab: selectTab,
-        searchController: search,
-        onSearch: (_) => filterListings(debounce: true),
-        category: category,
-        categories: [
-          ('all', tr('All categories')),
-          for (final c in integrationCategories)
-            (c, tr(integrationCategoryDisplay(c))),
-        ],
-        onCategory: (next) {
-          category = next;
-          filterListings();
-        },
-        marketplaceFooter:
-            listingPage.legacy ||
-                emptyDetail != null ||
-                (widget.standalone &&
-                    !listingPage.loaded &&
-                    !listingPage.failed)
-            ? null
-            : ConnectedAppMarketplaceFooter(
-                page: listingPage,
-                retry: _loadListings,
-                loadMore: () => _loadListings(next: true),
-                standalone: widget.standalone,
-              ),
-        installedWarning: mcpFailed
-            ? RaftBanner(
-                description: tr("Couldn't load MCP Apps."),
-                size: RaftBannerRecipeSize.sm,
-              )
-            : null,
-        installedFooter: LinkPreviewConsents(
-          key: ValueKey(('link-preview-consents', authority)),
-          workspace: w,
-        ),
-        layout: layout,
-        onLayout: setLayout,
-        error: actionError ?? error,
-        marketplace: listings,
-        recommendation: recommended != null && recommended['id'] is String
-            ? appTile(
-                recommended['id'] as String,
-                recommended,
-                recommendation: raftTextZh(
-                  context,
-                  'Connect GitHub: agents push code and open pull requests; you review and merge.',
-                  '连接 GitHub：Agent 推代码、开 PR，你来审批和合并。',
-                ),
-              )
-            : null,
-        rows: shownTab == RaftConnectedAppsTab.installed
-            ? installedRows
-            : registeredRows,
-        emptyMessage: empty,
-        emptyDetail: emptyDetail,
-        myAppsIntro: tr(
-          canManage
-              ? 'Raft Apps this server builds. Edit one to change its details, get its client secret or request Marketplace review.'
-              : 'Raft Apps this server builds. Only server owners and admins can change them.',
-        ),
-        secretReveal: canManage && !editorOpen ? secretReveal() : null,
-        reviewNote: cold
-            ? null
-            : tr(
-                'Raft reviews every third-party listing before it appears in the marketplace.',
-              ),
+    return RaftConnectedAppsSection(
+      standalone: widget.standalone,
+      scrollable: scrollable,
+      onRetry: actionError == null ? _refreshApps : null,
+      onRefresh: widget.standalone ? _refreshApps : null,
+      typeFilter: _toolbarFilter(
+        'apps-filter-type',
+        RaftGlyph.shapes,
+        listingType,
+        const [('all', 'All types'), ('app', 'Raft apps'), ('mcp', 'MCP apps')],
+        (type) => listingType = type,
+        20,
       ),
+      sortFilter: shownTab == RaftConnectedAppsTab.marketplace
+          ? _toolbarFilter(
+              'apps-filter-sort',
+              RaftGlyph.arrowDownUp,
+              listingSort,
+              const [
+                ('installs', 'Most installed'),
+                ('published', 'Newest'),
+                ('name', 'Name'),
+              ],
+              (sort) => listingSort = sort,
+              10,
+            )
+          : null,
+      onClearFilters: narrowed ? _clearFilters : null,
+      onBrowseMarketplace:
+          canManage &&
+              shownTab == RaftConnectedAppsTab.installed &&
+              p.installed.isEmpty &&
+              mcpApps.isEmpty
+          ? () {
+              _clearFilters();
+              selectTab(RaftConnectedAppsTab.marketplace);
+            }
+          : null,
+      adminNote: canManage
+          ? null
+          : tr(
+              'Only server owners and admins can install, edit, or remove apps.',
+            ),
+      loading: cold,
+      marketplaceLoading: !listingPage.loaded && !listingPage.failed,
+      notice: updateCount == 0 && !botLinkNotice.isActive
+          ? null
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: RaftSpace.x4,
+              children: [
+                if (updateCount > 0)
+                  RaftBanner(
+                    live: false,
+                    size: RaftBannerRecipeSize.sm,
+                    description: raftFormat(
+                      context,
+                      canManage
+                          ? updateCount == 1
+                                ? '{count} installed app has new permissions awaiting your review.'
+                                : '{count} installed apps have new permissions awaiting your review.'
+                          : updateCount == 1
+                          ? '{count} installed app needs an administrator to approve new permissions.'
+                          : '{count} installed apps need an administrator to approve new permissions.',
+                      {'count': updateCount},
+                    ),
+                    action: RaftSettingsRecipeButton(
+                      label: tr('View updates'),
+                      variant: RaftButtonRecipeVariant.outline,
+                      onPressed: showUpdates,
+                    ),
+                  ),
+                if (botLinkNotice.message case final message?)
+                  RaftBanner(
+                    key: const ValueKey(
+                      'connected-apps-bot-link-not-installed',
+                    ),
+                    description: tr(message),
+                    status: RaftBannerRecipeStatus.info,
+                    size: RaftBannerRecipeSize.sm,
+                    closeLabel: tr('Close'),
+                    onClose: () => setState(botLinkNotice.clear),
+                  ),
+              ],
+            ),
+      onRegister: canManage ? openEditor : null,
+      tab: shownTab,
+      counts: (
+        marketplace: widget.standalone ? marketplaceTotal : null,
+        installed: p.installed.length + mcpApps.length,
+        myApps: p.registered.length,
+      ),
+      onTab: selectTab,
+      searchController: search,
+      onSearch: (_) => filterListings(debounce: true),
+      category: category,
+      categories: [
+        ('all', tr('All categories')),
+        for (final c in integrationCategories)
+          (c, tr(integrationCategoryDisplay(c))),
+      ],
+      onCategory: (next) {
+        category = next;
+        filterListings();
+      },
+      marketplaceFooter:
+          listingPage.legacy ||
+              emptyDetail != null ||
+              (widget.standalone && !listingPage.loaded && !listingPage.failed)
+          ? null
+          : ConnectedAppMarketplaceFooter(
+              page: listingPage,
+              retry: _loadListings,
+              loadMore: () => _loadListings(next: true),
+              standalone: widget.standalone,
+            ),
+      installedWarning: mcpFailed
+          ? RaftBanner(
+              description: tr("Couldn't load MCP Apps."),
+              size: RaftBannerRecipeSize.sm,
+            )
+          : null,
+      installedFooter: LinkPreviewConsents(
+        key: ValueKey(('link-preview-consents', authority)),
+        workspace: w,
+      ),
+      layout: layout,
+      onLayout: setLayout,
+      error: actionError ?? error,
+      marketplace: listings,
+      recommendation: recommended != null && recommended['id'] is String
+          ? appTile(
+              recommended['id'] as String,
+              recommended,
+              recommendation: raftTextZh(
+                context,
+                'Connect GitHub: agents push code and open pull requests; you review and merge.',
+                '连接 GitHub：Agent 推代码、开 PR，你来审批和合并。',
+              ),
+            )
+          : null,
+      rows: shownTab == RaftConnectedAppsTab.installed
+          ? installedRows
+          : registeredRows,
+      emptyMessage: empty,
+      emptyDetail: emptyDetail,
+      myAppsIntro: tr(
+        canManage
+            ? 'Raft Apps this server builds. Edit one to change its details, get its client secret or request Marketplace review.'
+            : 'Raft Apps this server builds. Only server owners and admins can change them.',
+      ),
+      secretReveal: canManage && !editorOpen ? secretReveal() : null,
+      reviewNote: cold
+          ? null
+          : tr(
+              'Raft reviews every third-party listing before it appears in the marketplace.',
+            ),
     );
   }
 

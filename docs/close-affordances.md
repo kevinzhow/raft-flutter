@@ -86,8 +86,8 @@ in `apps/raft_flutter`.
 | `channel-details` | panel | back esc sysback | x esc | x esc | components/channel/ChannelDetailsSurface.tsx: desktop ChannelSideCard Close and Escape; phone page Back and system history | ok |  |
 | `connected-app-bot-remove-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ConnectedAppBot.tsx uses ConfirmDialog for bot removal | ok |  |
 | `app-prompt-text-reject-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | AppPromptTextPanels.tsx uses ConfirmDialog for the required reason | ok |  |
-| `link-preview-consents-dialog` | dialog | x esc scrim sysback drag | x esc scrim sysback | x esc scrim sysback | LinkPreviewConsents.tsx opens Manage in a dialog or touch sheet | ok |  |
-| `link-preview-consents-revoke-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | LinkPreviewConsents.tsx uses ConfirmDialog for Revoke | ok |  |
+| `link-preview-consents-dialog` | dialog | x esc scrim sysback | x esc scrim sysback | x esc scrim sysback | LinkPreviewConsents.tsx opens Manage in a dialog or touch sheet | ok |  |
+| `link-preview-consents-revoke-dialog` | dialog | esc sysback | esc sysback | esc sysback | LinkPreviewConsents.tsx uses AlertDialogCancel for Revoke | ok |  |
 | `history-lower-limit-confirm` | dialog | x esc sysback | x esc sysback | x esc sysback | Flutter-only history action; ConfirmDialog.tsx:138-165: X + Esc, no pointer dismissal | no-web |  |
 | `confirm-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ConfirmDialog.tsx:138-165 Dialog disablePointerDismissal: X + Esc, no scrim, all gated on loading | fixed | RaftDialogRoute binds Escape; Esc / Back / X blocked while loading |
 | `role-permission-help` | dialog | x esc scrim sysback | x esc scrim sysback | x esc scrim sysback | RolePermissionHelpDialog.tsx:55-60 DialogCard closeOnBackdrop: X + Esc + backdrop | fixed | scrim press: RaftAgentDialogCard.onBackdrop (the card scroll view swallowed it) |

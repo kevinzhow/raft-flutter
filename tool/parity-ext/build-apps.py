@@ -624,7 +624,8 @@ def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integ
                           if web_target != selector else []),
                     ],
                     'androidInteractions': [
-                        native
+                        {'scroll': 'if-needed', **native}
+                        if native['type'] in {'tap', 'tapText', 'reveal'} else native
                         for web, action in steps
                         for native in (
                             [

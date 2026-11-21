@@ -385,6 +385,21 @@ void main() {
     );
     expect(find.text('beta'), findsOneWidget);
 
+    t.view.physicalSize = const Size(390, 844);
+    await t.pumpAndSettle();
+    final created = find.byKey(const ValueKey('connected-app-share-created'));
+    final shareUrl = find.descendant(
+      of: created,
+      matching: find.byType(RaftAppEditorReadonlyInput),
+    );
+    final copyButton = find.descendant(
+      of: created,
+      matching: find.text('Copy'),
+    );
+    expect(t.getCenter(shareUrl).dy, t.getCenter(copyButton).dy);
+    t.view.physicalSize = const Size(1280, 1600);
+    await t.pumpAndSettle();
+
     await tapVisible(
       find.descendant(
         of: find.byKey(

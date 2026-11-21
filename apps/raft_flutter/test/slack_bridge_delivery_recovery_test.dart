@@ -183,6 +183,11 @@ void main() {
       final banner = tester.widget<RaftBanner>(recovery);
       expect(banner.size, RaftBannerRecipeSize.sm);
       expect(banner.glyph, RaftGlyph.triangleAlert);
+      final held = find.widgetWithText(RaftBanner, 'Messages need attention');
+      expect(
+        tester.getTopLeft(held).dy - tester.getBottomLeft(recovery).dy,
+        RaftSpace.x4,
+      );
       final retry = find.widgetWithText(RaftButton, 'Retry stalled message');
       final channel = find.descendant(
         of: recovery,

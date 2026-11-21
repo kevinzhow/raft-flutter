@@ -17,7 +17,9 @@ class ConnectedAppBot extends StatefulWidget {
     required this.offer,
     required this.onChanged,
     required this.onViewProfile,
+    this.logo,
     this.fromBotLink = false,
+    this.marketplaceHint = false,
     this.pendingPermissions,
     this.onFindAdmin,
   });
@@ -25,9 +27,10 @@ class ConnectedAppBot extends StatefulWidget {
   final WorkspaceController workspace;
   final String clientId, appName;
   final Map<String, dynamic> offer;
+  final Widget? logo;
   final ValueChanged<Map<String, dynamic>> onChanged;
   final ValueChanged<String> onViewProfile;
-  final bool fromBotLink;
+  final bool fromBotLink, marketplaceHint;
   final Widget? pendingPermissions;
   final VoidCallback? onFindAdmin;
 
@@ -137,10 +140,55 @@ class _ConnectedAppBotState extends State<ConnectedAppBot> {
       'server': workspace.server?.name ?? '',
       'app': widget.appName,
     };
-    Widget button(String label, VoidCallback callback) => RaftButton(
+    if (widget.marketplaceHint) {
+      return Column(
+        crossAxisAlignment: raftBreakpointWidth(context) >= 640
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        spacing: RaftSpace.x2,
+        children: [
+          if (canManage)
+            RaftButton(
+              key: const ValueKey('connected-app-bot-marketplace-add'),
+              label: raftFormat(context, 'Add @{handle} to {server}', names),
+              uiVariant: RaftButtonVariant.standard,
+              uiSize: RaftButtonSize.md,
+              onPressed: busy ? null : () => update(true),
+            )
+          else
+            RaftCssText(
+              raftFormat(
+                context,
+                'Only an owner or admin can add @{handle}.',
+                names,
+              ),
+              style: tokens.scale(RaftTypeScale.footnote, color: tokens.muted),
+            ),
+          if (failure.message case final message?) RaftErrorBanner(message),
+        ],
+      );
+    }
+    Widget button(
+      String label,
+      VoidCallback callback, {
+      RaftButtonVariant variant = RaftButtonVariant.standard,
+    }) => RaftButton(
       label: label,
-      tone: RaftButtonRecipeVariant.outline,
+      uiVariant: variant,
+      uiSize: RaftButtonSize.md,
       onPressed: busy ? null : callback,
+    );
+    Widget capability(RaftGlyph glyph, String label) => Row(
+      spacing: RaftSpace.x2,
+      children: [
+        RaftIcon(glyph, size: 14, color: tokens.ui.foregroundHint),
+        Expanded(
+          child: RaftCssText(
+            label,
+            style: tokens.scale(RaftTypeScale.footnote, color: tokens.muted),
+          ),
+        ),
+      ],
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -148,22 +196,26 @@ class _ConnectedAppBotState extends State<ConnectedAppBot> {
       children: [
         if (canManage && bot['grant'] == 'pending')
           RaftBanner(
+            status: RaftBannerRecipeStatus.info,
+            size: RaftBannerRecipeSize.sm,
+            glyph: RaftGlyph.info,
+            live: false,
             description: raftFormat(
               context,
               '{app} can post as @{handle}. It hasn’t joined {server} yet.',
               names,
             ),
-            footer: Wrap(
-              spacing: RaftSpace.x2,
-              runSpacing: RaftSpace.x2,
-              children: [
-                button(
-                  raftFormat(context, 'Add @{handle}', names),
-                  () => update(true),
-                ),
-                button(tr('Don’t add'), () => update(false)),
-              ],
-            ),
+            actions: [
+              button(
+                tr('Don’t add'),
+                () => update(false),
+                variant: RaftButtonVariant.ghost,
+              ),
+              button(
+                raftFormat(context, 'Add @{handle}', names),
+                () => update(true),
+              ),
+            ],
           ),
         ?widget.pendingPermissions,
         Focus(
@@ -176,62 +228,129 @@ class _ConnectedAppBotState extends State<ConnectedAppBot> {
               padding: const EdgeInsets.all(RaftSpace.x3),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: RaftSpace.x2,
+                spacing: RaftSpace.x3,
                 children: [
-                  Text(
-                    widget.appName,
-                    style: tokens.scale(RaftTypeScale.callout),
-                  ),
-                  Text('@$handle', style: tokens.scale(RaftTypeScale.monoMeta)),
-                  if (granted)
-                    RaftSettingsRecipeBadge(
-                      label: tr('Added to server'),
-                      variant: RaftBadgeRecipeVariant.success,
-                    )
-                  else ...[
-                    Text(
-                      raftFormat(
-                        context,
-                        'DMs members as {app} (review requests, for example)',
-                        names,
-                      ),
-                    ),
-                    Text(tr('Posts in channels once it’s invited')),
-                    Text(tr('Can’t see channels it hasn’t joined')),
-                  ],
-                  Wrap(
-                    spacing: RaftSpace.x2,
-                    runSpacing: RaftSpace.x2,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: RaftSpace.x3,
                     children: [
-                      if (granted && agent is String)
-                        button(
-                          tr('View profile'),
-                          () => widget.onViewProfile(agent),
-                        ),
-                      if (canManage)
-                        granted
-                            ? button(tr('Remove'), confirmRemove)
-                            : button(
-                                raftFormat(
-                                  context,
-                                  'Add @{handle} to {server}',
-                                  names,
+                      ?widget.logo,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: RaftSpace.half,
+                          children: [
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: RaftSpace.x1_5,
+                              children: [
+                                RaftCssText(
+                                  widget.appName,
+                                  style: tokens.scale(
+                                    RaftTypeScale.subhead,
+                                    weight: FontWeight.w600,
+                                  ),
                                 ),
-                                () => update(true),
+                                RaftBadge(
+                                  label: tr('App'),
+                                  variant: RaftBadgeRecipeVariant.muted,
+                                  appearance: RaftBadgeRecipeAppearance.soft,
+                                ),
+                              ],
+                            ),
+                            RaftCssText(
+                              '@$handle',
+                              style: tokens.scale(
+                                RaftTypeScale.monoMeta,
+                                color: tokens.muted,
                               ),
-                      if (!canManage && !granted && widget.fromBotLink) ...[
-                        Text(
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (granted)
+                        RaftBadge(
+                          label: tr('Added to server'),
+                          variant: RaftBadgeRecipeVariant.success,
+                          appearance: RaftBadgeRecipeAppearance.soft,
+                        ),
+                    ],
+                  ),
+                  if (!granted) ...[
+                    const RaftSeparator(),
+                    Column(
+                      spacing: RaftSpace.x1_5,
+                      children: [
+                        capability(
+                          RaftGlyph.directMessage,
+                          raftFormat(
+                            context,
+                            'DMs members as {app} (review requests, for example)',
+                            names,
+                          ),
+                        ),
+                        capability(
+                          RaftGlyph.hash,
+                          tr('Posts in channels once it’s invited'),
+                        ),
+                        capability(
+                          RaftGlyph.eyeOff,
+                          tr('Can’t see channels it hasn’t joined'),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (granted ? agent is String || canManage : canManage)
+                    Wrap(
+                      spacing: RaftSpace.x2,
+                      runSpacing: RaftSpace.x2,
+                      children: [
+                        if (granted && agent is String)
+                          button(
+                            tr('View profile'),
+                            () => widget.onViewProfile(agent),
+                          ),
+                        if (canManage)
+                          granted
+                              ? button(
+                                  tr('Remove'),
+                                  confirmRemove,
+                                  variant: RaftButtonVariant.ghost,
+                                )
+                              : button(
+                                  raftFormat(
+                                    context,
+                                    'Add @{handle} to {server}',
+                                    names,
+                                  ),
+                                  () => update(true),
+                                ),
+                      ],
+                    ),
+                  if (!canManage && !granted && widget.fromBotLink)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: RaftSpace.x2,
+                      children: [
+                        RaftCssText(
                           raftFormat(
                             context,
                             'Only an owner or admin can add @{handle}.',
                             names,
                           ),
+                          style: tokens.scale(
+                            RaftTypeScale.footnote,
+                            color: tokens.muted,
+                          ),
                         ),
                         if (widget.onFindAdmin case final findAdmin?)
-                          button(tr('Find a server admin'), findAdmin),
+                          button(
+                            tr('Find a server admin'),
+                            findAdmin,
+                            variant: RaftButtonVariant.outline,
+                          ),
                       ],
-                    ],
-                  ),
+                    ),
                   if (failure.message case final message?)
                     RaftErrorBanner(message),
                 ],

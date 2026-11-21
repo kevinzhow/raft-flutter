@@ -50,11 +50,10 @@ WorkspaceController _workspace(WidgetTester tester) {
   return workspace;
 }
 
-SurfaceProbe _probe(String id, {bool sheet = false}) => SurfaceProbe(
+SurfaceProbe _probe(String id) => SurfaceProbe(
   isOpen: () => find.byKey(ValueKey(id)).evaluate().isNotEmpty,
   x: anyX,
   scrim: const Offset(6, 6),
-  dragHandle: sheet ? find.byKey(const ValueKey('raft-sheet-handle')) : null,
 );
 
 Future<void> _openDetail(
@@ -150,9 +149,28 @@ void main() {
         if (revoke) {
           await tester.tap(find.text('Revoke'));
           await tester.pumpAndSettle();
+          final alert = find.byKey(
+            const ValueKey('link-preview-consents-revoke-dialog'),
+          );
+          expect(
+            find.descendant(of: alert, matching: find.byType(RaftDialogClose)),
+            findsNothing,
+          );
+          expect(
+            find.descendant(of: alert, matching: find.text('Keep allowed')),
+            findsOneWidget,
+          );
           return _probe('link-preview-consents-revoke-dialog');
         }
-        return _probe('link-preview-consents-dialog', sheet: true);
+        final sheet = find.byType(RaftFormSheet);
+        if (sheet.evaluate().isNotEmpty) {
+          expect(find.byKey(const ValueKey('raft-sheet-handle')), findsNothing);
+          final head = find.byKey(const ValueKey('raft-form-sheet-head'));
+          await tester.fling(head, const Offset(0, 140), 1000);
+          await tester.pumpAndSettle();
+          expect(sheet, findsOneWidget);
+        }
+        return _probe('link-preview-consents-dialog');
       },
   };
   final surfaces = dialogSurfaces

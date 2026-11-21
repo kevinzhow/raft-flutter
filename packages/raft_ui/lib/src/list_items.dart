@@ -580,8 +580,14 @@ class _RaftCollapsibleSectionHeaderState
             padding: EdgeInsets.zero,
             expand: true,
             semanticLabel: semanticLabel,
+            expanded: widget.expanded,
             onPressed: toggle,
-            child: ExcludeSemantics(child: header),
+            child: ExcludeSemantics(
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: header,
+              ),
+            ),
           )
         : RaftControl(
             key: widget.disclosureKey,
@@ -601,7 +607,9 @@ class _RaftCollapsibleSectionHeaderState
         Row(
           children: [
             Expanded(
-              child: Semantics(expanded: widget.expanded, child: summary),
+              child: inline
+                  ? summary
+                  : Semantics(expanded: widget.expanded, child: summary),
             ),
             if (widget.action != null) ...[
               const SizedBox(width: 8),

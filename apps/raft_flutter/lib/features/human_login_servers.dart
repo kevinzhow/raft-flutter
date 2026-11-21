@@ -566,18 +566,34 @@ class HumanLoginNotAccessible extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
+    final wide = MediaQuery.sizeOf(context).width >= 640;
     return Column(
       key: const ValueKey('human-login-not-accessible'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: RaftSpace.x3,
+      spacing: RaftSpace.x5,
       children: [
-        Text(
-          tr("This app isn't available to you"),
-          style: RaftTypography.heading(t, size: 16, line: 22),
+        Semantics(
+          header: true,
+          child: RaftCssText(
+            tr("This app isn't available to you"),
+            style: t.scale(wide ? RaftTypeScale.display : RaftTypeScale.title),
+          ),
         ),
         if (signedInAs case final String who when who.isNotEmpty)
-          Text(
-            '${tr('Signed in as')} $who',
+          RaftCssText.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: '${tr('Signed in as')} '),
+                TextSpan(
+                  text: who,
+                  style: t.scale(
+                    RaftTypeScale.caption,
+                    weight: FontWeight.w700,
+                    color: t.ui.foregroundHint,
+                  ),
+                ),
+              ],
+            ),
             style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
           ),
       ],

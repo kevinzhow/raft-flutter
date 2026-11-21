@@ -18,7 +18,12 @@ import 'hover_region.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'overlays/dialog.dart'
-    show RaftDialog, RaftDialogSize, RaftDialogSlots, showRaftDialog;
+    show
+        RaftDialog,
+        RaftDialogKind,
+        RaftDialogSize,
+        RaftDialogSlots,
+        showRaftDialog;
 import 'tokens/tokens.dart' show RaftTypeScale;
 import 'panel_layout.dart' show RaftCssText;
 import 'recipes/recipe_runtime.dart';
@@ -423,7 +428,10 @@ class RaftConfirmDialog extends StatefulWidget {
     this.initialFocusCancel = false,
     this.confirmTrailingGlyph,
     this.cssTitle = false,
+    this.kind = RaftDialogKind.dialog,
   });
+
+  final RaftDialogKind kind;
 
   /// Paint the heading on the CSS line baseline.
   final bool cssTitle;
@@ -622,49 +630,59 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
         ],
       );
     }
+    final footer = <Widget>[
+      if (widget.showCancel)
+        RaftButton(
+          label: widget.cancelLabel,
+          focusNode: widget.initialFocusCancel ? _cancelFocus : null,
+          uiSize: actionSize,
+          uiVariant: RaftButtonVariant.ghost,
+          onPressed: loading ? null : cancel,
+        ),
+      ValueListenableBuilder<bool>(
+        valueListenable:
+            widget.confirmEnabled ?? const AlwaysStoppedAnimation(true),
+        builder: (context, enabled, _) => RaftButton(
+          key: widget.confirmKey,
+          label: loading
+              ? widget.loadingLabel ?? 'Working…'
+              : widget.confirmLabel,
+          glyph: loading ? null : widget.confirmGlyph,
+          trailingGlyph: loading ? null : widget.confirmTrailingGlyph,
+          // ConfirmDialog passes an ordinary SVG/Spinner, without the
+          // Button recipe's explicit data-icon="inline-start" marker.
+          iconInlineStart: false,
+          leading: loading
+              ? const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.xs)
+              : null,
+          tone: widget.confirmVariant,
+          uiSize: actionSize,
+          onPressed: enabled && !loading ? confirm : null,
+        ),
+      ),
+    ];
     // Web ConfirmDialog gates every close on `loading`: Escape, Back and the
     // X all wait for the running confirm.
     return PopScope(
       canPop: !loading,
-      child: RaftDialog.shell(
-        surfaceKey: widget.surfaceKey,
-        title: title,
-        cssTitle: widget.cssTitle,
-        maxWidth: maxWidth,
-        onClose: loading ? null : cancel,
-        body: bare ? null : body,
-        footer: [
-          if (widget.showCancel)
-            RaftButton(
-              label: widget.cancelLabel,
-              focusNode: widget.initialFocusCancel ? _cancelFocus : null,
-              uiSize: actionSize,
-              uiVariant: RaftButtonVariant.ghost,
-              onPressed: loading ? null : cancel,
+      child: widget.kind == RaftDialogKind.alert
+          ? RaftDialog(
+              kind: RaftDialogKind.alert,
+              contentKey: widget.surfaceKey,
+              title: title,
+              maxWidth: maxWidth,
+              content: bare ? null : body,
+              actions: footer,
+            )
+          : RaftDialog.shell(
+              surfaceKey: widget.surfaceKey,
+              title: title,
+              cssTitle: widget.cssTitle,
+              maxWidth: maxWidth,
+              onClose: loading ? null : cancel,
+              body: bare ? null : body,
+              footer: footer,
             ),
-          ValueListenableBuilder<bool>(
-            valueListenable:
-                widget.confirmEnabled ?? const AlwaysStoppedAnimation(true),
-            builder: (context, enabled, _) => RaftButton(
-              key: widget.confirmKey,
-              label: loading
-                  ? widget.loadingLabel ?? 'Working…'
-                  : widget.confirmLabel,
-              glyph: loading ? null : widget.confirmGlyph,
-              trailingGlyph: loading ? null : widget.confirmTrailingGlyph,
-              // ConfirmDialog passes an ordinary SVG/Spinner, without the
-              // Button recipe's explicit data-icon="inline-start" marker.
-              iconInlineStart: false,
-              leading: loading
-                  ? const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.xs)
-                  : null,
-              tone: widget.confirmVariant,
-              uiSize: actionSize,
-              onPressed: enabled && !loading ? confirm : null,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

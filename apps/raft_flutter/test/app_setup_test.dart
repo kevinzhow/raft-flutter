@@ -229,7 +229,7 @@ void main() {
   });
 
   group('app details', () {
-    Future<void> openIntegrations(
+    Future<IntegAdapter> openIntegrations(
       WidgetTester t,
       Map<String, dynamic> listing,
     ) async {
@@ -268,6 +268,7 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('connected-app-app1')));
       await t.pumpAndSettle();
+      return a;
     }
 
     testWidgets('a listing that needs setup says so before the install', (
@@ -298,7 +299,22 @@ void main() {
     });
 
     testWidgets('installing stays open on the setup panel', (t) async {
-      await openIntegrations(t, _listing());
+      final adapter = await openIntegrations(t, {
+        ..._listing(),
+        'bot': {'offered': true, 'grant': 'pending', 'handle': 'acme'},
+      });
+      final grants = <Object?>[];
+      adapter.routes['POST /integrations/clients/app1/install/bot'] =
+          (request) {
+            grants.add(request.data);
+            return {
+              'botGrant': 'granted',
+              'bot': {'handle': 'acme', 'agentId': 'agent-acme'},
+            };
+          };
+      expect(find.text('Posts as'), findsOneWidget);
+      const addBot = ValueKey('connected-app-bot-marketplace-add');
+      expect(find.byKey(addBot), findsNothing);
       await t.tap(find.byKey(const ValueKey('connected-app-install')));
       await t.pumpAndSettle();
       expect(
@@ -310,6 +326,14 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Installed, setup pending'), findsOneWidget);
+      expect(find.text('Continue setup'), findsOneWidget);
+      expect(find.byKey(addBot), findsOneWidget);
+      await t.tap(find.byKey(addBot));
+      await t.pumpAndSettle();
+      expect(grants, [
+        {'action': 'grant'},
+      ]);
+      expect(find.byKey(addBot), findsNothing);
       expect(find.text('Continue setup'), findsOneWidget);
     });
 

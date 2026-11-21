@@ -93,6 +93,7 @@ Future<void> _stepUp(
     client,
     methods: listed,
     description: reason.description,
+    centered: reason == StepUpReason.appAccess,
     onSignInAgain: () => unawaited(client.logout()),
     onAnswer: (answer) async {
       try {
@@ -121,11 +122,16 @@ Future<bool> showVerifyItsYou(
   required String description,
   required Future<void> Function(StepUpAnswer answer) onAnswer,
   VoidCallback? onSignInAgain,
+  bool centered = false,
 }) async {
   var signInAgain = false;
   final verified = await showRaftForm<bool>(
     context,
     label: raftText(context, "Verify it's you"),
+    policy: centered
+        ? RaftPresentationPolicy.confirm
+        : RaftPresentationPolicy.form,
+    dialogMaxWidth: centered ? 400 : 560,
     // Web StepDialog `<Dialog disablePointerDismissal>`: a stray tap must
     // not cancel the step-up and drop the typed code.
     dismissible: false,

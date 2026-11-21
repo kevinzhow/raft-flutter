@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -11,6 +12,7 @@ import 'human_login_servers.dart';
 import 'second_factor_step_up.dart';
 
 const _loginDialogWidth = 600.0 + RaftSpace.x4 * 2;
+const _unavailableDialogWidth = _loginDialogWidth + RaftSpace.x4 * 2;
 
 /// The native "Login with Raft" confirmation: Web `HumanLoginSetupPage` for
 /// an app that opened its sign-in inside the in-app browser. A bottom sheet on
@@ -38,7 +40,7 @@ Future<Uri?> showHumanLoginSheet(
   // No text input: nothing to guard.
   guardUnsaved: false,
   label: 'Login with Raft',
-  dialogMaxWidth: _loginDialogWidth,
+  dialogMaxWidth: _unavailableDialogWidth,
 );
 
 class HumanLoginSheet extends StatefulWidget {
@@ -414,8 +416,16 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
           ),
       ],
     );
-    final content = Column(
-      key: const ValueKey('human-login-content'),
+    const contentKey = ValueKey('human-login-content');
+    final showCommitZone =
+        !notAccessible &&
+        (details != null || lookupUnavailable) &&
+        marketplace &&
+        !accountView;
+    final separateCommit =
+        showCommitZone && commit != HumanLoginCommit.adminNeeded;
+    final consent = Column(
+      key: separateCommit ? contentKey : null,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x3,
       children: [
@@ -456,17 +466,25 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
             ),
           ),
           ..._notices(context, choiceNow?.client, scopes),
-          if (marketplace && !accountView)
-            HumanLoginCommitZone(
-              row: current,
-              permissions: reviewedInstall,
-              busy: installing,
-              onFindAdmin: findAdmin,
-              joinsBot: joinsBot,
-              onBotChanged: (checked) =>
-                  setState(() => installBotChoice = (selectedId, checked)),
-            ),
         ],
+      ],
+    );
+    final content = Column(
+      key: separateCommit ? null : contentKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: RaftSpace.x3,
+      children: [
+        consent,
+        if (showCommitZone)
+          HumanLoginCommitZone(
+            row: current,
+            permissions: reviewedInstall,
+            busy: installing,
+            onFindAdmin: findAdmin,
+            joinsBot: joinsBot,
+            onBotChanged: (checked) =>
+                setState(() => installBotChoice = (selectedId, checked)),
+          ),
         if (botConflict case (final id, final handle) when id == selectedId)
           RaftBanner(
             description: raftFormat(
@@ -512,7 +530,9 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
               key: sheetKey,
               title: 'Login with Raft',
               onClose: busy ? () {} : cancel,
-              maxWidth: _loginDialogWidth,
+              maxWidth: notAccessible
+                  ? _unavailableDialogWidth
+                  : _loginDialogWidth,
               actions: actions,
               child: _Scrolls(child: body),
             ),
@@ -564,13 +584,19 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
         ),
       ),
       if (refusal != null)
-        Focus(
-          autofocus: accountRefusal != null,
-          skipTraversal: true,
-          child: RaftBanner(
-            key: const ValueKey('human-login-account-refusal'),
-            description: tr(refusal),
-            size: RaftBannerRecipeSize.sm,
+        Padding(
+          padding: const EdgeInsets.only(bottom: RaftSpace.x1),
+          child: Focus(
+            autofocus: accountRefusal != null,
+            skipTraversal: true,
+            child: Semantics(
+              role: SemanticsRole.alert,
+              child: RaftBanner(
+                key: const ValueKey('human-login-account-refusal'),
+                description: tr(refusal),
+                live: false,
+              ),
+            ),
           ),
         ),
       Column(
@@ -794,7 +820,7 @@ class _LoginLookupLoadingState extends State<_LoginLookupLoading> {
                     fromRecipe: true,
                   ),
                 ),
-                const SizedBox(height: RaftSpace.x3),
+                if (fraction != 2 / 3) const SizedBox(height: RaftSpace.x3),
               ],
               const SizedBox(height: RaftSpace.x5),
               const RaftSkeleton(height: RaftSpace.x4 * 4, fromRecipe: true),

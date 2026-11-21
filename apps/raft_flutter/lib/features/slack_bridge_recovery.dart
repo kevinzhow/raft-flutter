@@ -45,7 +45,7 @@ class SlackBridgeRecovery extends StatelessWidget {
     );
     final panels = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: RaftSpace.x3,
+      spacing: RaftSpace.x4,
       children: [
         if (showOutbound && blocks.isNotEmpty)
           RaftBanner(

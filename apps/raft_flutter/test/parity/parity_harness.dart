@@ -607,7 +607,11 @@ Future<void> _androidInteractions(
         await t.pump(const Duration(milliseconds: 300));
         // `scroll: false`: the target is already on screen, where Playwright
         // does not scroll either (ensureVisible would align it to the top).
-        if (raw['scroll'] != false) await t.ensureVisible(target!.first);
+        if (raw['scroll'] == 'if-needed') {
+          await _revealForClick(t, target!.first);
+        } else if (raw['scroll'] != false) {
+          await t.ensureVisible(target!.first);
+        }
         await t.pump();
         // Finding an offstage widget does not authorize a capture of it: the
         // scroll must make this real action reachable by pointer input.
@@ -652,7 +656,11 @@ Future<void> _androidInteractions(
           throw StateError('androidInteractions text ${raw['text']} missing');
         }
         await t.pump(const Duration(milliseconds: 300));
-        await t.ensureVisible(byText.first);
+        if (raw['scroll'] == 'if-needed') {
+          await _revealForClick(t, byText.first);
+        } else {
+          await t.ensureVisible(byText.first);
+        }
         await t.pump();
         await t.tap(byText.first, warnIfMissed: false);
       case 'secondaryTap':
@@ -706,7 +714,11 @@ Future<void> _androidInteractions(
         // Playwright's element screenshot scrolls the element into view
         // first: do the same for a keyed target below the fold.
         await t.pump(const Duration(milliseconds: 300));
-        await t.ensureVisible(target!.first);
+        if (raw['scroll'] == 'if-needed') {
+          await _revealForClick(t, target!.first);
+        } else {
+          await t.ensureVisible(target!.first);
+        }
         await t.pump();
       case 'hover':
         mouse ??= await t.createGesture(kind: PointerDeviceKind.mouse);
@@ -840,6 +852,13 @@ Future<void> _androidInteractions(
     await t.pump(const Duration(milliseconds: 50));
     await t.pump(const Duration(milliseconds: 300));
   }
+}
+
+Future<void> _revealForClick(WidgetTester tester, Finder target) async {
+  if (target.hitTestable().evaluate().isNotEmpty) return;
+  await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
+  await tester.pump();
+  expect(target.hitTestable(), findsOneWidget);
 }
 
 /// The widget a control-state interaction names without a ValueKey:

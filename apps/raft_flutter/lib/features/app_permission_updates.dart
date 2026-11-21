@@ -29,6 +29,7 @@ class AppPermissionUpdates extends ChangeNotifier {
   AppPermissionUpdateSummary _summary = (count: 0, needsAdminReview: false);
   int _ticket = 0;
   bool _disposed = false, _again = false;
+  bool _refreshOwed = false;
   int _consumers = 0;
   Future<void>? _inFlight;
   StreamSubscription<RaftEvent>? _events;
@@ -66,7 +67,11 @@ class AppPermissionUpdates extends ChangeNotifier {
       const Duration(minutes: 5),
       _refreshWhileVisible,
     );
-    _lifecycle = AppLifecycleListener(onShow: _refreshWhileVisible);
+    _lifecycle = AppLifecycleListener(
+      onShow: () {
+        if (_refreshOwed) _refreshWhileVisible(changed: true);
+      },
+    );
     _refreshWhileVisible();
   }
 
@@ -89,7 +94,12 @@ class AppPermissionUpdates extends ChangeNotifier {
   }
 
   void _refreshWhileVisible({bool changed = false}) {
-    if (_poll?.isRunning == true) unawaited(refresh(changed: changed));
+    if (_poll?.isRunning != true) {
+      _refreshOwed = allowed;
+      return;
+    }
+    _refreshOwed = false;
+    unawaited(refresh(changed: changed));
   }
 
   Future<void> refresh({bool changed = false}) {

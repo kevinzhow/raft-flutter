@@ -157,6 +157,7 @@ Future<void> openLinkPreviewConsents(
 ) => showRaftForm<void>(
   context,
   guardUnsaved: false,
+  dragDismissible: false,
   dialogMaxWidth: 448,
   label: raftText(context, 'Link previews'),
   builder: (_) => _LinkPreviewChoices(store: store),
@@ -246,6 +247,7 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
       context,
       RaftConfirmDialog(
         surfaceKey: const ValueKey('link-preview-consents-revoke-dialog'),
+        kind: RaftDialogKind.alert,
         title: raftFormat(context, 'Revoke {app}?', {'app': row.name}),
         message: raftFormat(
           context,
@@ -395,6 +397,12 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
           key: key,
           title: tr('Link previews'),
           onClose: close,
+          showHandle: false,
+          closeButton: RaftPanelAction(
+            glyph: RaftGlyph.x,
+            tooltip: tr('Close'),
+            onPressed: close,
+          ),
           commit: const SizedBox.shrink(),
           body: body,
         );

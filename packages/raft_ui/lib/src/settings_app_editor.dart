@@ -1454,23 +1454,17 @@ class RaftAppEditorCopyRow extends StatelessWidget {
     final button = RaftSettingsRecipeButton(
       label: copied ? 'Copied' : 'Copy',
       glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
-      glyphSize: 14,
-      size: RaftButtonRecipeSize.sm,
+      glyphSize: 18,
+      size: RaftButtonRecipeSize.lg,
       onPressed: onCopy,
     );
-    return raftBreakpointWidth(context) >= 640
-        ? Row(
-            spacing: RaftSpace.x2,
-            children: [
-              Expanded(child: field),
-              button,
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: RaftSpace.x2,
-            children: [field, button],
-          );
+    return Row(
+      spacing: RaftSpace.x2,
+      children: [
+        Expanded(child: field),
+        button,
+      ],
+    );
   }
 }
 

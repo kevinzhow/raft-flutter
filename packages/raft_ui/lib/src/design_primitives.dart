@@ -3534,6 +3534,7 @@ class RaftInteractive extends StatefulWidget {
     this.selected,
     this.checked,
     this.toggled,
+    this.expanded,
     this.inMutuallyExclusiveGroup = false,
     this.inertWhenDisabled = false,
     this.tooltip,
@@ -3557,7 +3558,7 @@ class RaftInteractive extends StatefulWidget {
   final bool busy, focusOnPointer, focusableWhenDisabled, button;
   final bool cancelOutsideRelease;
   final bool expandTouchTarget;
-  final bool? selected, checked, toggled;
+  final bool? selected, checked, toggled, expanded;
   final bool inMutuallyExclusiveGroup, inertWhenDisabled;
   final FocusNode? focusNode;
   final String? semanticLabel, semanticHint, tooltip;
@@ -3670,6 +3671,7 @@ class _RaftInteractiveState extends State<RaftInteractive>
       selected: widget.selected,
       checked: widget.checked,
       toggled: widget.toggled,
+      expanded: widget.expanded,
       inMutuallyExclusiveGroup: widget.inMutuallyExclusiveGroup,
       enabled: inert ? null : enabled,
       onTap: enabled ? activateControl : null,

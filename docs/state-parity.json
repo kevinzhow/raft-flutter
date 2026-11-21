@@ -53613,7 +53613,7 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance.",
         "role": "unresolved"
       },
-      "packages/raft_ui/lib/src/settings_controls.dart#local-function:CLASS:_RaftSettingsRecipeButtonState@3248/METHOD:build@3628/FUNCTION:draw@3838": {
+      "packages/raft_ui/lib/src/settings_controls.dart#local-function:CLASS:_RaftSettingsRecipeButtonState@3304/METHOD:build@3684/FUNCTION:draw@3894": {
         "role": "internal_wrapper",
         "familyRefs": [
           "button"
@@ -59088,7 +59088,7 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "apps/raft_flutter/lib/features/connected_app_bot.dart#local-function:CLASS:_ConnectedAppBotState@1053/METHOD:build@4146/FUNCTION:button@4650": {
+      "apps/raft_flutter/lib/features/connected_app_bot.dart#local-function:CLASS:_ConnectedAppBotState@1141/METHOD:build@4234/FUNCTION:button@5741": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59256,7 +59256,7 @@
         "owner": "WP-APPS",
         "reason": "Composes the shared progress and native login controls."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7231/METHOD:build@45902/FUNCTION:page@46018": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7231/METHOD:build@47766/FUNCTION:page@47882": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59790,6 +59790,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/connected_app_bot.dart#local-function:CLASS:_ConnectedAppBotState@1141/METHOD:build@4234/FUNCTION:capability@6022": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-APPS",
+        "reason": "Composes the icon and copy for each capability in the installed App bot card."
       }
     },
     "entries": {

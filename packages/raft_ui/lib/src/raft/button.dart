@@ -272,6 +272,7 @@ class RaftButton extends StatelessWidget {
     this.selected,
     this.checked,
     this.toggled,
+    this.expanded,
     this.inMutuallyExclusiveGroup = false,
     this.inertWhenDisabled = false,
     this.foreground,
@@ -388,7 +389,7 @@ class RaftButton extends StatelessWidget {
   final String? tooltip, semanticLabel, semanticHint;
   final bool button, inMutuallyExclusiveGroup, inertWhenDisabled;
   final SemanticsRole? semanticRole;
-  final bool? selected, checked, toggled;
+  final bool? selected, checked, toggled, expanded;
   final Color? foreground;
   final EdgeInsets? padding;
   final (double, double)? textStep;
@@ -472,6 +473,7 @@ class RaftButton extends StatelessWidget {
       selected: selected,
       checked: checked,
       toggled: toggled,
+      expanded: expanded,
       inMutuallyExclusiveGroup: inMutuallyExclusiveGroup,
       inertWhenDisabled: inertWhenDisabled,
       builder: (context, state) {

@@ -5,6 +5,38 @@ import 'app_global_server_selector_test.dart' show RootFixture;
 import 'support/server_tab.dart';
 
 void main() {
+  testWidgets('hidden permission changes are read once when shown', (
+    tester,
+  ) async {
+    const path = '/integrations/permission-updates';
+    final fixture = RootFixture();
+    fixture.overrides['GET $path'] = (_) => {'count': 0};
+    await fixture.mount(tester, 'light', 390, uri: Uri.parse('/s/alpha/tasks'));
+    final reads = fixture.adapter.calls.where(
+      (request) => request.path == path,
+    );
+    final setLifecycle = tester.binding.handleAppLifecycleStateChanged;
+    expect(reads, hasLength(1));
+    setLifecycle(AppLifecycleState.inactive);
+    setLifecycle(AppLifecycleState.hidden);
+    final serverId = fixture.workspace(tester).server!.id;
+    fixture.client.event('permission-updates:changed', {'serverId': serverId});
+    fixture.client.event('permission-updates:changed', {'serverId': serverId});
+    await tester.pump();
+    expect(reads, hasLength(1));
+    setLifecycle(AppLifecycleState.inactive);
+    setLifecycle(AppLifecycleState.resumed);
+    await fixture.flush(tester);
+    expect(reads, hasLength(2));
+    setLifecycle(AppLifecycleState.inactive);
+    setLifecycle(AppLifecycleState.hidden);
+    setLifecycle(AppLifecycleState.inactive);
+    setLifecycle(AppLifecycleState.resumed);
+    await fixture.flush(tester);
+    expect(reads, hasLength(2));
+    await fixture.close(tester);
+  });
+
   testWidgets('a cold Tasks route loads the server popover Apps dot', (
     tester,
   ) async {
