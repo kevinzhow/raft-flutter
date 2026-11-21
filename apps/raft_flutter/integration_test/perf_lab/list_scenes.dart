@@ -156,8 +156,18 @@ class ListScenes {
       );
     }
     if (workload == 'idle') {
+      final requestCounts = Map.of(fixture.api.hits);
       await idle(const Duration(seconds: 10));
-      return {'arrived': true, 'idleSeconds': 10, 'fixtureRows': fixture.size};
+      return {
+        'arrived': true,
+        'idleSeconds': 10,
+        'fixtureRows': fixture.size,
+        'requests': {
+          for (final MapEntry(:key, :value) in fixture.api.hits.entries)
+            if (value > (requestCounts[key] ?? 0))
+              key: value - (requestCounts[key] ?? 0),
+        },
+      };
     }
     if (workload == 'live' && !fixture.replaysLive) {
       return {
@@ -268,12 +278,15 @@ class _ListFixture {
   TasksPageStore? tasksPage;
   TaskSurfaceController? discussion;
   late final Widget body;
+  List<Map<String, dynamic>> activityRows = [];
+  Iterable<Map> acceptedActivity = const [];
   List<Map<String, dynamic>> taskRows = [];
   List<Map<String, dynamic>> agentRows = [];
   int get size => surface == 'task-discussion' ? feed.rows.length : rowCount;
   bool get replaysLive => const {
     'chat',
     'thread',
+    'activity',
     'task-discussion',
     'tasks-list',
     'tasks-board',
@@ -380,6 +393,18 @@ class _ListFixture {
         'conversationReplyCount': conversation.rows.length,
       },
     );
+    activityRows = [
+      for (final (index, channel) in directory.indexed)
+        {
+          'kind': 'channel',
+          'channelId': channel.id,
+          'channelName': channel.record.name,
+          'lastMessageId': '${channel.id}-1',
+          'lastMessagePreview': 'Activity $index',
+          'lastMessageAt': '2026-11-01T12:00:00Z',
+          'unreadCount': 1,
+        },
+    ];
     api.routes.addAll({
       'POST /feature-flags/evaluate': (_) => {
         'evaluations': [
@@ -429,18 +454,11 @@ class _ListFixture {
             'source': {'type': 'channel', 'channelId': main.id},
           },
       ]),
-      'GET /channels/inbox': (request) => _page(request, 'items', [
-        for (final (index, channel) in directory.indexed)
-          {
-            'kind': 'channel',
-            'channelId': channel.id,
-            'channelName': channel.record.name,
-            'lastMessageId': '${channel.id}-1',
-            'lastMessagePreview': 'Activity $index',
-            'lastMessageAt': '2026-11-01T12:00:00Z',
-            'unreadCount': 1,
-          },
-      ]),
+      'GET /channels/inbox': (request) => {
+        ..._page(request, 'items', activityRows),
+        'totalCount': activityRows.length,
+        'totalUnreadCount': activityRows.length,
+      },
       'GET /channels/saved': (request) => _page(request, 'saved', [
         for (final row in main.rows)
           {
@@ -524,6 +542,14 @@ class _ListFixture {
           section: surface,
           initialQuery: surface == 'search' ? 'Lab search result' : null,
           onMessage: (_, _) async {},
+          onActivityWindowAccepted: surface == 'activity'
+              ? (window, {bool firstPage = false}) {
+                  if (firstPage && window?['items'] is List) {
+                    acceptedActivity = (window!['items'] as List)
+                        .whereType<Map>();
+                  }
+                }
+              : null,
         );
       case 'files':
         body = SourceChannelFilesView(
@@ -617,6 +643,7 @@ class _ListFixture {
   }
 
   Future<Map<String, Object?>> update(int tick) async {
+    if (surface == 'activity') return _updateActivity(tick);
     if (surface == 'sidebar') {
       final id = 'room-live-$tick';
       const prefix = 'sidebar-channel-';
@@ -747,6 +774,57 @@ class _ListFixture {
           domain.ledger.contains(feed.id, added['id'] as String) &&
           id != null &&
           domain.ledger.message(feed.id, id)?['content'] == content,
+    };
+  }
+
+  Future<Map<String, Object?>> _updateActivity(int tick) async {
+    final id = 'room-live-$tick';
+    final message = 'activity-live-$tick';
+    final createdAt = DateTime.utc(2026, 11, 1, 12, 0, tick).toIso8601String();
+    const prefix = 'activity-channel-';
+    final visible = rows.firstOrNull?.widget.key;
+    final edited = visible is ValueKey<String>
+        ? visible.value.substring(prefix.length)
+        : null;
+    final row = activityRows
+        .where((row) => row['channelId'] == edited)
+        .firstOrNull;
+    final preview = 'Edited Activity $tick';
+    if (row != null) row['lastMessagePreview'] = preview;
+    activityRows.insert(0, {
+      'kind': 'channel',
+      'channelId': id,
+      'channelName': 'New Activity $tick',
+      'lastMessageId': message,
+      'lastMessagePreview': 'New preview $tick',
+      'lastMessageAt': createdAt,
+      'latestActivitySeq': '1',
+      'unreadCount': 1,
+    });
+    client.emit('message:new', {
+      ...labRow(id, 'short', 0, others: true),
+      'id': message,
+      'createdAt': createdAt,
+    });
+    if (row != null) {
+      client.emit('message:updated', {
+        'id': row['lastMessageId'],
+        'channelId': edited,
+        'content': preview,
+      });
+    }
+    await idle(const Duration(milliseconds: 275));
+    return {
+      'created': id,
+      'edited': edited,
+      'accepted':
+          acceptedActivity.any((row) => row['lastMessageId'] == message) &&
+          edited != null &&
+          acceptedActivity.any(
+            (row) =>
+                row['channelId'] == edited &&
+                row['lastMessagePreview'] == preview,
+          ),
     };
   }
 
