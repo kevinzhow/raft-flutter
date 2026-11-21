@@ -9,15 +9,19 @@ import 'package:flutter/rendering.dart';
 /// This wrapper reproduces the snap for a block: the paint origin moves to
 /// `round(global * dpr) / dpr` (round half up), the layout is untouched.
 class RaftCssPixelSnap extends SingleChildRenderObjectWidget {
-  const RaftCssPixelSnap({super.key, super.child});
+  const RaftCssPixelSnap({super.key, super.child, this.devicePixelRatio});
+
+  final double? devicePixelRatio;
 
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderCssPixelSnap(MediaQuery.devicePixelRatioOf(context));
+  RenderObject createRenderObject(BuildContext context) => _RenderCssPixelSnap(
+    devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context),
+  );
 
   @override
   void updateRenderObject(BuildContext context, _RenderCssPixelSnap object) {
-    object.devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    object.devicePixelRatio =
+        devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context);
   }
 }
 

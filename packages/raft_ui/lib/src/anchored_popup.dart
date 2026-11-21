@@ -30,6 +30,7 @@ class RaftAnchoredPopup extends StatefulWidget {
     this.gap = 4,
     this.collisionPadding = 5,
     this.snapToPixel = false,
+    this.snapToDevicePixels = false,
     this.flipVertically = true,
     this.scrollChild = true,
   }) : assert(!toRight || !toLeft);
@@ -50,8 +51,8 @@ class RaftAnchoredPopup extends StatefulWidget {
   /// A popup with its own scroll area receives the available height directly.
   final bool scrollChild;
 
-  /// floating-ui rounds the computed position to whole pixels.
-  final bool snapToPixel;
+  /// floating-ui rounds the computed position to the selected pixel grid.
+  final bool snapToPixel, snapToDevicePixels;
 
   @override
   State<RaftAnchoredPopup> createState() => _RaftAnchoredPopupState();
@@ -144,8 +145,12 @@ class _RaftAnchoredPopupState extends State<RaftAnchoredPopup>
         toLeft: widget.toLeft,
         gap: widget.gap,
         gutter: widget.collisionPadding,
-        snap: widget.snapToPixel,
         flipVertically: widget.flipVertically,
+        pixelScale: widget.snapToDevicePixels
+            ? metrics.devicePixelRatio
+            : widget.snapToPixel
+            ? 1
+            : null,
         insets: insets,
       ),
       child: RaftNativeSurfaceOccluder(
@@ -167,11 +172,12 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     required this.toLeft,
     required this.gap,
     required this.gutter,
-    this.snap = false,
     required this.flipVertically,
+    this.pixelScale,
     required this.insets,
   });
-  final bool snap, flipVertically;
+  final bool flipVertically;
+  final double? pixelScale;
   final Rect anchor;
   final bool above, alignRight, centerVertically, toRight, toLeft;
   final double gap;
@@ -208,12 +214,12 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     Offset position(double x, double y) {
       final left = x.clamp(minX, maxX);
       final top = y.clamp(minY, maxY);
-      return snap
-          ? Offset(
-              left.roundToDouble().clamp(minX, maxX),
-              top.roundToDouble().clamp(minY, maxY),
-            )
-          : Offset(left, top);
+      final scale = pixelScale;
+      if (scale == null) return Offset(left, top);
+      return Offset(
+        ((left * scale).round() / scale).clamp(minX, maxX),
+        ((top * scale).round() / scale).clamp(minY, maxY),
+      );
     }
 
     if (toRight || toLeft) {
@@ -259,5 +265,5 @@ class _PopupLayout extends SingleChildLayoutDelegate {
       gutter != old.gutter ||
       flipVertically != old.flipVertically ||
       insets != old.insets ||
-      snap != old.snap;
+      pixelScale != old.pixelScale;
 }

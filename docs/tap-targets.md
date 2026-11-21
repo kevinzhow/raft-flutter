@@ -126,6 +126,10 @@ to the existing viewer. The viewer's Close control returns to Search with the
 result still present. Search only renders Artifact rows when the app is
 enabled and the result belongs to the current search authority.
 
+The Channel filter opens the channel combobox beside its trigger through
+`RaftPopoverAnchor`. Choosing a channel applies the Search filter and closes the
+popup. Escape and outside taps dismiss it with the query and results still visible.
+
 ### Adding a container
 
 1. Build it, passing every handler it has (`null` where it has none).

@@ -45,6 +45,7 @@ class ParityCase {
     this.fullLengthHeight,
     this.settle = const Duration(milliseconds: 400),
     this.encloseElementCrop = false,
+    this.emulatedDeviceScaleFactor = true,
   });
 
   /// Product widgets exercised (for coverage reports, e.g. `raft_ui:RaftButton`).
@@ -57,6 +58,9 @@ class ParityCase {
 
   /// Enclose the element's bounds in whole CSS pixels before applying density.
   final bool encloseElementCrop;
+
+  /// False for reference images captured with Chromium's forced device scale.
+  final bool emulatedDeviceScaleFactor;
 }
 
 /// Why a case has no Flutter capture. All of these count as NOT COVERED.
@@ -294,10 +298,9 @@ Future<Map<String, dynamic>> captureParityCase(
   required Directory outputDir,
   required Map<String, dynamic> runInfo,
 }) async {
-  // The React provider uses Playwright's emulated deviceScaleFactor for every
-  // capture. Keep the CSS paint policy local to a case, including solo runs.
+  // Keep the reference's CSS paint policy local to the case.
   final previousBorderSnap = RaftBorderSnap.emulatedDeviceScaleFactor;
-  RaftBorderSnap.emulatedDeviceScaleFactor = true;
+  RaftBorderSnap.emulatedDeviceScaleFactor = mapping.emulatedDeviceScaleFactor;
   addTearDown(
     () => RaftBorderSnap.emulatedDeviceScaleFactor = previousBorderSnap,
   );

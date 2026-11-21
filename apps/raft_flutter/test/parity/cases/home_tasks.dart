@@ -487,6 +487,7 @@ Future<void> _typeSearch(WidgetTester t) async {
 }
 
 final ParityCase _searchResults = ParityCase(
+  emulatedDeviceScaleFactor: false,
   widgets: const [
     'raft_flutter:ResourceView(search)',
     'raft_flutter:ResourceSearchResults',
@@ -522,6 +523,7 @@ final ParityCase _searchResults = ParityCase(
 );
 
 final ParityCase _searchChannelDropdown = ParityCase(
+  emulatedDeviceScaleFactor: false,
   widgets: const [
     'raft_flutter:ResourceView(search)',
     'raft_flutter:TaskSelectionFilter',

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'css_pixel_snap.dart';
 import 'form_controls.dart';
 import 'icons.dart';
+import 'raft/css_box.dart';
 
 /// MessageSearchPage's search field: a [RaftInputGroup] with the search icon at its start and an inline-end clear
 /// button and (on desktop) `Esc` hint. The consumer retains query composition, focus and routing.
@@ -27,8 +28,8 @@ class RaftSearchInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RaftCssPixelSnap(
+    devicePixelRatio: RaftBorderSnap.emulatedDeviceScaleFactor ? 1 : null,
     child: RaftInputGroup(
-      snapBorderToDevicePixels: true,
       leading: const RaftInputGroupAddon.icon(RaftGlyph.search),
       controller: controller,
       focusNode: focusNode,

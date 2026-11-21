@@ -14716,11 +14716,12 @@
         "familyRefs": [
           "combobox",
           "picker_trigger",
+          "popover",
           "segmented",
           "select"
         ],
         "owner": "Choice9 design-system alignment",
-        "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
+        "reason": "Task and Search filters delegate popup placement and dismissal to RaftPopoverAnchor. The filter retains the trigger, selection callback and authority."
       },
       "apps/raft_flutter/lib/features/task_surface.dart#class:SourceTaskSurface": {
         "role": "unresolved",
@@ -41597,15 +41598,6 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "apps/raft_flutter/lib/features/task_selection_filter.dart#method:_TaskSelectionFilterState._anchor": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "menu",
-          "popover"
-        ],
-        "owner": "task289 task-filter adapter",
-        "reason": "Actual caller adapter selects RaftPopoverAnchor only for current Raft and non-combobox, forwarding the existing owner/controller/focus/builder/content. Frozen and combobox retain MenuAnchor. Business authority stays with TaskSelectionFilter; no thin-wrapper exemption, state closure or visual acceptance."
-      },
       "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68000/METHOD:build@74410/FUNCTION:toggle@74640": {
         "role": "unresolved",
         "familyRefs": [
@@ -58945,13 +58937,13 @@
         "owner": "Shared desktop chrome",
         "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7712/METHOD:activityList@114267/FUNCTION:bar@114489": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:activityList@114289/FUNCTION:bar@114511": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "Activity and Saved",
         "reason": "Mounts the Activity filter controls in the resource view."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7712/METHOD:scopedMenu@52305/FUNCTION:buildOwned@52537": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:scopedMenu@52327/FUNCTION:buildOwned@52559": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -59016,18 +59008,6 @@
         "reason": "Search page results use the same section heading for server entities, messages and Artifacts. The extension cases exercise the heading while page-level visual acceptance remains open."
       },
       "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:scopedDialog@51279/FUNCTION:buildOwned@51506": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:scopedMenu@52327/FUNCTION:buildOwned@52534": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:activityList@114101/FUNCTION:bar@114323": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

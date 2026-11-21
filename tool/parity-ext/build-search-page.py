@@ -29,6 +29,11 @@ def build_cases(official):
                     WAIT,
                 ]
                 if state == 'channel-dropdown':
+                    if phone:
+                        actions.extend([
+                            {'type': 'reveal', 'target': CHANNEL},
+                            {'type': 'wait', 'ms': 1050},
+                        ])
                     actions.extend([{'type': 'click', 'target': CHANNEL}, {'type': 'wait', 'ms': 250}])
                 if state == 'filters':
                     actions.extend([

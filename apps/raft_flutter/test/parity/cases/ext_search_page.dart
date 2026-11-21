@@ -111,16 +111,31 @@ Future<void> _interact(WidgetTester tester, ParityContext ctx) async {
   await tester.pump(const Duration(milliseconds: 550));
   switch (ctx.props['extCase']) {
     case 'channel-dropdown':
-      await Scrollable.ensureVisible(tester.element(_channel), alignment: .5);
-      await tester.pump();
-      await tester.tapAt(
-        tester.getCenter(_channel.hitTestable()),
-        kind: ctx.props['platform'] == 'mobile'
-            ? PointerDeviceKind.touch
-            : PointerDeviceKind.mouse,
-      );
+      final phone = ctx.props['platform'] == 'mobile';
+      if (phone) {
+        await Scrollable.ensureVisible(tester.element(_channel), alignment: .5);
+        await tester.pump(const Duration(milliseconds: 650));
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.tap(_channel.hitTestable());
+      } else {
+        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        final center = tester.getCenter(_channel.hitTestable());
+        await mouse.addPointer(location: center);
+        await mouse.down(center);
+        await mouse.up();
+        await mouse.moveTo(Offset(ctx.width - 1, ctx.height - 1));
+        await mouse.removePointer();
+      }
       await tester.pump(const Duration(milliseconds: 250));
-      expect(find.byType(RaftComboboxPanel), findsOneWidget);
+      final panel = find.byType(RaftComboboxPanel);
+      expect(panel, findsOneWidget);
+      final bounds = tester.getRect(panel);
+      ctx.captureEvidence['panelBounds'] = [
+        bounds.left,
+        bounds.top,
+        bounds.width,
+        bounds.height,
+      ];
     case 'filters':
       for (final (before, after) in const [
         ('Any time', 'Last 7 days'),

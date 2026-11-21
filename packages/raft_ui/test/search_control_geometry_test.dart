@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 void main() {
-  testWidgets('Search uses the four physical pixel field border at DPR 3', (
+  testWidgets('Search uses the browser scale mode for the field border', (
     tester,
   ) async {
     final controller = TextEditingController();
@@ -18,35 +18,47 @@ void main() {
     addTearDown(() => RaftBorderSnap.emulatedDeviceScaleFactor = false);
     addTearDown(controller.dispose);
     addTearDown(focus.dispose);
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: raftTheme(),
-        home: Material(
-          child: Center(
-            child: SizedBox(
-              width: 220,
-              child: RaftSearchInput(
-                controller: controller,
-                focusNode: focus,
-                hint: 'Search',
-                clearLabel: 'Clear Search',
-                onClear: controller.clear,
-              ),
+    final app = MaterialApp(
+      theme: raftTheme(),
+      home: Material(
+        child: Center(
+          child: SizedBox(
+            width: 220,
+            child: RaftSearchInput(
+              controller: controller,
+              focusNode: focus,
+              hint: 'Search',
+              clearLabel: 'Clear Search',
+              onClear: controller.clear,
             ),
           ),
         ),
       ),
     );
+    await tester.pumpWidget(app);
 
     final input = find.byType(RaftSearchInput);
-    final frame = tester
-        .widgetList<DecoratedBox>(
-          find.descendant(of: input, matching: find.byType(DecoratedBox)),
-        )
-        .map((widget) => widget.decoration)
-        .whereType<BoxDecoration>()
-        .firstWhere((decoration) => decoration.border is Border);
-    expect((frame.border! as Border).top.width, closeTo(4 / 3, .00001));
+    double borderWidth() =>
+        (tester
+                    .widgetList<DecoratedBox>(
+                      find.descendant(
+                        of: input,
+                        matching: find.byType(DecoratedBox),
+                      ),
+                    )
+                    .map((widget) => widget.decoration)
+                    .whereType<BoxDecoration>()
+                    .firstWhere((decoration) => decoration.border is Border)
+                    .border!
+                as Border)
+            .top
+            .width;
+    expect(borderWidth(), 1);
+
+    RaftBorderSnap.emulatedDeviceScaleFactor = false;
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(app);
+    expect(borderWidth(), closeTo(4 / 3, .00001));
   });
 
   testWidgets('A pinned toolbar reveals active chips and fades hidden edges', (

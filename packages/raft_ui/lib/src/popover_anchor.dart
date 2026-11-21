@@ -25,6 +25,7 @@ class RaftPopoverAnchor extends StatefulWidget {
     this.centerVertically = false,
     this.flipVertically = true,
     this.scrollChild = true,
+    this.snapToDevicePixels = false,
   });
 
   final MenuController controller;
@@ -41,6 +42,7 @@ class RaftPopoverAnchor extends StatefulWidget {
   final bool centerVertically;
   final bool flipVertically;
   final bool scrollChild;
+  final bool snapToDevicePixels;
 
   @override
   State<RaftPopoverAnchor> createState() => _RaftPopoverAnchorState();
@@ -99,6 +101,7 @@ class _RaftPopoverAnchorState extends State<RaftPopoverAnchor> {
           flipVertically: widget.flipVertically,
           scrollChild: widget.scrollChild,
           snapToPixel: true,
+          snapToDevicePixels: widget.snapToDevicePixels,
           child: TapRegion(
             groupId: info.tapRegionGroupId,
             onTapOutside: (_) => widget.controller.close(),

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart' show RaftSlotStyle;
 
@@ -87,7 +88,6 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
   final search = TextEditingController();
   final anchorFocus = FocusNode();
   final triggerKey = GlobalKey();
-  double horizontalOffset = 0;
   String needle = '';
   @override
   void initState() {
@@ -130,43 +130,6 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
     );
   }
 
-  Widget _anchor({
-    required MenuController controller,
-    required FocusNode childFocusNode,
-    required bool consumeOutsideTap,
-    required Clip clipBehavior,
-    required Offset alignmentOffset,
-    required VoidCallback onOpen,
-    required MenuStyle style,
-    required List<Widget> menuChildren,
-    required MenuAnchorChildBuilder builder,
-  }) {
-    if (!widget.combobox) {
-      return RaftPopoverAnchor(
-        controller: controller,
-        anchorKey: triggerKey,
-        childFocusNode: childFocusNode,
-        onOpen: onOpen,
-        // Web db5e399f SelectionPopover: sideOffset8/collisionPadding8.
-        gap: 8,
-        collisionPadding: 8,
-        builder: builder,
-        popup: menuChildren.firstOrNull ?? const SizedBox.shrink(),
-      );
-    }
-    return MenuAnchor(
-      controller: controller,
-      childFocusNode: childFocusNode,
-      consumeOutsideTap: consumeOutsideTap,
-      clipBehavior: clipBehavior,
-      alignmentOffset: alignmentOffset,
-      onOpen: onOpen,
-      style: style,
-      menuChildren: menuChildren,
-      builder: builder,
-    );
-  }
-
   Widget _tooltip(BuildContext context, Widget child) {
     final fit = widget.fit;
     if (fit == null) {
@@ -196,91 +159,87 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
               widget.aliases[entry.key]?.toLowerCase().contains(needle) == true,
         )
         .toList();
-    return _anchor(
+    return RaftPopoverAnchor(
       controller: menu,
+      anchorKey: triggerKey,
       childFocusNode: anchorFocus,
-      consumeOutsideTap: false,
-      clipBehavior: Clip.none,
-      alignmentOffset: Offset(horizontalOffset, 4),
+      gap: widget.combobox ? 4 : 8,
+      collisionPadding: 8,
+      snapToDevicePixels: widget.combobox,
       onOpen: () {
         widget.beforeOpen?.call(menu);
         search.clear();
-        final box = triggerKey.currentContext?.findRenderObject();
-        setState(() {
-          needle = '';
-          if (widget.combobox && box is RenderBox) {
-            final left = box.localToGlobal(Offset.zero).dx;
-            horizontalOffset = left + width > MediaQuery.sizeOf(context).width
-                ? box.size.width - width
-                : 0;
-          }
-        });
+        setState(() => needle = '');
       },
-      style: const MenuStyle(
-        padding: WidgetStatePropertyAll(EdgeInsets.zero),
-        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-        elevation: WidgetStatePropertyAll(0),
-        side: WidgetStatePropertyAll(BorderSide.none),
-      ),
-      menuChildren: [
-        if (widget.combobox)
-          SizedBox(width: width, child: _channelCombobox())
-        else
-          RaftSelectionPopover(
-            key: ValueKey(
-              'task-selection-${widget.field.toLowerCase()}-popover',
+      popup: widget.combobox
+          ? SizedBox(width: width, child: _channelCombobox())
+          : RaftSelectionPopover(
+              key: ValueKey(
+                'task-selection-${widget.field.toLowerCase()}-popover',
+              ),
+              width: width,
+              title: raftText(context, widget.field),
+              snapShadowToDevicePixels: widget.searchFilter,
+              searchController: search,
+              searchPlaceholder: raftText(context, 'Search…'),
+              onSearchChanged: (value) {
+                if (acceptsInteraction) {
+                  setState(() => needle = value.trim().toLowerCase());
+                }
+              },
+              emptyLabel: raftText(context, 'No results'),
+              onClear: widget.selection.isEmpty
+                  ? null
+                  : () {
+                      if (acceptsInteraction) widget.onClear();
+                    },
+              options: [
+                for (final option in entries)
+                  RaftSelectionOption(
+                    rowKey: ValueKey(
+                      'task-filter-${widget.field}-${option.key}',
+                    ),
+                    label: option.value,
+                    checked: widget.selection.contains(option.key),
+                    disabled: !widget.valid(),
+                    italic: _sentinel(option.key),
+                    reserveLeadingSlot: widget.field != 'Channel',
+                    leading: widget.leadingOf != null
+                        ? widget.leadingOf!(option.key)
+                        : widget.field == 'Channel' || _sentinel(option.key)
+                        ? null
+                        : _identityAvatar(option.key, option.value),
+                    onTap: () {
+                      if (acceptsInteraction) {
+                        widget.onToggle(option.key);
+                        if (widget.closeOnSelect) menu.close();
+                      }
+                    },
+                  ),
+              ],
             ),
-            width: width,
-            title: raftText(context, widget.field),
-            snapShadowToDevicePixels: widget.searchFilter,
-            searchController: search,
-            searchPlaceholder: raftText(context, 'Search…'),
-            onSearchChanged: (value) {
-              if (acceptsInteraction) {
-                setState(() => needle = value.trim().toLowerCase());
-              }
-            },
-            emptyLabel: raftText(context, 'No results'),
-            onClear: widget.selection.isEmpty
-                ? null
-                : () {
-                    if (acceptsInteraction) widget.onClear();
-                  },
-            options: [
-              for (final option in entries)
-                RaftSelectionOption(
-                  rowKey: ValueKey('task-filter-${widget.field}-${option.key}'),
-                  label: option.value,
-                  checked: widget.selection.contains(option.key),
-                  disabled: !widget.valid(),
-                  italic: _sentinel(option.key),
-                  reserveLeadingSlot: widget.field != 'Channel',
-                  leading: widget.leadingOf != null
-                      ? widget.leadingOf!(option.key)
-                      : widget.field == 'Channel' || _sentinel(option.key)
-                      ? null
-                      : _identityAvatar(option.key, option.value),
-                  onTap: () {
-                    if (acceptsInteraction) {
-                      widget.onToggle(option.key);
-                      if (widget.closeOnSelect) menu.close();
-                    }
-                  },
-                ),
-            ],
-          ),
-      ],
       builder: (context, controller, child) => _tooltip(
         context,
         Focus(
           key: triggerKey,
-          focusNode: widget.combobox ? anchorFocus : null,
+          canRequestFocus: !widget.combobox,
+          onKeyEvent: widget.combobox
+              ? (_, event) {
+                  if (event is! KeyDownEvent ||
+                      event.logicalKey != LogicalKeyboardKey.escape ||
+                      !controller.isOpen) {
+                    return KeyEventResult.ignored;
+                  }
+                  controller.close();
+                  return KeyEventResult.handled;
+                }
+              : null,
           // raft-ui `PickerTriggerButton`: the filter trigger of the tasks
           // toolbar and the search filters; the touch target stays 48px.
           child: RaftTouchTargetExpander(
             minSize: const Size.square(RaftMetrics.touchTarget),
             child: RaftPickerTriggerButton(
-              focusNode: widget.combobox ? null : anchorFocus,
+              focusNode: anchorFocus,
               label:
                   widget.label ??
                   (widget.fit != null
