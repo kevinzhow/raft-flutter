@@ -26,4 +26,6 @@ const Map<String, String> zhCatalogComposerExpand = <String, String>{
   "Enter adds a line · Cmd+Enter sends": "回车换行 · Cmd+回车发送",
   "Formatting": "格式",
   "Source server: {server}": "来源服务器：{server}",
+  "{target} won't be notified: other agents can only read this chat.":
+      "{target} 不会收到这条消息：其他 Agent 只能读这里，不能参与。",
 };

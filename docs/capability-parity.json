@@ -595,7 +595,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "MessageInput > PendingMentionActionStrip buttons 'Add' / 'Add all' / 'Notify' / 'Ignore'",
-   "gate": "adding requires channel member-management; agents cannot add via mention action",
+   "gate": "adding requires channel member-management; agents cannot add via mention action; read-only agent mentions in a Lounge explain why they are excluded and offer only Ignore",
    "flutterEntry": "pending_mention_actions.dart + raft_ui composer_pending_mentions.dart (Add / Add all / Notify / Ignore)",
    "flutterRefs": [
     {

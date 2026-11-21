@@ -237,6 +237,7 @@ class _PendingMentionActionsState extends State<PendingMentionActions> {
             availableActions: [
               for (final a in row['availableActions'] as List) '$a',
             ],
+            readOnlyInLounge: row['reason'] == 'lounge_agent_excluded',
             avatar: avatar(row),
           ),
       ];

@@ -57918,7 +57918,7 @@
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/composer_pending_mentions.dart#local-function:CLASS:RaftPendingMentionActionStrip@1910/METHOD:_row@4575/FUNCTION:done@5455": {
+      "packages/raft_ui/lib/src/composer_pending_mentions.dart#local-function:CLASS:RaftPendingMentionActionStrip@2036/METHOD:_row@4701/FUNCTION:done@5797": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
