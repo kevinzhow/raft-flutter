@@ -1942,13 +1942,14 @@ class RaftAppPermissionsSummary extends StatelessWidget {
     required this.columns,
     this.description,
     this.badge,
+    this.reviewBadge,
     this.loading,
   });
   final String? description;
 
   /// (label, values, empty copy) per column.
   final List<(String, List<String>, String)> columns;
-  final RaftConnectedAppBadge? badge;
+  final RaftConnectedAppBadge? badge, reviewBadge;
 
   /// The loading line replaces the section while the state reads.
   final String? loading;
@@ -1974,12 +1975,17 @@ class RaftAppPermissionsSummary extends StatelessWidget {
       color: t.ui.foregroundHint,
     );
     Widget scopeRow((String, List<String>, String) scope) {
-      final label = Text(
+      final label = RaftCssText(
         scope.$1,
         style: footnote.copyWith(fontWeight: FontWeight.w500),
       );
       final values = scope.$2.isEmpty
-          ? Text(scope.$3, style: footnote)
+          ? RaftCssText(
+              scope.$3,
+              style: footnote.copyWith(
+                height: t.typeSlot('callout').lineHeight / footnote.fontSize!,
+              ),
+            )
           : Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -2065,6 +2071,13 @@ class RaftAppPermissionsSummary extends StatelessWidget {
             if (badge != null) _Badge(badge!),
           ],
         ),
+        if (reviewBadge case final pending?) ...[
+          const SizedBox(height: RaftSpace.x3),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: _Badge(pending),
+          ),
+        ],
         const SizedBox(height: RaftSpace.x3),
         RaftCard(
           child: Column(

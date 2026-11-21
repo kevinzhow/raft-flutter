@@ -4,6 +4,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 void main() {
+  testWidgets('empty permission rows match the phone inset group height', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme().copyWith(platform: TargetPlatform.android),
+        home: const Scaffold(
+          body: RaftAppPermissionsSummary(
+            columns: [
+              ('Approved data', [], 'No data access'),
+              ('Developer subscriptions', [], 'No subscriptions'),
+              ('Active events', [], 'No active events'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final height = tester.getSize(find.byType(RaftCard)).height;
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(height, 214);
+  });
+
   for (final (size, platform) in [
     (const Size(390, 844), TargetPlatform.android),
     (const Size(1280, 900), TargetPlatform.linux),

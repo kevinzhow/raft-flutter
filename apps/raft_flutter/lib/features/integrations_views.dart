@@ -2002,6 +2002,9 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
           badge: managementStrings(s['effective_groups']).isNotEmpty
               ? RaftConnectedAppBadge.success(tr('Enabled'))
               : RaftConnectedAppBadge.muted(tr('Disabled')),
+          reviewBadge: s['app_review_pending'] == true
+              ? RaftConnectedAppBadge.warning(tr('App Review pending'))
+              : null,
           columns: [
             (
               tr('Approved data'),
@@ -2020,16 +2023,6 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
             ),
           ],
         ),
-        if (s['app_review_pending'] == true) ...[
-          const SizedBox(height: RaftSpace.x3),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: RaftSettingsRecipeBadge(
-              label: tr('App Review pending'),
-              variant: RaftBadgeRecipeVariant.warning,
-            ),
-          ),
-        ],
         if (needsPermissions || needsText) ...[
           const SizedBox(height: RaftSpace.x3),
           RaftBanner(

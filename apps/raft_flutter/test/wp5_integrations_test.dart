@@ -122,6 +122,30 @@ Future<(WorkspaceController, _Adapter)> _mountApps(
 }
 
 void main() {
+  testWidgets('installed permission review status precedes approved data', (
+    t,
+  ) async {
+    final (_, a) = await _mountApps(
+      t,
+      () => [_listing('inst', installedAt: '2026-06-18T00:00:00Z')],
+    );
+    a.routes['GET /integrations/marketplace/inst/install/app-notifications'] =
+        (_) => {
+          'approved_groups': <String>[],
+          'subscribed_events': <String>[],
+          'effective_groups': <String>[],
+          'effective_events': <String>[],
+          'app_review_pending': true,
+          'approval_required': false,
+        };
+    await t.tap(find.byKey(const ValueKey('connected-app-installed-inst')));
+    await t.pumpAndSettle();
+    final status = t.getRect(find.text('App Review pending'));
+    final scopes = t.getRect(find.text('Approved data'));
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(status.bottom, lessThan(scopes.top));
+  });
+
   // Server v1.24.0 removed POST /integrations/clients/:id/app-notifications/
   // permissions/review and Web 1.24 has no reviewer action: the marketplace
   // detail only shows the pending request (AppNotificationRequestSummary).

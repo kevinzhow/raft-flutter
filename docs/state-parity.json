@@ -59436,7 +59436,7 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@62236/METHOD:build@62710/FUNCTION:scopeRow@63287": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@62236/METHOD:build@62745/FUNCTION:scopeRow@63322": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",

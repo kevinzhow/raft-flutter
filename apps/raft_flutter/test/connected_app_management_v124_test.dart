@@ -496,14 +496,33 @@ void main() {
             'id': 'irrigation',
             'name': 'Irrigation',
             'installedAt': '2026-11-01T00:00:00Z',
+            'permissionApprovalRequired': true,
             'bot': {'offered': true, 'grant': grant, 'handle': 'sprinkler'},
           },
         ];
+      }
+      if (route.endsWith('/install/app-notifications')) {
+        return {
+          'approved_groups': <String>[],
+          'subscribed_events': <String>[],
+          'effective_groups': <String>[],
+          'effective_events': <String>[],
+          'approval_required': false,
+        };
       }
       return const <Object>[];
     });
     await _mount(tester, client);
     await _tap(tester, find.text('Irrigation'));
+    final pending = find.ancestor(
+      of: find.text('Don’t add'),
+      matching: find.byType(RaftBanner),
+    );
+    final permissions = find.byType(RaftAppPermissionsSummary);
+    expect(
+      tester.getTopLeft(permissions).dy - tester.getBottomLeft(pending).dy,
+      RaftSpace.x4,
+    );
     await _tap(tester, find.text('Add @sprinkler to Garden'));
     expect(client.posts[path], [
       {'action': 'grant'},
@@ -560,6 +579,8 @@ void main() {
     final notice = find.text('Permission details could not be loaded');
     final bot = find.text('Posts as');
     expect(tester.getTopLeft(notice).dy, lessThan(tester.getTopLeft(bot).dy));
+    final login = find.text('Login with Raft access');
+    expect(tester.getTopLeft(bot).dx, tester.getTopLeft(login).dx);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
