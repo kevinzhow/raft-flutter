@@ -4,6 +4,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 void main() {
+  testWidgets('app confirmation client ID uses the mono code token', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: const Scaffold(
+          body: RaftInlineCodeMessage(
+            prefix: 'Grant access to ',
+            code: 'garden_journal',
+            suffix: ' again.',
+          ),
+        ),
+      ),
+    );
+
+    final label = find.text('garden_journal');
+    final context = tester.element(label);
+    final tokens = RaftTokens.of(context);
+    final style = tester.widget<Text>(label).style!;
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(style.fontSize, 13);
+    expect(style.height! * style.fontSize!, 20);
+    expect(style.color, tokens.ui.foreground);
+  });
+
   testWidgets('empty permission rows match the phone inset group height', (
     tester,
   ) async {

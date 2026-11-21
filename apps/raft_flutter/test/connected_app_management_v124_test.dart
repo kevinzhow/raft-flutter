@@ -8,6 +8,8 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'parity/parity_harness.dart' show loadParityFonts;
+
 import 'parity/cases/screens/screen_fixture.dart';
 
 class _AppsClient extends ScreenFixtureClient {
@@ -595,7 +597,12 @@ void main() {
     expect(tester.getTopLeft(notice).dy, lessThan(tester.getTopLeft(bot).dy));
     final login = find.text('Login with Raft access');
     expect(tester.getTopLeft(bot).dx, tester.getTopLeft(login).dx);
+    final section = find.byType(RaftOAuthScopeSummary);
+    final footer = find.byType(RaftSeparator).last;
+    final footerGap =
+        tester.getTopLeft(footer).dy - tester.getBottomLeft(section).dy;
     await tester.pumpWidget(const SizedBox.shrink());
+    expect(footerGap, 16);
   });
 
   testWidgets('marketplace bot Add acts separately from the listing', (
@@ -795,6 +802,7 @@ void main() {
   testWidgets('link previews can be revoked and allowed from Applications', (
     tester,
   ) async {
+    await tester.runAsync(loadParityFonts);
     var allowed = true;
     final client = _AppsClient((method, route, _) {
       const path = '/integrations/clients/irrigation/link-preview-';
@@ -815,13 +823,23 @@ void main() {
       }
       return const <Object>[];
     });
-    await _mount(tester, client, size: const Size(944, 856));
+    await _mount(
+      tester,
+      client,
+      platform: TargetPlatform.linux,
+      size: const Size(1280, 900),
+    );
     final manage = find.byKey(const ValueKey('link-preview-consents-manage'));
     expect(
       tester.widget<RaftButton>(manage).resolvedVariant,
       RaftButtonVariant.standard,
     );
     await _tap(tester, manage);
+    final frame = find.ancestor(
+      of: find.text('Allowed'),
+      matching: find.byType(RaftDialogSurface),
+    );
+    final manageHeight = tester.getSize(frame).height;
     expect(find.text('Search apps'), findsNothing);
     final choiceRow = find.byKey(
       const ValueKey('link-preview-choice-irrigation'),
@@ -856,6 +874,7 @@ void main() {
     expect(find.text('Allow'), findsNothing);
     expect(find.text('Revoke'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
+    expect(manageHeight, 240);
   });
 }
 

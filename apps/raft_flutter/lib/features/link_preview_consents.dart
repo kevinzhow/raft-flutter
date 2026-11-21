@@ -168,10 +168,12 @@ class LinkPreviewAppChoice extends StatelessWidget {
     super.key,
     required this.store,
     required this.appId,
+    this.padding = EdgeInsets.zero,
   });
 
   final AppLinkStore store;
   final String appId;
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder(
@@ -179,13 +181,16 @@ class LinkPreviewAppChoice extends StatelessWidget {
     builder: (context, rows, _) {
       final choice = rows?.where((row) => row.id == appId).firstOrNull;
       if (choice == null || !store.current) return const SizedBox.shrink();
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: RaftSpace.x2,
-        children: [
-          RaftSectionEyebrow(raftText(context, 'Link previews')),
-          _LinkPreviewChoices(store: store, appId: appId),
-        ],
+      return Padding(
+        padding: padding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: RaftSpace.x2,
+          children: [
+            RaftSectionEyebrow(raftText(context, 'Link previews')),
+            _LinkPreviewChoices(store: store, appId: appId),
+          ],
+        ),
       );
     },
   );
@@ -376,12 +381,10 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
           for (final allowed in [true, false])
             if (shown.any((row) => row.allowed == allowed))
               Column(
-                spacing: RaftSpace.x2,
+                spacing: RaftSpace.x1_5,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  RaftDialogSectionEyebrow(
-                    tr(allowed ? 'Allowed' : 'Declined'),
-                  ),
+                  RaftSectionEyebrow(tr(allowed ? 'Allowed' : 'Declined')),
                   RaftListRowGroup(
                     children: [
                       for (final row in shown.where(
@@ -412,11 +415,11 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
           body: body,
         );
       }
-      return RaftDialog.card(
+      return RaftDialog(
         key: key,
         title: 'Link previews',
         onClose: close,
-        child: body,
+        content: body,
       );
     },
   );

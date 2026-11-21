@@ -54,7 +54,7 @@ import 'select_field.dart';
 import 'surface_background_scope.dart';
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeScale;
+import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftRadius, RaftTypeScale;
 import 'tooltip.dart';
 import 'viewport_breakpoints.dart';
 import 'sized_image.dart';
@@ -1215,7 +1215,6 @@ class _MarketplaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
     final grid = layout == RaftConnectedAppsLayout.grid;
     final botAction = app.botAction;
     Widget label(Widget child) =>
@@ -1237,12 +1236,9 @@ class _MarketplaceCard extends StatelessWidget {
                   children: [
                     RaftCssText(
                       app.name,
-                      style: RaftTypography.inherited(
-                        t,
-                        size: 16,
-                        line: 24,
+                      style: t.scale(
+                        RaftTypeScale.body,
                         weight: FontWeight.w600,
-                        color: text.strong,
                       ),
                     ),
                     if (app.badge != null) _Badge(app.badge!),
@@ -1445,18 +1441,11 @@ class _AppRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
     final grid = layout == RaftConnectedAppsLayout.grid;
     final wide = raftBreakpointWidth(context) >= 640;
-    final nameStyle = RaftTypography.inherited(
-      t,
-      size: 16,
-      line: 24,
-      weight: FontWeight.w600,
-      color: text.strong,
-    );
+    final nameStyle = t.scale(RaftTypeScale.body, weight: FontWeight.w600);
     final name = row.onOpenName == null
-        ? Text(row.name, style: nameStyle)
+        ? RaftCssText(row.name, style: nameStyle)
         : RaftInteractive(
             key: ValueKey('connected-app-installed-${row.id}'),
             semanticLabel: row.name,
@@ -1497,13 +1486,11 @@ class _AppRowCard extends StatelessWidget {
             children: [
               name,
               const SizedBox(height: 2),
-              Text(
+              RaftCssText(
                 row.meta,
-                style: RaftTypography.inherited(
-                  t,
-                  size: 12,
-                  line: 16,
-                  color: text.faint,
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  color: t.ui.foregroundMuted,
                 ),
               ),
               if (row.badges.isNotEmpty) ...[
@@ -2301,15 +2288,35 @@ class RaftInlineCodeMessage extends StatelessWidget {
   });
   final String prefix, code, suffix;
   @override
-  Widget build(BuildContext context) => Text.rich(
-    TextSpan(
-      children: [
-        TextSpan(text: prefix),
-        raftInlineCodeSpan(context, code),
-        TextSpan(text: suffix),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: prefix),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: tokens.ui.fillMuted,
+                borderRadius: BorderRadius.circular(RaftRadius.sticker),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x1),
+                child: Text(
+                  code,
+                  softWrap: false,
+                  style: tokens.scale(RaftTypeScale.monoCode, mono: true),
+                ),
+              ),
+            ),
+          ),
+          TextSpan(text: suffix),
+        ],
+      ),
+    );
+  }
 }
 
 /// InstalledAppNotifications `approval_required` strip: `border-l-4

@@ -1082,6 +1082,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                   clientId: app.id,
                   service: app.source['clientId'] as String?,
                   canManage: true,
+                  topInset: awaitingApproval ? 0 : RaftSpace.x4,
                   groupLabel: (g) => _groupLabel(modal, g),
                   onError: (message) {
                     if (modal.mounted &&
@@ -1141,24 +1142,33 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                 ),
               if (hasAppSetup(app.source))
                 AppSetupPanel(controller: w, clientId: app.id),
-              RaftOAuthScopeSummary(
-                title: tr('Login with Raft access'),
-                description: tr(
-                  'OAuth scopes currently granted to this server connection.',
-                ),
-                scopes: granted,
-                tooltips: {
-                  for (final scope in granted)
-                    scope: tr(
-                      integrationScopeCopy[scope] ??
-                          'Raft has no description for this scope.',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  RaftOAuthScopeSummary(
+                    title: tr('Login with Raft access'),
+                    description: tr(
+                      'OAuth scopes currently granted to this server connection.',
                     ),
-                },
-                resourceScopes: integrationResourceScopes,
-                emptyLabel: tr('No active grant scopes'),
+                    scopes: granted,
+                    tooltips: {
+                      for (final scope in granted)
+                        scope: tr(
+                          integrationScopeCopy[scope] ??
+                              'Raft has no description for this scope.',
+                        ),
+                    },
+                    resourceScopes: integrationResourceScopes,
+                    emptyLabel: tr('No active grant scopes'),
+                  ),
+                  LinkPreviewAppChoice(
+                    store: AppLinkStore.of(w),
+                    appId: app.id,
+                    padding: const EdgeInsets.only(top: RaftSpace.x4),
+                  ),
+                  if (!awaitingApproval) ?permissions,
+                ],
               ),
-              LinkPreviewAppChoice(store: AppLinkStore.of(w), appId: app.id),
-              if (!awaitingApproval) ?permissions,
             ],
             footer: [
               RaftConnectedAppButton(
@@ -1845,6 +1855,7 @@ class _InstalledAppPermissions extends StatefulWidget {
     required this.clientId,
     required this.service,
     required this.canManage,
+    required this.topInset,
     required this.groupLabel,
     required this.onError,
     required this.onUpdated,
@@ -1853,6 +1864,7 @@ class _InstalledAppPermissions extends StatefulWidget {
   final String clientId;
   final String? service;
   final bool canManage;
+  final double topInset;
   final String Function(String group) groupLabel;
   final ValueChanged<String?> onError;
   final Future<void> Function() onUpdated;
@@ -1969,10 +1981,14 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
   @override
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
+    final inset = EdgeInsets.only(top: widget.topInset);
     if (loading) {
-      return RaftAppPermissionsSummary(
-        columns: const [],
-        loading: tr('Loading App Notifications...'),
+      return Padding(
+        padding: inset,
+        child: RaftAppPermissionsSummary(
+          columns: const [],
+          loading: tr('Loading App Notifications...'),
+        ),
       );
     }
     final s = state;
@@ -2005,7 +2021,7 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
       groups: managementStrings(s['requested_groups']),
       textRevisionId: managementMap(textState['current'])['id'] as String?,
     );
-    return Column(
+    final permissions = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftAppPermissionsSummary(
@@ -2098,6 +2114,7 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
         ],
       ],
     );
+    return Padding(padding: inset, child: permissions);
   }
 }
 

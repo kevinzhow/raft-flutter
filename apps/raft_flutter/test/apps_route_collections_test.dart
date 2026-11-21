@@ -13,9 +13,9 @@ import 'package:raft_ui/raft_ui.dart';
 import 'parity/cases/screens/screen_fixture.dart';
 
 void main() {
-  for (final (viewport, toolbarHeight) in [
-    (const Size(390, 844), 72.0),
-    (const Size(1280, 900), 34.0),
+  for (final (viewport, toolbarHeight, nameSize, bylineSize) in [
+    (const Size(390, 844), 72.0, 16.0, 13.0),
+    (const Size(1280, 900), 34.0, 14.0, 12.0),
   ]) {
     testWidgets('Apps view switch fits the Web toolbar at $viewport', (
       tester,
@@ -55,6 +55,14 @@ void main() {
         of: find.text('Garden Journal'),
         matching: find.byType(RaftCard),
       );
+      final byline = find.descendant(
+        of: card,
+        matching: find.text('Other · by Third-party developer'),
+      );
+      final nameStyle = tester
+          .widget<RaftUnderlinedText>(find.byType(RaftUnderlinedText))
+          .style!;
+      final bylineStyle = tester.widget<Text>(byline).style!;
       final gridSize = tester.getSize(card);
       if (viewport.width < 640) {
         await tester.tap(find.byKey(const ValueKey('apps-toolbar-more')));
@@ -68,6 +76,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getSize(card).height, lessThan(gridSize.height));
       await tester.pumpWidget(const SizedBox.shrink());
+      expect(nameStyle.fontSize, nameSize);
+      expect(bylineStyle.fontSize, bylineSize);
+      expect(bylineStyle.height! * bylineStyle.fontSize!, 18);
     });
   }
 
@@ -397,6 +408,9 @@ void main() {
     final count = find.text('Showing 1 / 1');
     expect(card, findsOneWidget);
     expect(tester.getTopLeft(count).dy - tester.getBottomLeft(card).dy, 12);
+    final nameStyle = tester.widget<Text>(find.text('Garden Journal')).style!;
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(nameStyle.fontSize, 14);
   });
 }
 
