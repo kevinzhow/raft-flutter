@@ -3476,7 +3476,7 @@
    "status": "covered",
    "webEntry": "features/channel/ChatPanel.tsx DM titleSlot avatar button -> useProfileStore.openProfile(agent|human, peerId)",
    "gate": "",
-   "flutterEntry": "RaftDmHeader onAvatarTap -> WorkspaceController.openProfile",
+   "flutterEntry": "RaftDmHeader onAvatarTap -> WorkspaceController.openProfile. workspace_view.dart dmPeer uses the live agent avatar, including a reset to the default, once the directory knows the agent.",
    "flutterRefs": [
     {
      "file": "packages/raft_ui/lib/src/channel_header.dart",

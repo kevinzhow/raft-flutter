@@ -3360,14 +3360,10 @@ class _WorkspaceViewState extends State<WorkspaceView>
       origin: w.client.origin,
       senderId: c.string('peerId'),
       senderType: agent ? 'agent' : 'user',
-      agents: [
-        if (agent)
-          {
-            ...?profile,
-            'id': c.string('peerId'),
-            'avatarUrl': profile?['avatarUrl'] ?? c.json['peerAvatarUrl'],
-          },
-      ],
+      agents: [?profile],
+      carriedAvatarUrl: c.json['peerAvatarUrl'] is String
+          ? c.json['peerAvatarUrl'] as String
+          : null,
       members: [
         if (!agent)
           {'userId': c.string('peerId'), 'avatarUrl': c.json['peerAvatarUrl']},

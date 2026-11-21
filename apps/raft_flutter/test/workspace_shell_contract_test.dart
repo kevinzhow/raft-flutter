@@ -361,8 +361,8 @@ void main() {
                 ),
               )
               .pixelKey,
-          'robot',
-          reason: 'live null avatar retains Source DM discovery fallback',
+          isNull,
+          reason: 'the live agent clears the discovery avatar',
         );
         await t.tap(row);
         await frames(t, () {});
