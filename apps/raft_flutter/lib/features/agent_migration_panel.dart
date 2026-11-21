@@ -504,8 +504,13 @@ class _TechnicalDetailsState extends State<_TechnicalDetails> {
 
 /// Web MigrationReference: the support reference with a copy action.
 class MigrationReference extends StatefulWidget {
-  const MigrationReference({super.key, required this.migrationRef});
+  const MigrationReference({
+    super.key,
+    required this.migrationRef,
+    this.dialog = false,
+  });
   final String migrationRef;
+  final bool dialog;
   @override
   State<MigrationReference> createState() => _MigrationReferenceState();
 }
@@ -525,6 +530,12 @@ class _MigrationReferenceState extends State<MigrationReference> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final label = copied ? 'Migration ID Copied' : 'Copy Migration ID';
+    final glyph = copied ? RaftGlyph.check : RaftGlyph.copy;
+    final semanticLabel = copied
+        ? raftText(context, label)
+        : raftFormat(context, 'Copy migration ID {ref}', {
+            'ref': widget.migrationRef,
+          });
     return Row(
       children: [
         Text(
@@ -547,19 +558,24 @@ class _MigrationReferenceState extends State<MigrationReference> {
           ),
         ),
         const SizedBox(width: RaftSpace.x1_5),
-        RaftIconButton(
-          glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
-          visualSize: 20,
-          glyphSize: 12,
-          tooltip: label,
-          // Web `referenceCopyAria`: the accessible name carries the ID.
-          semanticLabel: copied
-              ? raftText(context, label)
-              : raftFormat(context, 'Copy migration ID {ref}', {
-                  'ref': widget.migrationRef,
-                }),
-          onPressed: copy,
-        ),
+        if (widget.dialog)
+          RaftButton(
+            glyph: glyph,
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.iconMd,
+            tooltip: raftText(context, label),
+            semanticLabel: semanticLabel,
+            onPressed: copy,
+          )
+        else
+          RaftIconButton(
+            glyph: glyph,
+            visualSize: 20,
+            glyphSize: 12,
+            tooltip: label,
+            semanticLabel: semanticLabel,
+            onPressed: copy,
+          ),
       ],
     );
   }
