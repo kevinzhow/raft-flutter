@@ -29,6 +29,7 @@ class RaftTimelineScrollbar extends RawScrollbar {
     required super.child,
     required ScrollController super.controller,
     required this.driver,
+    this.endInset = 0,
   }) : super(
          // ds-allow: platform scrollbar chrome; mirrors the Material desktop Scrollbar this replaces (material/scrollbar.dart)
          fadeDuration: const Duration(milliseconds: 300),
@@ -37,6 +38,7 @@ class RaftTimelineScrollbar extends RawScrollbar {
        );
 
   final RaftTimelineThumbDriver driver;
+  final double endInset;
 
   @override
   RawScrollbarState<RaftTimelineScrollbar> createState() =>
@@ -116,6 +118,12 @@ class _RaftTimelineScrollbarState
   }
 
   @override
+  void didUpdateWidget(RaftTimelineScrollbar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.endInset != oldWidget.endInset) updateScrollbarPainter();
+  }
+
+  @override
   void dispose() {
     hover.dispose();
     super.dispose();
@@ -160,7 +168,7 @@ class _RaftTimelineScrollbarState
               ? _thicknessWithTrack
               : _thicknessIdle)
       ..radius = theme.radius ?? _radius
-      ..crossAxisMargin = theme.crossAxisMargin ?? _margin
+      ..crossAxisMargin = (theme.crossAxisMargin ?? _margin) + widget.endInset
       ..mainAxisMargin = theme.mainAxisMargin ?? 0
       ..minLength = theme.minThumbLength ?? _minLength
       ..padding = MediaQuery.paddingOf(context)

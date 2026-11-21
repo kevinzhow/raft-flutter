@@ -37,3 +37,30 @@ abstract final class RaftThreadOutlineMetrics {
 
   static BorderRadius get tickCorners => BorderRadius.circular(tick.height);
 }
+
+/// Keeps the outline gutter inside the timeline viewport so the active
+/// search-row fill can reach it while message content stays clear of the rail.
+class RaftThreadOutlineGutter extends InheritedWidget {
+  const RaftThreadOutlineGutter({
+    super.key,
+    required this.visible,
+    required super.child,
+  });
+
+  final bool visible;
+
+  EdgeInsetsDirectional get inset => visible
+      ? RaftThreadOutlineMetrics.timelineInset
+      : EdgeInsetsDirectional.zero;
+
+  static EdgeInsetsDirectional? maybeOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<RaftThreadOutlineGutter>()
+      ?.inset;
+
+  static double contentWidth(BuildContext context, double viewportWidth) =>
+      viewportWidth - (maybeOf(context)?.end ?? 0);
+
+  @override
+  bool updateShouldNotify(RaftThreadOutlineGutter oldWidget) =>
+      visible != oldWidget.visible;
+}

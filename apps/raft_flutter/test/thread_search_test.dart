@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -87,12 +90,15 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme().copyWith(platform: platform),
-        home: SafeArea(
-          child: Scaffold(
-            body: RaftChatView(
-              controller: w,
-              thread: true,
-              viewportHandle: viewport,
+        home: RepaintBoundary(
+          key: const ValueKey('mounted-thread-surface'),
+          child: SafeArea(
+            child: Scaffold(
+              body: RaftChatView(
+                controller: w,
+                thread: true,
+                viewportHandle: viewport,
+              ),
             ),
           ),
         ),
@@ -176,6 +182,73 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     },
   );
+
+  testWidgets('desktop search paints through the outline rail gutter', (
+    tester,
+  ) async {
+    final (w, _) = await mountThread(tester, replyCount: 60);
+    final outline = threadOutlineFor(w)!;
+    await tester.runAsync(outline.load);
+    await tester.pumpAndSettle();
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics && widget.properties.label == 'Thread timeline',
+      ),
+      findsOneWidget,
+    );
+
+    w.threadSearch.open();
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('thread-search-input')),
+      'reply-30',
+    );
+    await tester.pumpAndSettle();
+    expect(w.threadSearch.activeMessageId, 'reply-30');
+
+    final surface = find.byKey(const ValueKey('mounted-thread-surface'));
+    final boundary = tester.renderObject<RenderRepaintBoundary>(surface);
+    final matched = tester.getRect(
+      find.byKey(const ValueKey('message-wrapper-reply-30')),
+    );
+    final adjacent = tester.getRect(
+      find.byKey(const ValueKey('message-wrapper-reply-31')),
+    );
+    final right = tester.getRect(surface).right;
+    expect(right - matched.right, RaftThreadOutlineMetrics.timelineInset.end);
+    expect(adjacent.right, matched.right);
+
+    final pixels = await tester.runAsync(() async {
+      final image = await boundary.toImage();
+      try {
+        final rgba = (await image.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        ))!;
+        int pixel(double x, double y) =>
+            rgba.getUint32(4 * (image.width * y.floor() + x.floor()));
+        // The outline ticks paint over the fill. Sample between them too.
+        List<int> railStrip(double y) => [
+          for (var offset = -4; offset <= 4; offset++)
+            pixel(right - 22, y + offset),
+        ];
+        return (
+          fill: pixel(matched.right - 20, matched.center.dy),
+          gutter: railStrip(matched.center.dy),
+          idleGutter: railStrip(adjacent.center.dy),
+        );
+      } finally {
+        image.dispose();
+      }
+    });
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 5));
+    expect(pixels!.idleGutter, isNot(contains(pixels.fill)));
+    expect(
+      pixels.gutter.where((pixel) => pixel == pixels.fill),
+      hasLength(greaterThanOrEqualTo(5)),
+    );
+  });
 
   for (final (size, platform, closeSize) in [
     (const Size(390, 844), TargetPlatform.android, 32.0),

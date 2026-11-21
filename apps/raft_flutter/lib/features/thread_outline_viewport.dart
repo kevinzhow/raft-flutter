@@ -77,26 +77,27 @@ class ThreadOutlineViewport extends StatelessWidget {
         return ListenableBuilder(
           listenable: outline,
           child: child,
-          builder: (context, timeline) => Stack(
-            fit: StackFit.expand,
-            children: [
-              Padding(
-                padding: outline.hasReplies(parent)
-                    ? RaftThreadOutlineMetrics.timelineInset
-                    : EdgeInsets.zero,
-                child: timeline,
-              ),
-              if (outline.hasReplies(parent))
-                PositionedDirectional(
-                  end: RaftThreadOutlineMetrics.railRight,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _ThreadOutlineRail(outline: outline, onJump: onJump),
+          builder: (context, timeline) {
+            final visible = outline.hasReplies(parent);
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                RaftThreadOutlineGutter(visible: visible, child: timeline!),
+                if (visible)
+                  PositionedDirectional(
+                    end: RaftThreadOutlineMetrics.railRight,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _ThreadOutlineRail(
+                        outline: outline,
+                        onJump: onJump,
+                      ),
+                    ),
                   ),
-                ),
-            ],
-          ),
+              ],
+            );
+          },
         );
       },
     );

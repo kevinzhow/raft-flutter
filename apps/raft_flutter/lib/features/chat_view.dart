@@ -2739,6 +2739,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       popupOpen: pickerMessageId == m.id || menuMessageId == m.id,
       highlighted:
           _messages.state.highlightedMessageId == m.id || searchActive == m.id,
+      searchMatch: searchActive == m.id,
       collapseLongMessages: choice.collapse,
       initiallyExpanded: choice.open,
       onMessageExpanded: (open, row) {
@@ -3223,12 +3224,12 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     );
     Widget? timelineWidget;
     double? timelineWidth;
-    Widget timelineFor(double width, Widget Function() create) {
+    Widget timelineFor(double width, Widget Function(double) create) {
       if (timelineWidget != null && timelineWidth == width) {
         return timelineWidget!;
       }
       timelineWidth = width;
-      return timelineWidget = create();
+      return timelineWidget = create(width);
     }
 
     return Chat(
@@ -3248,8 +3249,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         composerBuilder: (_) => const SizedBox.shrink(),
         chatAnimatedListBuilder: (context, _) => LayoutBuilder(
           builder: (context, constraints) => timelineFor(
-            constraints.maxWidth,
-            () => RaftMessageTimeline(
+            RaftThreadOutlineGutter.contentWidth(context, constraints.maxWidth),
+            (width) => RaftMessageTimeline(
               key: ValueKey('chat-list-${thread ? 'thread' : 'channel'}'),
               controller: viewport,
               retainRow: timelineKeys.retainRows(messages, source),
@@ -3259,7 +3260,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 i,
                 style: (
                   rowStyle,
-                  constraints.maxWidth,
+                  width,
                   systemStateAt(i),
                   source(messages[i]).id == dmReadId,
                   timelineKeys.progress.revision(source(messages[i]).id),
@@ -3268,7 +3269,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 summaries: _messages.threadSummaries,
                 highlighted: _messages.state.highlightedMessageId,
               ),
-              extentRevision: (rowStyle, constraints.maxWidth),
+              extentRevision: (rowStyle, width),
               canPrepareNearbyRows:
                   kDebugMode || defaultTargetPlatform != TargetPlatform.macOS
                   ? null
@@ -3284,12 +3285,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   dmRead: source(messages[index]).id == dmReadId,
                 ),
               ),
-              estimateRow: (index) => estimateRow(
-                measuredRows,
-                messages,
-                index,
-                constraints.maxWidth,
-              ),
+              estimateRow: (index) =>
+                  estimateRow(measuredRows, messages, index, width),
               slivers: (history, forward) => recipe.centeredSlivers(
                 header: header,
                 history: history,
