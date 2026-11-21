@@ -327,6 +327,7 @@ class RaftSheet extends StatelessWidget {
     required this.body,
     this.header,
     this.headerExtent = 0,
+    this.headerColor,
     this.footer,
     this.padding = EdgeInsets.zero,
     this.showHandle = true,
@@ -340,6 +341,7 @@ class RaftSheet extends StatelessWidget {
       body = const SizedBox.shrink(),
       header = null,
       headerExtent = 0,
+      headerColor = null,
       footer = null,
       showHandle = true,
       padding = EdgeInsets.zero;
@@ -349,6 +351,7 @@ class RaftSheet extends StatelessWidget {
   /// Pinned under the handle; drags the sheet. [headerExtent] is its height.
   final Widget? header, footer;
   final double headerExtent;
+  final Color? headerColor;
   final bool showHandle;
   final EdgeInsetsGeometry padding;
   final Widget? fixed;
@@ -375,6 +378,7 @@ class RaftSheet extends StatelessWidget {
     }
     final controller = RaftSheetScope.maybeOf(context)?.scrollController;
     final t = RaftTokens.of(context);
+    final headFill = headerColor ?? t.canvas;
     final headerSlot = header == null
         ? null
         : SizedBox(height: headerExtent, child: header);
@@ -389,12 +393,12 @@ class RaftSheet extends StatelessWidget {
             child: RaftSnappedDecoratedBox(
               // PanelHeader snaps its canvas edge and bottom border to the
               // same paint grid while its controls keep their layout boxes.
-              decoration: BoxDecoration(color: t.canvas),
+              decoration: BoxDecoration(color: headFill),
               paintDevicePixelRatio: RaftBorderSnap.emulatedDeviceScaleFactor
                   ? 1
                   : null,
               child: RaftSurfaceBackgroundScope(
-                color: t.canvas.a == 1 ? t.canvas : null,
+                color: headFill.a == 1 ? headFill : null,
                 child: headerSlot,
               ),
             ),

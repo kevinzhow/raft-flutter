@@ -423,6 +423,7 @@ void main() {
     _routes(a, []);
     await _mount(t, w, openMyApps: false);
     await _openRegistration(t);
+    expect(t.getSize(find.byType(RaftDialogHeader)).height, closeTo(44, 1));
     final webhookItem = find.widgetWithText(RaftSettingsSidebarItem, 'Webhook');
     Focus.of(t.element(webhookItem)).requestFocus();
     await t.pump();
@@ -435,7 +436,7 @@ void main() {
           .hitTestable(),
       findsOneWidget,
     );
-  });
+  }, variant: const TargetPlatformVariant({TargetPlatform.linux}));
 
   testWidgets('the phone editor opens with its close and Save in the head', (
     t,
@@ -581,6 +582,19 @@ void main() {
     await t.pumpAndSettle();
     final toggle = find.byKey(const ValueKey('app-notifications-enabled'));
     await t.ensureVisible(toggle);
+    expect(
+      find.text(
+        'Uses existing installation credentials and APIs. No login or webhook required.',
+      ),
+      findsNothing,
+    );
+    final deliveryBadge = t.widget<RaftSettingsRecipeBadge>(
+      find.ancestor(
+        of: find.text('Disabled'),
+        matching: find.byType(RaftSettingsRecipeBadge),
+      ),
+    );
+    expect(deliveryBadge.appearance, RaftBadgeRecipeAppearance.soft);
     await t.tap(toggle);
     await t.pumpAndSettle();
     expect(find.text('HTTPS endpoint'), findsOneWidget);

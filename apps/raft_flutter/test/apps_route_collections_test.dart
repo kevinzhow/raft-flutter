@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show SemanticsRole, Tristate;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -254,8 +255,22 @@ void main() {
     );
     await tester.tap(category);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Communication').hitTestable());
-    await tester.pumpAndSettle();
+    final semantics = tester.ensureSemantics();
+    try {
+      final selectedCategory = tester.getSemantics(
+        find.bySemanticsLabel('All categories').hitTestable().last,
+      );
+      expect(selectedCategory.getSemanticsData().role, SemanticsRole.listItem);
+      expect(
+        selectedCategory.getSemanticsData().flagsCollection.isSelected,
+        Tristate.isTrue,
+      );
+      await tester.tap(find.text('Communication').hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('All categories'), findsNothing);
+    } finally {
+      semantics.dispose();
+    }
     expect(
       tester.getTopLeft(category).dx,
       lessThan(tester.getTopLeft(type).dx),

@@ -1245,9 +1245,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             events = next.events;
           }),
         ),
-        RaftAppEditorFootnote(
-          'Uses existing installation credentials and APIs. No login or webhook required.',
-        ),
         if (pending is Map)
           RaftAppEditorFootnote(
             raftFormat(
@@ -1340,25 +1337,28 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     if (notificationsLoading) {
       return const RaftSettingsRecipeBadge(
         label: 'Loading',
-        appearance: RaftBadgeRecipeAppearance.outline,
+        appearance: RaftBadgeRecipeAppearance.soft,
       );
     }
     final state = notifications;
     if (state?['pending_revision'] != null) {
       return const RaftSettingsRecipeBadge(
         label: 'Pending app review',
+        appearance: RaftBadgeRecipeAppearance.soft,
         variant: RaftBadgeRecipeVariant.warning,
       );
     }
     if (managementStrings(state?['current_events']).isNotEmpty) {
       return const RaftSettingsRecipeBadge(
         label: 'Request approved',
+        appearance: RaftBadgeRecipeAppearance.soft,
         variant: RaftBadgeRecipeVariant.success,
       );
     }
     return const RaftSettingsRecipeBadge(
       label: 'Disabled',
-      appearance: RaftBadgeRecipeAppearance.outline,
+      appearance: RaftBadgeRecipeAppearance.soft,
+      variant: RaftBadgeRecipeVariant.muted,
     );
   }
 
@@ -1387,6 +1387,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
               RaftCheckboxRow(
                 key: const ValueKey('app-notifications-enabled'),
                 title: tr('Enable webhook'),
+                dense: true,
                 description: app == null
                     ? tr('Save the app before enabling its webhook.')
                     : null,

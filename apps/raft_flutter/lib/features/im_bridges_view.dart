@@ -731,11 +731,21 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         ),
       );
     }
+    final desktop =
+        raftBreakpointWidth(context) >= 768 &&
+        !RaftInteraction.of(context).touch;
     return ListView(
       primary: false,
       padding: raftScrollPadding(
         context,
-        RaftSettingsPanelFrame.contentInsetFor(context),
+        desktop
+            ? const EdgeInsets.fromLTRB(
+                RaftDesktopMetrics.pageInset,
+                RaftDesktopMetrics.pageTop,
+                RaftDesktopMetrics.pageInset,
+                RaftDesktopMetrics.pageInset,
+              )
+            : RaftSettingsPanelFrame.contentInsetFor(context),
       ),
       children: [
         RaftMessagingBridgesSection(

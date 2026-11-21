@@ -15,6 +15,7 @@ import 'recipes/badge.g.dart'
     show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant;
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
+import 'space.dart';
 import 'system_inset.dart' show raftScrollPadding;
 import 'theme.dart';
 import 'tokens/tokens.dart';
@@ -303,10 +304,11 @@ class RaftDescriptionList extends StatelessWidget {
     super.key,
     required this.entries,
     this.inline = false,
+    this.stacked = false,
     this.rowGap = 2,
   });
   final List<RaftDescriptionEntry> entries;
-  final bool inline;
+  final bool inline, stacked;
   final double rowGap;
 
   @override
@@ -344,6 +346,24 @@ class RaftDescriptionList extends StatelessWidget {
                   Flexible(child: detailsOf(e)),
                 ],
               ),
+            ),
+        ],
+      );
+    }
+    if (stacked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: rowGap + RaftSpace.x2,
+        children: [
+          for (final entry in entries)
+            Column(
+              key: entry.key,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: rowGap,
+              children: [
+                entry.termChild ?? RaftCssText(entry.term, style: term),
+                detailsOf(entry),
+              ],
             ),
         ],
       );

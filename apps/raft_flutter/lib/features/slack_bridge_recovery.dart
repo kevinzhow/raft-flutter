@@ -43,6 +43,21 @@ class SlackBridgeRecovery extends StatelessWidget {
       tone: RaftButtonRecipeVariant.outline,
       onPressed: busy ? null : action,
     );
+    Widget inboundRow(Map<String, dynamic> row) => Wrap(
+      spacing: RaftSpace.x2,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          '${name(row)}: ${tr(_inboundReason(row['reason']))}'
+          '${row['count'] == null ? '' : ' (${row['count']})'}',
+        ),
+        if (canManage)
+          retryButton(
+            row['eventId'] != null ? 'Retry message' : 'Retry up to 100',
+            () => onReplay(row),
+          ),
+      ],
+    );
     final panels = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x4,
@@ -150,7 +165,6 @@ class SlackBridgeRecovery extends StatelessWidget {
             ),
             footer: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: RaftSpace.x2,
               children: [
                 if (summary is Map)
                   Text(
@@ -163,23 +177,15 @@ class SlackBridgeRecovery extends StatelessWidget {
                       },
                     ),
                   ),
-                for (final row in [...(canManage ? groups : []), ...events])
-                  Wrap(
-                    spacing: RaftSpace.x2,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        '${name(row)}: ${tr(_inboundReason(row['reason']))}'
-                        '${row['count'] == null ? '' : ' (${row['count']})'}',
-                      ),
-                      if (canManage)
-                        retryButton(
-                          row['eventId'] != null
-                              ? 'Retry message'
-                              : 'Retry up to 100',
-                          () => onReplay(row),
-                        ),
-                    ],
+                if (canManage) ...groups.map(inboundRow),
+                if (events.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: RaftSpace.x3),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: RaftSpace.x2,
+                      children: events.map(inboundRow).toList(),
+                    ),
                   ),
               ],
             ),

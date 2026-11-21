@@ -1145,7 +1145,12 @@ class _TierGroupState extends State<_TierGroup> {
         disclosureKey: const ValueKey('human-login-identity-disclosure'),
         onExpandedChanged: (value) => setState(() => expanded = value),
         gap: RaftSpace.x2,
-        children: rows,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: rows,
+          ),
+        ],
       ),
     );
   }

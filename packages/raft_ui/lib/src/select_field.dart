@@ -215,6 +215,7 @@ class RaftSelectField<T> extends StatefulWidget {
     this.height,
     this.toolbarPicker = false,
     this.popupMinWidth,
+    this.triggerBuilder,
   });
 
   /// Callsite trigger height (`SelectTrigger className="h-10"`).
@@ -240,6 +241,7 @@ class RaftSelectField<T> extends StatefulWidget {
   final double? minimumTargetHeight;
   final bool toolbarPicker;
   final double? popupMinWidth;
+  final Widget Function(BuildContext, FocusNode, VoidCallback?)? triggerBuilder;
 
   @override
   State<RaftSelectField<T>> createState() => _RaftSelectFieldState<T>();
@@ -300,31 +302,33 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
         selected != null ||
         (widget.value != null && widget.unmatchedLabel != null);
     final onPressed = enabled ? toggle : null;
-    final trigger = widget.toolbarPicker
-        ? RaftPickerTriggerButton(
-            label:
-                selected?.label ??
-                (hasValue ? widget.unmatchedLabel! : widget.placeholder),
-            semanticLabel: widget.label,
-            onPressed: onPressed,
-            focusNode: triggerFocus,
-            invalid: widget.invalid,
-          )
-        : RaftInteractive(
-            onPressed: onPressed,
-            focusNode: triggerFocus,
-            semanticLabel: widget.label == null
-                ? null
-                : raftText(context, widget.label!),
-            builder: (context, st) => _raftTrigger(
-              context,
-              t,
-              st,
-              enabled: enabled,
-              selected: selected,
-              hasValue: hasValue,
-            ),
-          );
+    final trigger =
+        widget.triggerBuilder?.call(context, triggerFocus, onPressed) ??
+        (widget.toolbarPicker
+            ? RaftPickerTriggerButton(
+                label:
+                    selected?.label ??
+                    (hasValue ? widget.unmatchedLabel! : widget.placeholder),
+                semanticLabel: widget.label,
+                onPressed: onPressed,
+                focusNode: triggerFocus,
+                invalid: widget.invalid,
+              )
+            : RaftInteractive(
+                onPressed: onPressed,
+                focusNode: triggerFocus,
+                semanticLabel: widget.label == null
+                    ? null
+                    : raftText(context, widget.label!),
+                builder: (context, st) => _raftTrigger(
+                  context,
+                  t,
+                  st,
+                  enabled: enabled,
+                  selected: selected,
+                  hasValue: hasValue,
+                ),
+              ));
     return CompositedTransformTarget(
       key: anchorKey,
       link: link,

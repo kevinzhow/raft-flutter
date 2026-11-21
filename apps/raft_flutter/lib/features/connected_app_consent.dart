@@ -75,6 +75,7 @@ class ConnectedAppPermissionSet extends StatelessWidget {
             ],
           );
     return RaftDescriptionList(
+      stacked: raftBreakpointWidth(context) < 640,
       rowGap: RaftSpace.x3,
       entries: [
         RaftDescriptionEntry(

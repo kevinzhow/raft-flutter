@@ -480,10 +480,10 @@ def tap(test_id, key=None):
     )
 
 
-def tap_text(text, target):
+def tap_text(text, target, *, scroll=None):
     return (
         {'type': 'click', 'target': target},
-        {'type': 'tapText', 'text': text},
+        {'type': 'tapText', 'text': text, **({'scroll': scroll} if scroll else {})},
     )
 
 
@@ -831,14 +831,17 @@ case('route', 'install-success',
      'body:not(:has([data-testid="connected-app-detail-body"])) [data-testid="connected-apps-marketplace-collection"]',
      [market, detail, install], shell='apps', route_set='install-success',
      verify_key='connected-app-market_slack', absent_text='Install to this server')
-case('route', 'bot-step-up', '[data-testid="second-factor-step-up-dialog"]', [
-    installed_detail, tap_text('Add @issues', 'button:has-text("Add @issues") >> nth=0'),
-], shell='apps', route_set='bot-step-up', verify_text="Verify it's you")
+add_bot = tap_text(
+    'Add @issues', 'button:has-text("Add @issues") >> nth=0', scroll='if-needed',
+)
+case('route', 'bot-step-up', '[data-testid="second-factor-step-up-dialog"]',
+     [installed_detail, add_bot],
+     shell='apps', route_set='bot-step-up', verify_text="Verify it's you")
 case('route', 'bot-granted', '[data-testid="connected-app-bot-section"][data-bot-grant="granted"]',
-     [installed_detail, tap_text('Add @issues', 'button:has-text("Add @issues") >> nth=0')],
+     [installed_detail, add_bot],
      shell='apps', route_set='bot-granted',
      verify_key='connected-app-installed-detail', verify_text='Added to server')
-remove_bot = tap_text('Remove', '[data-testid="connected-app-bot-remove"]')
+remove_bot = tap_text('Remove', '[data-testid="connected-app-bot-remove"]', scroll='if-needed')
 case('route', 'bot-remove', '[data-testid="connected-app-bot-remove-confirm"]',
      [installed_detail, remove_bot], shell='apps', route_set='bot-removed',
      verify_key='connected-app-bot-remove-dialog')

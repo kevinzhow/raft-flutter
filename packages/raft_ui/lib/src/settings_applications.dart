@@ -219,6 +219,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
     this.onClearFilters,
     this.onBrowseMarketplace,
     this.onRetry,
+    this.announceRetry = false,
     this.onRefresh,
     this.recommendation,
     this.emptyDetail,
@@ -262,8 +263,9 @@ class RaftConnectedAppsSection extends StatelessWidget {
   final Widget? installedFooter;
   final Widget? notice;
   final bool standalone;
-  final RaftFitPicker? typeFilter, sortFilter;
+  final RaftFitSelect<String>? typeFilter, sortFilter;
   final VoidCallback? onClearFilters, onBrowseMarketplace, onRetry;
+  final bool announceRetry;
   final RefreshCallback? onRefresh;
   final RaftMarketplaceAppTile? recommendation;
   final bool marketplaceLoading;
@@ -412,15 +414,18 @@ class RaftConnectedAppsSection extends StatelessWidget {
       if (error case final message? when message.isNotEmpty)
         onRetry == null
             ? RaftConnectedAppsError(message)
-            : RaftBanner(
-                description: message,
-                size: RaftBannerRecipeSize.sm,
-                live: false,
-                action: RaftButton(
-                  glyph: RaftGlyph.refreshCw,
-                  label: raftText(context, 'Retry'),
-                  uiVariant: RaftButtonVariant.outline,
-                  onPressed: onRetry,
+            : Semantics(
+                liveRegion: announceRetry,
+                child: RaftBanner(
+                  description: message,
+                  size: RaftBannerRecipeSize.sm,
+                  live: false,
+                  action: RaftButton(
+                    glyph: RaftGlyph.refreshCw,
+                    label: raftText(context, 'Retry'),
+                    uiVariant: RaftButtonVariant.outline,
+                    onPressed: onRetry,
+                  ),
                 ),
               ),
       ?secretReveal,
@@ -441,13 +446,19 @@ class RaftConnectedAppsSection extends StatelessWidget {
       Widget heading(String title) => SliverToBoxAdapter(
         child: Semantics(
           header: true,
-          child: RaftCssText(
-            title,
-            style: RaftSansRecipe.resolve(
-              size: RaftSansRecipeSize.group,
-              states: t.recipeStates(),
-              tokens: t.recipeTokens,
-            ).base.text(t.recipeTokens),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: RaftSpace.x6),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: RaftCssText(
+                title,
+                style: RaftSansRecipe.resolve(
+                  size: RaftSansRecipeSize.group,
+                  states: t.recipeStates(),
+                  tokens: t.recipeTokens,
+                ).base.text(t.recipeTokens),
+              ),
+            ),
           ),
         ),
       );
@@ -604,7 +615,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
     String tr(String value) => raftText(context, value);
     final filters = [
       ?typeFilter,
-      RaftFitPicker(
+      RaftFitSelect<String>(
         key: const ValueKey('connected-apps-category-filter'),
         label:
             categories.where((entry) => entry.$1 == category).firstOrNull?.$2 ??
@@ -612,13 +623,11 @@ class RaftConnectedAppsSection extends StatelessWidget {
         glyph: RaftGlyph.layoutList,
         applied: category != 'all',
         labelOrder: 20,
-        menuEntries: [
+        selection: category,
+        onChanged: onCategory,
+        items: [
           for (final (value, label) in categories)
-            RaftMenuEntry(
-              label: label,
-              checked: value == category,
-              onPressed: () => onCategory(value),
-            ),
+            RaftSelectItem(value: value, label: label),
         ],
       ),
     ];
@@ -631,7 +640,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
           items: [_AppsScope(tab: tab, counts: counts, onTab: onTab)],
         ),
         RaftFitSearch(
-          semanticLabel: tr('Search apps'),
+          semanticLabel: tr('Search connected apps'),
           hintText: tr('Search apps…'),
           clearLabel: tr('Clear search'),
           controller: searchController,
@@ -659,7 +668,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
           firstLine: true,
           moreOrder: 60,
           moreItem: [
-            if (sortFilter?.menuEntries case final choices?) ...[
+            if (sortFilter?.menuChoices case final choices?) ...[
               ...choices,
               const RaftMenuEntry.separator(),
             ],

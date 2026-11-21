@@ -36,6 +36,7 @@ class RaftExternalIdentityBody extends StatelessWidget {
     final t = RaftTokens.of(context);
     final strong = t.ui.foreground;
     final muted = t.ui.foregroundMuted;
+    final inset = t.desktop ? RaftSpace.x4 : RaftSpace.x5;
     return ColoredBox(
       color: t.colors['layer-profile-content']!,
       child: SingleChildScrollView(
@@ -46,8 +47,8 @@ class RaftExternalIdentityBody extends StatelessWidget {
             if (sourceLabel != null)
               Padding(
                 key: const Key('external-identity-source'),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: RaftSpace.x5,
+                padding: EdgeInsets.symmetric(
+                  horizontal: inset,
                   vertical: RaftSpace.x3,
                 ),
                 child: RaftCssText(
@@ -62,9 +63,9 @@ class RaftExternalIdentityBody extends StatelessWidget {
             else if (workspaceName != null && workspaceName!.isNotEmpty)
               Container(
                 key: const Key('external-identity-source'),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: inset,
+                  vertical: RaftSpace.x3,
                 ),
                 decoration: BoxDecoration(
                   border: Border(
@@ -90,7 +91,10 @@ class RaftExternalIdentityBody extends StatelessWidget {
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.symmetric(
+                horizontal: inset,
+                vertical: RaftSpace.x5,
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 16,

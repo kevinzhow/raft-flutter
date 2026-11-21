@@ -239,12 +239,21 @@ void main() {
         await tester.pumpAndSettle();
         expect(identityScope, findsOneWidget);
         final identityRows = find.byType(RaftDisclosureCard);
+        final separators = find.descendant(
+          of: identityRows,
+          matching: find.byType(RaftSeparator),
+        );
+        expect(separators, findsNWidgets(2));
+        final firstScope = find.byKey(
+          const ValueKey('human-login-scope-openid'),
+        );
         expect(
-          find.descendant(
-            of: identityRows,
-            matching: find.byType(RaftSeparator),
-          ),
-          findsNWidgets(2),
+          tester.getTopLeft(firstScope).dy,
+          tester.getBottomLeft(separators.first).dy,
+        );
+        expect(
+          tester.getBottomLeft(firstScope).dy,
+          tester.getTopLeft(separators.last).dy,
         );
         expect(serverPicker, findsNothing);
         expect(api.authorizations, isEmpty);

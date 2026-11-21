@@ -22,6 +22,7 @@ import '../icons.dart';
 import '../localization.dart';
 import '../picker_trigger_button.dart';
 import '../recipe_surface.dart';
+import '../select_field.dart';
 import '../tooltip.dart' show RaftTooltip;
 import '../recipes/fit_toolbar.g.dart';
 import '../input_group_size.dart' show RaftInputGroupRecipeSize;
@@ -221,7 +222,7 @@ class RaftFitPicker extends RaftFitItem {
     );
     Widget trigger(FocusNode? focusNode, VoidCallback? press) {
       final button = RaftPickerTriggerButton(
-        key: probe || menuEntries != null ? null : key,
+        key: probe || hasPopup ? null : key,
         label: label,
         glyph: glyph,
         selected: applied || _hasValue,
@@ -252,16 +253,67 @@ class RaftFitPicker extends RaftFitItem {
           : button;
     }
 
-    if (probe || menuEntries == null) {
-      return trigger(null, onPressed);
+    if (probe || !hasPopup) {
+      return trigger(null, onPressed ?? (hasPopup ? () {} : null));
     }
+    return buildPopup((context, focusNode, press) => trigger(focusNode, press));
+  }
+
+  bool get hasPopup => menuEntries != null;
+
+  Widget buildPopup(
+    Widget Function(BuildContext, FocusNode, VoidCallback?) triggerBuilder,
+  ) {
     return RaftDropdownMenu(
       key: key,
       label: label,
       entries: menuEntries!,
-      triggerBuilder: (context, focusNode, press) => trigger(focusNode, press),
+      triggerBuilder: triggerBuilder,
     );
   }
+}
+
+class RaftFitSelect<T> extends RaftFitPicker {
+  const RaftFitSelect({
+    super.key,
+    required super.label,
+    super.glyph,
+    super.applied,
+    super.labelOrder,
+    required this.selection,
+    required this.items,
+    required this.onChanged,
+  });
+
+  final T selection;
+  final List<RaftSelectItem<T>> items;
+  final ValueChanged<T> onChanged;
+
+  List<RaftMenuEntry> get menuChoices => [
+    for (final item in items)
+      RaftMenuEntry(
+        label: item.label,
+        checked: item.value == selection,
+        onPressed: item.enabled ? () => onChanged(item.value) : null,
+      ),
+  ];
+
+  @override
+  bool get hasPopup => true;
+
+  @override
+  Widget buildPopup(
+    Widget Function(BuildContext, FocusNode, VoidCallback?) triggerBuilder,
+  ) => RaftSelectField<T>(
+    key: key,
+    label: label,
+    value: selection,
+    items: items,
+    onChanged: (value) {
+      if (value != null) onChanged(value);
+    },
+    triggerBuilder: triggerBuilder,
+  );
 }
 
 /// `FitToolbarMore`: a ghost ellipsis button, shown only while some item took

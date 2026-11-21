@@ -531,6 +531,7 @@ class RaftDialogHeader extends StatelessWidget {
     this.onClose,
     this.closeEnabled = true,
     this.outlineClose = false,
+    this.height,
   });
   final Object? title;
   final bool showClose;
@@ -540,6 +541,7 @@ class RaftDialogHeader extends StatelessWidget {
   final VoidCallback? onClose;
   final bool closeEnabled;
   final bool outlineClose;
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
@@ -557,6 +559,7 @@ class RaftDialogHeader extends StatelessWidget {
     return RaftRecipeBox(
       style: s.header,
       tokens: t.recipeTokens,
+      height: height,
       child: Row(
         children: [
           Expanded(

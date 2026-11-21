@@ -81,7 +81,22 @@ void main() {
     final tokens = RaftTokens.of(tester.element(heading));
     expect(style.color, tokens.ui.foregroundHint);
     expect(style.fontSize! * style.height!, 18);
+    final recommendation = find.ancestor(
+      of: find.text('Stamp'),
+      matching: find.byType(RaftCard),
+    );
+    final headingBlock = find.ancestor(
+      of: heading,
+      matching: find.byWidgetPredicate(
+        (widget) => widget is Semantics && widget.properties.header == true,
+      ),
+    );
+    final headingToCard =
+        tester.getTopLeft(recommendation).dy -
+        tester.getTopLeft(headingBlock.first).dy;
     final bylineStyle = tester.widget<Text>(find.text(byline)).style!;
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(headingToCard, 32);
     expect(bylineStyle.fontSize, 13);
     expect(bylineStyle.fontSize! * bylineStyle.height!, 18);
   });

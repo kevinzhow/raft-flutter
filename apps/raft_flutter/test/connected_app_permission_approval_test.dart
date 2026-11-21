@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/app_install_expectation.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/connected_app_consent.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -36,6 +38,38 @@ class _PermissionClient extends ScreenFixtureClient {
 }
 
 void main() {
+  testWidgets('permission names use the full row on a narrow review', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: const Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 306,
+              child: ConnectedAppPermissionSet(
+                permissions: AppInstallExpectation(
+                  scopes: ['openid', 'profile', 'agent:read'],
+                  groups: ['server'],
+                ),
+                newScopes: ['agent:read'],
+                newGroups: ['server'],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final label = tester.getTopLeft(find.text('Login scopes'));
+    final scope = tester.getTopLeft(find.text('openid', findRichText: true));
+    expect(scope.dx, label.dx + RaftSpace.x1);
+    expect(scope.dy, greaterThan(label.dy));
+  });
+
   testWidgets(
     'approving records the displayed scope, group and text revision',
     (tester) async {

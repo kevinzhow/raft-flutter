@@ -154,7 +154,10 @@ void main() {
       expect(custom.warnings, isEmpty);
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(pack: custom, dark: dark),
+          theme: raftTheme(
+            pack: custom,
+            dark: dark,
+          ).copyWith(platform: TargetPlatform.linux),
           home: Scaffold(
             body: Column(
               children: [
@@ -179,7 +182,12 @@ void main() {
                     name: 'Author',
                     subtitle: 'External',
                     projectionLabel: 'Source',
-                    avatar: SizedBox(width: 32, height: 32),
+                    sourceLabel: 'From Slack',
+                    avatar: SizedBox(
+                      key: ValueKey('fixture-external-avatar'),
+                      width: 32,
+                      height: 32,
+                    ),
                   ),
                 ),
               ],
@@ -197,6 +205,13 @@ void main() {
       expect(
         _fills(t, find.byType(RaftExternalIdentityBody)),
         contains(const Color(0xff654321)),
+      );
+      final bodyLeft = t.getTopLeft(find.byType(RaftExternalIdentityBody)).dx;
+      expect(t.getTopLeft(find.text('From Slack')).dx - bodyLeft, 16);
+      expect(
+        t.getTopLeft(find.byKey(const ValueKey('fixture-external-avatar'))).dx -
+            bodyLeft,
+        16,
       );
       await t.pumpWidget(const SizedBox());
       expect(t.takeException(), isNull);

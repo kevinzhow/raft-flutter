@@ -179,9 +179,13 @@ class LinkPreviewAppChoice extends StatelessWidget {
     builder: (context, rows, _) {
       final choice = rows?.where((row) => row.id == appId).firstOrNull;
       if (choice == null || !store.current) return const SizedBox.shrink();
-      return RaftConnectedAppDetailSection(
-        title: 'Link previews',
-        child: _LinkPreviewChoices(store: store, appId: appId),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: RaftSpace.x2,
+        children: [
+          RaftSectionEyebrow(raftText(context, 'Link previews')),
+          _LinkPreviewChoices(store: store, appId: appId),
+        ],
       );
     },
   );
@@ -398,6 +402,7 @@ class _LinkPreviewChoicesState extends State<_LinkPreviewChoices> {
           title: tr('Link previews'),
           onClose: close,
           showHandle: false,
+          headerColor: RaftSheetMetrics.fill(RaftTokens.of(context)),
           closeButton: RaftPanelAction(
             glyph: RaftGlyph.x,
             tooltip: tr('Close'),

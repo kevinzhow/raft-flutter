@@ -188,6 +188,20 @@ void main() {
         tester.getTopLeft(held).dy - tester.getBottomLeft(recovery).dy,
         RaftSpace.x4,
       );
+      final inboundExplanation = find.descendant(
+        of: held,
+        matching: find.textContaining('These messages are saved safely'),
+      );
+      final inboundAction = find.widgetWithText(RaftButton, 'Retry message');
+      final inboundRow = find.ancestor(
+        of: inboundAction,
+        matching: find.byType(Wrap),
+      );
+      expect(
+        tester.getTopLeft(inboundRow.first).dy -
+            tester.getBottomLeft(inboundExplanation).dy,
+        RaftSpace.x3,
+      );
       final retry = find.widgetWithText(RaftButton, 'Retry stalled message');
       final channel = find.descendant(
         of: recovery,

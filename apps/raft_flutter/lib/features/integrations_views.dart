@@ -1588,6 +1588,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
       standalone: widget.standalone,
       scrollable: scrollable,
       onRetry: actionError == null ? _refreshApps : null,
+      announceRetry: hasAcceptedData,
       onRefresh: widget.standalone ? _refreshApps : null,
       typeFilter: _toolbarFilter(
         'apps-filter-type',
@@ -1744,14 +1745,14 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     );
   }
 
-  RaftFitPicker _toolbarFilter(
+  RaftFitSelect<String> _toolbarFilter(
     String key,
     RaftGlyph glyph,
     String selected,
     List<(String, String)> choices,
     ValueChanged<String> onSelect,
     int order,
-  ) => RaftFitPicker(
+  ) => RaftFitSelect<String>(
     key: ValueKey(key),
     label: _filterTitle(
       choices.firstWhere((choice) => choice.$1 == selected).$2,
@@ -1759,17 +1760,15 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     glyph: glyph,
     applied: selected != choices.first.$1,
     labelOrder: order,
-    menuEntries: [
+    selection: selected,
+    onChanged: (value) {
+      if (value == selected) return;
+      onSelect(value);
+      filterListings();
+    },
+    items: [
       for (final (value, title) in choices)
-        RaftMenuEntry(
-          label: _filterTitle(title),
-          checked: value == selected,
-          onPressed: () {
-            if (value == selected) return;
-            onSelect(value);
-            filterListings();
-          },
-        ),
+        RaftSelectItem(value: value, label: _filterTitle(title)),
     ],
   );
 

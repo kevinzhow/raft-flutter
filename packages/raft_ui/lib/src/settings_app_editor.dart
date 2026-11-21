@@ -17,6 +17,7 @@ import 'recipe_surface.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart' show RaftButtonRecipeSize;
 import 'recipes/form_section.g.dart';
+import 'recipes/recipe_router.dart' show resolveRecipeClasses;
 import 'recipes/table.g.dart';
 import 'raft/badge.dart' show RaftBadge;
 import 'select_field.dart';
@@ -252,6 +253,7 @@ class _RaftConnectedAppEditorCardState
         children: [
           RaftDialogHeader(
             title: widget.formTitle,
+            height: t.desktop ? RaftDesktopMetrics.headerHeight : null,
             trailing: RaftDialogClose(
               bar: true,
               onPressed: widget.onClose,
@@ -915,97 +917,100 @@ class RaftAppPermissionsTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final tokens = t.recipeTokens;
-    final recipe = RaftTableRecipe.resolve(
-      states: t.recipeStates(),
-      tokens: tokens,
-    );
+    final states = t.recipeStates(responsive: true);
+    final recipe = RaftTableRecipe.resolve(states: states, tokens: tokens);
+    final labelStyle = resolveRecipeClasses(
+      const ['text-subhead', 'font-semibold', 'text-foreground'],
+      states,
+      tokens,
+    ).text(tokens);
+    final summaryStyle = resolveRecipeClasses(
+      const ['text-footnote', 'text-foreground-muted'],
+      states,
+      tokens,
+    ).text(tokens);
+    const accessWidth = 144.0;
+    final accessColumnWidth = t.desktop && raftBreakpointWidth(context) >= 768
+        ? accessWidth
+        : accessWidth + RaftSpace.x1_5;
     String tr(String s) => raftText(context, s);
     Widget head(String label) => RaftRecipeBox(
       style: recipe.head,
       tokens: tokens,
       child: Text(tr(label)),
     );
-    return RaftRecipeBox(
-      style: recipe.root,
-      tokens: tokens,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          RaftRecipeBox(
-            style: recipe.row,
-            tokens: tokens,
-            child: Row(
-              children: [
-                Expanded(child: head('Resource')),
-                SizedBox(width: 144, child: head('Access')),
-              ],
-            ),
-          ),
-          for (final row in rows)
+    return RaftCard(
+      clip: true,
+      child: RaftRecipeBox(
+        style: recipe.root,
+        tokens: tokens,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             RaftRecipeBox(
               style: recipe.row,
               tokens: tokens,
               child: Row(
                 children: [
-                  Expanded(
-                    child: RaftRecipeBox(
-                      style: recipe.cell,
-                      tokens: tokens,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tr(row.label),
-                            style: RaftTypography.body(
-                              t,
-                              size: 14,
-                              line: 20,
-                              weight: FontWeight.w700,
-                              color: t.strong,
-                            ),
-                          ),
-                          const SizedBox(height: RaftSpace.x1),
-                          Text(
-                            tr(row.summary),
-                            style: RaftTypography.body(
-                              t,
-                              size: 11,
-                              line: 11 * 1.625,
-                              color: t.muted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 144,
-                    child: RaftRecipeBox(
-                      style: recipe.cell,
-                      tokens: tokens,
-                      child: RaftSelectField<bool>(
-                        key: ValueKey('app-permission-${row.id}'),
-                        value: row.selected,
-                        label: row.accessLabel,
-                        onChanged: enabled
-                            ? (v) {
-                                if (v != null) onChanged(row.id, v);
-                              }
-                            : null,
-                        items: [
-                          RaftSelectItem(value: false, label: tr('No access')),
-                          RaftSelectItem(
-                            value: true,
-                            label: tr(row.writeAccess ? 'Write' : 'Read-only'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  Expanded(child: head('Resource')),
+                  SizedBox(width: accessColumnWidth, child: head('Access')),
                 ],
               ),
             ),
-        ],
+            for (final row in rows)
+              RaftRecipeBox(
+                style: recipe.row,
+                tokens: tokens,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: RaftRecipeBox(
+                        style: recipe.cell,
+                        tokens: tokens,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RaftCssText(tr(row.label), style: labelStyle),
+                            const SizedBox(height: RaftSpace.half),
+                            RaftCssText(tr(row.summary), style: summaryStyle),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: accessColumnWidth,
+                      child: RaftRecipeBox(
+                        style: recipe.cell,
+                        tokens: tokens,
+                        child: RaftSelectField<bool>(
+                          key: ValueKey('app-permission-${row.id}'),
+                          value: row.selected,
+                          label: row.accessLabel,
+                          onChanged: enabled
+                              ? (value) {
+                                  if (value != null) onChanged(row.id, value);
+                                }
+                              : null,
+                          items: [
+                            RaftSelectItem(
+                              value: false,
+                              label: tr('No access'),
+                            ),
+                            RaftSelectItem(
+                              value: true,
+                              label: tr(
+                                row.writeAccess ? 'Write' : 'Read-only',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

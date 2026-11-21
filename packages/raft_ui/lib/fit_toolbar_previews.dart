@@ -93,3 +93,30 @@ Widget fitToolbarNarrowPreview() => _rack(280);
 
 @RaftPreviews('Fit toolbar, rack, search collapsed', size: Size(200, 120))
 Widget fitToolbarCollapsedPreview() => _rack(190);
+
+@RaftPreviews('Fit toolbar, typed Select', size: Size(340, 260))
+Widget fitToolbarSelectPreview() {
+  var selection = 'all';
+  return StatefulBuilder(
+    builder: (context, setState) => RaftFitToolbar(
+      semanticLabel: 'Apps',
+      children: [
+        RaftFitGroup(
+          items: [
+            RaftFitSelect<String>(
+              label: selection == 'all' ? 'All categories' : 'Communication',
+              selection: selection,
+              applied: selection != 'all',
+              glyph: RaftGlyph.layoutList,
+              items: const [
+                RaftSelectItem(value: 'all', label: 'All categories'),
+                RaftSelectItem(value: 'communication', label: 'Communication'),
+              ],
+              onChanged: (value) => setState(() => selection = value),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}

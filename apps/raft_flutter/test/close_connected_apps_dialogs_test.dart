@@ -178,4 +178,66 @@ void main() {
       .toList();
   registerCloseTests(surfaces, harness);
   registerNoScrimTests(surfaces, harness);
+
+  testWidgets('installed app Link previews uses the full detail width', (
+    tester,
+  ) async {
+    final store = AppLinkStore.of(_workspace(tester));
+    await store.readConsentChoices();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 320,
+              child: LinkPreviewAppChoice(store: store, appId: 'garden'),
+            ),
+          ),
+        ),
+      ),
+    );
+    final heading = find.text('Link previews');
+    final row = find.byKey(const ValueKey('link-preview-choice-garden'));
+    final inset = tester.getTopLeft(heading).dx;
+    final groupWidth = tester.getSize(find.byType(RaftListRowGroup)).width;
+    expect(row, findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(inset, 0);
+    expect(groupWidth, 320);
+  });
+
+  testWidgets('dark link preview sheet header uses the dialog surface', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final store = AppLinkStore.of(_workspace(tester));
+    await store.readConsentChoices();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(dark: true),
+        home: Builder(
+          builder: (context) => RaftButton(
+            label: 'Open link previews',
+            onPressed: () => unawaited(openLinkPreviewConsents(context, store)),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open link previews'));
+    await tester.pumpAndSettle();
+    final head = find.byKey(const ValueKey('raft-form-sheet-head'));
+    final paint = find.ancestor(
+      of: head,
+      matching: find.byType(RaftSnappedDecoratedBox),
+    );
+    final tokens = RaftTokens.of(tester.element(head));
+    final actual = tester.widget<RaftSnappedDecoratedBox>(paint.first);
+    final expected = RaftSheetMetrics.fill(tokens);
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect((actual.decoration as BoxDecoration).color, expected);
+  });
 }
