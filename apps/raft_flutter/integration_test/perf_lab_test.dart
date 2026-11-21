@@ -35,6 +35,7 @@ import 'package:raft_flutter/platform/android_performance_hint.dart';
 
 import 'perf_lab/fixtures.dart';
 import 'perf_lab/keyboard.dart';
+import 'perf_lab/list_scenes.dart';
 import 'perf_lab/navigation_activity.dart';
 import 'perf_lab/navigation_host.dart';
 import 'perf_lab/probe.dart';
@@ -515,6 +516,13 @@ void main() {
         _ => throw ArgumentError('Unknown theme $name'),
       };
       SharedPreferences.setMockInitialValues({});
+      if (only.any((scene) => scene.startsWith('list-'))) {
+        failures.addAll(await ListScenes(
+          tester: t, theme: name, dark: dark, seconds: seconds,
+          lab: lab, images: images, wants: wants,
+        ).run());
+        if (only.every((scene) => scene.startsWith('list-'))) continue;
+      }
       final mix = LabChannel('mix', mixKinds(600), pageDelay: const Duration(milliseconds: 150));
       final openA = LabChannel('open-a', mixKinds(80), pageDelay: const Duration(milliseconds: 150));
       final openB = LabChannel('open-b', [for (final k in mixKinds(100).reversed) k], pageDelay: const Duration(milliseconds: 150));
