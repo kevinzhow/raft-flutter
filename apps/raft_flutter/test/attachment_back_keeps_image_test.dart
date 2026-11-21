@@ -319,7 +319,7 @@ _chrome(WidgetTester tester) {
     ],
     parent: seen('The parent message'),
     begin: seen('Beginning of replies'),
-    count: seen('1 replies'),
+    count: find.text('1 reply', findRichText: true).evaluate().isNotEmpty,
     none: seen('No replies yet'),
     top: tester.getTopLeft(_attachment).dy,
   );
