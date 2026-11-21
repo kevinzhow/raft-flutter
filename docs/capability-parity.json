@@ -890,7 +890,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "MessageItem showDmReadReceipt | MentionLink projectAgentReadReceipt",
-   "gate": "accepted peer frontier; own human sender; DM status on the current live last row",
+   "gate": "accepted peer frontier; own human sender; DM status on the current live last row; quoted handles display as text",
    "flutterEntry": "agentMentionRead projects the mention check and the profile hover card receipt. dmReadStatusMessageId selects the live DM row for RaftMessageReadStatus.",
    "flutterRefs": [
     {

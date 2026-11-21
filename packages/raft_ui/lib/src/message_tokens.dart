@@ -48,7 +48,11 @@ typedef _Match = ({int start, int end, String label, String href});
 /// The identity-backed and free-text matches in [text] (Web's mention,
 /// channel, thread, DM and task matchers), longest first at one start, none
 /// overlapping.
-List<_Match> _referenceMatches(String text, RaftTokenContext ctx) {
+List<_Match> _referenceMatches(
+  String text,
+  RaftTokenContext ctx, {
+  required bool inQuote,
+}) {
   final references = ctx.references;
   final taskHref = ctx.taskHref;
   final knownTaskNumber = ctx.knownTaskNumber;
@@ -60,7 +64,7 @@ List<_Match> _referenceMatches(String text, RaftTokenContext ctx) {
   final matches = <_Match>[];
 
   for (final ref in references) {
-    if (ref.text.isEmpty) continue;
+    if (ref.text.isEmpty || (inQuote && ref.text.startsWith('@'))) continue;
     final pattern = RegExp(RegExp.escape(ref.text));
     for (final m in pattern.allMatches(text)) {
       final left = m.start == 0 ? '' : text.substring(m.start - 1, m.start);
@@ -258,8 +262,10 @@ List<md.Node> raftApplyMessageTokens(
 }
 
 class _TokenPass {
-  _TokenPass(this.ctx);
+  _TokenPass(this.ctx, {this.inQuote = false});
   final RaftTokenContext ctx;
+  final bool inQuote;
+  late final _TokenPass _quoted = _TokenPass(ctx, inQuote: true);
   late final Map<String, RaftTextReference> byText = {
     for (final r in ctx.references) r.text: r,
   };
@@ -307,12 +313,13 @@ class _TokenPass {
           }
         }
         if (node.children != null) {
+          final pass = node.tag == 'blockquote' && !inQuote ? _quoted : this;
           mapped.add(
             raftCopyElement(
               node,
               _skippedTags.contains(node.tag)
                   ? _stripMarks(node.children!)
-                  : children(node.children!),
+                  : pass.children(node.children!),
             ),
           );
           continue;
@@ -362,7 +369,10 @@ class _TokenPass {
         link.children?.length == 1 &&
         link.children!.single is md.Text &&
         link.children!.single.textContent == href;
-    if (href != null && raftIsRetiredResourceRef(href)) {
+    final target = href == null ? null : raftParseRefTarget(href);
+    if (href != null &&
+        (raftIsRetiredResourceRef(href) ||
+            (inQuote && target?.kind == RaftRefKind.user))) {
       // Web 1.24 `isRetiredResourceRef`: the source reads as typed.
       return RaftClaimedText(
         autolink
@@ -370,7 +380,6 @@ class _TokenPass {
             : '[${link.textContent.replaceAllMapped(RegExp(r'[\\\[\]]'), (m) => '\\${m[0]}')}](<$href>)',
       );
     }
-    final target = href == null ? null : raftParseRefTarget(href);
     if (target == null) return null;
     final resolved = refFor(target);
     final label = autolink
@@ -486,7 +495,9 @@ class _TokenPass {
     if (raftIsRetiredResourceRef(m[1]!)) return [RaftClaimedText(m[0]!)];
     final target = raftParseRefTarget(m[1]!);
     if (target == null) return null;
-    if (escaped) return [RaftClaimedText(m[0]!)];
+    if (escaped || (inQuote && target.kind == RaftRefKind.user)) {
+      return [RaftClaimedText(m[0]!)];
+    }
     final resolved = refFor(target);
     return [
       resolved == null
@@ -497,7 +508,7 @@ class _TokenPass {
 
   List<Object>? _references(_Piece p) {
     if (ctx.references.isEmpty && ctx.taskHref == null) return null;
-    final matches = _referenceMatches(p.value, ctx);
+    final matches = _referenceMatches(p.value, ctx, inQuote: inQuote);
     if (matches.isEmpty) return null;
     final out = <Object>[];
     var cursor = 0;
