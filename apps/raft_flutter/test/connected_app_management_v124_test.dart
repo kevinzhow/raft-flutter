@@ -86,6 +86,38 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  testWidgets('the installed card homepage opens in the external browser', (
+    tester,
+  ) async {
+    const homepage = 'https://app.example.invalid/';
+    const launcher = MethodChannel('plugins.flutter.io/url_launcher');
+    final launches = <String>[];
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(launcher, (call) async {
+      if (call.method == 'launch') {
+        launches.add((call.arguments as Map)['url'] as String);
+      }
+      return true;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(launcher, null));
+    final client = _AppsClient((method, path, _) {
+      if (path == '/integrations/marketplace') {
+        return [
+          {
+            ..._promptApp,
+            'installedAt': '2026-11-01T00:00:00Z',
+            'homepageUrl': homepage,
+          },
+        ];
+      }
+      return const <Object>[];
+    });
+    await _mount(tester, client);
+    await _tap(tester, find.text('app.example.invalid'));
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(launches, [homepage]);
+  });
+
   testWidgets('installed apps includes server-local MCP apps', (tester) async {
     final client = _AppsClient((method, route, _) {
       if (route == '/mcp/apps') {

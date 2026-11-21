@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/src/raft/css_box.dart';
 
 void main() {
   testWidgets('Installed grid cards include the border in their minimum size', (
@@ -10,7 +11,7 @@ void main() {
     addTearDown(search.dispose);
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
+        theme: raftTheme(dark: true).copyWith(platform: TargetPlatform.linux),
         home: Scaffold(
           body: RaftConnectedAppsSection(
             tab: RaftConnectedAppsTab.installed,
@@ -28,6 +29,7 @@ void main() {
                 name: 'Garden Journal',
                 initials: 'GJ',
                 meta: 'Other · by Raft Labs',
+                badges: [RaftConnectedAppBadge.warning('Permission update')],
               ),
             ],
           ),
@@ -39,6 +41,14 @@ void main() {
       matching: find.byType(RaftCard),
     );
     expect(tester.getSize(app).height, 184);
+    final badge = find.byType(RaftBadge);
+    final paint = find.descendant(of: badge, matching: find.byType(RaftCssBox));
+    final tokens = RaftTokens.of(tester.element(badge));
+    final fill = tester.widget<RaftCssBox>(paint.first).fill;
+    expect(
+      fill,
+      raftChromeBlend(tokens.ui['warning-soft'], tokens.ui.layerCard),
+    );
   });
 
   testWidgets('Recommended apps use the group heading and footnote byline', (

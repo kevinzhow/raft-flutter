@@ -990,8 +990,8 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                                   close();
                                 } else if (modalError != null) {
                                   await WidgetsBinding.instance.endOfFrame;
-                                  if (dangerRowKey.currentContext
-                                      case final row?) {
+                                  final row = dangerRowKey.currentContext;
+                                  if (row != null && row.mounted) {
                                     await Scrollable.ensureVisible(
                                       row,
                                       alignmentPolicy:
@@ -1032,6 +1032,11 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
         ),
       ),
     );
+  }
+
+  VoidCallback? _homepageAction(Map<String, dynamic> app) {
+    final url = (app['homepageUrl'] as String?)?.trim();
+    return url == null || url.isEmpty ? null : () => managementLaunch(url);
   }
 
   String _groupLabel(BuildContext context, String group) {
@@ -1472,6 +1477,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             description: app.source['description'] as String?,
             homepageUrl: app.source['homepageUrl'] as String?,
             homepageLabel: integrationDomain(app.source['homepageUrl']),
+            onOpenHomepage: _homepageAction(app.source),
             onOpenName: () => openInstalled(app),
             onReviewPermissions: canManage && _awaitsApproval(app)
                 ? () => openInstalled(app)
@@ -1511,6 +1517,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             description: app['description'] as String?,
             homepageUrl: app['homepageUrl'] as String?,
             homepageLabel: integrationDomain(app['homepageUrl']),
+            onOpenHomepage: _homepageAction(app),
           ),
     ];
     final registeredRows = [
@@ -1539,6 +1546,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                 : tr(_statusHint(app['publishStatus'] as String?)!),
             homepageUrl: app['homepageUrl'] as String?,
             homepageLabel: integrationDomain(app['homepageUrl']),
+            onOpenHomepage: _homepageAction(app),
             actionLabel:
                 canManage &&
                     _canEditSourceOwned(app['publishStatus'] as String?)

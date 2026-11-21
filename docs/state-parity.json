@@ -59244,7 +59244,7 @@
         "owner": "WP-APPS",
         "reason": "Composes the shared progress and native login controls."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@49281/FUNCTION:page@49397": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@49499/FUNCTION:page@49615": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59436,43 +59436,43 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@60876/METHOD:build@61350/FUNCTION:scopeRow@61927": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@61565/METHOD:build@62039/FUNCTION:scopeRow@62616": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5622/METHOD:build@8230/FUNCTION:gap@14229": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5685/METHOD:build@8293/FUNCTION:gap@14347": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5622/METHOD:build@8230/FUNCTION:heading@14327": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5685/METHOD:build@8293/FUNCTION:heading@14445": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29428/METHOD:build@29650/FUNCTION:block@29729": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29546/METHOD:build@29768/FUNCTION:block@29847": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29428/METHOD:build@29650/FUNCTION:line@29848": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29546/METHOD:build@29768/FUNCTION:line@29966": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@27988/METHOD:build@28354/FUNCTION:placeholder@28745": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@28106/METHOD:build@28472/FUNCTION:placeholder@28863": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@56084/METHOD:build@56193/FUNCTION:chip@56469": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@56773/METHOD:build@56882/FUNCTION:chip@57158": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59791,13 +59791,13 @@
         "owner": "WP-APPS",
         "reason": "Opens the webhook signing-secret warning from the Apps editor; a mounted behavior test checks its confirm action."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@50075/FUNCTION:appTile@50958": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@50293/FUNCTION:appTile@51176": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Projects an Apps Marketplace tile with its independent bot action."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@38334/METHOD:build@38543/FUNCTION:label@38754": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@39032/METHOD:build@39241/FUNCTION:label@39452": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",

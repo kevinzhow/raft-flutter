@@ -159,6 +159,7 @@ class RaftConnectedAppRow {
     this.description,
     this.homepageUrl,
     this.homepageLabel,
+    this.onOpenHomepage,
     this.statusHint,
     this.onOpenName,
     this.onReviewPermissions,
@@ -171,6 +172,7 @@ class RaftConnectedAppRow {
   /// `category · developer` (Installed) or the category (My apps).
   final String meta;
   final String? logoUrl, description, homepageUrl, homepageLabel, statusHint;
+  final VoidCallback? onOpenHomepage;
   final List<RaftConnectedAppBadge> badges;
 
   /// Non-editable installed apps: the name is a button opening the access
@@ -300,6 +302,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
             : RaftButton(
                 label: raftText(context, 'Browse marketplace'),
                 onPressed: onBrowseMarketplace,
+                uiVariant: RaftButtonVariant.standard,
                 uiSize: RaftButtonSize.md,
               ),
       ),
@@ -1180,14 +1183,31 @@ class _Badge extends StatelessWidget {
   const _Badge(this.badge);
   final RaftConnectedAppBadge badge;
   @override
-  Widget build(BuildContext context) => RaftBadge(
-    label: raftText(context, badge.label),
-    variant: badge.variant ?? RaftBadgeRecipeVariant.default_,
-    appearance: badge.appearance ?? RaftBadgeRecipeAppearance.solid,
-    fontFamily: RaftInheritedFontScope.active(context)
-        ? RaftTokens.of(context).headingFont
-        : null,
-  );
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final appearance = badge.appearance ?? RaftBadgeRecipeAppearance.solid;
+    final variant = badge.variant ?? RaftBadgeRecipeVariant.default_;
+    Color? fill;
+    final surface = RaftSurfaceBackgroundScope.of(context);
+    if (appearance == RaftBadgeRecipeAppearance.soft &&
+        surface != null &&
+        surface.a == 1) {
+      final recipe = RaftBadgeRecipe.resolve(
+        appearance: appearance,
+        variant: variant,
+        tokens: t.recipeTokens,
+      );
+      final wash = recipe.root.backgroundColor?.resolve(t.recipeTokens);
+      if (wash != null) fill = raftChromeBlend(wash, surface);
+    }
+    return RaftBadge(
+      label: raftText(context, badge.label),
+      variant: variant,
+      appearance: appearance,
+      fill: fill,
+      fontFamily: RaftInheritedFontScope.active(context) ? t.headingFont : null,
+    );
+  }
 }
 
 class _MarketplaceCard extends StatelessWidget {
@@ -1394,12 +1414,11 @@ class RaftConnectedAppUrlLink extends StatelessWidget {
                   // stops before the arrow.
                   underlineOffset: 3,
                   underlineThickness: 1.5,
-                  style: RaftTypography.mono(
-                    t,
-                    size: 12,
-                    line: 16,
+                  style: t.scale(
+                    RaftTypeScale.monoMeta,
+                    mono: true,
                     color: color,
-                  ).copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
               // raft-ui `TextLinkExternalIcon`: ArrowUpRight, 0.857em, 2px
@@ -1503,6 +1522,7 @@ class _AppRowCard extends StatelessWidget {
                   child: RaftConnectedAppUrlLink(
                     url: row.homepageUrl!,
                     label: row.homepageLabel,
+                    onOpen: row.onOpenHomepage,
                   ),
                 ),
             ],

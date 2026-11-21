@@ -234,7 +234,15 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(listingsReads, 1);
-    await tester.tap(find.text('Browse marketplace'));
+    final browse = find.ancestor(
+      of: find.text('Browse marketplace'),
+      matching: find.byType(RaftButton),
+    );
+    expect(
+      tester.widget<RaftButton>(browse).uiVariant,
+      RaftButtonVariant.standard,
+    );
+    await tester.tap(browse);
     await tester.pumpAndSettle();
 
     expect(listingsReads, 2);
