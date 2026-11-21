@@ -30,6 +30,7 @@ class RaftSearchInput extends StatelessWidget {
   Widget build(BuildContext context) => RaftCssPixelSnap(
     devicePixelRatio: RaftBorderSnap.emulatedDeviceScaleFactor ? 1 : null,
     child: RaftInputGroup(
+      useEmbeddedControlRecipe: true,
       leading: const RaftInputGroupAddon.icon(RaftGlyph.search),
       controller: controller,
       focusNode: focusNode,

@@ -54,11 +54,28 @@ void main() {
             .top
             .width;
     expect(borderWidth(), 1);
+    final field = find.byType(TextField);
+    List<double> focusSpreads() => [
+      for (final paint in tester.widgetList<CustomPaint>(
+        find.descendant(of: input, matching: find.byType(CustomPaint)),
+      ))
+        if (paint.painter case final RaftOuterShadowPainter painter)
+          for (final shadow in painter.shadows)
+            if (shadow.color.a > 0) shadow.spreadRadius,
+    ];
+
+    expect(focusSpreads(), isEmpty);
+    await tester.tap(field);
+    await tester.pump();
+    expect(focusSpreads(), unorderedEquals([2, 4]));
 
     RaftBorderSnap.emulatedDeviceScaleFactor = false;
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(app);
     expect(borderWidth(), closeTo(4 / 3, .00001));
+    await tester.tap(field);
+    await tester.pump();
+    expect(focusSpreads(), unorderedEquals([2, 4]));
   });
 
   testWidgets('A pinned toolbar reveals active chips and fades hidden edges', (

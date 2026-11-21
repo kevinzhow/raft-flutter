@@ -1041,6 +1041,7 @@ class RaftInputGroup extends StatefulWidget {
     this.clearKey,
     this.size,
     this.snapBorderToDevicePixels = false,
+    this.useEmbeddedControlRecipe = false,
   });
 
   /// Key of the inline-end clear button (a test's or a focus lookup's handle).
@@ -1049,6 +1050,7 @@ class RaftInputGroup extends StatefulWidget {
   /// `InputGroup size`: the recipe default is `lg` (the forms' 44px); FitToolbarSearch is `md` (32px, 34px with a mouse).
   final RaftInputGroupRecipeSize? size;
   final bool snapBorderToDevicePixels;
+  final bool useEmbeddedControlRecipe;
   final RaftInputGroupAddon? leading, trailing;
 
   /// `variant="container"` addons are a muted block with a hairline seam (`SlugInput`); the default ones sit on
@@ -1094,6 +1096,9 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       widget.controller ??
       (_ownedController ??= TextEditingController(text: widget.initialValue));
 
+  bool get _usesEmbeddedControls =>
+      widget.useEmbeddedControlRecipe || widget.snapBorderToDevicePixels;
+
   void _textChanged() {
     if (mounted) setState(() {});
   }
@@ -1134,7 +1139,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
         disabled: disabled,
         extra: [
           if (focused) RaftRecipeStates.focusWithin,
-          if (widget.snapBorderToDevicePixels && focused && !disabled)
+          if (_usesEmbeddedControls && focused && !disabled)
             'has:focus-visible',
           if (widget.invalid) 'has:data-slot=input-group-control+data-invalid',
           if (disabled) 'has:data-slot=input-group-control+disabled',
@@ -1198,7 +1203,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
     }
 
     final hasClear = widget.onClear != null && controller.text.isNotEmpty;
-    final embeddedClear = hasClear && widget.snapBorderToDevicePixels;
+    final embeddedClear = hasClear && _usesEmbeddedControls;
     final embeddedButton = embeddedClear
         ? end.addon.target(':is(& > *)[data-slot="button"]')
         : null;
@@ -1326,7 +1331,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       label: '',
       glyph: RaftGlyph.x,
       uiVariant: RaftButtonVariant.ghost,
-      uiSize: widget.snapBorderToDevicePixels
+      uiSize: _usesEmbeddedControls
           ? RaftButtonSize.iconMd
           : RaftButtonSize.iconSm,
       visualWidth: button?.width,
