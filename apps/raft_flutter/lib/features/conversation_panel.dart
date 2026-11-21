@@ -203,10 +203,9 @@ class _ConversationPanelState extends State<ConversationPanel> {
               sections: hasTabs ? order : const [RaftConversationTabId.chat],
               value: tab,
               initiallyMounted: const [RaftConversationTabId.chat],
-              swipeEnabled:
-                  hasTabs &&
-                  !widget.hideHeader &&
-                  RaftInteraction.of(context).touch,
+              // Web v1.24: these tabs switch by tap only; a sideways drag on
+              // the chat is the time reveal's (Kevin, #raft-flutter e99dbd89).
+              swipeEnabled: false,
               onChanged: selectTab,
               // Reuse the same widget for a visited data owner. Changing only
               // the selected section must not update every page's root widget.

@@ -13,8 +13,10 @@ import 'message_touch_taps.dart' show raftMessageTapControl;
 // twice the touch slop, only to the left), counted from where the finger went
 // down. It leaves alone a drag that starts within 24px of a screen edge, in a
 // code block, display math, a diagram or media (the message's own controls),
-// or in anything that scrolls sideways with something to scroll, and any drag
-// while a popup is open. Read from raw pointer events: the list keeps its
+// on a field, or on anything inside the list that takes sideways drags itself
+// (a wide table or other sideways scroller with something to scroll, a
+// slider, a seek bar), even once that scroller has reached its end; and any
+// drag while a popup is open. Read from raw pointer events: the list keeps its
 // vertical scroll.
 
 /// How far the rows slide before the rubber band: room for the time.
@@ -56,17 +58,27 @@ _Decision _decide(double dx, double dy) {
   return dx < 0 ? _Decision.claim : _Decision.release;
 }
 
-/// Whether a drag that starts at [position] is left to what it starts on.
-bool _excludedStart(Offset position, int viewId) {
+/// Whether a drag that starts at [position] is left to what it starts on:
+/// anything between the hit target and [root] (the reveal itself) that keeps
+/// its own gestures or takes a sideways drag.
+bool _excludedStart(Offset position, int viewId, RenderObject? root) {
   final result = HitTestResult();
   WidgetsBinding.instance.hitTestInView(result, position, viewId);
   for (final entry in result.path) {
     final target = entry.target;
+    if (identical(target, root)) break;
     if (target is RenderMetaData &&
         identical(target.metaData, raftMessageTapControl)) {
       return true;
     }
     if (target is RenderEditable) return true;
+    // Any widget with a sideways drag of its own: a sideways Scrollable with
+    // something to scroll (one that fits drops its drag recognizer), a
+    // slider, a seek bar, a GestureDetector with a horizontal drag or a pan.
+    if (target is RenderSemanticsGestureHandler &&
+        target.onHorizontalDragUpdate != null) {
+      return true;
+    }
     if (target is RenderViewportBase &&
         target.axis == Axis.horizontal &&
         target.offset is ScrollPosition) {
@@ -172,7 +184,7 @@ class _RaftTimelineTimeRevealState extends State<RaftTimelineTimeReveal>
       // and to reduced motion (nothing slides).
       if (MediaQuery.disableAnimationsOf(context) ||
           !(widget.enabled?.call() ?? true) ||
-          _excludedStart(_start, _viewId)) {
+          _excludedStart(_start, _viewId, context.findRenderObject())) {
         _decision = _Decision.release;
         return;
       }
