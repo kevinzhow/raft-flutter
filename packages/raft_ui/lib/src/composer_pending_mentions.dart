@@ -30,17 +30,22 @@ class RaftPendingMention {
     required this.targetType,
     required this.targetHandle,
     required this.availableActions,
+    this.readOnlyInLounge = false,
     this.avatar,
   });
   final String resolutionId, targetType, targetHandle;
   final List<String> availableActions;
+  final bool readOnlyInLounge;
 
   /// Authorized target artwork (agent/user avatar); null → app initial.
   final Widget? avatar;
 
   bool get canNotify =>
+      !readOnlyInLounge &&
       availableActions.any((a) => a == 'notify' || a == 'notify_only');
-  bool get canAdd => availableActions.any((a) => a == 'add' || a == 'invite');
+  bool get canAdd =>
+      !readOnlyInLounge &&
+      availableActions.any((a) => a == 'add' || a == 'invite');
 
   /// `pendingMentionTargetLabel`.
   String get label {
@@ -146,18 +151,23 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
     final local = state[action.resolutionId];
     final busy = executing.containsKey(action.resolutionId);
     final target = action.label;
-    final status = switch (local) {
-      RaftPendingMentionState.added => raftFormat(
+    final status = switch ((action.readOnlyInLounge, local)) {
+      (true, _) => raftFormat(
+        context,
+        "{target} won't be notified: other agents can only read this chat.",
+        {'target': target},
+      ),
+      (false, RaftPendingMentionState.added) => raftFormat(
         context,
         '{target} was added to {channel}',
         {'target': target, 'channel': channel},
       ),
-      RaftPendingMentionState.notified => raftFormat(
+      (false, RaftPendingMentionState.notified) => raftFormat(
         context,
         'Notification queued for {target} · still not in {channel}',
         {'target': target, 'channel': channel},
       ),
-      null => raftFormat(
+      (false, null) => raftFormat(
         context,
         '{target} was not notified because they are not in {channel}',
         {'target': target, 'channel': channel},
