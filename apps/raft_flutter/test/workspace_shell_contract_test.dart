@@ -311,15 +311,13 @@ void main() {
           title.style!.color,
           RaftTokens.of(t.element(row)).colors['foreground'],
         );
-        final desc = t.widget<Text>(
+        expect(
           find.descendant(
             of: row,
             matching: find.text('Keeps release notes aligned.'),
           ),
+          findsNothing,
         );
-        expect(desc.style!.fontSize, 13);
-        expect(desc.style!.height, 18 / 13);
-        expect(desc.style!.fontWeight, FontWeight.w400);
         api.routes['GET /agents'] = (_) => [
           {
             'id': 'agent1',
@@ -341,10 +339,12 @@ void main() {
           find.descendant(of: row, matching: find.text('Live Cindy')),
           findsOneWidget,
         );
-        expect(
+        final desc = t.widget<Text>(
           find.descendant(of: row, matching: find.text('Live description')),
-          findsOneWidget,
         );
+        expect(desc.style!.fontSize, 13);
+        expect(desc.style!.height, 18 / 13);
+        expect(desc.style!.fontWeight, FontWeight.w400);
         expect(
           find.descendant(
             of: row,

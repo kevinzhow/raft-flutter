@@ -6625,7 +6625,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",
-     "needle": "Cancel Migration"
+     "needle": "Cancel migration?"
     }
    ],
    "justification": "",

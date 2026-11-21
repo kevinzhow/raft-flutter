@@ -72,7 +72,7 @@ void main() {
           of: row,
           matching: find.text('Current agent description'),
         ),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         tester.widget<RaftMountedAvatarFrame>(frame).presence?.light,
