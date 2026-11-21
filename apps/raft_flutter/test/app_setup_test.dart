@@ -264,6 +264,8 @@ void main() {
       addTearDown(t.view.reset);
       await t.pumpWidget(integHost(IntegrationsView(controller: w)));
       await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('connected-app-app1')));
       await t.pumpAndSettle();
     }
@@ -390,12 +392,12 @@ void main() {
       t,
     ) async {
       await pump(t, app: base);
-      expect(find.text('No setup required'), findsNWidgets(2));
+      expect(find.text('No setup required'), findsOneWidget);
       expect(find.byKey(const ValueKey('app-setup-url')), findsNothing);
       await t.ensureVisible(find.byKey(const ValueKey('app-setup-required')));
       await t.tap(find.byKey(const ValueKey('app-setup-required')));
       await t.pumpAndSettle();
-      expect(find.text('Setup required'), findsNWidgets(2));
+      expect(find.text('Setup required'), findsOneWidget);
       expect(find.byKey(const ValueKey('app-setup-url')), findsOneWidget);
       expect(
         find.textContaining('Configuration instructions', findRichText: true),
@@ -454,7 +456,7 @@ void main() {
           'setupDescription': 'x',
         },
       );
-      expect(find.text('Setup required'), findsNWidgets(2));
+      expect(find.text('Setup required'), findsOneWidget);
       await t.ensureVisible(find.byKey(const ValueKey('app-setup-required')));
       await t.tap(find.byKey(const ValueKey('app-setup-required')));
       await t.pumpAndSettle();

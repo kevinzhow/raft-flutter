@@ -9,7 +9,7 @@ import 'hover_region.dart';
 import 'package:flutter/material.dart';
 
 import 'card_parts.dart' show RaftCardScope;
-import 'design_primitives.dart' show RaftInteractive;
+import 'design_primitives.dart' show RaftInteractionState, RaftInteractive;
 import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/card.g.dart';
@@ -34,6 +34,7 @@ class RaftCard extends StatefulWidget {
     this.transparentBorder = false,
     this.onTap,
     this.semanticLabel,
+    this.linkUrl,
   }) : _item = false,
        selected = false,
        selectedBackground = null,
@@ -56,7 +57,8 @@ class RaftCard extends StatefulWidget {
        dialog = false,
        clip = false,
        transparentBorder = false,
-       semanticLabel = null;
+       semanticLabel = null,
+       linkUrl = null;
 
   final Widget child;
   final RaftCardRecipeVariant variant;
@@ -92,9 +94,9 @@ class RaftCard extends StatefulWidget {
   /// Item only: hover affordance; defaults to `onTap != null`.
   final bool? interactive;
 
-  /// Item and option: the tap.
   final VoidCallback? onTap;
   final String? semanticLabel;
+  final Uri? linkUrl;
   final bool _item;
 
   @override
@@ -123,12 +125,47 @@ class _RaftCardState extends State<RaftCard> {
   );
 
   Widget _buildPlain(BuildContext context) {
+    if (widget.onTap == null) return _plainSurface(context);
+    return Semantics(
+      container: true,
+      link: widget.linkUrl != null,
+      linkUrl: widget.linkUrl,
+      child: RaftInteractive(
+        button: widget.linkUrl == null,
+        onPressed: widget.onTap,
+        semanticContainer: false,
+        semanticLabel: widget.semanticLabel,
+        builder: _plainSurface,
+      ),
+    );
+  }
+
+  Widget _plainSurface(
+    BuildContext context, [
+    RaftInteractionState? interaction,
+  ]) {
     final t = RaftTokens.of(context);
     final tokens = RaftRecipeTokens(t);
-    final root = RaftCardRecipe.resolve(
+    var root = RaftCardRecipe.resolve(
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: tokens,
     ).root;
+    if (interaction != null) {
+      root = resolveRecipeClasses(
+        [
+          ...root.classes,
+          'hover:overlay-subtle',
+          'active:overlay-medium',
+          'focus-visible:shadow-focus',
+        ],
+        t.recipeStates(
+          hovered: interaction.hovered,
+          pressed: interaction.pressed,
+          focusVisible: interaction.focusVisible,
+        ),
+        tokens,
+      );
+    }
     final fill =
         widget.background ?? (widget.dialog ? t.colors['layer-dialog'] : null);
     return ConstrainedBox(

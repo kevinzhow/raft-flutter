@@ -56,6 +56,9 @@ EXT_SURFACE_LEVEL = {
     'components.ext-settings.providers': PAGE, 'components.ext-settings.im-bridges': PAGE,
     'components.ext-settings.account': PAGE, 'components.ext-settings.appearance': PAGE,
     'components.ext-settings.notifications': PAGE,
+    'components.apps.page': PAGE, 'components.apps.route': PAGE,
+    'components.apps.login': PAGE, 'components.apps.bridge': PAGE,
+    'components.apps.dialog': COMPONENT, 'components.apps.profile': COMPONENT,
     'components.wp6.settings': PAGE, 'components.wp6.tasks': PAGE,
     'components.members-ext.list': PAGE, 'components.members-ext.human': PAGE, 'components.members-ext.agent': PAGE,
     'components.members-ext.activity': PAGE, 'components.members-ext.saved': PAGE,
@@ -148,7 +151,7 @@ def _is_extension(case_id):
         'composerattachments', 'composer-states', 'conversation', 'dialogs', 'errors', 'forward-mobile', 'list-pages',
         'members-ext', 'members-pages', 'notifications', 'public-server', 'raftbench', 'row-menus', 'screens-ext',
         'search-overlay', 'shell', 'taskspage', 'taskdetail', 'thread-ext', 'thread-pill', 'attachment', 'wp6',
-        'frame', 'framework', 'states', 'action-card-v124'}
+        'apps', 'frame', 'framework', 'states', 'action-card-v124'}
 
 
 def unassigned(case_ids):

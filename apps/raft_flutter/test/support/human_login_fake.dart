@@ -47,6 +47,7 @@ class FakeHumanLoginApi implements HumanLoginApi {
   Completer<void>? lookupGate;
 
   final lookups = <({String serverId, Map<String, String> query})>[];
+  final lookupFailures = <String, RaftApiException>{};
   final authorizations = <Map<String, Object?>>[];
   final installs =
       <({String serverId, String appId, Map<String, Object?> body})>[];
@@ -94,6 +95,8 @@ class FakeHumanLoginApi implements HumanLoginApi {
     lookups.add((serverId: serverId, query: query));
     calls.add('lookup:$serverId');
     await lookupGate?.future;
+    final failure = lookupFailures[serverId];
+    if (failure != null) throw failure;
     final client = clients[serverId];
     if (client == null) {
       throw RaftApiException.response(

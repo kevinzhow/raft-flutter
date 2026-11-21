@@ -12,6 +12,14 @@ import 'app_link_models.dart';
 
 enum AppLinkChoice { allowing, declining, allowed, declined, failed }
 
+typedef AppLinkConsentRow = ({
+  String id,
+  String name,
+  String? icon,
+  DateTime date,
+  bool allowed,
+});
+
 enum AppLinkPhase { refreshing, preparing, holding, executing, pending }
 
 typedef AppLinkNotice = ({
@@ -64,6 +72,9 @@ class AppLinkStore {
   final _mounted = <AppLinkMessage>{};
   final _promptOwners = <(String, String), AppLinkMessage>{};
   final _choices = <String, AppLinkChoice>{};
+  final consentChoices = ValueNotifier<List<AppLinkConsentRow>?>(null);
+  final consentChoicesFailed = ValueNotifier(false);
+  int _consentRead = 0;
   StreamSubscription<RaftEvent>? _hints;
   Future<bool>? _flag;
   DateTime? _readHold;
@@ -142,6 +153,8 @@ class AppLinkStore {
     _cache.clear();
     _mounted.clear();
     _promptOwners.clear();
+    consentChoices.dispose();
+    consentChoicesFailed.dispose();
   }
 
   void _hint(RaftEvent event) {
@@ -213,6 +226,54 @@ class AppLinkStore {
 
   AppLinkChoice? choice(String app) => _choices[app];
 
+  Future<void> readConsentChoices() async {
+    if (!current) return;
+    final ticket = ++_consentRead;
+    bool latest() => current && ticket == _consentRead;
+    consentChoicesFailed.value = false;
+    try {
+      final result = await client.get('/integrations/link-preview-consents');
+      if (!latest()) return;
+      if (result is! Map ||
+          result['allowed'] is! List ||
+          result['declined'] is! List) {
+        throw const FormatException('Invalid link preview choices');
+      }
+      consentChoices.value = [
+        for (final key in ['allowed', 'declined'])
+          for (final row in result[key] as List)
+            if (row case {
+              'app': {'id': final String id, 'name': final String name},
+            })
+              if (DateTime.tryParse(
+                    '${row[key == 'allowed' ? 'granted_at' : 'declined_at']}',
+                  )
+                  case final date?)
+                (
+                  id: id,
+                  name: name,
+                  icon: switch (row['app']['icon']) {
+                    final String icon => icon,
+                    _ => null,
+                  },
+                  date: date,
+                  allowed: key == 'allowed',
+                ),
+      ];
+    } on RaftApiException catch (error) {
+      if (!latest()) return;
+      if (error.status == 404) {
+        consentChoices.value = const [];
+      } else if (consentChoices.value == null) {
+        consentChoicesFailed.value = true;
+      }
+    } on FormatException {
+      if (latest() && consentChoices.value == null) {
+        consentChoicesFailed.value = true;
+      }
+    }
+  }
+
   bool ownsPrompt(AppLinkMessage message, String app) =>
       identical(_promptOwners[(message.conversation, app)], message);
 
@@ -229,11 +290,14 @@ class AppLinkStore {
   }
 
   Future<void> choose(AppLinkConsent prompt, {required bool allow}) async {
-    final app = prompt.app.id;
+    await chooseApp(prompt.app.id, allow: allow);
+  }
+
+  Future<bool> chooseApp(String app, {required bool allow}) async {
     if (!current ||
         choice(app) == AppLinkChoice.allowing ||
         choice(app) == AppLinkChoice.declining) {
-      return;
+      return false;
     }
     _choices[app] = allow ? AppLinkChoice.allowing : AppLinkChoice.declining;
     _notify();
@@ -242,7 +306,7 @@ class AppLinkStore {
       await client.post(
         '/integrations/clients/$id/link-preview-${allow ? 'consent' : 'decline'}',
       );
-      if (!current) return;
+      if (!current) return false;
       _choices[app] = allow ? AppLinkChoice.allowed : AppLinkChoice.declined;
       for (final message in {..._cache.values, ..._mounted}) {
         final affected = message.links.values.any((link) => link.app.id == app);
@@ -268,15 +332,16 @@ class AppLinkStore {
         }
       }
     } on RaftApiException catch (error) {
-      if (!current) return;
+      if (!current) return false;
       _choices[app] = error.status == 404
           ? AppLinkChoice.declined
           : AppLinkChoice.failed;
     } catch (_) {
-      if (!current) return;
+      if (!current) return false;
       _choices[app] = AppLinkChoice.failed;
     }
     _notify();
+    return choice(app) != AppLinkChoice.failed;
   }
 
   void _notify() {

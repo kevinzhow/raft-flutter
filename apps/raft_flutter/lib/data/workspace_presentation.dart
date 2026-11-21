@@ -196,18 +196,12 @@ class WorkspacePresentation {
   }
 
   bool canVisitSection(String name) {
-    final capability = const {
-      'agents': 'viewAgents',
-      'computers': 'viewMachines',
-      'members': 'viewMembers',
-      'providers': 'manageExternalAuth',
-      'integrations': 'manageIntegrations',
-      'im-bridges': 'manageIntegrations',
-      'administration': 'viewServerSettings',
-      'billing': 'viewBilling',
-      'workspace-settings': 'viewServerSettings',
-    }[name];
+    final capability = NavigationRegistry.sectionCapabilities[name];
     if (capability != null) return can(capability);
+    if (name == 'apps') {
+      return server != null && server?.string('role') != 'guest';
+    }
+    if (name == 'integrations') return server != null;
     return const {
       'home',
       'chat',

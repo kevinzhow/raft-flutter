@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import '../platform/app_services.dart';
 import '../platform/app_update.dart';
+import 'app_permission_updates.dart';
 import 'artifacts/artifact_session.dart';
 import 'computers_rack/computer_attention_seen.dart';
 import 'feedback_unread.dart';
@@ -14,7 +15,7 @@ import 'server_menu_model.dart';
 
 /// The server's own pages the phone's server tab opens (Web v1.24
 /// MobileServerTab). Each is a pushed page with Back, not a tab root.
-enum ServerPage { artifacts, members, computers, settings }
+enum ServerPage { artifacts, members, computers, apps, settings }
 
 /// [ServerPage] ids, as the bar's tab ids spell them.
 final serverPageNames = {for (final page in ServerPage.values) page.name};
@@ -93,7 +94,7 @@ class _MobileServerTabState extends State<MobileServerTab> {
       w.client.origin,
       w.server?.json['avatarUrl'] as String?,
     );
-    return RaftMobileNavServerTab(
+    final tab = RaftMobileNavServerTab(
       key: const Key('mobile-tab-server'),
       label: name,
       semanticLabel: widget.otherServerUnread
@@ -113,6 +114,7 @@ class _MobileServerTabState extends State<MobileServerTab> {
         openPage: (page) => openPage(page, close),
       ),
     );
+    return AppPermissionUpdatesHost(workspace: w, child: tab);
   }
 }
 
@@ -261,6 +263,19 @@ class _ServerPopoverContentState extends State<_ServerPopoverContent> {
             'count': counts.count,
             'total': counts.total,
           }),
+        ),
+      if (!guest)
+        ListenableBuilder(
+          listenable: AppPermissionUpdates.of(w),
+          builder: (context, _) => page(
+            id: ServerPage.apps,
+            key: 'apps',
+            glyph: RaftGlyph.blocks,
+            label: 'Apps',
+            dot: AppPermissionUpdates.of(w).summary.needsAdminReview,
+            dotKey: 'apps-attention-dot',
+            what: raftText(context, 'App permissions need review'),
+          ),
         ),
       page(
         id: ServerPage.settings,

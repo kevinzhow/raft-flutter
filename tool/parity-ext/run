@@ -252,6 +252,7 @@ async function parityExtRoutes(page: Page, visualCase: VisualCase) {
     // props.routeSet selects per-case overrides from `routeSets`:
     // {"$pending": true} never answers (loading), {"$status": N} answers N.
     const routes = { ...(fixture.routes || {}), ...((fixture.routeSets || {})[props.routeSet] || {}) };
+    const completedRoutes = new Set<string>();
     // Search overlay: GET /messages/search answered from fixture.search by the
     // request's q (+ senderId); case prop searchMode "pending" never answers
     // (skeleton), "error" answers HTTP 500.
@@ -279,7 +280,9 @@ async function parityExtRoutes(page: Page, visualCase: VisualCase) {
         const when = (body as any)?.$when;
         if (Array.isArray(when)) {
           const params = new URL(route.request().url()).searchParams;
-          const hit = when.find((w: any) => Object.entries(w.query || {}).every(([k, v]) => params.get(k) === v));
+          const hit = when.find((w: any) =>
+            (!w.after || completedRoutes.has(w.after)) &&
+            Object.entries(w.query || {}).every(([k, v]) => params.get(k) === v));
           answer = hit ? hit.answer : (body as any).$default;
         }
         const special = (answer || {}) as { $pending?: boolean; $status?: number; $body?: unknown; $file?: string; $contentType?: string };
@@ -293,6 +296,7 @@ async function parityExtRoutes(page: Page, visualCase: VisualCase) {
           return route.fulfill({ status: special.$status, contentType: "application/json",
             body: JSON.stringify(special.$body ?? { error: "fixture error" }) });
         }
+        completedRoutes.add(key);
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(answer) });
       });
     }

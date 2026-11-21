@@ -13,14 +13,15 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../platform/file_selection.dart';
-
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
+import '../platform/file_selection.dart';
 import 'app_notifications_catalog.dart';
+import 'app_permission_updates.dart';
 import 'app_setup.dart';
 import 'app_when_to_use.dart';
+import 'connected_app_prompt_text_panel.dart';
 import 'integrations_views.dart';
 import 'management_support.dart';
 import 'second_factor_step_up.dart';
@@ -105,18 +106,24 @@ class ConnectedAppEditor extends StatefulWidget {
     required this.onSaved,
     required this.onClose,
     required this.onDenied,
+    this.onUpdated,
+    this.onOpenInstalledApp,
     this.app,
+    this.promptTextConsent,
   });
   final WorkspaceController controller;
 
   /// The app being edited; null registers a new one.
   final Map<String, dynamic>? app;
+  final Future<bool>? promptTextConsent;
   final ValueNotifier<ConnectedAppSecret?> secret;
 
   /// An app was created / changed / deleted: reload the lists. [created] is the
   /// new app's record on registration (the host opens My apps).
   final Future<void> Function({Map<String, dynamic>? created}) onSaved;
+  final ValueChanged<Map<String, dynamic>>? onUpdated;
   final VoidCallback onClose;
+  final VoidCallback? onOpenInstalledApp;
 
   /// A 401/403 on a mutation: the host drops its private rows and returns true.
   final bool Function(Object error) onDenied;
@@ -139,7 +146,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       setupDescription = TextEditingController(),
       endpoint = TextEditingController();
   String category = 'Other';
-  bool setupRequired = false;
+  bool setupRequired = false, enableBot = false;
   List<String> scopes = [..._identityScopes];
   List<String> groups = [], events = [];
   Map<String, dynamic>? notifications;
@@ -237,6 +244,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     setupUrl.text = '${app['setupUrl'] ?? ''}';
     setupDescription.text = '${app['setupDescription'] ?? ''}';
     setupRequired = hasAppSetup(app);
+    enableBot = app['enableBot'] == true;
     scopes = declaredIntegrationScopes(app['allowedScopes']);
     category = integrationCategoryLabel(app['category'] as String?);
   }
@@ -351,8 +359,11 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
 
   Map<String, dynamic> payload() {
     Object? value(TextEditingController c) => c.text.isEmpty ? null : c.text;
+    final editedClientId = clientId.text.trim();
     return {
       'name': name.text,
+      if (clientIdEditable && editedClientId.isNotEmpty)
+        'clientId': editedClientId,
       'description': value(description),
       'whenToUse': value(whenToUse),
       'homepageUrl': value(homepage),
@@ -362,6 +373,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       'setupDescription': setupRequired ? setupDescription.text : null,
       'allowedScopes': scopes,
       'category': category,
+      'enableBot': enableBot,
     };
   }
 
@@ -401,13 +413,14 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     final isNew = editing == null;
     try {
       if (!isNew) {
-        await w.client.patch(base, data: payload());
+        final updated = await w.client.patch(base, data: payload());
         if (!live) return;
+        final previous = editing!;
+        editing = {...previous, ...managementMap(updated)};
+        widget.onUpdated?.call(editing!);
         if (notifications != null && requestChanged) {
           await savePermissions('${editing!['id']}');
         }
-        if (!live) return;
-        await widget.onSaved();
         if (live) widget.onClose();
       } else {
         final data = <String, dynamic>{
@@ -623,6 +636,33 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     );
   }
 
+  Future<void> withdrawPublish() async {
+    final app = editing;
+    if (app == null || savingId != null || !live) return;
+    final id = '${app['id']}';
+    await guarded(
+      () async {
+        final updated = managementMap(
+          await w.client.post('$base/withdraw-publish'),
+        );
+        if (!live) return;
+        if (updated['id'] != id || updated['publishStatus'] != 'private') {
+          throw const FormatException('Invalid publish withdrawal response');
+        }
+        editing = updated;
+        final onUpdated = widget.onUpdated;
+        if (onUpdated == null) {
+          await widget.onSaved();
+        } else {
+          onUpdated(updated);
+        }
+        if (live) unawaited(loadShare());
+      },
+      'Failed to withdraw the publish request',
+      busy: (working) => savingId = working ? id : null,
+    );
+  }
+
   Future<void> confirmRegenerate() async {
     final app = editing!;
     final confirmed = await RaftConfirmDialog.show(
@@ -697,10 +737,10 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             ' stays listed, installable, and usable by existing connections. If approved, the source Server keeps its installation and access. Other Servers lose their installations, and their grants and tokens are revoked.',
           ),
         ),
-        confirmLabel: tr('Request offline review'),
+        confirmLabel: raftTextZh(context, 'Request', '申请'),
         loadingLabel: tr('Requesting...'),
         confirmGlyph: RaftGlyph.upload,
-        confirmVariant: RaftButtonRecipeVariant.danger,
+        confirmVariant: RaftButtonRecipeVariant.warning,
         onConfirm: () async {
           error = null;
           try {
@@ -834,6 +874,11 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
 
   String? get publishStatus => editing?['publishStatus'] as String?;
 
+  bool get clientIdEditable =>
+      editing != null &&
+      editing?['official'] != true &&
+      (publishStatus == 'private' || publishStatus == 'rejected');
+
   RaftButtonRecipeSize get small => RaftButtonRecipeSize.sm;
 
   @override
@@ -869,8 +914,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     final sections = [
       RaftAppEditorSection(
         id: 'profile',
-        glyph: RaftGlyph.user,
-        railLabel: 'Profile',
         title: 'Profile',
         description: 'Public identity and Marketplace-facing metadata.',
         status: tr(profileComplete ? 'Complete' : 'Needs details'),
@@ -878,8 +921,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'login',
-        glyph: RaftGlyph.shield,
-        railLabel: 'Login with Raft',
         title: 'Login with Raft',
         description: 'Authorized by the user at login.',
         status: tr(loginStatus),
@@ -887,8 +928,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'setup',
-        glyph: RaftGlyph.settings,
-        railLabel: 'Installation setup',
         title: 'Installation setup',
         description: 'Tell installers where to connect an external account or configure your App.',
         status: tr(setupRequired ? 'Setup required' : 'No setup required'),
@@ -901,8 +940,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'permissions',
-        glyph: RaftGlyph.shield,
-        railLabel: 'App permissions',
         title: 'App permissions',
         description: 'Approved by a Server admin at installation. The app accesses data directly.',
         status: raftFormat(context, '{count} permissions selected', {
@@ -912,46 +949,35 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       ),
       RaftAppEditorSection(
         id: 'notifications',
-        glyph: RaftGlyph.bell,
-        railLabel: 'Webhook',
         title: 'Webhook',
         experimentalBadge: true,
         description: 'Deliver subscribed events to the app.',
         status: tr(notificationsStatus),
         child: webhookSection(),
       ),
-      RaftAppEditorSection(
-        id: 'distribution',
-        glyph: RaftGlyph.link2,
-        railLabel: 'Distribution',
-        title: 'Distribution',
-        description:
-            'Private sharing, Marketplace review, and publication state.',
-        status: tr(distribution),
-        child: distributionSection(),
-      ),
-      RaftAppEditorSection(
-        id: 'danger',
-        glyph: RaftGlyph.alertTriangle,
-        railLabel: 'Danger zone',
-        title: 'Danger zone',
-        description: 'Credential rotation, offline review, and deletion stay separate from routine configuration.',
-        status: tr(app == null ? 'Available after save' : 'Restricted'),
-        warning: true,
-        child: dangerSection(),
-      ),
+      if (app != null) ...[
+        RaftAppEditorSection(
+          id: 'distribution',
+          title: 'Distribution',
+          description:
+              'Private sharing, Marketplace review, and publication state.',
+          status: tr(distribution),
+          child: distributionSection(),
+        ),
+        RaftAppEditorSection(
+          id: 'danger',
+          title: 'Danger zone',
+          description: 'Credential rotation, offline review, and deletion stay separate from routine configuration.',
+          status: tr('Restricted'),
+          child: dangerSection(),
+        ),
+      ],
     ];
     final showSecret = secret != null;
     return RaftConnectedAppEditorCard(
-      eyebrow: app == null ? 'Register App' : 'Edit app',
-      name: app == null ? tr('New connected app') : '${app['name']}',
-      description: 'Configure login, permissions, and events.',
-      initials: integrationInitials(
-        name.text.isNotEmpty
-            ? name.text
-            : '${app?['name'] ?? app?['clientId'] ?? 'App'}',
-      ),
-      logoUrl: app?['logoUrl'] as String?,
+      formTitle: app == null
+          ? raftTextZh(context, 'Create Raft app', '创建 Raft 应用')
+          : raftFormat(context, 'Edit {name}', {'name': app['name']}),
       closeLabel: tr('Close app form'),
       onClose: widget.onClose,
       submitLabel: tr(
@@ -1021,100 +1047,133 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           ? name.text
           : '${app?['name'] ?? app?['clientId'] ?? 'App'}',
     );
-    return RaftAppEditorStack(
-      children: [
-        RaftAppEditorProfileGrid(
-          logo: RaftAppEditorField(
-            label: 'Logo',
-            hint: app == null
-                ? 'Create the app first, then upload a logo from Edit.'
-                : 'Upload a square logo, or reset to the deterministic monogram.',
-            child: RaftAppEditorLogoWell(
-              initials: initials,
-              logoUrl: app?['logoUrl'] as String?,
-              actions: [
-                if (app != null)
-                  RaftSettingsRecipeButton(
-                    label: logoUploading
-                        ? 'Uploading…'
-                        : app['logoUrl'] != null
-                        ? 'Change'
-                        : 'Upload',
-                    glyph: RaftGlyph.upload,
-                    glyphSize: 14,
-                    size: small,
-                    onPressed: logoUploading ? null : uploadLogo,
-                  ),
-                if (app != null && app['logoUrl'] != null)
-                  RaftSettingsRecipeButton(
-                    label: 'Reset',
-                    size: small,
-                    onPressed: logoUploading ? null : clearLogo,
-                  ),
-              ],
-            ),
-          ),
-          fields: RaftAppEditorStack(
-            gap: RaftSpace.x3,
-            children: [
-              RaftAppEditorField(
-                label: 'App name',
-                child: input(
-                  name,
-                  placeholder: 'db9 Cloud Drive',
-                  key: const ValueKey('connected-app-name'),
+    final fields = [
+      RaftAppEditorField(
+        label: 'Logo',
+        hint: app == null
+            ? 'Create the app first, then upload a logo from Edit.'
+            : null,
+        child: RaftAppEditorLogoActions(
+          initials: initials,
+          logoUrl: app?['logoUrl'] as String?,
+          actions: [
+            if (app != null)
+              RaftButton(
+                label: tr(
+                  logoUploading
+                      ? 'Uploading…'
+                      : app['logoUrl'] != null
+                      ? 'Change'
+                      : 'Upload',
                 ),
+                glyph: RaftGlyph.upload,
+                uiSize: RaftButtonSize.md,
+                uiVariant: RaftButtonVariant.standard,
+                onPressed: logoUploading ? null : uploadLogo,
               ),
-              RaftAppEditorField(
-                label: 'Homepage URL',
-                child: input(homepage, placeholder: 'https://example.com'),
+            if (app != null && app['logoUrl'] != null)
+              RaftButton(
+                label: tr('Reset'),
+                uiSize: RaftButtonSize.md,
+                uiVariant: RaftButtonVariant.ghost,
+                onPressed: logoUploading ? null : clearLogo,
               ),
-              RaftAppEditorField(
-                label: 'Category',
-                child: RaftSelectField<String>(
-                  key: const ValueKey('connected-app-category'),
-                  value: category,
-                  label: 'App category',
-                  items: [
-                    for (final c in integrationCategories)
-                      RaftSelectItem(
-                        value: c,
-                        label: tr(integrationCategoryDisplay(c)),
-                      ),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => category = v);
-                  },
+          ],
+        ),
+      ),
+      RaftAppEditorField(
+        label: 'App name',
+        child: input(
+          name,
+          placeholder: 'db9 Cloud Drive',
+          key: const ValueKey('connected-app-name'),
+        ),
+      ),
+      RaftAppEditorFieldPair(
+        first: RaftAppEditorField(
+          label: 'Homepage URL',
+          child: input(homepage, placeholder: 'https://example.com'),
+        ),
+        second: RaftAppEditorField(
+          label: 'Category',
+          child: RaftSelectField<String>(
+            key: const ValueKey('connected-app-category'),
+            value: category,
+            label: 'App category',
+            items: [
+              for (final c in integrationCategories)
+                RaftSelectItem(
+                  value: c,
+                  label: tr(integrationCategoryDisplay(c)),
                 ),
-              ),
             ],
+            onChanged: (v) {
+              if (v != null) setState(() => category = v);
+            },
           ),
         ),
-        RaftAppEditorField(
-          label: 'Description',
-          child: RaftRecipeTextarea(
-            controller: description,
-            placeholder: tr('What this integration is for'),
-            recipeText: true,
-            minHeight: 96,
-          ),
+      ),
+      RaftAppEditorField(
+        label: 'Description',
+        child: RaftTextarea(
+          controller: description,
+          hintText: tr('What this integration is for'),
+          rows: 3,
+          growsWithScale: true,
         ),
-        RaftAppEditorField(
-          label: 'Client ID',
-          optional: true,
-          hint: 'Optional — auto-generated if left empty.',
-          child: input(
-            clientId,
-            placeholder: 'optional; auto-generated if empty',
-            mono: true,
-            enabled: app == null,
-          ),
+      ),
+      RaftAppEditorField(
+        label: 'Client ID',
+        optional: app == null,
+        hint: app == null
+            ? 'Optional — auto-generated if left empty.'
+            : clientIdEditable
+            ? 'Changing it keeps the old ID working as an alias of this App.'
+            : "A listed, official, or in-review App can't change its Client ID here.",
+        child: input(
+          clientId,
+          placeholder: app == null ? 'optional; auto-generated if empty' : null,
+          mono: true,
+          enabled: app == null || clientIdEditable,
         ),
-        AppWhenToUseField(
-          controller: whenToUse,
-          onChanged: (_) => setState(() {}),
-        ),
-      ],
+      ),
+      AppWhenToUseField(
+        controller: whenToUse,
+        onChanged: (_) => setState(() {}),
+      ),
+    ];
+    if (app == null || widget.promptTextConsent == null) {
+      return RaftAppEditorStack(gap: RaftSpace.x3, children: fields);
+    }
+    return FutureBuilder<bool>(
+      future: widget.promptTextConsent,
+      builder: (_, flag) => RaftAppEditorStack(
+        gap: RaftSpace.x3,
+        children: [
+          if (flag.data == true)
+            ConnectedAppPromptTextPanel(
+              key: ValueKey(('developer', app['id'])),
+              workspace: w,
+              clientId: app['id'] as String,
+              service: app['clientId'] as String?,
+              published:
+                  publishStatus == 'published' ||
+                  publishStatus == 'unpublish_requested',
+              onPendingText: (text) {
+                if (name.text == (app['name'] ?? '')) name.text = text.name;
+                if (description.text == (app['description'] ?? '')) {
+                  description.text = text.description ?? '';
+                }
+                if (whenToUse.text == (app['whenToUse'] ?? '')) {
+                  whenToUse.text = text.whenToUse ?? '';
+                }
+              },
+              onConfirmed: () =>
+                  unawaited(AppPermissionUpdates.of(w).refresh(changed: true)),
+            ),
+          ...fields,
+        ],
+      ),
     );
   }
 
@@ -1159,6 +1218,10 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     final source = notifications?['source_installation'];
     final locked =
         notificationsLoading || (editing != null && notifications == null);
+    final bot = managementMap(editing?['bot']);
+    final handle = bot['handle'] as String?;
+    final openInstalledApp = widget.onOpenInstalledApp;
+    final tokens = RaftTokens.of(context);
     return RaftAppEditorStack(
       gap: RaftSpace.x3,
       children: [
@@ -1194,6 +1257,56 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             warning: true,
           ),
         if (source is Map) sourceInstallation(managementMap(source)),
+        const RaftSeparator(),
+        RaftCheckboxRow(
+          key: const ValueKey('connected-app-enable-bot'),
+          title: tr('Post as the app'),
+          description: tr(
+            'Allow this app to post under its own name. A server admin must also add it during installation or from Installed apps before the app can get a key and post.',
+          ),
+          value: enableBot,
+          dense: true,
+          onChanged: submitting
+              ? null
+              : (value) => setState(() => enableBot = value),
+        ),
+        if (editing?['enableBot'] == true &&
+            enableBot &&
+            handle != null &&
+            openInstalledApp != null)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: RaftSpace.x4 + RaftSpace.x4,
+            ),
+            child: RaftCssText.rich(
+              TextSpan(
+                children: raftRichText(
+                  context,
+                  'Add @{handle} on this server → <link>Installed apps</link>',
+                  {
+                    'link': (label) => WidgetSpan(
+                      alignment: PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic,
+                      child: RaftTextLink(
+                        key: const ValueKey(
+                          'connected-app-bot-editor-installed',
+                        ),
+                        label: label,
+                        onPressed: openInstalledApp,
+                        variant: RaftTextLinkVariant.strong,
+                        scale: RaftTypeScale.footnote,
+                      ),
+                    ),
+                  },
+                  values: {'handle': handle},
+                ),
+              ),
+              style: tokens.scale(
+                RaftTypeScale.footnote,
+                color: tokens.ui.foregroundMuted,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -1416,6 +1529,19 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           ),
         if (app != null && hint != null)
           RaftAppEditorCallout(hint, tone: RaftAppEditorCalloutTone.warning),
+        if (status == 'publish_requested' || status == 'in_review')
+          RaftAppEditorBox(
+            child: RaftAppEditorActionRow(
+              title: 'Publish request',
+              description: 'Withdrawing returns the app to private. Its registration, credentials and installations stay, and you can request review again later.',
+              action: RaftSettingsRecipeButton(
+                key: const ValueKey('connected-app-withdraw-publish-button'),
+                label: 'Withdraw request',
+                size: small,
+                onPressed: savingId == null ? withdrawPublish : null,
+              ),
+            ),
+          ),
         if (app != null && shareable)
           RaftAppEditorBox(
             key: const ValueKey('connected-app-private-share-card'),

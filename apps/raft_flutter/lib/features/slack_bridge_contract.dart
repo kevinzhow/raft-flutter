@@ -7,7 +7,9 @@ class SlackBridgeProjection {
   List<Map<String, dynamic>> rows(String key) =>
       (snapshot[key] as List).cast<Map<String, dynamic>>();
   Map<String, dynamic> get health =>
-      snapshot['rawHealth'] as Map<String, dynamic>;
+      snapshot['rawHealth'] as Map<String, dynamic>? ?? const {};
+  List<Map<String, dynamic>> healthRows(String key) =>
+      health.containsKey(key) ? _list(health[key], max: 5000) : const [];
   bool get preflightPassed {
     final preflight = snapshot['preflight'] as Map<String, dynamic>?;
     if (preflight == null || preflight['state'] != 'passed') return false;
@@ -93,6 +95,10 @@ class SlackBridgeProjection {
     )) {
       return 'audience_unverified';
     }
+    if (healthRows('outboundDeliveries').isNotEmpty ||
+        health['failingSurface'] == 'delivery') {
+      return 'delivery_blocked';
+    }
     if (health['failingSurface'] != null) {
       return '${health['failingSurface']}_unverified';
     }
@@ -107,15 +113,22 @@ class SlackBridgeProjection {
       'oauthAuthority',
     });
     _require(response['protocolVersion'] == 1);
-    final s = _object(response['snapshot'], {
-      'stage',
-      'workspaceName',
-      'raftChannels',
-      'slackChannels',
-      'channelPairs',
-      'preflight',
-      'rawHealth',
-    });
+    final s = _object(
+      response['snapshot'],
+      {
+        'stage',
+        'workspaceName',
+        'raftChannels',
+        'slackChannels',
+        'channelPairs',
+        'preflight',
+        'rawHealth',
+      },
+      optional: {'needsSlackReauthorization'},
+    );
+    if (s.containsKey('needsSlackReauthorization')) {
+      _require(s['needsSlackReauthorization'] is bool);
+    }
     _enum(s['stage'], {
       'connect',
       'oauth',
@@ -148,13 +161,21 @@ class SlackBridgeProjection {
       _object(
         p,
         {'raftChannelId', 'slackChannelId'},
-        optional: {'bindingEpoch'},
+        optional: {'bindingEpoch', 'invalidReason'},
       );
       _require(
         raft.any((c) => c['id'] == p['raftChannelId']) &&
             slack.any((c) => c['id'] == p['slackChannelId']),
       );
       if (p.containsKey('bindingEpoch')) _integer(p['bindingEpoch']);
+      if (p.containsKey('invalidReason')) {
+        _enum(p['invalidReason'], {
+          'privacy_mismatch',
+          'not_member',
+          'channel_unavailable',
+          'provider_unavailable',
+        });
+      }
     }
     _unique(pairs, 'raftChannelId');
     _unique(pairs, 'slackChannelId');
@@ -174,8 +195,29 @@ class SlackBridgeProjection {
         );
       }
     }
+    if (s['rawHealth'] != null) _validateHealth(s['rawHealth']);
+    Map<String, dynamic>? authority;
+    if (response['oauthAuthority'] != null) {
+      authority = _object(response['oauthAuthority'], {
+        'registrationId',
+        'serverGrantId',
+        'grantEpoch',
+      });
+      final uuid = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      );
+      _require(
+        uuid.hasMatch('${authority['registrationId']}') &&
+            uuid.hasMatch('${authority['serverGrantId']}'),
+      );
+      _integer(authority['grantEpoch']);
+    }
+    return SlackBridgeProjection._(s, authority);
+  }
+
+  static void _validateHealth(dynamic value) {
     final h = _object(
-      s['rawHealth'],
+      value,
       {
         'install',
         'credential',
@@ -184,7 +226,16 @@ class SlackBridgeProjection {
         'lastVerifiedAt',
         'failingSurface',
       },
-      optional: {'agentMentionSync'},
+      optional: {
+        'agentMentionSync',
+        'attachmentSourceIssues',
+        'outboundDeliveries',
+        'outboundPairBlocks',
+        'cardEditNotices',
+        'inboundIsolated',
+        'inboundIsolatedSummary',
+        'inboundIsolatedGroups',
+      },
     );
     if (h['agentMentionSync'] != null) {
       final m = _object(h['agentMentionSync'], {
@@ -271,28 +322,10 @@ class SlackBridgeProjection {
         'audience',
         'connection',
         'scope',
+        'delivery',
       });
     }
-    Map<String, dynamic>? authority;
-    if (response['oauthAuthority'] != null) {
-      authority = _object(response['oauthAuthority'], {
-        'registrationId',
-        'serverGrantId',
-        'grantEpoch',
-      });
-      final uuid = RegExp(
-        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-      );
-      _require(
-        uuid.hasMatch('${authority['registrationId']}') &&
-            uuid.hasMatch('${authority['serverGrantId']}'),
-      );
-      _integer(authority['grantEpoch']);
-    }
-    // The authority is null whenever the viewer may not start OAuth, including
-    // a read-only member looking at the `oauth` stage; authorizing refuses
-    // without it.
-    return SlackBridgeProjection._(s, authority);
+    _validateRecovery(h, bindings);
   }
 
   static String oauthUrl(dynamic value) {
@@ -308,6 +341,122 @@ class SlackBridgeProjection {
     );
     _date(v['expiresAt']);
     return v['authorizationUrl'] as String;
+  }
+}
+
+void _validateRecovery(
+  Map<String, dynamic> health,
+  List<Map<String, dynamic>> bindings,
+) {
+  List<Map<String, dynamic>> rows(String key, {int max = 500}) =>
+      health.containsKey(key) ? _list(health[key], max: max) : const [];
+  for (final issue in rows('attachmentSourceIssues')) {
+    _object(issue, {'raftChannelId', 'reason'});
+    _text(issue['raftChannelId'], 256);
+    _enum(issue['reason'], {'unavailable', 'size_mismatch'});
+  }
+  for (final delivery in rows('outboundDeliveries')) {
+    _object(delivery, {
+      'raftChannelId',
+      'bindingId',
+      'bindingEpoch',
+      'deliveryId',
+      'providerAttempts',
+      'state',
+      'retryRequested',
+    });
+    _text(delivery['raftChannelId'], 256);
+    _text(delivery['bindingId'], 256);
+    _text(delivery['deliveryId'], 256);
+    _integer(delivery['bindingEpoch']);
+    _integer(delivery['providerAttempts']);
+    _enum(delivery['state'], {'dead', 'outcome_unknown', 'retry_wait'});
+    _require(delivery['retryRequested'] is bool);
+  }
+  const reasons = {
+    'connection',
+    'credentials',
+    'configuration',
+    'invite_app',
+    'reauthorize',
+    'unarchive',
+    'check_channel',
+  };
+  for (final block in rows('outboundPairBlocks')) {
+    _object(
+      block,
+      {'raftChannelId', 'bindingId', 'since', 'nextRetryAt', 'reason'},
+      optional: {'action', 'detail'},
+    );
+    _text(block['raftChannelId'], 256);
+    _text(block['bindingId'], 256);
+    _date(block['since']);
+    _date(block['nextRetryAt'], nullable: true);
+    _enum(block['reason'], reasons);
+    if (block.containsKey('action')) {
+      _require(block['action'] == 'workspace_admin');
+    }
+    if (block.containsKey('detail')) {
+      _enum(block['detail'], {
+        'history_limited',
+        'metadata_missing',
+        'marker_unconfirmed',
+      });
+    }
+  }
+  for (final card in rows('cardEditNotices', max: 2000)) {
+    _object(
+      card,
+      {'raftChannelId', 'bindingId', 'kind', 'since'},
+      optional: {'reason'},
+    );
+    _text(card['raftChannelId'], 256);
+    _text(card['bindingId'], 256);
+    _date(card['since']);
+    _enum(card['kind'], {
+      'not_confirmed',
+      'latest_update_not_shown',
+      'updates_cannot_be_shown',
+      'edit_waiting',
+    });
+    if (card.containsKey('reason')) _enum(card['reason'], reasons);
+  }
+  if (health.containsKey('inboundIsolatedSummary')) {
+    final summary = _object(health['inboundIsolatedSummary'], {
+      'count',
+      'oldestFirstFailureAt',
+      'undisplayed',
+    });
+    for (final count in [summary['count'], summary['undisplayed']]) {
+      _require(count is int && count >= 0 && count <= _maxInteger);
+    }
+    _date(summary['oldestFirstFailureAt'], nullable: true);
+  }
+  final events = rows('inboundIsolated');
+  final groups = rows('inboundIsolatedGroups', max: 5000);
+  const scope = {'raftChannelId', 'bindingId', 'bindingEpoch', 'reason'};
+  for (final event in events) {
+    _object(event, {...scope, 'eventId', 'firstFailureAt', 'heldAt'});
+    _text(event['eventId'], 256);
+    _date(event['firstFailureAt'], nullable: true);
+    _date(event['heldAt'], nullable: true);
+  }
+  _unique(events, 'eventId');
+  for (final group in groups) {
+    _object(group, {...scope, 'count'});
+    _integer(group['count']);
+  }
+  final reason = RegExp(r'^[a-z][a-z0-9_]{0,159}$');
+  for (final row in [...events, ...groups]) {
+    _text(row['raftChannelId'], 256);
+    _require(row['reason'] is String && reason.hasMatch(row['reason']));
+    _require(
+      bindings.any(
+        (binding) =>
+            binding['id'] == row['bindingId'] &&
+            binding['bindingEpoch'] == row['bindingEpoch'],
+      ),
+    );
   }
 }
 

@@ -108,6 +108,8 @@ void main() {
     await t.pumpAndSettle();
 
     // Marketplace detail of an installed app.
+    await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+    await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey('connected-app-inst')));
     await t.pumpAndSettle();
     expect(find.byType(RaftConnectedAppDetailSection), findsWidgets);

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/app_install_expectation.dart';
 import 'app_setup.dart' show appSetupDomain;
+import 'connected_app_consent.dart';
 import 'human_login.dart';
 
 /// The server part of Web `HumanLoginSetupPage` (pinned v1.21.23): the
@@ -20,6 +22,8 @@ enum HumanLoginCommit {
   /// Not installed and only an owner or admin may install it.
   adminNeeded,
 
+  suspended,
+
   /// The lookup did not answer for this server.
   unavailable,
 }
@@ -27,6 +31,7 @@ enum HumanLoginCommit {
 HumanLoginCommit humanLoginCommit(HumanLoginRow? row) {
   final client = row?.client;
   if (client == null) return HumanLoginCommit.unavailable;
+  if (client.suspended) return HumanLoginCommit.suspended;
   if (!client.installRequired) return HumanLoginCommit.ready;
   return client.canInstall
       ? HumanLoginCommit.install
@@ -116,20 +121,22 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x1_5,
       children: [
-        RaftDialogSectionEyebrow('Raft server'),
+        RaftCssText(
+          tr('Raft server'),
+          style: t.scale(
+            RaftTypeScale.footnote,
+            weight: FontWeight.w600,
+            color: t.muted,
+          ),
+        ),
         if (marketplace) _marketplace(context) else _plain(context),
-        Text(
+        RaftCssText(
           tr(
             marketplace
                 ? 'All Raft Servers you can access are shown here. Continue with an installed Server, or install the App where you have permission.'
                 : 'Choose where you want to use this app. Only available servers are shown here.',
           ),
-          style: _body(
-            t,
-            size: 12,
-            line: 16,
-            color: t.colors['foreground-hint'],
-          ),
+          style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
         ),
       ],
     );
@@ -138,13 +145,45 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
   /// Servers that have the app: canonical Select.
   Widget _plain(BuildContext context) {
     final choices = widget.lookup.choices;
+    final ready = choices.where((choice) => choice.client.ready).toList();
+    if (ready.isEmpty) {
+      final t = RaftTokens.of(context);
+      return Container(
+        key: const ValueKey('human-login-server-placeholder'),
+        alignment: AlignmentDirectional.centerStart,
+        constraints: BoxConstraints(
+          minHeight:
+              t.themeOverrides?.geometry['control-height'] ??
+              (t.desktop
+                  ? RaftDesktopMetrics.controlHeight
+                  : RaftLight.controlHeight),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x3),
+        decoration: BoxDecoration(
+          color: t.ui.fillMuted,
+          border: Border.all(color: t.ui.lineHairline),
+          borderRadius: BorderRadius.circular(
+            t.themeOverrides?.geometry['control-radius'] ??
+                (t.desktop
+                    ? RaftDesktopMetrics.controlRadius
+                    : RaftLight.controlRadius),
+          ),
+        ),
+        child: RaftCssText(
+          raftText(context, 'No available Raft Servers'),
+          style: t.scale(RaftTypeScale.callout, color: t.muted),
+        ),
+      );
+    }
     return RaftSelectField<String>(
       key: const ValueKey('human-login-server-select'),
       label: raftText(context, 'Raft server'),
       placeholder: raftText(context, 'Raft server'),
-      value: widget.selectedId.isEmpty ? null : widget.selectedId,
+      value: ready.any((choice) => choice.server.id == widget.selectedId)
+          ? widget.selectedId
+          : null,
       items: [
-        for (final choice in choices)
+        for (final choice in ready)
           RaftSelectItem(
             value: choice.server.id,
             label: choice.server.label,
@@ -263,6 +302,7 @@ class _ServerRow extends StatelessWidget {
       HumanLoginCommit.ready => 'Installed',
       HumanLoginCommit.install => 'Not installed',
       HumanLoginCommit.adminNeeded => 'Admin needed',
+      HumanLoginCommit.suspended => 'Suspended',
       HumanLoginCommit.unavailable => 'Unavailable',
     };
     return RaftAvatarListRow(
@@ -323,13 +363,16 @@ class HumanLoginCommitZone extends StatelessWidget {
   const HumanLoginCommitZone({
     super.key,
     required this.row,
-    required this.scopes,
+    required this.permissions,
     required this.busy,
+    required this.joinsBot,
+    required this.onBotChanged,
     this.onFindAdmin,
   });
   final HumanLoginRow? row;
-  final List<String> scopes;
-  final bool busy;
+  final AppInstallExpectation? permissions;
+  final bool busy, joinsBot;
+  final ValueChanged<bool> onBotChanged;
 
   /// Web "Find a server admin" (HumanLoginSetupPage.tsx:746-753): only an
   /// owner or admin can install, so the member gets the way to them.
@@ -376,15 +419,40 @@ class HumanLoginCommitZone extends StatelessWidget {
               ),
               style: _body(t, color: t.ink),
             ),
-          },
-          if (state == HumanLoginCommit.install)
-            Text(
-              raftFormat(context, 'Access granted: {scopes}', {
-                'scopes': scopes.join(' · '),
-              }),
-              key: const ValueKey('human-login-install-scopes'),
-              style: RaftTypography.mono(t, size: 12, line: 16, color: t.muted),
+            HumanLoginCommit.suspended => Text(
+              tr(HumanLoginMessages.serverSuspended),
+              style: _body(t, color: t.ink),
             ),
+          },
+          if (state == HumanLoginCommit.install) ...[
+            if (permissions case final reviewed?) ...[
+              Text(
+                tr('Installing approves for this Server:'),
+                style: _body(t, color: t.ink, weight: FontWeight.w600),
+              ),
+              ConnectedAppPermissionSet(
+                key: const ValueKey('human-login-install-scopes'),
+                permissions: reviewed,
+              ),
+              if (reviewed.textRevisionId != null)
+                ConnectedAppInstallPromptText(
+                  text: ConnectedAppPromptText(
+                    name: client!.name,
+                    description: client.description,
+                    whenToUse: client.whenToUse,
+                    service: client.clientId,
+                  ),
+                ),
+            ],
+            if (client?.botHandle case final handle?)
+              ConnectedAppInstallBotOption(
+                app: appName,
+                handle: handle,
+                server: server!.name,
+                checked: joinsBot,
+                onChanged: busy ? null : onBotChanged,
+              ),
+          ],
           if (setupDomain != null)
             RaftAppSetupRequirement(
               domain: setupDomain,
@@ -489,10 +557,10 @@ class _HumanLoginFaqState extends State<HumanLoginFaq> {
   }
 }
 
-/// Web's page for an app no server of the account has: the explanation and
-/// how to get access (it replaces the form).
 class HumanLoginNotAccessible extends StatelessWidget {
-  const HumanLoginNotAccessible({super.key});
+  const HumanLoginNotAccessible({super.key, this.signedInAs});
+
+  final String? signedInAs;
 
   @override
   Widget build(BuildContext context) {
@@ -504,35 +572,14 @@ class HumanLoginNotAccessible extends StatelessWidget {
       spacing: RaftSpace.x3,
       children: [
         Text(
-          tr('This App is not accessible yet'),
+          tr("This app isn't available to you"),
           style: RaftTypography.heading(t, size: 16, line: 22),
         ),
-        Text(
-          tr(
-            'This private third-party App is not available on any Raft Server you can access.',
+        if (signedInAs case final String who when who.isNotEmpty)
+          Text(
+            '${tr('Signed in as')} $who',
+            style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
           ),
-          style: _body(t),
-        ),
-        RaftCard(
-          background: t.colors['info-soft'],
-          padding: const EdgeInsets.all(RaftSpace.x4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: RaftSpace.x1,
-            children: [
-              Text(
-                tr('How can I get access?'),
-                style: _body(t, weight: FontWeight.w700, color: t.ink),
-              ),
-              Text(
-                tr(
-                  'Ask the third party that provides this App to add you to a Raft Server where the App is integrated, or ask them to publish the App to the Raft Marketplace.',
-                ),
-                style: _body(t, color: t.ink),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }

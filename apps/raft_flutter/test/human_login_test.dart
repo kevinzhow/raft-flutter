@@ -279,17 +279,21 @@ void main() {
           slug: 'gamma',
           name: 'Gamma',
         );
-        final api = FakeHumanLoginApi(
-          servers: const [gamma, beta, acme],
-          clients: {
-            'srv-1': FakeHumanLoginApi.app(
-              installRequired: true,
-              canInstall: true,
-            ),
-            'srv-2': FakeHumanLoginApi.app(),
-            // srv-3 answers 404.
-          },
-        );
+        final api =
+            FakeHumanLoginApi(
+                servers: const [gamma, beta, acme],
+                clients: {
+                  'srv-1': FakeHumanLoginApi.app(
+                    installRequired: true,
+                    canInstall: true,
+                  ),
+                  'srv-2': FakeHumanLoginApi.app(),
+                },
+              )
+              ..lookupFailures['srv-3'] = const RaftApiException(
+                'Offline',
+                status: 503,
+              );
         final lookup = await lookupHumanLoginClient(api, request());
         final found = lookup.choices;
         expect(found.map((c) => c.server.slug), ['beta', 'acme']);
@@ -430,7 +434,7 @@ void main() {
           isA<HumanLoginException>().having(
             (e) => e.text,
             'text',
-            'OAuth client not found for server',
+            HumanLoginMessages.notRegisteredForAny,
           ),
         ),
       );

@@ -365,6 +365,7 @@ class WorkspaceNavigation {
       'agents' || 'members' => RaftRoute.members,
       'computers' => RaftRoute.computers,
       'artifacts' => RaftRoute.artifacts,
+      'apps' => RaftRoute.apps,
       'search' => RaftRoute.search,
       'activity' => RaftRoute.activity,
       'tasks' => RaftRoute.tasks,
@@ -472,6 +473,7 @@ class WorkspaceNavigation {
       RaftRoute.computers ||
       RaftRoute.drafts ||
       RaftRoute.artifacts ||
+      RaftRoute.apps ||
       RaftRoute.settings => RaftLocation.at(
         serverSlug: location.serverSlug,
         route: RaftRoute.home,

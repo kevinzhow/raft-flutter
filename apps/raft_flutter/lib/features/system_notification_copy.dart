@@ -29,6 +29,17 @@ SystemNotificationCopy systemNotificationCopy(
       raftFormat(context, key, values);
   Object count(Object? value) =>
       zh ? value ?? 0 : NumberFormat.decimalPattern(locale).format(value ?? 0);
+  if (notice.destination == SystemNoticeDestination.appPermissionUpdates) {
+    return SystemNotificationCopy(
+      text(notice.title),
+      format(
+        p['count'] == 1
+            ? '{count} installed app requests new permissions. Review before allowing additional access.'
+            : '{count} installed apps request new permissions. Review before allowing additional access.',
+        {'count': count(p['count'])},
+      ),
+    );
+  }
   if (notice.incidentId != null) {
     // Fixed templates are localized first; the Computer name, count and reset
     // time are inserted afterwards and never enter a lookup.

@@ -264,7 +264,17 @@ void main() {
       server
         ..consent = true
         ..answers['POST $_installPath'] = [
-          (409, _changed(revision: _newRevision)),
+          (
+            409,
+            {
+              ..._changed(revision: _newRevision),
+              'current_text': {
+                'name': 'Slack Journal',
+                'description': null,
+                'when_to_use': 'Read notes from a linked channel.',
+              },
+            },
+          ),
           (
             400,
             {
@@ -277,12 +287,20 @@ void main() {
       await expectLater(
         installHumanLoginApp(api, choice),
         throwsA(
-          isA<HumanLoginException>().having(
-            (e) => e.text,
-            'text',
-            'The text this app adds to agent prompts just changed. Review the '
-                'current text, then try again.',
-          ),
+          isA<HumanLoginPermissionsChanged>()
+              .having(
+                (e) => e.text,
+                'text',
+                'The text this app adds to agent prompts just changed. Review the '
+                    'current text, then try again.',
+              )
+              .having((e) => e.choice.client.name, 'name', 'Slack Journal')
+              .having((e) => e.choice.client.description, 'description', null)
+              .having(
+                (e) => e.choice.client.whenToUse,
+                'when to use',
+                'Read notes from a linked channel.',
+              ),
         ),
       );
       await expectLater(
@@ -382,6 +400,8 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('connected-app-app-record-1')));
       await t.pumpAndSettle();
       expect(client.user, isNotNull);
@@ -391,6 +411,8 @@ void main() {
     testWidgets('Install sends the set the detail shows and, with the flag '
         'on, the prompt-text revision', (t) async {
       final server = await mount(t, consent: true);
+      expect(find.text('Text added to agent prompts'), findsOneWidget);
+      expect(find.text('Login scopes'), findsOneWidget);
       server.answers['POST $_installPath'] = [
         (200, {'ok': true}),
       ];

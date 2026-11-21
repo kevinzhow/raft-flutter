@@ -34,6 +34,7 @@ class _Adapter implements HttpClientAdapter {
       case 'GET /oauth/clients/lookup':
         data = FakeHumanLoginApi.app();
       case 'POST /oauth/authorize/human':
+      case 'POST /oauth/authorize/account':
         status = authorizeStatus;
         data = authorizeStatus == 200
             ? {
@@ -118,6 +119,37 @@ void main() {
     });
     expect(call.headers['X-Server-Id'], 'srv-2');
     expect(call.headers['Authorization'], isNotNull);
+  });
+
+  test('account authorization uses the account endpoint', () async {
+    final location = await authorizeHumanLogin(
+      api,
+      const HumanLoginRequest(
+        clientId: 'artifact-share',
+        returnUrl: 'https://artifacts.example.com/auth/callback',
+        state: 'account-state',
+        scopes: ['openid'],
+        serverHint: '',
+      ),
+      const HumanLoginChoice(
+        HumanLoginServer(id: 'srv-1', slug: 'acme', name: 'Acme'),
+        HumanLoginClient(
+          clientId: 'artifact-share',
+          name: 'Artifact Share',
+          accountMode: true,
+        ),
+      ),
+    );
+    final call = adapter.calls.singleWhere(
+      (call) => call.path.startsWith('/oauth/authorize'),
+    );
+    expect(call.path, '/oauth/authorize/account');
+    expect(call.data, {
+      'clientId': 'artifact-share',
+      'returnUrl': 'https://artifacts.example.com/auth/callback',
+      'scopes': ['openid'],
+    });
+    expect(location.queryParameters['state'], 'account-state');
   });
 
   test('the authorization is the app\'s authenticated POST', () async {

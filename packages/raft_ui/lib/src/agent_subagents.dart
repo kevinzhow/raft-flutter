@@ -303,9 +303,11 @@ class RaftDescriptionList extends StatelessWidget {
     super.key,
     required this.entries,
     this.inline = false,
+    this.rowGap = 2,
   });
   final List<RaftDescriptionEntry> entries;
   final bool inline;
+  final double rowGap;
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +357,7 @@ class RaftDescriptionList extends StatelessWidget {
           TableRow(
             children: [
               Padding(
-                padding: EdgeInsets.only(right: 16, top: i == 0 ? 0 : 2),
+                padding: EdgeInsets.only(right: 16, top: i == 0 ? 0 : rowGap),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
                     minWidth: 88,
@@ -369,7 +371,7 @@ class RaftDescriptionList extends StatelessWidget {
               KeyedSubtree(
                 key: entries[i].key,
                 child: Padding(
-                  padding: EdgeInsets.only(top: i == 0 ? 0 : 2),
+                  padding: EdgeInsets.only(top: i == 0 ? 0 : rowGap),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 32),
                     child: Align(

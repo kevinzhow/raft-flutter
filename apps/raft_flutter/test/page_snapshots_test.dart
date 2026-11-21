@@ -149,8 +149,9 @@ void main() {
       await t.pump();
     }
 
-    // Web's cold Applications section shows its loading line.
-    final loadingLine = find.text('Loading apps…');
+    final placeholders = find.byKey(
+      const ValueKey('apps-installed-loading-collection'),
+    );
 
     testWidgets(
       'revisit renders the snapshot at the first frame and revalidates in place',
@@ -158,10 +159,15 @@ void main() {
         final (w, a) = (await t.runAsync(_fixture))!;
         addTearDown(w.dispose);
         appRoutes(a, 'Beta app');
+        a.gate = Completer<void>();
         await t.pumpWidget(_host(IntegrationsView(controller: w)));
-        expect(loadingLine, findsOneWidget, reason: 'true cold load');
+        expect(placeholders, findsNothing);
+        await t.pump(const Duration(seconds: 1));
+        expect(placeholders, findsOneWidget, reason: 'true cold load');
+        a.gate!.complete();
+        a.gate = null;
         await t.pumpAndSettle();
-        expect(loadingLine, findsNothing);
+        expect(placeholders, findsNothing);
         await _leave(t);
 
         appRoutes(a, 'Beta app v2');
@@ -169,13 +175,13 @@ void main() {
         final before = _requests(a, '/integrations/clients');
         await t.pumpWidget(_host(IntegrationsView(controller: w)));
         // First frame: accepted counts, no loading state, request in flight.
-        expect(loadingLine, findsNothing);
+        expect(placeholders, findsNothing);
         expect(_anySpinner, findsNothing);
         await openMyApps(t);
         expect(find.text('Alpha app'), findsOneWidget);
         expect(find.text('Beta app'), findsOneWidget);
         expect(_anySpinner, findsNothing);
-        expect(loadingLine, findsNothing);
+        expect(placeholders, findsNothing);
         for (
           var i = 0;
           i < 10 && _requests(a, '/integrations/clients') == before;
@@ -266,7 +272,9 @@ void main() {
         await t.pumpWidget(_host(IntegrationsView(controller: w)));
         await t.pumpAndSettle();
         await openMyApps(t);
-        await t.tap(find.text('Register App'));
+        await t.tap(find.byKey(const ValueKey('connected-apps-register')));
+        await t.pumpAndSettle();
+        await t.tap(find.text('Create a Raft app'));
         await t.pumpAndSettle();
         await t.enterText(
           find.byKey(const ValueKey('connected-app-name')),
@@ -313,7 +321,9 @@ void main() {
         a.gate = Completer<void>();
         await t.pumpWidget(_host(IntegrationsView(controller: w)));
         expect(find.text('Alpha app'), findsNothing);
-        expect(loadingLine, findsOneWidget);
+        expect(placeholders, findsNothing);
+        await t.pump(const Duration(seconds: 1));
+        expect(placeholders, findsOneWidget);
         await openMyApps(t);
         expect(find.text('Alpha app'), findsNothing);
         a.gate!.complete();
@@ -335,7 +345,8 @@ void main() {
         w.notifyListeners();
         await t.pump();
         expect(find.text('Alpha app'), findsNothing);
-        expect(loadingLine, findsOneWidget);
+        await t.pump(const Duration(seconds: 1));
+        expect(placeholders, findsOneWidget);
         expect(
           w.resourceSnapshots.read<FieldSnapshot>(
             'management:integrations',

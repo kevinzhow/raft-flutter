@@ -3,9 +3,12 @@
 // identity block of a provider-owned message author.
 import 'package:flutter/material.dart';
 
-import 'design_primitives.dart';
 import 'list_items.dart';
+import 'panel_layout.dart' show RaftCssText;
+import 'raft/ui_tokens.dart';
+import 'space.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart';
 
 class RaftExternalIdentityBody extends StatelessWidget {
   const RaftExternalIdentityBody({
@@ -16,29 +19,47 @@ class RaftExternalIdentityBody extends StatelessWidget {
     required this.avatar,
     this.fromLabel,
     this.workspaceName,
+    this.sourceLabel,
+    this.postedAs,
   });
   final String name, subtitle, projectionLabel;
 
-  /// AvatarSlot `profile-tile` (type app).
+  /// AvatarSlot `profile-hero` (type app).
   final Widget avatar;
 
   /// "From" eyebrow of the source row, shown only with a [workspaceName].
   final String? fromLabel, workspaceName;
+  final String? sourceLabel, postedAs;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final strong = t.strong;
-    final muted = t.muted;
+    final strong = t.ui.foreground;
+    final muted = t.ui.foregroundMuted;
     return ColoredBox(
-      // ExternalIdentityDetailPanel: `ProfilePanelBody ... bg-layer-canvas`.
-      color: t.colors['layer-profile-content']!,
+      color: t.canvas,
       child: SingleChildScrollView(
         key: const Key('external-identity-body'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (workspaceName != null && workspaceName!.isNotEmpty)
+            if (sourceLabel != null)
+              Padding(
+                key: const Key('external-identity-source'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: RaftSpace.x5,
+                  vertical: RaftSpace.x3,
+                ),
+                child: RaftCssText(
+                  sourceLabel!,
+                  style: t.scale(
+                    RaftTypeScale.callout,
+                    weight: FontWeight.w600,
+                    color: strong,
+                  ),
+                ),
+              )
+            else if (workspaceName != null && workspaceName!.isNotEmpty)
               Container(
                 key: const Key('external-identity-source'),
                 padding: const EdgeInsets.symmetric(
@@ -81,33 +102,44 @@ class RaftExternalIdentityBody extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          RaftCssText(
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: t.headingFont,
-                              fontSize: 18,
-                              height: 28 / 18,
-                              fontWeight: FontWeight.w700,
+                            style: t.scale(
+                              RaftTypeScale.headline,
                               color: strong,
                             ),
                           ),
-                          Text(
-                            subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: RaftTypography.mono(t, color: muted),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            projectionLabel,
-                            style: TextStyle(
-                              fontFamily: t.headingFont,
-                              fontSize: 14,
-                              height: 20 / 14,
-                              color: muted,
+                          Padding(
+                            padding: const EdgeInsets.only(top: RaftSpace.half),
+                            child: RaftCssText(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: t.scale(
+                                RaftTypeScale.caption,
+                                color: t.ui.foregroundHint,
+                              ),
                             ),
+                          ),
+                          if (postedAs != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: RaftSpace.x1),
+                              child: RaftCssText(
+                                postedAs!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: t.scale(
+                                  RaftTypeScale.footnote,
+                                  color: muted,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          RaftCssText(
+                            projectionLabel,
+                            style: t.scale(RaftTypeScale.callout, color: muted),
                           ),
                         ],
                       ),

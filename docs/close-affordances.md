@@ -84,6 +84,10 @@ in `apps/raft_flutter`.
 | `channel-announcement-confirm` | dialog | x esc sysback | x esc sysback | x esc sysback | components/channel/ChannelAnnouncementField.tsx: ConfirmDialog for replace and remove, X and Escape | ok |  |
 | `channel-sidebar-section` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | components/channel/ChannelSectionSelect.tsx: SelectContent closes on Escape and outside press | ok |  |
 | `channel-details` | panel | back esc sysback | x esc | x esc | components/channel/ChannelDetailsSurface.tsx: desktop ChannelSideCard Close and Escape; phone page Back and system history | ok |  |
+| `connected-app-bot-remove-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ConnectedAppBot.tsx uses ConfirmDialog for bot removal | ok |  |
+| `app-prompt-text-reject-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | AppPromptTextPanels.tsx uses ConfirmDialog for the required reason | ok |  |
+| `link-preview-consents-dialog` | dialog | x esc scrim sysback drag | x esc scrim sysback | x esc scrim sysback | LinkPreviewConsents.tsx opens Manage in a dialog or touch sheet | ok |  |
+| `link-preview-consents-revoke-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | LinkPreviewConsents.tsx uses ConfirmDialog for Revoke | ok |  |
 | `history-lower-limit-confirm` | dialog | x esc sysback | x esc sysback | x esc sysback | Flutter-only history action; ConfirmDialog.tsx:138-165: X + Esc, no pointer dismissal | no-web |  |
 | `confirm-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ConfirmDialog.tsx:138-165 Dialog disablePointerDismissal: X + Esc, no scrim, all gated on loading | fixed | RaftDialogRoute binds Escape; Esc / Back / X blocked while loading |
 | `role-permission-help` | dialog | x esc scrim sysback | x esc scrim sysback | x esc scrim sysback | RolePermissionHelpDialog.tsx:55-60 DialogCard closeOnBackdrop: X + Esc + backdrop | fixed | scrim press: RaftAgentDialogCard.onBackdrop (the card scroll view swallowed it) |
@@ -118,7 +122,7 @@ in `apps/raft_flutter`.
 | `community-agreement` | dialog | x esc sysback | x esc sysback | x esc sysback | CommunityAgreementDialog.tsx:49,59 Modal (no backdrop close) + X | ok |  |
 | `connected-app-detail` | dialog | x esc sysback | x esc sysback | x esc sysback | SettingsPanel.tsx:6643-6661 Modal (no backdrop close) + CloseButton | ok |  |
 | `connected-app-installed-detail` | dialog | x esc sysback | x esc sysback | x esc sysback | SettingsPanel.tsx:6606-6625 Modal (no backdrop close) + CloseButton | ok |  |
-| `connected-app-editor` | dialog | x esc sysback | x esc sysback | x esc sysback | SettingsPanel.tsx:6746-6775 Modal (no backdrop close) + CloseButton | ok |  |
+| `connected-app-editor` | dialog | x esc sysback | x esc sysback | x esc sysback | IntegrationsSection.tsx:1743 FormDialog, narrow sheet, X or Escape, desktop Cancel, outside press stays | ok |  |
 | `provider-edit-dialog` | dialog | x esc scrim sysback drag | x esc scrim sysback | x esc scrim sysback | EditProviderConnectionModal.tsx:67 DialogCard: X + Esc, no backdrop close | approved | Below 768 the form is a bottom sheet (RaftPresentationPolicy.form, product-owner approved); from 768 the same centered dialog. X, Esc, Back, a scrim press and (sheet) a drag down all ask the route to close, and a form whose fields changed asks "Discard your changes?" first (an unchanged form just closes); Cancel and Submit never ask |
 | `material-alert-dialog` | dialog | esc sysback | esc sysback | esc sysback | no Web modal: the provider assigned-agents / verification result and history lists, the workspace profile card, the one-time credential and the workspace switcher are Flutter presentations (no-web); Esc / system back close, a scrim press does not discard | no-web | scopedDialog / fleet dialogs no longer close on a scrim tap |
 | `mention-link-dialog` | dialog | esc scrim sysback | esc scrim sysback | esc scrim sysback | MainLayout.tsx:1369,1410 task Modal closeOnBackdrop: Esc + backdrop (a task link opens the task surface on Web; Flutter shows a summary dialog) | ok |  |
@@ -142,6 +146,8 @@ in `apps/raft_flutter`.
 | `action-card-feedback` | dialog | x esc sysback | x esc sysback | x esc sysback | FeedbackCardDialog.tsx:69 NarrowDialogContent, pointer dismissal disabled | ok |  |
 | `action-card-mcp-default` | dialog | x esc sysback | x esc sysback | x esc sysback | McpConnectCardBody.tsx:307 ConfirmDialog | ok |  |
 | `action-card-send-create-agent` | dialog | x esc sysback | x esc sysback | x esc sysback | actionCardIntentFlows.tsx:730 ConfirmDialog | ok |  |
+| `settings-apps-add-menu` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | IntegrationsSection.tsx: Add app closes on Escape and outside press. | ok |  |
+| `apps-page` | panel | back sysback | - (Select another rail destination or use navigation history.) | - (Select another rail destination or use navigation history.) | IntegrationsSection.tsx: Apps is a route with a narrow Back action and browser history. | ok |  |
 | `drafts-page` | page | back sysback | - (this is a root section; leave through navigation or history) | - (this is a root section; leave through navigation or history) | DraftsPanel.tsx: mobile Back; desktop uses sidebar and history | ok |  |
 | `add-external-member-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | AddExternalMemberDialog.tsx uses DialogCard with X and Escape | ok |  |
 | `external-invite-withdraw-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ExternalInviteRows.tsx uses ConfirmDialog with X and Escape | ok |  |

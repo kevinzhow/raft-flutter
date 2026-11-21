@@ -38,6 +38,7 @@ void main() {
     String server = 'srv-1',
     Size size = phone,
     Locale locale = const Locale('en'),
+    TargetPlatform platform = TargetPlatform.android,
   }) async {
     result = null;
     done = false;
@@ -46,7 +47,7 @@ void main() {
     addTearDown(t.view.reset);
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme().copyWith(platform: platform),
         locale: locale,
         supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -132,7 +133,10 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.text('Access granted: openid · profile'), findsOneWidget);
+        expect(
+          find.text('Installing approves for this Server:'),
+          findsOneWidget,
+        );
         expect(find.text('Install and continue'), findsOneWidget);
         expect(
           find.text('Login with Raft'),
@@ -357,12 +361,8 @@ void main() {
       final gate = Completer<void>();
       final api = waiting()..lookupGate = gate;
       await open(t, api);
-      expect(find.text('Loading available Raft Servers...'), findsOneWidget);
-      expect(
-        button(t, primary).onPressed,
-        isNull,
-        reason: 'nothing to confirm yet',
-      );
+      expect(api.lookups, hasLength(1));
+      expect(primary, findsNothing, reason: 'nothing to confirm yet');
       await tapKey(t, cancel);
       expect(sheet, findsNothing);
       expect(result, isNull);
@@ -494,8 +494,11 @@ void main() {
     testWidgets('a server that did not answer is Unavailable, not usable', (
       t,
     ) async {
-      final api = several(count: 2);
-      api.clients.remove('srv-2');
+      final api = several(count: 2)
+        ..lookupFailures['srv-2'] = const RaftApiException(
+          'Offline',
+          status: 503,
+        );
       await open(t, api, server: '');
       expect(
         t
@@ -597,19 +600,13 @@ void main() {
       expect(find.text('Install and continue'), findsOneWidget);
     });
 
-    testWidgets('a server the account is not a member of: Web\'s message', (
+    testWidgets('a server outside the account shows the generic refusal', (
       t,
     ) async {
       final api = several();
       await open(t, api, server: 'srv-elsewhere');
       expect(api.lookups, isEmpty);
-      expect(
-        find.descendant(
-          of: error,
-          matching: find.text('You do not have access to any Raft Servers.'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text("This app isn't available to you"), findsOneWidget);
       expect(primary, findsNothing);
       expect(find.text('Back'), findsOneWidget);
       await tapKey(t, cancel);
@@ -617,25 +614,19 @@ void main() {
       expect(api.installs, isEmpty);
     });
 
-    testWidgets('a server that answers "not a member" is kept as Unavailable', (
+    testWidgets('a server that answers app not available is omitted', (
       t,
     ) async {
-      // The lookup answers 404 for a server the account cannot see the app on.
       final api = several(count: 2)..clients.remove('srv-1');
       await open(t, api, server: '');
       expect(
-        t
-            .widget<RaftSettingsRecipeBadge>(
-              find.byKey(const ValueKey('human-login-server-state-srv-1')),
-            )
-            .label,
-        'Unavailable',
+        find.byKey(const ValueKey('human-login-server-srv-1')),
+        findsNothing,
       );
-      // The usable server is the one chosen first.
       expect(find.text('Install and continue'), findsOneWidget);
     });
 
-    testWidgets('an app no server has: Web\'s "not accessible" explanation', (
+    testWidgets('an unavailable app shows the generic refusal and Back', (
       t,
     ) async {
       final api = FakeHumanLoginApi(clients: {});
@@ -644,12 +635,73 @@ void main() {
         find.byKey(const ValueKey('human-login-not-accessible')),
         findsOneWidget,
       );
-      expect(find.text('This App is not accessible yet'), findsOneWidget);
-      expect(find.text('How can I get access?'), findsOneWidget);
+      expect(find.text("This app isn't available to you"), findsOneWidget);
+      expect(find.text('Signed in as person@example.com'), findsOneWidget);
+      expect(find.text('How can I get access?'), findsNothing);
       expect(primary, findsNothing);
+      expect(api.authorizations, isEmpty);
       await tapKey(t, cancel);
       expect(result, isNull);
     });
+
+    testWidgets('a lookup outage can be retried from consent', (t) async {
+      final api = waiting()
+        ..lookupFailures['srv-1'] = const RaftApiException(
+          'Offline',
+          status: 503,
+        );
+      await open(t, api);
+      expect(error, findsOneWidget);
+      expect(
+        find.text('this app wants to connect to this server'),
+        findsOneWidget,
+      );
+      expect(find.text('App details'), findsOneWidget);
+      expect(find.text('No available Raft Servers'), findsOneWidget);
+      expect(find.text('Requested access'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('human-login-server-select')),
+        findsNothing,
+      );
+      expect(find.text("This app isn't available to you"), findsNothing);
+      expect(primary, findsNothing);
+
+      api.lookupFailures.clear();
+      await tapKey(t, find.text('Retry'));
+      expect(api.lookups.map((lookup) => lookup.serverId), ['srv-1', 'srv-1']);
+      expect(find.text('Install and continue'), findsOneWidget);
+      expect(error, findsNothing);
+      expect(find.text('No available Raft Servers'), findsNothing);
+      expect(find.text('Retry'), findsNothing);
+      expect(api.installs, isEmpty);
+      expect(api.authorizations, isEmpty);
+    });
+
+    for (final (size, platform, height) in [
+      (const Size(1280, 900), TargetPlatform.linux, 34.0),
+      (phone, TargetPlatform.android, 44.0),
+    ]) {
+      testWidgets('lookup outage aligns the server field at $size', (t) async {
+        final api = waiting()
+          ..lookupFailures['srv-1'] = const RaftApiException(
+            'Offline',
+            status: 503,
+          );
+        await open(t, api, size: size, platform: platform);
+        final appDetailsHelp = find.text(
+          'The app you are continuing to with Login with Raft.',
+        );
+        final server = find.byKey(const ValueKey('human-login-servers'));
+        final placeholder = find.byKey(
+          const ValueKey('human-login-server-placeholder'),
+        );
+        expect(
+          t.getTopLeft(server).dy - t.getBottomLeft(appDetailsHelp).dy,
+          closeTo(20, 1),
+        );
+        expect(t.getSize(placeholder).height, height);
+      });
+    }
   });
 
   group('page content', () {
@@ -674,7 +726,8 @@ void main() {
       final api = waiting(setupUrl: 'https://setup.example.com/configure');
       await open(t, api, locale: const Locale('zh', 'CN'));
       expect(find.text('安装并继续'), findsOneWidget);
-      expect(find.text('将授予：openid · profile'), findsOneWidget);
+      expect(find.text('安装将为此服务器批准：'), findsOneWidget);
+      expect(find.text('登录权限'), findsOneWidget);
       expect(
         find.textContaining('还没有安装 Artifact Share。你可以在这里安装，继续就会以你的身份安装。'),
         findsOneWidget,

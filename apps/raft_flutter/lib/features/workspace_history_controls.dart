@@ -9,6 +9,7 @@ import '../data/workspace_controller.dart';
 import '../platform/content_coordinator.dart';
 import '../platform/content_links.dart';
 import '../platform/content_target.dart';
+import 'apps_route.dart';
 
 /// Visits an observed entry without appending another history entry. Only the
 /// bound workspace owns these entries; late popup actions cannot cross epochs.
@@ -68,7 +69,10 @@ void restoreAcceptedLocation(
   Uri uri, {
   NativeContentCoordinator? externalLinks,
 }) {
-  final target = RaftLocation.fromUri(RaftLocation.canonicalLegacy(uri));
+  final target = appsRouteLocation(
+    uri,
+    guest: w.server?.string('role') == 'guest',
+  );
   if (externalLinks != null && target.messageId != null) {
     final frontend = ContentLinks.originFor(w.client.origin);
     final landing = ContentTarget.parse(
@@ -144,6 +148,7 @@ String _historyLabel(
     RaftRoute.members => 'Members',
     RaftRoute.computers => 'Computers',
     RaftRoute.artifacts => 'Artifacts',
+    RaftRoute.apps => 'Apps',
     RaftRoute.search => 'Search',
     RaftRoute.settings => 'Settings',
     RaftRoute.activity => 'Activity',

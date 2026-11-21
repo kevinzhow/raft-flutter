@@ -483,10 +483,12 @@ class RaftConfirmDialog extends StatefulWidget {
     BuildContext context,
     RaftConfirmDialog dialog, {
     bool overModal = false,
+    bool? nestedBackdrop,
   }) => showRaftDialog<bool>(
     context: context,
     barrierDismissible: false,
     overModal: overModal,
+    nestedBackdrop: nestedBackdrop,
     builder: (_) => dialog,
   );
 

@@ -1,6 +1,7 @@
 import 'close_registry_account_deletion.dart';
 import 'close_registry_action_cards.dart';
 import 'close_registry_app_links.dart';
+import 'close_registry_apps.dart';
 import 'close_registry_artifacts.dart';
 import 'close_registry_community.dart';
 import 'close_registry_channel_announcement.dart';
@@ -36,6 +37,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...channelDetailsSurfaces,
   ...dialogSurfaces,
   ...actionCardSurfaces,
+  ...appsSurfaces,
   ...draftsSurfaces,
   ...externalInviteCloseSurfaces,
   ...humanAvatarSurfaces,

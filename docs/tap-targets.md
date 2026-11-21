@@ -85,6 +85,30 @@ Use the existing navigation and close registries when they already cover a
 part of the contract. Platform-specific gestures and system handoffs use the
 existing native verification path.
 
+### Apps navigation
+
+The desktop rail Apps button and the phone server popover Apps cell visit
+`RaftRoute.apps` in the current server. The phone cell closes the popover
+before pushing the Apps page. Back returns to the source route and restores
+focus to the server tab on the phone. Desktop Forward reopens the Apps page.
+The bell's permission-update action opens this route with
+`permission_updates=1` and shows the first pending installed app's review.
+The review dot follows the current server's pending admin review state.
+The Installed card's Review permissions button opens the same detail dialog
+for that app. Closing the dialog returns to Installed. Approving the update
+refreshes both the bell count and the Apps dot, and removes the button when
+the app has no pending permissions. View profile closes the installed app
+dialog and opens the bot's profile in the workspace. Closing the profile
+returns to Apps. Guests keep their own link-preview choices in Settings → Apps.
+`mobile_server_tab_test.dart`, `apps_permission_notice_test.dart` and
+`apps_route_links_test.dart` exercise the mounted entry points.
+
+In Login with Raft, the App details card opens the app homepage in the
+system browser when the lookup provides an HTTP(S) homepage. Consent stays
+open on the same account or server selection when the person returns.
+`human_login_account_mode_test.dart` exercises the homepage action and
+checks that it sends no install or authorization request.
+
 ### Task conversation details
 
 On the Tasks route, a desktop task opens with its properties pinned above the

@@ -18,13 +18,14 @@ import 'icons.dart';
 import 'list_items.dart' show RaftSectionEyebrow;
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
 import 'localization.dart';
-import 'panel_layout.dart' show RaftCssText;
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_layout.dart';
 import 'raft/switch.dart';
+import 'raft/ui_tokens.dart';
 import 'indicators.dart' show RaftSkeleton;
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'tooltip.dart' show RaftTooltip;
 
 @immutable
@@ -428,54 +429,30 @@ class RaftMessagingBridgesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final copy = Colors.black.withValues(alpha: .6);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: RaftSpace.x4,
       children: [
-        Container(
+        Column(
           key: const ValueKey('im-bridges-header'),
-          padding: const EdgeInsets.all(16),
-          decoration: RaftSettingsCard.decoration(t).copyWith(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RaftSectionEyebrow(raftText(context, 'Messaging')),
-              const SizedBox(height: 4),
-              Text(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: RaftSpace.x1,
+          children: [
+            RaftSectionEyebrow(raftText(context, 'Messaging')),
+            Semantics(
+              header: true,
+              child: Text(
                 raftText(context, 'Messaging bridges'),
-                style: RaftTypography.body(
-                  t,
-                  size: 18,
-                  line: 28,
-                  weight: RaftTypography.black(t),
-                  color: RaftSettingsText(t).strong,
-                ),
+                style: t.scale(RaftTypeScale.headline, color: t.ink),
               ),
-              const SizedBox(height: 4),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 672),
-                child: RaftCssText(
-                  raftText(
-                    context,
-                    'Manage connections between Raft and external messaging services.',
-                  ),
-                  style: RaftTypography.body(
-                    t,
-                    size: 12,
-                    line: 12 * 1.625,
-                    color: copy,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
         if (failed)
           RaftBanner(
             status: RaftBannerRecipeStatus.warning,
             size: RaftBannerRecipeSize.lg,
-            glyph: RaftGlyph.circleAlert,
+            glyph: RaftGlyph.alertTriangle,
             title: 'Raft for Slack',
             description: 'The Slack bridge operation failed. No setup state was assumed.',
           )

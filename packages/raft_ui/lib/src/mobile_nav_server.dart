@@ -83,10 +83,6 @@ class _ServerPopoverHandle {
   /// opens on.
   FocusNode? currentFocus;
   BuildContext? currentRow;
-
-  /// The open logic put the focus on the current row: it shows its
-  /// focus-visible fill whatever the input, as on Web.
-  bool focusedByOpen = false;
 }
 
 class _ServerPopoverScope extends InheritedWidget {
@@ -100,8 +96,6 @@ class _ServerPopoverScope extends InheritedWidget {
 
 /// A radius taken from a token, not a literal.
 BorderRadius _tokenRadius(double r) => BorderRadius.all(Radius.circular(r));
-
-enum _OpenedBy { touch, pointer, keyboard }
 
 /// The server tab: the last cell of [RaftMobileNav] (its `trailing`), the
 /// current server's avatar where the other tabs have an icon and its name as
@@ -170,7 +164,6 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
   Timer? hold;
   Offset? holdStart;
   bool held = false, open = false, remeasure = false;
-  PointerDeviceKind lastKind = PointerDeviceKind.touch;
   late final _ServerPopoverHandle handle = _ServerPopoverHandle(close);
 
   FocusNode get focus =>
@@ -203,7 +196,7 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
     });
   }
 
-  void show(_OpenedBy by) {
+  void show() {
     if (open) return;
     setState(() => open = true);
     portal.show();
@@ -216,7 +209,6 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
       if (!mounted || !open) return;
       final row = handle.currentFocus;
       if (row != null && row.canRequestFocus) {
-        handle.focusedByOpen = true;
         row.requestFocus();
       } else {
         popoverFocus.requestFocus();
@@ -229,24 +221,22 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
     setState(() => open = false);
     portal.hide();
     handle.currentFocus = null;
-    handle.focusedByOpen = false;
     handle.currentRow = null;
     widget.onOpenChanged?.call(false);
     focus.requestFocus();
   }
 
-  void press(_OpenedBy by) {
+  void press() {
     // The click that ends a hold is not a press, whether the hold opened the
     // popover or found it open.
     if (held) {
       held = false;
       return;
     }
-    open ? close() : show(by);
+    open ? close() : show();
   }
 
   void pointerDown(PointerDownEvent e) {
-    lastKind = e.kind;
     hold?.cancel();
     held = false;
     if (e.buttons != kPrimaryButton) return;
@@ -254,13 +244,7 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
     hold = Timer(_serverHold, () {
       hold = null;
       held = true;
-      if (!open) {
-        show(
-          lastKind == PointerDeviceKind.touch
-              ? _OpenedBy.touch
-              : _OpenedBy.pointer,
-        );
-      }
+      if (!open) show();
     });
   }
 
@@ -303,19 +287,14 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
     final label = raftText(context, widget.label);
     return RaftLargeContentViewer(
       label: label,
-      onActivate: () => press(_OpenedBy.touch),
+      onActivate: press,
       iconBuilder: (context, size) =>
           SizedBox.square(dimension: size, child: widget.avatar),
       child: RaftInteractive(
         focusNode: focus,
         semanticLabel: widget.semanticLabel ?? label,
         tooltip: scope == null || !scope.geometry.labels ? label : null,
-        onPressed: () => press(
-          lastKind == PointerDeviceKind.touch
-              ? _OpenedBy.touch
-              : _OpenedBy.pointer,
-        ),
-        onKeyboardActivate: () => press(_OpenedBy.keyboard),
+        onPressed: press,
         builder: (context, state) => scope == null
             ? _capsuleCell(context, state)
             : _dockedCell(context, scope, state),

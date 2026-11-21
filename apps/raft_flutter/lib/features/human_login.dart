@@ -223,10 +223,10 @@ class HumanLoginRequest {
   /// The `POST /oauth/authorize/human` body of Web `authorizeWithClient`.
   Map<String, Object?> authorizeBody({
     required String clientId,
-    required String serverId,
+    String? serverId,
   }) => {
     'clientId': clientId,
-    'serverId': serverId,
+    'serverId': ?serverId,
     'returnUrl': returnUrl,
     'scopes': scopes,
     if (oidc) ...{
@@ -235,7 +235,7 @@ class HumanLoginRequest {
       if (codeChallenge.isNotEmpty) 'codeChallenge': codeChallenge,
       if (codeChallengeMethod.isNotEmpty)
         'codeChallengeMethod': codeChallengeMethod,
-      if (serverHint.isNotEmpty) 'server': serverHint,
+      if (serverId != null && serverHint.isNotEmpty) 'server': serverHint,
     },
   };
 }
@@ -268,11 +268,15 @@ class HumanLoginClient {
     this.marketplace = false,
     this.installRequired = false,
     this.canInstall = false,
+    this.accountMode = false,
+    this.suspended = false,
     this.disallowedScopes = const [],
     this.scopeReason,
     this.allowedScopes,
     this.appNotificationGroups = const [],
     this.promptTextRevisionId,
+    this.whenToUse,
+    this.botHandle,
   });
 
   factory HumanLoginClient.fromJson(Map<dynamic, dynamic> json) {
@@ -283,6 +287,7 @@ class HumanLoginClient {
 
     final validation = json['scopeValidation'];
     final installation = json['installation'];
+    final bot = json['bot'];
     return HumanLoginClient(
       id: text('id'),
       clientId: text('clientId') ?? '',
@@ -294,6 +299,8 @@ class HumanLoginClient {
       setupDescription: text('setupDescription'),
       marketplace: json['marketplace'] == true,
       installRequired: json['availability'] == 'install_required',
+      accountMode: json['loginMode'] == 'account',
+      suspended: json['availability'] == 'suspended',
       // Only an app waiting for an install carries `installation`; a ready
       // one is never installed twice.
       canInstall:
@@ -323,6 +330,10 @@ class HumanLoginClient {
             ]
           : const [],
       promptTextRevisionId: text('promptTextRevisionId'),
+      whenToUse: text('whenToUse'),
+      botHandle: bot is Map && bot['handle'] is String
+          ? bot['handle'] as String
+          : null,
     );
   }
 
@@ -335,6 +346,8 @@ class HumanLoginClient {
       setupDescription,
       scopeReason;
   final bool marketplace, installRequired, canInstall;
+  final bool accountMode, suspended;
+  bool get ready => !installRequired && !suspended;
   final List<String> disallowedScopes;
 
   /// What an install confirms (server routes/oauth.ts:1095-1099): the app's
@@ -342,7 +355,15 @@ class HumanLoginClient {
   /// prompt-text revision.
   final List<String>? allowedScopes;
   final List<String> appNotificationGroups;
-  final String? promptTextRevisionId;
+  final String? promptTextRevisionId, whenToUse, botHandle;
+
+  AppInstallExpectation installExpectation({required bool promptTextConsent}) =>
+      AppInstallExpectation.of(
+        allowedScopes: allowedScopes,
+        groups: appNotificationGroups,
+        textRevisionId: promptTextRevisionId,
+        promptTextConsent: promptTextConsent,
+      );
 
   /// The same app with the set a 409 APP_PERMISSIONS_CHANGED reported as
   /// current (Web HumanLoginSetupPage.tsx:431-447), still waiting for the
@@ -351,11 +372,12 @@ class HumanLoginClient {
     required List<String> scopes,
     required List<String> groups,
     String? textRevisionId,
+    ({String name, String? description, String? whenToUse})? promptText,
   }) => HumanLoginClient(
     id: id,
     clientId: clientId,
-    name: name,
-    description: description,
+    name: promptText?.name ?? name,
+    description: promptText == null ? description : promptText.description,
     homepageUrl: homepageUrl,
     logoUrl: logoUrl,
     setupUrl: setupUrl,
@@ -363,11 +385,15 @@ class HumanLoginClient {
     marketplace: marketplace,
     installRequired: installRequired,
     canInstall: canInstall,
+    accountMode: accountMode,
+    suspended: suspended,
     disallowedScopes: disallowedScopes,
     scopeReason: scopeReason,
     allowedScopes: scopes,
     appNotificationGroups: groups,
     promptTextRevisionId: textRevisionId ?? promptTextRevisionId,
+    whenToUse: promptText == null ? whenToUse : promptText.whenToUse,
+    botHandle: botHandle,
   );
 
   /// The same app once it is installed on the server: Web sets
@@ -383,11 +409,13 @@ class HumanLoginClient {
     setupDescription: setupDescription,
     // It was a Marketplace app; installing it does not change that.
     marketplace: true,
+    accountMode: accountMode,
     disallowedScopes: disallowedScopes,
     scopeReason: scopeReason,
     allowedScopes: allowedScopes,
     appNotificationGroups: appNotificationGroups,
     promptTextRevisionId: promptTextRevisionId,
+    whenToUse: whenToUse,
   );
 
   /// Web `initialsForApp`.
@@ -405,12 +433,15 @@ class HumanLoginClient {
 
 /// One server the app is available on (or could be installed on).
 class HumanLoginChoice {
-  const HumanLoginChoice(this.server, this.client);
+  const HumanLoginChoice(this.server, this.client, {this.botConflict});
   final HumanLoginServer server;
   final HumanLoginClient client;
+  final String? botConflict;
 
   /// Web `marketplaceServerRank`: ready first, then installable, then admin.
-  int get rank => !client.installRequired
+  int get rank => client.suspended
+      ? 3
+      : client.ready
       ? 0
       : client.canInstall
       ? 1
@@ -442,6 +473,9 @@ class HumanLoginLookup {
 
   List<HumanLoginChoice> get choices => [for (final row in rows) ?row.choice];
 
+  HumanLoginChoice? get accountChoice =>
+      choices.where((choice) => choice.client.accountMode).firstOrNull;
+
   /// Web `isMarketplaceApp`: some server lists it as a Marketplace app or
   /// waiting for an install.
   bool get isMarketplace =>
@@ -460,11 +494,32 @@ class HumanLoginLookup {
         ?.client;
   }
 
-  HumanLoginLookup replaced(HumanLoginChoice choice) => HumanLoginLookup([
+  HumanLoginLookup replaced(
+    HumanLoginChoice choice, {
+    bool allInstalling = false,
+  }) => HumanLoginLookup([
     for (final row in rows)
-      row.server.id == choice.server.id
-          ? HumanLoginRow(choice.server, choice.client)
-          : row,
+      if (row.server.id == choice.server.id)
+        HumanLoginRow(row.server, choice.client)
+      else if (row.client case final client?
+          when allInstalling &&
+              client.installRequired &&
+              client.id == choice.client.id)
+        HumanLoginRow(
+          row.server,
+          client.withPermissions(
+            scopes: effectiveAllowedOAuthScopes(choice.client.allowedScopes),
+            groups: choice.client.appNotificationGroups,
+            textRevisionId: choice.client.promptTextRevisionId,
+            promptText: (
+              name: choice.client.name,
+              description: choice.client.description,
+              whenToUse: choice.client.whenToUse,
+            ),
+          ),
+        )
+      else
+        row,
   ]);
 }
 
@@ -504,7 +559,7 @@ abstract interface class HumanLoginApi {
   /// `GET /oauth/clients/lookup` for [serverId].
   Future<dynamic> lookup(String serverId, Map<String, String> query);
 
-  /// `POST /oauth/authorize/human`.
+  /// Account requests omit `serverId` and use `/oauth/authorize/account`.
   Future<dynamic> authorize(Map<String, Object?> body);
 
   /// `POST /integrations/marketplace/<id>/install` on [serverId] (Web sends
@@ -561,8 +616,12 @@ class ClientHumanLoginApi implements HumanLoginApi {
       client.getForServer(serverId, '/oauth/clients/lookup', query: query);
 
   @override
-  Future<dynamic> authorize(Map<String, Object?> body) =>
-      client.post('/oauth/authorize/human', data: body);
+  Future<dynamic> authorize(Map<String, Object?> body) => client.post(
+    body.containsKey('serverId')
+        ? '/oauth/authorize/human'
+        : '/oauth/authorize/account',
+    data: body,
+  );
 
   @override
   Future<dynamic> installMarketplaceApp(
@@ -599,12 +658,20 @@ class HumanLoginMessages {
   static const noServerAccess = 'You do not have access to any Raft Servers.';
   static const notRegisteredForAny =
       'This app is not registered for any Raft Server you can access.';
+  static const serverStatusUnavailable =
+      'Installation status could not be loaded. Reload this page to try again.';
   static const missingClientId =
       'This service is missing a registered client id.';
   static const missingReturnUrl =
       'This service is missing a configured return URL.';
   static const continueFailed = 'Failed to continue with Raft.';
   static const installFailed = 'Failed to install this Marketplace app.';
+  static const rootIssuerRequired =
+      "This app is set up to sign in through a Server-specific address, which it can't use. Ask the app's developer to use Raft's main sign-in address.";
+  static const accountSuspended =
+      "This app's installations on your Servers are suspended. Ask a Server owner or admin to restore it.";
+  static const serverSuspended =
+      "This App's installation on this Server is suspended. Ask a Server owner or admin to restore it.";
 
   /// pages.humanLogin.permissionsChanged.
   static const permissionsChanged =
@@ -624,10 +691,10 @@ List<HumanLoginServer> humanLoginCandidates(
           if (s.id == request.serverHint || s.slug == request.serverHint) s,
       ];
 
-/// Web's lookup effect: every candidate server is asked for the client; a
-/// server that answers an error is kept as "unavailable" (Web lists it in the
-/// Marketplace picker). Throws [HumanLoginException] with Web's text when no
-/// server has the app.
+bool _appNotAvailable(RaftApiException error) =>
+    error.status == 404 ||
+    (error.status == 403 && error.code == 'app_not_available');
+
 Future<HumanLoginLookup> lookupHumanLoginClient(
   HumanLoginApi api,
   HumanLoginRequest request,
@@ -639,29 +706,36 @@ Future<HumanLoginLookup> lookupHumanLoginClient(
   if (candidates.isEmpty) {
     throw const HumanLoginException(HumanLoginMessages.noServerAccess);
   }
-  final rows = await Future.wait([
-    for (final server in candidates)
-      api
-          .lookup(server.id, {
-            'client_id': request.clientId,
-            'server_id': server.id,
-            'scope': request.scopes.join(' '),
-          })
-          .then<HumanLoginRow>(
-            (data) => data is Map
-                ? HumanLoginRow(server, HumanLoginClient.fromJson(data))
-                : HumanLoginRow(server),
-          )
-          .catchError((Object _) => HumanLoginRow(server)),
-  ]);
+  Future<HumanLoginRow?> lookup(HumanLoginServer server) async {
+    try {
+      final data = await api.lookup(server.id, {
+        'client_id': request.clientId,
+        'server_id': server.id,
+        'scope': request.scopes.join(' '),
+      });
+      return data is Map
+          ? HumanLoginRow(server, HumanLoginClient.fromJson(data))
+          : HumanLoginRow(server);
+    } on RaftApiException catch (error) {
+      return _appNotAvailable(error) ? null : HumanLoginRow(server);
+    } catch (_) {
+      return HumanLoginRow(server);
+    }
+  }
+
+  final answers = await Future.wait(candidates.map(lookup));
+  final rows = answers.nonNulls.toList();
+  if (rows.isEmpty) {
+    throw const HumanLoginException(HumanLoginMessages.notRegisteredForAny);
+  }
+  if (rows.every((row) => row.client == null)) {
+    throw const HumanLoginException(HumanLoginMessages.serverStatusUnavailable);
+  }
   rows.sort(
     (a, b) => a.rank != b.rank
         ? a.rank.compareTo(b.rank)
         : a.server.name.toLowerCase().compareTo(b.server.name.toLowerCase()),
   );
-  if (rows.every((r) => r.client == null)) {
-    throw const HumanLoginException(HumanLoginMessages.notRegisteredForAny);
-  }
   return HumanLoginLookup(rows);
 }
 
@@ -732,7 +806,8 @@ bool humanLoginCanContinue(
   HumanLoginRequest request,
   HumanLoginChoice choice,
 ) =>
-    !choice.client.installRequired &&
+    choice.client.ready &&
+    (!choice.client.accountMode || request.serverHint.isEmpty) &&
     request.returnUrl.trim().isNotEmpty &&
     !hasAgentInboundScope(request.scopes) &&
     choice.client.disallowedScopes.isEmpty;
@@ -772,28 +847,29 @@ HumanLoginException _refused(
 /// Web's text.
 Future<HumanLoginChoice> installHumanLoginApp(
   HumanLoginApi api,
-  HumanLoginChoice choice,
-) async {
+  HumanLoginChoice choice, {
+  AppInstallExpectation? reviewed,
+  bool? bot,
+  Future<dynamic> Function(Future<dynamic> Function())? guard,
+}) async {
   final app = choice.client;
   final id = app.id;
   if (!app.canInstall || id == null || id.isEmpty) {
     throw const HumanLoginException(HumanLoginMessages.installFailed);
   }
-  bool consent;
+  final expected =
+      reviewed ??
+      app.installExpectation(
+        promptTextConsent: await api.promptTextConsent(choice.server.id),
+      );
+  final Object? result;
   try {
-    consent = await api.promptTextConsent(choice.server.id);
-  } on Object {
-    // Unknown counts as off, as Web's flag store before it loads.
-    consent = false;
-  }
-  final expected = AppInstallExpectation.of(
-    allowedScopes: app.allowedScopes,
-    groups: app.appNotificationGroups,
-    textRevisionId: app.promptTextRevisionId,
-    promptTextConsent: consent,
-  );
-  try {
-    await api.installMarketplaceApp(choice.server.id, id, expected.body);
+    Future<dynamic> install() => api.installMarketplaceApp(
+      choice.server.id,
+      id,
+      {...expected.body, 'bot': ?bot},
+    );
+    result = await (guard == null ? install() : guard(install));
   } on RaftApiException catch (error) {
     final stale = appInstallRefusal(
       error,
@@ -802,6 +878,21 @@ Future<HumanLoginChoice> installHumanLoginApp(
     );
     final current = appPermissionsChangedCurrent(error);
     if (stale != null && current != null) {
+      final revisionMoved =
+          expected.textRevisionId != null &&
+          current.textRevisionId != expected.textRevisionId;
+      final fields = revisionMoved ? error.details['current_text'] : null;
+      final text = fields is Map && fields['name'] is String
+          ? (
+              name: fields['name'] as String,
+              description: fields['description'] is String
+                  ? fields['description'] as String
+                  : null,
+              whenToUse: fields['when_to_use'] is String
+                  ? fields['when_to_use'] as String
+                  : null,
+            )
+          : null;
       throw HumanLoginPermissionsChanged(
         stale,
         HumanLoginChoice(
@@ -809,7 +900,8 @@ Future<HumanLoginChoice> installHumanLoginApp(
           app.withPermissions(
             scopes: current.scopes,
             groups: current.groups,
-            textRevisionId: current.textRevisionId,
+            textRevisionId: revisionMoved ? current.textRevisionId : null,
+            promptText: text,
           ),
         ),
       );
@@ -820,10 +912,22 @@ Future<HumanLoginChoice> installHumanLoginApp(
       HumanLoginMessages.installFailed,
       'login-with-raft install',
     );
+  } on SecondFactorStepUpCancelled {
+    rethrow;
   } on Object {
     throw const HumanLoginException(HumanLoginMessages.installFailed);
   }
-  return HumanLoginChoice(choice.server, choice.client.installed);
+  final warnings = result is Map ? result['warnings'] : null;
+  return HumanLoginChoice(
+    choice.server,
+    choice.client.installed,
+    botConflict:
+        bot == true &&
+            warnings is List &&
+            warnings.contains('app_bot_handle_conflict')
+        ? app.botHandle
+        : null,
+  );
 }
 
 /// Web `authorizeWithClient`: asks for the code and builds the URL the
@@ -843,7 +947,7 @@ Future<Uri> authorizeHumanLogin(
   Future<dynamic> send() => api.authorize(
     request.authorizeBody(
       clientId: choice.client.clientId,
-      serverId: choice.server.id,
+      serverId: choice.client.accountMode ? null : choice.server.id,
     ),
   );
   try {
@@ -851,6 +955,26 @@ Future<Uri> authorizeHumanLogin(
   } on SecondFactorStepUpCancelled {
     rethrow;
   } on RaftApiException catch (error) {
+    if (error.status == 409 && error.code == 'login_mode_changed') {
+      throw const HumanLoginModeChanged();
+    }
+    if (_appNotAvailable(error)) {
+      throw const HumanLoginException(HumanLoginMessages.notRegisteredForAny);
+    }
+    if (choice.client.accountMode) {
+      if (error.status == 400 && error.code == 'root_issuer_required') {
+        throw const HumanLoginAccountRefusal(
+          HumanLoginMessages.rootIssuerRequired,
+        );
+      }
+      if (error.status == 403 &&
+          error.details['error_description'] ==
+              "This App's installations on your Servers are suspended. Ask a Server owner or admin to restore it.") {
+        throw const HumanLoginAccountRefusal(
+          HumanLoginMessages.accountSuspended,
+        );
+      }
+    }
     // Web: `error_description || error || continueFailed`.
     throw _refused(
       error,
@@ -872,4 +996,12 @@ Future<Uri> authorizeHumanLogin(
   } on Object {
     throw const HumanLoginException(HumanLoginMessages.continueFailed);
   }
+}
+
+class HumanLoginModeChanged implements Exception {
+  const HumanLoginModeChanged();
+}
+
+class HumanLoginAccountRefusal extends HumanLoginException {
+  const HumanLoginAccountRefusal(super.text);
 }

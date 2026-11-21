@@ -292,12 +292,24 @@ Future<SurfaceProbe> fromIntegrations(
     ),
   );
   await frames(t, 30);
-  if (installedTab) {
-    await t.tap(find.byKey(const ValueKey('connected-apps-tab-installed')));
+  if (!installedTab && tap == const ValueKey('connected-app-slack')) {
+    final scope = find.byKey(const ValueKey('connected-apps-scope-select'));
+    if (scope.hitTestable().evaluate().isNotEmpty) {
+      await t.tap(scope);
+      await frames(t, 20);
+      await t.tap(find.text('Marketplace').hitTestable());
+    } else {
+      await t.tap(find.byKey(const ValueKey('connected-apps-tab-marketplace')));
+    }
     await frames(t, 20);
   }
   await t.tap(find.byKey(tap));
   await frames(t, 30);
+  if (tap == const ValueKey('connected-apps-register') &&
+      surface != const ValueKey('settings-apps-add-menu')) {
+    await t.tap(find.text('Create a Raft app'));
+    await frames(t, 30);
+  }
   return SurfaceProbe(
     isOpen: () => find.byKey(surface).evaluate().isNotEmpty,
     x: find.descendant(of: find.byKey(surface), matching: anyX),
@@ -931,6 +943,10 @@ void registerCloseDialogTests(TestPart part) {
     'runtime-provider-connect-dialog',
     'claude-limit-resets-dialog',
     'claude-limit-reset-confirm-dialog',
+    'connected-app-bot-remove-dialog',
+    'app-prompt-text-reject-dialog',
+    'link-preview-consents-dialog',
+    'link-preview-consents-revoke-dialog',
   };
   final surfaces = [
     for (final surface in dialogSurfaces)

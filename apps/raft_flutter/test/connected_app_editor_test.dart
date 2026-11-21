@@ -1,15 +1,22 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/connected_app_editor.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_ui/raft_ui.dart';
+
+Future<void> _openRegistration(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('connected-apps-register')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Create a Raft app'));
+  await tester.pumpAndSettle();
+}
 
 class _Adapter implements HttpClientAdapter {
   final calls = <RequestOptions>[];
@@ -170,18 +177,12 @@ void main() {
       return {'client': created, 'clientSecret': 'shown-once-secret'};
     };
     await _mount(t, w, openMyApps: false);
-    await t.tap(find.byKey(const ValueKey('connected-apps-register')));
-    await t.pumpAndSettle();
+    await _openRegistration(t);
     expect(find.byKey(editor), findsOneWidget);
-    expect(find.text('New connected app'), findsOneWidget);
-    for (final id in [
-      'profile',
-      'login',
-      'permissions',
-      'notifications',
-      'distribution',
-      'danger',
-    ]) {
+    expect(find.text('Create Raft app'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(t.getCenter(find.byKey(submit)).dy, greaterThan(400));
+    for (final id in ['profile', 'login', 'permissions', 'notifications']) {
       expect(
         find.byKey(
           ValueKey('connected-app-editor-section-$id'),
@@ -189,6 +190,12 @@ void main() {
         ),
         findsOneWidget,
         reason: id,
+      );
+    }
+    for (final id in ['distribution', 'danger']) {
+      expect(
+        find.byKey(ValueKey('connected-app-editor-section-$id')),
+        findsNothing,
       );
     }
     // Needs details until name, description and homepage are filled.
@@ -225,37 +232,15 @@ void main() {
       };
       a.statuses['POST /integrations/clients'] = 409;
       await _mount(t, w, openMyApps: false);
-      await t.tap(find.byKey(const ValueKey('connected-apps-register')));
-      await t.pumpAndSettle();
+      await _openRegistration(t);
       await t.enterText(find.byKey(const ValueKey('connected-app-name')), 'X');
       await t.tap(find.byKey(submit));
       await t.pumpAndSettle();
       expect(find.byKey(editor), findsOneWidget);
       expect(find.text('Client ID already exists'), findsOneWidget);
-      expect(find.text('Register App'), findsWidgets);
+      expect(find.text('Add app'), findsOneWidget);
     },
   );
-
-  testWidgets('editing prefills the app, saves with PATCH and closes', (
-    t,
-  ) async {
-    final (w, a) = (await t.runAsync(_fixture))!;
-    addTearDown(w.dispose);
-    _routes(a, []);
-    a.routes['POST /integrations/clients'] = (_) => {
-      'error': 'Client ID already exists',
-    };
-    a.statuses['POST /integrations/clients'] = 409;
-    await _mount(t, w, openMyApps: false);
-    await t.tap(find.byKey(const ValueKey('connected-apps-register')));
-    await t.pumpAndSettle();
-    await t.enterText(find.byKey(const ValueKey('connected-app-name')), 'X');
-    await t.tap(find.byKey(submit));
-    await t.pumpAndSettle();
-    expect(find.byKey(editor), findsOneWidget);
-    expect(find.text('Client ID already exists'), findsOneWidget);
-    expect(find.text('Register App'), findsWidgets);
-  });
 
   testWidgets('editing prefills the app, saves with PATCH and closes', (
     t,
@@ -268,19 +253,36 @@ void main() {
     await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
     await t.pumpAndSettle();
     expect(find.byKey(editor), findsOneWidget);
-    expect(find.text('Edit app'), findsOneWidget);
+    expect(find.text('Edit db9 Drive'), findsOneWidget);
     expect(find.text('db9 Drive'), findsWidgets);
     expect(find.text('OAuth ready'), findsWidgets);
+    final logo = find.descendant(
+      of: find.byKey(editor),
+      matching: find.byType(RaftAppLogo),
+    );
+    final upload = find.text('Upload');
+    expect(t.getCenter(upload).dy, closeTo(t.getCenter(logo).dy, 2));
+    expect(t.getTopLeft(upload).dx, greaterThan(t.getTopRight(logo).dx));
+    await t.tap(find.text('Cancel'));
+    await t.pumpAndSettle();
+    expect(find.byKey(editor), findsNothing);
+    expect(a.calls.where((call) => call.method == 'PATCH'), isEmpty);
+    await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
+    await t.pumpAndSettle();
     await t.enterText(
       find.byKey(const ValueKey('connected-app-name')),
       'db9 Drive v2',
     );
+    final clientId = find.widgetWithText(RaftRecipeInput, 'db9');
+    expect(t.widget<RaftRecipeInput>(clientId).enabled, isTrue);
+    await t.enterText(clientId, ' db9-v2 ');
     await t.tap(find.byKey(submit));
     await t.pumpAndSettle();
     final patch = a.calls.singleWhere(
       (c) => c.method == 'PATCH' && c.path == '/integrations/clients/app-1',
     );
     expect(patch.data['name'], 'db9 Drive v2');
+    expect(patch.data['clientId'], 'db9-v2');
     expect(patch.data['returnUrl'], 'https://db9.example/cb');
     expect(find.byKey(editor), findsNothing);
   });
@@ -405,16 +407,50 @@ void main() {
     addTearDown(w.dispose);
     _routes(a, []);
     await _mount(t, w, openMyApps: false);
-    await t.tap(find.byKey(const ValueKey('connected-apps-register')));
+    await _openRegistration(t);
+    final webhookItem = find.widgetWithText(RaftSettingsSidebarItem, 'Webhook');
+    Focus.of(t.element(webhookItem)).requestFocus();
+    await t.pump();
+    await t.sendKeyEvent(LogicalKeyboardKey.enter);
     await t.pumpAndSettle();
-    await t.tap(find.text('Danger zone').first);
-    await t.pumpAndSettle();
+    expect(t.widget<RaftSettingsSidebarItem>(webhookItem).active, isTrue);
     expect(
-      find.text(
-        'Save the app before lifecycle or credential actions become available.',
-      ),
+      find
+          .byKey(const ValueKey('connected-app-editor-section-notifications'))
+          .hitTestable(),
       findsOneWidget,
     );
+  });
+
+  testWidgets('the phone editor opens with its close and Save in the head', (
+    t,
+  ) async {
+    t.view.devicePixelRatio = 1;
+    t.view.physicalSize = const Size(390, 844);
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    final (w, a) = (await t.runAsync(_fixture))!;
+    addTearDown(w.dispose);
+    _routes(a, [Map<String, dynamic>.from(_app)]);
+    await _mount(t, w, openMyApps: false);
+    await t.tap(find.byKey(const ValueKey('connected-apps-scope-select')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Developer'));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
+    await t.pumpAndSettle();
+
+    final close = find.bySemanticsLabel('Close app form');
+    expect(close, findsOneWidget);
+    expect(find.byKey(const ValueKey('raft-sheet-handle')), findsNothing);
+    expect(
+      t.getCenter(close).dy,
+      closeTo(t.getCenter(find.byKey(submit)).dy, 1),
+    );
+    await t.tap(close);
+    await t.pumpAndSettle();
+    expect(find.byKey(editor), findsNothing);
+    expect(a.calls.where((call) => call.method == 'PATCH'), isEmpty);
   });
 
   testWidgets('danger zone: regenerate confirms, then shows the new secret', (

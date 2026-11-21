@@ -14,6 +14,8 @@ import 'focus_visible.dart';
 import 'form_controls.dart';
 import 'menu_action_row.dart';
 import 'popover_surface.dart';
+import 'raft/button.dart';
+import 'raft/ui_tokens.dart';
 import 'raft_underline.dart';
 import 'recipes/web_selection_panel.g.dart';
 import 'recipes/web_selection_row.g.dart';
@@ -528,7 +530,8 @@ class _RaftCollapsibleSectionHeaderState
       ),
       child: marker,
     );
-    final header = widget.leadingDisclosure && widget.labelSpan != null
+    final inline = widget.leadingDisclosure && widget.labelSpan != null;
+    final header = inline
         ? RaftCssText.rich(
             TextSpan(
               children: [
@@ -555,11 +558,7 @@ class _RaftCollapsibleSectionHeaderState
                 widget.labelSpan!,
               ],
             ),
-            style: RaftTypography.inherited(
-              t,
-              size: RaftTypeScale.callout.fontSize,
-              line: RaftTypeScale.callout.lineHeight,
-            ),
+            style: t.scale(RaftTypeScale.callout),
           )
         : Row(
             crossAxisAlignment: widget.leadingDisclosure
@@ -569,6 +568,32 @@ class _RaftCollapsibleSectionHeaderState
                 ? [leadingMarker, const SizedBox(width: RaftSpace.x1), label]
                 : [label, const SizedBox(width: RaftSpace.x2), marker],
           );
+    final semanticLabel = widget.count == null
+        ? widget.label
+        : '${widget.label}, ${widget.count}';
+    void toggle() => widget.onExpandedChanged(!widget.expanded);
+    final summary = inline
+        ? RaftButton(
+            key: widget.disclosureKey,
+            uiSize: RaftButtonSize.inline,
+            uiVariant: RaftButtonVariant.link,
+            padding: EdgeInsets.zero,
+            expand: true,
+            semanticLabel: semanticLabel,
+            onPressed: toggle,
+            child: ExcludeSemantics(child: header),
+          )
+        : RaftControl(
+            key: widget.disclosureKey,
+            kind: RaftControlKind.textLink,
+            visualHeight: 16,
+            flexibleHeight: true,
+            shadow: false,
+            padding: EdgeInsets.zero,
+            semanticLabel: semanticLabel,
+            onPressed: toggle,
+            child: ExcludeSemantics(child: header),
+          );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -576,24 +601,7 @@ class _RaftCollapsibleSectionHeaderState
         Row(
           children: [
             Expanded(
-              child: Semantics(
-                expanded: widget.expanded,
-                child: RaftControl(
-                  key: widget.disclosureKey,
-                  kind: RaftControlKind.textLink,
-                  visualHeight: 16,
-                  flexibleHeight: true,
-                  shadow: false,
-                  padding: EdgeInsets.zero,
-                  semanticLabel: widget.count == null
-                      ? widget.label
-                      : '${widget.label}, ${widget.count}',
-                  onPressed: () => widget.onExpandedChanged(!widget.expanded),
-                  // Only the disclosure's repeated label and decoration are
-                  // excluded. An independent action keeps its own semantics.
-                  child: ExcludeSemantics(child: header),
-                ),
-              ),
+              child: Semantics(expanded: widget.expanded, child: summary),
             ),
             if (widget.action != null) ...[
               const SizedBox(width: 8),

@@ -54,7 +54,7 @@ class RaftSettingsNavEntry {
   const RaftSettingsNavEntry({
     required this.id,
     required this.label,
-    required this.glyph,
+    this.glyph,
     required this.onTap,
     this.attention = false,
     this.attentionDanger = false,
@@ -63,7 +63,7 @@ class RaftSettingsNavEntry {
     this.external = false,
   });
   final String id, label;
-  final RaftGlyph glyph;
+  final RaftGlyph? glyph;
   final VoidCallback onTap;
 
   /// The row's accessible name when the label alone repeats another row's
@@ -279,15 +279,17 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
                 growWithText: true,
                 child: Row(
                   children: [
-                    SizedBox.square(
-                      dimension: iconBox,
-                      child: RaftIcon(
-                        widget.entry.glyph,
-                        size: 16,
-                        color: icon.color?.resolve(tokens),
+                    if (widget.entry.glyph case final glyph?) ...[
+                      SizedBox.square(
+                        dimension: iconBox,
+                        child: RaftIcon(
+                          glyph,
+                          size: 16,
+                          color: icon.color?.resolve(tokens),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: s.columnGap ?? 8),
+                      SizedBox(width: s.columnGap ?? 8),
+                    ],
                     Expanded(
                       // Above the default text size the label wraps and the line
                       // box is a minimum, so nothing is clipped.

@@ -141,6 +141,10 @@ void main() {
       testWidgets('shows the requested groups but no Approve update '
           '(canReviewAppNotifications: $reviewer)', (t) async {
         final (_, a) = await _mountApps(t, () => [pending(reviewer: reviewer)]);
+        await t.tap(
+          find.byKey(const ValueKey('connected-apps-tab-marketplace')),
+        );
+        await t.pumpAndSettle();
         await t.tap(find.byKey(const ValueKey('connected-app-rev')));
         await t.pumpAndSettle();
         expect(find.text('Permission update pending review'), findsOneWidget);
@@ -184,7 +188,9 @@ void main() {
       a.routes['POST /integrations/clients'] = (_) => {
         'client': {'id': 'x'},
       };
-      await t.tap(find.text('Register App'));
+      await t.tap(find.byKey(const ValueKey('connected-apps-register')));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Create a Raft app'));
       await t.pumpAndSettle();
       await t.enterText(
         find.byKey(const ValueKey('connected-app-name')),

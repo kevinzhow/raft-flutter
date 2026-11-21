@@ -1,66 +1,51 @@
-// Settings > Workspace > Applications: the app editor modal of the Web client
-// (raft-source 26f77ef, packages/web/src/components/settings/SettingsPanel.tsx
-// IntegrationsSection `showRegisterDrawer` + ConnectedAppEditorSection +
-// DeclaredScopesPicker, AppNotificationsControls.tsx DeveloperAppPermissions /
-// DeveloperAppNotifications). A `max-w-5xl` Card in the Web `Modal`: header
-// (logo, title, close + save), optional error / one-time secret strip, then a
-// section rail (220px column on md and up, a horizontal strip on phones) next
-// to the scrolling sections (Profile, Login with Raft, App permissions,
-// Webhook, Distribution, Danger zone). The app owns the state and the API; the
-// geometry, colours and copy live here.
 import 'raft/checkbox.dart' show RaftCheckbox;
-
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'design_primitives.dart' show RaftInteractive, RaftTypography;
-import 'dialog_card.dart' show RaftCloseButton;
+import 'design_primitives.dart' show RaftTypography;
 import 'form_controls.dart' show RaftField;
+import 'form_presentation.dart' show RaftFormFrame, RaftFormSheet;
 import 'icons.dart';
 
 import 'list_items.dart' show RaftSectionEyebrow;
 import 'localization.dart';
+import 'overlays/dialog.dart';
+import 'panel_layout.dart' show RaftCssText, RaftPanelAction;
 import 'recipe_surface.dart';
 import 'recipes/badge.g.dart';
-import 'recipes/button_variants.g.dart'
-    show RaftButtonRecipe, RaftButtonRecipeSize, RaftButtonRecipeVariant;
-import 'recipes/card.g.dart';
+import 'recipes/button_variants.g.dart' show RaftButtonRecipeSize;
+import 'recipes/form_section.g.dart';
 import 'recipes/table.g.dart';
+import 'raft/badge.dart' show RaftBadge;
 import 'select_field.dart';
 import 'settings_applications.dart' show RaftAppLogo, RaftAppLogoSize;
 import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
+import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
 import 'raft/switch.dart';
 import 'tooltip.dart';
-import 'viewport_breakpoints.dart';
+import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 
 /// `appEditorSections` entry: the rail button and the section card it scrolls to.
 @immutable
 class RaftAppEditorSection {
   const RaftAppEditorSection({
     required this.id,
-    required this.glyph,
-    required this.railLabel,
     required this.title,
     required this.description,
     required this.status,
     required this.child,
     this.experimentalBadge = false,
-    this.warning = false,
   });
 
   /// `profile`, `login`, `permissions`, `notifications`, `distribution`, `danger`.
   final String id;
-  final RaftGlyph glyph;
-  final String railLabel, title, description, status;
+  final String title, description, status;
 
   /// `AppNotificationsLabel`: the title carries the Experimental badge.
   final bool experimentalBadge;
 
-  /// `tone="warning"` (the Danger zone card).
-  final bool warning;
   final Widget child;
 }
 
@@ -84,68 +69,19 @@ class RaftAppEditorStack extends StatelessWidget {
   );
 }
 
-/// raft-ui `Card` root with a callsite fill and optional clip / size.
-class _EditorCard extends StatelessWidget {
-  const _EditorCard({
-    super.key,
-    required this.child,
-    this.fill,
-    this.maxWidth,
-    this.height,
-    this.clip = false,
-  });
-  final Widget child;
-  final Color? fill;
-  final double? maxWidth, height;
-  final bool clip;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final tokens = t.recipeTokens;
-    final root = RaftCardRecipe.resolve(
-      states: t.recipeStates(),
-      tokens: tokens,
-    ).root;
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
-      child: RaftRecipeBox(
-        style: root.withCssUsedBorderWidths(),
-        tokens: tokens,
-        width: double.infinity,
-        height: height,
-        clip: clip,
-        applyText: false,
-        decorationOverride: fill == null
-            ? null
-            : (d) => d.copyWith(color: fill),
-        child: DefaultTextStyle.merge(
-          style: root.textStyle(tokens),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-/// The editor modal body. Wrap it in [RaftModalBackdrop] (`Modal`).
 class RaftConnectedAppEditorCard extends StatefulWidget {
   const RaftConnectedAppEditorCard({
     super.key,
-    required this.eyebrow,
-    required this.name,
-    required this.description,
-    required this.initials,
+    required this.formTitle,
     required this.closeLabel,
     required this.onClose,
     required this.submitLabel,
     required this.sections,
-    this.logoUrl,
     this.onSubmit,
     this.banner,
     this.railLabel = 'App editor sections',
   });
-  final String eyebrow, name, description, initials, closeLabel, submitLabel;
-  final String? logoUrl;
+  final String formTitle, closeLabel, submitLabel;
   final String railLabel;
   final VoidCallback onClose;
 
@@ -163,11 +99,9 @@ class RaftConnectedAppEditorCard extends StatefulWidget {
 class _RaftConnectedAppEditorCardState
     extends State<RaftConnectedAppEditorCard> {
   final scroll = ScrollController();
-  final rail = ScrollController();
   late final Map<String, GlobalKey> sectionKeys = {
     for (final s in widget.sections) s.id: GlobalKey(),
   };
-  final Map<String, GlobalKey> railKeys = {};
   late String active = widget.sections.first.id;
 
   @override
@@ -179,7 +113,6 @@ class _RaftConnectedAppEditorCardState
   @override
   void dispose() {
     scroll.dispose();
-    rail.dispose();
     super.dispose();
   }
 
@@ -205,19 +138,7 @@ class _RaftConnectedAppEditorCardState
         next = id;
       }
     }
-    if (next != active) {
-      setState(() => active = next);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final context = railKeys[next]?.currentContext;
-        if (context != null && context.mounted && rail.hasClients) {
-          Scrollable.ensureVisible(
-            context,
-            alignment: .5,
-            duration: const Duration(milliseconds: 200),
-          );
-        }
-      });
-    }
+    if (next != active) setState(() => active = next);
   }
 
   void jumpTo(String id) {
@@ -229,8 +150,7 @@ class _RaftConnectedAppEditorCardState
         scroll.position.context.storageContext.findRenderObject() as RenderBox;
     final delta =
         box.localToGlobal(Offset.zero).dy -
-        viewport.localToGlobal(Offset.zero).dy -
-        16;
+        viewport.localToGlobal(Offset.zero).dy;
     scroll.animateTo(
       (scroll.offset + delta).clamp(0, scroll.position.maxScrollExtent),
       duration: const Duration(milliseconds: 250),
@@ -241,383 +161,153 @@ class _RaftConnectedAppEditorCardState
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
     final widget = this.widget;
-    final band = raftBreakpointWidth(context);
-    final wide = band >= 768;
-    final inline = band >= 640;
-    final maxHeight = math.min(832.0, MediaQuery.sizeOf(context).height - 32);
-    final headerFill = t.colors['layer-canvas-muted']!;
-    final edge = BorderSide(color: text.edge, width: 2);
-    String tr(String s) => raftText(context, s);
-
-    final identity = Row(
-      children: [
-        RaftAppLogo(
-          initials: widget.initials,
-          logoUrl: widget.logoUrl,
-          size: RaftAppLogoSize.md,
+    final sheet = RaftFormFrame.sheetOf(context);
+    final commit = RaftButton(
+      key: const ValueKey('connected-app-editor-submit'),
+      label: widget.submitLabel,
+      uiVariant: RaftButtonVariant.accent,
+      uiSize: sheet ? RaftButtonSize.md : RaftButtonSize.lg,
+      onPressed: widget.onSubmit,
+    );
+    final edge = BorderSide(color: t.colors['line-seam']!);
+    const bodyKey = ValueKey('connected-app-editor-content');
+    if (sheet) {
+      return RaftFormSheet(
+        key: const ValueKey('connected-app-editor'),
+        title: widget.formTitle,
+        onClose: widget.onClose,
+        showHandle: false,
+        closeButton: RaftPanelAction(
+          glyph: RaftGlyph.x,
+          tooltip: widget.closeLabel,
+          onPressed: widget.onClose,
         ),
-        const SizedBox(width: RaftSpace.x3),
-        Expanded(
+        commit: commit,
+        body: Padding(
+          padding: const EdgeInsets.only(top: RaftSpace.x4),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            key: bodyKey,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              RaftSectionEyebrow(tr(widget.eyebrow)),
-              const SizedBox(height: RaftSpace.half),
-              Semantics(
-                header: true,
-                child: Text(
-                  widget.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: RaftTypography.body(
-                    t,
-                    size: 20,
-                    line: 28,
-                    weight: RaftTypography.black(t),
-                    color: text.strong,
-                  ),
+              if (widget.banner case final banner?)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: RaftSpace.x4),
+                  child: banner,
                 ),
-              ),
-              const SizedBox(height: RaftSpace.half),
-              Text(
-                tr(widget.description),
-                style: RaftTypography.body(
-                  t,
-                  size: 12,
-                  line: 16,
-                  color: t.muted,
-                ),
-              ),
+              for (final (index, section) in widget.sections.indexed)
+                RaftAppEditorSectionCard(section: section, first: index == 0),
             ],
           ),
         ),
-      ],
-    );
-    final actions = Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.end,
-      spacing: RaftSpace.x2,
-      children: [
-        RaftCloseButton(onPressed: widget.onClose, tooltip: widget.closeLabel),
-        RaftSettingsRecipeButton(
-          key: const ValueKey('connected-app-editor-submit'),
-          label: widget.submitLabel,
-          variant: RaftButtonRecipeVariant.accent,
-          size: RaftButtonRecipeSize.sm,
-          onPressed: widget.onSubmit,
-        ),
-      ],
-    );
-    final header = Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: RaftSpace.x4,
-        vertical: RaftSpace.x3,
-      ),
-      decoration: BoxDecoration(
-        color: headerFill,
-        border: Border(bottom: edge),
-      ),
-      child: inline
-          ? Row(
-              children: [
-                Expanded(child: identity),
-                const SizedBox(width: RaftSpace.x3),
-                actions,
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: RaftSpace.x3,
-              children: [
-                identity,
-                Align(alignment: Alignment.centerRight, child: actions),
-              ],
-            ),
-    );
-
-    Widget railItem(RaftAppEditorSection s) {
-      final selected = s.id == active;
-      final key = railKeys.putIfAbsent(s.id, GlobalKey.new);
-      final radius = RaftButtonRecipe.resolve(
-        variant: RaftButtonRecipeVariant.ghost,
-        size: RaftButtonRecipeSize.sm,
-        states: t.recipeStates(),
-        tokens: t.recipeTokens,
-      ).root.borderRadius?.resolve(Directionality.of(context));
-      final item = RaftInteractive(
-        key: key,
-        semanticLabel: s.railLabel,
-        selected: selected,
-        onPressed: () => jumpTo(s.id),
-        builder: (context, state) => ConstrainedBox(
-          constraints: BoxConstraints(minWidth: wide ? 0 : 155),
-          child: RaftSettingsCard.box(
-            t,
-            radius: radius,
-            color: selected ? (t.colors['primary-soft']!) : t.panel,
-            padding: const EdgeInsets.symmetric(
-              horizontal: RaftSpace.x3,
-              vertical: RaftSpace.x2,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: RaftSpace.x2,
-                  children: [
-                    RaftIcon(s.glyph, size: 14, color: text.strong),
-                    Flexible(
-                      child: Text(
-                        tr(s.railLabel),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: RaftTypography.body(
-                          t,
-                          size: 12,
-                          line: 16,
-                          weight: RaftTypography.black(t),
-                          color: text.strong,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: RaftSpace.x1),
-                // `text-[10px]` inherits the Button's 4/3 line height (13.33px);
-                // Chromium lays the rail out 1/3px tighter on the phone.
-                SizedBox(
-                  height: wide ? 10 * 4 / 3 : 13,
-                  child: Text(
-                    s.status,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: RaftTypography.body(
-                      t,
-                      size: 10,
-                      line: wide ? 10 * 4 / 3 : 13,
-                      weight: FontWeight.w700,
-                      color: t.muted,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       );
-      return item;
     }
 
     final railBox = Container(
       key: const ValueKey('connected-app-editor-rail'),
-      width: wide ? 220 : null,
-      padding: const EdgeInsets.all(RaftSpace.x3),
-      decoration: BoxDecoration(
-        color: headerFill,
-        border: wide ? Border(right: edge) : Border(bottom: edge),
-      ),
+      width: 208,
+      decoration: BoxDecoration(border: Border(right: edge)),
       child: Semantics(
         container: true,
         label: widget.railLabel,
-        child: wide
-            ? SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: RaftSpace.x2,
-                  children: [for (final s in widget.sections) railItem(s)],
-                ),
-              )
-            : SingleChildScrollView(
-                controller: rail,
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: RaftSpace.x2,
-                  children: [for (final s in widget.sections) railItem(s)],
-                ),
-              ),
-      ),
-    );
-    final content = Container(
-      key: const ValueKey('connected-app-editor-content'),
-      color: t.panel,
-      child: SingleChildScrollView(
-        controller: scroll,
-        padding: const EdgeInsets.all(RaftSpace.x4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: RaftSpace.x4,
-          children: [
-            for (final s in widget.sections)
-              KeyedSubtree(
-                key: sectionKeys[s.id],
-                child: RaftAppEditorSectionCard(section: s),
-              ),
-          ],
-        ),
-      ),
-    );
-    return DefaultTextStyle.merge(
-      style: RaftTypography.body(t, size: 14, line: 20, color: text.strong),
-      child: _EditorCard(
-        key: const ValueKey('connected-app-editor'),
-        maxWidth: 1024,
-        height: maxHeight,
-        clip: true,
-        fill: t.panel,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            header,
-            if (widget.banner != null)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: RaftSpace.x4,
-                  vertical: RaftSpace.x3,
-                ),
-                decoration: BoxDecoration(
-                  color: t.panel,
-                  border: Border(bottom: edge),
-                ),
-                child: widget.banner,
-              ),
-            Expanded(
-              child: wide
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        railBox,
-                        Expanded(child: content),
-                      ],
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        railBox,
-                        Expanded(child: content),
-                      ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: RaftSpace.x2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: RaftSpace.half,
+            children: [
+              for (final section in widget.sections)
+                FocusableActionDetector(
+                  actions: {
+                    ActivateIntent: CallbackAction<ActivateIntent>(
+                      onInvoke: (_) {
+                        jumpTo(section.id);
+                        return null;
+                      },
                     ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// `ConnectedAppEditorSection`: a Card with a muted header (title, description,
-/// the status chip) over the white body.
-class RaftAppEditorSectionCard extends StatelessWidget {
-  const RaftAppEditorSectionCard({super.key, required this.section});
-  final RaftAppEditorSection section;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
-    final inline = raftBreakpointWidth(context) >= 640;
-    final warning = section.warning;
-    final fill = warning
-        ? (t.colors['warning-soft']!)
-        : (t.colors['layer-canvas-muted']!);
-    final headerFill = t.colors['layer-canvas-muted']!;
-    final title = Wrap(
-      spacing: RaftSpace.x2,
-      runSpacing: RaftSpace.x2,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            raftText(context, section.title),
-            style: RaftTypography.body(
-              t,
-              size: 16,
-              line: 24,
-              weight: RaftTypography.black(t),
-              color: text.strong,
-            ),
+                  },
+                  child: RaftSettingsSidebarItem(
+                    active: section.id == active,
+                    entry: RaftSettingsNavEntry(
+                      id: section.id,
+                      label: section.title,
+                      onTap: () => jumpTo(section.id),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        if (section.experimentalBadge)
-          const RaftSettingsRecipeBadge(
-            label: 'Experimental',
-            variant: RaftBadgeRecipeVariant.success,
-          ),
-      ],
-    );
-    final copy = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        title,
-        const SizedBox(height: RaftSpace.half),
-        Text(
-          raftText(context, section.description),
-          style: RaftTypography.body(
-            t,
-            size: 12,
-            line: 12 * 1.625,
-            color: text.muted,
-          ),
-        ),
-      ],
-    );
-    final chip = Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: RaftSpace.x2,
-        vertical: RaftSpace.x1,
-      ),
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: text.edge, width: 1),
-      ),
-      child: Text(
-        section.status,
-        style: RaftTypography.mono(
-          t,
-          size: 10,
-          line: 15,
-          color: text.strong,
-        ).copyWith(fontWeight: RaftTypography.black(t)),
       ),
     );
-    return _EditorCard(
-      key: ValueKey('connected-app-editor-section-${section.id}'),
-      fill: fill,
+    return RaftDialog(
+      contentKey: const ValueKey('connected-app-editor'),
+      semanticLabel: widget.formTitle,
+      bar: true,
+      size: RaftDialogSize.wide,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: RaftSpace.x4,
-              vertical: RaftSpace.x3,
+          RaftDialogHeader(
+            title: widget.formTitle,
+            trailing: RaftDialogClose(
+              bar: true,
+              onPressed: widget.onClose,
+              semanticLabel: widget.closeLabel,
             ),
-            decoration: BoxDecoration(
-              color: headerFill,
-              border: Border(bottom: BorderSide(color: text.edge, width: 2)),
-            ),
-            child: inline
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: copy),
-                      const SizedBox(width: RaftSpace.x2),
-                      chip,
-                    ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: RaftSpace.x2,
-                    children: [copy, chip],
-                  ),
           ),
-          Container(
-            padding: const EdgeInsets.all(RaftSpace.x4),
-            color: t.panel,
-            child: section.child,
+          if (widget.banner case final banner?)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: RaftSpace.x4,
+                vertical: RaftSpace.x3,
+              ),
+              decoration: BoxDecoration(border: Border(bottom: edge)),
+              child: banner,
+            ),
+          Expanded(
+            child: RaftDialogBody(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (widget.sections.length > 1) railBox,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      key: bodyKey,
+                      controller: scroll,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: RaftSpace.x4,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final (index, section)
+                              in widget.sections.indexed)
+                            KeyedSubtree(
+                              key: sectionKeys[section.id],
+                              child: RaftAppEditorSectionCard(
+                                section: section,
+                                first: index == 0,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          RaftDialogFooter(
+            children: [
+              RaftButton(
+                label: raftText(context, 'Cancel'),
+                uiVariant: RaftButtonVariant.ghost,
+                uiSize: RaftButtonSize.lg,
+                onPressed: widget.onClose,
+              ),
+              commit,
+            ],
           ),
         ],
       ),
@@ -625,7 +315,96 @@ class RaftAppEditorSectionCard extends StatelessWidget {
   }
 }
 
-/// A `FormField labelStyle="plain" size="compact"` (optional / hint / error).
+class RaftAppEditorSectionCard extends StatelessWidget {
+  const RaftAppEditorSectionCard({
+    super.key,
+    required this.section,
+    required this.first,
+  });
+  final RaftAppEditorSection section;
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final recipe = RaftFormSectionRecipe.resolve(
+      states: t.recipeStates(),
+      tokens: tokens,
+    );
+    final sectionInset = recipe.root.padding.bottom;
+    return Container(
+      key: ValueKey('connected-app-editor-section-${section.id}'),
+      padding: EdgeInsets.only(
+        top: first ? 0 : sectionInset,
+        bottom: sectionInset,
+      ),
+      decoration: first
+          ? null
+          : BoxDecoration(
+              border: Border(
+                top: BorderSide(color: t.colors['line-hairline']!),
+              ),
+            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: recipe.root.rowGap ?? RaftSpace.x3,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: recipe.head.rowGap ?? 0,
+            children: [
+              Row(
+                spacing: recipe.titleRow.columnGap ?? 0,
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Wrap(
+                        spacing: RaftSpace.x1_5,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          RaftCssText(
+                            raftText(context, section.title),
+                            style: recipe.title.text(tokens),
+                          ),
+                          if (section.experimentalBadge)
+                            RaftBadge(
+                              label: raftText(context, 'Experimental'),
+                              variant: RaftBadgeRecipeVariant.success,
+                              wrap: true,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: RaftBadge(
+                        label: section.status,
+                        appearance: RaftBadgeRecipeAppearance.soft,
+                        variant: RaftBadgeRecipeVariant.muted,
+                        wrap: true,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              RaftCssText(
+                raftText(context, section.description),
+                style: recipe.description.text(tokens),
+              ),
+            ],
+          ),
+          section.child,
+        ],
+      ),
+    );
+  }
+}
+
+/// The Apps editor's Web `FormField`.
 class RaftAppEditorField extends StatelessWidget {
   const RaftAppEditorField({
     super.key,
@@ -646,40 +425,36 @@ class RaftAppEditorField extends StatelessWidget {
     optionalLabel: raftText(context, '(optional)'),
     hint: hint == null ? null : raftText(context, hint!),
     error: error,
-    compact: true,
     child: child,
   );
 }
 
-/// Profile: `grid gap-4 sm:grid-cols-[140px_minmax(0,1fr)]` (logo | fields).
-class RaftAppEditorProfileGrid extends StatelessWidget {
-  const RaftAppEditorProfileGrid({
+class RaftAppEditorFieldPair extends StatelessWidget {
+  const RaftAppEditorFieldPair({
     super.key,
-    required this.logo,
-    required this.fields,
+    required this.first,
+    required this.second,
   });
-  final Widget logo, fields;
+  final Widget first, second;
   @override
   Widget build(BuildContext context) => raftBreakpointWidth(context) >= 640
       ? Row(
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: RaftSpace.x3,
           children: [
-            SizedBox(width: 140, child: logo),
-            const SizedBox(width: RaftSpace.x4),
-            Expanded(child: fields),
+            Expanded(child: first),
+            Expanded(child: second),
           ],
         )
       : Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: RaftSpace.x4,
-          children: [logo, fields],
+          spacing: RaftSpace.x3,
+          children: [first, second],
         );
 }
 
-/// The 120px dashed logo well with the app logo and (when saved) the
-/// upload / reset buttons.
-class RaftAppEditorLogoWell extends StatelessWidget {
-  const RaftAppEditorLogoWell({
+class RaftAppEditorLogoActions extends StatelessWidget {
+  const RaftAppEditorLogoActions({
     super.key,
     required this.initials,
     this.logoUrl,
@@ -689,77 +464,24 @@ class RaftAppEditorLogoWell extends StatelessWidget {
   final String? logoUrl;
   final List<Widget> actions;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: RaftSpace.x2,
-      children: [
-        CustomPaint(
-          foregroundPainter: _DashedBorder(
-            color: t.colors['line-strong']!,
-            width: 2,
-          ),
-          child: Container(
-            width: 120,
-            height: 120,
-            alignment: Alignment.center,
-            color: t.colors['layer-canvas-muted'],
-            child: RaftAppLogo(
-              initials: initials,
-              logoUrl: logoUrl,
-              size: RaftAppLogoSize.lg,
-            ),
-          ),
-        ),
-        if (actions.isNotEmpty)
-          Wrap(
+  Widget build(BuildContext context) => Row(
+    spacing: RaftSpace.x4,
+    children: [
+      RaftAppLogo(
+        initials: initials,
+        logoUrl: logoUrl,
+        size: RaftAppLogoSize.lg,
+      ),
+      if (actions.isNotEmpty)
+        Flexible(
+          child: Wrap(
             spacing: RaftSpace.x2,
             runSpacing: RaftSpace.x2,
             children: actions,
           ),
-      ],
-    );
-  }
-}
-
-class _DashedBorder extends CustomPainter {
-  _DashedBorder({required this.color, required this.width});
-  final Color color;
-  final double width;
-  @override
-  void paint(Canvas canvas, Size size) {
-    // CSS `border-dashed`: dashes of 2 x width with 2 x width gaps, snapped so
-    // each side starts and ends on a dash.
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = width
-      ..style = PaintingStyle.fill;
-    final dash = width * 3, gapTarget = width * 2;
-    void side(double length, Offset origin, bool horizontal) {
-      final count = math.max(
-        1,
-        ((length + gapTarget) / (dash + gapTarget)).round(),
-      );
-      final gap = count == 1 ? 0.0 : (length - dash * count) / (count - 1);
-      for (var i = 0; i < count; i++) {
-        final at = i * (dash + gap);
-        final rect = horizontal
-            ? Rect.fromLTWH(origin.dx + at, origin.dy, dash, width)
-            : Rect.fromLTWH(origin.dx, origin.dy + at, width, dash);
-        canvas.drawRect(rect, paint);
-      }
-    }
-
-    side(size.width, Offset.zero, true);
-    side(size.width, Offset(0, size.height - width), true);
-    side(size.height, Offset.zero, false);
-    side(size.height, Offset(size.width - width, 0), false);
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorder old) =>
-      old.color != color || old.width != width;
+        ),
+    ],
+  );
 }
 
 /// Callout strips: `border-l-4 ... px-3 py-2 text-xs`.
@@ -1067,7 +789,7 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
                     semanticLabel: scope,
                     onChanged: (_) => onChanged(scope),
                   ),
-                  label,
+                  Flexible(child: label),
                 ],
               )
             : label,

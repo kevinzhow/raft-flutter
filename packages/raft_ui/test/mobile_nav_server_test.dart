@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/mobile_nav_server_previews.dart';
@@ -150,6 +151,57 @@ Future<void> _settle(WidgetTester t) async {
 
 void main() {
   tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+  for (final (dark, expected) in [
+    (false, const Color(0xffdcdcdc)),
+    (true, const Color(0xff3d3d3c)),
+  ]) {
+    testWidgets('server popover hairline paint in ${dark ? 'dark' : 'light'}', (
+      tester,
+    ) async {
+      await _size(tester, const Size(390, 844));
+      final fixture = _Fixture();
+      const capture = ValueKey('server-popover-paint');
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: capture,
+          child: _app(fixture, dark: dark),
+        ),
+      );
+      await tester.tap(_tab);
+      await _settle(tester);
+
+      final surface = find.byKey(capture);
+      final origin = tester.getTopLeft(surface);
+      final separators = find.byType(RaftMobileNavServerPopoverSeparator);
+      expect(separators, findsNWidgets(2));
+      final sampleRows = [
+        for (var index = 0; index < 2; index++)
+          (tester.getTopLeft(separators.at(index)).dy - origin.dy).round(),
+      ];
+      for (var index = 0; index < 2; index++) {
+        expect(tester.getSize(separators.at(index)).height, 1);
+      }
+      final boundary = tester.renderObject<RenderRepaintBoundary>(surface);
+      final colors = await tester.runAsync(() async {
+        final image = await boundary.toImage();
+        try {
+          final bytes = (await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          ))!;
+          return [
+            for (final row in sampleRows)
+              bytes.getUint32((row * image.width + image.width ~/ 2) * 4),
+          ];
+        } finally {
+          image.dispose();
+        }
+      });
+      final rgb = expected.toARGB32() & 0x00ffffff;
+      final rgba = (rgb << 8) | 0xff;
+      expect(colors, [rgba, rgba]);
+    });
+  }
 
   group('trailing cell', () {
     testWidgets('is one more equal-width cell; no trailing leaves the bar', (
@@ -834,28 +886,44 @@ void main() {
       expect(_pop, findsNothing, reason: '(c) the server tab closes it');
     });
 
-    testWidgets('the current row shows its focus fill after a touch open', (
-      t,
-    ) async {
-      await _size(t, const Size(390, 844));
-      final fx = _Fixture();
-      await t.pumpWidget(_app(fx));
-      final tokens = RaftTokens.of(t.element(_tab));
-      await t.tap(_tab);
-      await _settle(t);
-      List<Color?> fills(String text) => [
-        for (final b in t.widgetList<DecoratedBox>(
-          find.descendant(
-            of: find.widgetWithText(RaftMobileNavServerPopoverRow, text),
-            matching: find.byType(DecoratedBox),
-          ),
-        ))
-          if (b.decoration is BoxDecoration)
-            (b.decoration as BoxDecoration).color,
-      ];
-      expect(fills('Server 1'), contains(tokens.colors['brand-soft']));
-      expect(fills('Server 0'), isNot(contains(tokens.colors['brand-soft'])));
-    });
+    for (final (size, platform) in [
+      (const Size(856, 944), TargetPlatform.android),
+      (const Size(944, 856), TargetPlatform.android),
+      (const Size(390, 844), TargetPlatform.linux),
+    ]) {
+      testWidgets('only keyboard opening paints the current server focus '
+          'at ${size.width.toInt()} ${platform.name}', (t) async {
+        await _size(t, size);
+        final fx = _Fixture();
+        await t.pumpWidget(_app(fx, platform: platform));
+        final tokens = RaftTokens.of(t.element(_tab));
+        List<Color?> fills(String text) => [
+          for (final box in t.widgetList<DecoratedBox>(
+            find.descendant(
+              of: find.widgetWithText(RaftMobileNavServerPopoverRow, text),
+              matching: find.byType(DecoratedBox),
+            ),
+          ))
+            if (box.decoration is BoxDecoration)
+              (box.decoration as BoxDecoration).color,
+        ];
+        for (final kind in [PointerDeviceKind.touch, PointerDeviceKind.mouse]) {
+          await t.tapAt(t.getCenter(_tab), kind: kind);
+          await _settle(t);
+          expect(
+            fills('Server 1'),
+            isNot(contains(tokens.colors['brand-soft'])),
+          );
+          await t.sendKeyEvent(LogicalKeyboardKey.escape);
+          await _settle(t);
+          expect(fx.focus.hasPrimaryFocus, isTrue);
+        }
+        await t.sendKeyEvent(LogicalKeyboardKey.enter);
+        await _settle(t);
+        expect(fills('Server 1'), contains(tokens.colors['brand-soft']));
+        expect(fills('Server 0'), isNot(contains(tokens.colors['brand-soft'])));
+      });
+    }
   });
 
   group('previews', () {

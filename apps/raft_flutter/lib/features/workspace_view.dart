@@ -44,8 +44,7 @@ import '../data/sidebar_disclosure.dart';
 import 'message_reference_directory.dart';
 import 'chat_agent_presentation.dart';
 import 'working_agents.dart';
-import 'artifacts/artifact_dashboard.dart';
-import 'artifacts/artifact_session.dart';
+import 'apps_route.dart';
 import 'workspace_rail_destinations.dart';
 import 'computers_rack/computer_attention_seen.dart';
 import 'chat_view.dart';
@@ -1494,11 +1493,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 ),
               ),
             )
-          : route == 'artifacts'
-          ? ArtifactDashboard(
-              key: ValueKey(mobileAuthority),
-              workspace: w,
-              onBack: wide ? null : dismissPanel,
+          : workspaceCatalogRoutes.contains(route)
+          ? workspaceCatalogPage(
+              route,
+              w,
+              mobileAuthority,
+              wide ? null : dismissPanel,
             )
           : route == 'members'
           ? DesktopDirectoryView(
@@ -1826,7 +1826,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                     'members',
                                     'settings',
                                     draftsSection,
-                                    'artifacts',
+                                    ...workspaceCatalogRoutes,
                                   ].contains(route)))
                         mobilePageHeader(title, thread),
                       RaftToastPortal(controller: rowToast),
@@ -1935,7 +1935,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                         'tasks',
                                         'saved',
                                         draftsSection,
-                                        'artifacts',
+                                        ...workspaceCatalogRoutes,
                                         'activity',
                                         'search',
                                         'members',
@@ -2679,10 +2679,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     activityAttention: hasActivityAttention,
   );
 
-  Widget workspaceRail() => ListenableBuilder(
-    listenable: ArtifactSession.of(w),
-    builder: (_, _) => artifactAwareRail(),
-  );
+  Widget workspaceRail() => listenWorkspaceRail(w, artifactAwareRail);
 
   Widget artifactAwareRail() {
     final mobileAppScope = mobileAppBadge.key;

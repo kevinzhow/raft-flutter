@@ -87,6 +87,14 @@ class SystemNotificationStore extends ChangeNotifier {
   /// Evaluates the `pro_seat_add` flag of a server (null: could not tell, the
   /// last answer stays). Without it the seat-join notices stay off.
   final Future<bool?> Function(String serverId)? seatAddEnabled;
+  int _appPermissionUpdates = 0;
+
+  void setAppPermissionUpdates(int count) {
+    if (closed || count == _appPermissionUpdates) return;
+    _appPermissionUpdates = count;
+    _publish();
+  }
+
   List<SeatJoinBlock> _seatBlocks = const [];
   int _seatRevision = 0;
   bool? _seatFlag;
@@ -170,6 +178,15 @@ class SystemNotificationStore extends ChangeNotifier {
     final shared = entities?.call();
     return [
           ?secondFactorRecoveryNotice(_recovery),
+          if (c.server != null && _appPermissionUpdates > 0)
+            SystemNotice(
+              id: 'app-permission-updates',
+              kind: SystemNoticeKind.warning,
+              title: 'App permissions need review',
+              body: '',
+              parameters: {'count': _appPermissionUpdates},
+              destination: SystemNoticeDestination.appPermissionUpdates,
+            ),
           if (c.server != null) ...jointInviteNotices(_jointInvites),
           if (c.server != null) ...usageLimitNotices(_usage),
           if (c.server != null)
@@ -228,6 +245,7 @@ class SystemNotificationStore extends ChangeNotifier {
     _jointInvites = const [];
     ++_jointRevision;
     _recovery = null;
+    _appPermissionUpdates = 0;
     ++_recoveryRevision;
     feedbackUnread = 0;
     failed = false;

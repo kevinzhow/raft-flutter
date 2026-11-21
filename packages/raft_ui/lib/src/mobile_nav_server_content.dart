@@ -30,6 +30,7 @@ class RaftMobileNavServerPopoverSeparator extends StatelessWidget {
       tokens: t.recipeTokens,
       padding: EdgeInsets.zero,
       applyText: false,
+      declareSurface: true,
       height: separator.height ?? separator.borderWidth.vertical,
     );
   }
@@ -318,14 +319,6 @@ class _RaftMobileNavServerPopoverRowState
   final focus = FocusNode(debugLabel: 'server row');
 
   @override
-  void initState() {
-    super.initState();
-    focus.addListener(() {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
   void dispose() {
     focus.dispose();
     super.dispose();
@@ -358,13 +351,7 @@ class _RaftMobileNavServerPopoverRowState
             states: t.recipeStates(
               hovered: state.hovered && pointer,
               pressed: state.pressed,
-              // The focus the open logic gave the current row shows whatever
-              // the input (Web: the focus-visible fill).
-              focusVisible:
-                  state.focusVisible ||
-                  (widget.current &&
-                      focus.hasFocus &&
-                      (handle?.focusedByOpen ?? false)),
+              focusVisible: state.focusVisible,
             ),
           );
           final leading = widget.leading;
@@ -393,7 +380,7 @@ class _RaftMobileNavServerPopoverRowState
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
+                      RaftCssText(
                         label,
                         maxLines: 1,
                         softWrap: false,
@@ -404,7 +391,7 @@ class _RaftMobileNavServerPopoverRowState
                             : null,
                       ),
                       if (widget.description != null)
-                        Text(
+                        RaftCssText(
                           widget.description!,
                           maxLines: 1,
                           softWrap: false,
@@ -537,7 +524,7 @@ class RaftMobileNavServerPopoverDestination extends StatelessWidget {
                     color: svg?.color?.resolve(rt),
                   ),
                   ExcludeSemantics(
-                    child: Text(
+                    child: RaftCssText(
                       text,
                       maxLines: 1,
                       softWrap: false,

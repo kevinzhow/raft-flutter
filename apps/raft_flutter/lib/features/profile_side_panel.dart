@@ -99,6 +99,7 @@ class ProfileSidePanel extends StatelessWidget {
           profile: author,
           onClose: onClose,
           onBack: onBack,
+          showCompactClose: profileHost != null,
         ),
         fallback: (failed) => SourceProfileLoadingPanel(
           onBack: onBack,

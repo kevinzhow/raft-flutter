@@ -69,7 +69,7 @@ void main() {
             'notifications' => 'Notifications',
             'billing' => 'Plan & billing',
             'administration' => 'Administration',
-            _ => 'Applications',
+            _ => 'Apps',
           });
           final headerTop = width >= 768 ? 44.0 : 0.0;
           expect(t.getRect(header).top, headerTop);

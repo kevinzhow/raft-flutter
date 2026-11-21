@@ -14,13 +14,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
+import 'package:raft_flutter/data/raft_navigation_history.dart';
+import 'package:raft_flutter/features/workspace_history_controls.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
+import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_flutter/platform/app_update.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/app_services_fixture.dart';
 import '../parity_harness.dart';
+import 'fixture_when.dart';
 import 'members_settings/fixture_client.dart';
 import 'release_notes_source.dart';
 
@@ -31,6 +36,9 @@ Map<String, dynamic> _fx(ParityContext ctx) =>
 /// `$status` fails with that status (the React provider spec does the same).
 MsRoutes _routes(ParityContext ctx) {
   final fx = _fx(ctx);
+  final apps = ctx.props['extFixture'] == 'apps'
+      ? ctx.fixtures['ext:apps'] as Map<String, dynamic>
+      : const <String, dynamic>{};
   final merged = {
     ...Map<String, dynamic>.from(fx['routes'] as Map),
     ...Map<String, dynamic>.from(
@@ -57,19 +65,34 @@ MsRoutes _routes(ParityContext ctx) {
               as Map?) ??
           const {},
     ),
+    ...Map<String, dynamic>.from(apps['routes'] as Map? ?? const {}),
+    ...Map<String, dynamic>.from(
+      (apps['routeSets'] as Map?)?[ctx.props['routeSet']] as Map? ?? const {},
+    ),
   };
+  final completedRoutes = <String>{};
   return {
-    for (final MapEntry(:key, :value) in merged.entries)
-      key: (_) {
+    for (final MapEntry(key: key, value: answer) in merged.entries)
+      key: (input) {
+        final value = resolveFixtureWhen(
+          answer,
+          key.startsWith('GET ') && input is Map<String, dynamic>
+              ? input
+              : null,
+          completedRoutes: completedRoutes,
+        );
         if (value is Map && value[r'$pending'] == true) {
           return Completer<Object?>().future;
         }
         if (value is Map && value[r'$status'] != null) {
-          return RaftApiException(
-            'fixture error',
+          final body = value[r'$body'] as Map?;
+          return RaftApiException.response(
+            body?['error']?.toString() ?? 'fixture error',
             status: value[r'$status'] as int,
+            body: body,
           );
         }
+        completedRoutes.add(key);
         return value;
       },
   };
@@ -85,6 +108,7 @@ Widget _page(ParityContext ctx) {
     'labs': 'server_labs_ui_v0',
     'providers': 'provider_connections_v0',
     'bridge': 'slack_bridge_v0',
+    'prompt-text': 'app_prompt_text_consent',
     'analytics': 'product_analytics_settings_v0',
     'raftbench': 'raftbench_overview_v0',
   };
@@ -93,6 +117,17 @@ Widget _page(ParityContext ctx) {
       if (flags.contains(key)) value,
   };
   final routeSet = ctx.props['routeSet'] as String? ?? '';
+  final shell = ctx.props['appsShell'] as String?;
+  final shellTasks = shell == 'tasks'
+      ? ((ctx.fixtures['tasksFixture'] as Map)['tasks'] as List).cast<Map>()
+      : const <Map>[];
+  final shellTaskCounts = <Object?, int>{};
+  for (final task in shellTasks) {
+    final status = task['status'] == 'in_review'
+        ? 'in_progress'
+        : task['status'];
+    shellTaskCounts.update(status, (count) => count + 1, ifAbsent: () => 1);
+  }
   // Store-primed Administration states (the React host patches the same).
   final serverJson = {
     ...fixture.server,
@@ -115,6 +150,9 @@ Widget _page(ParityContext ctx) {
       'GET /servers/visual-server': (_) => serverJson,
       // The official spec's /api/agents rows (fxAgentDetailAgents).
       'GET /agents': (_) => fixture.agents,
+      if (shell == 'tasks') 'GET /tasks/server': (_) => {'tasks': shellTasks},
+      if (shell == 'tasks')
+        'GET /tasks/server/counts': (_) => {'counts': shellTaskCounts},
       'POST /feature-flags/evaluate': (data) => {
         'evaluations': [
           for (final key in (data is Map ? data['keys'] as List? : null) ?? [])
@@ -174,10 +212,57 @@ Widget _page(ParityContext ctx) {
   final server = RaftRecord(serverJson);
   w
     ..server = server
-    ..servers = [server];
+    ..servers = [
+      server,
+      if (shell != null && shell.isNotEmpty && shell != 'login')
+        RaftRecord({
+          ...serverJson,
+          'id': 'visual-alt-server',
+          'name': 'Android Lab',
+          'slug': 'android-lab',
+        }),
+    ];
   // Mobile cases: SettingsPanel fills the 390px viewport (the React host
   // mounts it alone); desktop: the 1216px page beside the 64px rail.
   final mobile = ctx.props['platform'] == 'mobile';
+  if (shell != null && shell.isNotEmpty) {
+    if (shell == 'channel/channel-home') {
+      final channel = RaftChannel({
+        ...w.channels.single.json,
+        'id': 'channel-home',
+        'name': '首页专修',
+        'description': 'Home shell, server badge, and bottom dock polish',
+      });
+      w.channels = [channel];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(w.selectChannel(channel, autoRead: false));
+      });
+    } else if (shell == 'settings/applications') {
+      restoreAcceptedLocation(
+        w,
+        Uri.parse('/s/${server.string('slug')}/$shell'),
+      );
+    } else {
+      w.setSection(shell == 'login' ? 'tasks' : shell);
+    }
+    if (ctx.props['app_bot'] case final String clientId) {
+      w.navigation.navigate(
+        w.location.withQuery({'app_bot': clientId}),
+        kind: RaftNavigationKind.replace,
+      );
+    }
+    return withAppServices(
+      WorkspaceView(
+        controller: w,
+        appearance: RaftAppearance(
+          mode: ctx.dark ? ThemeMode.dark : ThemeMode.light,
+        ),
+        onAppearance: (_) async {},
+        onLogout: () async {},
+        onChooseServer: () {},
+      ),
+    );
+  }
   // The React provider freezes its clock at the fixture instant (the Free
   // trial notice and relative dates read it).
   final now = DateTime.fromMillisecondsSinceEpoch(
@@ -209,7 +294,7 @@ Widget _page(ParityContext ctx) {
     ),
   );
   return ctx.frame(
-    width: mobile ? ctx.width : 1216,
+    width: mobile || ctx.props['extFixture'] == 'apps' ? ctx.width : 1216,
     height: ctx.height,
     padding: EdgeInsets.zero,
     child: ctx.props['tab'] == 'release-notes'

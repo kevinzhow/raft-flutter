@@ -2,6 +2,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'activity_first_unread.dart';
+import 'app_permission_updates.dart';
 import 'artifacts/artifact_session.dart';
 import 'computers_rack/computer_attention_seen.dart';
 
@@ -53,5 +54,12 @@ List<RaftRailDestination> workspaceRailDestinations(
       label: tr('Computers'),
       glyph: RaftGlyph.monitor,
       attention: computerAttentionDotFor(workspace),
+    ),
+  if (workspace.canVisitSection('apps'))
+    RaftRailDestination(
+      id: 'apps',
+      label: tr('Apps'),
+      glyph: RaftGlyph.blocks,
+      attention: AppPermissionUpdates.of(workspace).summary.needsAdminReview,
     ),
 ];

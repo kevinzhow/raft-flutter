@@ -128,6 +128,17 @@ void main() {
   final loginButton = find.byKey(const ValueKey('human-login-continue'));
   final cancelButton = find.byKey(const ValueKey('human-login-cancel'));
 
+  Future<void> discloseIdentity(WidgetTester tester) async {
+    final disclosure = find.byKey(
+      const ValueKey('human-login-identity-disclosure'),
+    );
+    await tester.ensureVisible(disclosure);
+    await tester.pumpAndSettle();
+    expect(disclosure.hitTestable(), findsOneWidget);
+    await tester.tap(disclosure);
+    await tester.pumpAndSettle();
+  }
+
   /// The artifact answered "Sign in required"; the person pressed its "Login
   /// with Raft" link and the server redirected to the Web setup page.
   Future<bool> openSetup(WidgetTester t, String url) async {
@@ -482,6 +493,11 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const ValueKey('human-login-scope-openid')),
+        findsNothing,
+      );
+      await discloseIdentity(t);
       for (final scope in ['openid', 'profile', 'identity']) {
         expect(
           find.byKey(ValueKey('human-login-scope-$scope')),
@@ -513,6 +529,8 @@ void main() {
         final api = FakeHumanLoginApi();
         await mount(t, api: api);
         await openSetup(t, setupUrl());
+        final priorLoads = List<String>.of(FakeWebView.loads);
+        expect(priorLoads.last, artifact);
         await t.tap(loginButton);
         await frames(t, 25);
 
@@ -526,7 +544,7 @@ void main() {
         ]);
         expect(sheet, findsNothing);
         expect(FakeWebView.loads, [
-          artifact,
+          ...priorLoads,
           '$callback?code=issued-code-1&state=st-1',
         ]);
         expect(viewer, findsOneWidget);
@@ -662,16 +680,13 @@ void main() {
       expect(FakeWebView.loads.last, startsWith('$callback?code='));
     });
 
-    testWidgets('a server the account is not in: Web\'s message, then back', (
+    testWidgets('a server the account is not in shows the generic refusal', (
       t,
     ) async {
       final api = FakeHumanLoginApi();
       await mount(t, api: api);
       await openSetup(t, setupUrl(server: 'srv-other'));
-      expect(
-        find.text('You do not have access to any Raft Servers.'),
-        findsOneWidget,
-      );
+      expect(find.text("This app isn't available to you"), findsOneWidget);
       expect(loginButton, findsNothing);
       expect(api.lookups, isEmpty);
       await t.tap(cancelButton);
@@ -681,20 +696,15 @@ void main() {
       expect(FakeWebView.shown, artifact);
     });
 
-    testWidgets('an app not registered on the server: Web\'s explanation', (
+    testWidgets('an unavailable app gives no server or access details', (
       t,
     ) async {
       final api = FakeHumanLoginApi(clients: {});
       await mount(t, api: api);
       await openSetup(t, setupUrl());
-      // Web shows its "not accessible" page, not the form.
-      expect(find.text('This App is not accessible yet'), findsOneWidget);
-      expect(
-        find.text(
-          'This private third-party App is not available on any Raft Server you can access.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text("This app isn't available to you"), findsOneWidget);
+      expect(find.text('Signed in as person@example.com'), findsOneWidget);
+      expect(find.text('How can I get access?'), findsNothing);
       expect(loginButton, findsNothing);
     });
 
@@ -880,6 +890,7 @@ void main() {
       expect(find.text('Artifact Share 想要连接到 Acme'), findsOneWidget);
       expect(find.text('请求的权限'), findsOneWidget);
       expect(find.text('取消'), findsOneWidget);
+      await discloseIdentity(t);
       expect(
         find.textContaining('使用 Raft 登录并签发稳定的身份令牌').evaluate(),
         isEmpty,
