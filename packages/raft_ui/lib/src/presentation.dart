@@ -506,12 +506,15 @@ class _DetentSheetState extends State<_DetentSheet>
 
   void close() {
     if (asking || !mounted) return;
-    asking = true;
     final route = ModalRoute.of(context);
+    // A reversing sheet can still report its minimum extent. Its drag
+    // belongs to that sheet, even after the route underneath becomes current.
+    if (route?.isCurrent != true) return;
+    asking = true;
     Navigator.of(context).maybePop().then((_) {
       asking = false;
       // Still open: the route said no. Back to the detent it was opened at.
-      if (mounted && route != null && route.isActive && controller.isAttached) {
+      if (mounted && route?.isCurrent == true && controller.isAttached) {
         unawaited(
           controller.animateTo(
             widget.initialSize,
