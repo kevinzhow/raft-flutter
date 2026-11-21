@@ -5294,7 +5294,7 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:attachmentGallery@66268/FUNCTION:view@67422": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:attachmentGallery@66362/FUNCTION:view@67516": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -5306,7 +5306,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:senderAvatar@78846/FUNCTION:avatar@81321": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:senderAvatar@78940/FUNCTION:avatar@81415": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -5366,7 +5366,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/presentation.dart#local-function:CLASS:RaftPresentedRoute@4833/METHOD:_buildSheet@11257/FUNCTION:surface@11555": {
+      "packages/raft_ui/lib/src/presentation.dart#local-function:CLASS:RaftPresentedRoute@4833/METHOD:_buildSheet@11419/FUNCTION:surface@11717": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS2 overlay family",
@@ -57212,7 +57212,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:buildTimeline@113052/FUNCTION:timelineFor@116754": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:buildTimeline@113146/FUNCTION:timelineFor@116783": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
