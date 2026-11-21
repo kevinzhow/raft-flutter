@@ -87,4 +87,8 @@ const Map<String, String> zhCatalogUpstream124Art3 = {
   "Couldn't open link": '无法打开链接',
   'Read {url} and summarize it in a few sentences, then answer my questions about it.':
       '请阅读 {url} ，先用几句话总结，再回答我关于它的问题。',
+  'You and {name}': '你和 {name}',
+  'Members of {name}': '{name} 的成员',
+  'Grid': '网格',
+  'Author': '作者',
 };
