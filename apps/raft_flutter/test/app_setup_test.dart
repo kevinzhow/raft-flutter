@@ -313,8 +313,13 @@ void main() {
             };
           };
       expect(find.text('Posts as'), findsOneWidget);
-      const addBot = ValueKey('connected-app-bot-marketplace-add');
-      expect(find.byKey(addBot), findsNothing);
+      final addBot = find.descendant(
+        of: find.byKey(const ValueKey('connected-app-detail')),
+        matching: find.byKey(
+          const ValueKey('connected-app-bot-marketplace-add'),
+        ),
+      );
+      expect(addBot, findsNothing);
       await t.tap(find.byKey(const ValueKey('connected-app-install')));
       await t.pumpAndSettle();
       expect(
@@ -327,13 +332,20 @@ void main() {
       );
       expect(find.text('Installed, setup pending'), findsOneWidget);
       expect(find.text('Continue setup'), findsOneWidget);
-      expect(find.byKey(addBot), findsOneWidget);
-      await t.tap(find.byKey(addBot));
+      final panel = t.getRect(
+        find.byKey(const ValueKey('app-installation-setup')),
+      );
+      final refresh = t.getRect(
+        find.byKey(const ValueKey('app-setup-refresh')),
+      );
+      expect(refresh.width, panel.width - 34);
+      expect(addBot, findsOneWidget);
+      await t.tap(addBot);
       await t.pumpAndSettle();
       expect(grants, [
         {'action': 'grant'},
       ]);
-      expect(find.byKey(addBot), findsNothing);
+      expect(addBot, findsNothing);
       expect(find.text('Continue setup'), findsOneWidget);
     });
 

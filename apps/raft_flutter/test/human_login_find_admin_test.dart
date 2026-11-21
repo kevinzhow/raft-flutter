@@ -85,6 +85,7 @@ void main() {
       findsOneWidget,
     );
     expect(link, findsOneWidget);
+    expect(t.getSize(link).height, 44);
     expect(find.text('Install and continue'), findsNothing);
     await t.ensureVisible(link);
     await t.tap(link);

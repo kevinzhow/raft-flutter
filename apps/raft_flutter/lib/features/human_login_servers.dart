@@ -462,12 +462,19 @@ class HumanLoginCommitZone extends StatelessWidget {
             // Web OUTLINE_LINK_BUTTON_CLASS: a full-width outline button.
             Padding(
               padding: const EdgeInsets.only(top: RaftSpace.x1),
-              child: RaftButton(
-                key: const ValueKey('human-login-find-admin'),
+              child: Semantics(
+                link: true,
+                container: true,
+                excludeSemantics: true,
                 label: tr('Find a server admin'),
-                tone: RaftButtonRecipeVariant.outline,
-                size: RaftButtonRecipeSize.md,
-                onPressed: () => onFindAdmin!(server!),
+                onTap: () => onFindAdmin!(server!),
+                child: RaftButton(
+                  key: const ValueKey('human-login-find-admin'),
+                  label: tr('Find a server admin'),
+                  tone: RaftButtonRecipeVariant.outline,
+                  size: RaftButtonRecipeSize.lg,
+                  onPressed: () => onFindAdmin!(server!),
+                ),
               ),
             ),
         ],

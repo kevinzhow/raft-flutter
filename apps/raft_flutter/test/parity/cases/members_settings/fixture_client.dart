@@ -14,11 +14,12 @@ import '../../parity_harness.dart';
 typedef MsRoutes = Map<String, Object? Function(dynamic data)>;
 
 class MsFixtureClient extends RaftClient {
-  MsFixtureClient(this.routes, Map<String, dynamic> user, {this.fallback})
-    : super(
-        origin: 'https://visual-fixture.invalid',
-        sessionStore: MemorySessionStore(),
-      ) {
+  MsFixtureClient(
+    this.routes,
+    Map<String, dynamic> user, {
+    this.fallback,
+    String origin = 'https://visual-fixture.invalid',
+  }) : super(origin: origin, sessionStore: MemorySessionStore()) {
     this.user = RaftRecord(user);
     selectServer('visual-server');
   }
@@ -267,9 +268,15 @@ class MsFixture {
   (WorkspaceController, MsFixtureClient) workspace(
     MsRoutes routes, {
     List<String> channels = const ['design'],
+    String origin = 'https://visual-fixture.invalid',
     Object? Function(String method, String path, dynamic data)? fallback,
   }) {
-    final client = MsFixtureClient(routes, user, fallback: fallback);
+    final client = MsFixtureClient(
+      routes,
+      user,
+      origin: origin,
+      fallback: fallback,
+    );
     final w = WorkspaceController(client)
       ..server = RaftRecord(server)
       ..servers = [RaftRecord(server)]

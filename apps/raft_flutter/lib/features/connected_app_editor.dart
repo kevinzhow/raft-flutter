@@ -297,6 +297,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       final draft =
           quiet &&
           (requestChanged ||
+              configOpen !=
+                  (managementMap(notifications?['webhook'])['enabled'] ==
+                      true) ||
               endpoint.text !=
                   '${managementMap(notifications?['webhook'])['endpoint_url'] ?? ''}');
       if (draft) {
@@ -791,19 +794,44 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
   Future<void> saveEndpoint() async {
     await guarded(
       () async {
-        final data = managementMap(
-          await w.client.request(
-            'PUT',
-            '$base/app-notifications/webhook',
-            data: {'endpointUrl': endpoint.text},
-          ),
-        );
-        webhookSecret = data['signing_secret'] as String?;
+        if (configOpen) {
+          final data = managementMap(
+            await w.client.request(
+              'PUT',
+              '$base/app-notifications/webhook',
+              data: {'endpointUrl': endpoint.text},
+            ),
+          );
+          webhookSecret = data['signing_secret'] as String?;
+        } else {
+          await w.client.delete('$base/app-notifications/webhook');
+          webhookSecret = null;
+        }
         webhookSecretCopied = false;
         await loadNotifications();
       },
-      'Failed to save App Notifications endpoint',
+      configOpen
+          ? 'Failed to save App Notifications endpoint'
+          : 'Failed to disable App Notifications endpoint',
       busy: (b) => webhookBusy = b ? 'endpoint' : null,
+    );
+  }
+
+  Future<void> confirmRotateSecret() async {
+    await RaftConfirmDialog.show(
+      context,
+      RaftConfirmDialog(
+        title: tr('Rotate signing secret?'),
+        message: tr(
+          'The current signing secret will stop working immediately, so your app must switch to the new one to keep verifying events. The new secret is shown once after rotating.',
+        ),
+        confirmLabel: tr('Rotate secret'),
+        loadingLabel: tr('Rotating...'),
+        confirmGlyph: RaftGlyph.alertTriangle,
+        confirmVariant: RaftButtonRecipeVariant.warning,
+        confirmKey: const ValueKey('app-notifications-rotate-secret-confirm'),
+        onConfirm: rotateSecret,
+      ),
     );
   }
 
@@ -826,33 +854,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       'Failed to rotate App Notifications secret',
       busy: (b) => webhookBusy = b ? 'rotate' : null,
     );
-  }
-
-  Future<bool> disableEndpoint() async {
-    final ok = await guarded(
-      () async {
-        await w.client.delete('$base/app-notifications/webhook');
-        webhookSecret = null;
-        await loadNotifications();
-        return true;
-      },
-      'Failed to disable App Notifications endpoint',
-      busy: (b) => webhookBusy = b ? 'disable' : null,
-    );
-    return ok ?? false;
-  }
-
-  Future<void> toggleWebhook(bool enabled) async {
-    if (editing == null) return;
-    if (enabled) {
-      setState(() => configOpen = true);
-      return;
-    }
-    if (managementMap(notifications?['webhook'])['enabled'] == true &&
-        !await disableEndpoint()) {
-      return;
-    }
-    if (mounted) setState(() => configOpen = false);
   }
 
   String groupLabel(String group) =>
@@ -1364,84 +1365,92 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
   Widget webhookSection() {
     final app = editing;
     final webhook = managementMap(notifications?['webhook']);
+    final savedEnabled = webhook['enabled'] == true;
     final busy = webhookBusy != null;
+    final locked =
+        app == null || notificationsLoading || notifications == null || busy;
+    final canSave = configOpen
+        ? endpoint.text.trim().isNotEmpty &&
+              (!savedEnabled || endpoint.text != webhook['endpoint_url'])
+        : savedEnabled;
     final pending = notifications?['pending_revision'];
     return RaftAppEditorStack(
       gap: RaftSpace.x3,
       children: [
         RaftAppEditorPanel(
           title: 'Delivery',
-          description: 'Endpoint and signing secret.',
           trailing: statusBadge(),
+          inset: true,
           child: RaftAppEditorStack(
             gap: RaftSpace.x3,
             children: [
-              RaftAppEditorSwitchRow(
-                title: 'Enable webhook',
-                description:
-                    'Receive selected Raft events at a signed HTTPS webhook.',
-                note: app == null
-                    ? 'Save the app before enabling its webhook.'
+              RaftCheckboxRow(
+                key: const ValueKey('app-notifications-enabled'),
+                title: tr('Enable webhook'),
+                description: app == null
+                    ? tr('Save the app before enabling its webhook.')
                     : null,
                 value: configOpen && app != null,
-                onChanged:
-                    app == null ||
-                        notificationsLoading ||
-                        notifications == null ||
-                        busy
+                onChanged: locked
                     ? null
-                    : toggleWebhook,
+                    : (enabled) => setState(() => configOpen = enabled),
               ),
               if (configOpen && app != null) ...[
-                RaftAppEditorInlineForm(
-                  field: RaftAppEditorField(
-                    label: 'HTTPS endpoint',
-                    child: RaftRecipeInput(
-                      controller: endpoint,
-                      mono: true,
-                      placeholder: 'https://example.com/raft/events',
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  action: RaftSettingsRecipeButton(
-                    label: webhookBusy == 'endpoint'
-                        ? 'Saving...'
-                        : 'Save endpoint',
-                    size: small,
-                    onPressed: busy || endpoint.text.trim().isEmpty
-                        ? null
-                        : saveEndpoint,
+                RaftAppEditorField(
+                  label: 'HTTPS endpoint',
+                  child: RaftRecipeInput(
+                    controller: endpoint,
+                    enabled: !busy,
+                    mono: true,
+                    placeholder: 'https://example.com/raft/events',
+                    onChanged: (_) => setState(() {}),
                   ),
                 ),
                 RaftAppEditorActionLine(
-                  message: webhook['enabled'] == true
+                  message: savedEnabled
                       ? raftFormat(context, 'Enabled · revision {revision}', {
                           'revision': webhook['config_revision'],
                         })
                       : tr('Enter an endpoint to finish enabling delivery.'),
                   actions: [
-                    if (webhook['enabled'] == true)
+                    if (savedEnabled)
                       RaftSettingsRecipeButton(
                         label: webhookBusy == 'rotate'
                             ? 'Rotating...'
                             : 'Rotate secret',
                         glyph: RaftGlyph.rotateCw,
                         glyphSize: 13,
-                        size: small,
-                        onPressed: busy ? null : rotateSecret,
+                        onPressed: busy ? null : confirmRotateSecret,
                       ),
                   ],
                 ),
-                if (webhookSecret != null)
-                  RaftAppEditorSigningSecret(
-                    secret: webhookSecret!,
-                    copied: webhookSecretCopied,
-                    onCopy: () => copy(
-                      webhookSecret!,
-                      done: () => webhookSecretCopied = true,
-                    ),
-                  ),
               ],
+              if (webhookSecret != null)
+                RaftAppEditorSigningSecret(
+                  secret: webhookSecret!,
+                  copied: webhookSecretCopied,
+                  onCopy: () => copy(
+                    webhookSecret!,
+                    done: () => webhookSecretCopied = true,
+                  ),
+                ),
+              if (!configOpen && savedEnabled)
+                RaftAppEditorActionLine(
+                  message: tr(
+                    'Events keep going to this endpoint until you save.',
+                  ),
+                  actions: const [],
+                ),
+              if (app != null && (configOpen || savedEnabled))
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: RaftSettingsRecipeButton(
+                    key: const ValueKey('app-notifications-save'),
+                    label: webhookBusy == 'endpoint' ? 'Saving...' : 'Save',
+                    variant: RaftButtonRecipeVariant.accent,
+                    onPressed: locked || !canSave ? null : saveEndpoint,
+                  ),
+                ),
             ],
           ),
         ),
@@ -1530,50 +1539,40 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
         if (app != null && hint != null)
           RaftAppEditorCallout(hint, tone: RaftAppEditorCalloutTone.warning),
         if (status == 'publish_requested' || status == 'in_review')
-          RaftAppEditorBox(
-            child: RaftAppEditorActionRow(
-              title: 'Publish request',
-              description: 'Withdrawing returns the app to private. Its registration, credentials and installations stay, and you can request review again later.',
-              action: RaftSettingsRecipeButton(
-                key: const ValueKey('connected-app-withdraw-publish-button'),
-                label: 'Withdraw request',
-                size: small,
-                onPressed: savingId == null ? withdrawPublish : null,
-              ),
+          RaftAppEditorActionRow(
+            title: 'Publish request',
+            description: 'Withdrawing returns the app to private. Its registration, credentials and installations stay, and you can request review again later.',
+            action: RaftSettingsRecipeButton(
+              key: const ValueKey('connected-app-withdraw-publish-button'),
+              label: 'Withdraw request',
+              onPressed: savingId == null ? withdrawPublish : null,
             ),
           ),
-        if (app != null && shareable)
-          RaftAppEditorBox(
+        if (app != null && shareable) ...[
+          RaftAppEditorStack(
             key: const ValueKey('connected-app-private-share-card'),
-            child: RaftAppEditorStack(
-              gap: RaftSpace.x3,
-              children: [
-                const RaftAppEditorActionRow(
-                  title: 'Private share link',
-                  description: 'Let one other server install this app without listing it in the public marketplace. Each link works once, only on the server you name, for one of its owners or admins.',
-                ),
-                shareLinksControls(),
-              ],
-            ),
-          ),
-        if (app != null && shareable)
-          RaftAppEditorBox(
-            cream: true,
-            child: RaftAppEditorActionRow(
-              title: 'Marketplace publish request',
-              description: 'Category and data access come from the app metadata and declared scopes above. Requesting review saves those changes first.',
-              action: RaftSettingsRecipeButton(
-                label: savingId == '${app['id']}'
-                    ? 'Requesting…'
-                    : 'Request publish',
-                variant: RaftButtonRecipeVariant.accent,
-                size: small,
-                onPressed: whenToUseTooLong || savingId == '${app['id']}'
-                    ? null
-                    : requestPublish,
+            gap: RaftSpace.x3,
+            children: [
+              const RaftAppEditorActionRow(
+                title: 'Private share link',
+                description: 'Let one other server install this app without listing it in the public marketplace. Each link works once, only on the server you name, for one of its owners or admins.',
               ),
+              shareLinksControls(),
+            ],
+          ),
+          RaftAppEditorActionRow(
+            title: 'Marketplace publish request',
+            description: 'Category and data access come from the app metadata and declared scopes above. Requesting review saves those changes first.',
+            action: RaftSettingsRecipeButton(
+              label: savingId == '${app['id']}'
+                  ? 'Requesting…'
+                  : 'Request publish',
+              onPressed: whenToUseTooLong || savingId == '${app['id']}'
+                  ? null
+                  : requestPublish,
             ),
           ),
+        ],
         if (status == 'published')
           RaftAppEditorCallout(
             'This app is published in the Marketplace. Offline approval preserves the source Server’s installation and access, but removes installations and access on other Servers.',

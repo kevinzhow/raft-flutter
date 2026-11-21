@@ -526,7 +526,10 @@ marketplace_uninstall_steps = [
         {'type': 'click', 'target': 'button:has-text("GitHub Issues") >> nth=0'},
         {'type': 'tap', 'key': 'connected-app-market_github'},
     ),
-    tap_text('Uninstall from this server', 'button:has-text("Uninstall from this server")'),
+    (
+        {'type': 'click', 'target': 'button:has-text("Uninstall from this server")'},
+        {'type': 'tap', 'key': 'connected-app-marketplace-uninstall', 'scroll': 'fully-visible'},
+    ),
 ]
 manage_previews = tap('link-preview-consents-manage')
 review_permissions = tap_text(

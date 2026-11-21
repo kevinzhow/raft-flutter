@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart';
 
 import '../data/app_install_expectation.dart';
 import 'app_notifications_catalog.dart';
@@ -195,72 +196,99 @@ class ConnectedAppPromptComparison extends StatelessWidget {
   final String beforeTitle, afterTitle;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    spacing: RaftSpace.x3,
-    children: [
+  Widget build(BuildContext context) {
+    final cards = <Widget>[
       if (before case final text?)
         ConnectedAppPromptTextBlock(title: beforeTitle, text: text)
       else
-        Text(
-          raftText(
-            context,
-            "No confirmed text yet, so agent prompts don't list this app.",
-          ),
+        ConnectedAppPromptTextBlock(
+          title: beforeTitle,
+          empty: "No confirmed text yet, so agent prompts don't list this app.",
         ),
       if (after case final text?)
         ConnectedAppPromptTextBlock(title: afterTitle, text: text),
-    ],
-  );
+    ];
+    return raftBreakpointWidth(context) >= 768
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: RaftSpace.x3,
+            children: [for (final card in cards) Expanded(child: card)],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: RaftSpace.x3,
+            children: cards,
+          );
+  }
 }
 
 class ConnectedAppPromptTextBlock extends StatelessWidget {
   const ConnectedAppPromptTextBlock({
     super.key,
-    required this.text,
+    this.text,
     this.title,
+    this.empty = 'Not added to agent prompts: this app has no When to use.',
   });
 
-  final ConnectedAppPromptText text;
+  final ConnectedAppPromptText? text;
   final String? title;
+  final String empty;
 
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
-    final lines = text.lines;
-    final code = RaftCodeRecipe(tokens);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: RaftSpace.x2,
-      children: [
-        if (title != null)
+    final lines = text?.lines;
+    final title = this.title;
+    if (lines == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: RaftSpace.x1,
+        children: [
+          if (title != null)
+            Text(
+              raftText(context, title),
+              style: tokens.scale(
+                RaftTypeScale.footnote,
+                weight: FontWeight.w600,
+              ),
+            ),
           Text(
-            raftText(context, title!),
+            raftText(context, empty),
             style: tokens.scale(
               RaftTypeScale.footnote,
-              weight: FontWeight.w600,
+              color: tokens.ui.foregroundMuted,
             ),
           ),
-        if (lines == null)
-          Text(
-            raftText(
-              context,
-              'Not added to agent prompts: this app has no When to use.',
+        ],
+      );
+    }
+    final bindings = tokens.recipeTokens;
+    final recipe = RaftCodeBlockRecipe.resolve(
+      states: tokens.recipeStates(responsive: true),
+      tokens: bindings,
+    );
+    return RaftRecipeBox(
+      style: recipe.root,
+      tokens: bindings,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title != null)
+            RaftRecipeBox(
+              style: recipe.header,
+              tokens: bindings,
+              child: RaftCssText(
+                raftText(context, title),
+                style: recipe.title.textStyle(bindings),
+              ),
             ),
-          )
-        else
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: code.background,
-              border: Border.all(color: code.border),
-              borderRadius: code.radius,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(RaftSpace.x3),
-              child: Text(lines, style: code.textStyle),
-            ),
+          RaftRecipeBox(
+            style: recipe.body,
+            tokens: bindings,
+            child: Text(lines),
           ),
-      ],
+        ],
+      ),
     );
   }
 }

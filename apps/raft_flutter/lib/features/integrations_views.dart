@@ -966,6 +966,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                         'Removing this app revokes its existing Login with Raft access for this server.',
                       ),
                       action: RaftConnectedAppButton(
+                        key: const ValueKey(
+                          'connected-app-marketplace-uninstall',
+                        ),
                         label: saving
                             ? tr('Uninstalling...')
                             : tr('Uninstall from this server'),
@@ -1033,103 +1036,113 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     bool fromBotLink = false,
   }) async {
     final source = authority;
+    // ignore: raft_lints/avoid_imperative_notice_state -- The installed detail owns this notice. A fresh permissions read or approval clears it.
+    String? modalError;
     await showRaftDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (modal) {
-        void close() => Navigator.of(modal).pop();
-        if (source != authority) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => close());
-        }
-        String tr(String s) => raftText(modal, s);
-        final granted = app.grantedScopes;
-        final awaitingApproval = _awaitsApproval(app);
-        final permissions = canManage
-            ? _InstalledAppPermissions(
-                controller: w,
-                clientId: app.id,
-                service: app.source['clientId'] as String?,
-                canManage: true,
-                groupLabel: (g) => _groupLabel(modal, g),
-                onUpdated: () async {
-                  await Future.wait([
-                    reload(),
-                    AppPermissionUpdates.of(w).refresh(changed: true),
-                  ]);
-                },
-              )
-            : null;
-        final offeredBot = managementMap(app.source['bot']);
-        final hasBot =
-            offeredBot['offered'] != false &&
-            (offeredBot['handle'] as String?)?.isNotEmpty == true;
-        return RaftConnectedAppDetailCard(
-          key: const ValueKey('connected-app-installed-detail'),
-          eyebrow: 'Installed app',
-          name: app.name,
-          initials: integrationInitials(app.name),
-          logoUrl: app.logoUrl,
-          byline: app.developer,
-          closeLabel: tr('Close installed app details'),
-          onClose: close,
-          sections: [
-            if (awaitingApproval && !hasBot) ?permissions,
-            if (hasBot)
-              ConnectedAppBot(
-                workspace: w,
-                clientId: app.id,
-                appName: app.name,
-                logo: RaftAppLogo(
-                  initials: integrationInitials(app.name),
-                  logoUrl: app.logoUrl,
-                  size: RaftAppLogoSize.sm,
-                ),
-                offer: offeredBot,
-                onChanged: (bot) => _updateBot(app.id, bot),
-                fromBotLink: fromBotLink,
-                pendingPermissions: awaitingApproval ? permissions : null,
-                onFindAdmin: () {
-                  close();
-                  if (source == authority) w.setSection('members');
-                },
-                onViewProfile: (id) {
-                  close();
-                  if (source == authority) {
-                    w.openProfile(RaftProfileKind.agent, id);
-                  }
-                },
-              ),
-            if (hasAppSetup(app.source))
-              AppSetupPanel(controller: w, clientId: app.id),
-            RaftOAuthScopeSummary(
-              title: tr('Login with Raft access'),
-              description: tr(
-                'OAuth scopes currently granted to this server connection.',
-              ),
-              scopes: granted,
-              tooltips: {
-                for (final scope in granted)
-                  scope: tr(
-                    integrationScopeCopy[scope] ??
-                        'Raft has no description for this scope.',
+      builder: (modal) => StatefulBuilder(
+        builder: (modal, setModal) {
+          void close() => Navigator.of(modal).pop();
+          if (source != authority) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => close());
+          }
+          String tr(String s) => raftText(modal, s);
+          final granted = app.grantedScopes;
+          final awaitingApproval = _awaitsApproval(app);
+          final permissions = canManage
+              ? _InstalledAppPermissions(
+                  controller: w,
+                  clientId: app.id,
+                  service: app.source['clientId'] as String?,
+                  canManage: true,
+                  groupLabel: (g) => _groupLabel(modal, g),
+                  onError: (message) {
+                    if (modal.mounted && modalError != message) {
+                      setModal(() => modalError = message);
+                    }
+                  },
+                  onUpdated: () async {
+                    await Future.wait([
+                      reload(),
+                      AppPermissionUpdates.of(w).refresh(changed: true),
+                    ]);
+                  },
+                )
+              : null;
+          final offeredBot = managementMap(app.source['bot']);
+          final hasBot =
+              offeredBot['offered'] != false &&
+              (offeredBot['handle'] as String?)?.isNotEmpty == true;
+          return RaftConnectedAppDetailCard(
+            key: const ValueKey('connected-app-installed-detail'),
+            eyebrow: 'Installed app',
+            name: app.name,
+            initials: integrationInitials(app.name),
+            logoUrl: app.logoUrl,
+            byline: app.developer,
+            closeLabel: tr('Close installed app details'),
+            onClose: close,
+            error: modalError,
+            sections: [
+              if (awaitingApproval && !hasBot) ?permissions,
+              if (hasBot)
+                ConnectedAppBot(
+                  workspace: w,
+                  clientId: app.id,
+                  appName: app.name,
+                  logo: RaftAppLogo(
+                    initials: integrationInitials(app.name),
+                    logoUrl: app.logoUrl,
+                    size: RaftAppLogoSize.sm,
                   ),
-              },
-              resourceScopes: integrationResourceScopes,
-              emptyLabel: tr('No active grant scopes'),
-            ),
-            LinkPreviewAppChoice(store: AppLinkStore.of(w), appId: app.id),
-            if (!awaitingApproval) ?permissions,
-          ],
-          footer: [
-            RaftConnectedAppButton(
-              label: tr('Close'),
-              variant: RaftButtonRecipeVariant.outline,
-              size: RaftButtonRecipeSize.lg,
-              onPressed: close,
-            ),
-          ],
-        );
-      },
+                  offer: offeredBot,
+                  onChanged: (bot) => _updateBot(app.id, bot),
+                  fromBotLink: fromBotLink,
+                  pendingPermissions: awaitingApproval ? permissions : null,
+                  onFindAdmin: () {
+                    close();
+                    if (source == authority) w.setSection('members');
+                  },
+                  onViewProfile: (id) {
+                    close();
+                    if (source == authority) {
+                      w.openProfile(RaftProfileKind.agent, id);
+                    }
+                  },
+                ),
+              if (hasAppSetup(app.source))
+                AppSetupPanel(controller: w, clientId: app.id),
+              RaftOAuthScopeSummary(
+                title: tr('Login with Raft access'),
+                description: tr(
+                  'OAuth scopes currently granted to this server connection.',
+                ),
+                scopes: granted,
+                tooltips: {
+                  for (final scope in granted)
+                    scope: tr(
+                      integrationScopeCopy[scope] ??
+                          'Raft has no description for this scope.',
+                    ),
+                },
+                resourceScopes: integrationResourceScopes,
+                emptyLabel: tr('No active grant scopes'),
+              ),
+              LinkPreviewAppChoice(store: AppLinkStore.of(w), appId: app.id),
+              if (!awaitingApproval) ?permissions,
+            ],
+            footer: [
+              RaftConnectedAppButton(
+                label: tr('Close'),
+                variant: RaftButtonRecipeVariant.outline,
+                size: RaftButtonRecipeSize.lg,
+                onPressed: close,
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -1305,6 +1318,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
   }) {
     String tr(String s) => raftText(context, s);
     final p = projection;
+    final installedBots = {
+      for (final app in p.installed) app.id: managementMap(app.source['bot']),
+    };
     final updateCount = p.installed.where(_awaitsApproval).length;
     final query = search.text.trim().toLowerCase();
     final narrowed =
@@ -1324,12 +1340,26 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
       String? recommendation,
     }) {
       final installed = app['installedAt'] != null;
+      final bot = installedBots[id];
       return RaftMarketplaceAppTile(
         id: id,
         name: '${app['name'] ?? ''}',
         initials: integrationInitials('${app['name'] ?? app['clientId']}'),
         logoUrl: app['logoUrl'] as String?,
         byline: recommendation ?? byline(app),
+        botAction:
+            installed && recommendation == null && bot?['grant'] == 'pending'
+            ? ConnectedAppBot(
+                key: ValueKey(('marketplace-bot', id)),
+                workspace: w,
+                clientId: id,
+                appName: '${app['name'] ?? ''}',
+                offer: bot!,
+                marketplaceHint: true,
+                onChanged: (bot) => _updateBot(id, bot),
+                onViewProfile: (_) {},
+              )
+            : null,
         description: recommendation == null
             ? app['description'] as String?
             : null,
@@ -1778,6 +1808,7 @@ class _InstalledAppPermissions extends StatefulWidget {
     required this.service,
     required this.canManage,
     required this.groupLabel,
+    required this.onError,
     required this.onUpdated,
   });
   final WorkspaceController controller;
@@ -1785,6 +1816,7 @@ class _InstalledAppPermissions extends StatefulWidget {
   final String? service;
   final bool canManage;
   final String Function(String group) groupLabel;
+  final ValueChanged<String?> onError;
   final Future<void> Function() onUpdated;
   @override
   State<_InstalledAppPermissions> createState() =>
@@ -1795,8 +1827,6 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
   Map<String, dynamic>? state;
   bool textConsent = false;
   bool loading = true, saving = false;
-  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next load of the installed-app notification settings succeeds; the state is dropped with the page.
-  String? error;
   String get path =>
       '/integrations/marketplace/${widget.clientId}/install/app-notifications';
   String get _snapshotKey => 'integrations:installed:${widget.clientId}';
@@ -1818,7 +1848,9 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
   Future<void> load() async {
     final identity = pageIdentity(widget.controller);
     try {
-      final data = managementMap(await widget.controller.client.get(path));
+      final data = managementMap(
+        await Future.sync(() => widget.controller.client.get(path)),
+      );
       final serverId = widget.controller.server?.id;
       final consent =
           serverId != null &&
@@ -1829,32 +1861,30 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
         state = data;
         textConsent = consent;
         loading = false;
-        error = null;
       });
+      widget.onError(null);
       writePageSnapshot(widget.controller, _snapshotKey, identity, {
         'state': data,
         'textConsent': consent,
       });
     } catch (e) {
       if (!mounted || identity != pageIdentity(widget.controller)) return;
-      setState(() {
-        loading = false;
-        error = userErrorText(
+      setState(() => loading = false);
+      widget.onError(
+        userErrorText(
           e,
           fallback: 'Failed to load installed App Notifications settings',
           where: 'installed app notifications',
-        );
-      });
+        ),
+      );
     }
   }
 
   Future<void> approve(AppInstallExpectation reviewed) async {
     if (saving) return;
     final identity = pageIdentity(widget.controller);
-    setState(() {
-      saving = true;
-      error = null;
-    });
+    setState(() => saving = true);
+    widget.onError(null);
     try {
       // Approving the app's update: "Verify it's you" first (Web
       // AppNotificationsControls, reason appAccess).
@@ -1879,9 +1909,8 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
       if (mounted && identity == pageIdentity(widget.controller)) {
         if (isAppPermissionsChanged(e)) await load();
         if (!mounted || identity != pageIdentity(widget.controller)) return;
-        setState(
-          () => error =
-              appInstallRefusal(
+        widget.onError(
+          appInstallRefusal(
                 e,
                 sentTextRevisionId: reviewed.textRevisionId,
                 permissionsChanged: "This app's permissions just changed. Review the current permissions, then confirm again.",
@@ -1909,11 +1938,7 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
       );
     }
     final s = state;
-    if (s == null) {
-      return error == null
-          ? const SizedBox.shrink()
-          : RaftConnectedAppsError(error!);
-    }
+    if (s == null) return const SizedBox.shrink();
     List<String> events(Object? raw) => [
       for (final e in managementStrings(raw))
         tr(appNotificationEventLabels[e] ?? e),
@@ -2040,10 +2065,6 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
             title: 'Text added to agent prompts',
             text: confirmed,
           ),
-        ],
-        if (error != null) ...[
-          const SizedBox(height: RaftSpace.x3),
-          RaftConnectedAppsError(error!),
         ],
       ],
     );

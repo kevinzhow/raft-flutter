@@ -35602,12 +35602,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#class:RaftAppEditorSwitchRow": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
       "packages/raft_ui/lib/src/settings_app_editor.dart#class:RaftAppEditorTwoColumn": {
         "role": "unresolved",
         "familyRefs": [],
@@ -35771,12 +35765,6 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/settings_app_editor.dart#method:RaftAppEditorStack.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#method:RaftAppEditorSwitchRow.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -59142,7 +59130,7 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "apps/raft_flutter/lib/features/connected_app_consent.dart#local-function:CLASS:ConnectedAppPermissionSet@492/METHOD:build@803/FUNCTION:lines@942": {
+      "apps/raft_flutter/lib/features/connected_app_consent.dart#local-function:CLASS:ConnectedAppPermissionSet@531/METHOD:build@842/FUNCTION:lines@981": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59256,7 +59244,7 @@
         "owner": "WP-APPS",
         "reason": "Composes the shared progress and native login controls."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7231/METHOD:build@47766/FUNCTION:page@47882": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7231/METHOD:build@48562/FUNCTION:page@48678": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59412,19 +59400,19 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@27767/METHOD:build@28092/FUNCTION:head@28360": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@27891/METHOD:build@28216/FUNCTION:head@28484": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@22737/METHOD:build@23441/FUNCTION:chip@23756": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@22861/METHOD:build@23565/FUNCTION:chip@23880": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@22737/METHOD:build@23441/FUNCTION:group@24734": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@22861/METHOD:build@23565/FUNCTION:group@24858": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59448,43 +59436,43 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@59039/METHOD:build@59513/FUNCTION:scopeRow@60090": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@60489/METHOD:build@60963/FUNCTION:scopeRow@61540": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5575/METHOD:build@8115/FUNCTION:gap@13930": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5622/METHOD:build@8162/FUNCTION:gap@13977": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5575/METHOD:build@8115/FUNCTION:heading@14028": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5622/METHOD:build@8162/FUNCTION:heading@14075": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@28994/METHOD:build@29216/FUNCTION:block@29295": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29041/METHOD:build@29263/FUNCTION:block@29342": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@28994/METHOD:build@29216/FUNCTION:line@29414": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29041/METHOD:build@29263/FUNCTION:line@29461": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@27554/METHOD:build@27920/FUNCTION:placeholder@28311": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@27601/METHOD:build@27967/FUNCTION:placeholder@28358": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@54247/METHOD:build@54356/FUNCTION:chip@54632": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@55697/METHOD:build@55806/FUNCTION:chip@56082": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59796,6 +59784,24 @@
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Composes the icon and copy for each capability in the installed App bot card."
+      },
+      "apps/raft_flutter/lib/features/connected_app_editor.dart#method:_ConnectedAppEditorState.confirmRotateSecret": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-APPS",
+        "reason": "Opens the webhook signing-secret warning from the Apps editor; a mounted behavior test checks its confirm action."
+      },
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7231/METHOD:section@49356/FUNCTION:appTile@50239": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-APPS",
+        "reason": "Projects an Apps Marketplace tile with its independent bot action."
+      },
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@37947/METHOD:build@38156/FUNCTION:label@38367": {
+        "role": "internal_wrapper",
+        "familyRefs": [],
+        "owner": "WP-APPS",
+        "reason": "Keeps passive Marketplace card content outside its interactive cover."
       }
     },
     "entries": {
@@ -63979,6 +63985,15 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "The review panel mounts in the app detail dialog. Matched-state capture and visual acceptance remain pending."
+      },
+      "surface:apps/raft_flutter/lib/features/connected_app_editor.dart#method:_ConnectedAppEditorState.confirmRotateSecret": {
+        "owner": "WP-APPS",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/connected_app_editor.dart#method:_ConnectedAppEditorState.confirmRotateSecret"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Mounted editor test confirms the warning and the request after approval. Capture applicability is unverified."
       }
     },
     "requirements": {
@@ -66884,6 +66899,12 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/connected_app_editor.dart#method:_ConnectedAppEditorState.confirmRotateSecret:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/connected_app_editor.dart#method:_ConnectedAppEditorState.confirmRotateSecret",
+        "applicability": "unknown",
+        "owner": "WP-APPS",
+        "reason": "Visual acceptance is unverified across themes and viewports."
       }
     },
     "knownStateAtoms": {
@@ -69715,6 +69736,11 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/connected_app_consent.dart#method:ConnectedAppPromptTextBlock.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-APPS",
+        "reason": "Resolves the generated CodeBlock slots from the viewport and input mode."
       }
     },
     "evidence": {},

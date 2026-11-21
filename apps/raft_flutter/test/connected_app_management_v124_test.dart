@@ -331,6 +331,10 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(
+      find.text('Uninstall from this server').hitTestable(),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
@@ -370,6 +374,10 @@ void main() {
         find.byKey(const ValueKey('connected-apps-tab-marketplace')),
       );
       await _tap(tester, find.text('Garden Notes'));
+      final live = tester.getTopLeft(find.text('Live now'));
+      final submitted = tester.getTopLeft(find.text('Submitted for review'));
+      expect(submitted.dy, live.dy);
+      expect(submitted.dx, greaterThan(live.dx));
       await _tap(tester, find.text('Reject text update'));
       expect(client.posts[path], isNull);
       await tester.enterText(
@@ -478,6 +486,86 @@ void main() {
     ]);
     expect(find.text('Remove @sprinkler?'), findsNothing);
     expect(find.text('Added to server'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('installed permission failures appear before the bot section', (
+    tester,
+  ) async {
+    final client = _AppsClient((method, route, _) {
+      if (route == '/integrations/marketplace') {
+        return [
+          {
+            'id': 'irrigation',
+            'name': 'Irrigation',
+            'installedAt': '2026-11-01T00:00:00Z',
+            'bot': {'offered': true, 'grant': 'pending', 'handle': 'sprinkler'},
+          },
+        ];
+      }
+      if (route.endsWith('/install/app-notifications')) {
+        throw RaftApiException.response(
+          'Permission details could not be loaded',
+          status: 503,
+          body: {'error': 'Permission details could not be loaded'},
+        );
+      }
+      return const <Object>[];
+    });
+    await _mount(tester, client);
+    await _tap(tester, find.text('Irrigation'));
+    final notice = find.text('Permission details could not be loaded');
+    final bot = find.text('Posts as');
+    expect(tester.getTopLeft(notice).dy, lessThan(tester.getTopLeft(bot).dy));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('marketplace bot Add acts separately from the listing', (
+    tester,
+  ) async {
+    const botPath = '/integrations/clients/irrigation/install/bot';
+    final listing = {
+      'id': 'irrigation',
+      'name': 'Irrigation',
+      'installedAt': '2026-11-01T00:00:00Z',
+      'bot': {'offered': true, 'grant': 'pending', 'handle': 'sprinkler'},
+    };
+    final client = _AppsClient(
+      (method, route, _) => switch (route) {
+        '/integrations/marketplace' => [listing],
+        '/integrations/marketplace/listings' => {
+          'items': [
+            {
+              'kind': 'app',
+              'id': 'app:irrigation',
+              'app': listing,
+              'installed': true,
+            },
+          ],
+          'total': 1,
+        },
+        botPath => {
+          'botGrant': 'granted',
+          'bot': {'handle': 'sprinkler', 'agentId': 'bot-1'},
+        },
+        _ => const <Object>[],
+      },
+    );
+    await _mount(tester, client);
+    await _tap(
+      tester,
+      find.byKey(const ValueKey('connected-apps-tab-marketplace')),
+    );
+    expect(find.text('Irrigation'), findsOneWidget);
+    expect(find.text('Add @sprinkler to Garden'), findsOneWidget);
+    await _tap(tester, find.text('Add @sprinkler to Garden'));
+    expect(client.posts[botPath], [
+      {'action': 'grant'},
+    ]);
+    expect(find.byKey(const ValueKey('connected-app-detail')), findsNothing);
+    expect(find.text('Add @sprinkler to Garden'), findsNothing);
+    await _tap(tester, find.text('Irrigation'));
+    expect(find.byKey(const ValueKey('connected-app-detail')), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

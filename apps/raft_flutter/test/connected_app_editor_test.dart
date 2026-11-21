@@ -594,8 +594,83 @@ void main() {
       'https://hooks.example/raft',
     );
     await t.pump();
-    await t.tap(find.text('Save endpoint'));
+    final save = find.byKey(const ValueKey('app-notifications-save'));
+    await t.ensureVisible(save);
+    await t.tap(save);
     await t.pumpAndSettle();
     expect(find.text('whsec_once'), findsOneWidget);
+  });
+
+  testWidgets('webhook: deliveries only stop when the unchecked box is saved', (
+    t,
+  ) async {
+    final (w, a) = (await t.runAsync(_fixture))!;
+    addTearDown(w.dispose);
+    _routes(a, [Map<String, dynamic>.from(_app)]);
+    const path = '/integrations/clients/app-1/app-notifications';
+    var enabled = true;
+    a.routes['GET $path'] = (_) => {
+      'current_groups': ['server'],
+      'current_events': <String>[],
+      'webhook': {
+        'endpoint_url': 'https://hooks.example/raft',
+        'enabled': enabled,
+      },
+    };
+    a.routes['DELETE $path/webhook'] = (_) {
+      enabled = false;
+      return <String, dynamic>{};
+    };
+    await _mount(t, w);
+    await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
+    await t.pumpAndSettle();
+    final toggle = find.byKey(const ValueKey('app-notifications-enabled'));
+    await t.ensureVisible(toggle);
+    await t.tap(toggle);
+    await t.pumpAndSettle();
+    expect(enabled, isTrue);
+    final save = find.byKey(const ValueKey('app-notifications-save'));
+    await t.ensureVisible(save);
+    await t.tap(save);
+    await t.pumpAndSettle();
+    expect(enabled, isFalse);
+    expect(
+      find.text('Events keep going to this endpoint until you save.'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('webhook: rotating waits for confirmation', (t) async {
+    final (w, a) = (await t.runAsync(_fixture))!;
+    addTearDown(w.dispose);
+    _routes(a, [Map<String, dynamic>.from(_app)]);
+    const path = '/integrations/clients/app-1/app-notifications';
+    a.routes['GET $path'] = (_) => {
+      'current_groups': ['server'],
+      'current_events': <String>[],
+      'webhook': {
+        'endpoint_url': 'https://hooks.example/raft',
+        'enabled': true,
+      },
+    };
+    var rotations = 0;
+    a.routes['POST $path/webhook/rotate-secret'] = (_) {
+      rotations++;
+      return {'signing_secret': 'rotated-once'};
+    };
+    await _mount(t, w);
+    await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
+    await t.pumpAndSettle();
+    final rotate = find.text('Rotate secret');
+    await t.ensureVisible(rotate);
+    await t.tap(rotate);
+    await t.pumpAndSettle();
+    expect(rotations, 0);
+    await t.tap(
+      find.byKey(const ValueKey('app-notifications-rotate-secret-confirm')),
+    );
+    await t.pumpAndSettle();
+    expect(rotations, 1);
+    expect(find.text('rotated-once'), findsOneWidget);
   });
 }

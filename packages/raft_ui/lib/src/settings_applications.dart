@@ -135,12 +135,14 @@ class RaftMarketplaceAppTile {
     this.description,
     this.logoUrl,
     this.badge,
+    this.botAction,
     this.onOpen,
   });
   final String id, name, initials, byline, stateLabel;
   final String? description, logoUrl;
   final RaftConnectedAppBadge? badge;
   final RaftMarketplaceAppState state;
+  final Widget? botAction;
   final VoidCallback? onOpen;
 }
 
@@ -1186,45 +1188,58 @@ class _MarketplaceCard extends StatelessWidget {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
     final grid = layout == RaftConnectedAppsLayout.grid;
+    final botAction = app.botAction;
+    Widget label(Widget child) =>
+        botAction == null ? child : IgnorePointer(child: child);
     final info = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RaftAppLogo(initials: app.initials, logoUrl: app.logoUrl),
+        label(RaftAppLogo(initials: app.initials, logoUrl: app.logoUrl)),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  RaftCssText(
-                    app.name,
-                    style: RaftTypography.inherited(
-                      t,
-                      size: 16,
-                      line: 24,
-                      weight: FontWeight.w600,
-                      color: text.strong,
+              label(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    RaftCssText(
+                      app.name,
+                      style: RaftTypography.inherited(
+                        t,
+                        size: 16,
+                        line: 24,
+                        weight: FontWeight.w600,
+                        color: text.strong,
+                      ),
                     ),
-                  ),
-                  if (app.badge != null) _Badge(app.badge!),
-                ],
+                    if (app.badge != null) _Badge(app.badge!),
+                  ],
+                ),
               ),
               const SizedBox(height: 2),
-              RaftCssText(
-                app.byline,
-                style: t.scale(RaftTypeScale.footnote, color: t.muted),
+              label(
+                RaftCssText(
+                  app.byline,
+                  style: t.scale(RaftTypeScale.footnote, color: t.muted),
+                ),
               ),
-              if (!grid && app.description != null) _Summary(app.description!),
+              if (!grid && app.description != null)
+                label(_Summary(app.description!)),
+              if (!grid && botAction != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: RaftSpace.x2),
+                  child: botAction,
+                ),
             ],
           ),
         ),
       ],
     );
-    final trailing = switch (app.state) {
+    final trailing = label(switch (app.state) {
       RaftMarketplaceAppState.installed => _Badge(
         RaftConnectedAppBadge.success(app.stateLabel),
       ),
@@ -1238,33 +1253,64 @@ class _MarketplaceCard extends StatelessWidget {
         inertWhenDisabled: true,
         button: false,
       ),
-    };
-    return RaftCard.item(
-      key: ValueKey('connected-app-${app.id}'),
-      onTap: app.onOpen,
-      padding: const EdgeInsets.all(12),
-      child: grid
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                info,
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: trailing,
-                  ),
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                Expanded(child: info),
-                const SizedBox(width: 12),
-                trailing,
-              ],
-            ),
+    });
+    final content = grid
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              info,
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: botAction == null
+                    ? Align(alignment: Alignment.centerRight, child: trailing)
+                    : Row(
+                        spacing: RaftSpace.x2,
+                        children: [
+                          Expanded(
+                            child: Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: botAction,
+                            ),
+                          ),
+                          trailing,
+                        ],
+                      ),
+              ),
+            ],
+          )
+        : Row(
+            children: [
+              Expanded(child: info),
+              const SizedBox(width: 12),
+              trailing,
+            ],
+          );
+    final key = ValueKey('connected-app-${app.id}');
+    if (botAction == null) {
+      return RaftCard.item(
+        key: key,
+        onTap: app.onOpen,
+        padding: const EdgeInsets.all(12),
+        child: content,
+      );
+    }
+    return Stack(
+      key: key,
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: RaftCard(
+            onTap: app.onOpen,
+            semanticLabel: app.name,
+            child: const SizedBox.expand(),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(RaftSpace.x3 + RaftSpace.hairline),
+          child: content,
+        ),
+      ],
     );
   }
 }

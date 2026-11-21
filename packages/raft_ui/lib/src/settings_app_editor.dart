@@ -1,7 +1,9 @@
 import 'raft/checkbox.dart' show RaftCheckbox;
+import 'raft/ui_tokens.dart';
 
 import 'package:flutter/material.dart';
 
+import 'card.dart';
 import 'design_primitives.dart' show RaftTypography;
 import 'form_controls.dart' show RaftField;
 import 'form_presentation.dart' show RaftFormFrame, RaftFormSheet;
@@ -23,8 +25,8 @@ import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
 import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
-import 'raft/switch.dart';
 import 'tooltip.dart';
+import 'tokens/tokens.dart';
 import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 
 /// `appEditorSections` entry: the rail button and the section card it scrolls to.
@@ -609,16 +611,18 @@ class RaftAppEditorActionRow extends StatelessWidget {
     final copy = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RaftSectionEyebrow(raftText(context, title)),
-        const SizedBox(height: RaftSpace.x1),
+        Text(
+          raftText(context, title),
+          style: t.scale(
+            RaftTypeScale.subhead,
+            weight: FontWeight.w600,
+            color: text.strong,
+          ),
+        ),
+        const SizedBox(height: RaftSpace.half),
         Text(
           raftText(context, description),
-          style: RaftTypography.body(
-            t,
-            size: 12,
-            line: 12 * 1.625,
-            color: text.muted,
-          ),
+          style: t.scale(RaftTypeScale.footnote, color: text.muted),
         ),
         if (extra != null) ...[
           const SizedBox(height: RaftSpace.x2),
@@ -1114,79 +1118,60 @@ class RaftAppEditorTwoColumn extends StatelessWidget {
   }
 }
 
-/// The titled bordered panel of DeveloperAppNotifications (`border-2 ... p-3`).
 class RaftAppEditorPanel extends StatelessWidget {
   const RaftAppEditorPanel({
     super.key,
     required this.title,
-    required this.description,
     required this.child,
+    this.description,
     this.trailing,
+    this.inset = false,
   });
-  final String title, description;
+  final String title;
+  final String? description;
   final Widget child;
   final Widget? trailing;
+  final bool inset;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
-    return Container(
-      padding: const EdgeInsets.all(RaftSpace.x3),
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.colors['line-muted']!, width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.only(bottom: RaftSpace.x2),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: t.colors['line-muted']!, width: 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: RaftSpace.x2,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: RaftSpace.x2,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    raftText(context, title),
+                    style: t.scale(
+                      RaftTypeScale.subhead,
+                      weight: FontWeight.w600,
+                      color: text.strong,
+                    ),
+                  ),
+                  if (description case final description?)
+                    Text(
+                      raftText(context, description),
+                      style: t.scale(RaftTypeScale.footnote, color: text.muted),
+                    ),
+                ],
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        raftText(context, title),
-                        style: RaftTypography.body(
-                          t,
-                          size: 14,
-                          line: 20,
-                          weight: RaftTypography.black(t),
-                          color: text.strong,
-                        ),
-                      ),
-                      const SizedBox(height: RaftSpace.half),
-                      Text(
-                        raftText(context, description),
-                        style: RaftTypography.body(
-                          t,
-                          size: 12,
-                          line: 12 * 1.625,
-                          color: t.muted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (trailing != null) ...[
-                  const SizedBox(width: RaftSpace.x2),
-                  trailing!,
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: RaftSpace.x3),
+            ?trailing,
+          ],
+        ),
+        if (inset)
+          RaftCard(padding: const EdgeInsets.all(RaftSpace.x4), child: child)
+        else
           child,
-        ],
-      ),
+      ],
     );
   }
 }
@@ -1207,85 +1192,6 @@ class RaftAppEditorFootnote extends StatelessWidget {
         line: 16,
         color: warning ? t.colors['warning-strong'] ?? t.muted : t.muted,
       ),
-    );
-  }
-}
-
-/// The Enable Webhook row: title, description and a `size="md"` switch.
-class RaftAppEditorSwitchRow extends StatelessWidget {
-  const RaftAppEditorSwitchRow({
-    super.key,
-    required this.title,
-    required this.description,
-    required this.value,
-    required this.onChanged,
-    this.note,
-  });
-  final String title, description;
-  final String? note;
-  final bool value;
-  final ValueChanged<bool>? onChanged;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                raftText(context, title),
-                style: RaftTypography.body(
-                  t,
-                  size: 14,
-                  line: 20,
-                  weight: FontWeight.w700,
-                  color: text.strong,
-                ),
-              ),
-              const SizedBox(height: RaftSpace.half),
-              Text(
-                raftText(context, description),
-                style: RaftTypography.body(
-                  t,
-                  size: 12,
-                  line: 20,
-                  color: text.muted,
-                ),
-              ),
-              if (note != null) ...[
-                const SizedBox(height: RaftSpace.x1),
-                Text(
-                  raftText(context, note!),
-                  style: RaftTypography.body(
-                    t,
-                    size: 11,
-                    line: 16.5,
-                    weight: FontWeight.w700,
-                    color: t.muted,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(width: RaftSpace.x4),
-        Padding(
-          padding: const EdgeInsets.only(top: RaftSpace.half),
-          child: RaftSwitch(
-            key: const ValueKey('app-notifications-enabled'),
-            value: value,
-            enabled: onChanged != null,
-            onChanged: onChanged,
-            size: RaftSwitchSize.md,
-            semanticLabel: raftText(context, title),
-            semanticDescription: raftText(context, description),
-          ),
-        ),
-      ],
     );
   }
 }

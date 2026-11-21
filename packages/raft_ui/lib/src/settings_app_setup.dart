@@ -255,9 +255,8 @@ class RaftAppSetupPanel extends StatelessWidget {
                 label: tr(
                   v.complete ? 'Manage configuration' : 'Continue setup',
                 ),
-                glyph: RaftGlyph.externalLink,
-                glyphSize: 16,
-                size: RaftButtonRecipeSize.sm,
+                trailingGlyph: RaftGlyph.arrowUpRight,
+                variant: RaftButtonRecipeVariant.default_,
                 onPressed: onOpen,
               ),
               Text(
@@ -283,15 +282,12 @@ class RaftAppSetupPanel extends StatelessWidget {
             style: _callout(t),
           ),
       ],
-      Align(
-        alignment: Alignment.centerLeft,
-        child: RaftSettingsRecipeButton(
-          key: const ValueKey('app-setup-refresh'),
-          label: tr('Refresh status'),
-          size: RaftButtonRecipeSize.sm,
-          variant: RaftButtonRecipeVariant.outline,
-          onPressed: onRefresh,
-        ),
+      RaftSettingsRecipeButton(
+        key: const ValueKey('app-setup-refresh'),
+        label: tr('Refresh status'),
+        variant: RaftButtonRecipeVariant.outline,
+        expand: true,
+        onPressed: onRefresh,
       ),
     ];
     return RaftSettingsCard(

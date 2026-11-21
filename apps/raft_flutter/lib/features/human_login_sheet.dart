@@ -476,14 +476,17 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
       children: [
         consent,
         if (showCommitZone)
-          HumanLoginCommitZone(
-            row: current,
-            permissions: reviewedInstall,
-            busy: installing,
-            onFindAdmin: findAdmin,
-            joinsBot: joinsBot,
-            onBotChanged: (checked) =>
-                setState(() => installBotChoice = (selectedId, checked)),
+          Padding(
+            padding: const EdgeInsets.only(top: RaftSpace.x3),
+            child: HumanLoginCommitZone(
+              row: current,
+              permissions: reviewedInstall,
+              busy: installing,
+              onFindAdmin: findAdmin,
+              joinsBot: joinsBot,
+              onBotChanged: (checked) =>
+                  setState(() => installBotChoice = (selectedId, checked)),
+            ),
           ),
         if (botConflict case (final id, final handle) when id == selectedId)
           RaftBanner(
@@ -1091,37 +1094,44 @@ class _TierGroupState extends State<_TierGroup> {
           ),
       ],
     );
-    final children = <Widget>[
-      Text.rich(summary),
-      for (final scope in scopes)
+    final rows = <Widget>[
+      for (final scope in scopes) ...[
+        const RaftSeparator(),
         Padding(
           key: ValueKey('human-login-scope-$scope'),
-          padding: const EdgeInsets.only(top: RaftSpace.x2),
+          padding: const EdgeInsets.symmetric(vertical: RaftSpace.x2),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: RaftSpace.x1,
             children: [
               Text(
                 scope,
-                style: RaftTypography.mono(t, size: 12, line: 16, color: t.ink),
+                style: t.scale(
+                  RaftTypeScale.monoMeta,
+                  weight: FontWeight.w700,
+                  color: t.ui.foreground,
+                ),
               ),
               Text(
                 tr(oauthScopeCopy(scope)),
-                style: RaftTypography.inherited(
-                  t,
-                  size: 13,
-                  line: 18,
-                  color: t.muted,
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  color: t.ui.foregroundMuted,
                 ),
               ),
             ],
           ),
         ),
+      ],
     ];
     if (!widget.collapsible) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
+        children: [
+          Text.rich(summary),
+          const SizedBox(height: RaftSpace.x2),
+          ...rows,
+        ],
       );
     }
     return RaftDisclosureCard(
@@ -1135,7 +1145,7 @@ class _TierGroupState extends State<_TierGroup> {
         disclosureKey: const ValueKey('human-login-identity-disclosure'),
         onExpandedChanged: (value) => setState(() => expanded = value),
         gap: RaftSpace.x2,
-        children: children.skip(1).toList(),
+        children: rows,
       ),
     );
   }

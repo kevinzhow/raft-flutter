@@ -238,6 +238,14 @@ void main() {
         await tester.tap(identityDisclosure);
         await tester.pumpAndSettle();
         expect(identityScope, findsOneWidget);
+        final identityRows = find.byType(RaftDisclosureCard);
+        expect(
+          find.descendant(
+            of: identityRows,
+            matching: find.byType(RaftSeparator),
+          ),
+          findsNWidgets(2),
+        );
         expect(serverPicker, findsNothing);
         expect(api.authorizations, isEmpty);
 

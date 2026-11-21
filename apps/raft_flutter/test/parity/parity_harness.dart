@@ -7,6 +7,7 @@
 // react > android > ios > ohos); metadata records `source: "flutter"`.
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import '../../../../tool/testing/system_fonts.dart';
 import '../support/glyph_clip_scan.dart';
@@ -45,6 +46,7 @@ class ParityCase {
     this.fullLengthHeight,
     this.settle = const Duration(milliseconds: 400),
     this.encloseElementCrop = false,
+    this.scrollContentCrop = false,
     this.emulatedDeviceScaleFactor = true,
   });
 
@@ -58,6 +60,10 @@ class ParityCase {
 
   /// Enclose the element's bounds in whole CSS pixels before applying density.
   final bool encloseElementCrop;
+
+  /// Capture the element through its actual scroll viewport when it extends
+  /// under pinned native chrome.
+  final bool scrollContentCrop;
 
   /// False for reference images captured with Chromium's forced device scale.
   final bool emulatedDeviceScaleFactor;
@@ -286,6 +292,94 @@ Future<List<String>> loadParityFonts() async {
   return List.unmodifiable(_loadedFontFamilies);
 }
 
+Future<Uint8List?> _captureScrollableElement(
+  WidgetTester tester,
+  RenderRepaintBoundary root,
+  RenderBox target,
+  ScrollPosition position,
+  Size pixels,
+  double density,
+) async {
+  final viewport = RenderAbstractViewport.of(target) as RenderBox;
+  Rect bounds(RenderBox box) =>
+      box.localToGlobal(Offset.zero, ancestor: root) & box.size;
+  final clip = bounds(viewport).intersect(Offset.zero & root.size);
+  final original = position.pixels;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+  final frames = <ui.Image>[];
+  try {
+    if (bounds(target).top < clip.top) {
+      position.jumpTo(
+        math.max(
+          position.minScrollExtent,
+          original + bounds(target).top - clip.top,
+        ),
+      );
+      await tester.pump();
+    }
+    for (var next = 0; next < pixels.height;) {
+      final origin = bounds(target).topLeft * density;
+      final top = origin.dy.floor() + next;
+      final bottom = math.min(
+        origin.dy.floor() + pixels.height.toInt(),
+        (clip.bottom * density).floor(),
+      );
+      if (top < (clip.top * density).floor() || bottom <= top) {
+        throw StateError(
+          'The scroll viewport cannot reveal the full capture target',
+        );
+      }
+      final frame = (await tester.runAsync(
+        () => root.toImage(pixelRatio: density),
+      ))!;
+      frames.add(frame);
+      final height = (bottom - top).toDouble();
+      canvas.drawImageRect(
+        frame,
+        Rect.fromLTWH(
+          origin.dx.floorToDouble(),
+          top.toDouble(),
+          pixels.width,
+          height,
+        ),
+        Rect.fromLTWH(0, next.toDouble(), pixels.width, height),
+        Paint()..filterQuality = FilterQuality.none,
+      );
+      next += bottom - top;
+      if (next < pixels.height) {
+        position.jumpTo(
+          math.min(
+            position.maxScrollExtent,
+            position.pixels + bottom / density - clip.top,
+          ),
+        );
+        await tester.pump();
+      }
+    }
+    return await tester.runAsync(() async {
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(
+        pixels.width.toInt(),
+        pixels.height.toInt(),
+      );
+      picture.dispose();
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+      return bytes!.buffer.asUint8List();
+    });
+  } finally {
+    if (recorder.isRecording) recorder.endRecording().dispose();
+    for (final frame in frames) {
+      frame.dispose();
+    }
+    if (position.pixels != original) {
+      position.jumpTo(original);
+      await tester.pump();
+    }
+  }
+}
+
 /// Pumps one case at its official viewport/density, captures the target rect
 /// from the full-viewport raster (like Playwright's clipped page screenshot,
 /// so portals/overlays above the target are included) and writes PNG +
@@ -409,6 +503,7 @@ Future<Map<String, dynamic>> captureParityCase(
     await t.pump();
     Rect rect = Offset.zero & size;
     String? targetNote;
+    RenderBox? scrollTarget;
     // Extension cases name the Flutter widget that corresponds to the React
     // capture.selector (`capture.androidKey`, a ValueKey<String>).
     final androidKey =
@@ -433,6 +528,20 @@ Future<Map<String, dynamic>> captureParityCase(
       final raw = origin & box.size;
       rect = raw.intersect(Offset.zero & size);
       if (rect != raw) targetNote = 'target clamped to viewport like React';
+      if (mapping.scrollContentCrop) {
+        final viewport = RenderAbstractViewport.maybeOf(box);
+        if (viewport case final RenderBox viewportBox) {
+          final bounds =
+              viewportBox.localToGlobal(Offset.zero, ancestor: rootBox) &
+              viewportBox.size;
+          if (raw.top < bounds.top || raw.bottom > bounds.bottom) {
+            scrollTarget = box;
+            rect = raw;
+            targetNote =
+                'full element reconstructed through its scroll viewport';
+          }
+        }
+      }
     }
     // Playwright encloses fractional element bounds in CSS pixels before
     // applying density. Use that crop for keyed extensions and opted-in cases.
@@ -452,31 +561,42 @@ Future<Map<String, dynamic>> captureParityCase(
             (rect.bottom * d).roundToDouble(),
           );
 
-    final png = await t.runAsync(() async {
-      final full = await rootBox.toImage(pixelRatio: ctx.density);
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
-      canvas.drawRect(
-        Offset.zero & pixelRect.size,
-        Paint()..color = Colors.white,
-      );
-      canvas.drawImageRect(
-        full,
-        pixelRect,
-        Offset.zero & pixelRect.size,
-        Paint()..filterQuality = FilterQuality.none,
-      );
-      final picture = recorder.endRecording();
-      final cropped = await picture.toImage(
-        pixelRect.width.toInt(),
-        pixelRect.height.toInt(),
-      );
-      picture.dispose();
-      final bytes = await cropped.toByteData(format: ui.ImageByteFormat.png);
-      full.dispose();
-      cropped.dispose();
-      return bytes!.buffer.asUint8List();
-    });
+    final png = scrollTarget != null
+        ? await _captureScrollableElement(
+            t,
+            rootBox,
+            scrollTarget,
+            Scrollable.of(targetContext!).position,
+            pixelRect.size,
+            ctx.density,
+          )
+        : await t.runAsync(() async {
+            final full = await rootBox.toImage(pixelRatio: ctx.density);
+            final recorder = ui.PictureRecorder();
+            final canvas = Canvas(recorder);
+            canvas.drawRect(
+              Offset.zero & pixelRect.size,
+              Paint()..color = Colors.white,
+            );
+            canvas.drawImageRect(
+              full,
+              pixelRect,
+              Offset.zero & pixelRect.size,
+              Paint()..filterQuality = FilterQuality.none,
+            );
+            final picture = recorder.endRecording();
+            final cropped = await picture.toImage(
+              pixelRect.width.toInt(),
+              pixelRect.height.toInt(),
+            );
+            picture.dispose();
+            final bytes = await cropped.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            full.dispose();
+            cropped.dispose();
+            return bytes!.buffer.asUint8List();
+          });
 
     final id = ctx.id;
     final imageFile = File('${outputDir.path}/$id.png');
@@ -609,6 +729,23 @@ Future<void> _androidInteractions(
         // does not scroll either (ensureVisible would align it to the top).
         if (raw['scroll'] == 'if-needed') {
           await _revealForClick(t, target!.first);
+        } else if (raw['scroll'] == 'fully-visible') {
+          final button = t.renderObject<RenderBox>(target!.first);
+          final viewport = RenderAbstractViewport.of(button) as RenderBox;
+          final position = button.localToGlobal(
+            Offset.zero,
+            ancestor: viewport,
+          );
+          final fullyVisible =
+              (Offset.zero & viewport.size).contains(position) &&
+              position.dy + button.size.height <= viewport.size.height;
+          if (!fullyVisible) {
+            await Scrollable.ensureVisible(
+              t.element(target.first),
+              alignment: 0.5,
+            );
+          }
+          expect(target.first.hitTestable(), findsOneWidget);
         } else if (raw['scroll'] != false) {
           await t.ensureVisible(target!.first);
         }

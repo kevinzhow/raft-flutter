@@ -98,7 +98,10 @@ MsRoutes _routes(ParityContext ctx) {
   };
 }
 
-Widget _page(ParityContext ctx) {
+Widget _page(
+  ParityContext ctx, {
+  String origin = 'https://visual-fixture.invalid',
+}) {
   SharedPreferences.setMockInitialValues({});
   final fixture = MsFixture(ctx);
   final role = ctx.props['role'] as String? ?? 'owner';
@@ -143,6 +146,7 @@ Widget _page(ParityContext ctx) {
     ),
   };
   final (w, fixtureClient) = fixture.workspace(
+    origin: origin,
     channels: ctx.props['tab'] == 'raftbench'
         ? const ['design', 'androidArtifacts']
         : const ['design'],
@@ -310,7 +314,8 @@ Widget _page(ParityContext ctx) {
 }
 
 /// The Settings page of one extension case (shared with the WP6 cases).
-Widget extSettingsPage(ParityContext ctx) => _page(ctx);
+Widget extSettingsPage(ParityContext ctx, {String? origin}) =>
+    origin == null ? _page(ctx) : _page(ctx, origin: origin);
 
 final _case = ParityCase(
   widgets: const [

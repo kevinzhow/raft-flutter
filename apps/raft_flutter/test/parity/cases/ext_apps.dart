@@ -16,7 +16,12 @@ import 'ext_settings.dart';
 import 'members_settings/fixture_client.dart';
 
 Widget _appsPage(ParityContext context) {
-  final page = extSettingsPage(context);
+  final page = extSettingsPage(
+    context,
+    origin: context.props['routeSet'] == 'private-share'
+        ? 'http://127.0.0.1:4388'
+        : null,
+  );
   return Builder(
     builder: (contextTheme) => Theme(
       data: Theme.of(contextTheme).copyWith(
@@ -74,6 +79,7 @@ final _appsSettings = ParityCase(
 
 final _appsLogin = ParityCase(
   widgets: const ['raft_flutter:HumanLoginSheet'],
+  scrollContentCrop: true,
   settle: const Duration(milliseconds: 600),
   build: _appsPage,
   interact: (tester, context) async {
