@@ -5,6 +5,7 @@
  "states": {
   "as-task": {
    "selected": "shell-design",
+   "scene": "channel",
    "draft": "Review the sidebar spacing before Friday.",
    "routes": {
     "GET /messages/channel/shell-design": {
@@ -227,6 +228,7 @@
   },
   "single": {
    "selected": "shell-design",
+   "scene": "channel",
    "draft": "@Android-Developer-4 please review the visual diff",
    "routes": {
     "GET /messages/channel/shell-design": {
@@ -480,6 +482,7 @@
   },
   "multi": {
    "selected": "shell-design",
+   "scene": "channel",
    "draft": "@Android-Developer-4 @QA-Engineer-2 please review the visual diff",
    "routes": {
     "GET /messages/channel/shell-design": {
@@ -744,8 +747,117 @@
    "patch": {},
    "extraChannels": []
   },
+  "lounge-excluded": {
+   "selected": "shell-dm-cindy",
+   "scene": "dm-agent",
+   "draft": "@Android-Developer-4 please review the visual diff",
+   "routes": {
+    "GET /messages/channel/shell-dm-cindy": {
+     "messages": [
+      {
+       "id": "scr-a1",
+       "seq": 1,
+       "serverId": "visual-server",
+       "channelId": "shell-dm-cindy",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Can you summarise yesterday's visual testing run?",
+       "createdAt": "2026-06-18T09:00:00.000Z"
+      },
+      {
+       "id": "scr-a2",
+       "seq": 2,
+       "serverId": "visual-server",
+       "channelId": "shell-dm-cindy",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Yesterday's run:\n\n1. 92 cases passed\n2. 3 cases need a second look\n3. The `elegant-dark` baseline is attached to the task\n\nI will keep the release notes aligned.",
+       "createdAt": "2026-06-18T09:02:00.000Z"
+      },
+      {
+       "id": "scr-a3",
+       "seq": 3,
+       "serverId": "visual-server",
+       "channelId": "shell-dm-cindy",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Thanks. Please re-run the three flagged cases today.",
+       "createdAt": "2026-06-19T03:00:00.000Z"
+      },
+      {
+       "id": "scr-a4",
+       "seq": 4,
+       "serverId": "visual-server",
+       "channelId": "shell-dm-cindy",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Done. All three are inside the tolerance now.",
+       "createdAt": "2026-06-19T03:12:00.000Z",
+       "reactions": [
+        {
+         "emoji": "🎉",
+         "count": 1,
+         "reactorIds": [
+          "visual-user"
+         ],
+         "reactorNames": [
+          "artin"
+         ]
+        }
+       ]
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {}
+    },
+    "POST /v2/messages": {
+     "message": {
+      "id": "cs-sent-shell-dm-cindy",
+      "seq": 90,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Android-Developer-4 please review the visual diff",
+      "createdAt": "2026-06-19T12:31:00.000Z"
+     },
+     "pendingMentionActions": [
+      {
+       "resolutionId": "cs-pending-1",
+       "messageId": "cs-sent-shell-dm-cindy",
+       "targetType": "agent",
+       "targetHandle": "Android-Developer-4",
+       "targetAvatarUrl": "pixel:robot",
+       "reason": "lounge_agent_excluded",
+       "availableActions": [],
+       "expiresAt": null
+      }
+     ],
+     "unresolvedMentionHandles": []
+    }
+   },
+   "patch": {},
+   "extraChannels": []
+  },
   "agent-stopped": {
    "selected": "shell-dm-cindy",
+   "scene": "dm-agent",
    "draft": "Thanks, please re-run the three flagged cases.",
    "routes": {
     "GET /messages/channel/shell-dm-cindy": {
@@ -849,6 +961,7 @@
   },
   "unresolved": {
    "selected": "shell-design",
+   "scene": "channel",
    "draft": "@ghostwriter @nobody can you take a look at this?",
    "routes": {
     "GET /messages/channel/shell-design": {
@@ -1091,6 +1204,7 @@
   },
   "conversion": {
    "selected": "shell-design",
+   "scene": "channel",
    "draft": "Waiting for the conversion to finish.",
    "routes": {
     "GET /messages/channel/shell-design": {
@@ -1320,6 +1434,7 @@
   },
   "archived": {
    "selected": "shell-design",
+   "scene": "channel",
    "draft": "#launch",
    "routes": {
     "GET /messages/channel/shell-design": {
@@ -2303,6 +2418,107 @@
        "add",
        "notify"
       ],
+      "expiresAt": null
+     }
+    ],
+    "unresolvedMentionHandles": []
+   }
+  },
+  "cs-lounge-excluded": {
+   "GET /messages/channel/shell-dm-cindy": {
+    "messages": [
+     {
+      "id": "scr-a1",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Can you summarise yesterday's visual testing run?",
+      "createdAt": "2026-06-18T09:00:00.000Z"
+     },
+     {
+      "id": "scr-a2",
+      "seq": 2,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Yesterday's run:\n\n1. 92 cases passed\n2. 3 cases need a second look\n3. The `elegant-dark` baseline is attached to the task\n\nI will keep the release notes aligned.",
+      "createdAt": "2026-06-18T09:02:00.000Z"
+     },
+     {
+      "id": "scr-a3",
+      "seq": 3,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Thanks. Please re-run the three flagged cases today.",
+      "createdAt": "2026-06-19T03:00:00.000Z"
+     },
+     {
+      "id": "scr-a4",
+      "seq": 4,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Done. All three are inside the tolerance now.",
+      "createdAt": "2026-06-19T03:12:00.000Z",
+      "reactions": [
+       {
+        "emoji": "🎉",
+        "count": 1,
+        "reactorIds": [
+         "visual-user"
+        ],
+        "reactorNames": [
+         "artin"
+        ]
+       }
+      ]
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {}
+   },
+   "POST /v2/messages": {
+    "message": {
+     "id": "cs-sent-shell-dm-cindy",
+     "seq": 90,
+     "serverId": "visual-server",
+     "channelId": "shell-dm-cindy",
+     "messageType": "chat",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "senderDisplayName": "artin",
+     "content": "@Android-Developer-4 please review the visual diff",
+     "createdAt": "2026-06-19T12:31:00.000Z"
+    },
+    "pendingMentionActions": [
+     {
+      "resolutionId": "cs-pending-1",
+      "messageId": "cs-sent-shell-dm-cindy",
+      "targetType": "agent",
+      "targetHandle": "Android-Developer-4",
+      "targetAvatarUrl": "pixel:robot",
+      "reason": "lounge_agent_excluded",
+      "availableActions": [],
       "expiresAt": null
      }
     ],

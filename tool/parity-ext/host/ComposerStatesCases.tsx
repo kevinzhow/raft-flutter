@@ -19,6 +19,7 @@ import { useLayoutEffect as parityExtCompStUseLayoutEffect } from "react";
 
 type ParityExtCompStState = {
   selected: string;
+  scene: "channel" | "dm-agent";
   draft: string;
   patch: Record<string, unknown>;
   extraChannels: Record<string, unknown>[];
@@ -37,7 +38,7 @@ function parityExtCompStProps() {
     theme: params.get("parityTheme") ?? "brutal-light",
     height: Number(params.get("windowHeight") ?? 300),
     // The screens-ext scene the state's conversation belongs to (props of ParityExtScView).
-    scene: (params.get("state") ?? "") === "agent-stopped" ? "dm-agent" : "channel",
+    scene: state.scene,
   };
 }
 

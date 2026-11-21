@@ -13,7 +13,14 @@
 // rectangle the React host marks.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart'
-    show addTearDown, closeTo, expect, find, findsOneWidget, isNull;
+    show
+        addTearDown,
+        closeTo,
+        expect,
+        find,
+        findsNothing,
+        findsOneWidget,
+        isNull;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
@@ -164,6 +171,29 @@ final ParityCase _case = ParityCase(
   settle: const Duration(milliseconds: 1200),
   build: _build,
   interact: (tester, ctx) async {
+    if (ctx.props['state'] == 'lounge-excluded') {
+      final status = find.byKey(
+        const ValueKey('pending-mention-action-status'),
+      );
+      expect(status, findsOneWidget);
+      expect(
+        tester.widget<RaftCssText>(status).data,
+        "@Android-Developer-4 won't be notified: other agents can only read this chat.",
+      );
+      final strip = find.byType(RaftPendingMentionActionStrip);
+      expect(
+        find.descendant(of: strip, matching: find.text('Ignore')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: strip, matching: find.text('Notify')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: strip, matching: find.text('Add')),
+        findsNothing,
+      );
+    }
     if (ctx.props['state'] == 'single' || ctx.props['state'] == 'multi') {
       expect(
         find.byType(RaftPendingMentionActionStrip).hitTestable(),
@@ -234,7 +264,7 @@ final ParityCase _case = ParityCase(
 
 const _states = {
   'as-task': ['as-task'],
-  'pending-mention': ['single', 'multi'],
+  'pending-mention': ['single', 'multi', 'lounge-excluded'],
   'warning': ['agent-stopped', 'unresolved', 'conversion'],
   'suggestions': ['archived'],
 };

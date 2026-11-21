@@ -131,7 +131,9 @@ _RowStage _rowStage(ParityContext ctx) {
         'senderType': 'agent',
         'senderId': ids.cindy['id'],
         'senderName': ids.cindy['displayName'],
-        'content': m['content'],
+        'content': ctx.props['state'] == 'quoted-mentions'
+            ? _fx(ctx)['quotedMentions']
+            : m['content'],
         'threadId': null,
         'createdAt': m['createdAt'],
       },
@@ -168,6 +170,7 @@ ParityCase _rowCase() => ParityCase(
   interact: (t, ctx) async {
     final stage = stageFor(ctx, () => _rowStage(ctx));
     await stage.alignRow(t);
+    if (ctx.props['state'] == 'quoted-mentions') return;
     final id = (_fx(ctx)['message'] as Map)['id'] as String;
     final mouse = await _mouse(t);
     final state = ctx.props['state'] as String;
@@ -458,6 +461,8 @@ final Map<String, ParityCase> extThreadMessageCases = () {
   for (final s in _hoverStates) {
     add('desktop', s, _rowCase());
   }
+  add('desktop', 'quoted-mentions', _rowCase());
+  add('mobile', 'quoted-mentions', _rowCase());
   for (final s in const [
     'forward-single',
     'forward-multi',
