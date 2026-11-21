@@ -18,7 +18,10 @@ class RaftSearchRecipe {
   final RaftTokens t;
   final bool mobile;
   double get pageInset => t.desktop ? 16 : 20;
-  double get backHeaderInset => pageInset - 11;
+  EdgeInsets get headerInsets => EdgeInsets.only(
+    left: mobile ? pageInset - 11 : pageInset,
+    right: pageInset,
+  );
   static const _desktopFilterHeight = 44.0;
   EdgeInsets get filterPadding => EdgeInsets.symmetric(
     horizontal: pageInset,
