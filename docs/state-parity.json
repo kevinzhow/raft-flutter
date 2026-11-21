@@ -14899,6 +14899,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/timeline_scrollbar.dart#method:_RaftTimelineScrollbarState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Repositions the existing scrollbar when the Thread outline gutter changes."
+      },
       "apps/raft_flutter/lib/features/usage_data_card.dart#class:UsageDataSettingsCard": {
         "role": "unresolved",
         "familyRefs": [],
