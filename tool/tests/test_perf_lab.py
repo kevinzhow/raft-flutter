@@ -59,6 +59,21 @@ class DetectionTest(unittest.TestCase):
         r['frames'][0]['r'] = 12000  # 12+12 is not a 24 ms pipeline budget.
         self.assertEqual(lab.detect_record(r)['checks']['frame-budget']['status'], 'PASS')
 
+    def test_list_scene_flags_absolute_overruns_and_missed_motion_vsyncs(self):
+        r = self.observed('list-tasks-list-live', ui=(2, 17, 2), movement=[
+            {'atUs': 1_000_500, 'px': 20}, {'atUs': 1_050_500, 'px': 600},
+        ])
+        r['frames'][-1]['v'] += 16667
+        checks = lab.detect_record(r)['checks']
+        self.assertEqual(checks['frame-budget']['status'], 'ISSUE')
+        self.assertEqual(checks['target-frame-budget']['status'], 'REVIEW')
+        self.assertEqual(checks['motion-vsync']['status'], 'ISSUE')
+        self.assertEqual(checks['motion-vsync']['skipped'], 1)
+
+    def test_list_idle_flags_even_one_frame(self):
+        r = self.observed('list-sidebar-idle', ui=(2,), kind='idle', idleSeconds=10)
+        self.assertEqual(lab.detect_record(r)['checks']['idle-work']['status'], 'ISSUE')
+
     def test_uit_does_not_replace_the_raw_ui_duration(self):
         r = self.observed(ui=(2,))
         r['frames'][0]['uit'] = 200000

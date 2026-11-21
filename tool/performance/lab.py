@@ -42,6 +42,10 @@ ROW_KINDS = ['plain', 'markdown', 'code', 'image', 'attachments', 'reactions', '
 DETECTION_SCENARIOS = ['open-cold', 'open-warm', 'steady-scroll', 'image-scroll', 'older-drag',
                        'channel-switch', 'thread-open', 'section-cycle', 'nav-activity-item',
                        'keyboard', 'idle-final']
+LIST_SURFACES = ('chat', 'thread', 'activity', 'tasks-list', 'tasks-board', 'task-discussion',
+                 'search', 'files', 'directory', 'apps', 'saved', 'sidebar')
+DETECTION_SCENARIOS += [f'list-{surface}-{workload}' for surface in LIST_SURFACES
+                       for workload in ('steady', 'fling', 'live', 'idle')]
 DETECTION_CONTROLS = ['control-idle', 'control-ticker', 'control-animation']
 DETECTION_GAPS = {
     'server-switch': 'Server switching has no arrival-verified lab scene yet.',
@@ -91,6 +95,7 @@ def detect_record(record, *, evidence=None):
         isinstance(f, dict) and all(isinstance(f.get(k), (int, float)) and not isinstance(f[k], bool)
                                    and math.isfinite(f[k]) and f[k] >= 0 for k in ('b', 'ui', 'r')) for f in raw)
     idle_scene = record.get('kind') == 'idle'
+    list_scene = scene.startswith('list-')
     surface = {key: diagnostic.get(key) for key in (
         'renderSurfaceWidth', 'renderSurfaceHeight', 'nativeWindowWidth', 'nativeWindowHeight')}
     surface_known = all(isinstance(v, (int, float)) and not isinstance(v, bool)
@@ -103,8 +108,9 @@ def detect_record(record, *, evidence=None):
           'Native/render surface sizes are missing or differ; frame durations are diagnostic only.', **surface)
     timing_allowed = (record.get('profile') is True and record.get('phasesCollected') is False
                       and diagnostic.get('cpuSamplingEnabled') is False
-                      and diagnostic.get('phaseProfilingEnabled') is False and surface_matches)
-    budget = 1e6 / hz if valid_hz else None
+                      and diagnostic.get('phaseProfilingEnabled') is False and surface_matches
+                      and (not list_scene or arrival.get('arrived') is True))
+    budget = (16700 if list_scene else 1e6 / hz) if valid_hz else None
     actions = diagnostic.get('actions') or []
 
     def action_for(frame):
@@ -121,9 +127,24 @@ def detect_record(record, *, evidence=None):
               budgetUs=budget, frames=len(raw))
     else:
         over = [f for f in raw if f['ui'] > budget or f['r'] > budget]
-        check('frame-budget', 'REVIEW' if over else 'PASS',
+        check('frame-budget', ('ISSUE' if list_scene else 'REVIEW') if over else 'PASS',
+              'Raw UI and raster durations checked separately against 16.7 ms.' if list_scene else
               'Raw UI and raster durations checked separately against the actual refresh rate.',
               budgetUs=budget, frames=len(raw), overBudget=len(over))
+        if list_scene:
+            check('target-frame-budget', 'REVIEW' if any(max(f['ui'], f['r']) > 8330 for f in raw) else 'PASS',
+                  'Stretch target is 8.33 ms in each pipeline stage.')
+            motion = record.get('movement') or []
+            vsyncs = [f.get('v') for f in raw if isinstance(f.get('v'), (int, float))]
+            if len(motion) >= 2 and len(vsyncs) >= 2 and arrival.get('arrived') is True:
+                start, end = motion[0]['atUs'], motion[-1]['atUs']
+                tick = 1e6 / hz
+                gaps = [right - left for left, right in zip(vsyncs, vsyncs[1:])
+                        if left >= start - tick and right <= end + tick]
+                skipped = sum(max(0, round(gap / tick) - 1) for gap in gaps)
+                check('motion-vsync', 'ISSUE' if skipped else 'PASS' if gaps else 'NOT_RUN',
+                      'Expected display intervals compared with frame vsync timestamps during movement.',
+                      skipped=skipped, intervals=len(gaps), refreshRateHz=hz)
     if valid_hz and valid_frames:
         streak, run_frames = 0, []
         for f in raw:
@@ -166,7 +187,10 @@ def detect_record(record, *, evidence=None):
         allowed = diagnostic.get('allowedActivity') or []
         span = (raw[-1]['b'] - raw[0]['b']) if len(raw) > 1 else 0
         repeated = len(raw) >= 3 and span >= 1e6
-        if repeated and not allowed:
+        if list_scene and raw:
+            check('idle-work', 'ISSUE', 'An untouched list must submit zero frames.', frames=len(raw))
+            finding('idle-frames', 'ISSUE', {'frames': len(raw)}, occurrences=len(raw))
+        elif repeated and not allowed:
             control = diagnostic.get('control') == 'unexpected-ticker'
             status = 'ISSUE' if control else 'REVIEW'
             check('idle-work', status, 'Application-requested frames continued for at least one second.', frames=len(raw), spanUs=span)

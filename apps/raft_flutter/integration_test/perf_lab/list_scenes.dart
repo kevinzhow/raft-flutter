@@ -1,0 +1,670 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_flutter/features/desktop_directory_view.dart';
+import 'package:raft_flutter/features/integrations_views.dart';
+import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/source_channel_files_view.dart';
+import 'package:raft_flutter/features/task_surface.dart';
+import 'package:raft_flutter/features/task_surface_controller.dart';
+import 'package:raft_flutter/features/tasks_page/tasks_page.dart';
+import 'package:raft_flutter/features/tasks_page/tasks_page_model.dart';
+import 'package:raft_flutter/features/tasks_page/tasks_page_store.dart';
+import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_ui/raft_ui.dart';
+
+import '../../test/support/tasks_page_harness.dart' show pageTask, TasksServer;
+import 'fixtures.dart';
+import 'probe.dart';
+
+const listSurfaces = [
+  'chat',
+  'thread',
+  'activity',
+  'tasks-list',
+  'tasks-board',
+  'task-discussion',
+  'search',
+  'files',
+  'directory',
+  'apps',
+  'saved',
+  'sidebar',
+];
+const listWorkloads = ['steady', 'fling', 'live', 'idle'];
+
+class ListScenes {
+  ListScenes({
+    required this.tester,
+    required this.theme,
+    required this.dark,
+    required this.seconds,
+    required this.lab,
+    required this.images,
+    required this.wants,
+  });
+
+  final WidgetTester tester;
+  final String theme;
+  final bool dark;
+  final int seconds;
+  final LabRecorder lab;
+  final LabImages images;
+  final bool Function(String) wants;
+
+  Future<List<String>> run() async {
+    final failures = <String>[];
+    for (final surface in listSurfaces) {
+      final workloads = listWorkloads.where(
+        (work) => wants('list-$surface-$work'),
+      );
+      if (workloads.isEmpty) continue;
+      final fixture = await _ListFixture.open(surface, images);
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            key: ValueKey(surface),
+            theme: raftTheme(dark: dark),
+            home: Scaffold(body: fixture.body),
+          ),
+        );
+        if (surface == 'tasks-board') {
+          await idle(const Duration(milliseconds: 600));
+          fixture.tasksPage!.visit(serverId: 's1', userId: 'alice').params
+            ..setTab(TasksPageTab.all)
+            ..setView(TasksPageView.board);
+        }
+        for (final workload in workloads) {
+          final scene = 'list-$surface-$workload';
+          final record = await lab.measure(
+            tester,
+            theme,
+            scene,
+            () => _measure(fixture, workload),
+            kind: workload == 'idle' ? 'idle' : 'continuous',
+            evidence: (extras) => {
+              'arrival': {
+                'arrived': extras['arrived'] == true && fixture.rows.isNotEmpty,
+                'requirement': 'A visible product row, accepted motion, and accepted live updates where required.',
+                'visibleKeys': fixture.rows
+                    .take(12)
+                    .map((element) => element.widget.key.toString())
+                    .toList(),
+              },
+            },
+          );
+          if (record['failure'] case final Object error) {
+            failures.add('$theme/$scene: $error');
+          }
+          if (tester.takeException() case final Object error) {
+            failures.add('$theme/$scene: $error');
+          }
+        }
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        fixture.dispose();
+      }
+    }
+    return failures;
+  }
+
+  Future<Map<String, Object?>> _measure(
+    _ListFixture fixture,
+    String workload,
+  ) async {
+    final before = fixture.rows;
+    if (before.isEmpty) {
+      throw StateError(
+        'No visible product rows. Missing routes: ${fixture.api.misses}',
+      );
+    }
+    if (workload == 'idle') {
+      await idle(const Duration(seconds: 10));
+      return {'arrived': true, 'idleSeconds': 10, 'fixtureRows': fixture.size};
+    }
+    if (workload == 'live' && !fixture.replaysLive) {
+      return {
+        'arrived': false,
+        'reason': 'This fixture has no accepted live update replay.',
+      };
+    }
+    final scroll = before
+        .map((element) => Scrollable.maybeOf(element, axis: Axis.vertical))
+        .nonNulls
+        .firstOrNull;
+    if (scroll == null) {
+      throw StateError('The visible rows have no vertical list.');
+    }
+    final position = scroll.position;
+    final from = position.pixels;
+    final towardsMax =
+        position.maxScrollExtent - from > from - position.minScrollExtent;
+    final target = towardsMax
+        ? position.maxScrollExtent
+        : position.minScrollExtent;
+    final movement = <Map<String, int>>[];
+    final accepted = <Map<String, Object?>>[];
+    double last = from;
+    void changed() {
+      if (position.pixels == last) return;
+      last = position.pixels;
+      movement.add({'atUs': developer.Timeline.now, 'px': last.round()});
+    }
+
+    position.addListener(changed);
+    try {
+      final distance = (from - target).abs();
+      if (distance < 100) {
+        throw StateError('Scroll extent is only $distance px.');
+      }
+      if (workload == 'fling') {
+        final axis = axisDirectionToAxis(position.axisDirection);
+        final forward =
+            towardsMax == (position.axisDirection == AxisDirection.down);
+        if (axis != Axis.vertical) {
+          throw StateError('Expected a vertical list.');
+        }
+        final row = before.firstWhere(
+          (row) =>
+              identical(Scrollable.maybeOf(row, axis: Axis.vertical), scroll),
+        );
+        final visible = fixture.visibleRect(row);
+        final start = Offset(visible.left + 12, visible.center.dy);
+        await tester.flingFrom(start, Offset(0, forward ? -160 : 160), 2200);
+        await idle(const Duration(milliseconds: 1700));
+      } else {
+        final destination = (from + (towardsMax ? 1 : -1) * 900 * seconds)
+            .clamp(position.minScrollExtent, position.maxScrollExtent);
+        final duration = Duration(seconds: seconds);
+        await Future.wait([
+          position.animateTo(
+            destination,
+            duration: duration,
+            curve: Curves.linear,
+          ),
+          if (workload == 'live') _live(fixture, accepted, until: duration),
+        ]);
+      }
+    } finally {
+      position.removeListener(changed);
+    }
+    final moved = (last - from).abs();
+    return {
+      'arrived':
+          moved >= 100 &&
+          (workload != 'live' ||
+              accepted.length == seconds * 2 - 1 &&
+                  accepted.every((item) => item['accepted'] == true)),
+      'fixtureRows': fixture.size,
+      'movedPx': moved,
+      'movement': movement,
+      'live': accepted,
+    };
+  }
+
+  Future<void> _live(
+    _ListFixture fixture,
+    List<Map<String, Object?>> accepted, {
+    required Duration until,
+  }) async {
+    final clock = Stopwatch()..start();
+    for (var tick = 1; tick * 500 < until.inMilliseconds; tick++) {
+      final wait = Duration(milliseconds: tick * 500) - clock.elapsed;
+      if (wait > Duration.zero) await idle(wait);
+      final started = developer.Timeline.now;
+      final result = await fixture.update(tick);
+      accepted.add({'atUs': started, ...result});
+    }
+  }
+}
+
+class _ListFixture {
+  _ListFixture(this.surface, this.workspace, this.api, this.client, this.feed);
+
+  static const rowCount = 320;
+  final String surface;
+  final WorkspaceController workspace;
+  final LabAdapter api;
+  final LabClient client;
+  final LabChannel feed;
+  TasksPageStore? tasksPage;
+  TaskSurfaceController? discussion;
+  late final Widget body;
+  List<Map<String, dynamic>> taskRows = [];
+  List<Map<String, dynamic>> agentRows = [];
+  int get size => surface == 'task-discussion' ? feed.rows.length : rowCount;
+  bool get replaysLive => const {
+    'chat',
+    'thread',
+    'task-discussion',
+    'tasks-list',
+    'tasks-board',
+    'directory',
+    'sidebar',
+  }.contains(surface);
+
+  static Future<_ListFixture> open(String surface, LabImages images) async {
+    const kinds = [...mixCycle, 'table', 'math', 'diagram', 'forwarded'];
+    final rows = List.generate(
+      rowCount,
+      (index) => kinds[index % kinds.length],
+    );
+    final feed = LabChannel('list-feed', rows);
+    final thread = LabChannel('list-thread', rows);
+    final conversation = LabChannel('list-discussion', rows);
+    final directory = [
+      for (var index = 0; index < rowCount; index++)
+        LabChannel('room-$index', const []),
+    ];
+    final (workspace, api, client) = await labWorkspace([
+      feed,
+      thread,
+      conversation,
+      ...directory,
+    ], images);
+    workspace.server = RaftRecord({'id': 's1', 'name': 'Lab', 'role': 'owner'});
+    workspace.channel = feed.record;
+    final source = switch (surface) {
+      'thread' => thread,
+      'task-discussion' => conversation,
+      _ => feed,
+    };
+    final result = _ListFixture(surface, workspace, api, client, source);
+    await result._install(directory, feed, thread, conversation, images);
+    return result;
+  }
+
+  Future<void> _install(
+    List<LabChannel> directory,
+    LabChannel main,
+    LabChannel thread,
+    LabChannel conversation,
+    LabImages images,
+  ) async {
+    final people = [
+      for (var index = 0; index < rowCount ~/ 2; index++)
+        {
+          'id': 'person-$index',
+          'userId': 'person-$index',
+          'name': 'Member $index',
+          'displayName': 'Member $index',
+          'role': 'member',
+        },
+    ];
+    agentRows = [
+      for (var index = 0; index < rowCount ~/ 2; index++)
+        {
+          'id': 'agent-$index',
+          'name': 'Agent $index',
+          'displayName': 'Agent $index',
+          'activity': 'idle',
+          'runtime': 'codex',
+        },
+    ];
+    final tasks = TasksServer(
+      tasks: [
+        for (var index = 0; index < rowCount; index++)
+          pageTask(
+            'task-$index',
+            number: index + 1,
+            channelId: main.id,
+            status: index.isEven ? 'todo' : 'in_progress',
+            claimedBy: index % 4 == 0 ? 'alice' : null,
+          ),
+      ],
+    );
+    taskRows = tasks.tasks;
+    const taskId = 'lab-discussion-task';
+    final selectedTask = pageTask(
+      taskId,
+      number: 321,
+      channelId: main.id,
+      extra: {
+        'channelType': 'channel',
+        'conversationChannelId': conversation.id,
+        'conversationReplyCount': conversation.rows.length,
+      },
+    );
+    api.routes.addAll({
+      'GET /agents': (_) => agentRows,
+      'GET /servers/s1/members': (_) => people,
+      'GET /tasks/server': (request) => tasks.answer(request).$2,
+      'GET /tasks/server/counts': (request) => tasks.answer(request).$2,
+      'GET /tasks/channel/${main.id}/number/321': (_) => {'task': selectedTask},
+      'GET /tasks/$taskId/history': (_) => {'events': []},
+      'GET /integrations/clients': (_) => [],
+      'GET /integrations/overview': (_) => [],
+      'GET /integrations/marketplace': (_) => [
+        for (var index = 0; index < rowCount; index++)
+          {
+            'id': 'app-$index',
+            'clientId': 'client-$index',
+            'name': 'Lab application $index',
+            'description': 'Workspace app for incoming notifications $index',
+          },
+      ],
+      'GET /channels/${main.id}/files': (request) => _page(request, 'files', [
+        for (final (index, row) in main.rows.indexed)
+          {
+            'id': 'file-$index',
+            'channelId': main.id,
+            'messageId': row['id'],
+            'filename': 'Lab image $index.png',
+            'mimeType': 'image/png',
+            'width': LabImages.sizes[index % 4].$1,
+            'height': LabImages.sizes[index % 4].$2,
+            'sizeBytes': images.pngs[index % 4].$3.length,
+            'thumbnailUrl': images.url(index % 4, 'file-$index'),
+            'createdAt': row['createdAt'],
+            'source': {'type': 'channel', 'channelId': main.id},
+          },
+      ]),
+      'GET /channels/inbox': (request) => _page(request, 'items', [
+        for (final (index, channel) in directory.indexed)
+          {
+            'kind': 'channel',
+            'channelId': channel.id,
+            'channelName': channel.record.name,
+            'lastMessageId': '${channel.id}-1',
+            'lastMessagePreview': 'Activity $index',
+            'lastMessageAt': '2026-11-01T12:00:00Z',
+            'unreadCount': 1,
+          },
+      ]),
+      'GET /channels/saved': (request) => _page(request, 'saved', [
+        for (final row in main.rows)
+          {
+            ...row,
+            'messageId': row['id'],
+            'channelName': main.record.name,
+            'savedAt': row['createdAt'],
+          },
+      ]),
+      'GET /messages/search': (request) => _page(request, 'results', [
+        for (final row in main.rows)
+          {
+            ...row,
+            'content': 'Lab search result ${row['id']}',
+            'channelName': main.record.name,
+          },
+      ]),
+    });
+    switch (surface) {
+      case 'chat':
+        await workspace.selectChannel(main.record);
+        body = RaftChatView(controller: workspace);
+      case 'thread':
+        final parent = main.rows.last['id'] as String;
+        api.routes['GET /messages/context/$parent'] = (_) => {
+          'messages': [main.rows.last],
+        };
+        unawaited(
+          workspace.openThreadIdentity(
+            parentChannelId: main.id,
+            parentMessageId: parent,
+            initialThreadChannelId: thread.id,
+            navigate: false,
+          ),
+        );
+        body = RaftChatView(controller: workspace, thread: true);
+      case 'task-discussion':
+        final owner = discussion = TaskSurfaceController(
+          parent: workspace,
+          row: selectedTask,
+          valid: () => true,
+          taskKeyed: true,
+        );
+        unawaited(owner.start());
+        body = SourceTaskSurface(
+          owner: owner,
+          inPlace: true,
+          onClose: () {},
+          onTask: null,
+          onViewBilling: null,
+        );
+      case 'tasks-list':
+      case 'tasks-board':
+        final store = tasksPage = TasksPageStore.of(workspace);
+        body = TasksPage(
+          controller: workspace,
+          currentTaskId: null,
+          onOpenTask: (_) {},
+          store: store,
+        );
+      case 'activity':
+      case 'saved':
+      case 'search':
+        body = ResourceView(
+          controller: workspace,
+          section: surface,
+          initialQuery: surface == 'search' ? 'Lab search result' : null,
+          onMessage: (_, _) async {},
+        );
+      case 'files':
+        body = SourceChannelFilesView(
+          controller: workspace,
+          channelId: main.id,
+          formatCreatedAt: (instant) => instant.substring(0, 10),
+        );
+      case 'directory':
+        body = DesktopDirectoryView(controller: workspace, onSelected: (_) {});
+      case 'apps':
+        body = IntegrationsView(controller: workspace);
+      case 'sidebar':
+        body = WorkspaceView(
+          controller: workspace,
+          appearance: const RaftAppearance(),
+          onAppearance: (_) async {},
+          onLogout: () async {},
+        );
+    }
+  }
+
+  static Map<String, Object?> _page(
+    RequestOptions request,
+    String field,
+    List<Map<String, dynamic>> rows,
+  ) {
+    final offset =
+        int.tryParse(
+          '${request.queryParameters['offset'] ?? request.queryParameters['cursor']}',
+        ) ??
+        0;
+    final limit = int.tryParse('${request.queryParameters['limit']}') ?? 30;
+    final slice = rows.skip(offset).take(limit).toList();
+    return {
+      field: slice,
+      'total': rows.length,
+      'globalTotal': rows.length,
+      'hasMore': offset + slice.length < rows.length,
+      'nextCursor': offset + slice.length < rows.length
+          ? '${offset + slice.length}'
+          : null,
+    };
+  }
+
+  List<Element> get rows {
+    final prefix = switch (surface) {
+      'chat' || 'thread' || 'task-discussion' => 'message-${feed.id}-',
+      'activity' => 'activity-channel-room-',
+      'tasks-list' => 'tasks-page-row-cell-',
+      'tasks-board' => 'task-board-card-',
+      'search' => 'message:${feed.id}-',
+      'files' => 'channel-file-file-',
+      'directory' => 'desktop-directory-',
+      'apps' => 'connected-app-',
+      'saved' => 'saved-${feed.id}-',
+      'sidebar' => 'sidebar-channel-room-',
+      _ => '',
+    };
+    return find
+        .byWidgetPredicate((widget) {
+          final key = widget.key;
+          return key is ValueKey<String> && key.value.startsWith(prefix);
+        })
+        .evaluate()
+        .where((row) => !visibleRect(row).isEmpty)
+        .toList();
+  }
+
+  Rect visibleRect(Element element) {
+    final box = element.renderObject;
+    if (box is! RenderBox ||
+        !box.attached ||
+        !box.hasSize ||
+        box.size.isEmpty) {
+      return Rect.zero;
+    }
+    final Object? viewport = RenderAbstractViewport.maybeOf(box);
+    if (viewport is! RenderBox || !viewport.hasSize) return Rect.zero;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    return rect.intersect(viewport.localToGlobal(Offset.zero) & viewport.size);
+  }
+
+  Future<Map<String, Object?>> update(int tick) async {
+    if (surface == 'sidebar') {
+      final id = 'room-live-$tick';
+      const prefix = 'sidebar-channel-';
+      final visible = rows.firstOrNull?.widget.key;
+      final edited = visible is ValueKey<String>
+          ? visible.value.substring(prefix.length)
+          : null;
+      final name = 'Renamed room $tick';
+      final created = {
+        'id': id,
+        'serverId': 's1',
+        'name': 'New room $tick',
+        'joined': true,
+        'type': 'public',
+      };
+      api.routes['GET /channels/$id'] = (_) => created;
+      client.emit('channel:updated', {'channel': created});
+      if (edited != null) {
+        client.emit('channel:updated', {
+          'channel': {'id': edited, 'serverId': 's1', 'name': name},
+        });
+      }
+      await idle(const Duration(milliseconds: 250));
+      return {
+        'created': id,
+        'edited': edited,
+        'accepted':
+            workspace.channels.any((channel) => channel.id == id) &&
+            workspace.channels.any(
+              (channel) => channel.id == edited && channel.name == name,
+            ),
+      };
+    }
+    if (surface == 'tasks-list' || surface == 'tasks-board') {
+      final added = pageTask(
+        'live-task-$tick',
+        number: 1000 + tick,
+        channelId: feed.id,
+        claimedBy: 'alice',
+      );
+      taskRows.add(added);
+      client.emit('task:created', {
+        'channelId': feed.id,
+        'tasks': [added],
+      });
+      final visible = rows
+          .map((row) => (row.widget.key as ValueKey<String>).value)
+          .map(
+            (key) => key.replaceFirst(
+              RegExp(r'^tasks-page-row-cell-|^task-board-card-'),
+              '',
+            ),
+          )
+          .map((id) => taskRows.where((row) => row['id'] == id).firstOrNull)
+          .nonNulls
+          .firstOrNull;
+      if (visible != null) {
+        visible['title'] = 'Edited during scroll $tick';
+        client.emit('task:updated', {
+          'channelId': feed.id,
+          'task': Map.of(visible),
+        });
+      }
+      final known = tasksPage!.knownById;
+      return {
+        'created': added['id'],
+        'edited': visible?['id'],
+        'accepted':
+            known.containsKey(added['id']) &&
+            visible != null &&
+            known[visible['id']]?['title'] == visible['title'],
+      };
+    }
+    if (surface == 'directory') {
+      final id = 'live-agent-$tick';
+      final agent = {...agentRows.first, 'id': id, 'name': 'Live agent $tick'};
+      agentRows.add(agent);
+      client.emit('agent:created', {'agent': agent});
+      const prefix = 'desktop-directory-agent-';
+      final visible = rows
+          .map((row) => (row.widget.key as ValueKey<String>).value)
+          .where((key) => key.startsWith(prefix))
+          .firstOrNull;
+      final edited = visible?.substring(prefix.length);
+      final detail = 'Live update $tick';
+      if (edited != null) {
+        client.emit('agent:activity', {
+          'agentId': edited,
+          'activity': 'working',
+          'detail': detail,
+        });
+      }
+      return {
+        'created': id,
+        'edited': edited,
+        'accepted':
+            workspace.entityDirectory.agent(id) != null &&
+            edited != null &&
+            workspace.entityDirectory.agent(edited)?['activityDetail'] ==
+                detail,
+      };
+    }
+    final domain =
+        discussion?.discussion?.messageDomain ?? workspace.messageDomain;
+    final index = feed.rows.length;
+    final added = labRow(
+      feed.id,
+      mixCycle[index % mixCycle.length],
+      index,
+      others: true,
+    );
+    feed.rows.add(added);
+    client.emit('message:new', added);
+    final visible = rows.firstOrNull?.widget.key;
+    final id = visible is ValueKey<String>
+        ? visible.value.substring('message-'.length)
+        : null;
+    final edited = feed.rows.where((row) => row['id'] == id).firstOrNull;
+    final content = 'Live revision $tick';
+    if (edited != null) {
+      edited['content'] = content;
+      client.emit('message:updated', Map.of(edited));
+    }
+    return {
+      'created': added['id'],
+      'edited': id,
+      'accepted':
+          domain.ledger.contains(feed.id, added['id'] as String) &&
+          id != null &&
+          domain.ledger.message(feed.id, id)?['content'] == content,
+    };
+  }
+
+  void dispose() {
+    discussion?.dispose();
+    tasksPage?.dispose();
+    workspace.dispose();
+  }
+}

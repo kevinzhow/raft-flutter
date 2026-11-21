@@ -13,7 +13,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
 /// Bump when any generated content, size or route timing changes.
-const fixtureVersion = 'perf-lab-fixture-v4';
+const fixtureVersion = 'perf-lab-fixture-v5';
 
 /// Row kinds measured individually by the row-mount scenario.
 const rowKinds = [
@@ -46,7 +46,10 @@ const _users = [
 /// records every endpoint the product asked for but the fixture lacks.
 class LabAdapter implements HttpClientAdapter {
   final Map<String, FutureOr<dynamic> Function(RequestOptions)> routes = {};
-  final List<(bool Function(RequestOptions), FutureOr<dynamic> Function(RequestOptions))> patterns = [];
+  final List<
+    (bool Function(RequestOptions), FutureOr<dynamic> Function(RequestOptions))
+  >
+  patterns = [];
   final misses = <String, int>{};
   final hits = <String, int>{};
   final completedHits = <String, int>{};
@@ -55,7 +58,11 @@ class LabAdapter implements HttpClientAdapter {
   var peakPending = 0;
   Duration responseDelay = Duration.zero;
   @override
-  Future<ResponseBody> fetch(RequestOptions o, Stream<Uint8List>? s, Future<void>? c) async {
+  Future<ResponseBody> fetch(
+    RequestOptions o,
+    Stream<Uint8List>? s,
+    Future<void>? c,
+  ) async {
     requests++;
     pending++;
     peakPending = math.max(peakPending, pending);
@@ -69,17 +76,29 @@ class LabAdapter implements HttpClientAdapter {
         }
       }
     }
-    if (route == null) misses.update('${o.method} ${o.path}', (v) => v + 1, ifAbsent: () => 1);
+    if (route == null) {
+      misses.update('${o.method} ${o.path}', (v) => v + 1, ifAbsent: () => 1);
+    }
     try {
-      if (responseDelay > Duration.zero) await Future<void>.delayed(responseDelay);
+      if (responseDelay > Duration.zero) {
+        await Future<void>.delayed(responseDelay);
+      }
       return ResponseBody.fromString(
-      jsonEncode(route == null ? {'error': 'Unexpected endpoint'} : await route(o)),
-      route == null ? 404 : 200,
-      headers: {Headers.contentTypeHeader: ['application/json']},
+        jsonEncode(
+          route == null ? {'error': 'Unexpected endpoint'} : await route(o),
+        ),
+        route == null ? 404 : 200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
       );
     } finally {
       pending--;
-      completedHits.update('${o.method} ${o.path}', (v) => v + 1, ifAbsent: () => 1);
+      completedHits.update(
+        '${o.method} ${o.path}',
+        (v) => v + 1,
+        ifAbsent: () => 1,
+      );
     }
   }
 
@@ -90,14 +109,22 @@ class LabAdapter implements HttpClientAdapter {
 /// A client whose realtime events the lab drives.
 class LabClient extends RaftClient {
   LabClient(LabAdapter adapter, {super.origin = 'https://example.invalid'})
-    : super( sessionStore: MemorySessionStore(), transport: Dio()..httpClientAdapter = adapter) {
+    : super(
+        sessionStore: MemorySessionStore(),
+        transport: Dio()..httpClientAdapter = adapter,
+      ) {
     _accountEvents = super.events.listen(stream.add);
   }
   final stream = StreamController<RaftEvent>.broadcast(sync: true);
   late final StreamSubscription<RaftEvent> _accountEvents;
   @override
   Stream<RaftEvent> get events => stream.stream;
-  void emit(String name, dynamic payload) => stream.add(RaftEvent(name, payload));
+  void emit(String name, dynamic payload) {
+    final event = RaftEvent(name, payload);
+    invalidateReadsForEvent(event);
+    stream.add(event);
+  }
+
   // The local replay is the socket transport. Never try a network connection
   // to the fixture origin, including when the production app root restores it.
   @override
@@ -130,10 +157,14 @@ class LabImages {
       canvas.drawRect(
         ui.Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
         ui.Paint()
-          ..shader = ui.Gradient.linear(ui.Offset.zero, ui.Offset(w.toDouble(), h.toDouble()), [
-            ui.Color(0xff000000 | random.nextInt(0xffffff)),
-            ui.Color(0xff000000 | random.nextInt(0xffffff)),
-          ]),
+          ..shader = ui.Gradient.linear(
+            ui.Offset.zero,
+            ui.Offset(w.toDouble(), h.toDouble()),
+            [
+              ui.Color(0xff000000 | random.nextInt(0xffffff)),
+              ui.Color(0xff000000 | random.nextInt(0xffffff)),
+            ],
+          ),
       );
       // Photographic-ish entropy so PNG decode cost is realistic.
       for (var i = 0; i < 600; i++) {
@@ -152,8 +183,11 @@ class LabImages {
     final images = LabImages._(server, pngs);
     server.listen((request) async {
       images.reads++;
-      if (images.responseDelay > Duration.zero) await Future<void>.delayed(images.responseDelay);
-      final k = int.tryParse(request.uri.pathSegments.last.split('.').first) ?? 0;
+      if (images.responseDelay > Duration.zero) {
+        await Future<void>.delayed(images.responseDelay);
+      }
+      final k =
+          int.tryParse(request.uri.pathSegments.last.split('.').first) ?? 0;
       request.response.headers.contentType = ContentType('image', 'png');
       request.response.add(pngs[k % pngs.length].$3);
       await request.response.close();
@@ -161,10 +195,12 @@ class LabImages {
     return images;
   }
 
-  String url(int k, String id) => 'http://127.0.0.1:${server.port}/img/$k.png?a=$id';
+  String url(int k, String id) =>
+      'http://127.0.0.1:${server.port}/img/$k.png?a=$id';
 }
 
-String longMarkdown(int i) => '''## 第 $i 条固定性能消息
+String longMarkdown(int i) =>
+    '''## 第 $i 条固定性能消息
 
 这是用于复现真实频道滚动卡顿的中文长消息。我们必须保留同一份输入和原始测量结果，不能用短消息或空列表替代用户正在阅读的内容。一次完整的回归应覆盖长段落、内联格式、链接、列表、代码以及附件，检查真实构建和布局成本。
 
@@ -180,13 +216,15 @@ String longMarkdown(int i) => '''## 第 $i 条固定性能消息
 String plainText(int i) => switch (i % 4) {
   0 => 'Message $i: plain text with 中文、日本語 and a short reply.',
   1 => '好的，我下午把第 $i 版的截图发到频道里，顺便确认一下发布时间。',
-  2 => 'Sounds good — shipping build $i after the review. Ping me if anything regresses.',
+  2 =>
+    'Sounds good — shipping build $i after the review. Ping me if anything regresses.',
   _ => '收到 👍 we will sync on #$i tomorrow morning.',
 };
 
 String codeMessage(int i) {
   final lines = [
-    for (var l = 0; l < 28; l++) '  final value$l = await fetchRow(${i + l}, retry: ${l % 3}); // 第 $l 行',
+    for (var l = 0; l < 28; l++)
+      '  final value$l = await fetchRow(${i + l}, retry: ${l % 3}); // 第 $l 行',
   ].join('\n');
   return 'Code $i — the repro:\n\n```dart\nFuture<int> repro$i(Client client) async {\n$lines\n  return value0 + value27;\n}\n```\n\nThe line `fetchRow` dominates.';
 }
@@ -194,8 +232,18 @@ String codeMessage(int i) {
 /// One fixed message row of [kind]. [n] is the message's position.
 /// The signed-in fixture user is `alice` (`_users[0]`); [others] picks only
 /// other senders, as for live arrivals from teammates.
-Map<String, dynamic> labRow(String channel, String kind, int n, {String? id, DateTime? base, int seqBase = 0, bool others = false}) {
-  final (sender, name) = others ? _users[1 + n % (_users.length - 1)] : _users[(n ~/ 2) % _users.length];
+Map<String, dynamic> labRow(
+  String channel,
+  String kind,
+  int n, {
+  String? id,
+  DateTime? base,
+  int seqBase = 0,
+  bool others = false,
+}) {
+  final (sender, name) = others
+      ? _users[1 + n % (_users.length - 1)]
+      : _users[(n ~/ 2) % _users.length];
   final messageId = id ?? '$channel-$n';
   final row = <String, dynamic>{
     'id': messageId,
@@ -205,12 +253,20 @@ Map<String, dynamic> labRow(String channel, String kind, int n, {String? id, Dat
     'senderType': 'user',
     'senderName': name,
     'messageType': 'chat',
-    'createdAt': (base ?? DateTime.utc(2026, 10, 1)).add(Duration(minutes: n * 3)).toIso8601String(),
+    'createdAt': (base ?? DateTime.utc(2026, 10, 1))
+        .add(Duration(minutes: n * 3))
+        .toIso8601String(),
     'content': switch (kind) {
       'markdown' => longMarkdown(n),
       'code' => codeMessage(n),
       'image' => 'Screenshots for build $n',
       'attachments' => 'Spec and logs for $n',
+      'table' =>
+        '| Release | Files | Status |\n|---|---|---|\n'
+            '| Build $n | 12 | Ready |\n| Next | 8 | In review |',
+      'math' => 'Workload $n\n\n\$\$\n\\frac{a^2+b^2}{c}=\\sqrt{x}\n\$\$',
+      'diagram' =>
+        '```mermaid\nflowchart TD\nA[Request $n] --> B[Response]\n```',
       _ => plainText(n),
     },
   };
@@ -231,14 +287,37 @@ Map<String, dynamic> labRow(String channel, String kind, int n, {String? id, Dat
   }
   if (kind == 'attachments') {
     row['attachments'] = [
-      {'id': 'file-$messageId-0', 'channelId': channel, 'filename': 'Quarterly report $n.pdf', 'mimeType': 'application/pdf', 'sizeBytes': 2400000},
-      {'id': 'file-$messageId-1', 'channelId': channel, 'filename': 'logs-$n.zip', 'mimeType': 'application/zip', 'sizeBytes': 18000000},
+      {
+        'id': 'file-$messageId-0',
+        'channelId': channel,
+        'filename': 'Quarterly report $n.pdf',
+        'mimeType': 'application/pdf',
+        'sizeBytes': 2400000,
+      },
+      {
+        'id': 'file-$messageId-1',
+        'channelId': channel,
+        'filename': 'logs-$n.zip',
+        'mimeType': 'application/zip',
+        'sizeBytes': 18000000,
+      },
     ];
   }
   if (kind == 'reactions') {
     row['reactions'] = [
-      for (final (e, c) in [('👍', 4), ('🎉', 2), ('❤️', 3), ('👀', 1), ('🚀', 5), ('✅', 2)])
-        {'emoji': e, 'count': c, 'userIds': [for (var u = 0; u < c; u++) 'user-$u']},
+      for (final (e, c) in [
+        ('👍', 4),
+        ('🎉', 2),
+        ('❤️', 3),
+        ('👀', 1),
+        ('🚀', 5),
+        ('✅', 2),
+      ])
+        {
+          'emoji': e,
+          'count': c,
+          'userIds': [for (var u = 0; u < c; u++) 'user-$u'],
+        },
     ];
   }
   if (kind == 'task') {
@@ -246,6 +325,28 @@ Map<String, dynamic> labRow(String channel, String kind, int n, {String? id, Dat
     row['taskStatus'] = 'in_progress';
     row['taskTitle'] = 'Fix scrolling regression $n';
     row['taskId'] = 'task-$messageId';
+  }
+  if (kind == 'forwarded') {
+    row['actionMetadata'] = {
+      'kind': 'forwarded-bundle',
+      'version': 1,
+      'forwardedItems': [
+        {
+          'index': 0,
+          'provenanceState': 'available',
+          'sourceTargetSnapshot': {
+            'type': 'channel',
+            'label': 'Fixture channel',
+            'labelVisibility': 'public',
+          },
+          'sourceAuthorSnapshot': {'type': 'user', 'uniqueName': 'bob'},
+          'contentSnapshot': plainText(n),
+          'sourceMessageId': '$channel-forward-$n',
+          'sourceTargetId': channel,
+          'sourceMessageSeq': n + 1,
+        },
+      ],
+    };
   }
   return row;
 }
@@ -260,23 +361,41 @@ Map<String, dynamic> threadSummary(String parentId, int n) => {
         'senderType': 'user',
         'senderId': _users[r].$1,
         'senderName': _users[r].$2,
-        'preview': r == 0 ? '我看了一下，问题在列表的布局阶段。' : 'Agreed, let us measure before changing it.',
-        'createdAt': DateTime.utc(2026, 10, 1).add(Duration(minutes: n * 3 + r + 1)).toIso8601String(),
+        'preview': r == 0
+            ? '我看了一下，问题在列表的布局阶段。'
+            : 'Agreed, let us measure before changing it.',
+        'createdAt': DateTime.utc(
+          2026,
+          10,
+          1,
+        ).add(Duration(minutes: n * 3 + r + 1)).toIso8601String(),
       },
   ],
 };
 
 /// A channel's fixed history plus the side data its kinds need.
 class LabChannel {
-  LabChannel(this.id, this.kinds, {this.pageDelay = Duration.zero, this.firstPage}) {
+  LabChannel(
+    this.id,
+    this.kinds, {
+    this.pageDelay = Duration.zero,
+    this.firstPage,
+  }) {
     for (var n = 0; n < kinds.length; n++) {
       final row = labRow(id, kinds[n], n);
       rows.add(row);
-      if (kinds[n] == 'thread-summary') summaries[row['id']] = threadSummary(row['id'], n);
+      if (kinds[n] == 'thread-summary') {
+        summaries[row['id']] = threadSummary(row['id'], n);
+      }
       if (kinds[n] == 'task') {
         tasks.add({
-          'id': row['taskId'], 'messageId': row['id'], 'channelId': id, 'taskNumber': row['taskNumber'],
-          'title': row['taskTitle'], 'status': 'in_progress', 'claimedByName': 'Bob Li',
+          'id': row['taskId'],
+          'messageId': row['id'],
+          'channelId': id,
+          'taskNumber': row['taskNumber'],
+          'title': row['taskTitle'],
+          'status': 'in_progress',
+          'claimedByName': 'Bob Li',
         });
       }
     }
@@ -292,23 +411,34 @@ class LabChannel {
   final summaries = <String, dynamic>{};
   final tasks = <Map<String, dynamic>>[];
   var olderPagesServed = 0;
-  RaftChannel get record => RaftChannel({'id': id, 'name': 'lab-$id', 'joined': true});
+  RaftChannel get record =>
+      RaftChannel({'id': id, 'name': 'lab-$id', 'joined': true});
 
   Future<Map<String, dynamic>> page(RequestOptions o) async {
     final before = BigInt.tryParse('${o.queryParameters['before'] ?? ''}');
     // Match the real transport's requested page size. Returning all 600
     // history rows in one response exceeds the product's accepted-window cap.
-    final limit = (int.tryParse('${o.queryParameters['limit'] ?? 50}') ?? 50).clamp(1, 500).toInt();
+    final limit = (int.tryParse('${o.queryParameters['limit'] ?? 50}') ?? 50)
+        .clamp(1, 500)
+        .toInt();
     if (pageDelay > Duration.zero) await Future<void>.delayed(pageDelay);
     if (before != null) {
       final older = rows.where((r) => BigInt.parse(r['seq']) < before).toList();
       final slice = older.sublist(math.max(0, older.length - limit));
       if (slice.isNotEmpty) olderPagesServed++;
-      return {'messages': slice, 'hasMore': older.length > slice.length, 'threadSummariesByParentMessageId': summaries};
+      return {
+        'messages': slice,
+        'hasMore': older.length > slice.length,
+        'threadSummariesByParentMessageId': summaries,
+      };
     }
     final count = math.min(rows.length, math.min(firstPage ?? limit, limit));
     final first = rows.sublist(rows.length - count);
-    return {'messages': first, 'hasMore': rows.length > first.length, 'threadSummariesByParentMessageId': summaries};
+    return {
+      'messages': first,
+      'hasMore': rows.length > first.length,
+      'threadSummariesByParentMessageId': summaries,
+    };
   }
 
   void install(LabAdapter api) {
@@ -318,15 +448,32 @@ class LabChannel {
   }
 }
 
-List<String> mixKinds(int count) => [for (var i = 0; i < count; i++) mixCycle[i % mixCycle.length]];
+List<String> mixKinds(int count) => [
+  for (var i = 0; i < count; i++) mixCycle[i % mixCycle.length],
+];
 
 /// Signs in a fixture workspace with the lab's routes. Every channel's rows
 /// arrive through the product's own network page path.
-Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChannel> channels, LabImages images, {bool mobile = false, bool ownsClient = true, String origin = 'https://example.invalid', LabAdapter? adapter}) async {
+Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(
+  List<LabChannel> channels,
+  LabImages images, {
+  bool mobile = false,
+  bool ownsClient = true,
+  String origin = 'https://example.invalid',
+  LabAdapter? adapter,
+}) async {
   final api = adapter ?? LabAdapter();
-  api.routes['POST /auth/login'] = (_) => {'accessToken': 'fixture-only', 'refreshToken': 'fixture-only', 'user': {
-    'id': 'alice', 'name': 'Alice Zhang', 'email': 'alice@example.invalid', 'emailVerified': true, 'displayLanguage': 'en',
-  }};
+  api.routes['POST /auth/login'] = (_) => {
+    'accessToken': 'fixture-only',
+    'refreshToken': 'fixture-only',
+    'user': {
+      'id': 'alice',
+      'name': 'Alice Zhang',
+      'email': 'alice@example.invalid',
+      'emailVerified': true,
+      'displayLanguage': 'en',
+    },
+  };
   api.routes['GET /agents'] = (_) => [];
   api.routes['GET /servers/s1/members'] = (_) => [];
   api.routes['GET /servers/s1/machines'] = (_) => {'machines': []};
@@ -338,37 +485,70 @@ Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChanne
   api.routes['GET /servers/unread-summary'] = (_) => <dynamic>[];
   // The workspace's one-time reads, answered as a server without these features
   // would (same state the product reaches from a 404, without a fixture miss).
-  api.routes['GET /servers/s1/translation-settings'] = (_) => {'translationEnabled': false, 'translationAvailable': false, 'canManageTranslation': false};
+  api.routes['GET /servers/s1/translation-settings'] = (_) => {
+    'translationEnabled': false,
+    'translationAvailable': false,
+    'canManageTranslation': false,
+  };
   api.routes['POST /feature-flags/evaluate'] = (_) => {'evaluations': []};
-  api.routes['GET /servers/s1/setup-projection'] = (_) => {'phase': 'complete', 'surface': 'complete', 'blocksChat': false};
+  api.routes['GET /servers/s1/setup-projection'] = (_) => {
+    'phase': 'complete',
+    'surface': 'complete',
+    'blocksChat': false,
+  };
   api.routes['GET /channels/dm'] = (_) => [];
-  api.routes['GET /channels'] = (_) => [for (final c in channels) c.record.json];
+  api.routes['GET /channels'] = (_) => [
+    for (final c in channels) c.record.json,
+  ];
   api.patterns.add((
-    (o) => o.method == 'GET' && o.path.startsWith('/channels/') && o.path.endsWith('/members'),
-    (_) => [for (final (id, name) in _users) {'userId': id, 'name': name}],
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/channels/') &&
+        o.path.endsWith('/members'),
+    (_) => [
+      for (final (id, name) in _users) {'userId': id, 'name': name},
+    ],
   ));
   // The viewer's own reactions, fetched once per mounted reaction row.
   api.patterns.add((
-    (o) => o.method == 'GET' && o.path.startsWith('/messages/') && o.path.endsWith('/reactions/viewer'),
-    (o) => {'serverId': 's1', 'messageId': o.path.split('/')[2], 'viewerVersion': 1, 'reactedEmojis': ['👍']},
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/messages/') &&
+        o.path.endsWith('/reactions/viewer'),
+    (o) => {
+      'serverId': 's1',
+      'messageId': o.path.split('/')[2],
+      'viewerVersion': 1,
+      'reactedEmojis': ['👍'],
+    },
   ));
   api.patterns.add((
-    (o) => o.method == 'GET' && o.path.startsWith('/attachments/') && o.path.endsWith('/url'),
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/attachments/') &&
+        o.path.endsWith('/url'),
     (o) {
       final id = o.path.split('/')[2];
-      return {'url': images.url(id.hashCode.abs() % LabImages.sizes.length, id)};
+      return {
+        'url': images.url(id.hashCode.abs() % LabImages.sizes.length, id),
+      };
     },
   ));
   // Image attachment URLs keep the image's true aspect: pick by declared size.
   api.patterns.insert(0, (
-    (o) => o.method == 'GET' && o.path.startsWith('/attachments/img-') && o.path.endsWith('/url'),
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/attachments/img-') &&
+        o.path.endsWith('/url'),
     (o) {
       final id = o.path.split('/')[2];
       for (final c in channels) {
         for (final r in c.rows) {
           for (final a in (r['attachments'] as List? ?? const [])) {
             if (a['id'] == id) {
-              final k = LabImages.sizes.indexWhere((s) => s.$1 == a['width'] && s.$2 == a['height']);
+              final k = LabImages.sizes.indexWhere(
+                (s) => s.$1 == a['width'] && s.$2 == a['height'],
+              );
               return {'url': images.url(k < 0 ? 0 : k, id)};
             }
           }
@@ -383,8 +563,13 @@ Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChanne
   api.routes['POST /attachments/urls'] = (o) async {
     final urls = <Map<String, dynamic>>[];
     for (final id in (o.data as Map)['attachmentIds'] as List) {
-      final single = RequestOptions(path: '/attachments/$id/url', method: 'GET');
-      final response = await api.patterns.firstWhere((entry) => entry.$1(single)).$2(single);
+      final single = RequestOptions(
+        path: '/attachments/$id/url',
+        method: 'GET',
+      );
+      final response = await api.patterns
+          .firstWhere((entry) => entry.$1(single))
+          .$2(single);
       urls.add({'id': id, ...Map<String, dynamic>.from(response as Map)});
     }
     return {'urls': urls};
@@ -392,8 +577,16 @@ Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChanne
   final client = LabClient(api, origin: origin);
   await client.login('fixture', 'fixture');
   client.selectServer('s1');
-  final w = WorkspaceController(client, mobileNavigation: mobile, ownsClient: ownsClient);
-  w.server = RaftRecord({'id': 's1', 'name': 'Lab', 'role': mobile ? 'owner' : 'member'});
+  final w = WorkspaceController(
+    client,
+    mobileNavigation: mobile,
+    ownsClient: ownsClient,
+  );
+  w.server = RaftRecord({
+    'id': 's1',
+    'name': 'Lab',
+    'role': mobile ? 'owner' : 'member',
+  });
   w.channels = [for (final c in channels) c.record];
   w.messageDomain.ledger.switchServer('s1');
   return (w, api, client);
