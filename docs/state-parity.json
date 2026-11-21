@@ -52725,6 +52725,30 @@
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/task_chip_page.dart#class:_StablePageRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Tasks page row identity wrapper. Its TaskChipList family mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#class:_StablePageRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Retains the mounted Tasks page row when its visible inputs are unchanged. The TaskChipList family mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:RaftTaskPageList._buildSliver": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Builds the sliver presentation of the Tasks page list. The TaskChipList family mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:RaftTaskPageList._row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Constructs the existing Tasks page row for a mounted list item. The TaskChipList family mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/task_chip_page.dart#method:RaftTaskPageList.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -52749,6 +52773,12 @@
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_PageRowState._actions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Supplies the retained Tasks page row with its current actions. The TaskChipList family mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/task_chip_page.dart#method:_PageRowState._activate": {
         "role": "unresolved",
         "familyRefs": [],
@@ -52766,6 +52796,24 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_StablePageRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Creates the Tasks page row identity state. The TaskChipList family mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_StablePageRow.revision": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Defines the visible inputs of the retained Tasks page row. The TaskChipList family mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_StablePageRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Builds the retained row inside the Tasks page list. The TaskChipList family mapping remains unreviewed."
       },
       "packages/raft_ui/lib/task_page_previews.dart#class:_PageList": {
         "role": "unresolved",
