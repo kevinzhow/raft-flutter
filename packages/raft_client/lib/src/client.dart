@@ -1450,24 +1450,20 @@ class RaftClient {
   /// A retained response for immediate display under the current authority.
   /// Callers must still perform the normal read to revalidate it.
   Object? peekGet(String path, {Map<String, dynamic>? query}) {
-    final entry = _retainedGet(path, query);
+    final entry = _retainedGet(_retainedKey(path, query));
     return entry == null ? null : _cloneJson(entry.data);
   }
 
-  _GetEntry? _retainedGet(String path, Map<String, dynamic>? query) {
+  _GetKey? _retainedKey(String path, Map<String, dynamic>? query) {
     if (sharedSessionAuthority != null || Zone.current[_freshKey] == true) {
       return null;
     }
-    final key = _getKey(
-      path,
-      query,
-      currentRequestHeaders,
-      workspaceScoped: true,
-    );
-    return key == null
-        ? null
-        : _getCache.peek(key, key.policy.age, governor.now(), stale: true);
+    return _getKey(path, query, currentRequestHeaders, workspaceScoped: true);
   }
+
+  _GetEntry? _retainedGet(_GetKey? key) => key == null
+      ? null
+      : _getCache.peek(key, key.policy.age, governor.now(), stale: true);
 
   /// Publishes a retained display snapshot synchronously and then publishes
   /// the revalidated value only if it changed. The caller owns its UI lifetime.
@@ -1481,12 +1477,24 @@ class RaftClient {
   }) async {
     final authentication = _authenticationGeneration;
     final workspace = _generation;
-    final prior = _retainedGet(path, query);
-    if (prior != null) onData(_cloneJson(prior.data));
-    final dynamic current;
+    final key = _retainedKey(path, query);
+    final prior = _retainedGet(key);
+    final observation = _getCache.observe(key);
     try {
+      if (prior != null) onData(_cloneJson(prior.data));
       final request = read ?? () => get(path, query: query);
-      current = prior == null ? await request() : await runBackground(request);
+      final current = prior == null
+          ? await request()
+          : await runBackground(request);
+      if (_closed ||
+          _authenticationGeneration != authentication ||
+          _generation != workspace) {
+        throw const RaftApiException.staleScope();
+      }
+      if (observation?.invalidated != true &&
+          (prior == null || !_equalReadJson(prior.data, current))) {
+        onData(current);
+      }
     } on RaftApiException catch (error) {
       final status = error.status;
       if (prior != null &&
@@ -1495,13 +1503,9 @@ class RaftClient {
         return;
       }
       rethrow;
+    } finally {
+      _getCache.unobserve(observation);
     }
-    if (_closed ||
-        _authenticationGeneration != authentication ||
-        _generation != workspace) {
-      throw const RaftApiException.staleScope();
-    }
-    if (prior == null || !_equalReadJson(prior.data, current)) onData(current);
   }
 
   /// Read an account-owned resource without attaching the active workspace.

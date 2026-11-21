@@ -228,6 +228,8 @@ _ReadEffect _writeEffect(Uri uri, Object? body) {
       : segments) {
     ['feature-flags', 'evaluate'] ||
     ['attachments', 'urls'] ||
+    ['objects', 'summaries'] ||
+    ['messages', _, 'link-cards', 'read'] ||
     ['auth', 'me', 'timezone-observation'] => _noReads,
     ['channels', 'saved', ...] => (
       policy,

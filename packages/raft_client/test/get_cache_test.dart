@@ -338,6 +338,44 @@ void main() {
     expect(wire.requests(path), 2);
   });
 
+  test('an event fences publication of an older observed refresh', () async {
+    const path = '/tasks/channel/main/number/3';
+    await client.get(path);
+    now = now.add(const Duration(seconds: 11));
+    wire.versions[path] = 2;
+    final hold = wire.holds[path] = Completer<void>();
+    final shown = <int>[];
+    final observation = client.observeGet(
+      path,
+      onData: (body) => shown.add(body['version'] as int),
+    );
+    expect(shown, [1]);
+    while (wire.requests(path) < 2) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    client.invalidateReadsForEvent(
+      const RaftEvent('task:updated', {
+        'channelId': 'main',
+        'task': {'id': 'task-3', 'taskNumber': 3},
+      }),
+    );
+    wire.holds.remove(path);
+    wire.versions[path] = 3;
+    expect((await client.get(path))['version'], 3);
+    hold.complete();
+    await observation;
+    expect(shown, [1]);
+  });
+
+  test('read-only POST routes keep unrelated snapshots warm', () async {
+    const task = '/tasks/channel/main/number/3';
+    await client.get(task);
+    await client.post('/objects/summaries', data: {'refs': []});
+    await client.post('/messages/m1/link-cards/read');
+    await client.get(task);
+    expect(wire.requests(task), 1);
+  });
+
   test(
     'does not retain server no-store, secret-bearing or oversized replies',
     () async {
