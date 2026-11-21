@@ -31,6 +31,7 @@ import 'package:raft_ui/conversation_finder_previews.dart';
 import 'package:raft_ui/chat_composition_previews.dart';
 import 'package:raft_ui/combobox_previews.dart';
 import 'package:raft_ui/collapsible_section_previews.dart';
+import 'package:raft_ui/comment_card_previews.dart';
 import 'package:raft_ui/composer_expand_previews.dart';
 import 'package:raft_ui/computer_connection_previews.dart';
 import 'package:raft_ui/conversation_card_previews.dart';
@@ -459,6 +460,13 @@ final auditSurfaces = <AuditSurface>[
     'Card parts',
     cardPartsPreview,
     Size(420, 520),
+  ),
+  AuditSurface(
+    'commentCardPreview',
+    'Comment thread and private draft',
+    commentCardPreview,
+    Size(340, 230),
+    representative: true,
   ),
   AuditSurface(
     'fitToolbarWidePreview',
