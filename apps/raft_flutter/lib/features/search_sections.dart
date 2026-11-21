@@ -163,6 +163,7 @@ class SearchEverywhereRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: RaftSpace.x2),
       child: RaftSearchResultSurface(
         key: const Key('search-everywhere'),
+        pageLayout: true,
         entity: true,
         onPressed: onPressed,
         child: Row(

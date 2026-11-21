@@ -111,7 +111,9 @@ function ParityExtLpPanel({ props }: { props: ParityExtLpProps }) {
   // Elegant, 62px Brutal); this host has no shell root. The page canvas is the document body,
   // `--layer-canvas-muted` (index.css `body`): the Tasks panel is `dark:bg-transparent` over it.
   const brutal = props.params.get("parityTheme") === "brutal-light";
-  const shell = { "--shell-header-height": panel === "activity" && props.platform === "desktop" ? "44px" : "56px" } as Record<string, string>;
+  const shell = panel === "search"
+    ? {}
+    : { "--shell-header-height": panel === "activity" && props.platform === "desktop" ? "44px" : "56px" };
   return (
     <main className="min-h-screen bg-white p-0 font-display text-black">
       <div

@@ -18,7 +18,7 @@ void main() {
     addTearDown(() => RaftBorderSnap.emulatedDeviceScaleFactor = false);
     addTearDown(controller.dispose);
     addTearDown(focus.dispose);
-    final app = MaterialApp(
+    Widget app({bool matchCssBorderScale = false}) => MaterialApp(
       theme: raftTheme(),
       home: Material(
         child: Center(
@@ -27,6 +27,7 @@ void main() {
             child: RaftSearchInput(
               controller: controller,
               focusNode: focus,
+              matchCssBorderScale: matchCssBorderScale,
               hint: 'Search',
               clearLabel: 'Clear Search',
               onClear: controller.clear,
@@ -35,7 +36,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpWidget(app);
+    await tester.pumpWidget(app());
 
     final input = find.byType(RaftSearchInput);
     double borderWidth() =>
@@ -53,6 +54,8 @@ void main() {
                 as Border)
             .top
             .width;
+    expect(borderWidth(), closeTo(4 / 3, .00001));
+    await tester.pumpWidget(app(matchCssBorderScale: true));
     expect(borderWidth(), 1);
     final field = find.byType(TextField);
     List<double> focusSpreads() => [
@@ -71,7 +74,7 @@ void main() {
 
     RaftBorderSnap.emulatedDeviceScaleFactor = false;
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpWidget(app);
+    await tester.pumpWidget(app(matchCssBorderScale: true));
     expect(borderWidth(), closeTo(4 / 3, .00001));
     await tester.tap(field);
     await tester.pump();

@@ -23,11 +23,12 @@ class RaftSearchResultSurface extends StatelessWidget {
     this.selected = false,
     this.nested = false,
     this.first = false,
+    this.pageLayout = false,
   });
 
   final Widget child;
   final VoidCallback onPressed;
-  final bool entity, selected, nested;
+  final bool entity, selected, nested, pageLayout;
 
   /// First child of a thread card: no divider above it.
   final bool first;
@@ -49,23 +50,25 @@ class RaftSearchResultSurface extends StatelessWidget {
           ],
         );
         if (t.option('searchResult.selection', or: 'card') == 'flat') {
-          final inset = t.desktop || entity && RaftInteraction.of(context).touch
-              ? 8.0
-              : 12.0;
-          final radius = BorderRadius.circular(
-            RaftSearchRecipe(t, mobile: false).cardRadius,
-          );
+          final compact =
+              (pageLayout || entity) && t.desktop ||
+              entity && RaftInteraction.of(context).touch;
+          final recipe = RaftSearchRecipe(t, mobile: false);
+          final radius = BorderRadius.circular(recipe.cardRadius);
+          final selection = pageLayout
+              ? raftChromeBlend(t.ui['brand-soft'], t.ui.layerCanvas)
+              : t.ui['brand-soft'];
           return Container(
             width: double.infinity,
             margin: const EdgeInsets.symmetric(horizontal: 8),
             padding: EdgeInsets.symmetric(
-              horizontal: RaftSearchRecipe(t, mobile: false).pageInset - 8,
-              vertical: inset,
+              horizontal: pageLayout ? recipe.pageInset - 8 : 12,
+              vertical: compact ? 8 : 12,
             ),
             decoration: BoxDecoration(
               borderRadius: radius,
               color: selected
-                  ? raftChromeBlend(t.ui['brand-soft'], t.ui.layerCanvas)
+                  ? selection
                   : interaction.hovered
                   ? t.ui.fillPressed
                   : null,

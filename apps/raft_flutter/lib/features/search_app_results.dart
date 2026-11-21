@@ -278,6 +278,7 @@ class SearchAppGroupSection extends StatelessWidget {
     required this.onOpen,
     this.wrapHit,
     this.now,
+    this.pageLayout = false,
   });
 
   final SearchAppResults results;
@@ -285,6 +286,7 @@ class SearchAppGroupSection extends StatelessWidget {
   final ValueChanged<ArtifactCard> onOpen;
   final Widget Function(String key, Widget row)? wrapHit;
   final DateTime? now;
+  final bool pageLayout;
 
   @override
   Widget build(BuildContext context) {
@@ -356,6 +358,7 @@ class SearchAppGroupSection extends StatelessWidget {
     ].where((text) => text.isNotEmpty).join(' · ');
     final row = RaftSearchResultSurface(
       key: ValueKey(key),
+      pageLayout: pageLayout,
       selected: selectedKey == key,
       entity: true,
       onPressed: () => onOpen(card),

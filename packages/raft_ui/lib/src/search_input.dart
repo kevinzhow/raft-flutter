@@ -18,18 +18,23 @@ class RaftSearchInput extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.showEscape = false,
+    this.matchCssBorderScale = false,
   });
   final TextEditingController controller;
   final FocusNode focusNode;
   final String hint, clearLabel;
   final VoidCallback onClear;
   final ValueChanged<String>? onChanged, onSubmitted;
-  final bool showEscape;
+  final bool showEscape, matchCssBorderScale;
 
   @override
   Widget build(BuildContext context) => RaftCssPixelSnap(
-    devicePixelRatio: RaftBorderSnap.emulatedDeviceScaleFactor ? 1 : null,
+    devicePixelRatio:
+        matchCssBorderScale && RaftBorderSnap.emulatedDeviceScaleFactor
+        ? 1
+        : null,
     child: RaftInputGroup(
+      snapBorderToDevicePixels: !matchCssBorderScale,
       useEmbeddedControlRecipe: true,
       leading: const RaftInputGroupAddon.icon(RaftGlyph.search),
       controller: controller,

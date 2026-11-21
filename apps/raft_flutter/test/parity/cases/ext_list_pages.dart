@@ -565,7 +565,9 @@ Widget _panel(ParityContext ctx) {
       controller: w,
       section: panel,
       clock: () => now,
-      mobileRoot: panel == 'activity' && ctx.props['platform'] == 'mobile',
+      mobileRoot:
+          (panel == 'activity' || panel == 'search') &&
+          ctx.props['platform'] == 'mobile',
       onBack: () {},
       initialQuery: ctx.props['q'] as String?,
       searchMemory: _memory(ctx, w),

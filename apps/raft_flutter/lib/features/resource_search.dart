@@ -621,6 +621,7 @@ class ResourceSearchResults extends StatelessWidget {
       bool entity = false,
     }) {
       final row = RaftSearchResultSurface(
+        pageLayout: true,
         selected: selectedKey == key,
         entity: entity,
         onPressed: open,
@@ -882,6 +883,7 @@ class ResourceSearchResults extends StatelessWidget {
                     onOpen: onArtifact!,
                     wrapHit: wrapResult,
                     now: now,
+                    pageLayout: true,
                   ),
                 ),
               // `showInitialSkeleton` needs no entity match; with one the

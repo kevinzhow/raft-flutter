@@ -3523,6 +3523,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           child: RaftSearchInput(
             controller: query,
             focusNode: queryFocus,
+            matchCssBorderScale: true,
             // search.placeholder: the shortcut hint follows on desktop.
             hint: conversation != null
                 ? raftFormat(context, 'Search in {conversation}', {
