@@ -6,7 +6,7 @@
 //
 // Reads the generated `inbox_item` / `inbox_item_skeleton` recipes. Left out
 // on purpose (nothing Flutter mounts needs them): the selection checkbox
-// slot, the `context`/`subtitle`/`message`/`metadata` slots, the trailing
+// slot, the `context`/`message` slots, the trailing
 // unread pixel (hidden in compact) and the roomy density.
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
@@ -71,6 +71,8 @@ class RaftInboxItem extends StatefulWidget {
     this.leadingBadge,
     this.timestamp,
     this.body,
+    this.subtitle,
+    this.metadata,
     this.marks = const [],
     this.actions = const [],
     this.selected = false,
@@ -80,6 +82,7 @@ class RaftInboxItem extends StatefulWidget {
     this.onOpen,
     this.focusNode,
     this.timestampAtRest = false,
+    this.timestampTrailing = false,
     this.timestampTooltip,
     this.located = false,
     this.onLongPress,
@@ -89,7 +92,10 @@ class RaftInboxItem extends StatefulWidget {
 
   final String semanticLabel;
   final Widget title;
-  final Widget? leading, leadingBadge, timestamp, body;
+  final Widget? leading, leadingBadge, timestamp, body, metadata;
+
+  /// The recipe's caption below the heading, separate from the activity body.
+  final Widget? subtitle;
   final List<Widget> marks, actions;
 
   /// Web `data-active`: the row open in the detail pane.
@@ -108,6 +114,9 @@ class RaftInboxItem extends StatefulWidget {
   /// "3m", "2h") at rest, on touch too; only an older row's clock is revealed
   /// by hover or keyboard focus (never on touch). `true` is the former.
   final bool timestampAtRest;
+
+  /// Draw the timestamp in InboxItemTrailing, centered beside the content.
+  final bool timestampTrailing;
 
   /// The time in words ("Today at 5:20 PM"), a [RaftTooltip] on the shown
   /// timestamp. Mouse only.
@@ -278,6 +287,19 @@ class _RaftInboxItemState extends State<RaftInboxItem>
         tokens,
         base: DefaultTextStyle.of(context).style,
       );
+      final timestamp = showTime
+          ? RaftTooltip(
+              message: widget.timestampTooltip ?? '',
+              enabled: !touch && widget.timestampTooltip != null,
+              child: DefaultTextStyle(
+                key: const ValueKey('inbox-item-timestamp'),
+                style: timeStyle,
+                maxLines: 1,
+                softWrap: false,
+                child: widget.timestamp!,
+              ),
+            )
+          : null;
       final headingHeight = style.itemTitle.lineHeightPx ?? 22;
       final lineHeight = style.itemLine.height ?? 22;
       final cell = style.item.before!;
@@ -388,25 +410,19 @@ class _RaftInboxItemState extends State<RaftInboxItem>
                                     child: widget.title,
                                   ),
                                 ),
-                                if (showTime)
-                                  RaftTooltip(
-                                    message: widget.timestampTooltip ?? '',
-                                    enabled:
-                                        !touch &&
-                                        widget.timestampTooltip != null,
-                                    child: DefaultTextStyle(
-                                      key: const ValueKey(
-                                        'inbox-item-timestamp',
-                                      ),
-                                      style: timeStyle,
-                                      maxLines: 1,
-                                      softWrap: false,
-                                      child: widget.timestamp!,
-                                    ),
-                                  ),
+                                if (!widget.timestampTrailing) ?timestamp,
                               ],
                             ),
                           ),
+                          if (widget.subtitle case final subtitle?)
+                            Padding(
+                              padding: style.itemSubtitle.margin,
+                              child: RaftRecipeBox(
+                                style: style.itemSubtitle,
+                                tokens: tokens,
+                                child: subtitle,
+                              ),
+                            ),
                           if (hasLine)
                             RaftScaled.lineBox(
                               context,
@@ -445,10 +461,21 @@ class _RaftInboxItemState extends State<RaftInboxItem>
                                 ],
                               ),
                             ),
+                          if (widget.metadata case final metadata?)
+                            Padding(
+                              padding: style.itemMetadata.margin,
+                              child: RaftRecipeBox(
+                                style: style.itemMetadata,
+                                tokens: tokens,
+                                growWithText: true,
+                                child: metadata,
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ),
+                  if (widget.timestampTrailing) ?timestamp,
                 ],
               ),
             ),

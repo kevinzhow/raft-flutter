@@ -20,6 +20,7 @@ class ArtifactCommentsPanel extends StatefulWidget {
     this.initialComment,
     this.path,
     this.review,
+    this.insert,
   });
 
   final ArtifactCommentStore store;
@@ -27,6 +28,7 @@ class ArtifactCommentsPanel extends StatefulWidget {
   final VoidCallback onClose;
   final String? initialComment, path;
   final ArtifactReviewStore? review;
+  final ArtifactCommentInsert? insert;
 
   @override
   State<ArtifactCommentsPanel> createState() => _ArtifactCommentsPanelState();
@@ -58,7 +60,8 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
   void didUpdateWidget(covariant ArtifactCommentsPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.path != widget.path ||
-        oldWidget.data.card.version != widget.data.card.version) {
+        oldWidget.data.card.version != widget.data.card.version ||
+        widget.insert != null && oldWidget.insert != widget.insert) {
       _file = false;
       _reply = null;
       _edit = null;
@@ -343,6 +346,9 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
       review: widget.review,
       draft: draft,
       autofocus: reply != null || edit != null || draft != null,
+      insert: reply == null && edit == null && draft == null
+          ? widget.insert
+          : null,
       onCancel: reply == null && edit == null && draft == null
           ? null
           : () {
@@ -553,7 +559,20 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
           ),
         ],
         if (widget.review case final review?) ..._drafts(review),
-        if (threads.isEmpty) Text(raftText(context, 'No comments yet')),
+        if (threads.isEmpty)
+          if (widget.insert == null)
+            Text(raftText(context, 'No comments yet'))
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x1),
+              child: Text(
+                raftText(context, 'No comments yet'),
+                style: RaftTokens.of(context).scale(
+                  RaftTypeScale.footnote,
+                  color: RaftTokens.of(context).muted,
+                ),
+              ),
+            ),
         for (final child in _groups(unresolved))
           Padding(
             padding: const EdgeInsets.only(bottom: RaftSpace.x2),
@@ -583,9 +602,15 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final compactReport =
+        widget.insert != null && RaftAdaptiveWorkspace.compactOf(context);
+    final footerBorder = Border(
+      top: BorderSide(color: compactReport ? t.ui.lineSeam : t.ui.lineHairline),
+    );
+    final closeLabel = raftText(context, 'Close comments');
     return ColoredBox(
       key: const ValueKey('artifact-comments-panel'),
-      color: t.panel,
+      color: widget.insert == null ? t.panel : t.ui.layerCard,
       child: ListenableBuilder(
         listenable: Listenable.merge([store, widget.review]),
         builder: (context, _) => Column(
@@ -593,16 +618,26 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
           children: [
             RaftPanelHeaderBar(
               title: raftText(context, 'Comments'),
+              columnMargin: compactReport ? RaftSpace.x4 : null,
               actions: [
-                RaftButton(
-                  key: const ValueKey('artifact-comments-close'),
-                  glyph: RaftGlyph.x,
-                  tooltip: raftText(context, 'Close comments'),
-                  semanticLabel: raftText(context, 'Close comments'),
-                  tone: RaftButtonRecipeVariant.ghost,
-                  size: RaftButtonRecipeSize.iconSm,
-                  onPressed: widget.onClose,
-                ),
+                if (compactReport)
+                  RaftPanelAction(
+                    key: const ValueKey('artifact-comments-close'),
+                    glyph: RaftGlyph.x,
+                    tooltip: closeLabel,
+                    minHitExtent: RaftMetrics.touchTarget,
+                    onPressed: widget.onClose,
+                  )
+                else
+                  RaftButton(
+                    key: const ValueKey('artifact-comments-close'),
+                    glyph: RaftGlyph.x,
+                    tooltip: closeLabel,
+                    semanticLabel: closeLabel,
+                    tone: RaftButtonRecipeVariant.ghost,
+                    size: RaftButtonRecipeSize.iconSm,
+                    onPressed: widget.onClose,
+                  ),
               ],
             ),
             Expanded(child: _discussion(context)),
@@ -615,11 +650,16 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
               SafeArea(
                 top: false,
                 child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: t.ui.lineHairline)),
-                  ),
+                  decoration: BoxDecoration(border: footerBorder),
                   child: Padding(
-                    padding: const EdgeInsets.all(RaftSpace.x3),
+                    padding: compactReport
+                        ? EdgeInsets.fromLTRB(
+                            RaftSpace.x3,
+                            RaftSpace.x2 + footerBorder.top.width,
+                            RaftSpace.x3,
+                            RaftSpace.x3,
+                          )
+                        : const EdgeInsets.all(RaftSpace.x3),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisSize: MainAxisSize.min,

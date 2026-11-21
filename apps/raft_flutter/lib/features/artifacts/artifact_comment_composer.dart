@@ -42,6 +42,13 @@ String? _imageType(List<int> bytes) {
   return null;
 }
 
+class ArtifactCommentInsert {
+  ArtifactCommentInsert(this.text);
+
+  final String text;
+  bool _applied = false;
+}
+
 class ArtifactCommentComposer extends StatefulWidget {
   const ArtifactCommentComposer({
     super.key,
@@ -55,6 +62,7 @@ class ArtifactCommentComposer extends StatefulWidget {
     this.onCancel,
     this.onDone,
     this.autofocus = false,
+    this.insert,
   });
 
   final ArtifactCommentStore store;
@@ -67,6 +75,7 @@ class ArtifactCommentComposer extends StatefulWidget {
   bool get editing => edit != null || draft != null;
   final VoidCallback? onCancel, onDone;
   final bool autofocus;
+  final ArtifactCommentInsert? insert;
 
   @override
   State<ArtifactCommentComposer> createState() =>
@@ -94,6 +103,7 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
   @override
   void initState() {
     super.initState();
+    if (widget.insert != null) _trackReportFocus(true);
     final prefs = DevicePreferences.current;
     final kept = prefs?.getString(_key);
     if (kept != null) {
@@ -126,6 +136,7 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
     _text.addListener(_changed);
     _focus.addListener(_changed);
     if (!widget.editing) unawaited(_readRecipients());
+    _applyInsert();
     if (widget.autofocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !widget.store.current) return;
@@ -133,6 +144,50 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
         _focus.requestFocus();
       });
     }
+  }
+
+  @override
+  void didUpdateWidget(covariant ArtifactCommentComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ((oldWidget.insert == null) != (widget.insert == null)) {
+      _trackReportFocus(widget.insert != null);
+    }
+    if (oldWidget.insert != widget.insert) _applyInsert();
+  }
+
+  void _trackReportFocus(bool track) {
+    final modality = RaftFocusVisible.shared;
+    if (track) {
+      modality.addRingListener(_reportFocusChanged);
+    } else {
+      modality.removeRingListener(_reportFocusChanged);
+    }
+  }
+
+  void _reportFocusChanged() {
+    if (_focus.hasFocus) setState(() {});
+  }
+
+  void _applyInsert() {
+    final insert = widget.insert;
+    if (insert == null || insert._applied) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !widget.store.current ||
+          _busy ||
+          insert._applied ||
+          widget.insert != insert) {
+        return;
+      }
+      final draft = _text.text;
+      final text = draft.isEmpty ? insert.text : '$draft\n\n${insert.text}';
+      insert._applied = true;
+      _text.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+      if (!RaftInteraction.of(context).touch) _focus.requestFocus();
+    });
   }
 
   Future<void> _readRecipients() async {
@@ -345,7 +400,10 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
         }),
       );
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+        _applyInsert();
+      }
     }
   }
 
@@ -452,12 +510,34 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
 
   @override
   void dispose() {
+    if (widget.insert != null) _trackReportFocus(false);
     _debounce?.cancel();
     _focus.removeListener(_changed);
     _focus.dispose();
     _text.removeListener(_changed);
     _text.dispose();
     super.dispose();
+  }
+
+  String? _audienceDescription(BuildContext context) {
+    if (_recipients == null && !widget.editing) return null;
+    final recipients = {
+      for (final entry
+          in _recipients ?? const <({ArtifactActor actor, String reason})>[])
+        (entry.actor.type, entry.actor.id): entry.actor,
+      for (final token in _mentions)
+        (token.actor.type, token.actor.id): token.actor,
+    };
+    if (recipients.isNotEmpty) {
+      return raftFormat(context, 'Will notify: {names}', {
+        'names': recipients.values
+            .map((actor) => artifactCommentActorName(context, actor))
+            .join(', '),
+      });
+    }
+    return _recipients == null
+        ? null
+        : raftText(context, "Won't notify anyone.");
   }
 
   @override
@@ -467,13 +547,7 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
       context,
       widget.reply == null ? 'Comment' : 'Reply',
     );
-    final recipients = {
-      for (final entry
-          in _recipients ?? const <({ArtifactActor actor, String reason})>[])
-        (entry.actor.type, entry.actor.id): entry.actor,
-      for (final token in _mentions)
-        (token.actor.type, token.actor.id): token.actor,
-    };
+    final audience = _audienceDescription(context);
     return Focus(
       onKeyEvent: _onKey,
       child: Column(
@@ -509,16 +583,6 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
                 },
               ),
             ),
-          RaftTextarea(
-            fieldKey: const ValueKey('artifact-comment-input'),
-            controller: _text,
-            focusNode: _focus,
-            enabled: !_busy,
-            hintText: placeholder,
-            semanticLabel: placeholder,
-            rows: 2,
-            growsWithScale: true,
-          ),
           for (final image in _images)
             Row(
               children: [
@@ -540,6 +604,7 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
                 ),
               ],
             ),
+          _composerBox(placeholder, audience: audience),
           if (_problem.message case final message?)
             Semantics(
               liveRegion: true,
@@ -551,66 +616,143 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
                 ),
               ),
             ),
-          Wrap(
-            alignment: WrapAlignment.end,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: RaftSpace.x1,
-            children: [
-              if (widget.onCancel != null)
-                RaftButton(
-                  label: raftText(context, 'Cancel'),
-                  tone: RaftButtonRecipeVariant.ghost,
-                  onPressed: _busy ? null : widget.onCancel,
-                ),
-              if (!widget.editing)
-                RaftButton(
-                  key: const ValueKey('artifact-comment-attach'),
-                  glyph: RaftGlyph.paperclip,
-                  semanticLabel: raftText(context, 'Add image'),
-                  tooltip: raftText(context, 'Add image'),
-                  tone: RaftButtonRecipeVariant.ghost,
-                  size: RaftButtonRecipeSize.iconSm,
-                  onPressed: _busy || _uploading || _images.length == 4
-                      ? null
-                      : _attach,
-                ),
-              if (!widget.editing && widget.review != null)
-                RaftButton(
-                  key: const ValueKey('artifact-comment-save-draft'),
-                  label: raftText(context, 'Save draft'),
-                  tone: RaftButtonRecipeVariant.ghost,
-                  size: RaftButtonRecipeSize.sm,
-                  onPressed:
-                      _canSend && widget.review!.loaded && !widget.review!.busy
-                      ? () => unawaited(_send(asDraft: true))
-                      : null,
-                ),
-              RaftButton(
-                key: const ValueKey('artifact-comment-send'),
-                glyph: widget.editing ? RaftGlyph.check : RaftGlyph.send,
-                semanticLabel: raftText(
-                  context,
-                  widget.editing ? 'Save' : 'Send',
-                ),
-                size: RaftButtonRecipeSize.iconSm,
-                onPressed: _canSend ? _send : null,
-              ),
-            ],
-          ),
-          if (_recipients != null || recipients.isNotEmpty)
-            Text(
-              recipients.isEmpty
-                  ? raftText(context, "Won't notify anyone.")
-                  : raftFormat(context, 'Will notify: {names}', {
-                      'names': recipients.values
-                          .map(
-                            (actor) => artifactCommentActorName(context, actor),
-                          )
-                          .join(', '),
-                    }),
-              style: t.scale(RaftTypeScale.footnote, color: t.muted),
-            ),
         ],
+      ),
+    );
+  }
+
+  VoidCallback? get _attachAction =>
+      _busy || _uploading || _images.length == 4 ? null : _attach;
+
+  bool get _hasDraftAction => !widget.editing && widget.review != null;
+
+  Widget _cancel() => RaftButton(
+    label: 'Cancel',
+    tone: RaftButtonRecipeVariant.ghost,
+    onPressed: _busy ? null : widget.onCancel,
+  );
+
+  Widget _saveDraft() => RaftButton(
+    key: const ValueKey('artifact-comment-save-draft'),
+    label: 'Save draft',
+    tone: RaftButtonRecipeVariant.outline,
+    size: RaftButtonRecipeSize.md,
+    onPressed: _canSend && widget.review!.loaded && !widget.review!.busy
+        ? () => unawaited(_send(asDraft: true))
+        : null,
+  );
+
+  Widget _sendButton({required bool text, String? recipientTooltip}) {
+    final label = widget.editing ? 'Save' : 'Send';
+    return RaftButton(
+      key: const ValueKey('artifact-comment-send'),
+      label: text ? label : '',
+      glyph: text ? null : (widget.editing ? RaftGlyph.check : RaftGlyph.send),
+      semanticLabel: text ? null : raftText(context, label),
+      tooltip: recipientTooltip,
+      size: text ? RaftButtonRecipeSize.md : RaftButtonRecipeSize.iconSm,
+      onPressed: _canSend ? _send : null,
+    );
+  }
+
+  Widget _composerBox(String placeholder, {String? audience}) {
+    final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final reporting = widget.insert != null;
+    final slots = RaftComposerRecipe.compactSlots(
+      t,
+      focusVisible:
+          _focus.hasFocus &&
+          (!reporting || RaftFocusVisible.shared.ringVisible),
+    );
+    final input = slots.input;
+    var style = input.text(tokens, base: DefaultTextStyle.of(context).style);
+    // The CSS body's fine-pointer tier keeps report facts on their own lines.
+    // Continue using the recipe for the font family's ink and other properties.
+    if (reporting && t.desktop) {
+      final body = t.typeSlot('body');
+      style = style.copyWith(fontSize: body.fontSize, height: body.height);
+    }
+    // CSS extends the toolbar into the box's side padding. Give the editor
+    // that padding back while keeping the toolbar inside its hit bounds.
+    final margin = slots.toolbar.margin;
+    return RaftTapSlopHost(
+      child: RaftRecipeBox(
+        key: const ValueKey('artifact-comment-frame'),
+        style: slots.root,
+        tokens: tokens,
+        declareSurface: true,
+        decorationOverride: (decoration) => raftSnapBorder(context, decoration),
+        padding: slots.root.padding + margin,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: slots.root.rowGap ?? RaftSpace.x2,
+          children: [
+            Padding(
+              padding: input.padding - margin,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: input.minHeight!,
+                  // The editor scrolls within its viewport so enlarged text
+                  // leaves the toolbar reachable in the comments sheet.
+                  maxHeight: input.maxHeight!,
+                ),
+                child: Semantics(
+                  label: placeholder,
+                  hint: audience,
+                  child: RaftBareInput(
+                    fieldKey: const ValueKey('artifact-comment-input'),
+                    controller: _text,
+                    focusNode: _focus,
+                    enabled: !_busy,
+                    multiline: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    hintText: placeholder,
+                    style: style,
+                    hintStyle: style.copyWith(
+                      color: input
+                          .target('::placeholder')
+                          ?.color
+                          ?.resolve(tokens),
+                    ),
+                    cursorColor: style.color,
+                  ),
+                ),
+              ),
+            ),
+            Row(
+              spacing: slots.toolbar.columnGap ?? RaftSpace.x1,
+              children: [
+                if (!widget.editing)
+                  RaftComposerAction(
+                    key: const ValueKey('artifact-comment-attach'),
+                    glyph: RaftGlyph.imagePlus,
+                    tooltip: 'Add image',
+                    onPressed: _attachAction,
+                  ),
+                Expanded(
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: slots.meta.columnGap ?? RaftSpace.x1,
+                    runSpacing: slots.meta.rowGap ?? RaftSpace.x1,
+                    children: [
+                      if (widget.onCancel != null) _cancel(),
+                      if (_hasDraftAction) _saveDraft(),
+                      _sendButton(
+                        text: _hasDraftAction,
+                        recipientTooltip: RaftInteraction.of(context).pointer
+                            ? audience
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

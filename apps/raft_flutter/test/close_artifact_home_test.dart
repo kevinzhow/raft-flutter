@@ -5,8 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/artifacts/artifact_dashboard.dart';
-import 'package:raft_flutter/features/artifacts/artifact_dashboard_data.dart';
-import 'package:raft_flutter/features/artifacts/artifact_dashboard_filter.dart';
 import 'package:raft_flutter/features/artifacts/artifact_forward_dialog.dart';
 import 'package:raft_flutter/features/artifacts/artifact_manage_dialogs.dart';
 import 'package:raft_flutter/features/artifacts/artifact_models.dart';
@@ -28,6 +26,17 @@ void main() {
       surface.id: (tester, size) async {
         await tester.pumpWidget(const SizedBox.shrink());
         final client = ArtifactFakeClient();
+        final card = artifactCardJson(title: 'Collection artifact');
+        client.answers['GET /artifacts/dashboard/all?sort=opened'] = (_) => {
+          'rows': [
+            if (surface.id == 'artifact-collection-viewer') {'card': card},
+          ],
+        };
+        client.answers['GET /artifacts/$artifactId'] = (_) =>
+            artifactViewerJson(card: card, frame: false);
+        client.answers['GET /artifacts/dashboard/conversations'] = (_) => {
+          'conversations': [],
+        };
         client.answers['GET /public/artifacts/$artifactId'] = (_) => {
           'title': 'Public roadmap',
           'kind': 'html',
@@ -40,6 +49,8 @@ void main() {
         final data = ArtifactViewerData.fromJson(artifactViewerJson())!;
         await openFromButton(tester, size, (context) {
           switch (surface.id) {
+            case 'artifact-collection-viewer':
+            case 'artifact-dashboard-filter':
             case 'artifact-dashboard-page':
             case 'artifact-public-page':
             case 'public-artifact-menu':
@@ -48,7 +59,9 @@ void main() {
                   PageRouteBuilder(
                     pageBuilder: (context, _, _) {
                       final back = Navigator.of(context).pop;
-                      return surface.id != 'artifact-dashboard-page'
+                      return surface.id != 'artifact-dashboard-page' &&
+                              surface.id != 'artifact-dashboard-filter' &&
+                              surface.id != 'artifact-collection-viewer'
                           ? ArtifactPublicPage(
                               client: client,
                               id: artifactId,
@@ -66,14 +79,6 @@ void main() {
                             );
                     },
                   ),
-                ),
-              );
-            case 'artifact-dashboard-filter':
-              unawaited(
-                showArtifactDashboardFilter(
-                  context,
-                  ArtifactDashboardApi(client),
-                  authors: true,
                 ),
               );
             case 'artifact-manage-dialog':
@@ -97,6 +102,24 @@ void main() {
               );
           }
         });
+        if (surface.id == 'artifact-collection-viewer') {
+          await tester.tap(
+            find.byKey(ValueKey('artifact-dashboard-open-$artifactId')),
+          );
+          await frames(tester);
+          final close = find.byKey(const ValueKey('artifact-viewer-close'));
+          return SurfaceProbe(
+            isOpen: () => close.evaluate().isNotEmpty,
+            back: close,
+            x: close,
+          );
+        }
+        if (surface.id == 'artifact-dashboard-filter') {
+          await tester.tap(
+            find.byKey(const Key('artifacts-filter-conversation')),
+          );
+          await frames(tester);
+        }
         if (surface.id == 'public-artifact-menu') {
           await tester.tap(find.byKey(const Key('public-artifact-more')));
           await frames(tester);
@@ -118,6 +141,7 @@ void main() {
         return SurfaceProbe(
           isOpen: () => find.byKey(ValueKey(surface.id)).evaluate().isNotEmpty,
           x: anyX,
+          back: find.widgetWithText(RaftButton, 'Cancel'),
           scrim: const Offset(10, 140),
         );
       },

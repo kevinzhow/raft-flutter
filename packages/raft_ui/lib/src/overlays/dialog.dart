@@ -32,6 +32,7 @@ import '../theme.dart';
 import '../tokens/tokens.dart' show RaftDesktopMetrics;
 import '../settings_layout.dart' show RaftSpace;
 import '../agent_create_form.dart' show buildAgentDialog;
+import '../panel_layout.dart' show RaftCssText;
 
 part 'dialog_card_parts.dart';
 part 'dialog_shell_parts.dart';
@@ -224,6 +225,7 @@ class RaftDialog extends StatelessWidget {
     this.outlineClose = false,
   }) : _card = false,
        _shell = false,
+       _cssShellTitle = false,
        titleGlyph = null,
        footer = null,
        cardActions = null,
@@ -254,6 +256,7 @@ class RaftDialog extends StatelessWidget {
   }) : assert(!pinFooterAtLargeText || actions == null),
        _card = true,
        _shell = false,
+       _cssShellTitle = false,
        outlineClose = false,
        title = title,
        onClose = onClose,
@@ -270,6 +273,7 @@ class RaftDialog extends StatelessWidget {
   const RaftDialog.shell({
     super.key,
     required String title,
+    bool cssTitle = false,
     required Widget? body,
     required List<Widget> footer,
     this.onClose,
@@ -278,6 +282,7 @@ class RaftDialog extends StatelessWidget {
     this.outlineClose = false,
   }) : _card = false,
        _shell = true,
+       _cssShellTitle = cssTitle,
        title = title,
        content = body,
        actions = footer,
@@ -297,7 +302,7 @@ class RaftDialog extends StatelessWidget {
        description = null,
        pinFooterAtLargeText = false;
 
-  final bool _shell, outlineClose;
+  final bool _shell, _cssShellTitle, outlineClose;
 
   /// DialogCard `description`: `DialogDescription` under the title with `mt-1
   /// mb-4`; the header then drops its own `mb-4`.
@@ -571,8 +576,9 @@ class RaftDialogHeader extends StatelessWidget {
 
 /// `DialogTitle` (sentence case; decision 0002).
 class RaftDialogTitle extends StatelessWidget {
-  const RaftDialogTitle(this.text, {super.key});
+  const RaftDialogTitle(this.text, {super.key, this.cssLineBox = false});
   final String text;
+  final bool cssLineBox;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -582,7 +588,12 @@ class RaftDialogTitle extends StatelessWidget {
       base: DefaultTextStyle.of(context).style,
     );
     final value = raftText(context, text);
-    return Semantics(header: true, child: Text(value, style: style));
+    return Semantics(
+      header: true,
+      child: cssLineBox
+          ? RaftCssText(value, style: style)
+          : Text(value, style: style),
+    );
   }
 }
 
@@ -803,6 +814,7 @@ class RaftDialogRoute<T> extends PopupRoute<T> {
     this.overModal = false,
     this.motionDuration = const Duration(milliseconds: 150),
     this.modal = false,
+    this.browserBackdropBlend = false,
     super.settings,
   }) : super(traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop);
 
@@ -817,6 +829,9 @@ class RaftDialogRoute<T> extends PopupRoute<T> {
 
   /// The product composition owns its backdrop and layout, as Web Modal does.
   final bool modal;
+
+  /// Use the browser's 8-bit source-over blend over an opaque host.
+  final bool browserBackdropBlend;
 
   // The live dialog routes, bottom first: one opened over another of the same
   // navigator uses the `nested` scrim, as raft-ui does for a Dialog under another overlay.
@@ -858,6 +873,7 @@ class RaftDialogRoute<T> extends PopupRoute<T> {
           capturedThemes: capturedThemes,
           overModal: overModal,
           nested: nested,
+          browserBackdropBlend: browserBackdropBlend,
         );
 
   @override
@@ -914,11 +930,12 @@ class RaftDialogBarrier extends StatelessWidget {
     required this.capturedThemes,
     this.overModal = false,
     this.nested = false,
+    this.browserBackdropBlend = false,
   });
   final bool overModal;
 
   /// Opened over another dialog: `layer-backdrop-nested` in the Raft look.
-  final bool nested;
+  final bool nested, browserBackdropBlend;
   final Animation<double> animation;
   final bool dismissible;
   final String? label;
@@ -929,16 +946,59 @@ class RaftDialogBarrier extends StatelessWidget {
     Builder(
       builder: (context) {
         final t = RaftTokens.of(context);
-        Widget layer = RaftDialogBackdrop(
-          nested: nested,
-          child: const SizedBox.expand(),
-        );
         final blur = t.size('blur.dialogBackdrop', fallback: 0);
-        if (blur > 0) {
-          layer = BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-            child: layer,
-          );
+        final recipe = RaftDialogBackdrop.overlayOf(context, nested: nested);
+        final color = recipe.backgroundColor?.resolve(t.recipeTokens);
+        final opaqueBlend =
+            browserBackdropBlend &&
+            color != null &&
+            color.r == 0 &&
+            color.g == 0 &&
+            color.b == 0 &&
+            color.a > 0 &&
+            color.a < 1;
+        Widget layer = opaqueBlend
+            ? const SizedBox.expand()
+            : RaftDialogBackdrop(
+                nested: nested,
+                child: const SizedBox.expand(),
+              );
+        ImageFilter? filter = blur > 0
+            ? ImageFilter.blur(sigmaX: blur, sigmaY: blur)
+            : null;
+        if (opaqueBlend) {
+          final scale = (256 - (color.a * 255).round()) / 256;
+          // Chromium's black source-over path truncates the scaled bytes.
+          // The color filter rounds to the nearest byte.
+          const bias = -0.5 + 1 / 1024;
+          final dim = ColorFilter.matrix([
+            scale,
+            0,
+            0,
+            0,
+            bias,
+            0,
+            scale,
+            0,
+            0,
+            bias,
+            0,
+            0,
+            scale,
+            0,
+            bias,
+            0,
+            0,
+            0,
+            1,
+            0,
+          ]);
+          filter = filter == null
+              ? dim
+              : ImageFilter.compose(outer: dim, inner: filter);
+        }
+        if (filter != null) {
+          layer = BackdropFilter(filter: filter, child: layer);
         }
         return FadeTransition(
           opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
@@ -969,6 +1029,7 @@ Future<T?> showRaftDialog<T>({
   RouteSettings? routeSettings,
   bool overModal = false,
   bool modal = false,
+  bool browserBackdropBlend = false,
 }) {
   final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
   return navigator.push(
@@ -978,6 +1039,7 @@ Future<T?> showRaftDialog<T>({
       label: barrierLabel,
       overModal: overModal,
       modal: modal,
+      browserBackdropBlend: browserBackdropBlend,
       motionDuration: Duration.zero,
       settings: routeSettings,
       capturedThemes: InheritedTheme.capture(

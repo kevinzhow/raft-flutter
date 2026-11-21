@@ -23,6 +23,8 @@ class RaftPopoverAnchor extends StatefulWidget {
     this.collisionPadding = 5,
     this.alignRight = false,
     this.centerVertically = false,
+    this.flipVertically = true,
+    this.scrollChild = true,
   });
 
   final MenuController controller;
@@ -37,6 +39,8 @@ class RaftPopoverAnchor extends StatefulWidget {
   /// Web `align="end"`: the popup's right edge on the trigger's.
   final bool alignRight;
   final bool centerVertically;
+  final bool flipVertically;
+  final bool scrollChild;
 
   @override
   State<RaftPopoverAnchor> createState() => _RaftPopoverAnchorState();
@@ -92,6 +96,8 @@ class _RaftPopoverAnchorState extends State<RaftPopoverAnchor> {
           collisionPadding: widget.collisionPadding,
           alignRight: widget.alignRight,
           centerVertically: widget.centerVertically,
+          flipVertically: widget.flipVertically,
+          scrollChild: widget.scrollChild,
           snapToPixel: true,
           child: TapRegion(
             groupId: info.tapRegionGroupId,

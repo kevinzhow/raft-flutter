@@ -55,6 +55,18 @@ class ArtifactSession extends ChangeNotifier {
   /// Bumped on every change of what a summary or save may answer.
   int generation = 0;
 
+  final deletedArtifacts = ValueNotifier<int>(0);
+
+  bool isCurrent(int at) => !_ended && generation == at && _scope == _authority;
+
+  Future<void> deleteArtifact(String id, int at) async {
+    if (!isCurrent(at) || !enabled) throw const RaftApiException.staleScope();
+    await api.deleteArtifact(id);
+    if (!isCurrent(at)) return;
+    summaries.invalidate(id);
+    deletedArtifacts.value++;
+  }
+
   String get _authority => jsonEncode([
     w.client.origin,
     w.client.generation,
@@ -201,6 +213,7 @@ class ArtifactSession extends ChangeNotifier {
     _events = null;
     summaries.dispose();
     attachments.dispose();
+    deletedArtifacts.dispose();
     super.dispose();
   }
 }
@@ -234,7 +247,7 @@ class ObjectSummaryLoader {
   final _kept =
       <ArtifactLinkTarget, ({ArtifactLinkState state, DateTime until})>{};
   final _waiting = <ArtifactLinkTarget>{};
-  final _inFlight = <ArtifactLinkTarget>{};
+  final _inFlight = <ArtifactLinkTarget, Object>{};
   Timer? _timer;
   DateTime? _heldUntil;
   int _generation = 0;
@@ -251,13 +264,14 @@ class ObjectSummaryLoader {
       if (fresh || kept.state is ArtifactLinkOk) _kept[target] = kept;
       if (fresh) return kept.state;
     }
-    if (!_inFlight.contains(target) && _waiting.add(target)) _schedule();
+    if (!_inFlight.containsKey(target) && _waiting.add(target)) _schedule();
     return kept?.state ?? ArtifactLinkLoading(target);
   }
 
   /// Forgets [target]'s answer (an Artifact changed) and reads it again.
   void invalidate(String id) {
     _kept.removeWhere((target, _) => target.id == id);
+    _inFlight.removeWhere((target, _) => target.id == id);
     onChanged?.call();
   }
 
@@ -286,17 +300,24 @@ class ObjectSummaryLoader {
     }
     final all = _waiting.toList();
     _waiting.clear();
-    _inFlight.addAll(all);
     for (var at = 0; at < all.length; at += objectSummariesMaxRefs) {
       final chunk = all.sublist(
         at,
         (at + objectSummariesMaxRefs).clamp(0, all.length),
       );
-      unawaited(_send(chunk, _generation));
+      final request = Object();
+      for (final target in chunk) {
+        _inFlight[target] = request;
+      }
+      unawaited(_send(chunk, _generation, request));
     }
   }
 
-  Future<void> _send(List<ArtifactLinkTarget> chunk, int generation) async {
+  Future<void> _send(
+    List<ArtifactLinkTarget> chunk,
+    int generation,
+    Object request,
+  ) async {
     try {
       final answers = await post(chunk);
       if (_disposed || generation != _generation) return;
@@ -311,6 +332,7 @@ class ObjectSummaryLoader {
       }
       final now = _now();
       for (final target in chunk) {
+        if (_inFlight[target] != request) continue;
         _inFlight.remove(target);
         final answer = byRef[target];
         final ArtifactLinkState state;
@@ -339,6 +361,7 @@ class ObjectSummaryLoader {
       }
     } catch (error) {
       if (_disposed || generation != _generation) return;
+      if (!chunk.any((target) => _inFlight[target] == request)) return;
       if (error is RaftApiException && error.status == 429) {
         final wait = error.retryAfter ?? const Duration(seconds: 5);
         final clamped = Duration(
@@ -352,6 +375,7 @@ class ObjectSummaryLoader {
       final retry = _now().add(unavailableTtl);
       final held = _heldUntil;
       for (final target in chunk) {
+        if (_inFlight[target] != request) continue;
         _inFlight.remove(target);
         _kept[target] = (
           state: ArtifactLinkUnavailable(target, error: true),

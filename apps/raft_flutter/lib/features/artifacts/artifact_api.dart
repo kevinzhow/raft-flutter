@@ -27,6 +27,8 @@ abstract final class ArtifactPaths {
   static String frame(String id) => '/artifacts/${_id(id)}/frame';
   static String file(String id, String path, [int? version]) =>
       '/artifacts/${_id(id)}/files/${Uri.encodeComponent(path)}${_version(version)}';
+  static String objectFile(String id, String fileId) =>
+      '/objects/artifact/${_id(id)}/files/${Uri.encodeComponent(fileId)}';
   static String downloadZip(String id, [int? version]) =>
       '/artifacts/${_id(id)}/download.zip${_version(version)}';
   static String subscription(String id) => '/artifacts/${_id(id)}/subscription';
@@ -80,6 +82,13 @@ class ArtifactApi {
   Future<Uint8List> fileBytes(String id, String path, int version) =>
       client.getBytes(ArtifactPaths.file(id, path, version));
 
+  Future<Uint8List> cover(ArtifactCard card, {required bool compact}) {
+    final screenshot = card.preview.screenshot(compact);
+    return screenshot == null
+        ? fileBytes(card.id, card.preview.path, card.version)
+        : client.getBytes(ArtifactPaths.objectFile(card.id, screenshot));
+  }
+
   /// Every file of a version in one zip.
   Future<Uint8List> zipBytes(String id, int version) =>
       client.getBytes(ArtifactPaths.downloadZip(id, version));
@@ -93,6 +102,9 @@ class ArtifactApi {
         ? body['following'] as bool
         : following;
   }
+
+  Future<void> deleteArtifact(String id) =>
+      client.delete(ArtifactPaths.viewer(id));
 
   /// POST save-attachment: the Artifact as the saver now sees it, and
   /// whether this save made it (false: it was saved before).

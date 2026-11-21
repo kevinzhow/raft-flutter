@@ -34,8 +34,10 @@ export 'src/form_dialog.dart';
 export 'src/collapsible.dart';
 export 'src/viewport_breakpoints.dart';
 export 'src/interaction.dart';
+export 'src/focus_visible.dart' show RaftFocusVisible;
 export 'src/secret_view.dart';
 export 'src/attachment_card.dart';
+export 'src/raft/file_preview.dart';
 
 export 'src/adaptive_workspace.dart';
 export 'src/panel_edge.dart';
@@ -200,6 +202,7 @@ export 'src/message_list_end_fade.dart';
 export 'src/system_message.dart';
 
 export 'src/composer_recipe.dart';
+export 'src/tap_slop.dart' show RaftTapSlopHost;
 export 'src/composer_attachments.dart';
 export 'src/composer_recoverable_uploads.dart';
 export 'src/composer_drop_overlay.dart';
@@ -283,6 +286,8 @@ export 'src/reduced_motion.dart';
 export 'src/split_pane.dart';
 export 'src/quick_switcher.dart';
 export 'src/announcement_markdown.dart';
+export 'src/artifact_collection_layout.dart';
+export 'src/markdown_document.dart';
 export 'src/announcement_modal.dart';
 export 'src/quick_switcher_results.dart';
 

@@ -119,10 +119,15 @@ String artifactActorName(BuildContext context, ArtifactActor actor) =>
     );
 
 /// How long ago, as the Web's `formatRelativeTime` says it.
-String artifactRelativeTime(BuildContext context, DateTime? at) => at == null
+String artifactRelativeTime(
+  BuildContext context,
+  DateTime? at, {
+  DateTime? now,
+}) => at == null
     ? ''
     : resourceRelativeTime(
         at.toIso8601String(),
+        now: now,
         chinese: Localizations.maybeLocaleOf(context)?.languageCode == 'zh',
       );
 
@@ -218,4 +223,44 @@ String? artifactChangedFiles(BuildContext context, ArtifactVersion version) {
           'count': more,
         })
       : raftFormat(context, 'Changed: {files}', {'files': files});
+}
+
+String artifactShownTitle(String title) {
+  final trimmed = title.trim();
+  final bare = trimmed
+      .replaceFirst(RegExp(r'\.(md|markdown|html?)$', caseSensitive: false), '')
+      .trim();
+  return bare.isNotEmpty
+      ? bare
+      : trimmed.isNotEmpty
+      ? trimmed
+      : title;
+}
+
+String artifactShortTime(BuildContext context, DateTime? at, {DateTime? now}) {
+  if (at == null) return '';
+  final minutes =
+      (now ?? DateTime.now()).difference(at).inMilliseconds.clamp(0, 1 << 53) /
+      60000;
+  final chinese = Localizations.maybeLocaleOf(context)?.languageCode == 'zh';
+  final (count, unit) = switch (minutes) {
+    < 60 => (minutes.round(), chinese ? '分钟' : 'm'),
+    < 1440 => ((minutes / 60).round(), chinese ? '小时' : 'h'),
+    _ => ((minutes / 1440).round(), chinese ? '天' : 'd'),
+  };
+  return chinese ? '$count $unit前' : '$count$unit ago';
+}
+
+String artifactAudience(
+  BuildContext context,
+  ArtifactHome home,
+  String? server,
+) {
+  final label = artifactScopeLabel(context, home, serverName: server);
+  if (home.kind != 'conversation') return label;
+  return switch (home.conversationType) {
+    'dm' => raftFormat(context, 'You and {name}', {'name': label}),
+    'joint' => raftFormat(context, 'Members of {name}', {'name': label}),
+    _ => raftFormat(context, 'Members of {name}', {'name': '#$label'}),
+  };
 }

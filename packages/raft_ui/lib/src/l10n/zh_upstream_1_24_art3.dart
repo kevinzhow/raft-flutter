@@ -19,6 +19,10 @@ const Map<String, String> zhCatalogUpstream124Art3 = {
   'Nothing here involves you yet': '还没有和你有关的 Artifact',
   'Recently opened': '最近打开',
   'Opened': '打开时间',
+  'Opened {time}': '打开于 {time}',
+  '{total, plural, one {# Artifact} other {# Artifacts}}': '{total} 个 Artifact',
+  '{total, plural, one {{filtered} of # Artifact} other {{filtered} of # Artifacts}}':
+      '{filtered} / 共 {total} 个 Artifact',
   'Who can see it': '谁能看',
   'Rename Artifact': '重命名 Artifact',
   'Artifact title': 'Artifact 标题',

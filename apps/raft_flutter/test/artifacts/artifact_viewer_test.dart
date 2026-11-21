@@ -106,6 +106,34 @@ void main() {
     );
   });
 
+  testWidgets('an embedded frame offers display report in the comment menu', (
+    tester,
+  ) async {
+    answerViewer(artifactViewerJson());
+    final path = '/artifacts/$artifactId';
+    client.answers['GET $path/comments'] = (_) => {'comments': []};
+    client.answers['GET $path/will-notify'] = (_) => {'recipients': []};
+    client.answers['GET $path/review/drafts'] = (_) => {'drafts': []};
+    await open(tester);
+    await tester.tap(find.byKey(const Key('artifact-viewer-menu-trigger')));
+    await tester.pumpAndSettle();
+    final report = find.text("Doesn't display well here");
+    expect(report, findsNothing);
+    await tester.tapAt(const Offset(10, 500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('artifact-comment-menu-trigger')));
+    await tester.pumpAndSettle();
+    await tester.tap(report);
+    await tester.pumpAndSettle();
+    expect(find.byType(RaftSheet), findsOneWidget);
+    final composer = find.byKey(const Key('artifact-comment-input'));
+    final field = tester.widget<EditableText>(
+      find.descendant(of: composer, matching: find.byType(EditableText)),
+    );
+    expect(field.controller.text, contains('Version: v1'));
+    expect(client.requests, isNot(contains('POST $path/comments')));
+  });
+
   testWidgets('an Artifact this reader can\'t see is the one "can\'t open" '
       'state', (tester) async {
     client.answers['GET /artifacts/$artifactId'] = (_) =>

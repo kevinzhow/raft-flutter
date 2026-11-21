@@ -3,6 +3,17 @@ import 'package:flutter/material.dart';
 import 'previews.dart';
 import 'raft_ui.dart';
 
+@RaftPreviews('File preview')
+Widget filePreview() => const Row(
+  spacing: RaftSpace.x6,
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    RaftFilePreview(kind: RaftFilePreviewKind.document, label: 'TXT'),
+    RaftFilePreview(kind: RaftFilePreviewKind.code, label: 'HTML'),
+    RaftFilePreview(kind: RaftFilePreviewKind.media, label: 'IMG'),
+  ],
+);
+
 @RaftPreviews('Attachment')
 Widget attachmentPreview() => const _AttachmentPreview();
 

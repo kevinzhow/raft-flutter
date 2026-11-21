@@ -26,10 +26,13 @@ class RaftAnchoredPopup extends StatefulWidget {
     this.alignRight = false,
     this.centerVertically = false,
     this.toRight = false,
+    this.toLeft = false,
     this.gap = 4,
     this.collisionPadding = 5,
     this.snapToPixel = false,
-  });
+    this.flipVertically = true,
+    this.scrollChild = true,
+  }) : assert(!toRight || !toLeft);
   final GlobalKey anchorKey;
   final Widget child;
 
@@ -38,8 +41,14 @@ class RaftAnchoredPopup extends StatefulWidget {
   /// different subtree or retaining the previous frame's bounds.
   final Rect? anchorRect;
   final Listenable? movement;
-  final bool above, alignRight, centerVertically, toRight;
+  final bool above, alignRight, centerVertically, toRight, toLeft;
   final double gap, collisionPadding;
+
+  /// Some anchored controls constrain the content to their requested side.
+  final bool flipVertically;
+
+  /// A popup with its own scroll area receives the available height directly.
+  final bool scrollChild;
 
   /// floating-ui rounds the computed position to whole pixels.
   final bool snapToPixel;
@@ -132,13 +141,17 @@ class _RaftAnchoredPopupState extends State<RaftAnchoredPopup>
         alignRight: widget.alignRight,
         centerVertically: widget.centerVertically,
         toRight: widget.toRight,
+        toLeft: widget.toLeft,
         gap: widget.gap,
         gutter: widget.collisionPadding,
         snap: widget.snapToPixel,
+        flipVertically: widget.flipVertically,
         insets: insets,
       ),
       child: RaftNativeSurfaceOccluder(
-        child: SingleChildScrollView(child: widget.child),
+        child: widget.scrollChild
+            ? SingleChildScrollView(child: widget.child)
+            : widget.child,
       ),
     );
   }
@@ -151,14 +164,16 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     required this.alignRight,
     required this.centerVertically,
     required this.toRight,
+    required this.toLeft,
     required this.gap,
     required this.gutter,
     this.snap = false,
+    required this.flipVertically,
     required this.insets,
   });
-  final bool snap;
+  final bool snap, flipVertically;
   final Rect anchor;
-  final bool above, alignRight, centerVertically, toRight;
+  final bool above, alignRight, centerVertically, toRight, toLeft;
   final double gap;
   final double gutter;
   final EdgeInsets insets;
@@ -170,11 +185,17 @@ class _PopupLayout extends SingleChildLayoutDelegate {
           0,
           constraints.maxWidth - insets.horizontal - gutter * 2,
         ),
-        maxHeight: math.max(
-          0,
-          constraints.maxHeight - insets.vertical - gutter * 2,
-        ),
+        maxHeight: math.max(0, _availableHeight(constraints.maxHeight)),
       );
+
+  double _availableHeight(double height) {
+    final top = insets.top + gutter;
+    final bottom = height - insets.bottom - gutter;
+    if (flipVertically || toRight || toLeft || centerVertically) {
+      return bottom - top;
+    }
+    return above ? anchor.top - gap - top : bottom - anchor.bottom - gap;
+  }
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
@@ -195,12 +216,12 @@ class _PopupLayout extends SingleChildLayoutDelegate {
           : Offset(left, top);
     }
 
-    if (toRight) {
-      // LeftRail HelpMenu: PopoverContent side=right, align=end, offset8.
-      final proposedLeft = anchor.right + gap;
-      final left = proposedLeft + childSize.width <= rightEdge
-          ? proposedLeft
-          : anchor.left - gap - childSize.width;
+    if (toRight || toLeft) {
+      final onRight = anchor.right + gap;
+      final onLeft = anchor.left - gap - childSize.width;
+      final left = toLeft
+          ? (onLeft >= minX ? onLeft : onRight)
+          : (onRight + childSize.width <= rightEdge ? onRight : onLeft);
       return position(
         left,
         alignRight ? anchor.bottom - childSize.height : anchor.top,
@@ -218,7 +239,9 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     final upper = anchor.top - gap - childSize.height;
     final bottomFits = below + childSize.height <= bottomEdge;
     final upperFits = upper >= minY;
-    final top = above
+    final top = !flipVertically
+        ? (above ? upper : below)
+        : above
         ? (upperFits || !bottomFits ? upper : below)
         : (bottomFits ? below : upper);
     return position(left, top);
@@ -231,8 +254,10 @@ class _PopupLayout extends SingleChildLayoutDelegate {
       alignRight != old.alignRight ||
       centerVertically != old.centerVertically ||
       toRight != old.toRight ||
+      toLeft != old.toLeft ||
       gap != old.gap ||
       gutter != old.gutter ||
+      flipVertically != old.flipVertically ||
       insets != old.insets ||
       snap != old.snap;
 }

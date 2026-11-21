@@ -57,6 +57,7 @@ class RootAdapter extends MessageAdapter {
     if (status == 401 && !(body is Map && body['error'] is String)) {
       body = {'error': 'Invalid or expired token', 'code': 'auth_required'};
     }
+    if (body is ResponseBody) return body;
     return ResponseBody.fromString(
       jsonEncode(body),
       status,

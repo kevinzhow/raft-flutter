@@ -422,7 +422,11 @@ class RaftConfirmDialog extends StatefulWidget {
     this.size,
     this.initialFocusCancel = false,
     this.confirmTrailingGlyph,
+    this.cssTitle = false,
   });
+
+  /// Paint the heading on the CSS line baseline.
+  final bool cssTitle;
 
   /// ConfirmDialog `size`: the raft-ui Dialog size (`sm` / `md`) instead of
   /// [maxWidth]; the width comes from the dialog recipe.
@@ -623,6 +627,7 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
       child: RaftDialog.shell(
         surfaceKey: widget.surfaceKey,
         title: title,
+        cssTitle: widget.cssTitle,
         maxWidth: maxWidth,
         onClose: loading ? null : cancel,
         body: bare ? null : body,

@@ -31,6 +31,7 @@ import 'primitive_tokens.dart';
 import 'tokens/tokens.dart';
 import 'control_typography.dart';
 import 'recipe_surface.dart';
+import 'surface_background_scope.dart';
 import 'raft/css_box.dart';
 import 'raft/ui_tokens.dart';
 import 'raft/button.dart';
@@ -1873,7 +1874,8 @@ class RaftMenuController extends ChangeNotifier {
 /// pixel, bleeding through the popup's `p-1` inset (read from the
 /// `dropdown_menu` recipe's `separator` slot).
 class _RaftMenuSeparator extends StatelessWidget {
-  const _RaftMenuSeparator();
+  const _RaftMenuSeparator({required this.compositeOnSurface});
+  final bool compositeOnSurface;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -1883,13 +1885,18 @@ class _RaftMenuSeparator extends StatelessWidget {
       states: t.recipeStates(),
     ).separator;
     final margin = style.margin;
+    final fill =
+        style.backgroundColor?.resolve(rt) ?? t.colors['line-hairline']!;
+    final backdrop = RaftSurfaceBackgroundScope.of(context);
     return Padding(
       padding: EdgeInsets.only(top: margin.top, bottom: margin.bottom),
       child: CustomPaint(
         key: const ValueKey('raft-menu-separator'),
         size: Size(double.infinity, style.height ?? 1),
         painter: _MenuSeparatorPainter(
-          style.backgroundColor?.resolve(rt) ?? t.colors['line-hairline']!,
+          compositeOnSurface && backdrop?.a == 1 && fill.a > 0 && fill.a < 1
+              ? raftChromeBlend(fill, backdrop!)
+              : fill,
           left: margin.left,
           right: margin.right,
         ),
@@ -1912,6 +1919,61 @@ class _MenuSeparatorPainter extends CustomPainter {
       old.color != color || old.left != left || old.right != right;
 }
 
+class _DropdownMenuMark extends StatelessWidget {
+  const _DropdownMenuMark({required this.checked});
+  final bool checked;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.expand(
+    child: CustomPaint(
+      painter: _DropdownMenuMarkPainter(
+        checked,
+        IconTheme.of(context).color ?? RaftTokens.of(context).ui.foreground,
+      ),
+    ),
+  );
+}
+
+class _DropdownMenuMarkPainter extends CustomPainter {
+  const _DropdownMenuMarkPainter(this.checked, this.color);
+
+  // Intrinsic geometry of the raft-ui 0.95.3 DropdownMenu indicator SVGs.
+  static const _viewBox = 12.0;
+  static const _stroke = 1.0;
+  final bool checked;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = checked
+        ? (Path()
+            ..moveTo(1.75, 6.41)
+            ..lineTo(4.4, 9.25)
+            ..lineTo(10.25, 2.99))
+        : (Path()
+            ..moveTo(4.25, 2.5)
+            ..lineTo(7.75, 6)
+            ..lineTo(4.25, 9.5));
+    canvas
+      ..save()
+      ..scale(size.width / _viewBox, size.height / _viewBox)
+      ..drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = _stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      )
+      ..restore();
+  }
+
+  @override
+  bool shouldRepaint(_DropdownMenuMarkPainter old) =>
+      checked != old.checked || color != old.color;
+}
+
 @immutable
 class RaftMenuEntry {
   const RaftMenuEntry({
@@ -1921,6 +1983,10 @@ class RaftMenuEntry {
     this.trailing,
     this.onPressed,
     this.checked,
+    this.submenu = const [],
+    this.submenuSide = RaftDropdownSide.right,
+    this.openSubmenuOnHover = false,
+    this.description,
   });
   const RaftMenuEntry.separator()
     : label = null,
@@ -1928,11 +1994,19 @@ class RaftMenuEntry {
       leading = null,
       trailing = null,
       onPressed = null,
-      checked = null;
+      checked = null,
+      submenu = const [],
+      submenuSide = RaftDropdownSide.right,
+      openSubmenuOnHover = false,
+      description = null;
   final String? label;
   final RaftGlyph? glyph;
   final Widget? leading, trailing;
   final VoidCallback? onPressed;
+  final List<RaftMenuEntry> submenu;
+  final RaftDropdownSide submenuSide;
+  final bool openSubmenuOnHover;
+  final String? description;
 
   /// `DropdownMenuRadioItem`: non-null makes the entry a radio item of a
   /// `RaftMenuKind.dropdownMenu` menu, [checked] being the chosen one (a check
@@ -1955,7 +2029,7 @@ class RaftPickerIndicator extends StatelessWidget {
   );
 }
 
-enum RaftDropdownSide { bottom, top, right }
+enum RaftDropdownSide { bottom, top, right, left }
 
 enum RaftDropdownAlign { start, end }
 
@@ -1986,10 +2060,13 @@ class RaftDropdownMenu extends StatefulWidget {
     this.align = RaftDropdownAlign.start,
     this.sideOffset,
     this.triggerBuilder,
+    this.submenuTriggerBuilder,
+    this.triggerFocus,
     this.header,
     this.surfaceKey,
     this.panelInset,
     this.openOnHover = false,
+    this.openDelay = Duration.zero,
     this.closeDelay = const Duration(milliseconds: 120),
   });
 
@@ -2000,13 +2077,16 @@ class RaftDropdownMenu extends StatefulWidget {
   final RaftDropdownAlign align;
   final double? sideOffset;
   final RaftDropdownTriggerBuilder? triggerBuilder;
+  final Widget Function(FocusNode focus, VoidCallback? onPressed, bool open)?
+  submenuTriggerBuilder;
+  final FocusNode? triggerFocus;
   final Widget? header;
 
   /// Identifies the rendered popup surface without changing trigger identity.
   final Key? surfaceKey;
   final EdgeInsetsGeometry? panelInset;
   final bool openOnHover;
-  final Duration closeDelay;
+  final Duration openDelay, closeDelay;
   final String label;
   final List<RaftMenuEntry> entries;
   final RaftMenuController? controller;
@@ -2026,7 +2106,8 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
   final portal = OverlayPortalController();
   final anchor = LayerLink();
   final anchorKey = GlobalKey();
-  final trigger = FocusNode();
+  final ownedTrigger = FocusNode();
+  FocusNode get trigger => widget.triggerFocus ?? ownedTrigger;
   final menuFocus = FocusNode(skipTraversal: true);
   final popup = FocusScopeNode(
     traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
@@ -2034,7 +2115,8 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
   final ownedController = RaftMenuController();
   final nodes = <FocusNode>[];
   int ticket = 0;
-  Timer? hoverClose;
+  Timer? hoverOpen, hoverClose;
+  bool openedOnHover = false;
   bool focusPopup = true;
   bool presentationActive = true;
   bool get triggerEnabled => widget.enabled && presentationActive;
@@ -2048,6 +2130,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
     presentationActive = active;
     ++ticket;
     if (!active) {
+      hoverOpen?.cancel();
       hoverClose?.cancel();
       // Retained pages suspend their presentation before removing layout.
       // Never reopen or restore focus into a suspended trigger.
@@ -2133,7 +2216,9 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
   }
 
   void close({bool restoreFocus = true}) {
+    hoverOpen?.cancel();
     hoverClose?.cancel();
+    openedOnHover = false;
     controller.close();
     if (restoreFocus &&
         triggerEnabled &&
@@ -2147,8 +2232,13 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
     if (!triggerEnabled) {
       return;
     }
+    hoverOpen?.cancel();
+    openedOnHover = false;
     focusPopup =
-        !widget.openOnHover || RaftFocusVisible.shared.keyboard || edge != null;
+        widget.submenuTriggerBuilder != null ||
+        !widget.openOnHover ||
+        RaftFocusVisible.shared.keyboard ||
+        edge != null;
     controller.open();
     if (edge != null) {
       final captured = ticket;
@@ -2166,13 +2256,25 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
   void hoverEnter() {
     hoverClose?.cancel();
     if (!widget.openOnHover || !triggerEnabled || controller.isOpen) return;
-    // Source Help opens immediately on hover without moving keyboard focus.
-    focusPopup = false;
-    controller.open();
+    void open() {
+      if (!triggerEnabled || controller.isOpen) return;
+      focusPopup = false;
+      openedOnHover = true;
+      controller.open();
+    }
+
+    if (widget.openDelay == Duration.zero) {
+      open();
+    } else {
+      hoverOpen?.cancel();
+      hoverOpen = Timer(widget.openDelay, open);
+    }
   }
 
   void hoverExit() {
     if (!widget.openOnHover) return;
+    hoverOpen?.cancel();
+    if (!controller.isOpen) return;
     hoverClose?.cancel();
     hoverClose = Timer(widget.closeDelay, () => close(restoreFocus: false));
   }
@@ -2180,7 +2282,8 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
   List<int> get enabled => [
     for (var i = 0; i < widget.entries.length; i++)
       if (widget.entries[i].label != null &&
-          widget.entries[i].onPressed != null)
+          (widget.entries[i].onPressed != null ||
+              widget.entries[i].submenu.isNotEmpty))
         i,
   ];
   void _edge(int delta) {
@@ -2255,6 +2358,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
 
   @override
   void dispose() {
+    hoverOpen?.cancel();
     hoverClose?.cancel();
     ticket++;
     controller.removeListener(_changed);
@@ -2262,10 +2366,80 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
     for (final node in nodes) {
       node.dispose();
     }
-    trigger.dispose();
+    ownedTrigger.dispose();
     menuFocus.dispose();
     popup.dispose();
     super.dispose();
+  }
+
+  Widget menuItem(int index) {
+    final entry = widget.entries[index];
+    final label = entry.label;
+    if (label == null) {
+      return _RaftMenuSeparator(
+        compositeOnSurface: widget.kind == RaftMenuKind.dropdownMenu,
+      );
+    }
+    if (entry.submenu.isEmpty) {
+      return RaftMenuItem(
+        kind: widget.kind,
+        label: label,
+        glyph: entry.glyph,
+        leading: entry.leading,
+        trailing: entry.trailing,
+        checked: entry.checked,
+        description: entry.description,
+        focusNode: nodes[index],
+        onMove: move,
+        onPressed: entry.onPressed == null ? null : () => activateEntry(index),
+      );
+    }
+    return RaftDropdownMenu(
+      label: label,
+      kind: widget.kind,
+      side: entry.submenuSide,
+      openOnHover:
+          entry.openSubmenuOnHover && RaftInteraction.of(context).pointer,
+      openDelay: const Duration(milliseconds: 100),
+      triggerFocus: nodes[index],
+      width: 240,
+      sideOffset: widget.kind == RaftMenuKind.dropdownMenu ? null : 2,
+      entries: [
+        for (final choice in entry.submenu)
+          RaftMenuEntry(
+            label: choice.label,
+            glyph: choice.glyph,
+            checked: choice.checked,
+            description: choice.description,
+            leading: choice.leading,
+            trailing: choice.trailing,
+            onPressed: choice.onPressed == null
+                ? null
+                : () {
+                    close();
+                    choice.onPressed!();
+                  },
+          ),
+      ],
+      submenuTriggerBuilder: (focus, open, showing) => CallbackShortcuts(
+        bindings: {
+          if (open != null)
+            const SingleActivator(LogicalKeyboardKey.arrowRight): open,
+        },
+        child: RaftMenuItem(
+          kind: widget.kind,
+          label: label,
+          glyph: entry.glyph,
+          trailing: widget.kind == RaftMenuKind.dropdownMenu
+              ? const _DropdownMenuMark(checked: false)
+              : const RaftIcon(RaftGlyph.chevronRight, size: 16),
+          submenuOpen: showing,
+          focusNode: focus,
+          onMove: move,
+          onPressed: open,
+        ),
+      ),
+    );
   }
 
   @override
@@ -2279,6 +2453,11 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
     void toggle() {
       if (!triggerEnabled) return;
       if (controller.isOpen) {
+        if (widget.submenuTriggerBuilder != null &&
+            openedOnHover &&
+            !RaftFocusVisible.shared.keyboard) {
+          return;
+        }
         close();
       } else {
         show();
@@ -2312,6 +2491,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                       movement: movement,
                       above: top,
                       toRight: widget.side == RaftDropdownSide.right,
+                      toLeft: widget.side == RaftDropdownSide.left,
                       alignRight: right,
                       gap: gap,
                       snapToPixel: true,
@@ -2325,6 +2505,11 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                             node: popup,
                             child: CallbackShortcuts(
                               bindings: {
+                                if (widget.triggerFocus != null)
+                                  const SingleActivator(
+                                    LogicalKeyboardKey.arrowLeft,
+                                  ): () =>
+                                      close(),
                                 const SingleActivator(
                                   LogicalKeyboardKey.escape,
                                 ): () =>
@@ -2361,24 +2546,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                                       i < widget.entries.length;
                                       i++
                                     )
-                                      if (widget.entries[i].label == null)
-                                        const _RaftMenuSeparator()
-                                      else
-                                        RaftMenuItem(
-                                          kind: widget.kind,
-                                          label: widget.entries[i].label!,
-                                          glyph: widget.entries[i].glyph,
-                                          leading: widget.entries[i].leading,
-                                          trailing: widget.entries[i].trailing,
-                                          checked: widget.entries[i].checked,
-                                          focusNode: nodes[i],
-                                          onMove: move,
-                                          onPressed:
-                                              widget.entries[i].onPressed ==
-                                                  null
-                                              ? null
-                                              : () => activateEntry(i),
-                                        ),
+                                      menuItem(i),
                                   ],
                                 ),
                               ),
@@ -2416,6 +2584,11 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                 },
               },
               child:
+                  widget.submenuTriggerBuilder?.call(
+                    trigger,
+                    triggerEnabled ? toggle : null,
+                    controller.isOpen,
+                  ) ??
                   widget.triggerBuilder?.call(
                     context,
                     trigger,
@@ -2603,10 +2776,16 @@ class RaftMenuItem extends StatefulWidget {
     this.italic = false,
     this.divider = false,
     this.checked,
+    this.submenuOpen,
+    this.description,
   });
 
   /// A radio item of a `dropdownMenu` (see [RaftMenuEntry.checked]).
   final bool? checked;
+
+  /// Open state of a dropdown submenu trigger. Null denotes a regular row.
+  final bool? submenuOpen;
+  final String? description;
 
   /// SelectionPopover sentinel rows ("Assigned to me", "Unassigned"):
   /// `italic text-foreground-muted`.
@@ -2662,7 +2841,7 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
           ? widget.selected
           : null,
       inMutuallyExclusiveGroup: radio ? true : null,
-      label: widget.label,
+      label: [widget.label, ?widget.description].join(', '),
       enabled: enabled,
       focusable: enabled,
       focused: semanticFocused,
@@ -2766,49 +2945,55 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
                                 : RaftIcon(widget.glyph!, size: 16)),
                         trailing: widget.trailing,
                         indicator: widget.checked!
-                            ? RaftIcon(
-                                RaftGlyph.check,
-                                size:
-                                    slots.indicator.target('& svg')?.width ??
-                                    slots.indicator.width ??
-                                    14,
-                              )
-                            : null,
+                            ? const _DropdownMenuMark(checked: true)
+                            : const SizedBox.shrink(),
                         root: slots.radioItem,
                         itemText: slots.radioLabel,
                         itemIndicator: slots.indicator,
+                        description: widget.description,
                         tokens: t.recipeTokens,
                       );
                     },
                   )
                 : widget.kind == RaftMenuKind.dropdownMenu
-                ? RaftMenuSlotRow(
-                    label: widget.label,
-                    leading:
-                        widget.leading ??
-                        (widget.glyph == null
-                            ? null
-                            : RaftIcon(widget.glyph!, size: 16)),
-                    trailing: widget.trailing,
-                    root: RaftDropdownMenuRecipe.resolve(
-                      tokens: t.recipeTokens,
-                      states: t
-                          .recipeStates(
-                            responsive: true,
-                            disabled: !enabled,
-                            extra: [
-                              if (!enabled) 'data-disabled',
-                              if (widget.selected) 'data-selected',
-                              if (enabled && (hovered || focused))
-                                'data-highlighted',
-                            ],
-                          )
-                          .copyWith(
-                            viewportWidth: MediaQuery.sizeOf(context).width,
-                            viewportHeight: MediaQuery.sizeOf(context).height,
-                          ),
-                    ).item,
-                    tokens: t.recipeTokens,
+                ? Builder(
+                    builder: (context) {
+                      final slots = RaftDropdownMenuRecipe.resolve(
+                        tokens: t.recipeTokens,
+                        states: t
+                            .recipeStates(
+                              responsive: true,
+                              disabled: !enabled,
+                              extra: [
+                                if (!enabled) 'data-disabled',
+                                if (widget.selected) 'data-selected',
+                                if (widget.submenuOpen == true)
+                                  'data-popup-open',
+                                if (enabled && (hovered || focused))
+                                  'data-highlighted',
+                              ],
+                            )
+                            .copyWith(
+                              viewportWidth: MediaQuery.sizeOf(context).width,
+                              viewportHeight: MediaQuery.sizeOf(context).height,
+                            ),
+                      );
+                      final submenu = widget.submenuOpen != null;
+                      return RaftMenuSlotRow(
+                        label: widget.label,
+                        leading:
+                            widget.leading ??
+                            (widget.glyph == null
+                                ? null
+                                : RaftIcon(widget.glyph!, size: 16)),
+                        trailing: submenu ? null : widget.trailing,
+                        indicator: submenu ? widget.trailing : null,
+                        itemIndicator: submenu ? slots.indicator : null,
+                        root: submenu ? slots.submenuTrigger : slots.item,
+                        description: widget.description,
+                        tokens: t.recipeTokens,
+                      );
+                    },
                   )
                 : Builder(
                     builder: (context) {

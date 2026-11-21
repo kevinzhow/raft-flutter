@@ -25,6 +25,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
     this.onPressed,
     this.glyph,
     this.trailingGlyph = RaftGlyph.chevronDown,
+    this.inlineIndicator = false,
     this.selected = false,
     this.invalid = false,
     this.enabled = true,
@@ -41,6 +42,10 @@ class RaftPickerTriggerButton extends StatelessWidget {
 
   /// The inline-start icon (`data-icon="inline-start"`) and the indicator at the end.
   final RaftGlyph? glyph, trailingGlyph;
+
+  /// The Select and Combobox indicator can use the inline SVG extent of the
+  /// trigger recipe, with no additional indicator box.
+  final bool inlineIndicator;
 
   /// `data-has-value`: a filter is applied.
   final bool selected, invalid, enabled;
@@ -89,6 +94,14 @@ class RaftPickerTriggerButton extends StatelessWidget {
           tokens: rt,
         ).base;
         if (restyle != null) style = restyle!(style);
+        final glyphExtent = style.target("& svg:not([class*='size-'])")!.width!;
+        final indicator = trailingGlyph == null
+            ? null
+            : RaftIcon(
+                trailingGlyph!,
+                size: inlineIndicator ? glyphExtent : 14,
+                color: t.ui.foregroundHint,
+              );
         return RaftRecipeBox(
           style: style,
           tokens: rt,
@@ -101,7 +114,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
                 if (glyph != null)
                   RaftIcon(
                     glyph!,
-                    size: style.target("& svg:not([class*='size-'])")!.width!,
+                    size: glyphExtent,
                     color: DefaultTextStyle.of(context).style.color,
                   ),
                 for (final (text, labelStyle) in [
@@ -124,17 +137,13 @@ class RaftPickerTriggerButton extends StatelessWidget {
                     )
                   else
                     Text(text, style: labelStyle, maxLines: 1),
-                if (trailingGlyph != null)
-                  SizedBox.square(
-                    dimension: 16,
-                    child: Center(
-                      child: RaftIcon(
-                        trailingGlyph!,
-                        size: 14,
-                        color: t.ui.foregroundHint,
-                      ),
-                    ),
-                  ),
+                if (indicator != null)
+                  inlineIndicator
+                      ? indicator
+                      : SizedBox.square(
+                          dimension: 16,
+                          child: Center(child: indicator),
+                        ),
               ],
             ),
           ),

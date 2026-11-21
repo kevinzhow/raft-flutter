@@ -205,7 +205,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('artifact-mention-a1')));
     await tester.pumpAndSettle();
-    expect(find.text('Will notify: Helper'), findsOneWidget);
+    expect(find.text('Will notify: Helper'), findsNothing);
+    expect(tester.getSemantics(composer).hint, contains('Will notify: Helper'));
     await tester.tap(find.byKey(const ValueKey('artifact-comments-close')));
     await tester.pumpAndSettle();
     await tester.tap(openComments);

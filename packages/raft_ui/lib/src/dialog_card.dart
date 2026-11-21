@@ -26,6 +26,7 @@ import 'package:flutter/rendering.dart';
 import 'dismiss_scope.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'recipes/button_variants.g.dart';
 import 'raft/button.dart' show RaftButton;
 import 'tokens/tokens.dart' show RaftDesktopMetrics;
@@ -574,31 +575,44 @@ class RaftDialogTextInput extends StatelessWidget {
     this.autofocus = false,
     this.enabled = true,
     this.leadingGlyph,
+    this.onChanged,
     this.onSubmitted,
     this.fieldKey,
+    this.semanticLabel,
     this.obscure = false,
     this.readOnly = false,
     this.mono = false,
+    this.focusRingFollowsInputModality = false,
   });
   final TextEditingController controller;
-  final String? placeholder;
+  final String? placeholder, semanticLabel;
 
   /// Web `readOnly` Input; [mono] is `font-mono text-xs`.
   final bool multiline, autofocus, enabled, obscure, readOnly, mono;
+
+  /// Use keyboard-modality focus paint on the single-line recipe input.
+  final bool focusRingFollowsInputModality;
   final RaftGlyph? leadingGlyph;
-  final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged, onSubmitted;
   final Key? fieldKey;
   @override
   Widget build(BuildContext context) {
     final hint = placeholder == null ? null : raftText(context, placeholder!);
-    return multiline
+    final label = semanticLabel == null
+        ? null
+        : raftText(context, semanticLabel!);
+    final tokens = RaftTokens.of(context);
+    final selection = tokens.colors['selection'];
+    final input = multiline
         ? RaftTextarea(
             controller: controller,
             hintText: hint,
+            semanticLabel: label,
             fieldKey: fieldKey,
             autofocus: autofocus,
             enabled: enabled,
             readOnly: readOnly,
+            onChanged: onChanged,
             mono: mono,
             textStep: mono ? RaftTextSteps.xs : null,
             growsWithScale: true,
@@ -606,15 +620,26 @@ class RaftDialogTextInput extends StatelessWidget {
         : RaftTextInput(
             controller: controller,
             hintText: hint,
+            semanticLabel: label,
             fieldKey: fieldKey,
             autofocus: autofocus,
             enabled: enabled,
             readOnly: readOnly,
             obscureText: obscure,
             leadingGlyph: leadingGlyph,
+            onChanged: onChanged,
             onSubmitted: onSubmitted,
             mono: mono,
+            focusRingFollowsInputModality: focusRingFollowsInputModality,
             textStep: mono ? RaftTextSteps.xs : null,
           );
+    return TextSelectionTheme(
+      data: TextSelectionTheme.of(context).copyWith(
+        selectionColor: selection != null && !multiline && tokens.card.a == 1
+            ? raftChromeBlend(selection, tokens.card)
+            : selection,
+      ),
+      child: input,
+    );
   }
 }

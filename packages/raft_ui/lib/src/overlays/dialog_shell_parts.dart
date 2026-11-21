@@ -17,16 +17,20 @@ class _ShellDialogPartsState extends State<_ShellDialogParts> {
         ? null
         : KeyedSubtree(key: _body, child: d.content!);
     final footer = RaftDialogActions(key: _footer, children: d.actions!);
+    final title = d.title! as String;
     if (RaftFormFrame.sheetOf(context)) {
       return RaftFormSheet(
-        title: raftText(context, d.title! as String),
+        title: raftText(context, title),
         onClose: d.onClose,
         body: body ?? const SizedBox.shrink(),
         footer: footer,
       );
     }
     return RaftDialog(
-      title: d.title,
+      title: d._cssShellTitle
+          ? RaftDialogTitle(title, cssLineBox: true)
+          : title,
+      semanticLabel: title,
       content: body,
       actions: [footer],
       maxWidth: d.maxWidth,

@@ -8,6 +8,7 @@ import 'tap_slop.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
+import 'recipes/composer.g.dart' as generated;
 import 'recipes/composer_suggestion_list.g.dart';
 import 'recipes/recipe_runtime.dart' show RaftSlotStyle;
 import 'theme.dart';
@@ -33,6 +34,15 @@ class RaftComposerRecipe {
     this.bottomSafeInset = 0,
     this.devicePixelRatio = 1,
   }) : assert(bottomSafeInset >= 0);
+
+  /// The generic Composer slots used by the compact Artifact comment box.
+  static generated.RaftComposerRecipeStyle compactSlots(
+    RaftTokens tokens, {
+    required bool focusVisible,
+  }) => generated.RaftComposerRecipe.resolve(
+    states: tokens.recipeStates(extra: [if (focusVisible) 'has:focus-visible']),
+    tokens: tokens.recipeTokens,
+  );
 
   final RaftTokens tokens;
   final bool desktop;

@@ -13,6 +13,54 @@
  "entries": [
   {
    "kind": "endpoint",
+   "id": "DELETE /artifacts/:id",
+   "area": "artifacts",
+   "capability": "Delete a Workspace Artifact and all of its versions",
+   "background": false,
+   "status": "covered",
+   "webEntry": "Web v1.24 ArtifactViewerMenu.tsx > Delete > Delete Artifact",
+   "gate": "workspace_artifacts_v0, own server and capabilities.delete. The server checks object management permission under the item lock.",
+   "flutterEntry": "ArtifactWorkspaceViewer opens RaftConfirmDialog and sends the signed-in Artifact API request after confirmation.",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/artifacts/artifact_api.dart",
+     "needle": "client.delete(ArtifactPaths.viewer(id))"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart",
+     "needle": "Future<void> _deleteArtifact()"
+    }
+   ],
+   "justification": "A successful response refreshes the collection and message object summaries. Refusal keeps the confirmation open with retry.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:artifacts.display-report",
+   "area": "artifacts",
+   "capability": "Open an editable display report for the shown Artifact",
+   "background": false,
+   "status": "partial",
+   "webEntry": "Web v1.24 ArtifactViewerMenu.tsx, ArtifactReviewParts.tsx, useArtifactDisplayReport.ts",
+   "gate": "Comment capability and a mounted comment composer",
+   "flutterEntry": "ArtifactWorkspaceViewer measures the displayed area and inserts a draft into the existing whole-Artifact comment composer.",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart",
+     "needle": "void _reportDisplay()"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart",
+     "needle": "void _applyInsert()"
+    }
+   ],
+   "justification": "Embedded frames use the Comment actions dropdown. Drawn content and browser fallbacks use More. The phone report opens the comments sheet. The existing composer owns submission.",
+   "impact": "Flutter uses its own header layout and does not implement the Web review-control folding algorithm.",
+   "size": "S"
+  },
+  {
+   "kind": "endpoint",
    "id": "DELETE /channels/saved/:id",
    "area": "messages",
    "capability": "Remove a message from Saved (toolbar bookmark, context menu, Saved footer badge, Saved page row X / context menu)",

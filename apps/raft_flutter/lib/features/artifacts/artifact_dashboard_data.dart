@@ -123,7 +123,14 @@ typedef ArtifactDashboardRow = ({
   ArtifactDashboardNews news,
 });
 typedef ArtifactDashboardCounts = ({int total, int filtered, int relevant});
-typedef ArtifactDashboardChoice = ({String id, String label});
+typedef ArtifactDashboardChoice = ({
+  String id,
+  String label,
+  String name,
+  String peerDisplayName,
+  String? kind,
+  ArtifactActor? actor,
+});
 
 class ArtifactDashboardPage {
   const ArtifactDashboardPage(this.rows, this.nextCursor, this.counts);
@@ -212,6 +219,19 @@ class ArtifactDashboardApi {
                         item['name'] ??
                         '')
                     .toString(),
+            name: (item['name'] ?? '').toString(),
+            peerDisplayName: (item['peerDisplayName'] ?? '').toString(),
+            kind: switch (item['type']) {
+              final String value => value,
+              _ => null,
+            },
+            actor: authors
+                ? ArtifactActor.fromJson(item)
+                : switch (item['peer']) {
+                    final Map peer when item['type'] == 'dm' =>
+                      ArtifactActor.fromJson(peer),
+                    _ => null,
+                  },
           ),
     ];
   }

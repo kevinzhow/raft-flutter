@@ -1,0 +1,304 @@
+{
+  "routes": {
+    "GET /artifacts/dashboard/all": {
+      "rows": [
+        {
+          "card": {
+            "id": "pt_743b9130-45de-40f0-bdc0-9d08b6fb447a",
+            "url": "/artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a",
+            "title": "Release checklist",
+            "kind": "text",
+            "facts": {
+              "sizeBytes": 80,
+              "fileCount": 1
+            },
+            "preview": {
+              "kind": "none"
+            },
+            "version": 1,
+            "latestVersion": 1,
+            "pinned": false,
+            "author": {
+              "type": "user",
+              "id": "visual-user",
+              "name": "artin",
+              "displayName": "artin",
+              "avatarUrl": null
+            },
+            "createdAt": "2026-06-18T14:30:00.000Z",
+            "updatedAt": "2026-06-19T11:30:00.000Z",
+            "commentCount": 0,
+            "home": {
+              "kind": "conversation",
+              "conversation": {
+                "id": "artifact-parity-notes",
+                "name": "release-notes",
+                "type": "private"
+              }
+            }
+          },
+          "openedAt": "2026-06-19T12:29:00.000Z",
+          "news": {
+            "mentions": 0,
+            "comments": 0,
+            "versions": 0
+          }
+        },
+        {
+          "card": {
+            "id": "pt_683b9130-45de-40f0-bdc0-9d08b6fb447b",
+            "url": "/artifacts/pt_683b9130-45de-40f0-bdc0-9d08b6fb447b",
+            "title": "Workspace planning.md",
+            "kind": "markdown",
+            "facts": {
+              "sizeBytes": 80,
+              "fileCount": 1
+            },
+            "preview": {
+              "kind": "excerpt",
+              "text": "## Planning notes\n\nPrepare the release checklist."
+            },
+            "version": 1,
+            "latestVersion": 1,
+            "pinned": false,
+            "author": {
+              "type": "user",
+              "id": "visual-user",
+              "name": "artin",
+              "displayName": "artin",
+              "avatarUrl": null
+            },
+            "createdAt": "2026-06-18T14:30:00.000Z",
+            "updatedAt": "2026-06-18T16:30:00.000Z",
+            "commentCount": 0,
+            "home": {
+              "kind": "server"
+            }
+          },
+          "openedAt": null,
+          "news": {
+            "mentions": 0,
+            "comments": 0,
+            "versions": 0
+          }
+        }
+      ],
+      "counts": {
+        "total": 2,
+        "filtered": 2,
+        "relevant": 0
+      },
+      "nextCursor": null
+    },
+    "GET /artifacts/dashboard/authors": {
+      "authors": [
+        {
+          "type": "user",
+          "id": "visual-user",
+          "name": "artin",
+          "displayName": "artin",
+          "avatarUrl": null
+        }
+      ]
+    },
+    "GET /artifacts/dashboard/conversations": {
+      "conversations": [
+        {
+          "id": "artifact-parity-notes",
+          "name": "release-notes",
+          "type": "private"
+        }
+      ]
+    },
+    "GET /artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a": {
+      "card": {
+        "id": "pt_743b9130-45de-40f0-bdc0-9d08b6fb447a",
+        "url": "/artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a",
+        "title": "Release checklist",
+        "kind": "text",
+        "facts": {
+          "sizeBytes": 80,
+          "fileCount": 1
+        },
+        "preview": {
+          "kind": "none"
+        },
+        "version": 1,
+        "latestVersion": 1,
+        "pinned": false,
+        "author": {
+          "type": "user",
+          "id": "visual-user",
+          "name": "artin",
+          "displayName": "artin",
+          "avatarUrl": null
+        },
+        "createdAt": "2026-06-18T14:30:00.000Z",
+        "updatedAt": "2026-06-19T11:30:00.000Z",
+        "commentCount": 0,
+        "home": {
+          "kind": "conversation",
+          "conversation": {
+            "id": "artifact-parity-notes",
+            "name": "release-notes",
+            "type": "private"
+          }
+        }
+      },
+      "files": [
+        {
+          "path": "checklist.txt",
+          "kind": "text",
+          "sizeBytes": 69,
+          "entry": true
+        }
+      ],
+      "versions": [
+        {
+          "number": 1,
+          "publisher": {
+            "type": "user",
+            "id": "visual-user",
+            "name": "artin",
+            "displayName": "artin",
+            "avatarUrl": null
+          },
+          "createdAt": "2026-06-18T14:30:00.000Z",
+          "note": null,
+          "changedPaths": [
+            "checklist.txt"
+          ]
+        }
+      ],
+      "viewer": {
+        "type": "user",
+        "id": "visual-user",
+        "name": "artin",
+        "displayName": "artin",
+        "avatarUrl": null
+      },
+      "following": false,
+      "savedFrom": null,
+      "origin": null,
+      "capabilities": {
+        "publish": true,
+        "comment": true,
+        "changeHome": true,
+        "unpublish": false,
+        "narrowHome": false,
+        "delete": true
+      }
+    },
+    "GET /artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a/comments": {
+      "comments": [],
+      "olderCursor": null
+    },
+    "GET /artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a/will-notify": {
+      "recipients": []
+    },
+    "GET /artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a/review/drafts": {
+      "drafts": []
+    },
+    "GET /artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a/details": {
+      "card": {
+        "id": "pt_743b9130-45de-40f0-bdc0-9d08b6fb447a",
+        "url": "/artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a",
+        "title": "Release checklist",
+        "kind": "text",
+        "facts": {
+          "sizeBytes": 80,
+          "fileCount": 1
+        },
+        "preview": {
+          "kind": "none"
+        },
+        "version": 1,
+        "latestVersion": 1,
+        "pinned": false,
+        "author": {
+          "type": "user",
+          "id": "visual-user",
+          "name": "artin",
+          "displayName": "artin",
+          "avatarUrl": null
+        },
+        "createdAt": "2026-06-18T14:30:00.000Z",
+        "updatedAt": "2026-06-19T11:30:00.000Z",
+        "commentCount": 0,
+        "home": {
+          "kind": "conversation",
+          "conversation": {
+            "id": "artifact-parity-notes",
+            "name": "release-notes",
+            "type": "private"
+          }
+        }
+      },
+      "files": [
+        {
+          "path": "checklist.txt",
+          "kind": "text",
+          "sizeBytes": 69,
+          "entry": true
+        }
+      ],
+      "versions": [
+        {
+          "number": 1,
+          "publisher": {
+            "type": "user",
+            "id": "visual-user",
+            "name": "artin",
+            "displayName": "artin",
+            "avatarUrl": null
+          },
+          "createdAt": "2026-06-18T14:30:00.000Z",
+          "note": null,
+          "changedPaths": [
+            "checklist.txt"
+          ]
+        }
+      ],
+      "viewer": {
+        "type": "user",
+        "id": "visual-user",
+        "name": "artin",
+        "displayName": "artin",
+        "avatarUrl": null
+      },
+      "following": false,
+      "savedFrom": null,
+      "origin": null,
+      "capabilities": {
+        "publish": true,
+        "comment": true,
+        "changeHome": true,
+        "unpublish": false,
+        "narrowHome": false,
+        "delete": true
+      }
+    },
+    "GET /artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a/files/checklist.txt/content": {
+      "kind": "text",
+      "content": "Release checklist\n\nGather screenshots.\nReview changes.\nPublish notes."
+    },
+    "GET /artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a/comments": {
+      "comments": [],
+      "olderCursor": null
+    },
+    "POST /feature-flags/evaluate": {
+      "evaluations": [
+        {
+          "key": "workspace_artifacts_v0",
+          "enabled": true
+        }
+      ]
+    },
+    "GET /artifacts/pt_743b9130-45de-40f0-bdc0-9d08b6fb447a/presence": {
+      "viewing": [],
+      "readCurrentVersion": [],
+      "readOtherVersion": [],
+      "ownRead": null
+    }
+  }
+}

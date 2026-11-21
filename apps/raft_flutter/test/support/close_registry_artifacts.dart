@@ -8,6 +8,15 @@ const _artifactDialogClose = {
 
 const artifactHomeSurfaces = <CloseSurface>[
   CloseSurface(
+    'artifact-collection-viewer',
+    kind: SurfaceKind.viewer,
+    web: 'ArtifactsDashboard.tsx mounts an in-column Viewer. Back on phone, close on wide layouts, and Escape.',
+    phone: {Affordance.back, Affordance.esc, Affordance.systemBack},
+    fold: {Affordance.x, Affordance.esc, Affordance.systemBack},
+    desktop: {Affordance.x, Affordance.esc, Affordance.systemBack},
+    files: ['lib/features/artifacts/artifact_dashboard.dart'],
+  ),
+  CloseSurface(
     'artifact-dashboard-page',
     kind: SurfaceKind.panel,
     web: 'ArtifactsDashboard.tsx: leave with workspace navigation or browser Back.',
@@ -40,12 +49,12 @@ const artifactHomeSurfaces = <CloseSurface>[
   ),
   CloseSurface(
     'artifact-dashboard-filter',
-    kind: SurfaceKind.dialog,
+    kind: SurfaceKind.popup,
     web: 'ArtifactFilterCombobox.tsx: Escape and an outside press dismiss.',
     webOutside: WebOutside.closes,
-    phone: {..._artifactDialogClose, Affordance.scrim},
-    fold: {..._artifactDialogClose, Affordance.scrim},
-    desktop: {..._artifactDialogClose, Affordance.scrim},
+    phone: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    fold: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    desktop: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
     files: ['lib/features/artifacts/artifact_dashboard_filter.dart'],
   ),
   CloseSurface(
@@ -53,9 +62,9 @@ const artifactHomeSurfaces = <CloseSurface>[
     kind: SurfaceKind.dialog,
     web: 'ArtifactRenameDialog.tsx and ArtifactNarrowHome.tsx: Escape and Cancel close while idle.',
     webOutside: WebOutside.stays,
-    phone: _artifactDialogClose,
-    fold: _artifactDialogClose,
-    desktop: _artifactDialogClose,
+    phone: {Affordance.back, Affordance.esc, Affordance.systemBack},
+    fold: {Affordance.back, Affordance.esc, Affordance.systemBack},
+    desktop: {Affordance.back, Affordance.esc, Affordance.systemBack},
     files: ['lib/features/artifacts/artifact_manage_dialogs.dart'],
   ),
   CloseSurface(
@@ -82,6 +91,31 @@ const artifactSurfaces = <CloseSurface>[
     files: ['lib/features/artifacts/artifact_viewer_page.dart'],
     status: 'approved',
     fix: 'page / full-bleed window instead of the side column (docs/parity.md)',
+  ),
+  CloseSurface(
+    'artifact-delete-confirm',
+    kind: SurfaceKind.dialog,
+    web: 'ArtifactViewerMenu.tsx mounts ConfirmDialog. X, Escape and Cancel close while idle. The scrim stays open.',
+    webOutside: WebOutside.stays,
+    phone: _artifactDialogClose,
+    fold: _artifactDialogClose,
+    desktop: _artifactDialogClose,
+    files: ['lib/features/artifacts/artifact_viewer_page.dart'],
+  ),
+  CloseSurface(
+    'artifact-display-report',
+    kind: SurfaceKind.panel,
+    web: 'ArtifactSurface.tsx opens the comment list beside the Viewer or in a Drawer on phones.',
+    phone: {
+      Affordance.x,
+      Affordance.esc,
+      Affordance.scrim,
+      Affordance.systemBack,
+      Affordance.drag,
+    },
+    fold: _artifactDialogClose,
+    desktop: _artifactDialogClose,
+    files: ['lib/features/artifacts/artifact_viewer_page.dart'],
   ),
 ];
 

@@ -1445,6 +1445,7 @@ class RaftBareInput extends StatelessWidget {
     this.cursorColor,
     this.autofocus = false,
     this.enabled = true,
+    this.multiline = false,
     this.textAlignVertical,
     this.onChanged,
     this.onSubmitted,
@@ -1457,7 +1458,7 @@ class RaftBareInput extends StatelessWidget {
   final String? hintText;
   final TextStyle style, hintStyle;
   final Color? cursorColor;
-  final bool autofocus, enabled;
+  final bool autofocus, enabled, multiline;
   final TextAlignVertical? textAlignVertical;
   final ValueChanged<String>? onChanged, onSubmitted;
   final VoidCallback? onTapOutside;
@@ -1471,8 +1472,14 @@ class RaftBareInput extends StatelessWidget {
     focusNode: focusNode,
     autofocus: autofocus,
     enabled: enabled,
+    minLines: multiline ? 1 : null,
+    maxLines: multiline ? null : 1,
+    keyboardType: multiline ? TextInputType.multiline : null,
     textAlignVertical: textAlignVertical,
     style: style,
+    strutStyle: multiline
+        ? StrutStyle.fromTextStyle(style, forceStrutHeight: true)
+        : null,
     cursorColor: cursorColor,
     onChanged: onChanged,
     onSubmitted: onSubmitted,

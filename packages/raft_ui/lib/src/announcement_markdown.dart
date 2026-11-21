@@ -59,9 +59,14 @@ InlineSpan raftInlineCodeSpan(BuildContext context, String text) =>
     )._inlineCode(text, DefaultTextStyle.of(context).style);
 
 class RaftAnnouncementMarkdown extends StatefulWidget {
-  const RaftAnnouncementMarkdown(this.data, {super.key, this.onLink});
+  const RaftAnnouncementMarkdown(this.data, {super.key, this.onLink})
+    : documentStyle = false;
+
+  const RaftAnnouncementMarkdown.document(this.data, {super.key, this.onLink})
+    : documentStyle = true;
 
   final String data;
+  final bool documentStyle;
   final ValueChanged<String>? onLink;
 
   @override
@@ -98,7 +103,12 @@ class _RaftAnnouncementMarkdownState extends State<RaftAnnouncementMarkdown> {
         encodeHtml: false,
       ).parse(data),
     );
-    final builder = _MarkdownBlocks(context, onLink, _recognizers);
+    final builder = _MarkdownBlocks(
+      context,
+      onLink,
+      _recognizers,
+      documentStyle: widget.documentStyle,
+    );
     return _layoutBlocks(builder.blocks(nodes), outer: true);
   }
 }
@@ -161,10 +171,15 @@ const _blockTags = {
 };
 
 class _MarkdownBlocks {
-  _MarkdownBlocks(this.context, this.onLink, this.recognizers)
-    : t = RaftTokens.of(context),
-      base = DefaultTextStyle.of(context).style;
+  _MarkdownBlocks(
+    this.context,
+    this.onLink,
+    this.recognizers, {
+    this.documentStyle = false,
+  }) : t = RaftTokens.of(context),
+       base = DefaultTextStyle.of(context).style;
   final BuildContext context;
+  final bool documentStyle;
   final ValueChanged<String>? onLink;
 
   /// Collects the recognizers created for links (owned by the caller).
@@ -208,9 +223,27 @@ class _MarkdownBlocks {
       case 'p':
         return RaftCssBlock(
           child: _text(_inlineSpans(children, base), base),
-          marginTop: afterParagraph ? 12 : 0,
+          marginTop: !documentStyle && afterParagraph ? 12 : 0,
+          marginBottom: documentStyle ? 12 : 0,
         );
       case 'h1' || 'h2' || 'h3':
+        if (documentStyle) {
+          final (size, top, bottom) = switch (e.tag) {
+            'h1' => (30.0, 24.0, 12.0),
+            'h2' => (24.0, 20.0, 10.0),
+            _ => (20.0, 16.0, 8.0),
+          };
+          final style = base.copyWith(
+            fontSize: size,
+            height: 1.25,
+            fontWeight: FontWeight.w700,
+          );
+          return RaftCssBlock(
+            child: _text(_inlineSpans(children, style), style),
+            marginTop: top,
+            marginBottom: bottom,
+          );
+        }
         final style = raftCssTextStyle(
           family: t.bodyFont,
           step: switch (e.tag) {
@@ -223,7 +256,11 @@ class _MarkdownBlocks {
         ).copyWith(fontFamilyFallback: base.fontFamilyFallback);
         return RaftCssBlock(child: _text(_inlineSpans(children, style), style));
       case 'h4' || 'h5' || 'h6':
-        return RaftCssBlock(child: _text(_inlineSpans(children, base), base));
+        return RaftCssBlock(
+          child: _text(_inlineSpans(children, base), base),
+          marginTop: documentStyle ? 12 : 0,
+          marginBottom: documentStyle ? 4 : 0,
+        );
       case 'ul' || 'ol':
         return _list(e);
       case 'blockquote':

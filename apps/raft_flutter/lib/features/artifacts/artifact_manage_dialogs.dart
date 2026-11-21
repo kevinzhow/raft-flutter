@@ -19,9 +19,12 @@ Future<ArtifactViewerData?> showArtifactManageDialog(
   required bool Function() current,
   String? conversationName,
   String? serverName,
+  ArtifactHomeTarget? initialTarget,
+  bool opaqueHost = false,
 }) => showRaftDialog<ArtifactViewerData>(
   context: context,
   barrierDismissible: false,
+  browserBackdropBlend: opaqueHost,
   builder: (_) => ArtifactManageDialog(
     api: api,
     data: data,
@@ -29,6 +32,7 @@ Future<ArtifactViewerData?> showArtifactManageDialog(
     current: current,
     conversationName: conversationName,
     serverName: serverName,
+    initialTarget: initialTarget,
   ),
 );
 
@@ -41,6 +45,7 @@ class ArtifactManageDialog extends StatefulWidget {
     required this.current,
     this.conversationName,
     this.serverName,
+    this.initialTarget,
   });
 
   final ArtifactSharingApi api;
@@ -48,19 +53,32 @@ class ArtifactManageDialog extends StatefulWidget {
   final ArtifactManageAction action;
   final bool Function() current;
   final String? conversationName, serverName;
+  final ArtifactHomeTarget? initialTarget;
 
   @override
   State<ArtifactManageDialog> createState() => _ArtifactManageDialogState();
 }
 
 class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
-  late final title = TextEditingController(text: widget.data.card.title);
-  ArtifactHomeTarget? target;
+  late final title = TextEditingController.fromValue(
+    TextEditingValue(
+      text: widget.data.card.title,
+      selection: TextSelection(
+        baseOffset: 0,
+        extentOffset: widget.data.card.title.length,
+      ),
+    ),
+  );
+  String get submittedTitle =>
+      title.text.trim().replaceAll(RegExp(r'[\r\n]+'), ' ');
+  bool get canRename =>
+      submittedTitle.isNotEmpty && submittedTitle != data.card.title.trim();
+  late ArtifactHomeTarget? target = widget.initialTarget;
   ArtifactHomeLoss? loss;
   final refusalNotice = CauseNotice();
   bool working = false;
   bool previewing = false;
-  bool confirming = false;
+  late bool confirming = target != null;
   bool changed = false;
 
   ArtifactViewerData get data => widget.data;
@@ -72,6 +90,12 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
   bool get narrowing =>
       target?.kind == 'conversation' ||
       turningOffLink && data.capabilities.narrowHome;
+
+  @override
+  void initState() {
+    super.initState();
+    if (target != null && narrowing) unawaited(preview());
+  }
 
   @override
   void dispose() {
@@ -151,8 +175,8 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
       );
       return;
     }
-    final name = title.text.trim().replaceAll(RegExp(r'[\r\n]+'), ' ');
-    if (rename && (name.isEmpty || name == data.card.title)) return;
+    final name = submittedTitle;
+    if (rename && !canRename) return;
     final to = target;
     if (!rename && to == null) return;
     setState(() {
@@ -190,12 +214,20 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
         ? 'Turn off link sharing?'
         : narrowing
         ? 'Move to a conversation'
+        : target?.kind == 'public'
+        ? 'Turn on link sharing?'
         : 'Who can see it';
     return PopScope(
       canPop: !working,
       child: RaftDialog(
         contentKey: const Key('artifact-manage-dialog'),
-        title: Text(text(label)),
+        title: RaftDialogTitle(label, cssLineBox: true),
+        semanticLabel: text(label),
+        maxWidth: !rename && confirming ? 400 : null,
+        showClose: !rename && !confirming,
+        kind: !rename && confirming
+            ? RaftDialogKind.alert
+            : RaftDialogKind.dialog,
         closeEnabled: !working,
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -204,10 +236,14 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
             if (rename)
               RaftDialogTextInput(
                 controller: title,
-                placeholder: 'Artifact title',
-                autofocus: RaftInteraction.of(context).pointer,
+                semanticLabel: 'Artifact title',
+                autofocus: true,
+                focusRingFollowsInputModality: true,
+                onChanged: (_) {
+                  if (refusalNotice.isActive) setState(refusalNotice.clear);
+                },
                 onSubmitted: (_) => unawaited(save()),
-                enabled: !working,
+                readOnly: working,
               )
             else if (!confirming) ...[
               Text(
@@ -247,7 +283,7 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
                   ),
                 ),
               if (target?.kind == 'public')
-                Text(
+                RaftDialogDescription(
                   text(
                     "Anyone with the link can view it, and it won't show up in search engines.",
                   ),
@@ -278,26 +314,49 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
                 RaftButton(label: text('Try again'), onPressed: preview),
             ],
             if (refusalNotice.message case final message?)
-              Semantics(liveRegion: true, child: Text(text(message))),
+              if (rename)
+                Padding(
+                  padding: const EdgeInsets.only(top: RaftSpace.x4),
+                  child: RaftBanner(
+                    status: RaftBannerRecipeStatus.warning,
+                    glyph: RaftGlyph.triangleAlert,
+                    description: message,
+                  ),
+                )
+              else
+                Semantics(liveRegion: true, child: Text(text(message))),
           ],
         ),
         actions: [
           RaftButton(
             label: text('Cancel'),
-            secondary: true,
+            tone: RaftButtonRecipeVariant.ghost,
+            size: RaftButtonRecipeSize.lg,
             onPressed: working ? null : () => Navigator.of(context).pop(),
           ),
-          if (rename || confirming)
+          if (rename)
+            ValueListenableBuilder(
+              valueListenable: title,
+              builder: (_, _, _) => RaftButton(
+                label: text('Save'),
+                size: RaftButtonRecipeSize.lg,
+                busy: working,
+                onPressed: working || !canRename ? null : save,
+              ),
+            )
+          else if (confirming)
             RaftButton(
               label: text(
-                rename
-                    ? 'Save'
-                    : turningOffLink
+                turningOffLink
                     ? 'Turn off link sharing'
                     : narrowing
                     ? 'Move to conversation'
+                    : target?.kind == 'public'
+                    ? 'Turn on link sharing'
                     : 'Confirm',
               ),
+              size: RaftButtonRecipeSize.lg,
+              busy: working,
               onPressed: working || previewing || narrowing && loss == null
                   ? null
                   : save,

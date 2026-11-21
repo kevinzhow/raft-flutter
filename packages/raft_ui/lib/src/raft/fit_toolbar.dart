@@ -1032,7 +1032,7 @@ class _FitSearchSlotState extends State<_FitSearchSlot> {
 // ---------------------------------------------------------------------------
 // Scroll group
 
-class _FitScrollGroup extends StatefulWidget {
+class _FitScrollGroup extends StatelessWidget {
   const _FitScrollGroup({
     super.key,
     required this.controller,
@@ -1048,15 +1048,69 @@ class _FitScrollGroup extends StatefulWidget {
   final List<Widget> children;
 
   @override
-  State<_FitScrollGroup> createState() => _FitScrollGroupState();
+  Widget build(BuildContext context) {
+    final fit = _fitStyle(context, scroll: true, pinned: end != null);
+    // `scroll-px-6` and the `mask-fade-x` edge: 24px.
+    final fade = fit.scroller.length('scroll-padding-left') ?? 24;
+    final body = SizedBox(
+      height: height,
+      child: OverflowBox(
+        minHeight: height + 12,
+        maxHeight: height + 12,
+        child: RaftHorizontalScrollFade(
+          extent: fade,
+          child: SingleChildScrollView(
+            controller: controller,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: gap,
+              children: children,
+            ),
+          ),
+        ),
+      ),
+    );
+    // One Row whether or not [end] is shown: when it appears (Clear All after
+    // the first filter), the chips keep their elements and the chip that had
+    // focus keeps it, instead of the scroller being re-parented.
+    return SizedBox(
+      width: width,
+      child: Row(
+        spacing: gap,
+        children: [
+          Expanded(child: body),
+          ?end,
+        ],
+      ),
+    );
+  }
 }
 
-class _FitScrollGroupState extends State<_FitScrollGroup> {
+/// The `mask-fade-x` paint for a toolbar's horizontal scroll viewport.
+class RaftHorizontalScrollFade extends StatefulWidget {
+  const RaftHorizontalScrollFade({
+    super.key,
+    required this.extent,
+    required this.child,
+  });
+
+  final double extent;
+  final Widget child;
+
+  @override
+  State<RaftHorizontalScrollFade> createState() =>
+      _RaftHorizontalScrollFadeState();
+}
+
+class _RaftHorizontalScrollFadeState extends State<RaftHorizontalScrollFade> {
   bool _atStart = true, _atEnd = true;
 
-  bool _update(ScrollMetrics m) {
-    final start = m.pixels <= 1;
-    final end = m.maxScrollExtent <= 1 || m.pixels >= m.maxScrollExtent - 1;
+  bool _update(ScrollMetrics metrics) {
+    if (metrics.axis != Axis.horizontal) return false;
+    final start = metrics.extentBefore <= 1;
+    final end = metrics.extentAfter <= 1;
     if (start != _atStart || end != _atEnd) {
       setState(() {
         _atStart = start;
@@ -1068,65 +1122,33 @@ class _FitScrollGroupState extends State<_FitScrollGroup> {
 
   @override
   Widget build(BuildContext context) {
-    final fit = _fitStyle(context, scroll: true, pinned: widget.end != null);
-    // `scroll-px-6` and the `mask-fade-x` edge: 24px.
-    final fade = fit.scroller.length('scroll-padding-left') ?? 24;
-    final scroller = NotificationListener<ScrollMetricsNotification>(
-      onNotification: (n) => _update(n.metrics),
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (n) => _update(n.metrics),
-        child: SingleChildScrollView(
-          controller: widget.controller,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: widget.gap,
-            children: widget.children,
-          ),
-        ),
-      ),
-    );
-    // An alpha mask (dstIn): only the alpha of these stops matters, so any
-    // theme colour made opaque / clear will do.
+    final direction = Directionality.of(context);
     final shown = RaftTokens.of(context).ink.withValues(alpha: 1);
     final hidden = shown.withValues(alpha: 0);
-    final masked = ShaderMask(
-      blendMode: BlendMode.dstIn,
-      shaderCallback: (rect) {
-        final f = (fade / (rect.width == 0 ? 1 : rect.width)).clamp(0.0, .5);
-        return LinearGradient(
-          stops: [0, f, 1 - f, 1],
-          colors: [
-            _atStart ? shown : hidden,
-            shown,
-            shown,
-            _atEnd ? shown : hidden,
-          ],
-        ).createShader(rect);
-      },
-      child: scroller,
-    );
-    final body = SizedBox(
-      height: widget.height,
-      child: OverflowBox(
-        minHeight: widget.height + 12,
-        maxHeight: widget.height + 12,
-        child: masked,
-      ),
-    );
-    final end = widget.end;
-    // One Row whether or not [end] is shown: when it appears (Clear All after
-    // the first filter), the chips keep their elements and the chip that had
-    // focus keeps it, instead of the scroller being re-parented.
-    return SizedBox(
-      width: widget.width,
-      child: Row(
-        spacing: widget.gap,
-        children: [
-          Expanded(child: body),
-          ?end,
-        ],
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (notice) => notice.depth == 0 && _update(notice.metrics),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notice) =>
+            notice.depth == 0 && _update(notice.metrics),
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) {
+            final fade = (widget.extent / (rect.width == 0 ? 1 : rect.width))
+                .clamp(0.0, .5);
+            return LinearGradient(
+              begin: AlignmentDirectional.centerStart,
+              end: AlignmentDirectional.centerEnd,
+              stops: [0, fade, 1 - fade, 1],
+              colors: [
+                _atStart ? shown : hidden,
+                shown,
+                shown,
+                _atEnd ? shown : hidden,
+              ],
+            ).createShader(rect, textDirection: direction);
+          },
+          child: widget.child,
+        ),
       ),
     );
   }

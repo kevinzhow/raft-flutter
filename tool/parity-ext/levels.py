@@ -45,6 +45,7 @@ EXT_SURFACE_LEVEL = {
     'components.channelheader.mobile': FRAME,
     # L2 pages
     'components.app-links.unavailable': PAGE,
+    'components.artifacts.desktop': PAGE, 'components.artifacts.phone': PAGE,
     'components.screens-ext.channel': PAGE, 'components.screens-ext.dm': PAGE,
     'components.screens-ext.composer': PAGE, 'components.screens-ext.activity': PAGE,
     'components.ext-settings.nav': PAGE, 'components.ext-settings.about': PAGE,

@@ -4778,11 +4778,13 @@
           "variant": "zero visible threads",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "gapKind": "case-missing",
-          "size": "S",
-          "justification": "The actual list renders an empty state. It has no registered paired case."
+          "parityCase": [
+            "components.artifacts.desktop.display-report",
+            "components.artifacts.phone.display-report"
+          ],
+          "status": "covered",
+          "caseValidity": "react-checked",
+          "justification": "The display-report cases open the real comment list with zero posted threads."
         },
         {
           "state": "error",
@@ -4916,7 +4918,7 @@
           "status": "gap",
           "gapKind": "case-missing",
           "size": "S",
-          "justification": "Loading is present in the filter dialog. A matched asynchronous capture needs a fixture."
+          "justification": "The anchored filter popover shows a loading footer while it reads the first page. A paired asynchronous capture is pending."
         },
         {
           "state": "empty",
@@ -4924,9 +4926,9 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "gapKind": "impl-diff",
+          "gapKind": "case-missing",
           "size": "S",
-          "justification": "An unmatched search renders an empty result. The Web popover and Flutter dialog use different hosts."
+          "justification": "An unmatched search renders an empty result within the anchored filter popover. A paired empty capture is pending."
         },
         {
           "state": "error",
@@ -4936,7 +4938,7 @@
           "status": "gap",
           "gapKind": "case-missing",
           "size": "S",
-          "justification": "The dialog offers a retry. The failed route lacks a paired capture."
+          "justification": "The anchored filter popover offers retry after a failed option read. A paired error capture is pending."
         }
       ]
     },
@@ -5114,6 +5116,36 @@
           ],
           "status": "covered",
           "caseValidity": "react-checked"
+        }
+      ]
+    },
+    {
+      "id": "artifact.delete",
+      "title": "Delete Artifact confirmation",
+      "webEntry": "packages/web/src/apps/artifacts/ArtifactViewerMenu.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "confirmed deletion is pending",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Both confirmations remain mounted while awaiting the delete response. Mounted Flutter coverage holds the response open."
+        },
+        {
+          "state": "error",
+          "variant": "server refuses deletion",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Both confirmations show an inline error and enable retry. Mounted Flutter coverage supplies a server refusal."
         }
       ]
     }
@@ -49277,16 +49309,12 @@
         "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitScrollGroup": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitScrollGroupState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "FitToolbar",
+        "reason": "Composes the FitToolbar scrolling group and its optional pinned action."
       },
       "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitSearchSlot": {
         "role": "unresolved",
@@ -49373,18 +49401,6 @@
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftFitToolbar.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroup.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroupState.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
@@ -55821,7 +55837,9 @@
       },
       "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#method:_ArtifactCommentComposerState.build": {
         "role": "entry_composition",
-        "familyRefs": [],
+        "familyRefs": [
+          "button"
+        ],
         "owner": "Artifact discussion"
       },
       "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#class:ArtifactCommentBody": {
@@ -56796,11 +56814,6 @@
         "familyRefs": [],
         "owner": "WP-ART3"
       },
-      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#function:showArtifactDashboardFilter": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "WP-ART3"
-      },
       "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#method:ArtifactDashboardFilter.createState": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -56817,11 +56830,6 @@
         "owner": "WP-ART3"
       },
       "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.build": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "WP-ART3"
-      },
-      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.row": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-ART3"
@@ -57867,6 +57875,415 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/attachment_previews.dart#function:filePreview": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "FilePreview presentation",
+        "reason": "Mounts the FilePreview artwork variants and extension labels in the SDK preview."
+      },
+      "packages/raft_ui/lib/src/raft/file_preview.dart#class:RaftFilePreview": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "FilePreview presentation",
+        "reason": "Owns the mounted document, code and media illustrations and extension label using generated FilePreview slots."
+      },
+      "packages/raft_ui/lib/src/raft/file_preview.dart#local-function:CLASS:RaftFilePreview@425/METHOD:_code@3820/FUNCTION:glyph@3899": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "FilePreview presentation",
+        "reason": "Renders a punctuation mark in the authored FilePreview code illustration."
+      },
+      "packages/raft_ui/lib/src/raft/file_preview.dart#method:RaftFilePreview._code": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "FilePreview presentation",
+        "reason": "Composes the code illustration from the FilePreview recipe rows and marks."
+      },
+      "packages/raft_ui/lib/src/raft/file_preview.dart#method:RaftFilePreview._document": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "FilePreview presentation",
+        "reason": "Composes the FilePreview document illustration from the source line layout and theme ink."
+      },
+      "packages/raft_ui/lib/src/raft/file_preview.dart#method:RaftFilePreview.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "FilePreview presentation",
+        "reason": "Resolves the FilePreview slots and mounts the artwork and optional extension label."
+      },
+      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.compactSlots": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion",
+        "reason": "Binds the generated Composer slots used by compact Artifact comments."
+      },
+      "packages/raft_ui/lib/src/announcement_markdown.dart#local-function:CLASS:_MarkdownBlocks@5459/METHOD:blocks@5957/FUNCTION:flushInline@6184": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Shared Markdown renderer",
+        "reason": "Flushes inline spans into the current block during native Markdown rendering."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#class:_DropdownMenuMark": {
+        "role": "internal_part",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "DropdownMenu",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/design_primitives.dart#class:RaftMenuItem"
+        ],
+        "reason": "The canonical menu row renders the raft-ui submenu chevron and checked radio indicator in its indicator slot."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#class:_DropdownMenuMarkPainter": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "DropdownMenu",
+        "reason": "Paints the two published indicator paths inside the private DropdownMenu mark."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:_DropdownMenuMark.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "DropdownMenu",
+        "reason": "Bounds the indicator painter to the resolved DropdownMenu slot and uses the slot foreground."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroup.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "FitToolbar",
+        "reason": "Composes the FitToolbar scrolling group and its optional pinned action."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:RaftHorizontalScrollFade": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "FitToolbar",
+        "reason": "Shares the Web horizontal overflow fade between the FitToolbar and the Artifacts filter strip."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftHorizontalScrollFade.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "FitToolbar",
+        "reason": "Owns scroll edge visibility for the mounted filter strip."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_RaftHorizontalScrollFadeState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "FitToolbar",
+        "reason": "Tracks the remaining scroll extent in the mounted horizontal strip."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_RaftHorizontalScrollFadeState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "FitToolbar",
+        "reason": "Paints the horizontal scroll fade while either edge hides content."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#local-function:CLASS:RaftInboxItemSkeleton@27254/METHOD:build@27403/FUNCTION:line@28599": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Inbox item",
+        "reason": "Paints the loading skeleton lines within RaftInboxItemSkeleton."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#local-function:CLASS:_RaftInboxItemState@5716/METHOD:build@8113/FUNCTION:content@9319": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Inbox item",
+        "reason": "Composes the main content slots of the mounted Inbox item."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#method:_ArtifactCommentComposerState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Applies each Viewer display report once to the existing comment draft."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#method:_ArtifactCommentComposerState._composerBox": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "Artifact discussion",
+        "reason": "Places the shared editor and actions in the generated Composer slots for Artifact comments at all widths."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#method:_ArtifactCommentComposerState._cancel": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#method:_ArtifactCommentComposerState._saveDraft": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#method:_ArtifactCommentComposerState._sendButton": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart#method:_ArtifactDashboardState.toolbar": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "segmented",
+          "picker_trigger",
+          "menu",
+          "button"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Composes the collection search input, anchored filters, sort dropdown and Grid/List switch."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#class:_ArtifactFilterOptions": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "combobox"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Owns the mounted combobox options, including query loading, retry and choice mapping."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#class:_ArtifactFilterOptionsState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "combobox"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Owns the mounted combobox options, including query loading, retry and choice mapping."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#method:_ArtifactFilterOptions.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "combobox"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Owns the mounted combobox options, including query loading, retry and choice mapping."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#method:_ArtifactFilterOptionsState._mark": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "combobox"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Renders the avatar or conversation glyph for an option in the collection combobox."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#method:_ArtifactFilterOptionsState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "combobox",
+          "button"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Owns the mounted combobox options, including query loading, retry and choice mapping."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#class:_ArtifactExcerpt": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Renders Markdown thumbnail blocks and spans using the shared Artifact excerpt type scale."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#class:_ArtifactTileCover": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Renders the cover slot of a mounted collection Grid tile and owns async content resolution."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#class:_ArtifactTileCoverState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Renders the cover slot of a mounted collection Grid tile and owns async content resolution."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.author": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Renders collection item metadata in the relevant Grid and List slots."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.mono": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Renders collection item metadata in the relevant Grid and List slots."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.phoneRow": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Composes a compact collection List item through RaftInboxItem with the open action, scope and metadata."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.tableHeader": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Composes a column-aligned desktop collection List header or item."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.tableRow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Composes a column-aligned desktop collection List header or item."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:_ArtifactExcerpt.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Renders Markdown thumbnail blocks and spans using the shared Artifact excerpt type scale."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:_ArtifactTileCover.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Renders the cover slot of a mounted collection Grid tile and owns async content resolution."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:_ArtifactTileCoverState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Renders the cover slot of a mounted collection Grid tile and owns async content resolution."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@2164/FUNCTION:viewer@2360": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Builds ArtifactWorkspaceViewer for both the compact preview route and wide dialog route."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._deleteArtifact": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Mounts the shared destructive confirmation from the Viewer overflow."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._openReportSheet": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Mounts the existing comments panel in the Drawer on compact layouts. The Drawer family has no canonical binding in the registry yet."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._changeVisibility": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Dispatches the Viewer visibility action to the management flow or shows a toast if a direct move fails."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._collectionMeta": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Composes the scope chip and original-message link in the collection Viewer header."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:_RaftDropdownMenuState.menuItem": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu",
+          "popover"
+        ],
+        "owner": "DropdownMenu",
+        "reason": "Composes a canonical DropdownMenu row with its selection and optional submenu."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_scope_chip.dart#class:ArtifactScopeChip": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Renders the scope badge and opens the audience or visibility menu when the mounted chip is interactive."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_scope_chip.dart#method:ArtifactScopeChip.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Renders the scope badge and opens the audience or visibility menu when the mounted chip is interactive."
+      },
+      "packages/raft_ui/lib/src/markdown_document.dart#class:RaftMarkdownDocument": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Shared Markdown renderer",
+        "reason": "Composes the native Markdown scroll area and width-dependent paper frame for the Artifact content reader."
+      },
+      "packages/raft_ui/lib/src/markdown_document.dart#method:RaftMarkdownDocument.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Shared Markdown renderer",
+        "reason": "Composes the native Markdown scroll area and width-dependent paper frame for the Artifact content reader."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69034/METHOD:build@77350/FUNCTION:toggle@77580": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu",
+          "popover"
+        ],
+        "owner": "DropdownMenu",
+        "reason": "Toggles the canonical anchored menu from its mounted trigger."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71049/METHOD:build@80306/FUNCTION:toggle@80536": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu",
+          "popover"
+        ],
+        "owner": "DropdownMenu",
+        "reason": "Toggles the anchored dropdown or submenu from its mounted trigger and keeps a mouse-opened submenu active on click."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelAction._currentAction": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header"
+        ],
+        "owner": "PanelHeader",
+        "reason": "Paints the mounted header action using the resolved PanelAction slot."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#function:raftPanelHeaderEdges": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header"
+        ],
+        "owner": "PanelHeader",
+        "reason": "Resolves the PanelAction icon inset so the Back artwork lines up with a host column margin."
+      },
+      "packages/raft_ui/lib/src/artifact_collection_layout.dart#method:RaftArtifactCollectionLayout.headerCount": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Renders the phone Artifacts header count with the shared caption and mono digits."
+      },
+      "packages/raft_ui/lib/src/artifact_collection_layout.dart#method:RaftArtifactCollectionLayout.versionBadge": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3",
+        "reason": "Aligns a collection Grid version badge on the inherited inline baseline using its shared Badge recipe."
       }
     },
     "entries": {
@@ -61611,15 +62028,6 @@
         "mountStatus": "source_reviewed",
         "reason": "Action-card intent dispatch, shared dialog placement or browser handoff. Visual acceptance is pending."
       },
-      "surface:art3.function:showArtifactDashboardFilter": {
-        "owner": "WP-ART3",
-        "kind": "route_or_panel_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#function:showArtifactDashboardFilter"
-        ],
-        "mountStatus": "source_reviewed",
-        "reason": "Artifact dashboard, viewer controls or public page. Visual acceptance is tracked separately."
-      },
       "surface:art3.function:showArtifactForwardDialog": {
         "owner": "WP-ART3",
         "kind": "route_or_panel_candidate",
@@ -61678,9 +62086,11 @@
         "owner": "WP-ART3",
         "kind": "route_or_panel_candidate",
         "lifecycleScreenId": "artifact.dashboard",
-        "declarationRefs": [],
-        "mountStatus": "unresolved",
-        "reason": "Dashboard uses canonical inputs, cards, list rows, dialogs and buttons. Per-state visual evidence is tracked separately."
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart#class:ArtifactDashboard"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The server Artifacts route mounts the collection toolbar, display-mode switch and the responsive Grid or List."
       },
       "screen:artifact.public": {
         "owner": "WP-ART3",
@@ -61695,10 +62105,11 @@
         "kind": "route_or_panel_candidate",
         "lifecycleScreenId": "artifact.dashboard-filter",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#class:ArtifactDashboardFilter"
+          "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#class:ArtifactDashboardFilter",
+          "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#class:_ArtifactFilterOptions"
         ],
         "mountStatus": "source_reviewed",
-        "reason": "Mounted from the dashboard as a shared dialog."
+        "reason": "The collection toolbar mounts an anchored conversation or author combobox. Its popup owns option loading, empty search, retry and selection."
       },
       "screen:artifact.manage": {
         "owner": "WP-ART3",
@@ -61876,6 +62287,52 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "WorkspaceView mounts the same unavailable state after a failed external message landing under its current authority."
+      },
+      "screen:artifact.delete": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "artifact.delete",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._deleteArtifact"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The Viewer overflow mounts a shared destructive confirmation with pending and refusal states."
+      },
+      "surface:apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._openReportSheet": {
+        "owner": "WP-ART3",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._openReportSheet"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The compact Viewer opens the existing whole-Artifact composer in a Drawer."
+      },
+      "surface:apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._changeVisibility": {
+        "owner": "WP-ART3",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._changeVisibility"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Dispatches the Viewer visibility action to the management flow or shows a toast if a direct move fails."
+      },
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69034/METHOD:build@77350/FUNCTION:toggle@77580": {
+        "owner": "DropdownMenu",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69034/METHOD:build@77350/FUNCTION:toggle@77580"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Toggles the canonical anchored menu from its mounted trigger."
+      },
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71049/METHOD:build@80306/FUNCTION:toggle@80536": {
+        "owner": "DropdownMenu",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71049/METHOD:build@80306/FUNCTION:toggle@80536"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Toggles the anchored dropdown or submenu from its mounted trigger and keeps a mouse-opened submenu active on click."
       }
     },
     "requirements": {
@@ -67495,6 +67952,91 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/composer_recipe.dart#method:RaftComposerRecipe.compactSlots|state:has:focus-visible": {
+        "applicability": "required",
+        "owner": "Artifact discussion",
+        "reason": "The compact comment frame shows the Composer focus ring while its editor has focus."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart#method:_ArtifactDashboardState.toolbar|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "WP-ART3",
+        "reason": "Resolves the TasksPanel toolbar and SegmentedControl track in the mounted collection toolbar."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.tableHeader|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "WP-ART3",
+        "reason": "Resolves responsive Table head typography and insets for the desktop collection List."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.tableRow|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "WP-ART3",
+        "reason": "Resolves responsive Table cell insets for the desktop collection List."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:_RaftMenuItemState.build|state:data-popup-open": {
+        "applicability": "required",
+        "owner": "DropdownMenu",
+        "reason": "Paints the canonical submenu trigger while its nested popup is open."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelAction._currentAction|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "required",
+        "owner": "PanelHeader",
+        "reason": "Applies the disabled recipe state to a mounted action without an activation callback."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelAction._currentAction|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "applicability": "required",
+        "owner": "PanelHeader",
+        "reason": "Shows the source keyboard focus treatment on the mounted action."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelAction._currentAction|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "required",
+        "owner": "PanelHeader",
+        "reason": "Paints the pointer-hover fill on the mounted action."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelAction._currentAction|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "required",
+        "owner": "PanelHeader",
+        "reason": "Paints the active fill while the mounted action is pressed."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelAction._currentAction|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "PanelHeader",
+        "reason": "Resolves the source bar-button extent and pointer-fine icon inset."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#function:raftPanelHeaderEdges|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "PanelHeader",
+        "reason": "Uses the same responsive button and icon geometry as the rendered PanelAction."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "applicability": "unknown",
+        "owner": "WP-ART3",
+        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "WP-ART3",
+        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "unknown",
+        "owner": "WP-ART3",
+        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-ART3",
+        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:data-pressed": {
+        "applicability": "unknown",
+        "owner": "WP-ART3",
+        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+      },
+      "packages/raft_ui/lib/src/artifact_collection_layout.dart#method:RaftArtifactCollectionLayout.versionBadge|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "WP-ART3",
+        "reason": "Selects the same responsive Badge height as the mounted version badge."
       }
     },
     "evidence": {},

@@ -157,10 +157,12 @@ void main() {
         expect(find.byKey(const Key('artifact-table')), findsOneWidget);
         expect(find.byType(RaftPanelResizeHandle), findsNothing);
       } else {
+        expect(find.byKey(const Key('artifact-grid')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('artifacts-view-list')));
+        await tester.pumpAndSettle();
         expect(find.byKey(const Key('artifact-list')), findsOneWidget);
-        expect(find.text('Grid'), findsNothing);
       }
-      await tester.tap(find.text('By conversation'));
+      await tester.tap(find.byKey(const Key('artifacts-filter-conversation')));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const Key('artifact-dashboard-filter')),

@@ -159,27 +159,91 @@ class ArtifactFacts {
   final List<String> columnNames;
 }
 
+typedef ArtifactExcerptText = ({
+  String text,
+  bool bold,
+  bool italic,
+  bool code,
+});
+typedef ArtifactExcerptBlock = ({int heading, List<ArtifactExcerptText> spans});
+
+List<ArtifactExcerptBlock> _excerptBlocks(Object? value) {
+  if (value is! List || value.isEmpty || value.length > 16) return const [];
+  final result = <ArtifactExcerptBlock>[];
+  var length = 0;
+  var runs = 0;
+  for (final raw in value) {
+    final block = _map(raw);
+    final heading = block['type'] == 'heading' ? _int(block['level']) : 0;
+    if (block['type'] != 'paragraph' && (heading < 1 || heading > 6)) {
+      return const [];
+    }
+    final spans = block['spans'];
+    if (spans is! List || spans.isEmpty || (runs += spans.length) > 80) {
+      return const [];
+    }
+    final parts = <ArtifactExcerptText>[];
+    for (final raw in spans) {
+      final span = _map(raw);
+      final text = _string(span['text']);
+      if (text.isEmpty || (length += text.length) > 2048) return const [];
+      parts.add((
+        text: text,
+        bold: span['bold'] == true,
+        italic: span['italic'] == true,
+        code: span['code'] == true,
+      ));
+    }
+    result.add((heading: heading, spans: parts));
+  }
+  return result;
+}
+
 /// What a card shows of the Artifact (shared `ArtifactPreview`). A kind this
 /// client doesn't know is `none`.
 class ArtifactPreview {
-  const ArtifactPreview._(this.kind, {this.text = '', this.path = ''});
+  const ArtifactPreview._(
+    this.kind, {
+    this.text = '',
+    this.path = '',
+    this.blocks = const [],
+    this.desktopScreenshot,
+    this.phoneScreenshot,
+  });
   const ArtifactPreview.none() : this._('none');
 
   factory ArtifactPreview.fromJson(Object? json) {
     final map = _map(json);
     switch (map['kind']) {
       case 'excerpt' when map['text'] is String:
-        return ArtifactPreview._('excerpt', text: map['text'] as String);
+        return ArtifactPreview._(
+          'excerpt',
+          text: map['text'] as String,
+          blocks: _excerptBlocks(map['blocks']),
+        );
       case 'image' when map['path'] is String:
         return ArtifactPreview._('image', path: map['path'] as String);
+      case 'screenshot'
+          when map['desktop'] is String &&
+              (map['desktop'] as String).isNotEmpty:
+        return ArtifactPreview._(
+          'screenshot',
+          desktopScreenshot: map['desktop'] as String,
+          phoneScreenshot: _stringOrNull(map['phone']),
+        );
       default:
-        // `screenshot` covers come from core's object files; this client
-        // draws the card without a cover for them (see docs/parity.md).
         return const ArtifactPreview.none();
     }
   }
 
   final String kind, text, path;
+  final List<ArtifactExcerptBlock> blocks;
+  final String? desktopScreenshot, phoneScreenshot;
+
+  String? screenshot(bool compact) =>
+      compact && phoneScreenshot?.isNotEmpty == true
+      ? phoneScreenshot
+      : desktopScreenshot;
 }
 
 /// ArtifactCard `unseen`: others' changes past the reader's read position.

@@ -7,12 +7,12 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 851 (403 endpoint/network keys, 448 client-side).
+Total capabilities: 853 (404 endpoint/network keys, 449 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 722 |
-| ⚠️ partial | 30 |
+| ✅ covered | 723 |
+| ⚠️ partial | 31 |
 | ❌ missing | 2 |
 | ➖ na | 97 |
 

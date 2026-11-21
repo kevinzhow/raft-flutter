@@ -109,8 +109,14 @@ class _ArtifactDrawnContentState extends State<ArtifactDrawnContent> {
       );
     }
     final text = utf8.decode(bytes, allowMalformed: true);
-    final mono = RaftTypography.mono(t, size: 13, line: 20);
+    if (widget.kind == ArtifactKind.markdown) {
+      return RaftMarkdownDocument(
+        text,
+        scrollKey: const ValueKey('artifact-viewer-markdown'),
+      );
+    }
     if (widget.kind == ArtifactKind.csv) {
+      final mono = RaftTypography.mono(t, size: 13, line: 20);
       final rows = artifactCsvRows(text);
       if (rows.isEmpty) return noPreview();
       final head = rows.first, body = rows.skip(1).toList();
@@ -167,9 +173,11 @@ class _ArtifactDrawnContentState extends State<ArtifactDrawnContent> {
       child: SingleChildScrollView(
         key: const ValueKey('artifact-viewer-text'),
         padding: const EdgeInsets.all(RaftSpace.x4),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Text(lines.join('\n'), style: mono),
+        child: RaftSelectionArea(
+          child: RaftCssText(
+            lines.join('\n'),
+            style: t.scale(t.typeSlot('footnote'), mono: true),
+          ),
         ),
       ),
     );

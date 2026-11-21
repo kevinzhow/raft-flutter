@@ -97,6 +97,15 @@ restores the pinned properties above the conversation. The task's own
 Back or close affordance still returns to the originating surface.
 Legacy tasks and tasks without loaded properties have no details toggle.
 
+### Compact Artifact comment composer
+
+The compact comment box houses Add image, Save draft and Send. Add image opens
+the image picker and returns to the same composer with the words intact and
+the selected image shown. Save draft stores the comment privately in the
+current Artifact review. Send posts to the current Artifact discussion and
+shows the comment there. The comment capability gates the box, and Save draft
+requires a loaded review. Closing the comments returns to the Viewer.
+
 ### Adding a container
 
 1. Build it, passing every handler it has (`null` where it has none).

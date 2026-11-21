@@ -8,8 +8,11 @@ import 'package:flutter/services.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'menu_action_row.dart' show RaftMenuItemSurface;
+import 'popover_surface.dart' show RaftPopoverSurface;
 import 'recipe_surface.dart';
 import 'recipes/combobox.g.dart';
+import 'space.dart';
 import 'theme.dart';
 
 /// Drives a [RaftComboboxPanel] whose search input lives elsewhere (the field
@@ -34,6 +37,8 @@ class RaftComboboxItem {
     this.label, {
     this.description,
     this.hint,
+    this.leading,
+    this.leadingGap,
     this.keywords,
     this.group,
     this.enabled = true,
@@ -51,6 +56,10 @@ class RaftComboboxItem {
   /// Second line that only helps the eye (the stored id of a named option).
   /// Shown when there is no [description]; not part of the name.
   final String? hint;
+  final Widget? leading;
+
+  /// The gap within a label that includes a leading mark.
+  final double? leadingGap;
 
   /// Extra searchable text (the option's stored value).
   final String? keywords;
@@ -90,6 +99,13 @@ bool raftComboboxItemMatches(RaftComboboxItem item, String query) {
 /// descriptions and disabled rows, matched word by word
 /// ([raftComboboxItemMatches]), and can offer the typed text as a custom value.
 class RaftComboboxPanel extends StatefulWidget {
+  /// The width of the Web conversation and author filter popup.
+  static const filterWidth = 320.0;
+
+  /// Filter popups keep a one-rem gutter even when their width is capped.
+  static double filterWidthForViewport(double viewportWidth) =>
+      (viewportWidth - RaftSpace.x4 * 2).clamp(0.0, filterWidth).toDouble();
+
   const RaftComboboxPanel({
     super.key,
     required this.label,
@@ -104,6 +120,11 @@ class RaftComboboxPanel extends StatefulWidget {
        onCustom = null,
        currentId = null,
        autofocus = false,
+       highlightFirst = false,
+       filterLocally = true,
+       separateGroups = false,
+       input = null,
+       footer = null,
        controller = null;
 
   const RaftComboboxPanel.items({
@@ -116,6 +137,11 @@ class RaftComboboxPanel extends StatefulWidget {
     this.onCustom,
     this.currentId,
     this.autofocus = false,
+    this.highlightFirst = false,
+    this.filterLocally = true,
+    this.separateGroups = false,
+    this.input,
+    this.footer,
     this.enabled = true,
     this.controller,
     this.emptyLabel = 'No results',
@@ -125,7 +151,7 @@ class RaftComboboxPanel extends StatefulWidget {
   final String label;
 
   /// The catalog text shown when no row matches the typed query.
-  final String emptyLabel;
+  final String? emptyLabel;
   final Map<String, String> options;
   final List<RaftComboboxItem>? items;
   final ValueChanged<String> onSelected;
@@ -141,6 +167,19 @@ class RaftComboboxPanel extends StatefulWidget {
   /// The row that is the field's current value (not offered as custom text).
   final String? currentId;
   final bool autofocus;
+
+  /// Whether Enter commits the first enabled row as soon as results appear.
+  final bool highlightFirst;
+
+  /// Disable local matching when the results already come from a search API.
+  final bool filterLocally;
+
+  /// Draw the Combobox separator between consecutive named groups.
+  final bool separateGroups;
+
+  /// The caller's input in the existing ComboboxInputGroup recipe.
+  final Widget? input;
+  final Widget? footer;
 
   /// The search input is the host's: no header and no search box, only the
   /// rows, filtered by `controller.query`.
@@ -217,7 +256,9 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
   List<RaftComboboxItem> get _rows {
     final text = query.text.trim();
     final all = _all;
-    final matches = widget.items == null
+    final matches = !widget.filterLocally
+        ? all
+        : widget.items == null
         ? all
               .where(
                 (item) => item.label.toLowerCase().contains(text.toLowerCase()),
@@ -237,11 +278,17 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
     ];
   }
 
+  int activeIndex(List<RaftComboboxItem> choices) =>
+      highlighted < 0 && widget.highlightFirst
+      ? choices.indexWhere((row) => row.enabled)
+      : highlighted;
+
   KeyEventResult navigate(FocusNode _, KeyEvent event) {
     if (event is! KeyDownEvent || !widget.enabled) {
       return KeyEventResult.ignored;
     }
     final choices = _rows;
+    final active = activeIndex(choices);
     if (event.logicalKey == LogicalKeyboardKey.escape) {
       widget.onDismiss();
     } else if (choices.any((row) => row.enabled) &&
@@ -249,9 +296,9 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
             event.logicalKey == LogicalKeyboardKey.arrowUp)) {
       setState(() {
         final down = event.logicalKey == LogicalKeyboardKey.arrowDown;
-        var next = highlighted < 0
+        var next = active < 0
             ? (down ? 0 : choices.length - 1)
-            : (highlighted + (down ? 1 : -1)) % choices.length;
+            : (active + (down ? 1 : -1)) % choices.length;
         // Disabled rows are listed but never highlighted.
         while (!choices[next].enabled) {
           next = (next + (down ? 1 : -1)) % choices.length;
@@ -264,10 +311,10 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
         if (mounted && target != null) Scrollable.ensureVisible(target);
       });
     } else if (event.logicalKey == LogicalKeyboardKey.enter &&
-        highlighted >= 0 &&
-        highlighted < choices.length &&
-        choices[highlighted].enabled) {
-      choose(choices[highlighted].id);
+        active >= 0 &&
+        active < choices.length &&
+        choices[active].enabled) {
+      choose(choices[active].id);
     } else {
       return KeyEventResult.ignored;
     }
@@ -288,14 +335,15 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
     final base = RaftTypography.body(t, size: 14, line: 20);
     final input = r.input.text(tokens, base: base);
     final choices = _rows;
+    final active = activeIndex(choices);
+    final emptyLabel = widget.emptyLabel;
     return DefaultTextStyle(
       style: base,
       child: Focus(
         canRequestFocus: false,
         onKeyEvent: navigate,
-        child: RaftRecipeBox(
-          style: r.content,
-          tokens: tokens,
+        child: RaftPopoverSurface(
+          surfaceStyle: r.content,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -343,6 +391,14 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                     ),
                   ),
                 ),
+              if (widget.input case final input?)
+                RaftRecipeBox(
+                  style: r.inputGroup,
+                  tokens: tokens,
+                  declareSurface: widget.separateGroups,
+                  alignment: Alignment.centerLeft,
+                  child: input,
+                ),
               Flexible(
                 child: RaftRecipeBox(
                   style: r.list,
@@ -359,9 +415,19 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                           for (var i = 0; i < choices.length; i++) ...[
                             if (choices[i].group != null &&
                                 (i == 0 ||
-                                    choices[i - 1].group != choices[i].group))
-                              RaftComboboxGroupLabel(choices[i].group!)
-                            else if (i > 0 && (r.list.rowGap ?? 0) > 0)
+                                    choices[i - 1].group !=
+                                        choices[i].group)) ...[
+                              if (widget.separateGroups &&
+                                  i > 0 &&
+                                  choices[i - 1].group != null)
+                                RaftMenuItemSurface(
+                                  style: r.separator,
+                                  tokens: tokens,
+                                  applyText: false,
+                                  child: const SizedBox.shrink(),
+                                ),
+                              RaftComboboxGroupLabel(choices[i].group!),
+                            ] else if (i > 0 && (r.list.rowGap ?? 0) > 0)
                               SizedBox(height: r.list.rowGap),
                             RaftInteractive(
                               key: optionKeys.putIfAbsent(
@@ -389,7 +455,7 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                     extra: {
                                       if (!enabled) 'data-disabled',
                                       if (selected) 'data-selected',
-                                      if (i == highlighted && enabled)
+                                      if (i == active && enabled)
                                         'data-highlighted',
                                       if (i == choices.length - 1) 'last-child',
                                     },
@@ -402,11 +468,21 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                     (choices[i].hint != choices[i].label
                                         ? choices[i].hint
                                         : null);
-                                final row = RaftRecipeBox(
+                                final row = RaftMenuItemSurface(
                                   style: item,
                                   tokens: tokens,
                                   child: Row(
                                     children: [
+                                      if (choices[i].leading
+                                          case final leading?) ...[
+                                        leading,
+                                        SizedBox(
+                                          width:
+                                              choices[i].leadingGap ??
+                                              item.columnGap ??
+                                              8,
+                                        ),
+                                      ],
                                       if (widget.glyph != null)
                                         SizedBox.square(
                                           dimension: 20,
@@ -489,12 +565,12 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                               },
                             ),
                           ],
-                          if (choices.isEmpty)
+                          if (choices.isEmpty && emptyLabel != null)
                             RaftRecipeBox(
                               style: r.empty,
                               tokens: tokens,
                               child: Text(
-                                raftText(context, widget.emptyLabel),
+                                raftText(context, emptyLabel),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -504,6 +580,7 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                   ),
                 ),
               ),
+              ?widget.footer,
             ],
           ),
         ),

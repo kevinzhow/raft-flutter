@@ -144,6 +144,7 @@ class RaftBadge extends StatelessWidget {
     this.leading,
     this.trailing,
     this.glyph,
+    this.glyphSize,
     this.onPressed,
     this.disabled = false,
     this.foreground,
@@ -169,6 +170,9 @@ class RaftBadge extends StatelessWidget {
 
   /// A Lucide glyph before the label (`[&_svg]:size-3.5`, 13px in the solid appearance).
   final RaftGlyph? glyph;
+
+  /// A caller's authored size for the leading glyph.
+  final double? glyphSize;
 
   /// Rendered as a `<button>` (`render={<button/>}`): enables the hover overlay.
   final VoidCallback? onPressed;
@@ -274,7 +278,7 @@ class RaftBadge extends StatelessWidget {
       );
     }
     style = RaftControlTypography.of(context, style);
-    final iconSize = solid ? 13.0 : 14.0;
+    final iconSize = glyphSize ?? (solid ? 13.0 : 14.0);
     final baselineShift = raftBaselineShift(
       mono ? RaftFontMetrics.spaceMono : RaftFontMetrics.spaceGrotesk,
       12,
