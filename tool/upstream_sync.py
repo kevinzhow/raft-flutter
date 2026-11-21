@@ -1716,6 +1716,53 @@ def build_decisions(report: dict) -> list[dict]:
     return rows
 
 
+def collect_unlisted_modifications(repo: Path, files: list[FileChange], report: dict) -> list[dict]:
+    """In-place edits without a mapped counterpart or a file-specific review item."""
+    feature_ids = {id_ for row in report["decisions"] if row["kind"] == "feature" for id_ in row["ids"]}
+    listed = {row["path"] for row in report["web_ui"]["files"] if row["cp"]["files"] or row["id"] in feature_ids}
+    for move in report["moves"]:
+        listed.add(move["old"])
+        listed.update(target["path"] for target in move["targets"])
+    for kind in ("added", "removed", "changed_path_expr"):
+        listed.update(path for row in report["api"][kind] for path in row["files"])
+    listed.update("packages/web/src/" + path for row in report["capabilities_touched"] for path in row["files"])
+    fields = report["fields"]
+    for rows in (fields["changed"].values(), fields["added_types"], fields["removed_types"], report["wire_tags"]):
+        listed.update(row["file"] for row in rows)
+    listed.update(report["styles"]["css"])
+    listed.update(report["styles"]["theme_files"])
+    listed.update(row["path"].split("#")[0] for row in report["visual_layer"]["per_file"])
+    listed.update(f"packages/web/src/i18n/messages/{locale}.ts" for locale in ("en", "zh-cn"))
+
+    shared_prefix = "packages/shared/src/"
+    candidates = [
+        file for file in files
+        if file.status == "M" and not file.old_path and file.path not in listed
+        and file.path.startswith((shared_prefix, "packages/web/src/"))
+    ]
+    by_name = collections.defaultdict(list)
+    for file in candidates:
+        if file.path.startswith(shared_prefix):
+            by_name[Path(file.path).name].append(file.path)
+    references = collections.defaultdict(set)
+    if by_name:
+        names = "|".join(re.escape(name) for name in sorted(by_name))
+        source_ref = re.compile(rf"(?<![\w./-])((?:[\w.-]+/)*({names}))(?![\w/-]|\.[\w])")
+        for base in (repo / "apps", repo / "packages"):
+            for dart in _walk_files(base, (".dart",)):
+                if dart.name.endswith(".g.dart"):
+                    continue
+                text = dart.read_text(encoding="utf-8", errors="replace")
+                for reference, name in set(source_ref.findall(text)):
+                    for path in by_name[name]:
+                        if path == reference or path.endswith("/" + reference):
+                            references[path].add(dart.relative_to(repo).as_posix())
+    return [
+        {"path": file.path, "added": None if file.binary else file.added,
+         "removed": None if file.binary else file.removed, "dart_refs": sorted(references[file.path])}
+        for file in candidates
+    ]
+
 
 def generate_report(mirror: Path, repo: Path, a: str, b: str, work: Path, keep_trees: bool = False) -> dict:
     info_a, info_b = tag_info(mirror, a), tag_info(mirror, b)
@@ -1811,6 +1858,7 @@ def generate_report(mirror: Path, repo: Path, a: str, b: str, work: Path, keep_t
     report["behavior_drift"] = drift
     report["visual_layer"] = collect_visual_layer(repo, ix, ui_items, visual, shared_b)
     report["decisions"] = build_decisions(report)
+    report["unlisted_modifications"] = collect_unlisted_modifications(repo, files, report)
     report["i18n"].pop("_en_b", None)
     return report
 
@@ -2139,6 +2187,18 @@ def render_markdown(r: dict, limit_ui: int = 80) -> str:
     L.append(", ".join(f"`{x['path'].split('packages/web/src/')[-1]}` ({x['lines']})" for x in unmapped_big[:60]) or "none")
     L.append("")
     L.extend(render_moves(r.get("moves", [])))
+    unlisted = r.get("unlisted_modifications", [])
+    L.append(f"## Unlisted in-place modifications ({len(unlisted)})")
+    L.append("")
+    L.append("Shared and Web files changed at the same path without a mapped counterpart or a separate review item. "
+             "A Dart reference is a filename or path mention in source. Check whether the changed behavior reaches Flutter.")
+    L.append("")
+    L.append(_tbl(["Upstream path", "Lines", "Dart references (shared files)"], [
+        [f"`{row['path']}`", f"+{row['added']}/-{row['removed']}" if row["added"] is not None else "binary",
+         ", ".join(f"`{path}`" for path in row["dart_refs"]) or "-"]
+        for row in unlisted
+    ]) if unlisted else "None.")
+    L.append("")
     # ---- i18n
     L.append("## 文案对照 (i18n: en / zh-cn)")
     L.append("")
