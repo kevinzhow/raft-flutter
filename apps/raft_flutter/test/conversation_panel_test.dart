@@ -98,29 +98,28 @@ void main() {
         final taskReads = transport.calls
             .where((r) => r.path == '/tasks/channel/c1')
             .length;
+        // Web v1.24 switches these tabs by tap only (Kevin, #raft-flutter
+        // e99dbd89): a sideways drag on the chat is the time reveal's, so it
+        // never pages to Tasks, loads it or notifies.
         final drag = await t.startGesture(const Offset(360, 300));
         await drag.moveBy(const Offset(-20, 0));
         await t.pump();
         await drag.moveBy(const Offset(-250, 0));
-        for (var frame = 0; frame < 8; frame++) {
-          await t.pump(const Duration(milliseconds: 16));
-          expect(
-            t.widget<PageView>(find.byType(PageView)).controller!.page,
-            greaterThan(.5),
-          );
-          expect(w.location.chatTab, isNull);
-          expect(find.byType(RaftComposer), findsOneWidget);
-          expect(find.text('Public message'), findsOneWidget);
-          expect(chatBuilds, 0);
-          expect(notifications, 0);
-          expect(
-            transport.calls.where((r) => r.path == '/tasks/channel/c1'),
-            hasLength(taskReads),
-          );
-        }
+        await t.pump(const Duration(milliseconds: 16));
+        expect(
+          t.widget<PageView>(find.byType(PageView)).controller!.page,
+          0,
+        );
         await drag.up();
-        // Finish the page animation, then let the real async fixture request
-        // complete before settling its loading animation in the fake clock.
+        await t.pumpAndSettle();
+        expect(w.location.chatTab, isNull);
+        expect(chatBuilds, 0);
+        expect(notifications, 0);
+        expect(
+          transport.calls.where((r) => r.path == '/tasks/channel/c1'),
+          hasLength(taskReads),
+        );
+        await t.tap(find.descendant(of: tabs, matching: find.text('Tasks')));
         for (
           var frame = 0;
           frame < 100 && w.location.chatTab != 'tasks';
@@ -165,8 +164,8 @@ void main() {
           reason: 'Inactive/stale callbacks must remain inert.',
         );
         expect(w.navigation.entries.length, navigationLength);
-        // Cached chat is still laid out for reverse drags, but cannot send
-        // or mark read while the accepted section is Tasks.
+        // The retained chat cannot send or mark read while the accepted
+        // section is Tasks.
         expect(editor, findsNothing);
         expect(
           t
@@ -192,36 +191,10 @@ void main() {
         );
         expect(w.location.chatTab, 'files');
         expect(find.text('No files yet'), findsOneWidget);
-        // Return through the visited Tasks section, then drag the cached chat
-        // into view. No chat rebuild/layout activation occurs mid-gesture.
+        // Return through the visited Tasks section to the retained chat.
         await t.tap(find.descendant(of: tabs, matching: find.text('Tasks')));
         await t.pumpAndSettle();
-        chatBuilds = 0;
-        final back = await t.startGesture(const Offset(30, 300));
-        await back.moveBy(const Offset(20, 0));
-        await t.pump();
-        await back.moveBy(const Offset(250, 0));
-        for (var frame = 0; frame < 8; frame++) {
-          await t.pump(const Duration(milliseconds: 16));
-          expect(
-            t.widget<PageView>(find.byType(PageView)).controller!.page,
-            lessThan(.5),
-          );
-          expect(w.location.chatTab, 'tasks');
-          expect(find.text('Public message'), findsOneWidget);
-          expect(chatBuilds, 0);
-          final chip = t.widget<RaftMountedMessageTaskChip>(
-            find.byKey(const ValueKey('message-task-m1')),
-          );
-          expect(chip.onOpen, isNotNull);
-          chip.onOpen!();
-          expect(taskOpens, 0);
-          expect(
-            t.widget<RaftComposer>(find.byType(RaftComposer)).enabled,
-            false,
-          );
-        }
-        await back.up();
+        await t.tap(find.descendant(of: tabs, matching: find.text('Chat')));
         await t.pumpAndSettle();
         expect(w.location.chatTab, isNull);
         expect(t.widget<RaftComposer>(find.byType(RaftComposer)).enabled, true);
