@@ -332,6 +332,13 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface(
+    'filePreview',
+    'File preview',
+    filePreview,
+    Size(240, 120),
+    representative: true,
+  ),
+  AuditSurface(
     'attachmentPreview',
     'Attachment',
     attachmentPreview,
