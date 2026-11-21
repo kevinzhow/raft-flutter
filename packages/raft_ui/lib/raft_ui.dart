@@ -51,6 +51,7 @@ export 'src/font_warm_up.dart';
 export 'src/idle_work.dart';
 export 'src/lru_cache.dart';
 export 'src/message_reference_chip.dart';
+export 'src/comment_card.dart';
 export 'src/action_card.dart';
 export 'src/message_export.dart';
 export 'src/forwarded_bundle.dart';
@@ -112,6 +113,8 @@ export 'src/recipes/button_variants.g.dart'
 
 export 'src/icons.dart';
 export 'src/recipes/choice_list.g.dart' show RaftChoiceListRecipe;
+export 'src/recipes/panel_toggle_action.g.dart'
+    show RaftPanelToggleActionRecipe;
 export 'src/brand.dart';
 export 'src/auth_account_link.dart';
 export 'src/auth_legal_page.dart';
@@ -281,6 +284,7 @@ export 'src/task_head_editor.dart';
 export 'src/task_conversation_parts.dart';
 
 export 'src/popover_surface.dart';
+export 'src/recipes/popover.g.dart' show RaftPopoverRecipe;
 export 'src/conversation_finder.dart';
 export 'src/reduced_motion.dart';
 export 'src/split_pane.dart';

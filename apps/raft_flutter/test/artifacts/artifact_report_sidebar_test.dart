@@ -76,7 +76,7 @@ void main() {
 
         final toggle = find.byKey(const Key('artifact-comments-trigger'));
         final idle = tester.widget<RaftButton>(toggle);
-        expect(idle.semanticLabel, 'Comments');
+        expect(idle.semanticLabel, 'Comments (0)');
         expect(idle.toggled, isNot(true));
 
         await tester.tap(
@@ -94,6 +94,9 @@ void main() {
 
         final panelLeft = tester.getRect(panel).left;
         final toggleBounds = tester.getRect(toggle);
+        // The dashboard's own 20px column margin stays in effect when the
+        // Viewer uses the 28px desktop PanelToggleAction box.
+        expect(toggleBounds, const Rect.fromLTRB(1173, 51.5, 1201, 79.5));
         final boundary = tester.renderObject<RenderRepaintBoundary>(
           find.byKey(boundaryKey),
         );
@@ -126,7 +129,7 @@ void main() {
         }))!;
 
         final active = tester.widget<RaftButton>(toggle);
-        expect(active.semanticLabel, 'Close comments');
+        expect(active.semanticLabel, 'Comments (0)');
         // Pinned Web 1.24 paints x940 before the 339px panel content and fills
         // the pressed button with --accent. Reading the raster catches a border
         // occluded by the opaque Comments panel even when its widget is present.
@@ -208,7 +211,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(panel, findsNothing);
         final closed = tester.widget<RaftButton>(toggle);
-        expect(closed.semanticLabel, 'Comments');
+        expect(closed.semanticLabel, 'Comments (0)');
         expect(closed.toggled, isNot(true));
         expect(closed.focusNode!.hasFocus, isTrue);
         expect(

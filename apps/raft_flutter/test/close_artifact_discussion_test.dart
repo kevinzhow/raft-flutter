@@ -29,7 +29,7 @@ void main() {
       await tester.pumpAndSettle();
       return SurfaceProbe(
         isOpen: () => find
-            .byKey(const ValueKey('artifact-review-discard-dialog'))
+            .byKey(const ValueKey('artifact-review-discard-popover'))
             .evaluate()
             .isNotEmpty,
         back: find.text('Cancel'),
@@ -105,6 +105,11 @@ Future<SurfaceProbe> _openPanel(
       ),
     ),
   );
+  if (withDraft) {
+    return SurfaceProbe(
+      isOpen: () => find.text('Discard all').evaluate().isNotEmpty,
+    );
+  }
   await tester.tap(find.byKey(const ValueKey('artifact-comments-trigger')));
   await tester.pumpAndSettle();
   return SurfaceProbe(

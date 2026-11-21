@@ -15,7 +15,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart' show RaftPanelToggleActionRecipe;
+import 'package:raft_ui/recipes.dart' show CssNum;
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart'
     show WebViewPlatform;
 
@@ -38,6 +38,7 @@ import 'artifact_frame_view.dart';
 import 'artifact_manage_dialogs.dart';
 import 'artifact_models.dart';
 import 'artifact_open_in_browser.dart';
+import 'artifact_review_batch_bar.dart';
 import 'artifact_review_store.dart';
 import 'artifact_scope_chip.dart';
 import 'artifact_session.dart';
@@ -88,7 +89,7 @@ enum _Panel { none, files, versions, comments }
 
 /// The files / versions panel beside the content on wide windows.
 const _sidePanelWidth = 320.0;
-const _displayReportPanelWidth = 340.0;
+const _commentsPanelWidth = 340.0;
 const _headerActionsMinWidth = 440;
 // Web ArtifactMetaRow reserves the presence row from the first paint.
 const _collectionMetaMinHeight = 27.0;
@@ -102,6 +103,7 @@ class ArtifactWorkspaceViewer extends StatefulWidget {
     required this.onClose,
     this.seed,
     this.inCollection = false,
+    this.columnMargin,
     this.onDeleted,
     this.webViewBuilder,
     this.save,
@@ -109,6 +111,7 @@ class ArtifactWorkspaceViewer extends StatefulWidget {
     this.operatingSystem,
     this.voiceOver,
     this.hostScript,
+    this.commentClock,
   });
 
   final ArtifactSession session;
@@ -118,6 +121,9 @@ class ArtifactWorkspaceViewer extends StatefulWidget {
   /// the viewer route answers.
   final ArtifactCard? seed;
   final bool page, inCollection;
+
+  /// The host column's header inset, inherited by the Viewer on Web.
+  final double? columnMargin;
   final VoidCallback onClose;
   final VoidCallback? onDeleted;
 
@@ -128,6 +134,7 @@ class ArtifactWorkspaceViewer extends StatefulWidget {
   final String? operatingSystem;
   final ValueListenable<bool>? voiceOver;
   final Future<String> Function()? hostScript;
+  final DateTime Function()? commentClock;
 
   @override
   State<ArtifactWorkspaceViewer> createState() =>
@@ -164,9 +171,16 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   ArtifactReviewStore? review;
   final commentsFocus = FocusNode();
   final moreFocus = FocusNode();
+  final _reviewComposers = <Object, ArtifactReviewComposerState>{};
+  final _reviewComposerState = ValueNotifier<ArtifactReviewComposerState>((
+    engaged: false,
+    editingDraft: false,
+  ));
   final reportArea = GlobalKey();
   ArtifactCommentInsert? report;
   RaftPresentedRoute<void>? reportSheet;
+  RaftPresentedRoute<void>? _regularCommentsRoute;
+  ({bool fromMore, String? filePath})? _commentsIntent;
   bool confirmingDelete = false;
   bool discussionLanding = false;
 
@@ -180,7 +194,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       w,
       shown.id,
       reviewId: widget.target.reviewId,
-    );
+    )..addListener(_discussionScopeChanged);
     if (data!.capabilities.comment) review = ArtifactReviewStore(discussion!);
     if (widget.target.commentId != null || widget.target.reviewId != null) {
       panel = _Panel.comments;
@@ -195,6 +209,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         _mountDiscussion();
       } else {
         if (panel == _Panel.comments) panel = _Panel.none;
+        _commentsIntent = null;
         report = null;
         _removeReportSheet();
         review?.dispose();
@@ -205,28 +220,155 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     });
   }
 
+  void _discussionScopeChanged() {
+    if (!mounted ||
+        discussion?.current != false ||
+        panel != _Panel.comments ||
+        report != null) {
+      return;
+    }
+    setState(() {
+      panel = _Panel.none;
+      discussionLanding = false;
+      _commentsIntent = null;
+    });
+  }
+
+  bool get _regularCommentsOpen =>
+      panel == _Panel.comments &&
+      report == null &&
+      current &&
+      discussion?.current == true;
+
+  void _syncRegularCommentsRoute() {
+    if (!mounted) return;
+    final needsSheet =
+        _regularCommentsOpen && RaftAdaptiveWorkspace.compactOf(context);
+    if (!needsSheet) {
+      _removeRegularCommentsRoute();
+    } else if (_regularCommentsRoute == null) {
+      unawaited(_presentRegularComments());
+    }
+  }
+
+  void _removeRegularCommentsRoute() {
+    final route = _regularCommentsRoute;
+    _regularCommentsRoute = null;
+    if (route != null && route.isActive) route.navigator?.removeRoute(route);
+  }
+
+  Future<void> _presentRegularComments() async {
+    final store = discussion!;
+    final route = raftPresentedRoute<void>(
+      context,
+      policy: const RaftPresentationPolicy(
+        compact: RaftSurfaceForm.sheet,
+        medium: RaftSurfaceForm.sheet,
+        wide: RaftSurfaceForm.sheet,
+      ),
+      label: raftText(context, 'Comments'),
+      sheetFillsHeight: true,
+      sheetFixedHeight: (context) =>
+          MediaQuery.sizeOf(context).height * .7 +
+          RaftSheetMetrics.handleBox(RaftTokens.of(context)),
+      dragDismissible: RaftInteraction.of(context).touch,
+      content: (context, _) => ListenableBuilder(
+        listenable: store,
+        builder: (context, _) => current && store.current
+            ? RaftSheet.fixed(
+                child: _commentsPanel(
+                  data!,
+                  onClose: () => Navigator.of(context).maybePop(),
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+    _regularCommentsRoute = route;
+    await Navigator.of(context, rootNavigator: true).push(route);
+    await route.completed;
+    if (!mounted || !identical(_regularCommentsRoute, route)) return;
+    _regularCommentsRoute = null;
+    _closeComments();
+  }
+
   void _closeComments() {
+    final fromMore = _commentsIntent?.fromMore ?? false;
     setState(() {
       discussionLanding = false;
       panel = _Panel.none;
+      _commentsIntent = null;
       report = null;
     });
-    if (widget.inCollection && commentsFocus.parent == null) {
+    _focusCommentsEntry(fromMore: fromMore);
+  }
+
+  void _focusCommentsEntry({bool fromMore = false}) {
+    if (fromMore || commentsFocus.parent == null) {
       moreFocus.requestFocus();
     } else {
       commentsFocus.requestFocus();
     }
   }
 
-  void _toggleComments() {
+  void _reviewComposerChanged(
+    Object owner,
+    ArtifactReviewComposerState? state,
+  ) {
+    if (!mounted) return;
+    if (state == null) {
+      _reviewComposers.remove(owner);
+    } else {
+      _reviewComposers[owner] = state;
+    }
+    final composers = _reviewComposers.values;
+    _reviewComposerState.value = (
+      engaged: composers.any((composer) => composer.engaged),
+      editingDraft: composers.any((composer) => composer.editingDraft),
+    );
+  }
+
+  void _showSentDrafts() {
+    if (!current || discussion?.current != true || report != null) return;
+    if (!_regularCommentsOpen) _toggleComments();
+    if (!RaftAdaptiveWorkspace.compactOf(context)) _focusCommentsEntry();
+  }
+
+  void _toggleComments({bool fromMore = false}) {
     if (panel == _Panel.comments) {
       _closeComments();
       return;
     }
+    _openComments(fromMore: fromMore);
+  }
+
+  void _openComments({required bool fromMore, String? filePath}) {
     setState(() {
       report = null;
+      _commentsIntent = (fromMore: fromMore, filePath: filePath);
       panel = _Panel.comments;
     });
+    _syncRegularCommentsRoute();
+  }
+
+  ({String path, int version})? _commentableFile(ArtifactViewerData shown) {
+    if (switching ||
+        !viewerSession.enabled ||
+        !_canComment(shown) ||
+        shown.card.fromAnotherServer ||
+        shown.card.version <= 0) {
+      return null;
+    }
+    final file = _shownFile(shown);
+    return file == null ? null : (path: file.path, version: shown.card.version);
+  }
+
+  void _openFileComment(({String path, int version}) file) {
+    final shown = data;
+    if (shown == null || _commentableFile(shown) != file) return;
+    discussion!.showAll();
+    discussionLanding = false;
+    _openComments(fromMore: true, filePath: file.path);
   }
 
   late final actions = ArtifactViewerActions(
@@ -273,6 +415,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
 
   @override
   void dispose() {
+    final regular = _regularCommentsRoute;
+    _regularCommentsRoute = null;
+    if (regular != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (regular.isActive) regular.navigator?.removeRoute(regular);
+      });
+    }
     _removeReportSheet();
     poll?.dispose();
     viewerSession.removeListener(_discussionAvailability);
@@ -280,6 +429,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     discussion?.dispose();
     commentsFocus.dispose();
     moreFocus.dispose();
+    _reviewComposerState.dispose();
     viewerFocus.dispose();
     _voiceOver.removeListener(_voiceOverChanged);
     frame.removeListener(_frameChanged);
@@ -305,7 +455,12 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   /// it with a notice (Web `useArtifactViewer`).
   Future<void> _load(int? version) async {
     final mine = ++ticket;
-    if (data != null) setState(() => switching = true);
+    if (data != null) {
+      if (panel == _Panel.comments && _commentsIntent?.filePath != null) {
+        _closeComments();
+      }
+      setState(() => switching = true);
+    }
     try {
       final result = await api.viewer(
         ArtifactLinkTarget(widget.target.id, version),
@@ -325,6 +480,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         frameAttempt++;
         pinned = result.card.pinned ? result.card.version : null;
         shownPath = null;
+        _commentsIntent = null;
         report = null;
         if (newer != null && newer!.version <= result.card.latestVersion) {
           newer = null;
@@ -404,17 +560,14 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       !shown.card.fromAnotherServer &&
       shown.capabilities.delete;
 
-  bool _canReport(ArtifactViewerData shown) =>
+  bool _canComment(ArtifactViewerData shown) =>
       current && shown.capabilities.comment && discussion?.current == true;
 
   bool _reportInCommentsMenu(ArtifactViewerData shown) =>
-      _canReport(shown) &&
+      _canComment(shown) &&
       shown.card.kind.framed &&
       _shownFile(shown) != null &&
       _webView;
-
-  bool get _reportSidebarOpen =>
-      !widget.page && panel == _Panel.comments && report != null;
 
   RaftMenuEntry _reportEntry(BuildContext context) => RaftMenuEntry(
     label: raftText(context, "Doesn't display well here"),
@@ -433,7 +586,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
 
   void _reportDisplay() {
     final shown = data;
-    if (shown == null || !_canReport(shown)) return;
+    if (shown == null || !_canComment(shown)) return;
     final box = reportArea.currentContext?.findRenderObject();
     final area = box is RenderBox && box.hasSize && !box.size.isEmpty
         ? '${box.size.width.round()}x${box.size.height.round()} CSS px'
@@ -463,6 +616,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     if (widget.page) {
       setState(() {
         report = null;
+        _commentsIntent = null;
         discussionLanding = false;
         panel = _Panel.none;
       });
@@ -471,6 +625,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     }
     setState(() {
       report = insert;
+      _commentsIntent = null;
       discussionLanding = false;
       panel = _Panel.comments;
     });
@@ -762,7 +917,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   List<RaftMenuEntry> _menu(
     BuildContext context,
     ArtifactViewerData data, {
-    RaftMenuEntry? foldedComments,
+    RaftMenuEntry? menuComments,
   }) {
     String tr(String s) => raftText(context, s);
     final card = data.card;
@@ -817,7 +972,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
             );
           },
         ),
-      ?foldedComments,
+      ?menuComments,
+      if (_commentableFile(data) case final file?)
+        RaftMenuEntry(
+          label: tr('Comment on this file'),
+          glyph: RaftGlyph.messageSquare,
+          onPressed: () => _openFileComment(file),
+        ),
       if ((!widget.inCollection || widget.page) &&
           _framed(data) &&
           _webView &&
@@ -827,7 +988,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           glyph: RaftGlyph.search,
           onPressed: () => setState(() => finding = true),
         ),
-      if (!widget.inCollection || widget.page || foldedComments != null)
+      if (!widget.inCollection || widget.page || menuComments != null)
         const RaftMenuEntry.separator(),
       RaftMenuEntry(
         label: tr('Copy link'),
@@ -867,7 +1028,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
               : (data.following ? RaftGlyph.bellOff : RaftGlyph.bell),
           onPressed: () => unawaited(_toggleFollow()),
         ),
-        if (_canReport(data) && !_reportInCommentsMenu(data))
+        if (_canComment(data) && !_reportInCommentsMenu(data))
           _reportEntry(context),
       ],
       if (_canDelete(data)) ...[
@@ -1139,9 +1300,17 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
             serverName: w.server?.name,
           );
     final more = tr('More actions');
+    final t = RaftTokens.of(context);
     final showComments = discussion?.current == true;
-    final commentsLabel = tr(
-      panel == _Panel.comments ? 'Close comments' : 'Comments',
+    final commentsOpen = panel == _Panel.comments;
+    final commentsCount =
+        discussion?.completeCommentCount ?? card?.commentCount ?? 0;
+    final numbers = MaterialLocalizations.of(context);
+    final countLabel = numbers.formatDecimal(commentsCount);
+    final commentsLabel = raftTextZh(
+      context,
+      'Comments ($countLabel)',
+      '评论（$countLabel）',
     );
     final version = data == null
         ? null
@@ -1183,33 +1352,62 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           RaftButton(
             key: const ValueKey('artifact-comments-trigger'),
             focusNode: commentsFocus,
-            glyph: RaftGlyph.messageSquare,
+            glyph: t.desktop ? RaftGlyph.comment : RaftGlyph.messageSquare,
+            glyphSize: t.desktop
+                ? RaftDesktopMetrics.controlIconSize
+                : t.recipeTokens.number('controlIconSize'),
             tooltip: commentsLabel,
             semanticLabel: commentsLabel,
-            toggled: _reportSidebarOpen ? true : null,
+            toggled: commentsOpen,
             tone: RaftButtonRecipeVariant.ghost,
-            size: widget.inCollection
-                ? RaftButtonRecipeSize.iconMd
-                : RaftButtonRecipeSize.iconLg,
-            styleBuilder: _reportSidebarOpen
-                ? (context, state, _) {
-                    final tokens = RaftTokens.of(context);
-                    return RaftPanelToggleActionRecipe.resolve(
-                      tokens: tokens.recipeTokens,
-                      states: tokens.recipeStates(
-                        responsive: true,
-                        hovered: state.hovered,
-                        pressed: state.pressed,
-                        focusVisible: state.focusVisible,
-                        extra: const ['data-pressed'],
+            styleBuilder: (context, state, _) {
+              final tokens = RaftTokens.of(context);
+              final recipe = RaftPanelToggleActionRecipe.resolve(
+                tokens: tokens.recipeTokens,
+                states: tokens.recipeStates(
+                  responsive: true,
+                  hovered: state.hovered,
+                  pressed: state.pressed,
+                  focusVisible: state.focusVisible,
+                  extra: [if (commentsOpen) 'data-pressed'],
+                ),
+              ).base;
+              if (!tokens.desktop) return recipe;
+              // This slot replaces Button's already-snapped border recipe.
+              final widths = recipe.borderWidth;
+              return recipe.copyWith(
+                properties: {
+                  ...recipe.properties,
+                  for (final (side, width) in [
+                    ('top', widths.top),
+                    ('right', widths.right),
+                    ('bottom', widths.bottom),
+                    ('left', widths.left),
+                  ])
+                    if (width > 0)
+                      'border-$side-width': CssNum(
+                        raftControlBorderPx(context, width),
+                        'px',
                       ),
-                    ).base;
-                  }
-                : null,
-            glyphSize: _reportSidebarOpen
-                ? RaftTokens.of(context).recipeTokens.number('controlIconSize')
-                : null,
+                },
+              );
+            },
             onPressed: _toggleComments,
+            child: commentsCount <= 0
+                ? null
+                : RaftChrome(
+                    child: Text(
+                      commentsCount > 99
+                          ? '${numbers.formatDecimal(99)}+'
+                          : countLabel,
+                      key: const ValueKey('artifact-comment-count'),
+                      style: t.scale(
+                        RaftTypeScale.monoMeta,
+                        mono: true,
+                        color: t.ui.foregroundHint,
+                      ),
+                    ),
+                  ),
           ),
         if (_reportInCommentsMenu(data))
           RaftDropdownMenu(
@@ -1235,15 +1433,18 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           align: RaftDropdownAlign.end,
           sideOffset: 4,
           width: 220,
-          triggerFocus: widget.inCollection ? moreFocus : null,
+          triggerFocus: moreFocus,
           entries: _menu(
             context,
             data,
-            foldedComments: showComments && foldComments
+            menuComments:
+                showComments &&
+                    (foldComments || RaftAdaptiveWorkspace.compactOf(context))
                 ? RaftMenuEntry(
                     label: commentsLabel,
                     glyph: RaftGlyph.messageSquare,
-                    onPressed: _toggleComments,
+                    // The folded trigger follows Comments across a resize.
+                    onPressed: () => _toggleComments(fromMore: !foldComments),
                   )
                 : null,
           ),
@@ -1281,6 +1482,8 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         titleSuffix: version,
         columnMargin: widget.page
             ? RaftArtifactCollectionLayout.columnMargin
+            : t.desktop
+            ? widget.columnMargin ?? RaftDesktopMetrics.pageInset
             : null,
         metaSlot: widget.page && details != null
             ? ConstrainedBox(
@@ -1353,6 +1556,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         shownPath: shownPath,
         onShow: (path) => setState(() {
           shownPath = path;
+          _commentsIntent = null;
           finding = false;
           if (widget.page) panel = _Panel.none;
         }),
@@ -1371,22 +1575,32 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         onClose: () => setState(() => panel = _Panel.none),
       ),
       _Panel.comments =>
-        discussion == null
+        discussion == null ||
+                report == null &&
+                    (!_regularCommentsOpen ||
+                        RaftAdaptiveWorkspace.compactOf(context))
             ? null
-            : ArtifactCommentsPanel(
-                store: discussion!,
-                review: review,
-                data: data,
-                initialComment: discussionLanding
-                    ? widget.target.commentId
-                    : null,
-                path: report == null ? _shownFile(data)?.path : null,
-                insert: report,
-                onClose: _closeComments,
-              ),
+            : _commentsPanel(data, onClose: _closeComments),
       _Panel.none => null,
     };
   }
+
+  Widget _commentsPanel(
+    ArtifactViewerData data, {
+    required VoidCallback onClose,
+  }) => ArtifactCommentsPanel(
+    store: discussion!,
+    review: review,
+    data: data,
+    clock: widget.commentClock,
+    initialComment: discussionLanding ? widget.target.commentId : null,
+    filePath: _commentsIntent?.filePath,
+    insert: report,
+    onClose: onClose,
+    onReviewComposerChanged: report == null && discussion?.reviewId == null
+        ? _reviewComposerChanged
+        : null,
+  );
 
   Widget _body(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -1410,6 +1624,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     }
     final content = _content(context, data);
     final side = _panel(context, data);
+    final draftReview =
+        report == null &&
+            discussion?.reviewId == null &&
+            discussion?.current == true &&
+            current
+        ? review
+        : null;
     final main = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1432,11 +1653,35 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
             onClose: () => setState(() => finding = false),
           ),
         Expanded(
-          child: SizedBox.expand(key: reportArea, child: content),
+          child: SizedBox.expand(
+            key: reportArea,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                content,
+                if (draftReview != null)
+                  Positioned(
+                    left: RaftSpace.x3,
+                    right: RaftSpace.x3,
+                    bottom: RaftSpace.x4,
+                    child: Center(
+                      child: ArtifactReviewBatchBar(
+                        review: draftReview,
+                        version: data.card.version,
+                        onSent: _showSentDrafts,
+                        onDiscarded: _focusCommentsEntry,
+                        commentsOpen: _regularCommentsOpen,
+                        composerState: _reviewComposerState,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ],
     );
-    if (widget.page) {
+    if (widget.page && (side == null || !_regularCommentsOpen)) {
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -1449,9 +1694,9 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(child: main),
-        if (side != null && _reportSidebarOpen)
+        if (side != null && panel == _Panel.comments)
           Container(
-            width: _displayReportPanelWidth,
+            width: _commentsPanelWidth,
             decoration: BoxDecoration(
               border: BorderDirectional(
                 start: BorderSide(color: t.ui.lineSeam),
@@ -1473,6 +1718,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final needsSheet =
+        _regularCommentsOpen && RaftAdaptiveWorkspace.compactOf(context);
+    if (needsSheet != (_regularCommentsRoute != null)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _syncRegularCommentsRoute();
+      });
+    }
     final busy = switching || data == null && !unavailable;
     final view = Semantics(
       container: true,
@@ -1483,21 +1735,23 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.inCollection)
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final width = constraints.maxWidth;
-                  return _header(
-                    context,
-                    foldComments:
-                        width.isFinite &&
-                        width > 0 &&
-                        width.round() < _headerActionsMinWidth,
-                  );
-                },
-              )
-            else
-              _header(context),
+            ListenableBuilder(
+              listenable: Listenable.merge([discussion]),
+              builder: (context, _) => widget.inCollection
+                  ? LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        return _header(
+                          context,
+                          foldComments:
+                              width.isFinite &&
+                              width > 0 &&
+                              width.round() < _headerActionsMinWidth,
+                        );
+                      },
+                    )
+                  : _header(context),
+            ),
             if (busy && data != null)
               const RaftProgressBar(size: RaftProgressRecipeSize.sm),
             Expanded(child: _body(context)),
@@ -1508,6 +1762,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     final scoped = CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (raftDismissTopPopup(context)) return;
           if (finding) {
             setState(() => finding = false);
           } else if (panel == _Panel.comments) {
@@ -1524,6 +1779,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     final safe = PopScope(
       canPop: panel != _Panel.comments,
       onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && raftDismissTopPopup(context)) return;
         if (!didPop && panel == _Panel.comments) _closeComments();
       },
       child: widget.inCollection

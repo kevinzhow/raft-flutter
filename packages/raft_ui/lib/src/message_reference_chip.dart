@@ -16,13 +16,15 @@ import 'icons.dart';
 import 'localization.dart';
 import 'mounted_task_chip.dart';
 import 'panel_layout.dart' show raftCssBaseline;
-import 'recipe_surface.dart' show RaftRecipeBinding;
+import 'recipe_surface.dart'
+    show RaftRecipeBinding, RaftRecipeBox, RaftSlotPaint;
 import 'recipes/badge.g.dart';
 import 'recipes/message_reference.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/task_chip.g.dart';
 import 'recipes/token_binding.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 enum RaftReferenceKind {
   /// MentionLink of the viewer (`MessageReferenceText variant="primary"`).
@@ -82,6 +84,59 @@ class RaftReferenceAppearance {
   final WidgetBuilder? hoverCard;
 }
 
+InlineSpan raftMentionTextSpan(
+  BuildContext context, {
+  required String label,
+  required TextStyle base,
+  required bool own,
+  bool useSourceTypography = false,
+}) {
+  if (!own) {
+    final t = RaftTokens.of(context);
+    final resolver = RaftRecipeTokens(t);
+    final style = _secondaryMention(t, resolver);
+    return TextSpan(
+      text: label,
+      style: _secondaryMentionTextStyle(t, resolver, style, base),
+    );
+  }
+  return WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: RaftReferenceChip(
+      label: label,
+      appearance: const RaftReferenceAppearance(RaftReferenceKind.selfMention),
+      fontSize: base.fontSize ?? RaftTypeScale.callout.fontSize,
+      fontFamily: base.fontFamily,
+      fontFamilyFallback: base.fontFamilyFallback,
+      useSourceTypography: useSourceTypography,
+    ),
+  );
+}
+
+RaftSlotStyle _secondaryMention(RaftTokens tokens, RaftRecipeTokens resolver) =>
+    RaftMessageReferenceRecipe.resolve(
+      variant: RaftMessageReferenceRecipeVariant.secondary,
+      states: tokens.recipeStates(),
+      tokens: resolver,
+    ).root;
+
+TextStyle _secondaryMentionTextStyle(
+  RaftTokens tokens,
+  RaftRecipeTokens resolver,
+  RaftSlotStyle style,
+  TextStyle base,
+) {
+  final fixed =
+      tokens.option('messageReference.chipLayout', or: 'intrinsic') == 'fixed';
+  return base.copyWith(
+    fontWeight: fixed ? FontWeight.w700 : style.fontWeight,
+    color: fixed
+        ? tokens.colors['foreground']
+        : style.color?.resolve(resolver) ?? base.color,
+  );
+}
+
 /// Inline span for one reference inside a markdown paragraph. [base] is the
 /// surrounding paragraph style (the recipes use `font-size: inherit`).
 /// References are short `whitespace-nowrap` boxes, so they are WidgetSpans
@@ -104,25 +159,12 @@ InlineSpan raftReferenceSpan(
   } else if (appearance.kind == RaftReferenceKind.mention) {
     // `display: inline` text: bold, underline (decoration-black/30,
     // decoration-2, underline-offset-2).
-    final s = RaftMessageReferenceRecipe.resolve(
-      variant: RaftMessageReferenceRecipeVariant.secondary,
-      states: t.recipeStates(),
-      tokens: resolver,
-    ).root;
+    final s = _secondaryMention(t, resolver);
     final decoration = RaftColorRef.fromCss(s['text-decoration-color']);
     final color = s.color?.resolve(resolver) ?? base.color;
     child = RaftUnderlinedText(
       label,
-      style: base.copyWith(
-        fontWeight:
-            t.option('messageReference.chipLayout', or: 'intrinsic') == 'fixed'
-            ? FontWeight.w700
-            : s.fontWeight,
-        color:
-            t.option('messageReference.chipLayout', or: 'intrinsic') == 'fixed'
-            ? t.colors['foreground']
-            : color,
-      ),
+      style: _secondaryMentionTextStyle(t, resolver, s, base),
       underlineColor: decoration?.resolve(resolver, currentColor: color),
     );
   } else {
@@ -220,12 +262,16 @@ class RaftReferenceChip extends StatelessWidget {
     this.fontSize = 14,
     this.fontFamily,
     this.fontFamilyFallback,
+    this.useSourceTypography = false,
   });
   final String label;
   final RaftReferenceAppearance appearance;
   final double fontSize;
   final String? fontFamily;
   final List<String>? fontFamilyFallback;
+
+  /// Draw the primary inline chip at the source recipe's text and box metrics.
+  final bool useSourceTypography;
 
   @override
   Widget build(BuildContext context) {
@@ -425,8 +471,18 @@ class RaftReferenceChip extends StatelessWidget {
     RaftTokens t, {
     required bool sticker,
   }) {
-    final size = sticker ? fontSize : fontSize * .875;
-    final line = sticker ? size * 1.2 : 20.0;
+    final source = useSourceTypography && sticker
+        ? RaftMessageReferenceRecipe.resolve(
+            variant: RaftMessageReferenceRecipeVariant.primary,
+            states: t.recipeStates(responsive: true),
+            tokens: t.recipeTokens,
+          ).root
+        : null;
+    final size = switch (source?['font-size']) {
+      CssNum(unit: 'em', :final value) => fontSize * value,
+      _ => sticker ? fontSize : fontSize * .875,
+    };
+    final line = source?.lineHeightPx ?? (sticker ? size * 1.2 : 20.0);
     final unavailable =
         appearance.kind == RaftReferenceKind.permalinkUnavailable;
     final linkIcon =
@@ -442,8 +498,10 @@ class RaftReferenceChip extends StatelessWidget {
       fontFamilyFallback: fontFamilyFallback,
       fontSize: size,
       height: line / size,
-      fontWeight: FontWeight.w600,
-      color: foreground,
+      fontWeight: source?.fontWeight ?? FontWeight.w600,
+      color:
+          source?.foreground(t.recipeTokens, inherited: foreground) ??
+          foreground,
       leadingDistribution: TextLeadingDistribution.even,
     );
     final scaledStyle = style.copyWith(
@@ -469,6 +527,14 @@ class RaftReferenceChip extends StatelessWidget {
         ),
       ),
     );
+    if (source != null) {
+      return RaftRecipeBox(
+        style: source,
+        tokens: t.recipeTokens,
+        applyText: false,
+        child: labelBox,
+      );
+    }
     final ring = raftControlBorderPx(context, 1.5);
     return RaftCssBox(
       radius: t.size('radius.sticker', fallback: 4),

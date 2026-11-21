@@ -311,6 +311,7 @@ class _ArtifactDashboardState extends State<ArtifactDashboard> {
               seed: card,
               page: compact,
               inCollection: true,
+              columnMargin: RaftArtifactCollectionLayout.columnMargin,
               onClose: closeViewer,
               onDeleted: () => closeViewer(refresh: false),
             ),

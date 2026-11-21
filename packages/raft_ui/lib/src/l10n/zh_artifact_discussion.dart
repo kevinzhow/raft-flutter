@@ -6,6 +6,7 @@ const Map<String, String> zhCatalogArtifactDiscussion = <String, String>{
   "Will notify: {names}": "会通知：{names}",
   "Won't notify anyone.": "不会通知任何人。",
   "Close comments": "关闭评论",
+  "Comment on this file": "评论此文件",
   "Loading comments": "正在加载评论",
   "Couldn't load the comments.": "评论加载失败。",
   "No comments yet": "还没有评论",

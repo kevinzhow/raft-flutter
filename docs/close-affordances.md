@@ -233,7 +233,7 @@ in `apps/raft_flutter`.
 | `artifact-comments` | panel | x esc sysback | x esc sysback | x esc sysback | ArtifactCommentsPanel.tsx: close button and Escape; bottom sheet on phones (ArtifactSurface.tsx) | ok |  |
 | `artifact-comment-actions` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | ArtifactCommentsPanel.tsx: comment More opens Edit and Delete. Escape and outside press dismiss. | ok |  |
 | `artifact-comment-delete` | dialog | back esc sysback | back esc sysback | back esc sysback | ArtifactCommentsPanel.tsx: ConfirmDialog cancel, Escape, and outside press stays. | ok |  |
-| `artifact-review-discard` | dialog | back esc sysback | back esc sysback | back esc sysback | ArtifactReviewPanel.tsx: ConfirmDialog for discarding drafts. Cancel, Escape, and outside press stays. | ok |  |
+| `artifact-review-discard` | popup | back esc scrim sysback | back esc scrim sysback | back esc scrim sysback | ArtifactReviewParts.tsx anchors the batch confirmation to Discard all. Cancel, Escape, and an outside press close it. | ok |  |
 | `artifact-collection-viewer` | viewer | back esc sysback | x esc sysback | x esc sysback | ArtifactsDashboard.tsx mounts an in-column Viewer. Back on phone, close on wide layouts, and Escape. | ok |  |
 | `artifact-dashboard-page` | panel | back | - (The dashboard replaces the workspace section, without an overlay.) | - (Select another workspace rail destination to leave.) | ArtifactsDashboard.tsx: leave with workspace navigation or browser Back. | ok |  |
 | `artifact-public-page` | viewer | back | back | back | PublicArtifactPage.tsx: standalone route, browser Back. | ok |  |

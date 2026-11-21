@@ -1,0 +1,294 @@
+{
+  "artifactId": "pt_f3530000-45de-40f0-bdc0-9d08b6fb447a",
+  "clockIso": "2026-11-19T03:05:00Z",
+  "routes": {
+    "GET /artifacts/pt_f3530000-45de-40f0-bdc0-9d08b6fb447a": {
+      "card": {
+        "id": "pt_f3530000-45de-40f0-bdc0-9d08b6fb447a",
+        "url": "/artifacts/pt_f3530000-45de-40f0-bdc0-9d08b6fb447a",
+        "title": "Discussion notes",
+        "kind": "text",
+        "facts": {
+          "sizeBytes": 53,
+          "fileCount": 1
+        },
+        "preview": {
+          "kind": "none"
+        },
+        "version": 1,
+        "latestVersion": 1,
+        "pinned": false,
+        "author": {
+          "type": "user",
+          "id": "visual-user",
+          "name": "reviewowner",
+          "displayName": "Review Owner",
+          "avatarUrl": null
+        },
+        "createdAt": "2026-11-19T03:00:00Z",
+        "updatedAt": "2026-11-19T03:00:00Z",
+        "commentCount": 4,
+        "home": {
+          "kind": "server"
+        }
+      },
+      "files": [
+        {
+          "path": "discussion.txt",
+          "kind": "text",
+          "sizeBytes": 53,
+          "entry": true
+        }
+      ],
+      "versions": [
+        {
+          "number": 1,
+          "publisher": {
+            "type": "user",
+            "id": "visual-user",
+            "name": "reviewowner",
+            "displayName": "Review Owner",
+            "avatarUrl": null
+          },
+          "createdAt": "2026-11-19T03:00:00Z",
+          "note": null,
+          "changedPaths": [
+            "discussion.txt"
+          ]
+        }
+      ],
+      "viewer": {
+        "type": "user",
+        "id": "visual-user",
+        "name": "reviewowner",
+        "displayName": "Review Owner",
+        "avatarUrl": null
+      },
+      "following": false,
+      "savedFrom": null,
+      "origin": null,
+      "capabilities": {
+        "comment": true,
+        "delete": true
+      }
+    },
+    "GET /artifacts/pt_f3530000-45de-40f0-bdc0-9d08b6fb447a/files/discussion.txt/content": {
+      "kind": "text",
+      "content": "Discussion notes\n\nReview the heading before posting.\n"
+    },
+    "GET /artifacts/pt_f3530000-45de-40f0-bdc0-9d08b6fb447a/comments": {
+      "comments": [
+        {
+          "id": "discussion-root",
+          "author": {
+            "type": "user",
+            "id": "visual-user",
+            "name": "reviewowner",
+            "displayName": "Review Owner",
+            "avatarUrl": null
+          },
+          "createdAt": "2026-11-19T03:00:00Z",
+          "body": [
+            {
+              "type": "text",
+              "text": "For "
+            },
+            {
+              "type": "mention",
+              "actor": {
+                "type": "user",
+                "id": "visual-user",
+                "name": "reviewowner",
+                "displayName": "Review Owner",
+                "avatarUrl": null
+              }
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "mention",
+              "actor": {
+                "type": "user",
+                "id": "review-peer",
+                "name": "reviewpeer",
+                "displayName": "Review Peer",
+                "avatarUrl": null
+              }
+            },
+            {
+              "type": "text",
+              "text": ". Plain @reviewowner."
+            }
+          ],
+          "replyTo": null,
+          "version": 1,
+          "target": {
+            "scope": "artifact"
+          },
+          "resolvedAt": null,
+          "resolvedBy": null,
+          "deletedAt": null,
+          "editedAt": "2026-11-19T03:05:00Z",
+          "reviewId": null
+        },
+        {
+          "id": "discussion-reply",
+          "author": {
+            "type": "user",
+            "id": "review-peer",
+            "name": "reviewpeer",
+            "displayName": "Review Peer",
+            "avatarUrl": null
+          },
+          "createdAt": "2026-11-19T03:05:00Z",
+          "body": [
+            {
+              "type": "text",
+              "text": "Thanks, "
+            },
+            {
+              "type": "mention",
+              "actor": {
+                "type": "user",
+                "id": "visual-user",
+                "name": "reviewowner",
+                "displayName": "Review Owner",
+                "avatarUrl": null
+              }
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ],
+          "replyTo": "discussion-root",
+          "version": 1,
+          "target": {
+            "scope": "artifact"
+          },
+          "resolvedAt": null,
+          "resolvedBy": null,
+          "deletedAt": null,
+          "editedAt": null,
+          "reviewId": null
+        },
+        {
+          "id": "resolved-root",
+          "author": {
+            "type": "user",
+            "id": "visual-user",
+            "name": "reviewowner",
+            "displayName": "Review Owner",
+            "avatarUrl": null
+          },
+          "createdAt": "2026-11-19T03:00:00Z",
+          "body": [
+            {
+              "type": "text",
+              "text": "Check the heading."
+            }
+          ],
+          "replyTo": null,
+          "version": 1,
+          "target": {
+            "scope": "artifact"
+          },
+          "resolvedAt": "2026-11-19T03:05:00Z",
+          "resolvedBy": {
+            "type": "user",
+            "id": "visual-user",
+            "name": "reviewowner",
+            "displayName": "Review Owner",
+            "avatarUrl": null
+          },
+          "deletedAt": null,
+          "editedAt": null,
+          "reviewId": null
+        },
+        {
+          "id": "resolved-reply",
+          "author": {
+            "type": "user",
+            "id": "review-peer",
+            "name": "reviewpeer",
+            "displayName": "Review Peer",
+            "avatarUrl": null
+          },
+          "createdAt": "2026-11-19T03:05:00Z",
+          "body": [
+            {
+              "type": "text",
+              "text": "Heading updated."
+            }
+          ],
+          "replyTo": "resolved-root",
+          "version": 1,
+          "target": {
+            "scope": "artifact"
+          },
+          "resolvedAt": null,
+          "resolvedBy": null,
+          "deletedAt": null,
+          "editedAt": null,
+          "reviewId": null
+        }
+      ],
+      "olderCursor": null,
+      "review": null
+    },
+    "GET /artifacts/pt_f3530000-45de-40f0-bdc0-9d08b6fb447a/review/drafts": {
+      "drafts": [
+        {
+          "id": "discussion-draft",
+          "target": {
+            "scope": "artifact"
+          },
+          "version": 1,
+          "replyTo": null,
+          "body": [
+            {
+              "type": "text",
+              "text": "Private note for "
+            },
+            {
+              "type": "mention",
+              "actor": {
+                "type": "user",
+                "id": "review-peer",
+                "name": "reviewpeer",
+                "displayName": "Review Peer",
+                "avatarUrl": null
+              }
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ],
+          "createdAt": "2026-11-19T03:05:00Z",
+          "updatedAt": "2026-11-19T03:05:00Z",
+          "expiresAt": "2026-12-19T03:05:00Z"
+        }
+      ]
+    },
+    "GET /artifacts/pt_f3530000-45de-40f0-bdc0-9d08b6fb447a/presence": {
+      "viewing": [],
+      "readCurrentVersion": [],
+      "readOtherVersion": [],
+      "ownRead": null
+    },
+    "GET /artifacts/pt_f3530000-45de-40f0-bdc0-9d08b6fb447a/will-notify": {
+      "recipients": []
+    },
+    "POST /feature-flags/evaluate": {
+      "evaluations": [
+        {
+          "key": "workspace_artifacts_v0",
+          "enabled": true
+        }
+      ]
+    }
+  }
+}

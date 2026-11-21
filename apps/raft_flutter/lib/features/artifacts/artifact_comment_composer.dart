@@ -49,6 +49,8 @@ class ArtifactCommentInsert {
   bool _applied = false;
 }
 
+typedef ArtifactReviewComposerState = ({bool engaged, bool editingDraft});
+
 class ArtifactCommentComposer extends StatefulWidget {
   const ArtifactCommentComposer({
     super.key,
@@ -62,7 +64,9 @@ class ArtifactCommentComposer extends StatefulWidget {
     this.onCancel,
     this.onDone,
     this.autofocus = false,
+    this.standing = false,
     this.insert,
+    this.onReviewComposerChanged,
   });
 
   final ArtifactCommentStore store;
@@ -74,8 +78,10 @@ class ArtifactCommentComposer extends StatefulWidget {
 
   bool get editing => edit != null || draft != null;
   final VoidCallback? onCancel, onDone;
-  final bool autofocus;
+  final bool autofocus, standing;
   final ArtifactCommentInsert? insert;
+  final void Function(Object, ArtifactReviewComposerState?)?
+  onReviewComposerChanged;
 
   @override
   State<ArtifactCommentComposer> createState() =>
@@ -135,6 +141,7 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
     _before = _text.text;
     _text.addListener(_changed);
     _focus.addListener(_changed);
+    _reportReviewComposer(false);
     if (!widget.editing) unawaited(_readRecipients());
     _applyInsert();
     if (widget.autofocus) {
@@ -153,6 +160,15 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
       _trackReportFocus(widget.insert != null);
     }
     if (oldWidget.insert != widget.insert) _applyInsert();
+    final previous = oldWidget.onReviewComposerChanged;
+    if (previous != widget.onReviewComposerChanged) {
+      if (previous != null) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => previous(this, null),
+        );
+      }
+      _reportReviewComposer(_focus.hasFocus);
+    }
   }
 
   void _trackReportFocus(bool track) {
@@ -511,12 +527,27 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
   @override
   void dispose() {
     if (widget.insert != null) _trackReportFocus(false);
+    _reportReviewComposer(false, disposing: true);
     _debounce?.cancel();
     _focus.removeListener(_changed);
     _focus.dispose();
     _text.removeListener(_changed);
     _text.dispose();
     super.dispose();
+  }
+
+  void _reportReviewComposer(bool focused, {bool disposing = false}) {
+    final report = widget.onReviewComposerChanged;
+    if (report == null) return;
+    final value = disposing
+        ? null
+        : (
+            engaged: focused || !widget.standing,
+            editingDraft: widget.draft != null,
+          );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted || disposing) report(this, value);
+    });
   }
 
   String? _audienceDescription(BuildContext context) {
@@ -550,6 +581,7 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
     final audience = _audienceDescription(context);
     return Focus(
       onKeyEvent: _onKey,
+      onFocusChange: _reportReviewComposer,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,

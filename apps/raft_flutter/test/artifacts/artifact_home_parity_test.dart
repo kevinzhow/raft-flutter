@@ -1065,7 +1065,10 @@ void main() {
       final comments = find.byKey(const Key('artifact-comments-trigger'));
       final more = find.byKey(const Key('artifact-viewer-menu-trigger'));
       final menu = find.byKey(const Key('artifact-viewer-menu-surface'));
-      final item = find.descendant(of: menu, matching: find.text('Comments'));
+      final item = find.descendant(
+        of: menu,
+        matching: find.text('Comments (0)'),
+      );
       expect(tester.getSize(viewer).width, cardWidth);
       expect(comments, folded ? findsNothing : findsOneWidget);
 

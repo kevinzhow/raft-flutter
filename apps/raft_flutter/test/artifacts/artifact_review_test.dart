@@ -304,6 +304,21 @@ void main() {
     expect(find.text('Your drafts'), findsOneWidget);
     expect(find.text('First draft'), findsOneWidget);
     final send = find.byKey(const ValueKey('artifact-review-submit'));
+    expect(
+      tester.widget<RaftButton>(send).tone,
+      RaftButtonRecipeVariant.primary,
+    );
+    await tester.tap(find.text('Edit').hitTestable().first);
+    await tester.pumpAndSettle();
+    expect(tester.widget<RaftButton>(send).onPressed, isNull);
+    await tester.tap(find.text('Cancel').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(composer.hitTestable());
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<RaftButton>(send).tone,
+      RaftButtonRecipeVariant.outline,
+    );
     await tester.tap(send);
     await tester.pumpAndSettle();
     expect(

@@ -485,12 +485,15 @@ class ArtifactOrigin {
 }
 
 /// Everything the viewer needs for one version (shared `ArtifactViewerData`).
+typedef ArtifactViewerActor = ({String type, String id});
+
 class ArtifactViewerData {
   const ArtifactViewerData({
     required this.card,
     this.files = const [],
     this.versions = const [],
     this.capabilities = const ArtifactCapabilities(),
+    this.viewer,
     this.following = false,
     this.origin,
     this.originalConversationId,
@@ -502,6 +505,7 @@ class ArtifactViewerData {
     final card = ArtifactCard.fromJson(map['card']);
     if (card == null) return null;
     final frame = map['frame'];
+    final viewer = _map(map['viewer']);
     return ArtifactViewerData(
       card: card,
       files: [
@@ -513,6 +517,15 @@ class ArtifactViewerData {
           for (final version in versions) ?ArtifactVersion.fromJson(version),
       ],
       capabilities: ArtifactCapabilities.fromJson(map['capabilities']),
+      viewer: switch (viewer) {
+        {
+          'type': ('user' || 'agent') && final String type,
+          'id': final String id,
+        }
+            when id.isNotEmpty =>
+          (type: type, id: id),
+        _ => null,
+      },
       following: map['following'] == true,
       origin: ArtifactOrigin.fromJson(map['origin']),
       originalConversationId: _stringOrNull(
@@ -528,6 +541,7 @@ class ArtifactViewerData {
   /// Newest first.
   final List<ArtifactVersion> versions;
   final ArtifactCapabilities capabilities;
+  final ArtifactViewerActor? viewer;
   final bool following;
   final ArtifactOrigin? origin;
   final String? originalConversationId;
@@ -549,6 +563,7 @@ class ArtifactViewerData {
     files: files,
     versions: versions,
     capabilities: changed?.capabilities ?? capabilities,
+    viewer: viewer,
     following: following ?? this.following,
     origin: origin,
     originalConversationId: changed == null

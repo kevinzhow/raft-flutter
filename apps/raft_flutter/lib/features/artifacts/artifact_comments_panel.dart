@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:raft_ui/raft_ui.dart';
 
 import '../icu_message.dart';
@@ -10,6 +12,7 @@ import 'artifact_comment_models.dart';
 import 'artifact_comment_store.dart';
 import 'artifact_models.dart';
 import 'artifact_review_store.dart';
+import 'artifact_text.dart' show artifactRelativeTime;
 
 class ArtifactCommentsPanel extends StatefulWidget {
   const ArtifactCommentsPanel({
@@ -18,17 +21,22 @@ class ArtifactCommentsPanel extends StatefulWidget {
     required this.data,
     required this.onClose,
     this.initialComment,
-    this.path,
+    this.filePath,
     this.review,
     this.insert,
+    this.clock,
+    this.onReviewComposerChanged,
   });
 
   final ArtifactCommentStore store;
   final ArtifactViewerData data;
   final VoidCallback onClose;
-  final String? initialComment, path;
+  final String? initialComment, filePath;
   final ArtifactReviewStore? review;
   final ArtifactCommentInsert? insert;
+  final DateTime Function()? clock;
+  final void Function(Object, ArtifactReviewComposerState?)?
+  onReviewComposerChanged;
 
   @override
   State<ArtifactCommentsPanel> createState() => _ArtifactCommentsPanelState();
@@ -37,7 +45,9 @@ class ArtifactCommentsPanel extends StatefulWidget {
 class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
   final _scroll = ScrollController();
   final _landing = GlobalKey();
-  bool _resolvedOpen = false, _landed = false, _file = false;
+  final _resolvedDisclosure = GlobalKey();
+  String? _activeThread;
+  bool _resolvedOpen = false, _landed = false;
   ArtifactComment? _reply, _edit;
   ArtifactReviewDraft? _editDraft;
 
@@ -49,6 +59,8 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
           : RaftSheetScope.maybeOf(context)?.scrollController) ??
       _scroll;
   bool get _canComment => widget.data.capabilities.comment;
+  bool get _regularSheet =>
+      widget.insert == null && RaftSheetScope.maybeOf(context) != null;
   bool _own(ArtifactComment comment) =>
       comment.author.type == 'user' &&
       comment.author.id == store.workspace.client.user?.id;
@@ -65,10 +77,10 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
   @override
   void didUpdateWidget(covariant ArtifactCommentsPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.path != widget.path ||
+    if (oldWidget.filePath != widget.filePath ||
         oldWidget.data.card.version != widget.data.card.version ||
         widget.insert != null && oldWidget.insert != widget.insert) {
-      _file = false;
+      _activeThread = null;
       _reply = null;
       _edit = null;
       _editDraft = null;
@@ -154,68 +166,144 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
 
   Widget _entry(ArtifactComment comment) {
     final t = RaftTokens.of(context);
+    if (comment.deleted) {
+      return Text(
+        raftText(context, 'Comment deleted'),
+        style: t
+            .scale(RaftTypeScale.callout, color: t.ui.foregroundHint)
+            .copyWith(fontStyle: FontStyle.italic),
+      );
+    }
     final name = artifactCommentActorName(context, comment.author);
-    final time = DateTime.tryParse(comment.createdAt)?.toLocal();
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: RaftSpace.x2,
+    final time = artifactRelativeTime(
+      context,
+      DateTime.tryParse(comment.createdAt),
+      now: widget.clock?.call(),
+    );
+    final agent = comment.author.type == 'agent';
+    final avatarUrl = comment.author.avatarUrl;
+    final initials = raftAvatarInitials(name, max: 1);
+    final editing = _edit?.id == comment.id;
+    final showActions = _canComment && _own(comment);
+    final scaled = RaftScaled.grows(context);
+    final authorStyle = t.scale(RaftTypeScale.subhead, weight: FontWeight.w700);
+    final author = Text(
+      name,
+      style: authorStyle,
+      maxLines: scaled ? null : 1,
+      overflow: scaled ? null : TextOverflow.ellipsis,
+    );
+    const headerGap = RaftSpace.x1_5;
+    final details = Wrap(
+      spacing: headerGap,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        RaftAvatar(
-          name: name,
-          size: 24,
-          imageUrl: comment.author.avatarUrl,
-          kind: comment.author.type == 'agent'
-              ? RaftAvatarKind.agent
-              : RaftAvatarKind.human,
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: RaftSpace.x1,
-            children: [
-              Wrap(
-                spacing: RaftSpace.x1_5,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(name, style: t.scale(RaftTypeScale.caption)),
-                  if (time != null)
-                    Text(
-                      MaterialLocalizations.of(context).formatCompactDate(time),
-                      style: t.scale(RaftTypeScale.footnote, color: t.muted),
-                    ),
-                  if (comment.edited)
-                    Text(
-                      raftText(context, 'edited'),
-                      style: t.scale(RaftTypeScale.footnote, color: t.muted),
-                    ),
-                ],
-              ),
-              if (comment.deleted)
-                Text(
-                  raftText(context, 'Comment deleted'),
-                  style: t.scale(RaftTypeScale.footnote, color: t.muted),
-                )
-              else if (_edit?.id != comment.id)
-                ArtifactCommentBody(body: comment.body),
-              if (comment.images.isNotEmpty)
-                Wrap(
-                  spacing: RaftSpace.x1,
-                  runSpacing: RaftSpace.x1,
-                  children: [
-                    for (final id in comment.images)
-                      _ArtifactCommentImage(
-                        key: ValueKey(id),
-                        store: store,
-                        id: id,
-                      ),
-                  ],
+        if (scaled) author,
+        if (agent)
+          RaftBadge(
+            label: raftText(context, 'Agent'),
+            appearance: RaftBadgeRecipeAppearance.outline,
+          ),
+        if (time.isNotEmpty)
+          Text(
+            time,
+            style: t.scale(
+              RaftTypeScale.monoMeta,
+              mono: true,
+              color: t.ui.foregroundHint,
+            ),
+          ),
+        if (comment.edited)
+          Text(
+            raftText(context, 'edited'),
+            style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
+          ),
+      ],
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: RaftSpace.x1,
+      children: [
+        Row(
+          spacing: headerGap,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: RaftSpace.half),
+              child: ExcludeSemantics(
+                child: RaftAvatar(
+                  name: name,
+                  uiSize: RaftAvatarSize.xs,
+                  imageUrl: avatarUrl,
+                  content:
+                      !agent &&
+                          (avatarUrl?.isEmpty ?? true) &&
+                          initials.isNotEmpty
+                      ? RaftAvatarInitials(initials, size: RaftAvatarSize.xs)
+                      : null,
+                  kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
                 ),
-              if (_edit?.id == comment.id) _composer(edit: comment),
+              ),
+            ),
+            Expanded(
+              child: scaled
+                  ? details
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final minimumAuthorWidth = authorStyle.fontSize ?? 0;
+                        final detailsWidth =
+                            (constraints.maxWidth -
+                                    headerGap -
+                                    minimumAuthorWidth)
+                                .clamp(0, double.infinity)
+                                .toDouble();
+                        return Row(
+                          spacing: headerGap,
+                          children: [
+                            Flexible(child: author),
+                            if (details.children.isNotEmpty)
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: detailsWidth,
+                                ),
+                                child: details,
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+            ),
+            if (showActions) _commentActions(comment, name),
+          ],
+        ),
+        if (!editing)
+          ArtifactCommentBody(body: comment.body, viewer: widget.data.viewer),
+        if (comment.images.isNotEmpty)
+          Wrap(
+            spacing: RaftSpace.x1,
+            runSpacing: RaftSpace.x1,
+            children: [
+              for (final id in comment.images)
+                _ArtifactCommentImage(key: ValueKey(id), store: store, id: id),
             ],
           ),
+        if (editing) _composer(edit: comment),
+      ],
+    );
+  }
+
+  Widget _cardMeta(String label, {RaftGlyph? glyph}) {
+    final t = RaftTokens.of(context);
+    final color = t.ui.foregroundHint;
+    return Row(
+      spacing: RaftSpace.x1,
+      children: [
+        if (glyph != null) RaftIcon(glyph, size: 14, color: color),
+        Flexible(
+          child: Text(
+            label,
+            style: t.scale(RaftTypeScale.caption, color: color),
+          ),
         ),
-        if (_canComment && _own(comment) && !comment.deleted)
-          _commentActions(comment, name),
       ],
     );
   }
@@ -257,74 +345,127 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
     );
   }
 
-  Widget _thread(ArtifactCommentThread thread) {
+  void _revealNearestEdge(BuildContext targetContext) {
+    if (!targetContext.mounted) return;
+    final position = Scrollable.maybeOf(targetContext)?.position;
+    final target = targetContext.findRenderObject();
+    if (position == null ||
+        !_scroll.positions.contains(position) ||
+        !position.hasContentDimensions ||
+        position.isScrollingNotifier.value ||
+        target == null ||
+        !target.attached) {
+      return;
+    }
+    final viewport = RenderAbstractViewport.maybeOf(target);
+    if (viewport == null) return;
+
+    final start = viewport.getOffsetToReveal(target, 0).offset;
+    final end = viewport.getOffsetToReveal(target, 1).offset;
+    // Keep the reading position when both edges of a tall target are clipped.
+    final offset = position.pixels
+        .clamp(math.min(start, end), math.max(start, end))
+        .clamp(position.minScrollExtent, position.maxScrollExtent);
+    if (offset != position.pixels) position.jumpTo(offset.toDouble());
+  }
+
+  void _activateThread(String id, BuildContext cardContext) {
+    if (_activeThread == id) return;
+    setState(() => _activeThread = id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _activeThread != id) return;
+      _revealNearestEdge(cardContext);
+    });
+  }
+
+  void _toggleResolved() {
+    setState(() => _resolvedOpen = !_resolvedOpen);
+    if (!_resolvedOpen || !_regularSheet) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_resolvedOpen || !_regularSheet) return;
+      if (_resolvedDisclosure.currentContext case final disclosure?) {
+        _revealNearestEdge(disclosure);
+      }
+    });
+  }
+
+  Widget _thread(BuildContext cardContext, ArtifactCommentThread thread) {
     final t = RaftTokens.of(context);
     final root = thread.root;
     final landing =
         thread.id == widget.initialComment ||
         thread.replies.any((reply) => reply.id == widget.initialComment);
-    return Container(
+    final resolutionLabel = raftText(
+      context,
+      thread.resolved ? 'Reopen' : 'Resolve',
+    );
+    return RaftCommentCard(
       key: landing ? _landing : ValueKey(thread.id),
-      padding: const EdgeInsets.all(RaftSpace.x3),
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.ui.lineHairline),
-        borderRadius: BorderRadius.circular(t.radius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: RaftSpace.x2,
-        children: [
-          if (root == null)
-            Text(raftText(context, 'Reply to an earlier comment'))
-          else
-            _entry(root),
-          if (root?.resolvedBy case final resolver?)
-            Text(
-              raftFormat(context, 'Resolved by {name} · {time}', {
-                'name': artifactCommentActorName(context, resolver),
-                'time': root!.resolvedAt?.split('T').first ?? '',
-              }),
-              style: t.scale(RaftTypeScale.footnote, color: t.muted),
-            ),
-          for (final reply in thread.replies)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(start: RaftSpace.x3),
-              child: _entry(reply),
-            ),
-          if (_reply?.id == root?.id && root != null)
-            _composer(reply: root)
-          else if (root != null && _canComment)
-            Wrap(
-              spacing: RaftSpace.x1,
-              children: [
-                if (!root.deleted)
-                  RaftButton(
-                    label: raftText(context, 'Reply'),
-                    tone: RaftButtonRecipeVariant.ghost,
-                    size: RaftButtonRecipeSize.sm,
-                    onPressed: () => setState(() {
-                      _edit = null;
-                      _editDraft = null;
-                      _reply = root;
-                    }),
-                  ),
-                if (_canResolve(root))
-                  RaftButton(
-                    label: raftText(
-                      context,
-                      thread.resolved ? 'Reopen' : 'Resolve',
-                    ),
-                    tone: RaftButtonRecipeVariant.ghost,
-                    size: RaftButtonRecipeSize.sm,
-                    onPressed: store.changing(root.id)
-                        ? null
-                        : () => unawaited(_resolve(root)),
-                  ),
-              ],
-            ),
-        ],
-      ),
+      active: _activeThread == null ? landing : _activeThread == thread.id,
+      onActivate: () => _activateThread(thread.id, cardContext),
+      children: [
+        if (root == null)
+          Text(
+            raftText(context, 'Reply to an earlier comment'),
+            style: t
+                .scale(RaftTypeScale.callout, color: t.ui.foregroundHint)
+                .copyWith(fontStyle: FontStyle.italic),
+          )
+        else
+          _entry(root),
+        for (final reply in thread.replies)
+          Padding(
+            padding: const EdgeInsets.only(top: RaftSpace.x1),
+            child: _entry(reply),
+          ),
+        if ((root?.resolvedBy, root?.resolvedAt) case (
+          final resolver?,
+          final resolvedAt?,
+        ))
+          _cardMeta(
+            raftFormat(context, 'Resolved by {name} · {time}', {
+              'name': artifactCommentActorName(context, resolver),
+              'time': artifactRelativeTime(
+                context,
+                DateTime.tryParse(resolvedAt),
+                now: widget.clock?.call(),
+              ),
+            }),
+            glyph: RaftGlyph.squareCheckBig,
+          ),
+        if (_reply?.id == root?.id && root != null)
+          _composer(reply: root)
+        else if (root != null && _canComment)
+          Wrap(
+            spacing: RaftSpace.x1,
+            children: [
+              if (!root.deleted)
+                RaftButton(
+                  label: raftText(context, 'Reply'),
+                  glyph: RaftGlyph.reply,
+                  tone: RaftButtonRecipeVariant.ghost,
+                  size: RaftButtonRecipeSize.md,
+                  onPressed: () => setState(() {
+                    _edit = null;
+                    _editDraft = null;
+                    _reply = root;
+                  }),
+                ),
+              if (_canResolve(root))
+                RaftButton(
+                  label: resolutionLabel,
+                  glyph: thread.resolved
+                      ? RaftGlyph.reopenTask
+                      : RaftGlyph.squareCheckBig,
+                  tone: RaftButtonRecipeVariant.ghost,
+                  size: RaftButtonRecipeSize.md,
+                  busy: store.changing(root.id),
+                  loadingLabel: resolutionLabel,
+                  onPressed: () => unawaited(_resolve(root)),
+                ),
+            ],
+          ),
+      ],
     );
   }
 
@@ -337,7 +478,8 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
         draft?.place ??
         edit?.place ??
         reply?.place ??
-        ArtifactCommentPlace(_file ? widget.path : null);
+        ArtifactCommentPlace(widget.filePath);
+    final footer = reply == null && edit == null && draft == null;
     return ArtifactCommentComposer(
       key: ValueKey((
         widget.data.card.version,
@@ -353,11 +495,11 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
       edit: edit,
       review: widget.review,
       draft: draft,
-      autofocus: reply != null || edit != null || draft != null,
-      insert: reply == null && edit == null && draft == null
-          ? widget.insert
-          : null,
-      onCancel: reply == null && edit == null && draft == null
+      autofocus: !footer,
+      standing: footer && widget.insert == null,
+      insert: footer ? widget.insert : null,
+      onReviewComposerChanged: widget.onReviewComposerChanged,
+      onCancel: footer
           ? null
           : () {
               setState(() {
@@ -370,22 +512,51 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
     );
   }
 
-  List<Widget> _groups(List<ArtifactCommentThread> threads) {
+  Widget _groupHeading(String label) {
     final t = RaftTokens.of(context);
-    final groups = <String?, List<ArtifactCommentThread>>{};
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x1),
+      child: Text(
+        label,
+        style: t.scale(
+          RaftTypeScale.footnote,
+          weight: FontWeight.w700,
+          color: t.ui.foregroundHint,
+        ),
+      ),
+    );
+  }
+
+  Iterable<Widget> _groups(List<ArtifactCommentThread> threads) sync* {
+    final regularSheet = _regularSheet;
+    final groups = <String?, List<ArtifactCommentThread>>{null: []};
     for (final thread in threads) {
       (groups[thread.first.place.path] ??= []).add(thread);
     }
-    return [
-      for (final path in {null, ...groups.keys})
-        if (groups[path] case final group?) ...[
-          Text(
-            path ?? raftText(context, 'Whole Artifact'),
-            style: t.scale(RaftTypeScale.caption),
-          ),
-          for (final thread in group) _thread(thread),
-        ],
-    ];
+    final populatedGroups = groups.entries.where(
+      (group) => group.value.isNotEmpty,
+    );
+    for (final (index, group) in populatedGroups.indexed) {
+      if (regularSheet && index > 0) yield const SizedBox(height: RaftSpace.x4);
+      final heading = _groupHeading(
+        group.key ?? raftText(context, 'Whole Artifact'),
+      );
+      yield regularSheet
+          ? heading
+          : Padding(
+              padding: const EdgeInsets.only(bottom: RaftSpace.x2),
+              child: heading,
+            );
+      for (final thread in group.value) {
+        yield Padding(
+          key: ValueKey(('artifact-comment-thread', thread.id)),
+          padding: regularSheet
+              ? const EdgeInsets.only(top: RaftSpace.x2)
+              : const EdgeInsets.only(bottom: RaftSpace.x2),
+          child: Builder(builder: (context) => _thread(context, thread)),
+        );
+      }
+    }
   }
 
   List<Widget> _drafts(ArtifactReviewStore review) {
@@ -408,81 +579,88 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
           ),
         ),
       if (review.drafts.isNotEmpty) ...[
-        Text(
-          raftText(context, 'Your drafts'),
-          style: t.scale(RaftTypeScale.caption),
-        ),
+        _groupHeading(raftText(context, 'Your drafts')),
         for (final draft in review.drafts)
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(color: t.ui.lineHairline),
-              borderRadius: BorderRadius.circular(t.radius),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(RaftSpace.x3),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: RaftSpace.x1,
-                children: [
-                  Text(draft.place.path ?? raftText(context, 'Whole Artifact')),
-                  if (_editDraft?.id == draft.id)
-                    _composer(draft: draft)
-                  else
-                    ArtifactCommentBody(body: draft.body),
-                  for (final id in draft.images)
-                    _ArtifactCommentImage(
-                      key: ValueKey(id),
-                      store: store,
-                      id: id,
-                    ),
-                  if (_editDraft?.id != draft.id)
-                    Wrap(
-                      spacing: RaftSpace.x1,
-                      children: [
-                        RaftButton(
-                          label: raftText(context, 'Edit'),
-                          tone: RaftButtonRecipeVariant.ghost,
-                          onPressed: review.busy
-                              ? null
-                              : () => setState(() {
-                                  _reply = null;
-                                  _edit = null;
-                                  _editDraft = draft;
-                                }),
+          Padding(
+            padding: const EdgeInsets.only(top: RaftSpace.x2),
+            child: RaftCommentCard(
+              key: ValueKey(draft.id),
+              privateDraft: true,
+              children: [
+                _cardMeta(
+                  draft.place.path ?? raftText(context, 'Whole Artifact'),
+                ),
+                if (_editDraft?.id == draft.id)
+                  _composer(draft: draft)
+                else
+                  ArtifactCommentBody(
+                    body: draft.body,
+                    viewer: widget.data.viewer,
+                    // DraftCard uses Text.Sans body in both viewport tiers.
+                    style: RaftTypography.sans(t, color: t.ui.foreground)
+                        .copyWith(
+                          leadingDistribution:
+                              raftCssTextHeightBehavior.leadingDistribution,
                         ),
-                        RaftButton(
-                          label: raftText(context, 'Delete'),
-                          tone: RaftButtonRecipeVariant.ghost,
-                          onPressed: review.busy
-                              ? null
-                              : () => _discard(review, draft.id),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
+                  ),
+                for (final id in draft.images)
+                  _ArtifactCommentImage(
+                    key: ValueKey(id),
+                    store: store,
+                    id: id,
+                  ),
+                if (_editDraft?.id != draft.id)
+                  Wrap(
+                    spacing: RaftSpace.x1,
+                    children: [
+                      RaftButton(
+                        label: raftText(context, 'Edit'),
+                        glyph: RaftGlyph.pencil,
+                        tone: RaftButtonRecipeVariant.ghost,
+                        onPressed: review.busy
+                            ? null
+                            : () => setState(() {
+                                _reply = null;
+                                _edit = null;
+                                _editDraft = draft;
+                              }),
+                      ),
+                      RaftButton(
+                        label: raftText(context, 'Delete'),
+                        glyph: RaftGlyph.trash2,
+                        tone: RaftButtonRecipeVariant.ghost,
+                        onPressed: review.busy
+                            ? null
+                            : () => _discard(review, draft.id),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ),
-        Wrap(
-          alignment: WrapAlignment.end,
-          spacing: RaftSpace.x2,
-          children: [
-            RaftButton(
-              label: raftText(context, 'Discard all'),
-              tone: RaftButtonRecipeVariant.ghost,
-              onPressed: review.busy ? null : () => _discard(review, null),
-            ),
-            RaftButton(
-              key: const ValueKey('artifact-review-submit'),
-              label: raftFormat(context, 'Send {count}', {
-                'count': review.drafts.length,
-              }),
-              onPressed: review.busy || _editDraft != null
-                  ? null
-                  : () => review.submit(widget.data.card.version),
-            ),
-          ],
-        ),
+        if (widget.insert != null || store.reviewId != null)
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: RaftSpace.x2,
+            children: [
+              RaftButton(
+                label: raftText(context, 'Discard all'),
+                tone: RaftButtonRecipeVariant.ghost,
+                onPressed: review.busy ? null : () => _discard(review, null),
+              ),
+              RaftButton(
+                key: const ValueKey('artifact-review-submit'),
+                label: raftFormat(context, 'Send {count}', {
+                  'count': review.drafts.length,
+                }),
+                onPressed: review.busy || _editDraft != null
+                    ? null
+                    : () => review.submit(widget.data.card.version),
+              ),
+            ],
+          )
+        else
+          const SizedBox(height: RaftSpace.x4),
       ],
     ];
   }
@@ -548,7 +726,10 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
       children: [
         if (store.reviewId != null) ...[
           if (store.review case final review?)
-            ArtifactCommentBody(body: readCommentBody(review['body']))
+            ArtifactCommentBody(
+              body: readCommentBody(review['body']),
+              viewer: widget.data.viewer,
+            )
           else
             Text(raftText(context, "This review isn't on this Artifact.")),
           RaftButton(
@@ -582,28 +763,30 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
                 ),
               ),
             ),
-        for (final child in _groups(unresolved))
-          Padding(
-            padding: const EdgeInsets.only(bottom: RaftSpace.x2),
-            child: child,
-          ),
-        if (resolved.isNotEmpty)
-          RaftButton(
-            glyph: _resolvedOpen
-                ? RaftGlyph.chevronDown
-                : RaftGlyph.chevronRight,
-            tone: RaftButtonRecipeVariant.ghost,
-            label: raftFormat(context, 'Resolved ({count})', {
-              'count': resolved.length,
-            }),
-            onPressed: () => setState(() => _resolvedOpen = !_resolvedOpen),
-          ),
-        if (_resolvedOpen)
-          for (final child in _groups(resolved))
-            Padding(
-              padding: const EdgeInsets.only(bottom: RaftSpace.x2),
-              child: child,
+        ..._groups(unresolved),
+        if (resolved.isNotEmpty) ...[
+          if (unresolved.isNotEmpty)
+            SizedBox(height: _regularSheet ? RaftSpace.x4 : RaftSpace.x2),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: RaftButton(
+              key: _resolvedDisclosure,
+              glyph: _resolvedOpen
+                  ? RaftGlyph.chevronDown
+                  : RaftGlyph.chevronRight,
+              tone: RaftButtonRecipeVariant.ghost,
+              size: RaftButtonRecipeSize.md,
+              label: raftFormat(context, 'Resolved ({count})', {
+                'count': resolved.length,
+              }),
+              onPressed: _toggleResolved,
             ),
+          ),
+          if (_resolvedOpen) ...[
+            const SizedBox(height: RaftSpace.x2),
+            ..._groups(resolved),
+          ],
+        ],
       ],
     );
   }
@@ -613,13 +796,15 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
     final t = RaftTokens.of(context);
     final compactReport =
         widget.insert != null && RaftAdaptiveWorkspace.compactOf(context);
+    final regularSheet = _regularSheet;
+    final sheetChrome = compactReport || regularSheet;
     final footerBorder = Border(
-      top: BorderSide(color: compactReport ? t.ui.lineSeam : t.ui.lineHairline),
+      top: BorderSide(color: sheetChrome ? t.ui.lineSeam : t.ui.lineHairline),
     );
     final closeLabel = raftText(context, 'Close comments');
     return ColoredBox(
       key: const ValueKey('artifact-comments-panel'),
-      color: widget.insert == null ? t.panel : t.ui.layerCard,
+      color: t.ui.layerCard,
       child: ListenableBuilder(
         listenable: Listenable.merge([store, widget.review]),
         builder: (context, _) => Column(
@@ -627,9 +812,10 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
           children: [
             RaftPanelHeaderBar(
               title: raftText(context, 'Comments'),
+              subtitle: widget.filePath,
               columnMargin: compactReport ? RaftSpace.x4 : null,
               actions: [
-                if (compactReport)
+                if (sheetChrome)
                   RaftPanelAction(
                     key: const ValueKey('artifact-comments-close'),
                     responsiveRecipe: true,
@@ -659,10 +845,11 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
                 _editDraft == null)
               SafeArea(
                 top: false,
+                bottom: !regularSheet,
                 child: DecoratedBox(
                   decoration: BoxDecoration(border: footerBorder),
                   child: Padding(
-                    padding: compactReport
+                    padding: sheetChrome || widget.insert == null
                         ? EdgeInsets.fromLTRB(
                             RaftSpace.x3,
                             RaftSpace.x2 + footerBorder.top.width,
@@ -670,26 +857,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
                             RaftSpace.x3,
                           )
                         : const EdgeInsets.all(RaftSpace.x3),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (widget.path case final path?)
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: RaftButton(
-                              label: _file
-                                  ? path
-                                  : raftText(context, 'Whole Artifact'),
-                              glyph: RaftGlyph.chevronDown,
-                              tone: RaftButtonRecipeVariant.ghost,
-                              size: RaftButtonRecipeSize.sm,
-                              onPressed: () => setState(() => _file = !_file),
-                            ),
-                          ),
-                        _composer(),
-                      ],
-                    ),
+                    child: _composer(),
                   ),
                 ),
               ),
@@ -701,21 +869,41 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
 }
 
 class ArtifactCommentBody extends StatelessWidget {
-  const ArtifactCommentBody({super.key, required this.body});
+  const ArtifactCommentBody({
+    super.key,
+    required this.body,
+    required this.viewer,
+    this.style,
+  });
 
   final List<ArtifactCommentPart> body;
+  final ArtifactViewerActor? viewer;
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final base =
+        style ?? t.scale(RaftTypeScale.callout, color: t.ui.foreground);
     return Text.rich(
       TextSpan(
+        style: base,
         children: [
           for (final part in body)
-            TextSpan(
-              text: part.display,
-              style: part.actor == null ? null : t.scale(RaftTypeScale.caption),
-            ),
+            if (part.actor case final actor?)
+              raftMentionTextSpan(
+                context,
+                label:
+                    '@${actor.displayName.trim().isEmpty ? artifactCommentActorName(context, actor) : actor.displayName}',
+                base: base,
+                useSourceTypography: true,
+                own:
+                    actor.gone == null &&
+                    viewer?.type == actor.type &&
+                    viewer?.id == actor.id,
+              )
+            else
+              TextSpan(text: part.text),
         ],
       ),
     );

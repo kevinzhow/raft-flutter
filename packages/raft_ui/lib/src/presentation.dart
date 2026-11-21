@@ -160,6 +160,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     bool dialogFillsHeight = false,
     bool scrollDialogSurface = false,
     bool sheetFillsHeight = false,
+    double Function(BuildContext)? sheetFixedHeight,
     double sheetInitialSize = RaftSheetMetrics.largeDetent,
     double sideWidth = 420,
     bool reduceMotion = false,
@@ -178,6 +179,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
          dialogFillsHeight: dialogFillsHeight,
          scrollDialogSurface: scrollDialogSurface,
          sheetFillsHeight: sheetFillsHeight,
+         sheetFixedHeight: sheetFixedHeight,
          sheetInitialSize: sheetInitialSize,
          sideWidth: sideWidth,
          reduceMotion: reduceMotion,
@@ -198,6 +200,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     required this.dialogFillsHeight,
     required this.scrollDialogSurface,
     required this.sheetFillsHeight,
+    required this.sheetFixedHeight,
     required this.sheetInitialSize,
     required this.sideWidth,
     required bool reduceMotion,
@@ -284,11 +287,11 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
   /// does, instead of clipping an inner scrollport at the window inset.
   final bool scrollDialogSurface;
 
-  /// The sheet is always [RaftSheetMetrics.largeDetent] tall (an editor whose
-  /// content scrolls itself). Otherwise the sheet is a scrolling [RaftSheet]
-  /// that opens at [sheetInitialSize] of the window and can be dragged up to
-  /// the large detent.
+  /// Content manages its own scrolling in a sheet of [sheetFixedHeight],
+  /// or [RaftSheetMetrics.largeDetent] of the window by default. Otherwise
+  /// the sheet opens at [sheetInitialSize] and can expand to the large detent.
   final bool sheetFillsHeight;
+  final double Function(BuildContext)? sheetFixedHeight;
   final double sheetInitialSize;
 
   final contentKey = GlobalKey(debugLabel: 'presented content');
@@ -316,7 +319,8 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
           ? LayoutBuilder(
               builder: (context, box) => SizedBox(
                 height: math.min(
-                  media.size.height * RaftSheetMetrics.largeDetent,
+                  sheetFixedHeight?.call(context) ??
+                      media.size.height * RaftSheetMetrics.largeDetent,
                   box.maxHeight,
                 ),
                 child: surface(
@@ -605,6 +609,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
   bool dialogFillsHeight = false,
   bool scrollDialogSurface = false,
   bool sheetFillsHeight = false,
+  double Function(BuildContext)? sheetFixedHeight,
   double sheetInitialSize = RaftSheetMetrics.largeDetent,
 }) {
   final navigator = Navigator.of(context, rootNavigator: true);
@@ -626,6 +631,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
     dialogFillsHeight: dialogFillsHeight,
     scrollDialogSurface: scrollDialogSurface,
     sheetFillsHeight: sheetFillsHeight,
+    sheetFixedHeight: sheetFixedHeight,
     sheetInitialSize: sheetInitialSize,
   );
 }

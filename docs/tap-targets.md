@@ -105,6 +105,10 @@ the selected image shown. Save draft stores the comment privately in the
 current Artifact review. Send posts to the current Artifact discussion and
 shows the comment there. The comment capability gates the box, and Save draft
 requires a loaded review. Closing the comments returns to the Viewer.
+The Viewer More menu offers **Comment on this file** when the displayed file
+can be commented on. It opens the same composer and names the file. Send and
+Save draft apply to that file. Back returns to More. Opening **Comments**
+opens the whole-Artifact composer.
 
 ### Adding a container
 

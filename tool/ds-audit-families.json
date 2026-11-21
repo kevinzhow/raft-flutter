@@ -34,6 +34,19 @@
         }
       }
     },
+    "comment-card": {
+      "canonical": [
+        "RaftCommentCard"
+      ],
+      "note": "The shared card frame for Artifact threads and private drafts.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftCommentCard": {
+          "declarationId": "packages/raft_ui/lib/src/comment_card.dart#class:RaftCommentCard",
+          "role": "public_api"
+        }
+      }
+    },
     "side-panel-frame": {
       "canonical": [
         "RaftSidePanelFrame"
@@ -2741,10 +2754,10 @@
       "axes": {}
     },
     "comment": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "WP-DS3 messages/composer; ART2 comments where applicable",
-      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "family": "comment-card",
+      "decision": "existing",
+      "owner": "Artifact discussion",
+      "reason": "RaftCommentCard applies the generated Comment card recipe to posted threads and private drafts.",
       "generatedFile": "packages/raft_theme/lib/recipes/comment.g.dart",
       "axes": {
         "clamp": [

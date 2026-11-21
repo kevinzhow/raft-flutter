@@ -46736,12 +46736,6 @@
         "owner": "WP-DS2 overlay family",
         "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/presentation.dart#local-function:CLASS:RaftPresentedRoute@4833/METHOD:_buildSheet@10841/FUNCTION:surface@11139": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS2 overlay family",
-        "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "packages/raft_ui/lib/src/selected_text_quote.dart#local-function:EXTENSION:<anonymous>@3014/METHOD:_raft@3371/FUNCTION:item@4025": {
         "role": "unresolved",
         "familyRefs": [],
@@ -58164,14 +58158,6 @@
         "owner": "WP-ART3",
         "reason": "Renders the cover slot of a mounted collection Grid tile and owns async content resolution."
       },
-      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@2164/FUNCTION:viewer@2360": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "dialog"
-        ],
-        "owner": "WP-ART3",
-        "reason": "Builds ArtifactWorkspaceViewer for both the compact preview route and wide dialog route."
-      },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._deleteArtifact": {
         "role": "entry_composition",
         "familyRefs": [
@@ -58290,6 +58276,163 @@
         "familyRefs": [],
         "owner": "WP-ART3",
         "reason": "Aligns a collection Grid version badge on the inherited inline baseline using its shared Badge recipe."
+      },
+      "packages/raft_ui/lib/src/comment_card.dart#class:RaftCommentCard": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "comment-card"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "packages/raft_ui/lib/src/comment_card.dart#method:RaftCommentCard.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "comment-card"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "packages/raft_ui/lib/comment_card_previews.dart#function:commentCardPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "comment-card"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "packages/raft_ui/lib/src/dashed_rounded_border.dart#class:RaftDashedRoundedPainter": {
+        "role": "internal_part",
+        "familyRefs": [
+          "comment-card"
+        ],
+        "owner": "Artifact discussion and composer drop overlay",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/comment_card.dart#class:RaftCommentCard"
+        ]
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._cardMeta": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "comment-card"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "packages/raft_ui/lib/src/message_reference_chip.dart#function:raftMentionTextSpan": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Inline message references"
+      },
+      "packages/raft_ui/lib/src/message_reference_chip.dart#function:_secondaryMention": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Inline message references"
+      },
+      "packages/raft_ui/lib/src/message_reference_chip.dart#function:_secondaryMentionTextStyle": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Inline message references"
+      },
+      "packages/raft_ui/lib/src/presentation.dart#local-function:CLASS:RaftPresentedRoute@4833/METHOD:_buildSheet@11003/FUNCTION:surface@11301": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS2 overlay family",
+        "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._groupHeading": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._regularSheet": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@2092/FUNCTION:viewer@2288": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Builds ArtifactWorkspaceViewer for both the compact preview route and wide dialog route."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@2184/FUNCTION:viewer@2380": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Same compact preview and wide dialog viewer after adding the batch bar import."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._showSentDrafts": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#class:ArtifactReviewBatchBar": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "popover"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#class:_ArtifactReviewBatchBarState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "popover"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#method:ArtifactReviewBatchBar.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#method:_ArtifactReviewBatchBarState._confirmation": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "popover"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#method:_ArtifactReviewBatchBarState._send": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#method:_ArtifactReviewBatchBarState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "popover"
+        ],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#method:_ArtifactReviewBatchBarState.initState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._commentsPanel": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "comment-card"
+        ],
+        "owner": "Artifact discussion",
+        "reason": "Mounts the same discussion panel for the regular drawer and desktop Viewer."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._presentRegularComments": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion",
+        "reason": "Presents the regular compact Comments drawer using the shared Drawer route."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._syncRegularCommentsRoute": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion",
+        "reason": "Keeps the regular Comments drawer in sync with the Viewer selection, layout, and access."
       }
     },
     "entries": {
@@ -62339,6 +62482,23 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Toggles the anchored dropdown or submenu from its mounted trigger and keeps a mouse-opened submenu active on click."
+      },
+      "surface:apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#method:_ArtifactReviewBatchBarState._send": {
+        "owner": "Artifact discussion",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart#method:_ArtifactReviewBatchBarState._send"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "surface:apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._presentRegularComments": {
+        "owner": "Artifact discussion",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._presentRegularComments"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The regular compact Viewer Comments action mounts the shared discussion in a drawer."
       }
     },
     "requirements": {
@@ -68015,34 +68175,37 @@
         "reason": "Uses the same responsive button and icon geometry as the rendered PanelAction."
       },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
-        "applicability": "unknown",
-        "owner": "WP-ART3",
-        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+        "applicability": "required",
+        "owner": "Artifact discussion"
       },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
-        "applicability": "unknown",
-        "owner": "WP-ART3",
-        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+        "applicability": "required",
+        "owner": "Artifact discussion"
       },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
-        "applicability": "unknown",
-        "owner": "WP-ART3",
-        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+        "applicability": "required",
+        "owner": "Artifact discussion"
       },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
-        "applicability": "unknown",
-        "owner": "WP-ART3",
-        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+        "applicability": "required",
+        "owner": "Artifact discussion"
       },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header|state:data-pressed": {
-        "applicability": "unknown",
-        "owner": "WP-ART3",
-        "reason": "Uses the canonical responsive panel toggle recipe for the open desktop report sidebar."
+        "applicability": "required",
+        "owner": "Artifact discussion"
       },
       "packages/raft_ui/lib/src/artifact_collection_layout.dart#method:RaftArtifactCollectionLayout.versionBadge|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "required",
         "owner": "WP-ART3",
         "reason": "Selects the same responsive Badge height as the mounted version badge."
+      },
+      "packages/raft_ui/lib/src/comment_card.dart#method:RaftCommentCard.build|state:data-active": {
+        "applicability": "required",
+        "owner": "Artifact discussion"
+      },
+      "packages/raft_ui/lib/src/message_reference_chip.dart#method:RaftReferenceChip._sourceChip|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "required",
+        "owner": "Artifact discussion"
       }
     },
     "evidence": {},

@@ -63,6 +63,10 @@ class ArtifactCommentStore extends ChangeNotifier {
       !_revoked &&
       channelSearchPageAuthority(workspace) == authority;
 
+  int? get completeCommentCount => loaded && cursor == null && reviewId == null
+      ? _rows.values.where((comment) => !comment.deleted).length
+      : null;
+
   List<ArtifactCommentThread> get threads {
     final ordered = _rows.values.toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
