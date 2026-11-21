@@ -90,7 +90,16 @@ void main() {
     testWidgets(
       'Raft $dark retains conversation content across sidebar sections',
       (t) async {
-        final (w, _) = await pageFixture(t);
+        final (w, api) = await pageFixture(t);
+        api.routes['GET /agents'] = (_) => [
+          {
+            'id': 'uniform-agent',
+            'name': 'Cindy',
+            'description': 'Keeps visual tests honest',
+            'status': 'active',
+            'serverId': 's1',
+          },
+        ];
         w.dms = [
           RaftChannel({
             'id': 'uniform-peer',
@@ -99,12 +108,11 @@ void main() {
             'peerId': 'uniform-agent',
             'name': 'Cindy',
             'peerDisplayName': 'Cindy',
-            'peerDescription': 'Keeps visual tests honest',
+            'peerDescription': 'Discovery description',
             'joined': true,
           }),
         ];
         await mountPage(t, w, dark);
-        final row = find.byKey(const ValueKey('sidebar-channel-uniform-peer'));
         for (final section in ['normal', 'pinned', 'custom']) {
           w.sidebarOrder = switch (section) {
             'pinned' => {
@@ -129,7 +137,14 @@ void main() {
           };
           w.notifyListeners();
           await t.pumpAndSettle();
-          expect(row, findsOneWidget);
+          final row = find.byKey(
+            ValueKey(
+              section == 'pinned'
+                  ? 'sidebar-agent:uniform-agent'
+                  : 'sidebar-channel-uniform-peer',
+            ),
+          );
+          expect(row, findsOneWidget, reason: section);
           final item = t.widget<RaftNavItem>(row);
           expect(
             item.description,
