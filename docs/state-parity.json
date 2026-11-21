@@ -58559,7 +58559,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4989/METHOD:buildTimeline@113851/FUNCTION:timelineFor@117470": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4989/METHOD:buildTimeline@113673/FUNCTION:timelineFor@117310": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -58577,25 +58577,25 @@
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27461/METHOD:_build@34466/FUNCTION:row@41604": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27831/METHOD:_build@34900/FUNCTION:row@42038": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27461/METHOD:_build@34466/FUNCTION:titleContent@37778": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27831/METHOD:_build@34900/FUNCTION:titleContent@38212": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27461/METHOD:_build@34466/FUNCTION:titleWithIndicators@40834": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27831/METHOD:_build@34900/FUNCTION:titleWithIndicators@41268": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27461/METHOD:_build@34466/FUNCTION:wrappedTitle@36637": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27831/METHOD:_build@34900/FUNCTION:wrappedTitle@37071": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
