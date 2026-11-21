@@ -57227,6 +57227,42 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:buildTimeline@113052/FUNCTION:timelineFor@116754": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Composes the timeline at the effective message width when the outline gutter is present."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4198/METHOD:build@15974/FUNCTION:row@16728": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Maintains timeline row ownership after the Thread outline gutter import shifted its lexical position."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4198/METHOD:build@15974/FUNCTION:row@16728/FUNCTION:buildRow@16782": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Maintains the existing row-builder ownership at its current lexical position."
+      },
+      "packages/raft_ui/lib/src/thread_outline_metrics.dart#class:RaftThreadOutlineGutter": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Provides the shared outline gutter to timeline content layout and active search-row paint."
+      },
+      "packages/raft_ui/lib/src/thread_outline_metrics.dart#method:RaftThreadOutlineGutter.maybeOf": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Reads the nearest outline gutter at the timeline and row geometry owners."
+      },
+      "packages/raft_ui/lib/src/thread_outline_metrics.dart#method:RaftThreadOutlineGutter.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Invalidates scoped timeline geometry when the outline becomes visible or hidden."
+      },
       "apps/raft_flutter/lib/features/thread_workspace_header.dart#class:WorkspaceThreadHeader": {
         "role": "unresolved",
         "familyRefs": [],
