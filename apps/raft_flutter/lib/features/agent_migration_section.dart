@@ -419,7 +419,6 @@ class _AgentMigrationSectionState
               current['targetMachineId'],
             ),
           }).text(context);
-          final t = RaftTokens.of(context);
           // A move to the cloud is canceled only before the switch, and only
           // the source computer has to confirm.
           final hosted = isHostedMigration(current);
@@ -435,46 +434,26 @@ class _AgentMigrationSectionState
             onConfirm: () => _submitCancel(generation, sourceAuthority),
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: RaftSpace.x3,
               children: [
-                Text(
-                  raftText(context, 'Canceling is safe'),
-                  style: RaftTypography.body(
-                    t,
-                    size: 14,
-                    line: 14 * 1.625,
-                    weight: FontWeight.w700,
-                  ),
-                ),
                 Text(
                   raftFormat(
                     context,
                     hosted
                         ? 'Raft will stop moving the agent to the cloud. The agent and its workspace stay on {source}, and it goes back to work there.'
-                        : 'Raft will stop the migration from {source} to {target} and clean up on both computers. Your agent and its workspace stay on whichever computer has them now.',
+                        : 'Your agent stays where it is now, and Raft cleans up on both computers. Keep {source} and {target} online until it finishes.',
                     {'source': source, 'target': target},
                   ),
-                  style: RaftTypography.body(
-                    t,
-                    size: 14,
-                    line: 14 * 1.625,
-                    color: t.strong,
+                ),
+                if (hosted)
+                  Text(
+                    raftFormat(
+                      context,
+                      'Canceling finishes once {source} confirms. Keep it online until then.',
+                      {'source': source},
+                    ),
                   ),
-                ),
-                const SizedBox(height: RaftSpace.x3),
                 MigrationReference(migrationRef: '${current['migrationRef']}'),
-                const SizedBox(height: RaftSpace.x3),
-                Text(
-                  hosted
-                      ? raftFormat(
-                          context,
-                          'Canceling finishes once {source} confirms. Keep it online until then.',
-                          {'source': source},
-                        )
-                      : raftText(
-                          context,
-                          'Canceling finishes only after both computers confirm. Keep both computers online until then.',
-                        ),
-                ),
               ],
             ),
           );
