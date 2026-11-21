@@ -85,9 +85,7 @@ WorkspaceController _workspace(ParityContext ctx) {
     routes: {
       'GET /agents': [
         for (final agent in ids.agents)
-          avatarReset && agent['id'] == 'agent-cindy'
-              ? {...agent, 'avatarUrl': null}
-              : agent,
+          if (!avatarReset || agent['id'] != 'agent-cindy') agent,
       ],
       'GET /servers/visual-server/members': ids.members,
       if (ctx.props['routeSet'] == 'fr-bell')
@@ -113,13 +111,6 @@ WorkspaceController _workspace(ParityContext ctx) {
     workspace.sidebarOrder = Map<String, dynamic>.from(
       routes['GET /servers/visual-server/sidebar-order'] as Map,
     );
-    workspace.dms = [
-      for (final dm in workspace.dms)
-        if (dm.id == 'shell-dm-cindy')
-          RaftChannel({...dm.json, 'peerAvatarUrl': 'pixel:owl'})
-        else
-          dm,
-    ];
   }
   return workspace;
 }
@@ -419,6 +410,14 @@ final ParityCase _case = ParityCase(
       );
       expect(avatar, findsOneWidget);
       expect(t.widget<RaftPixelAvatar>(avatar).avatarKey, 'robot');
+      final frame = find.descendant(
+        of: row,
+        matching: find.byType(RaftMountedAvatarFrame),
+      );
+      expect(
+        t.widget<RaftMountedAvatarFrame>(frame).presence?.light,
+        RaftPresence.offline,
+      );
     }
     if (ctx.props['extCase'] == 'desktop.topbar-drag') {
       final origin = find.byKey(
