@@ -663,6 +663,7 @@ class ResourceSearchResults extends StatelessWidget {
       final key = 'message:${row['id']}';
       final hit = RaftQuickSwitcherHit(
         key: ValueKey('search-message:${row['id']}'),
+        pageLayout: true,
         where: searchSourceLabel(row, dmRows),
         threadLabel: thread ? raftText(context, 'Thread').toLowerCase() : null,
         warnings: [

@@ -58975,7 +58975,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11966/METHOD:build@17269/FUNCTION:messageGroup@23860": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11966/METHOD:build@17269/FUNCTION:messageGroup@23886": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

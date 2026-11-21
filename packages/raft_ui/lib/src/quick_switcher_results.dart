@@ -167,6 +167,7 @@ class RaftQuickSwitcherHit extends StatelessWidget {
     this.time = '',
     this.nested = false,
     this.first = false,
+    this.pageLayout = false,
   });
   final String where, sender, time;
   final String? threadLabel;
@@ -175,7 +176,7 @@ class RaftQuickSwitcherHit extends StatelessWidget {
   final List<String> warnings;
   final Widget? avatar;
   final Widget snippet;
-  final bool selected, nested, first;
+  final bool selected, nested, first, pageLayout;
   final VoidCallback onPressed;
 
   @override
@@ -332,6 +333,7 @@ class RaftQuickSwitcherHit extends StatelessWidget {
       ],
     );
     return RaftSearchResultSurface(
+      pageLayout: pageLayout,
       selected: selected,
       nested: nested,
       first: first,
