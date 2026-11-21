@@ -917,7 +917,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     final readGeneration = workspace.readState.generation;
     try {
       // Shared with a mounted Activity page reconciling the same window.
-      final value = await workspace.sharedQuery(
+      Future<dynamic> read() => workspace.sharedQuery(
         '/channels/inbox',
         query: {
           'filter': 'all',
@@ -926,6 +926,9 @@ class SourceActivityUnreadStore extends ChangeNotifier {
           'offset': 0,
         },
       );
+      final value = await (_convergence.hasPending
+          ? RaftClient.runRevalidating(read)
+          : read());
       if (_disposed ||
           authority != scope ||
           request != _request ||

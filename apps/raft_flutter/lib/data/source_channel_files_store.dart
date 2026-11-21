@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:raft_client/raft_client.dart';
 
 typedef ChannelFilesGet = Future<dynamic> Function(
   String path, {
@@ -211,10 +212,13 @@ class SourceChannelFilesStore extends ChangeNotifier {
         epoch == _epoch &&
         request == _request;
     try {
-      final data = await get(
+      Future<dynamic> read() => get(
         '/channels/${Uri.encodeComponent(channelId)}/files',
         query: {'limit': 50, 'cursor': ?cursor},
       );
+      final data = await (loaded && !more
+          ? RaftClient.runRevalidating(read)
+          : read());
       if (!current()) return;
       if (data is! Map ||
           data['files'] is! List ||

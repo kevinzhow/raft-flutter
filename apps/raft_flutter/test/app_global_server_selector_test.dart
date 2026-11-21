@@ -214,8 +214,12 @@ class RootClient extends RaftClient {
     super.joinChannel(channelId);
   }
 
-  void event(String name, dynamic payload) =>
-      injectedEvents.add(RaftEvent(name, payload));
+  void event(String name, dynamic payload) {
+    final event = RaftEvent(name, payload);
+    invalidateReadsForEvent(event);
+    injectedEvents.add(event);
+  }
+
   Future<void>? disposing;
   @override
   Future<void> dispose() => disposing ??= disposeOnce();
