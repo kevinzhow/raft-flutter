@@ -40,6 +40,7 @@ import 'recipe_surface.dart';
 import 'raft/avatar.dart';
 import 'raft/badge.dart';
 import 'raft/list_row.dart' show RaftListRowSkeleton;
+import 'raft/status.dart' show RaftStatus, RaftStatusSize, RaftStatusVariant;
 import 'token_geometry.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart'
@@ -161,6 +162,7 @@ class RaftConnectedAppRow {
     this.homepageLabel,
     this.onOpenHomepage,
     this.statusHint,
+    this.needsAdminReview = false,
     this.onOpenName,
     this.onReviewPermissions,
     this.actionLabel,
@@ -174,6 +176,7 @@ class RaftConnectedAppRow {
   final String? logoUrl, description, homepageUrl, homepageLabel, statusHint;
   final VoidCallback? onOpenHomepage;
   final List<RaftConnectedAppBadge> badges;
+  final bool needsAdminReview;
 
   /// Non-editable installed apps: the name is a button opening the access
   /// detail.
@@ -1472,10 +1475,25 @@ class _AppRowCard extends StatelessWidget {
     final info = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RaftAppLogo(
-          initials: row.initials,
-          logoUrl: row.logoUrl,
-          size: RaftAppLogoSize.sm,
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            RaftAppLogo(
+              initials: row.initials,
+              logoUrl: row.logoUrl,
+              size: RaftAppLogoSize.sm,
+            ),
+            if (row.needsAdminReview)
+              Positioned(
+                top: -RaftStatusSize.sm.px / 2,
+                right: -RaftStatusSize.sm.px / 2,
+                child: RaftStatus(
+                  size: RaftStatusSize.sm,
+                  variant: RaftStatusVariant.accent,
+                  semanticLabel: raftText(context, 'Needs your review'),
+                ),
+              ),
+          ],
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1537,7 +1555,7 @@ class _AppRowCard extends StatelessWidget {
             label: row.actionLabel!,
             glyph: row.actionGlyph,
             glyphSize: 14,
-            size: RaftButtonRecipeSize.sm,
+            size: RaftButtonRecipeSize.md,
             onPressed: row.onAction,
           );
     final actions = row.onReviewPermissions == null

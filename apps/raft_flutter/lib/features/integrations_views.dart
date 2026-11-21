@@ -1478,6 +1478,14 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             homepageUrl: app.source['homepageUrl'] as String?,
             homepageLabel: integrationDomain(app.source['homepageUrl']),
             onOpenHomepage: _homepageAction(app.source),
+            needsAdminReview:
+                canManage &&
+                (app.source['needsAdminReview'] == true ||
+                    marketplace.any(
+                      (row) =>
+                          row['id'] == app.id &&
+                          row['needsAdminReview'] == true,
+                    )),
             onOpenName: () => openInstalled(app),
             onReviewPermissions: canManage && _awaitsApproval(app)
                 ? () => openInstalled(app)

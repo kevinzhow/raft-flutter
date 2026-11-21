@@ -60,6 +60,7 @@ void main() {
   testWidgets('reviewing an app clears the bell notice and the Apps dot', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     const notificationPath = '/integrations/permission-updates';
     const permissionPath =
         '/integrations/marketplace/garden/install/app-notifications';
@@ -84,6 +85,7 @@ void main() {
           'name': 'Garden',
           'installedAt': '2026-11-20T00:00:00Z',
           'permissionApprovalRequired': pending,
+          'needsAdminReview': pending,
         },
       ],
       'GET $permissionPath': (_) => {
@@ -118,6 +120,8 @@ void main() {
       findsOneWidget,
     );
     await tap(find.text('Close').last);
+    final appDot = find.bySemanticsLabel(RegExp('Needs your review'));
+    expect(appDot, findsOneWidget);
     await tap(find.byKey(const Key('connected-app-review-permissions-garden')));
     expect(
       find.byKey(const Key('connected-app-installed-detail')),
@@ -137,6 +141,7 @@ void main() {
       },
     );
     await tap(find.text('Close').last);
+    expect(appDot, findsNothing);
     expect(
       find.byKey(const Key('connected-app-review-permissions-garden')),
       findsNothing,
@@ -148,5 +153,6 @@ void main() {
     await tap(bell);
     expect(find.text('View updates'), findsNothing);
     await fixture.close(tester);
+    semantics.dispose();
   });
 }
