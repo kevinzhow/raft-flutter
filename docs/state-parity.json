@@ -38222,6 +38222,12 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/thread_composition.dart#method:RaftThreadHeader.usesDesktopBar": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Selects shared desktop panel chrome for the split Thread based on placement and input modality."
+      },
       "packages/raft_ui/lib/src/thread_composition.dart#method:RaftThreadHeader.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -38233,6 +38239,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/thread_composition.dart#method:RaftThreadOverflowAction.opensFromPointer": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Selects initial Thread menu focus from the shared input modality."
       },
       "packages/raft_ui/lib/src/thread_composition.dart#method:RaftThreadOverflowAction.build": {
         "role": "unresolved",
