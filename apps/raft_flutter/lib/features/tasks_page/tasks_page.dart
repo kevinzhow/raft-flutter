@@ -126,6 +126,8 @@ class _TasksPageState extends State<TasksPage> {
   bool _creating = false;
   bool _listening = false;
   final _root = GlobalKey();
+  TasksPageToolbar? _toolbar;
+  Object? _toolbarInputs;
 
   WorkspaceController get w => widget.controller;
 
@@ -145,7 +147,7 @@ class _TasksPageState extends State<TasksPage> {
     // The people and agents the filters and the assignee picker list.
     w.services.entityDirectory
       ..ensureAuthors()
-      ..addListener(_changed);
+      ..addListener(_directoryChanged);
     store.addListener(_changed);
     params.addListener(_paramsChanged);
     selection.addListener(_changed);
@@ -157,6 +159,7 @@ class _TasksPageState extends State<TasksPage> {
   @override
   void didUpdateWidget(TasksPage old) {
     super.didUpdateWidget(old);
+    _toolbar = null;
     if (old.shown != widget.shown) {
       store.setShown(widget.shown);
       _queueHistoryRefresh();
@@ -167,7 +170,7 @@ class _TasksPageState extends State<TasksPage> {
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_key);
     if (_listening) {
-      w.services.entityDirectory.removeListener(_changed);
+      w.services.entityDirectory.removeListener(_directoryChanged);
       store.removeListener(_changed);
       params.removeListener(_paramsChanged);
       selection.removeListener(_changed);
@@ -183,6 +186,11 @@ class _TasksPageState extends State<TasksPage> {
     TasksSelectionEscape.active = selection.selecting;
     if (mounted) setState(() {});
     _queueHistoryRefresh();
+  }
+
+  void _directoryChanged() {
+    _toolbar = null;
+    _changed();
   }
 
   void _queueHistoryRefresh() {
@@ -517,7 +525,23 @@ class _TasksPageState extends State<TasksPage> {
     final inset = width >= raftTaskPageNarrowWidth ? surfaceInset : 16.0;
     final board = params.view == TasksPageView.board;
 
-    final toolbar = TasksPageToolbar(
+    final canCreate = w.server?.string('role') != 'guest';
+    final toolbarInputs = (
+      tab,
+      counts.tabs[TasksPageTab.mine],
+      counts.tabs[TasksPageTab.all],
+      params.rawQuery,
+      filters,
+      params.sort,
+      params.view,
+      canCreate,
+      inset,
+    );
+    if (_toolbarInputs != toolbarInputs) {
+      _toolbarInputs = toolbarInputs;
+      _toolbar = null;
+    }
+    final toolbar = _toolbar ??= TasksPageToolbar(
       controller: w,
       tab: tab,
       onTabChange: params.setTab,
@@ -534,7 +558,7 @@ class _TasksPageState extends State<TasksPage> {
       onSortChange: params.setSort,
       view: params.view,
       onViewChange: params.setView,
-      onNewTask: w.server?.string('role') == 'guest' ? null : _newTask,
+      onNewTask: canCreate ? _newTask : null,
       sideInset: inset,
     );
 
