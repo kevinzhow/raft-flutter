@@ -373,6 +373,16 @@ void main() {
     expect(surface.semanticLabel, '1 reply');
     expect((surface.summary as Text).data, '1 reply');
     expect(surface.replies.single.timestamp, contains('02:57 PM'));
+    final frame = find.descendant(
+      of: preview,
+      matching: find.byType(AnimatedContainer),
+    );
+    final messageBody = find.descendant(
+      of: find.byKey(const ValueKey('public-message-m2')),
+      matching: find.byType(RaftMessageBody),
+    );
+    expect(t.getSize(frame).width, 560);
+    expect(t.getTopLeft(frame).dx, t.getTopLeft(messageBody).dx);
     await t.tap(find.text('Looks good to me'));
     await t.pumpAndSettle();
     expect(
