@@ -28461,6 +28461,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/inline_thread_surface.dart#method:RaftInlineThreadRecipe._frame": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Uses the generated message embed content frame for inline reply width and corners."
+      },
       "packages/raft_ui/lib/src/inline_thread_surface.dart#method:RaftInlineThreadSurface.createState": {
         "role": "unresolved",
         "familyRefs": [],
