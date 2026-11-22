@@ -352,6 +352,7 @@ class RaftFormSheet extends StatelessWidget {
     this.commit,
     this.showHandle = true,
     this.headerColor,
+    this.insetBodyViewport = false,
   });
 
   /// The title as it is shown (already localized).
@@ -377,6 +378,7 @@ class RaftFormSheet extends StatelessWidget {
   /// A narrow dialog uses its header as the sheet's drag target.
   final bool showHandle;
   final Color? headerColor;
+  final bool insetBodyViewport;
 
   /// The close X of the head: the supplied [closeButton], else the scaffold's own.
   Widget _closeAction(BuildContext context) =>
@@ -510,6 +512,7 @@ class RaftFormSheet extends StatelessWidget {
     return RaftSheet(
       showHandle: showHandle,
       headerColor: headerColor,
+      insetBodyViewport: insetBodyViewport,
       header: Column(
         key: const ValueKey('raft-form-sheet-head'),
         children: [

@@ -442,7 +442,7 @@ void main() {
         expect(find.byKey(ValueKey('human-login-server-$id')), findsOneWidget);
       }
       String state(String id) => t
-          .widget<RaftSettingsRecipeBadge>(
+          .widget<RaftBadge>(
             find.byKey(ValueKey('human-login-server-state-$id')),
           )
           .label;
@@ -502,7 +502,7 @@ void main() {
       await open(t, api, server: '');
       expect(
         t
-            .widget<RaftSettingsRecipeBadge>(
+            .widget<RaftBadge>(
               find.byKey(const ValueKey('human-login-server-state-srv-2')),
             )
             .label,

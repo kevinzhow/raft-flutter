@@ -123,6 +123,8 @@ void main() {
 
     final consent = find.byKey(const ValueKey('human-login-content'));
     expect(tester.getSize(consent).width, 550);
+    final readyBadge = find.widgetWithText(RaftBadge, 'Ready');
+    expect(tester.getSize(readyBadge).height, 20);
     expect(
       find.ancestor(of: consent, matching: find.byType(RaftDialog)),
       findsOneWidget,

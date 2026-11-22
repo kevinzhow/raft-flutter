@@ -330,6 +330,7 @@ class RaftSheet extends StatelessWidget {
     this.headerColor,
     this.footer,
     this.padding = EdgeInsets.zero,
+    this.insetBodyViewport = false,
     this.showHandle = true,
   }) : assert(header == null || headerExtent > 0, 'a header needs its height'),
        fixed = null;
@@ -343,6 +344,7 @@ class RaftSheet extends StatelessWidget {
       headerExtent = 0,
       headerColor = null,
       footer = null,
+      insetBodyViewport = false,
       showHandle = true,
       padding = EdgeInsets.zero;
 
@@ -354,6 +356,7 @@ class RaftSheet extends StatelessWidget {
   final Color? headerColor;
   final bool showHandle;
   final EdgeInsetsGeometry padding;
+  final bool insetBodyViewport;
   final Widget? fixed;
 
   @override
@@ -404,29 +407,35 @@ class RaftSheet extends StatelessWidget {
             ),
           ),
         Expanded(
-          child: CustomScrollView(
-            controller: controller,
-            slivers: [
-              if (showHandle)
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _PinnedHeader(
-                    extent: math.max(
-                      RaftSheetMetrics.handleBox(t) + headerExtent,
-                      RaftSheetMetrics.minDragTarget,
-                    ),
-                    color: RaftSheetMetrics.fill(t),
-                    child: _PointerDragArea(
-                      child: Column(
-                        children: [const RaftSheetHandle(), ?headerSlot],
+          child: Padding(
+            padding: insetBodyViewport ? padding : EdgeInsets.zero,
+            child: CustomScrollView(
+              controller: controller,
+              slivers: [
+                if (showHandle)
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _PinnedHeader(
+                      extent: math.max(
+                        RaftSheetMetrics.handleBox(t) + headerExtent,
+                        RaftSheetMetrics.minDragTarget,
+                      ),
+                      color: RaftSheetMetrics.fill(t),
+                      child: _PointerDragArea(
+                        child: Column(
+                          children: [const RaftSheetHandle(), ?headerSlot],
+                        ),
                       ),
                     ),
                   ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: insetBodyViewport ? EdgeInsets.zero : padding,
+                    child: body,
+                  ),
                 ),
-              SliverToBoxAdapter(
-                child: Padding(padding: padding, child: body),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         ?footer,

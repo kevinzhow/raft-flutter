@@ -182,6 +182,7 @@ class _RaftConnectedAppEditorCardState
         title: widget.formTitle,
         onClose: widget.onClose,
         showHandle: false,
+        insetBodyViewport: true,
         closeButton: RaftPanelAction(
           glyph: RaftGlyph.x,
           tooltip: widget.closeLabel,

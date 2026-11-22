@@ -887,7 +887,7 @@ class _AppCard extends StatelessWidget {
                         weight: FontWeight.w700,
                       ),
                     ),
-                    RaftSettingsRecipeBadge(
+                    RaftBadge(
                       label: tr(
                         client.suspended
                             ? 'Suspended'

@@ -59214,7 +59214,7 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "apps/raft_flutter/lib/features/human_login_servers.dart#local-function:CLASS:_HumanLoginServerFieldState@2856/METHOD:_marketplace@6229/FUNCTION:rowWidgets@6683": {
+      "apps/raft_flutter/lib/features/human_login_servers.dart#local-function:CLASS:_HumanLoginServerFieldState@2949/METHOD:_marketplace@6322/FUNCTION:rowWidgets@6776": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59400,19 +59400,19 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@28153/METHOD:build@28478/FUNCTION:head@29701": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@28186/METHOD:build@28511/FUNCTION:head@29734": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23123/METHOD:build@23827/FUNCTION:chip@24142": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23156/METHOD:build@23860/FUNCTION:chip@24175": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23123/METHOD:build@23827/FUNCTION:group@25120": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23156/METHOD:build@23860/FUNCTION:group@25153": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",

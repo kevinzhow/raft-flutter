@@ -123,7 +123,11 @@ class ConnectedAppMarketplaceFooter extends StatelessWidget {
                       'shown': page.rows.length,
                       'total': page.total,
                     }),
-                    style: t.scale(RaftTypeScale.monoMeta, color: t.muted),
+                    style: t.scale(
+                      RaftTypeScale.monoMeta,
+                      mono: true,
+                      color: t.muted,
+                    ),
                   ),
                 if (page.loading && !page.loaded)
                   const RaftSpinner(size: 16)

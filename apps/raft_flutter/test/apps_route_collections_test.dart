@@ -415,6 +415,7 @@ void main() {
     final count = find.text('Showing 1 / 1');
     expect(card, findsOneWidget);
     expect(tester.getTopLeft(count).dy - tester.getBottomLeft(card).dy, 12);
+    final countStyle = tester.widget<Text>(count).style!;
     final nameStyle = tester.widget<Text>(find.text('Garden Journal')).style!;
     final installs = find.text('100+ installs');
     expect(installs, findsOneWidget);
@@ -423,6 +424,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     expect(nameStyle.fontSize, 14);
     expect(badgeStyle.fontFamily, monoFamily);
+    expect(countStyle.fontFamily, monoFamily);
   });
 }
 

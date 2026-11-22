@@ -483,6 +483,21 @@ void main() {
       t.getCenter(close).dy,
       closeTo(t.getCenter(find.byKey(submit)).dy, 1),
     );
+    final header = find.byKey(const ValueKey('raft-form-sheet-head'));
+    final viewport = find.descendant(
+      of: find.byKey(editor),
+      matching: find.byType(CustomScrollView),
+    );
+    await t.drag(viewport, const Offset(0, -200));
+    await t.pumpAndSettle();
+    expect(
+      t.getTopLeft(viewport).dy - t.getBottomLeft(header).dy,
+      RaftSpace.x4,
+    );
+    expect(
+      t.view.physicalSize.height - t.getBottomLeft(viewport).dy,
+      closeTo(RaftSpace.x4, 1),
+    );
     await t.tap(close);
     await t.pumpAndSettle();
     expect(find.byKey(editor), findsNothing);

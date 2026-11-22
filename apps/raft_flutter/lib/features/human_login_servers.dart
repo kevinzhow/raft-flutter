@@ -346,7 +346,7 @@ class _ServerRow extends StatelessWidget {
             size: 16,
           )
         else
-          RaftSettingsRecipeBadge(
+          RaftBadge(
             key: ValueKey('human-login-server-state-${row.server.id}'),
             label: tr(badge),
             variant: state == HumanLoginCommit.ready
