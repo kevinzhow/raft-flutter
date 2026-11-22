@@ -330,11 +330,13 @@ class _RenderBannerOverhangHost extends RenderProxyBox {
     visitChildren(collect);
     for (final target in overhangs.reversed) {
       if (!target.attached || !target.hasSize) continue;
-      final transform = target.getTransformTo(this);
-      final inverted = Matrix4.tryInvert(transform);
-      if (inverted == null) continue;
-      final local = MatrixUtils.transformPoint(inverted, position);
-      if (target.hitTestChildren(result, position: local)) {
+      final hit = result.addWithPaintTransform(
+        transform: target.getTransformTo(this),
+        position: position,
+        hitTest: (result, local) =>
+            target.hitTestChildren(result, position: local),
+      );
+      if (hit) {
         result.add(BoxHitTestEntry(this, position));
         return true;
       }
