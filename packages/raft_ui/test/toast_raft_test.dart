@@ -308,6 +308,19 @@ void main() {
     }
 
     final send = find.byKey(const ValueKey('composer-submit'));
+    testWidgets('a visible toast follows the keyboard off screen', (t) async {
+      await mount(t, const Size(390, 844), keyboard: 300);
+      await toast(t);
+      final message = find.text('Channel ID and content are required');
+      final raised = t.getRect(message).bottom;
+      t.view.viewInsets = const FakeViewPadding();
+      await t.pump();
+      await t.pump();
+      await t.pump();
+      expect(t.getRect(message).bottom, greaterThan(raised + 250));
+      expect(t.getRect(message).bottom, lessThan(t.getTopLeft(send).dy));
+    });
+
     for (final (name, size, keyboard, strip) in [
       ('phone', const Size(390, 844), 0.0, false),
       ('phone with an attachment strip', const Size(390, 844), 0.0, true),
