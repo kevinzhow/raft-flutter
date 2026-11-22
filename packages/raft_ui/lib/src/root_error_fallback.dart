@@ -25,6 +25,7 @@ class RaftRootErrorFallback extends StatelessWidget {
     super.key,
     required this.message,
     required this.onReload,
+    this.onOpenHome,
     this.stack,
     this.componentStack,
     this.componentStackOpen = true,
@@ -46,6 +47,30 @@ class RaftRootErrorFallback extends StatelessWidget {
 
   /// "Reload app" (`window.location.reload()` on Web).
   final VoidCallback onReload;
+  final VoidCallback? onOpenHome;
+
+  Widget _actions(BuildContext context, RaftButtonRecipeSize size) => Wrap(
+    alignment: WrapAlignment.end,
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      if (onOpenHome != null)
+        RaftButton(
+          key: const ValueKey('root-error-open-home'),
+          label: raftTextZh(context, 'Open Raft home', '回到 Raft 首页'),
+          variant: RaftControlVariant.ghost,
+          size: size,
+          onPressed: onOpenHome,
+        ),
+      RaftButton(
+        key: const ValueKey('root-error-reload'),
+        label: raftText(context, 'Reload app'),
+        variant: RaftControlVariant.accent,
+        size: size,
+        onPressed: onReload,
+      ),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -137,13 +162,7 @@ class RaftRootErrorFallback extends StatelessWidget {
                   // `mt-6 flex justify-end` after the `mb-4` boxes.
                   Align(
                     alignment: Alignment.centerRight,
-                    child: RaftButton(
-                      key: const ValueKey('root-error-reload'),
-                      label: raftText(context, 'Reload app'),
-                      variant: RaftControlVariant.accent,
-                      size: RaftButtonRecipeSize.md,
-                      onPressed: onReload,
-                    ),
+                    child: _actions(context, RaftButtonRecipeSize.md),
                   ),
                 ],
               ),
@@ -292,13 +311,7 @@ extension on RaftRootErrorFallback {
             const SizedBox(height: 20),
             Align(
               alignment: Alignment.centerRight,
-              child: RaftButton(
-                key: const ValueKey('root-error-reload'),
-                label: raftText(context, 'Reload app'),
-                variant: RaftControlVariant.accent,
-                size: RaftButtonRecipeSize.lg,
-                onPressed: onReload,
-              ),
+              child: _actions(context, RaftButtonRecipeSize.lg),
             ),
           ],
         ),

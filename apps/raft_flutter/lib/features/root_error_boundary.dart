@@ -265,9 +265,14 @@ class RootErrors extends ChangeNotifier {
 /// App.tsx's root `ErrorBoundary` around the whole app: while a fatal error
 /// is recorded the fallback page replaces the app; "Reload app" remounts it.
 class RootErrorBoundary extends StatefulWidget {
-  RootErrorBoundary({super.key, required this.child, RootErrors? errors})
-    : errors = errors ?? _shared;
+  RootErrorBoundary({
+    super.key,
+    required this.child,
+    this.homeBuilder,
+    RootErrors? errors,
+  }) : errors = errors ?? _shared;
   final Widget child;
+  final WidgetBuilder? homeBuilder;
   final RootErrors errors;
   static RootErrors get _shared => RootErrors.instance;
 
@@ -277,6 +282,7 @@ class RootErrorBoundary extends StatefulWidget {
 
 class _RootErrorBoundaryState extends State<RootErrorBoundary> {
   int generation = 0;
+  bool home = false, openingHome = false;
 
   @override
   void initState() {
@@ -308,22 +314,58 @@ class _RootErrorBoundaryState extends State<RootErrorBoundary> {
     widget.errors.clear();
   }
 
+  Future<void> openHome() async {
+    if (openingHome) return;
+    openingHome = true;
+    try {
+      final prefs = await DevicePreferences.load();
+      if (prefs != null) {
+        await Future.wait([
+          for (final key in prefs.getKeys())
+            if (key.startsWith('raft.rail-memory.v1.') ||
+                key.startsWith('raft.server-surface.') &&
+                    !key.endsWith('.last'))
+              prefs.remove(key),
+        ]);
+      }
+    } catch (_) {
+      // Preferences are best effort on the crash screen.
+    } finally {
+      openingHome = false;
+    }
+    if (!mounted) return;
+    home = true;
+    reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     final report = widget.errors.current;
     if (report == null) {
-      return KeyedSubtree(key: ValueKey(generation), child: widget.child);
+      return KeyedSubtree(
+        key: ValueKey(generation),
+        child:
+            (home ? widget.homeBuilder?.call(context) : null) ?? widget.child,
+      );
     }
-    return _RootErrorApp(report: report, onReload: reload);
+    return _RootErrorApp(
+      report: report,
+      onReload: reload,
+      onOpenHome: openHome,
+    );
   }
 }
 
 /// The fallback owns a minimal app (theme, locale, text direction) because
 /// the app that failed is no longer mounted.
 class _RootErrorApp extends StatelessWidget {
-  const _RootErrorApp({required this.report, required this.onReload});
+  const _RootErrorApp({
+    required this.report,
+    required this.onReload,
+    required this.onOpenHome,
+  });
   final RootErrorReport report;
-  final VoidCallback onReload;
+  final VoidCallback onReload, onOpenHome;
 
   @override
   Widget build(BuildContext context) {
@@ -351,6 +393,7 @@ class _RootErrorApp extends StatelessWidget {
         componentStack: report.componentStack,
         componentStackOpen: false,
         onReload: onReload,
+        onOpenHome: onOpenHome,
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/root_error_boundary.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'flutter_test_config.dart' show leakDebt;
 
@@ -221,6 +222,33 @@ void main() {
       await tester.tap(find.text('错误堆栈'));
       await tester.pump();
       expect(find.textContaining('boom'), findsOneWidget);
+    });
+
+    testWidgets('Open Raft home discards saved places and restarts', (
+      tester,
+    ) async {
+      const rail = 'raft.rail-memory.v1.origin.alice.demo.chat';
+      const surface = 'raft.server-surface.origin.alice.demo';
+      const last = 'raft.server-surface.origin.alice.last';
+      SharedPreferences.setMockInitialValues({
+        rail: '/s/demo/channel/c1',
+        surface: '/s/demo/channel/c1',
+        last: 'demo',
+        'raft.mode': 'light',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      errors.report(StateError('boom'), null);
+      await tester.pumpWidget(
+        RootErrorBoundary(errors: errors, child: const _Counter()),
+      );
+      await tester.tap(find.text('Open Raft home'));
+      await tester.pumpAndSettle();
+      expect(errors.current, isNull);
+      expect(find.byType(_Counter), findsOneWidget);
+      expect(prefs.getString(rail), isNull);
+      expect(prefs.getString(surface), isNull);
+      expect(prefs.getString(last), 'demo');
+      expect(prefs.getString('raft.mode'), 'light');
     });
   });
 

@@ -33,15 +33,17 @@ void runRaftAppRoot(List<String> args, {DesktopWindows? desktopWindows}) {
   // Release builds only: dev/local builds and platforms without a GitHub
   // release asset get a disabled service. Starts after the first frame.
   if (desktopWindows?.isChild == true) {
+    RaftApp childApp({Uri? initialLocation}) => RaftApp(
+      initialLocation: initialLocation ?? desktopWindows!.initialLocation,
+      onStartupReady: allowFirstFrame,
+      services: AppServices.updatesDisabledForTestOrPreview(
+        desktopWindows: desktopWindows,
+      ),
+    );
     runApp(
       RootErrorBoundary(
-        child: RaftApp(
-          initialLocation: desktopWindows!.initialLocation,
-          onStartupReady: allowFirstFrame,
-          services: AppServices.updatesDisabledForTestOrPreview(
-            desktopWindows: desktopWindows,
-          ),
-        ),
+        child: childApp(),
+        homeBuilder: (_) => childApp(initialLocation: Uri(path: '/')),
       ),
     );
     unawaited(
@@ -61,17 +63,20 @@ void runRaftAppRoot(List<String> args, {DesktopWindows? desktopWindows}) {
     },
     origin: updateOrigin,
   );
+  RaftApp mainApp({bool home = false}) => RaftApp(
+    initialArguments: home ? const [] : args,
+    initialLocation: home ? Uri(path: '/') : null,
+    onStartupReady: allowFirstFrame,
+    services: AppServices.withUpdates(
+      appUpdate,
+      desktopWindows: desktopWindows,
+    ),
+    ownsAppUpdate: true,
+  );
   runApp(
     RootErrorBoundary(
-      child: RaftApp(
-        initialArguments: args,
-        onStartupReady: allowFirstFrame,
-        services: AppServices.withUpdates(
-          appUpdate,
-          desktopWindows: desktopWindows,
-        ),
-        ownsAppUpdate: true,
-      ),
+      child: mainApp(),
+      homeBuilder: (_) => mainApp(home: true),
     ),
   );
   unawaited(
