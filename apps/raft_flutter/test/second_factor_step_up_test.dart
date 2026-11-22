@@ -157,8 +157,24 @@ void main() {
   testWidgets('a wrong code stays in the dialog; a backup code works', (
     t,
   ) async {
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     client.stepUpAnswers.add(_refusal(400, 'second_factor_code_invalid'));
     await changePassword(t);
+    final methodLink = find.byKey(const ValueKey('step-up-use-backup_code'));
+    expect(
+      t
+          .widget<RaftUnderlinedText>(
+            find.descendant(
+              of: methodLink,
+              matching: find.byType(RaftUnderlinedText),
+            ),
+          )
+          .style
+          ?.fontSize,
+      15,
+    );
     await answer(t, '000000');
     expect(
       find.text(
@@ -168,7 +184,7 @@ void main() {
     );
     expect(client.patches, hasLength(1));
 
-    await t.tap(find.byKey(const ValueKey('step-up-use-backup_code')));
+    await t.tap(methodLink);
     await t.pumpAndSettle();
     expect(find.text('Backup code'), findsOneWidget);
     await answer(t, 'abcde-12345');

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -41,9 +43,56 @@ class ConnectedAppBot extends StatefulWidget {
 class _ConnectedAppBotState extends State<ConnectedAppBot> {
   late Map<String, dynamic> bot = widget.offer;
   bool busy = false;
+  final _linkedSection = GlobalKey();
   late final failure = CauseNotice(scope: () => pageIdentity(workspace));
   WorkspaceController get workspace => widget.workspace;
   String get handle => '${bot['handle'] ?? ''}';
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.fromBotLink) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final section = _linkedSection.currentContext;
+      if (section != null) {
+        unawaited(Scrollable.ensureVisible(section, alignment: .5));
+      }
+    });
+  }
+
+  Widget _focusLinkedSection(RaftTokens tokens, Widget child) {
+    if (!widget.fromBotLink) return child;
+    return Focus(
+      autofocus: true,
+      skipTraversal: true,
+      child: Builder(
+        key: _linkedSection,
+        builder: (context) => Stack(
+          key: const ValueKey('connected-app-bot-section'),
+          clipBehavior: Clip.none,
+          fit: StackFit.passthrough,
+          children: [
+            if (Focus.of(context).hasPrimaryFocus)
+              Positioned.fill(
+                left: -RaftSpace.x2,
+                top: -RaftSpace.x2,
+                right: -RaftSpace.x2,
+                bottom: -RaftSpace.x2,
+                child: RaftOuterRings(
+                  radius: RaftRadius.container,
+                  rings: [
+                    for (final layer in tokens.ui.focusRing.layers)
+                      RaftRing(layer.spread, layer.color),
+                  ],
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> update(bool grant, {bool confirming = false}) async {
     if (busy || !workspace.can('manageIntegrations')) return;
@@ -218,10 +267,9 @@ class _ConnectedAppBotState extends State<ConnectedAppBot> {
             ],
           ),
         ?widget.pendingPermissions,
-        Focus(
-          autofocus: widget.fromBotLink,
-          skipTraversal: true,
-          child: Semantics(
+        _focusLinkedSection(
+          tokens,
+          Semantics(
             container: true,
             label: tr('Posts as'),
             explicitChildNodes: true,

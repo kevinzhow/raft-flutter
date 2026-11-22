@@ -157,6 +157,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
   /// is shown once.
   List<Map<String, dynamic>> shareLinks = [];
   final shareTarget = TextEditingController();
+  final shareTargetFocus = FocusNode();
   ({String linkId, String slug, String url})? shareCreated;
   bool shareLoading = false, shareCopied = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the target is edited and on the next create.
@@ -214,6 +215,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
   void dispose() {
     shareCopyReset?.cancel();
     secretCopyReset?.cancel();
+    shareTargetFocus.dispose();
     widget.secret.removeListener(refresh);
     for (final c in [
       name,
@@ -1605,6 +1607,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
                 child: RaftTextInput(
                   key: const ValueKey('connected-app-share-target-input'),
                   controller: shareTarget,
+                  focusNode: shareTargetFocus,
                   mono: true,
                   hintText: 'server-slug',
                   invalid: shareTargetError != null,
@@ -1623,7 +1626,10 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
                 size: RaftButtonRecipeSize.lg,
                 onPressed: shareLoading || shareTarget.text.trim().isEmpty
                     ? null
-                    : () => unawaited(createShare()),
+                    : () {
+                        shareTargetFocus.unfocus();
+                        unawaited(createShare());
+                      },
               ),
             ],
           ),

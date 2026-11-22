@@ -14,7 +14,6 @@ import 'card.dart' show RaftCard;
 
 import 'package:flutter/material.dart';
 
-import 'announcement_markdown.dart' show raftInlineCodeSpan;
 import 'raft_underline.dart';
 import 'system_inset.dart';
 import 'design_primitives.dart'
@@ -1729,21 +1728,22 @@ class RaftConnectedAppDetailRow extends StatelessWidget {
   }
 }
 
-/// `break-all font-mono text-xs font-bold` detail value.
+/// The `font-mono text-mono-meta` value inherits its detail row's weight.
 class RaftConnectedAppMonoValue extends StatelessWidget {
   const RaftConnectedAppMonoValue(this.value, {super.key});
   final String value;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final style = t.typeSlot('mono-meta');
     return Text(
       value,
       style: RaftTypography.mono(
         t,
-        size: 12,
-        line: 16,
+        size: style.fontSize,
+        line: style.lineHeight,
         color: RaftSettingsText(t).strong,
-      ).copyWith(fontWeight: FontWeight.w700),
+      ),
     );
   }
 }

@@ -261,6 +261,7 @@ class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
                   RaftTextLink(
                     key: ValueKey('step-up-use-${other.wire}'),
                     variant: RaftTextLinkVariant.muted,
+                    scale: RaftTypeScale.subhead,
                     label: raftText(
                       context,
                       other == SecondFactorMethod.backupCode

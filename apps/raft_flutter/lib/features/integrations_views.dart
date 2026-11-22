@@ -1063,6 +1063,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     bool fromBotLink = false,
   }) async {
     final source = authority;
+    setState(appActionNotice.clear);
     final modalError = CauseNotice(scope: () => authority);
     await showRaftDialog<void>(
       context: context,
@@ -1088,6 +1089,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                     if (modal.mounted &&
                         source == authority &&
                         modalError.message != message) {
+                      setState(() => appActionNotice.raise(message));
                       setModal(() => modalError.raise(message));
                     }
                   },

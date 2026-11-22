@@ -570,6 +570,7 @@ void main() {
   testWidgets('installed permission failures appear before the bot section', (
     tester,
   ) async {
+    var failPermissions = true;
     final client = _AppsClient((method, route, _) {
       if (route == '/integrations/marketplace') {
         return [
@@ -581,7 +582,7 @@ void main() {
           },
         ];
       }
-      if (route.endsWith('/install/app-notifications')) {
+      if (failPermissions && route.endsWith('/install/app-notifications')) {
         throw RaftApiException.response(
           'Permission details could not be loaded',
           status: 503,
@@ -592,7 +593,11 @@ void main() {
     });
     await _mount(tester, client);
     await _tap(tester, find.text('Irrigation'));
-    final notice = find.text('Permission details could not be loaded');
+    const failure = 'Permission details could not be loaded';
+    final notice = find.descendant(
+      of: find.byKey(const ValueKey('connected-app-installed-detail')),
+      matching: find.text(failure),
+    );
     final bot = find.text('Posts as');
     expect(tester.getTopLeft(notice).dy, lessThan(tester.getTopLeft(bot).dy));
     final login = find.text('Login with Raft access');
@@ -601,8 +606,13 @@ void main() {
     final footer = find.byType(RaftSeparator).last;
     final footerGap =
         tester.getTopLeft(footer).dy - tester.getBottomLeft(section).dy;
-    await tester.pumpWidget(const SizedBox.shrink());
     expect(footerGap, 16);
+    await _tap(tester, find.text('Close').last);
+    expect(find.text(failure), findsOneWidget);
+    failPermissions = false;
+    await _tap(tester, find.text('Irrigation'));
+    expect(find.text(failure, skipOffstage: false), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('marketplace bot Add acts separately from the listing', (
@@ -653,6 +663,13 @@ void main() {
     expect(find.text('Add @sprinkler to Garden'), findsNothing);
     await _tap(tester, find.text('Irrigation'));
     expect(find.byKey(const ValueKey('connected-app-detail')), findsOneWidget);
+    final handle = tester.widget<RichText>(
+      find.descendant(
+        of: find.byType(RaftConnectedAppMonoValue),
+        matching: find.text('@sprinkler', findRichText: true),
+      ),
+    );
+    expect(handle.text.style?.fontWeight, FontWeight.w600);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

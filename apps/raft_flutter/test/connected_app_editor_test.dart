@@ -372,14 +372,16 @@ void main() {
         c.method == 'POST' && c.path.contains('/share-link');
     expect(a.calls.where(sharePost), isEmpty);
 
-    await t.enterText(
-      find.descendant(of: input, matching: find.byType(EditableText)),
-      ' Beta ',
+    final shareInput = find.descendant(
+      of: input,
+      matching: find.byType(EditableText),
     );
+    await t.enterText(shareInput, ' Beta ');
     await t.pump();
     await tapVisible(
       find.byKey(const ValueKey('connected-app-share-create-button')),
     );
+    expect(t.widget<EditableText>(shareInput).focusNode.hasFocus, isFalse);
     final post = a.calls.singleWhere(sharePost);
     expect(post.path, '/integrations/clients/app-1/share-links');
     expect(post.data, {'targetServerSlug': 'beta'});

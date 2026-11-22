@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/profile_side_panel.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 
@@ -89,6 +90,17 @@ void main() {
     final workspace = fixture.workspace(tester);
     expect(find.byKey(_details), findsOneWidget);
     expect(find.text('Add @garden'), findsOneWidget);
+    final identity = find.byKey(const ValueKey('connected-app-bot-section'));
+    expect(tester.getRect(identity).center.dy, inInclusiveRange(0, 844));
+    expect(
+      find.descendant(
+        of: identity,
+        matching: find.byWidgetPredicate(
+          (widget) => widget is RaftOuterRings && widget.rings.isNotEmpty,
+        ),
+      ),
+      findsOneWidget,
+    );
     expect(workspace.location.uri.queryParameters, {'from': 'app'});
     expect(workspace.location.uri.fragment, 'apps');
 
