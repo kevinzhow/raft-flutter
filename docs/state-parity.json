@@ -60176,6 +60176,405 @@
         "familyRefs": [],
         "owner": "Sidebar navigation",
         "reason": "Composes navigation row content and applies the trailing metadata width cap when needed."
+      },
+      "apps/raft_flutter/lib/app_bootstrap.dart#local-function:FUNCTION:runRaftAppRoot@496/FUNCTION:childApp@1400": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "App bootstrap",
+        "reason": "Composes the root app and its error recovery host."
+      },
+      "apps/raft_flutter/lib/app_bootstrap.dart#local-function:FUNCTION:runRaftAppRoot@496/FUNCTION:mainApp@2404": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "App bootstrap",
+        "reason": "Composes the root app and its error recovery host."
+      },
+      "apps/raft_flutter/lib/features/announcement_host.dart#class:AnnouncementSidebarSlot": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL announcements",
+        "reason": "Mounts the announcement card in the workspace sidebar."
+      },
+      "apps/raft_flutter/lib/features/announcement_host.dart#method:AnnouncementSidebarSlot.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL announcements",
+        "reason": "Mounts the announcement card in the workspace sidebar."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#class:ChannelSideAreaState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@10971/METHOD:_build@13612/FUNCTION:chatContent@17753": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Mounts the chat or folded thread inside the clipped conversation region."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#method:ChannelSideAreaState._build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#method:ChannelSideAreaState._card": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#method:ChannelSideAreaState._column": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#method:ChannelSideAreaState._wrapHead": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#method:ChannelSideAreaState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#method:ChannelSideAreaState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:attachmentGallery@65221/FUNCTION:view@66375": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildTimeline@112218/FUNCTION:timelineFor@115855": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@121720/FUNCTION:sendCurrent@124974": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace conversation",
+        "reason": "Uses the canonical toast for a send attempted after the session goes offline."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:senderAvatar@78012/FUNCTION:avatar@80487": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/desktop_detail_host.dart#function:desktopThreadFocus": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Composes the thread focus and return behavior for desktop details."
+      },
+      "apps/raft_flutter/lib/features/message_context_menu_sections.dart#function:runMessageContextMenuChoice": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace conversation",
+        "reason": "Dispatches context menu actions and presents toast feedback through raft_ui."
+      },
+      "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1859/METHOD:navigate@21975/FUNCTION:openAgent@23051": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Raft Flutter component wiring",
+        "reason": "Presents the existing FleetDetail in RaftPageFrame from the Computer detail opened by a system notification."
+      },
+      "apps/raft_flutter/lib/features/workspace_channel_access.dart#class:WorkspaceChannelAccessPage": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL channel access",
+        "reason": "Composes the access error and recovery action at the requested workspace route."
+      },
+      "apps/raft_flutter/lib/features/workspace_channel_access.dart#method:WorkspaceChannelAccessPage.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL channel access",
+        "reason": "Composes the access error and recovery action at the requested workspace route."
+      },
+      "apps/raft_flutter/lib/features/workspace_history_controls.dart#function:_recentEntries": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL History",
+        "reason": "Composes recent conversation rows and the desktop history controls."
+      },
+      "apps/raft_flutter/lib/features/workspace_history_controls.dart#function:_recentIdentity": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL History",
+        "reason": "Composes recent conversation rows and the desktop history controls."
+      },
+      "apps/raft_flutter/lib/features/workspace_history_controls.dart#method:WorkspaceHistoryControls._buildControls": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL History",
+        "reason": "Composes recent conversation rows and the desktop history controls."
+      },
+      "apps/raft_flutter/lib/features/workspace_offline_notice.dart#class:WorkspaceOfflineMessagesBanner": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL offline recovery",
+        "reason": "Projects cached session state into the connection badge and the read-only messages banner."
+      },
+      "apps/raft_flutter/lib/features/workspace_offline_notice.dart#class:WorkspaceOfflineNotice": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL offline recovery",
+        "reason": "Projects cached session state into the connection badge and the read-only messages banner."
+      },
+      "apps/raft_flutter/lib/features/workspace_offline_notice.dart#class:_WorkspaceOfflineNoticeState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL offline recovery",
+        "reason": "Projects cached session state into the connection badge and the read-only messages banner."
+      },
+      "apps/raft_flutter/lib/features/workspace_offline_notice.dart#method:WorkspaceOfflineMessagesBanner.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL offline recovery",
+        "reason": "Projects cached session state into the connection badge and the read-only messages banner."
+      },
+      "apps/raft_flutter/lib/features/workspace_offline_notice.dart#method:WorkspaceOfflineNotice.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL offline recovery",
+        "reason": "Projects cached session state into the connection badge and the read-only messages banner."
+      },
+      "apps/raft_flutter/lib/features/workspace_offline_notice.dart#method:_WorkspaceOfflineNoticeState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL offline recovery",
+        "reason": "Projects cached session state into the connection badge and the read-only messages banner."
+      },
+      "apps/raft_flutter/lib/features/workspace_offline_notice.dart#method:_WorkspaceOfflineNoticeState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL offline recovery",
+        "reason": "Projects cached session state into the connection badge and the read-only messages banner."
+      },
+      "apps/raft_flutter/lib/features/workspace_panel_dismissal.dart#method:_WorkspacePanelDismissal.escapePanel": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Connects the workspace panel and its dismissal actions to the accepted location."
+      },
+      "apps/raft_flutter/lib/features/workspace_panel_dismissal.dart#method:_WorkspacePanelDismissal.workspaceSideThread": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Connects the workspace panel and its dismissal actions to the accepted location."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6161/METHOD:buildWorkspace@45270/FUNCTION:<anonymous>@45526/FUNCTION:conversation@49221": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6161/METHOD:buildWorkspace@45270/FUNCTION:<anonymous>@45526/FUNCTION:workspace@63683": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6161/METHOD:desktopContentDetail@98002/FUNCTION:header@99896": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6161/METHOD:settingsRailAction@105492/FUNCTION:action@105526": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
+      },
+      "packages/raft_ui/lib/announcement_previews.dart#function:announcementSidebarPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-SHELL announcements",
+        "reason": "Previews the sidebar announcement card."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@49831/METHOD:build@50291/FUNCTION:withoutRailInset@50529": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Projects safe-area insets for the mounted keyboard layout beside a rail."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:mainContent@12620": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Keeps the workspace content mounted and projects the thread only when folded."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:panel@13079": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:profile@11792": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:thread@11326": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#method:RaftAdaptiveWorkspace.dockedThreadOf": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Supplies the docked thread to the conversation side area."
+      },
+      "packages/raft_ui/lib/src/announcement_markdown.dart#local-function:CLASS:_MarkdownBlocks@5616/METHOD:blocks@6179/FUNCTION:flushInline@6406": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Shared Markdown renderer",
+        "reason": "Flushes inline spans into the current block during native Markdown rendering."
+      },
+      "packages/raft_ui/lib/src/announcement_sidebar_card.dart#class:RaftAnnouncementSidebarCard": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL announcements",
+        "reason": "Composes the sidebar announcement typography, image, and actions."
+      },
+      "packages/raft_ui/lib/src/announcement_sidebar_card.dart#method:RaftAnnouncementSidebarCard.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SHELL announcements",
+        "reason": "Composes the sidebar announcement typography, image, and actions."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@16637/METHOD:_agentsSection@59604/FUNCTION:row@61673": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@16637/METHOD:_infoSection@42374/FUNCTION:versionValue@42511": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@16637/METHOD:_recoveryGuide@84283/FUNCTION:step@84578": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@16637/METHOD:_upgradeAdvice@82266/FUNCTION:lines@82788": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#class:RaftDropdownMenuLabel": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "DropdownMenu",
+        "reason": "Renders a noninteractive menu label using the generated menu label styling."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71716/METHOD:build@80973/FUNCTION:toggle@81203": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu",
+          "popover"
+        ],
+        "owner": "DropdownMenu",
+        "reason": "Toggles the anchored dropdown or submenu from its mounted trigger and keeps a mouse-opened submenu active on click."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:RaftDropdownMenuLabel.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "DropdownMenu",
+        "reason": "Renders a noninteractive menu label using the generated menu label styling."
+      },
+      "packages/raft_ui/lib/src/empty_state.dart#local-function:CLASS:RaftEmptyState@1536/METHOD:build@2038/FUNCTION:text@2870": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#class:RaftPanelHeaderChrome": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace panel header",
+        "reason": "Composes shared header actions and layout from the host and the panel recipe."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#function:raftProfileExpandAction": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace panel header",
+        "reason": "Composes shared header actions and layout from the host and the panel recipe."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderBar._build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace panel header",
+        "reason": "Composes shared header actions and layout from the host and the panel recipe."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderChrome.foldsProfileMessage": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace panel header",
+        "reason": "Composes shared header actions and layout from the host and the panel recipe."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderChrome.maybeOf": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace panel header",
+        "reason": "Composes shared header actions and layout from the host and the panel recipe."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderChrome.updateShouldNotify": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace panel header",
+        "reason": "Composes shared header actions and layout from the host and the panel recipe."
+      },
+      "packages/raft_ui/lib/src/root_error_fallback.dart#local-function:EXTENSION:<anonymous>@7708/METHOD:_web@7754/FUNCTION:code@7909": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/root_error_fallback.dart#local-function:EXTENSION:<anonymous>@7708/METHOD:_web@7754/FUNCTION:disclosure@8451": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/root_error_fallback.dart#method:RaftRootErrorFallback._actions": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Root error recovery",
+        "reason": "Composes the fallback actions with raft_ui buttons."
+      },
+      "packages/raft_ui/lib/src/server_switcher_top_bar.dart#local-function:CLASS:_TopBarServerTriggerState@2580/METHOD:build@10543/FUNCTION:<anonymous>@11043/FUNCTION:measure@11566": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Measures names for the mounted workspace switcher and its quick-switch capacity."
       }
     },
     "entries": {
@@ -64413,6 +64812,69 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Mounted editor test confirms the warning and the request after approval. Capture applicability is unverified."
+      },
+      "surface:apps/raft_flutter/lib/features/agent_detail_view.dart#method:_AgentDetailPanelState._panel": {
+        "owner": "Workspace profile",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "The Agent detail header mounts its More Actions menu for the folded direct-message command and other available actions.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_detail_view.dart#method:_AgentDetailPanelState._panel"
+        ]
+      },
+      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@121720/FUNCTION:sendCurrent@124974": {
+        "owner": "Workspace conversation",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "Uses the canonical toast for a send attempted after the session goes offline.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@121720/FUNCTION:sendCurrent@124974"
+        ]
+      },
+      "surface:apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.build": {
+        "owner": "Workspace profile",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "The member profile header mounts its More Actions menu when the direct-message command folds into it.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.build"
+        ]
+      },
+      "surface:apps/raft_flutter/lib/features/message_context_menu_sections.dart#function:runMessageContextMenuChoice": {
+        "owner": "Workspace conversation",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "Dispatches context menu actions and presents toast feedback through raft_ui.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/message_context_menu_sections.dart#function:runMessageContextMenuChoice"
+        ]
+      },
+      "surface:apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1859/METHOD:navigate@21975/FUNCTION:openAgent@23051": {
+        "owner": "Raft Flutter component wiring",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1859/METHOD:navigate@21975/FUNCTION:openAgent@23051"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The Agent row in the Computer details opened by the notification bell presents the existing Agent detail page."
+      },
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71716/METHOD:build@80973/FUNCTION:toggle@81203": {
+        "owner": "DropdownMenu",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71716/METHOD:build@80973/FUNCTION:toggle@81203"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Toggles the anchored dropdown or submenu from its mounted trigger and keeps a mouse-opened submenu active on click."
+      },
+      "surface:packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderChrome.foldsProfileMessage": {
+        "owner": "Workspace panel header",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "The shared fit calculation controls whether the mounted agent or member profile header places messaging in its More Actions menu.",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderChrome.foldsProfileMessage"
+        ]
       }
     },
     "requirements": {
@@ -67343,6 +67805,26 @@
       "iconInlineEnd": "has:data-icon=inline-end"
     },
     "stateUses": {
+      "packages/raft_ui/lib/src/design_primitives.dart#method:RaftDropdownMenuLabel.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "DropdownMenu",
+        "applicability": "required",
+        "reason": "The label uses the generated responsive menu styling."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderBar._build|state:dark": {
+        "owner": "Workspace panel header",
+        "applicability": "required",
+        "reason": "The panel header resolves the dark palette."
+      },
+      "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderBar._build|state:has:>data-slot=panel-meta": {
+        "owner": "Workspace panel header",
+        "applicability": "required",
+        "reason": "The panel header selects its meta-slot variant when it has a subtitle or meta slot."
+      },
+      "packages/raft_ui/lib/src/server_switcher_top_bar.dart#method:_TopBarServerTriggerState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "Workspace strip",
+        "applicability": "required",
+        "reason": "The server trigger resolves the responsive control size."
+      },
       "packages/raft_ui/lib/src/thread_composition.dart#method:RaftThreadHeader.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "required",
         "owner": "WP-THREAD"
