@@ -6560,11 +6560,35 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
+      "apps/raft_flutter/lib/features/activity_card_row.dart#class:ListedActivityCard": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "PERF-LISTS",
+        "reason": "Retains the mounted Activity card when its presentation and authority inputs match."
+      },
+      "apps/raft_flutter/lib/features/activity_card_row.dart#class:_ListedActivityCardState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "PERF-LISTS",
+        "reason": "Owns the mounted Activity card and its swipe host."
+      },
       "apps/raft_flutter/lib/features/activity_card_row.dart#method:ActivityCardRow.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/activity_card_row.dart#method:ListedActivityCard.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "PERF-LISTS",
+        "reason": "Creates state for the mounted Activity card."
+      },
+      "apps/raft_flutter/lib/features/activity_card_row.dart#method:_ListedActivityCardState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "PERF-LISTS",
+        "reason": "Delegates Activity rendering to the existing card and swipe row."
       },
       "apps/raft_flutter/lib/features/activity_context_menu.dart#function:buildActivityContextMenu": {
         "role": "unresolved",
@@ -13381,12 +13405,6 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.item": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.listedActivityCard": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

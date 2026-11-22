@@ -3167,8 +3167,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       phoneBar: phone ? bar(activityToolbar(scope)) : null,
       keyFor: (row) => listUpdates.keyOf(rowKey(row)),
       indexOfKey: listUpdates.indexOf,
-      rowBuilder: (context, row, index) =>
-          listedActivityCard(shown, index, scope),
+      rowBuilder: (context, row, index) => activityCard(row, scope),
       tail: hasMore
           ? RaftButton.text(
               onPressed: () => load(append: true),
@@ -4253,23 +4252,6 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     if (!projected) await load(keep: true, quietErrors: true);
   }
 
-  /// The Activity row at [index] of [rows]: the list form, always (Web's
-  /// `activity_conversation_list_v0` is retired; no pinned-first sections).
-  Widget listedActivityCard(
-    List<Map<String, dynamic>> rows,
-    int index,
-    String scope, {
-    String? viewFilter,
-  }) {
-    return activityCard(
-      rows[index],
-      scope,
-      viewFilter: viewFilter,
-      separator: index > 0,
-      topRule: index > 0,
-    );
-  }
-
   ActivityRowLookups activityLookups() => ActivityRowLookups(
     controller: w,
     agents: rowAgents,
@@ -4356,14 +4338,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     unawaited(openWorkspaceArtifact(context, w, target));
   }
 
-  Widget activityCard(
-    Map<String, dynamic> row,
-    String scope, {
-    String? viewFilter,
-    bool separator = false,
-    bool topRule = false,
-  }) {
-    final filter = viewFilter ?? this.filter;
+  Widget activityCard(Map<String, dynamic> row, String scope) {
     final pin = activityGestureMatches(scope);
     final facets = activityFacets;
     final host = ActivityRowHost(
@@ -4386,13 +4361,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       people: rowPeople,
     );
     final undo = facets.undo;
-    final card = ActivityCardRow(row: row, host: host);
-    return undo == null
-        ? card
-        : ActivitySwipeRow(
-            row: row,
-            host: host,
-            hooks: ActivitySwipeHooks(
+    return ListedActivityCard(
+      row: row,
+      host: host,
+      authority: scope,
+      swipe: undo == null
+          ? null
+          : ActivitySwipeHooks(
               open: facets.open,
               undo: undo,
               muteChannel: activityMuteChannel,
@@ -4401,8 +4376,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                   unawaited(toggleActivityRead(r, scope, unread)),
               key: rowKey,
             ),
-            child: card,
-          );
+    );
   }
 
   /// `task.status.emptyGroup`: "No {status} tasks"
@@ -5593,7 +5567,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     }
     if (section == 'saved') return savedCard(row, scope, topRule: topRule);
     if (section == 'activity') {
-      return activityCard(row, scope, topRule: topRule);
+      return activityCard(row, scope);
     }
     return const SizedBox.shrink();
   }
