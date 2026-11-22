@@ -494,6 +494,17 @@ void main() {
       const ValueKey('connected-app-regenerate-secret-button'),
     );
     await t.ensureVisible(button);
+    final secretTitle = find.text('Client secret');
+    final regenerate = find.descendant(
+      of: button,
+      matching: find.byType(RaftButton),
+    );
+    final section = find.byKey(
+      const ValueKey('connected-app-editor-section-danger'),
+    );
+    final rowInset = t.getTopLeft(secretTitle).dx - t.getTopLeft(section).dx;
+    final warningButton =
+        t.widget<RaftButton>(regenerate).uiVariant == RaftButtonVariant.warning;
     await t.tap(button);
     await t.pumpAndSettle();
     expect(find.text('Regenerate client secret'), findsOneWidget);
@@ -507,6 +518,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('rotated-secret'), findsOneWidget);
     expect(find.byKey(editor), findsOneWidget);
+    expect((rowInset, warningButton), (0, true));
   });
 
   testWidgets('danger zone: delete confirms and removes the app', (t) async {
@@ -523,6 +535,10 @@ void main() {
     await t.pumpAndSettle();
     final card = find.byKey(const ValueKey('connected-app-delete-card'));
     await t.ensureVisible(card);
+    final deleteCopy = find.text(
+      'Permanently deletes this app registration and its current credentials.',
+    );
+    final copyInset = t.getTopLeft(deleteCopy).dx - t.getTopLeft(card).dx;
     await t.tap(
       find.descendant(of: card, matching: find.text('Delete app')).last,
     );
@@ -538,6 +554,7 @@ void main() {
       ),
       hasLength(1),
     );
+    expect(copyInset, 0);
     expect(find.byKey(editor), findsNothing);
     expect(find.text('No Raft Apps yet'), findsOneWidget);
   });

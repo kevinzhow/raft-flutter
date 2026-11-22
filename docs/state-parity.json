@@ -59436,7 +59436,7 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@61906/METHOD:build@62415/FUNCTION:scopeRow@62992": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@62001/METHOD:build@62510/FUNCTION:scopeRow@63087": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59472,7 +59472,7 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@57114/METHOD:build@57223/FUNCTION:chip@57499": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@57209/METHOD:build@57318/FUNCTION:chip@57594": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59797,7 +59797,7 @@
         "owner": "WP-APPS",
         "reason": "Projects an Apps Marketplace tile with its independent bot action."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@39139/METHOD:build@39348/FUNCTION:label@39521": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@39234/METHOD:build@39443/FUNCTION:label@39616": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",

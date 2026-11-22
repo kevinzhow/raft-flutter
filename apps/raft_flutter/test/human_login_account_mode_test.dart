@@ -166,8 +166,16 @@ void main() {
     );
     final signedInAs = find.text('Signed in as person@example.com');
     final scopes = find.byKey(const ValueKey('human-login-scopes'));
-    final descriptionStyle = tester.widget<Text>(description).style!;
+    final descriptionText = tester.widget<Text>(description);
+    final descriptionStyle = descriptionText.style!;
     expect(descriptionStyle.height! * descriptionStyle.fontSize!, 22);
+    final appName = (descriptionText.textSpan! as TextSpan).children!
+        .whereType<TextSpan>()
+        .singleWhere((span) => span.text == 'Artifact Share');
+    expect(
+      appName.style?.color ?? descriptionStyle.color,
+      descriptionStyle.color,
+    );
     Rect lineBox(Finder text) => tester.getRect(
       find.ancestor(of: text, matching: find.byType(RaftCssText)).first,
     );

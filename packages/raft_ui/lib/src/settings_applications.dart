@@ -1203,7 +1203,11 @@ class _Badge extends StatelessWidget {
       variant: variant,
       appearance: appearance,
       fill: fill,
-      fontFamily: RaftInheritedFontScope.active(context) ? t.headingFont : null,
+      fontFamily:
+          appearance != RaftBadgeRecipeAppearance.outline &&
+              RaftInheritedFontScope.active(context)
+          ? t.headingFont
+          : null,
     );
   }
 }

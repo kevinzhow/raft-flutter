@@ -880,8 +880,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       editing?['official'] != true &&
       (publishStatus == 'private' || publishStatus == 'rejected');
 
-  RaftButtonRecipeSize get small => RaftButtonRecipeSize.sm;
-
   @override
   Widget build(BuildContext context) {
     final app = editing;
@@ -1715,35 +1713,25 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     final status = publishStatus;
     return RaftAppEditorStack(
       children: [
-        RaftAppEditorBox(
-          softBorder: true,
-          shadow: false,
-          child: RaftAppEditorActionRow(
-            title: 'Client secret',
-            description: 'Regenerating invalidates the previous secret for this app. The new secret is shown once.',
-            action: RaftSettingsRecipeButton(
-              key: const ValueKey('connected-app-regenerate-secret-button'),
-              label: regenerating
-                  ? 'Regenerating...'
-                  : 'Regenerate client secret',
-              variant: RaftButtonRecipeVariant.primary,
-              size: small,
-              onPressed: submitting || regenerating ? null : confirmRegenerate,
-            ),
+        RaftAppEditorActionRow(
+          title: 'Client secret',
+          description: 'Regenerating invalidates the previous secret for this app. The new secret is shown once.',
+          action: RaftSettingsRecipeButton(
+            key: const ValueKey('connected-app-regenerate-secret-button'),
+            label: regenerating
+                ? 'Regenerating...'
+                : 'Regenerate client secret',
+            variant: RaftButtonRecipeVariant.warning,
+            onPressed: submitting || regenerating ? null : confirmRegenerate,
           ),
         ),
         if (status == 'published')
-          RaftAppEditorBox(
-            softBorder: true,
-            shadow: false,
-            child: RaftAppEditorActionRow(
-              title: 'Marketplace lifecycle',
-              description: 'Requesting offline review keeps the app live until App Admin approves removal.',
-              action: RaftSettingsRecipeButton(
-                label: 'Request offline review',
-                size: small,
-                onPressed: confirmOffline,
-              ),
+          RaftAppEditorActionRow(
+            title: 'Marketplace lifecycle',
+            description: 'Requesting offline review keeps the app live until App Admin approves removal.',
+            action: RaftSettingsRecipeButton(
+              label: 'Request offline review',
+              onPressed: confirmOffline,
             ),
           ),
         if (const {
@@ -1752,17 +1740,15 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           'in_review',
           'rejected',
         }.contains(status))
-          RaftSettingsActionCard(
+          RaftAppEditorActionRow(
             key: const ValueKey('connected-app-delete-card'),
             title: 'Delete app',
             description: 'Permanently deletes this app registration and its current credentials.',
-            stacked: true,
             action: RaftSettingsRecipeButton(
               label: 'Delete app',
               glyph: RaftGlyph.trash2,
-              glyphSize: 14,
+              glyphSize: RaftSpace.x4,
               variant: RaftButtonRecipeVariant.danger,
-              size: small,
               onPressed: confirmDelete,
             ),
           ),

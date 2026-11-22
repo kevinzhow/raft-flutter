@@ -357,7 +357,14 @@ void main() {
                 {
                   'kind': 'app',
                   'id': 'app:garden-journal',
-                  'app': {..._installed('Garden Journal'), 'installedAt': null},
+                  'app': {
+                    ..._installed('Garden Journal'),
+                    'installedAt': null,
+                    'marketplaceInstallBadge': {
+                      'kind': 'bucket',
+                      'bucket': '100_plus',
+                    },
+                  },
                 },
               ],
               'total': 1,
@@ -409,8 +416,13 @@ void main() {
     expect(card, findsOneWidget);
     expect(tester.getTopLeft(count).dy - tester.getBottomLeft(card).dy, 12);
     final nameStyle = tester.widget<Text>(find.text('Garden Journal')).style!;
+    final installs = find.text('100+ installs');
+    expect(installs, findsOneWidget);
+    final badgeStyle = tester.widget<Text>(installs).style!;
+    final monoFamily = RaftTokens.of(tester.element(installs)).monoFont;
     await tester.pumpWidget(const SizedBox.shrink());
     expect(nameStyle.fontSize, 14);
+    expect(badgeStyle.fontFamily, monoFamily);
   });
 }
 
