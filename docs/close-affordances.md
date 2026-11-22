@@ -195,7 +195,7 @@ in `apps/raft_flutter`.
 | `rack-upgrade-hint-popover` | popup | esc scrim | esc scrim | esc scrim | features/computer/RackRowAction.tsx:96-150 Popover (side bottom, align end) behind the warning icon: Esc, outside press, focus back to the trigger | ok |  |
 | `raftbench-date-picker` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | raftbench/HostedAnalysis.tsx native <input type="date"> picker: Esc, outside press | ok |  |
 | `mobile-server-tab-popover` | popup | esc scrim sysback | - (a wide layout has the left rail, not the bottom bar) | - (the desktop layout has the left rail, not the bottom bar) | MobileServerTab.tsx MobileNavServerPopoverContent: Esc, outside press, focus back to the server tab | ok |  |
-| `workspace-history-menu` | popup | - (native navigation uses the page stack) | esc scrim sysback | esc scrim sysback | components/topbar/HistoryMenu.tsx DropdownMenu: Escape and outside press | ok |  |
+| `workspace-history-menu` | popup | - (native phone navigation uses the page stack) | - (History controls are native desktop chrome) | esc scrim sysback | components/topbar/HistoryMenu.tsx DropdownMenu: Escape and outside press | ok |  |
 | `sidebar-channel-leave-confirmation` | dialog | x esc sysback | x esc sysback | x esc sysback | LeaveChannelConfirmDialog.tsx ConfirmDialog | ok |  |
 | `sidebar-section-add-conversations` | dialog | x esc scrim sysback drag | x esc scrim sysback | x esc scrim sysback | SidebarSectionAddConversationsDialog.tsx DialogCard with closeOnBackdrop | ok |  |
 | `create-external-channel-invites` | dialog | x esc sysback | x esc sysback | x esc sysback | CreateChannelDialog.tsx external review DialogCard | ok |  |

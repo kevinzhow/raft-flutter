@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_flutter/features/channel_details_host.dart';
 import 'package:raft_flutter/features/channel_side_area.dart';
+import 'package:raft_flutter/features/channel_side_cards.dart';
 import 'package:raft_flutter/features/channel_side_flags.dart';
 import 'package:raft_flutter/features/channel_side_store.dart';
 import 'package:raft_flutter/features/message_task_actions.dart';
@@ -14,6 +16,7 @@ import 'flutter_test_config.dart' show leakDebt;
 import 'message_presentation_test.dart' show fixture;
 import 'support/close_registry_side_cards.dart';
 import 'support/close_runner.dart';
+import 'support/close_support.dart';
 import 'support/close_surface.dart';
 
 /// A Tasks card beside the chat: its X on a wide layout; covering the chat on a
@@ -86,6 +89,50 @@ void main() {
             .isNotEmpty,
         x: find.byKey(const Key('channel-side-card-tasks-close')),
         back: find.byKey(const Key('side-back')),
+      );
+    },
+    'channel-profile-column-move': (t, size) async {
+      await t.pumpWidget(const SizedBox.shrink());
+      final (w, _) = await mountWorkspace(
+        t,
+        size,
+        platform: closePlatform(size),
+      );
+      TaskV2ConversationsFlag.of(w).markEnabled();
+      ChannelSideCards.toggle(w, ChannelSideCard.tasks);
+      w.openProfile(RaftProfileKind.human, 'bob');
+      await frames(t, 25);
+      await tapAndSettle(t, find.byKey(const Key('channel-profile-move')));
+      final move = find.text('Move left');
+      return SurfaceProbe(
+        isOpen: () => move.evaluate().isNotEmpty,
+        scrim: Offset(size.width * .4, size.height * .8),
+      );
+    },
+    'channel-thread-column-move': (t, size) async {
+      await t.pumpWidget(const SizedBox.shrink());
+      final (w, _) = await mountWorkspace(
+        t,
+        size,
+        platform: closePlatform(size),
+      );
+      final sidebarSeam = find.byKey(const Key('sidebar-resize-handle'));
+      await t.drag(sidebarSeam, const Offset(-85, 0));
+      await frames(t);
+      ChannelDetailsStore.of(w).open(w.channel!);
+      await t.runAsync(
+        () => w.openThreadIdentity(
+          parentChannelId: 'c1',
+          parentMessageId: 'mt',
+          initialThreadChannelId: 't1',
+        ),
+      );
+      await frames(t, 25);
+      await tapAndSettle(t, find.byKey(const Key('channel-thread-move')));
+      final move = find.text('Move right');
+      return SurfaceProbe(
+        isOpen: () => move.evaluate().isNotEmpty,
+        scrim: Offset(size.width * .4, size.height * .8),
       );
     },
   });

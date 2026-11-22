@@ -280,7 +280,7 @@ void main() {
     );
   });
 
-  // R5: the location survives every crossing; Back always walks to Home.
+  // R5: the destination survives every crossing; Back reaches a tab root.
   const shapes = <String>[
     '/s/alpha',
     '/s/alpha/channel/ca',
@@ -296,18 +296,30 @@ void main() {
     '/s/alpha/search',
     '/s/alpha/activity',
   ];
+  const canonicalProfiles = {
+    '/s/alpha/agent/agent-1': '/members?profile=agent%3Aagent-1',
+    '/s/alpha/human/bob': '/members?profile=human%3Abob',
+  };
   for (final path in shapes) {
     scenario('R5 round trip $path', (t) async {
       final f = await mount(t, phone, path);
       final start = where(f, t);
+      final canonical = canonicalProfiles[path];
       await resize(t, f, wide);
-      expect(where(f, t), start, reason: 'phone -> wide');
+      expect(where(f, t), canonical ?? start, reason: 'phone -> wide');
       expect(wideShown(t), isTrue);
+      if (canonical != null) {
+        expect(find.byKey(const Key('profile-panel')), findsOneWidget);
+      }
       await resize(t, f, phone);
-      expect(where(f, t), start, reason: 'wide -> phone');
+      expect(where(f, t), canonical ?? start, reason: 'wide -> phone');
       expect(phoneShown(t), isTrue);
+      if (canonical != null) {
+        expect(find.byKey(const Key('profile-panel')), findsOneWidget);
+      }
       // Back-walk to exit after the transitions never revisits stale pages.
       final landed = await backWalk(t, f);
+      if (canonical != null) expect(landed, ['/members', '']);
       expect(landed.length, lessThanOrEqualTo(6), reason: '$landed');
       expect(
         landed.toSet().length,

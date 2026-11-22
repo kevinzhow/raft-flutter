@@ -59,7 +59,7 @@ void main() {
     final w = f.workspace(t);
     // Web /computers?profile=agent:<id>: the page stays Computers.
     expect(w.location.route, RaftRoute.computers);
-    expect(w.location.query('open'), 'agent:agent-1');
+    expect(w.location.profile?.toString(), 'agent:agent-1');
     expect(
       find.byKey(const ValueKey('computers-rack-side-panel')),
       findsOneWidget,
@@ -79,7 +79,7 @@ void main() {
       findsNothing,
     );
     expect(w.location.route, RaftRoute.computers);
-    expect(w.location.query('open'), isNull);
+    expect(w.location.profile, isNull);
     await f.close(t);
   });
 
@@ -190,7 +190,13 @@ void main() {
     await t.tapAt(t.getBottomLeft(row) + const Offset(24, -8));
     await f.flush(t);
     await t.pump(const Duration(milliseconds: 400));
-    expect(f.workspace(t).location.entityId, 'computer-a');
+    final location = f.workspace(t).location;
+    expect(location.route, RaftRoute.computers);
+    expect(location.profile?.toString(), 'computer:computer-a');
+    expect(
+      find.byKey(const ValueKey('computers-rack-side-panel')),
+      findsOneWidget,
+    );
     await f.close(t);
   });
 }

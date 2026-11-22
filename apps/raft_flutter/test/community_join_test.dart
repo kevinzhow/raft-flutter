@@ -100,9 +100,7 @@ void main() {
     },
   );
 
-  testWidgets('declining leaves the not-found page, which still redirects', (
-    t,
-  ) async {
+  testWidgets('declining leaves the not-found page until Continue', (t) async {
     final f = RootFixture();
     _Community(f, needsAgreement: true);
     await f.mount(t, 'light', 1280, uri: Uri(path: '/s/community'));
@@ -113,12 +111,19 @@ void main() {
     expect(find.byType(RaftServerAccessDeniedPage), findsOneWidget);
     await t.pump(const Duration(seconds: 3));
     await f.flush(t);
+    expect(find.byType(RaftServerAccessDeniedPage), findsOneWidget);
+    await t.tap(find.byKey(const ValueKey('server-denied-continue')));
+    await f.flush(t);
+    expect(find.byType(RaftServerAccessDeniedPage), findsNothing);
+    expect(find.byType(GlobalServerSelector), findsOneWidget);
+    await t.tap(find.byKey(const ValueKey('global-server-a')));
+    await f.flush(t);
     expect(find.byType(WorkspaceView), findsOneWidget);
     expect(f.workspace(t).server!.id, 'a');
     await f.close(t);
   });
 
-  testWidgets('the redirect closes an open agreement dialog', (t) async {
+  testWidgets('the agreement stays open while the user reads it', (t) async {
     final f = RootFixture();
     _Community(f, needsAgreement: true);
     await f.mount(t, 'light', 1280, uri: Uri(path: '/s/community'));
@@ -126,8 +131,8 @@ void main() {
     expect(find.byType(RaftCommunityAgreementDialog), findsOneWidget);
     await t.pump(const Duration(seconds: 3));
     await f.flush(t);
-    expect(find.byType(RaftCommunityAgreementDialog), findsNothing);
-    expect(find.byType(WorkspaceView), findsOneWidget);
+    expect(find.byType(RaftCommunityAgreementDialog), findsOneWidget);
+    expect(find.byType(RaftServerAccessDeniedPage), findsOneWidget);
     await f.close(t);
   });
 

@@ -36,6 +36,7 @@ import 'recipes/token_binding.dart';
 import 'recipe_surface.dart'
     show RaftRecipeBinding, RaftRecipeBox, RaftSlotPaint, raftCssText;
 import 'status_bar.dart';
+import 'space.dart';
 import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'large_content_viewer.dart';
 import 'theme.dart';
@@ -690,6 +691,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
     BuildContext context,
     RaftTokens t,
     List<Widget> actions,
+    EdgeInsets? compactInsets,
   ) {
     final narrow =
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
@@ -753,7 +755,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
       child: Container(
         height: grows ? null : height,
         constraints: BoxConstraints(minHeight: height),
-        padding: (contentInsets ?? edges).copyWith(
+        padding: (contentInsets ?? compactInsets ?? edges).copyWith(
           top: grows ? 8 : 0,
           bottom: grows ? 8 : 0,
         ),
@@ -862,14 +864,28 @@ class RaftPanelHeaderBar extends StatelessWidget {
             ...chrome.actions,
             if (this.actions.isNotEmpty) this.actions.last,
           ];
-    final header = _build(context, actions);
+    final header = chrome?.plannedProfile == true
+        ? LayoutBuilder(
+            builder: (context, box) => _build(
+              context,
+              actions,
+              compactInsets: box.maxWidth < 180
+                  ? const EdgeInsets.symmetric(horizontal: RaftSpace.x2)
+                  : null,
+            ),
+          )
+        : _build(context, actions);
     return chrome?.wrap?.call(context, header) ?? header;
   }
 
-  Widget _build(BuildContext context, List<Widget> actions) {
+  Widget _build(
+    BuildContext context,
+    List<Widget> actions, {
+    EdgeInsets? compactInsets,
+  }) {
     final t = RaftTokens.of(context);
     if (t.option('panelAction.surface', or: 'outline') == 'ghost')
-      return _ghostHeader(context, t, actions);
+      return _ghostHeader(context, t, actions, compactInsets);
     final rt = RaftRecipeTokens(t);
     final width = MediaQuery.sizeOf(context).width;
     final s = RaftPanelHeaderRecipe.resolve(
@@ -893,6 +909,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
     final lines = grows ? null : 1;
     final barPadding =
         contentInsets ??
+        compactInsets ??
         (columnMargin == null
             ? s.header.padding.copyWith(left: leftPadding)
             : raftPanelHeaderEdges(

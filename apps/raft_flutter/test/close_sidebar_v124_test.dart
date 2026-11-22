@@ -15,8 +15,32 @@ import 'support/close_surface.dart';
 import 'support/joint_channel_fixture.dart' show fixture;
 
 void main() {
-  registerCloseTests(sidebarV124Surfaces, {
-    for (final surface in sidebarV124Surfaces)
+  registerCloseTests(
+    [workspaceHistorySurface],
+    {
+      workspaceHistorySurface.id: (tester, size) async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        final (workspace, _) = await pageFixture(tester);
+        await mountPage(
+          tester,
+          workspace,
+          false,
+          width: size.width,
+          height: size.height,
+        );
+        await tester.tap(find.byKey(const Key('topbar-history')));
+        await tester.pumpAndSettle();
+        final menu = find.byKey(const Key('topbar-history-menu'));
+        return SurfaceProbe(
+          isOpen: () => menu.evaluate().isNotEmpty,
+          scrim: Offset(size.width - 16, size.height - 16),
+        );
+      },
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
+  registerCloseTests(sidebarV124Dialogs, {
+    for (final surface in sidebarV124Dialogs)
       surface.id: (tester, size) async {
         if (surface.id == 'sidebar-channel-leave-confirmation') {
           final (workspace, _) = await pageFixture(tester);

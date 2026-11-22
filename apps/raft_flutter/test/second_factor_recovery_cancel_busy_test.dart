@@ -109,10 +109,10 @@ void main() {
 
   bool cancelEnabled(WidgetTester t) =>
       t
-          .widget<RaftControl>(
+          .widget<RaftButton>(
             find.byWidgetPredicate(
               (w) =>
-                  w is RaftControl &&
+                  w is RaftButton &&
                   w.key is ValueKey<String> &&
                   (w.key! as ValueKey<String>).value.endsWith('-Cancel reset'),
             ),

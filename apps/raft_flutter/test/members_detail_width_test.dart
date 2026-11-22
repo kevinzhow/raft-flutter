@@ -74,7 +74,7 @@ void main() {
       expect(t.getSize(list).width, page.width - 380);
 
       // Drag the seam all the way left: the list gives way down to 160.
-      final handle = find.byKey(const Key('desktop-master-resize-handle'));
+      final handle = find.byKey(const Key('profile-resize-handle'));
       final drag = await t.startGesture(t.getCenter(handle));
       await drag.moveBy(const Offset(-40, 0));
       await drag.moveBy(Offset(-window.width, 0));

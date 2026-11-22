@@ -18,7 +18,7 @@ import 'support/app_services_fixture.dart';
 
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
-    for (final width in [390.0, 1280.0]) {
+    for (final width in [390.0, 1600.0]) {
       for (final chip in [false, true]) {
         testWidgets(
           '[K10b entry] actual ${chip ? 'message footer chip' : 'channel Tasks tab card'} owns task URI ${dark ? 'dark' : 'light'}/$width',

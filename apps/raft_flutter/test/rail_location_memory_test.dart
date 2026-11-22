@@ -148,9 +148,11 @@ void main() {
       await t.pump(const Duration(milliseconds: 50));
       // Away to Chat and back: the same person, not the members root.
       await rail('chat');
-      expect(w.location.route, isNot(RaftRoute.agent));
+      expect(w.location.profile, isNull);
       await rail('members');
-      expect(w.location.toString(), '/s/demo/agent/a1');
+      expect(w.location.route, RaftRoute.members);
+      expect(w.location.profile?.toString(), 'agent:a1');
+      expect(find.byKey(const Key('profile-panel')), findsOneWidget);
       // Chat comes back on the open conversation.
       await rail('chat');
       expect(w.section, 'chat');

@@ -314,7 +314,7 @@ void main() {
         if (section == 'members') {
           expect(find.byType(MemberProfileView), findsOneWidget);
         }
-        final detail = find.byKey(const Key('desktop-content-detail'));
+        final detail = find.byKey(const Key('workspace-profile-panel'));
         final x = t.getRect(detail).left.round();
         final tokens = tokensOf(t, detail);
         expectSeam(
@@ -326,7 +326,7 @@ void main() {
         );
         await expectHoverLine(
           t,
-          find.byKey(const Key('desktop-master-resize-handle')),
+          find.byKey(const Key('profile-resize-handle')),
           x,
           500,
           tokens,

@@ -1645,7 +1645,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 },
               ),
             );
-      if (['members', 'agents', if (!wide) 'computers'].contains(route)) {
+      final directoryList = route == 'members' || route == 'agents';
+      if (directoryList || !wide && route == 'computers') {
         final detail = desktopContentDetail();
         content = widget.mobileRoutePage && detail != null
             ? detail
@@ -1823,6 +1824,13 @@ class _WorkspaceViewState extends State<WorkspaceView>
                             sidebarResizeLabel: tr('Resize sidebar'),
                             threadResizeLabel: tr('Resize thread'),
                             profileWidth: profilePanelWidth.value,
+                            profileWidthBounds: directoryList
+                                ? (
+                                    contentFloor: DesktopMasterDetail.listFloor,
+                                    maxWidth: profilePanelWidth.max,
+                                  )
+                                : RaftAdaptiveWorkspace
+                                      .defaultProfileWidthBounds,
                             onProfileWidthChanged: profilePanelWidth.save,
                             profileResizeLabel: tr('Resize profile'),
                             sidebarVisible: DesktopNavigationPolicy.forSection(
