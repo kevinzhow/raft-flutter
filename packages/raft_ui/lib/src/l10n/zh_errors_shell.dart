@@ -4,4 +4,7 @@
 const Map<String, String> zhCatalogErrorsShell = <String, String>{
   // avatar.tooLarge with common.fileSize.maxLabel5mb ("5 MB") filled in.
   "Avatar image must be 5 MB or smaller": "头像图片不能超过 5 MB",
+  "You're no longer in this channel": "你已不在这个频道中",
+  "This conversation isn't available to you": "这个对话你无法打开",
+  "Back to conversations": "回到会话列表",
 };

@@ -626,7 +626,7 @@ class RaftEditableEyebrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      RaftSectionEyebrow(label),
+      Flexible(child: RaftSectionEyebrow(label)),
       if (onEdit != null) ...[
         const SizedBox(width: 8),
         RaftInlineIconButton(

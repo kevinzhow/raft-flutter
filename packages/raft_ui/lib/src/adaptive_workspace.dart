@@ -43,6 +43,7 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
     this.thread,
     this.profile,
     this.profileWidth = 380,
+    this.profileWidthBounds = defaultProfileWidthBounds,
     this.onProfileWidthChanged,
     this.profileResizeLabel = 'Resize profile',
     this.onPresentationChanged,
@@ -113,12 +114,16 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   /// when folded.
   final Widget? profile;
   final double profileWidth;
+  final ({double contentFloor, double maxWidth}) profileWidthBounds;
 
-  /// Web `ProfilePanel` is drag-resizable between 300 and 600; the host stores
-  /// the width once a drag ends (or a keyboard step lands).
+  /// The host stores the accepted width when the resize ends.
   final ValueChanged<double>? onProfileWidthChanged;
   final String profileResizeLabel;
   static const profileMinWidth = 300.0, profileMaxWidth = 600.0;
+  static const defaultProfileWidthBounds = (
+    contentFloor: 320.0,
+    maxWidth: profileMaxWidth,
+  );
   final void Function(bool mainVisible, bool threadVisible)?
   onPresentationChanged;
 
@@ -496,9 +501,9 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
     super.dispose();
   }
 
-  static double clampProfile(double value) => value.clamp(
+  double clampProfile(double value) => value.clamp(
     RaftAdaptiveWorkspace.profileMinWidth,
-    RaftAdaptiveWorkspace.profileMaxWidth,
+    widget.profileWidthBounds.maxWidth,
   );
 
   @override
@@ -518,7 +523,8 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
     if (oldWidget.threadWidth != widget.threadWidth) {
       threadWidth = widget.threadWidth;
     }
-    if (oldWidget.profileWidth != widget.profileWidth) {
+    if (oldWidget.profileWidth != widget.profileWidth ||
+        oldWidget.profileWidthBounds != widget.profileWidthBounds) {
       profileWidth = clampProfile(widget.profileWidth);
     }
   }
@@ -681,8 +687,8 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
       final profileMax = math.max(
         RaftAdaptiveWorkspace.profileMinWidth,
         math.min(
-          RaftAdaptiveWorkspace.profileMaxWidth,
-          conversationWidth - 320,
+          widget.profileWidthBounds.maxWidth,
+          conversationWidth - widget.profileWidthBounds.contentFloor,
         ),
       );
       if (widget.profile == null || !sideThread || widget.thread != null) {

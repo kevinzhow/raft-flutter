@@ -77,6 +77,7 @@ class DesktopNavigationPolicy {
     DesktopContentKind? target,
   }) {
     final chat = route == 'chat' || route == 'home';
+    final directory = const {'members', 'agents', 'computers'}.contains(route);
     final content = wide && (route == 'activity' || route == 'search');
     final threadIsDetail = wide && target == DesktopContentKind.thread;
     return (
@@ -86,7 +87,7 @@ class DesktopNavigationPolicy {
           (route == 'chat' || content && target != null),
       profile:
           location.profile != null &&
-          (wide || chat || route == 'apps'),
+          (wide || chat || directory || route == 'apps'),
     );
   }
 

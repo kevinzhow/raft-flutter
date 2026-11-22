@@ -77,8 +77,9 @@ Future<void> expectPointerKeepsOpen(
 /// opened surface). A width without affordances must say why in `none`.
 void registerCloseTests(
   List<CloseSurface> surfaces,
-  Map<String, OpenSurface> harness,
-) {
+  Map<String, OpenSurface> harness, {
+  TestVariant<Object?> variant = const DefaultTestVariant(),
+}) {
   for (final surface in surfaces) {
     final open = harness[surface.id];
     for (final (name, size) in closeSizes) {
@@ -112,7 +113,7 @@ void registerCloseTests(
         if (surface.kind == SurfaceKind.dialog) {
           await expectPointerKeepsOpen(t, surface, name, size, open!);
         }
-      });
+      }, variant: variant);
     }
   }
 }

@@ -3,16 +3,19 @@ import 'close_surface.dart';
 const _dialog = {Affordance.x, Affordance.esc, Affordance.systemBack};
 const _modal = {..._dialog, Affordance.scrim};
 
-const sidebarV124Surfaces = [
-  CloseSurface(
-    'workspace-history-menu',
-    kind: SurfaceKind.popup,
-    web: 'components/topbar/HistoryMenu.tsx DropdownMenu: Escape and outside press',
-    fold: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
-    desktop: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
-    none: {'phone': 'native navigation uses the page stack'},
-    files: ['lib/features/workspace_history_controls.dart'],
-  ),
+const workspaceHistorySurface = CloseSurface(
+  'workspace-history-menu',
+  kind: SurfaceKind.popup,
+  web: 'components/topbar/HistoryMenu.tsx DropdownMenu: Escape and outside press',
+  desktop: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+  none: {
+    'phone': 'native phone navigation uses the page stack',
+    'fold': 'History controls are native desktop chrome',
+  },
+  files: ['lib/features/workspace_history_controls.dart'],
+);
+
+const sidebarV124Dialogs = [
   CloseSurface(
     'sidebar-channel-leave-confirmation',
     kind: SurfaceKind.dialog,

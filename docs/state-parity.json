@@ -58782,12 +58782,6 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78231/METHOD:build@79703/FUNCTION:message@83288": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-SIDEBAR",
-        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
-      },
       "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27831/METHOD:_build@34900/FUNCTION:row@42038": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -60285,12 +60279,6 @@
         "owner": "Workspace conversation",
         "reason": "Dispatches context menu actions and presents toast feedback through raft_ui."
       },
-      "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1859/METHOD:navigate@21975/FUNCTION:openAgent@23051": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "Raft Flutter component wiring",
-        "reason": "Presents the existing FleetDetail in RaftPageFrame from the Computer detail opened by a system notification."
-      },
       "apps/raft_flutter/lib/features/workspace_channel_access.dart#class:WorkspaceChannelAccessPage": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -60375,73 +60363,17 @@
         "owner": "Workspace side panels",
         "reason": "Connects the workspace panel and its dismissal actions to the accepted location."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6161/METHOD:buildWorkspace@45270/FUNCTION:<anonymous>@45526/FUNCTION:conversation@49221": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-SIDEBAR",
-        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6161/METHOD:buildWorkspace@45270/FUNCTION:<anonymous>@45526/FUNCTION:workspace@63683": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-SIDEBAR",
-        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6161/METHOD:desktopContentDetail@98002/FUNCTION:header@99896": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-SIDEBAR",
-        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6161/METHOD:settingsRailAction@105492/FUNCTION:action@105526": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "workspace-shell"
-        ],
-        "owner": "Shared desktop chrome",
-        "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
-      },
       "packages/raft_ui/lib/announcement_previews.dart#function:announcementSidebarPreview": {
         "role": "preview_fixture",
         "familyRefs": [],
         "owner": "WP-SHELL announcements",
         "reason": "Previews the sidebar announcement card."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:mainContent@12620": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "Workspace side panels",
-        "reason": "Keeps the workspace content mounted and projects the thread only when folded."
-      },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:panel@13079": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:profile@11792": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:thread@11326": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#method:RaftAdaptiveWorkspace.dockedThreadOf": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace side panels",
         "reason": "Supplies the docked thread to the conversation side area."
-      },
-      "packages/raft_ui/lib/src/announcement_markdown.dart#local-function:CLASS:_MarkdownBlocks@5616/METHOD:blocks@6179/FUNCTION:flushInline@6406": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "Shared Markdown renderer",
-        "reason": "Flushes inline spans into the current block during native Markdown rendering."
       },
       "packages/raft_ui/lib/src/announcement_sidebar_card.dart#class:RaftAnnouncementSidebarCard": {
         "role": "entry_composition",
@@ -60499,12 +60431,6 @@
         "familyRefs": [],
         "owner": "DropdownMenu",
         "reason": "Renders a noninteractive menu label using the generated menu label styling."
-      },
-      "packages/raft_ui/lib/src/empty_state.dart#local-function:CLASS:RaftEmptyState@1536/METHOD:build@2038/FUNCTION:text@2870": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/panel_layout.dart#class:RaftPanelHeaderChrome": {
         "role": "entry_composition",
@@ -60568,13 +60494,87 @@
         "owner": "Shared desktop chrome",
         "reason": "Measures names for the mounted workspace switcher and its quick-switch capacity."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@49929/METHOD:build@50389/FUNCTION:withoutRailInset@50627": {
+      "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1970/METHOD:navigate@22908/FUNCTION:openAgent@24359": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Raft Flutter component wiring",
+        "reason": "Presents the existing FleetDetail in RaftPageFrame from the Computer detail opened by a system notification."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6170/METHOD:buildWorkspace@45279/FUNCTION:<anonymous>@45535/FUNCTION:conversation@49230": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6170/METHOD:buildWorkspace@45279/FUNCTION:<anonymous>@45535/FUNCTION:workspace@63754": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6170/METHOD:desktopContentDetail@98507/FUNCTION:header@100401": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6170/METHOD:settingsRailAction@105933/FUNCTION:action@105967": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@50174/METHOD:build@50634/FUNCTION:withoutRailInset@50872": {
         "role": "entry_composition",
         "familyRefs": [
           "workspace-shell"
         ],
         "owner": "Shared desktop chrome",
         "reason": "Projects safe-area insets for the mounted keyboard layout beside a rail."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:mainContent@12774": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Keeps the workspace content mounted and projects the thread only when folded."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:panel@13233": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:profile@11946": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:thread@11480": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/announcement_markdown.dart#local-function:CLASS:_MarkdownBlocks@5674/METHOD:blocks@6237/FUNCTION:flushInline@6464": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Shared Markdown renderer",
+        "reason": "Flushes inline spans into the current block during native Markdown rendering."
+      },
+      "packages/raft_ui/lib/src/empty_state.dart#local-function:CLASS:RaftEmptyState@1536/METHOD:build@2091/FUNCTION:text@2923": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78507/METHOD:build@79979/FUNCTION:message@83564": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       }
     },
     "entries": {
@@ -64849,15 +64849,6 @@
           "apps/raft_flutter/lib/features/message_context_menu_sections.dart#function:runMessageContextMenuChoice"
         ]
       },
-      "surface:apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1859/METHOD:navigate@21975/FUNCTION:openAgent@23051": {
-        "owner": "Raft Flutter component wiring",
-        "kind": "route_or_panel_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1859/METHOD:navigate@21975/FUNCTION:openAgent@23051"
-        ],
-        "mountStatus": "source_reviewed",
-        "reason": "The Agent row in the Computer details opened by the notification bell presents the existing Agent detail page."
-      },
       "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71716/METHOD:build@80973/FUNCTION:toggle@81203": {
         "owner": "DropdownMenu",
         "kind": "surface_factory",
@@ -64875,6 +64866,15 @@
         "declarationRefs": [
           "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelHeaderChrome.foldsProfileMessage"
         ]
+      },
+      "surface:apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1970/METHOD:navigate@22908/FUNCTION:openAgent@24359": {
+        "owner": "Raft Flutter component wiring",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1970/METHOD:navigate@22908/FUNCTION:openAgent@24359"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The Agent row in the Computer details opened by the notification bell presents the existing Agent detail page."
       }
     },
     "requirements": {

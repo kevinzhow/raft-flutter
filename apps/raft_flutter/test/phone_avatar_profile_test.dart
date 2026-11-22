@@ -30,16 +30,15 @@ void main() {
     ...extra,
   };
 
-  // Newest last. m1..m6 filler so the list scrolls on a phone; the sender
-  // rows sit near the bottom, `mention` pings an agent.
-  List<Map<String, dynamic>> rows() => [
-    for (var i = 1; i <= 14; i++)
-      row('f$i', i, {
-        'senderId': 'u2',
-        'senderType': 'user',
-        'senderName': 'Dana',
-        'content': 'Filler message number $i with some body text to wrap',
-      }),
+  List<Map<String, dynamic>> rows({bool shortHistory = false}) => [
+    if (!shortHistory)
+      for (var i = 1; i <= 14; i++)
+        row('f$i', i, {
+          'senderId': 'u2',
+          'senderType': 'user',
+          'senderName': 'Dana',
+          'content': 'Filler message number $i with some body text to wrap',
+        }),
     row('mh', 15, {
       'senderId': 'bob',
       'senderType': 'user',
@@ -90,13 +89,15 @@ void main() {
 
   Future<(WorkspaceController, MessageAdapter)> mount(
     WidgetTester t,
-    Size size,
-  ) async {
+    Size size, {
+    bool shortHistory = false,
+  }) async {
     t.view.physicalSize = size;
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
     final (w, api) = await pageFixture(t, section: 'chat');
-    api.routes['GET /messages/channel/c1'] = (_) => {'messages': rows()};
+    final history = rows(shortHistory: shortHistory);
+    api.routes['GET /messages/channel/c1'] = (_) => {'messages': history};
     api.routes['GET /channels/c1/available-mentions'] = (_) => {
       'humans': [],
       'agents': [],
@@ -159,11 +160,11 @@ void main() {
     };
     await t.runAsync(() => w.entityDirectory.preload());
     w.messageDomain.ledger.ingest(
-      rows(),
+      history,
       expectedGeneration: w.messageDomain.ledger.generation,
     );
     w.messageDomain.visibleIds['c1'] = {
-      for (final r in rows()) r['id'] as String,
+      for (final r in history) r['id'] as String,
     };
     await t.pumpWidget(
       MaterialApp(
@@ -333,7 +334,7 @@ void main() {
   testWidgets(
     'wide: a tap outside the profile panel dismisses it, non-blocking',
     (t) async {
-      final (w, _) = await mount(t, const Size(1280, 800));
+      final (w, _) = await mount(t, const Size(1280, 800), shortHistory: true);
       final panel = find.byKey(const Key('profile-panel'));
       Future<void> open(String id) async {
         await t.ensureVisible(avatar(id));
@@ -364,20 +365,18 @@ void main() {
       expect(w.navigation.entries.length, entries);
       expect(find.byKey(const ValueKey('profile-agent-a1')), findsOneWidget);
 
-      // The blank area of the timeline (right of the message text, left of the
-      // panel) closes it like the X.
-      await t.tapAt(Offset(rect.left - 24, 420));
-      await frames(t, 20);
-      expect(panel, findsNothing);
-      expect(w.location.profile, isNull);
-
-      // Reopen, then tap a control outside: it still does its job (a mention
+      // Retarget, then tap a control outside: it still does its job (a mention
       // chip opens the agent profile) rather than only closing the panel.
       await open('mh');
       expect(w.location.profile?.id, 'bob');
-      final mention = find.textContaining('@Cindy', findRichText: true).first;
+      final mention = find.descendant(
+        of: find.byKey(const Key('message-mm')),
+        matching: find.textContaining('@Cindy', findRichText: true),
+      );
+      expect(mention, findsOneWidget);
       await t.ensureVisible(mention);
       await frames(t, 4);
+      expect(mention.hitTestable(), findsOneWidget);
       await t.tapAt(t.getCenter(mention));
       await frames(t, 20);
       expect(w.location.profile?.id, 'a1');
@@ -387,6 +386,12 @@ void main() {
       await t.dragFrom(Offset(rect.left - 200, 500), const Offset(0, 80));
       await frames(t, 10);
       expect(panel, findsOneWidget);
+
+      // The blank area of the timeline closes the panel like the X.
+      await t.tapAt(Offset(rect.left - 24, 420));
+      await frames(t, 20);
+      expect(panel, findsNothing);
+      expect(w.location.profile, isNull);
     },
   );
 }

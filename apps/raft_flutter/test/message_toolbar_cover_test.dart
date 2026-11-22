@@ -295,9 +295,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     w.openProfile(RaftProfileKind.human, 'bob');
     await pageFrames(tester, () {});
-    // Too narrow for thread and profile side by side: the profile covers the
-    // thread column.
-    expect(find.byKey(const Key('workspace-profile-panel')), findsNothing);
+    // The thread folds into the conversation region. The profile takes the
+    // space where the floating toolbar was.
+    expect(find.byKey(const Key('workspace-profile-panel')), findsOneWidget);
+    expect(find.byKey(const Key('workspace-thread-panel')), findsNothing);
     final panel = find.byType(ProfileSidePanel);
     expect(tester.getRect(panel).contains(at), isTrue);
     expectCovered(tester, at, panel);

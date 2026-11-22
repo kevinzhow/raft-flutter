@@ -69,17 +69,24 @@ void main() {
       of: find.byKey(const ValueKey('computers-rack-search')),
       matching: find.byType(EditableText),
     );
-    await t.tap(search);
+    expect(search.hitTestable(), findsOneWidget);
+    await t.showKeyboard(search);
+    await t.pump();
+    expect(t.widget<EditableText>(search).focusNode.hasFocus, isTrue);
     await t.enterText(search, 'build');
-    await t.pump(const Duration(milliseconds: 300));
-    // The field's own X (the toolbar's Clear all is a separate control).
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('computers-rack-search')),
-        matching: find.bySemanticsLabel('Clear search'),
-      ),
-      findsOneWidget,
-    );
+    await t.pump();
+    expect(t.widget<EditableText>(search).controller.text, 'build');
+    expect(ComputersRackPreferences.instance.query, 'build');
+    final semantics = t.ensureSemantics();
+    try {
+      await t.pump();
+      expect(
+        find.bySemanticsLabel('Clear search').hitTestable(),
+        findsOneWidget,
+      );
+    } finally {
+      semantics.dispose();
+    }
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await f.flush(t);
     await t.pump(const Duration(milliseconds: 300));

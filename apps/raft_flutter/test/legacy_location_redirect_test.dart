@@ -4,7 +4,7 @@ import 'package:raft_flutter/features/workspace_view.dart';
 import 'app_global_server_selector_test.dart' show RootFixture;
 
 // Web useRailLegacyRedirect29–64 (mounted once in MainLayout, REPLACE only):
-//   /s/<slug>/machine/<id>          -> /s/<slug>/computer/<id>
+//   /s/<slug>/machine/<id>          -> /s/<slug>/computers?profile=computer:<id> on wide
 //   /s/<slug>?sidebarTab=members    -> /s/<slug>/members
 //   /s/<slug>?sidebarTab=computers  -> /s/<slug>/computers
 //   /s/<slug>?tab=machines          -> /s/<slug>/computers
@@ -13,7 +13,10 @@ import 'app_global_server_selector_test.dart' show RootFixture;
 // All other query keys stay intact. Driven through the actual RaftApp with
 // its initial platform route and a later engine pushRouteInformation.
 const _cases = [
-  ('/s/alpha/machine/m1?keep=one', '/s/alpha/computer/m1?keep=one'),
+  (
+    '/s/alpha/machine/m1?keep=one',
+    '/s/alpha/computers?keep=one&profile=computer%3Am1',
+  ),
   ('/s/alpha?sidebarTab=members&keep=one', '/s/alpha/members?keep=one'),
   ('/s/alpha?sidebarTab=computers', '/s/alpha/computers'),
   ('/s/alpha?tab=machines&keep=one', '/s/alpha/computers?keep=one'),

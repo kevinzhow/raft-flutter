@@ -146,6 +146,11 @@ const pages = <String, String>{
   'activity': '/s/alpha/activity',
 };
 
+const wideProfiles = {
+  'agent page': '/members?profile=agent%3Aagent-1',
+  'human page': '/members?profile=human%3Abob',
+};
+
 /// One walk through every layout class the app meets: fold / unfold, rotate,
 /// a phone-width desktop window and back, wide-to-wide, and the keyboard on
 /// each touch size (inset only, then inset plus a shrunken window).
@@ -168,22 +173,31 @@ void main() {
   for (final MapEntry(key: kind, value: path) in pages.entries) {
     scenario('$kind survives every layout class and the keyboard', (t) async {
       final f = await mount(t, folded, path);
-      final start = where(f, t);
+      var expected = where(f, t);
       final stack = mountedPages(t);
       expectShell(t, folded, 'start');
       for (final (label, dp) in walk) {
         await resize(t, f, dp);
+        if (wideAt(dp)) expected = wideProfiles[kind] ?? expected;
         expectShell(t, dp, '$kind at $label');
-        expect(where(f, t), start, reason: '$kind kept its location: $label');
+        expect(
+          where(f, t),
+          expected,
+          reason: '$kind kept its location: $label',
+        );
       }
       // Back on a phone-sized window the stack is the one we started with.
       await resize(t, f, folded);
       expect(mountedPages(t), stack, reason: '$kind phone page stack');
       for (final dp in [folded, phone, unfolded]) {
         await resize(t, f, dp);
-        final field = find.byType(EditableText);
+        final profile = find.byKey(const Key('profile-panel'));
+        final edits = find.byType(EditableText);
+        final field = profile.evaluate().isEmpty
+            ? edits.hitTestable()
+            : find.descendant(of: profile, matching: edits).hitTestable();
         if (field.evaluate().isNotEmpty) {
-          await t.tap(field.last, warnIfMissed: false);
+          await t.tap(field.last);
           await settle(t, 3);
         }
         for (final shrink in [false, true]) {
@@ -191,7 +205,7 @@ void main() {
           expectShell(t, dp, '$kind keyboard up at $dp shrink=$shrink');
           expect(
             where(f, t),
-            start,
+            expected,
             reason: '$kind keyboard up at $dp shrink=$shrink',
           );
           // A window the keyboard really shrinks (adjustResize) can turn a
@@ -206,7 +220,7 @@ void main() {
             );
           }
           await keyboard(t, f, dp, up: false, shrink: shrink);
-          expect(where(f, t), start, reason: '$kind keyboard down at $dp');
+          expect(where(f, t), expected, reason: '$kind keyboard down at $dp');
         }
         FocusManager.instance.primaryFocus?.unfocus();
       }
