@@ -9,10 +9,11 @@
 //
 // [clear] drops both when the channel comes back (`channel:updated` with
 // `joined`, a sync `scope` added) or a check answers it can be read.
-import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
-class ChannelAccessLoss extends ChangeNotifier {
+import 'plain_listenable.dart';
+
+class ChannelAccessLoss extends PlainListenable {
   ChannelAccessLoss._(this.client);
   final RaftClient client;
 
@@ -41,7 +42,8 @@ class ChannelAccessLoss extends ChangeNotifier {
   final _unavailable = <String>{};
 
   void _synchronize() {
-    final scope = '${client.origin}|${client.user?.id}|${client.serverId}';
+    final scope =
+        '${client.origin}|${client.generation}|${client.user?.id}|${client.serverId}';
     if (_scope == scope) return;
     _scope = scope;
     _lost.clear();
@@ -62,7 +64,7 @@ class ChannelAccessLoss extends ChangeNotifier {
   void noteReadError(String? channelId, Object error) {
     _synchronize();
     if (channelId == null || !isDenial(error) || !_lost.add(channelId)) return;
-    notifyListeners();
+    notify();
   }
 
   /// Opening [channelId] answered: null when it could be read, else the
@@ -72,13 +74,13 @@ class ChannelAccessLoss extends ChangeNotifier {
     final changed = error != null && isDenial(error)
         ? _unavailable.add(channelId)
         : _unavailable.remove(channelId);
-    if (changed) notifyListeners();
+    if (changed) notify();
   }
 
   void clear(String channelId) {
     _synchronize();
     final a = _lost.remove(channelId), b = _unavailable.remove(channelId);
-    if (a || b) notifyListeners();
+    if (a || b) notify();
   }
 
   /// A sync `scope` change for one channel. Removed is a membership change,
@@ -86,11 +88,15 @@ class ChannelAccessLoss extends ChangeNotifier {
   /// channel is read once and marked only if that read is refused.
   Future<void> applyScopeChange(String channelId, String op) async {
     if (op == 'added') return clear(channelId);
+    _synchronize();
+    final scope = _scope;
     try {
       await client.get('/channels/${Uri.encodeComponent(channelId)}');
-      clear(channelId);
+      _synchronize();
+      if (scope == _scope) clear(channelId);
     } catch (error) {
-      noteReadError(channelId, error);
+      _synchronize();
+      if (scope == _scope) noteReadError(channelId, error);
     }
   }
 }
