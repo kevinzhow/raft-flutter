@@ -789,13 +789,12 @@ class _RaftToastPortalState extends State<RaftToastPortal>
     final clearance = math.max(_held, measure());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !context.mounted) return;
-      final next = math.max(_held, measure());
-      if ((next - clearance).abs() > .5) {
-        _held = next;
-        setState(() {});
+      final live = measure();
+      if (MediaQuery.viewInsetsOf(context).bottom == 0) {
+        _held = math.max(_held, live);
       }
+      if ((math.max(_held, live) - clearance).abs() > .5) setState(() {});
     });
-    _held = clearance;
     return clearance;
   }
 
