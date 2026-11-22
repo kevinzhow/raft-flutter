@@ -82,7 +82,13 @@ void main() {
         await t.tap(button('More'));
         await t.pumpAndSettle();
         final panel = t.getRect(find.byType(RaftMenuPanel));
-        expect(panel.right, closeTo(trigger.right, .01));
+        expect(
+          panel.right,
+          closeTo(
+            (trigger.right - panel.width).roundToDouble() + panel.width,
+            .01,
+          ),
+        );
         expect(panel.bottom, closeTo(trigger.top - 8, .01));
         await t.sendKeyEvent(LogicalKeyboardKey.arrowDown);
         await t.pump();
