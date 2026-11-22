@@ -258,6 +258,12 @@ void main() {
           close.center.dy,
           closeTo(banner.top + 12 + (context == _desktop ? 11 : 10), .6),
         );
+        await t.tapAt(close.topCenter + const Offset(0, 1));
+        await t.pump();
+        expect(closed, 2, reason: '${context.$2} top overhang');
+        await t.tapAt(close.bottomCenter - const Offset(0, 1));
+        await t.pump();
+        expect(closed, 3, reason: '${context.$2} bottom overhang');
       }
       await _mount(t, _banner(onClose: () {}), width: 360);
       expect(find.bySemanticsLabel('Dismiss'), findsWidgets);
