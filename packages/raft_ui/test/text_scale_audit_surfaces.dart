@@ -493,6 +493,12 @@ final auditSurfaces = <AuditSurface>[
     Size(200, 120),
   ),
   AuditSurface(
+    'fitToolbarSelectPreview',
+    'Fit toolbar, typed Select',
+    fitToolbarSelectPreview,
+    Size(340, 260),
+  ),
+  AuditSurface(
     'delegatedFacePreview',
     'Delegated assistant face',
     delegatedFacePreview,
