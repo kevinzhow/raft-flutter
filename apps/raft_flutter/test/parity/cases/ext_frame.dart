@@ -78,15 +78,16 @@ WorkspaceController _workspace(ParityContext ctx) {
   final ids = ParityIdentities(ctx);
   final scenes = (ctx.fixtures['ext:screens'] as Map)['scenes'] as Map;
   final frame = ctx.fixtures['ext:frame'] as Map;
-  final avatarReset = ctx.props['avatarReset'] == true;
+  final avatarResetRoutes = ctx.props['avatarReset'] == true
+      ? (frame['routeSets'] as Map)['fr-avatar-reset'] as Map
+      : null;
   final workspace = shellWorkspace(
     ctx,
     selected: selected,
     routes: {
-      'GET /agents': [
-        for (final agent in ids.agents)
-          if (!avatarReset || agent['id'] != 'agent-cindy') agent,
-      ],
+      'GET /agents': avatarResetRoutes == null
+          ? ids.agents
+          : avatarResetRoutes['GET /agents'] as List,
       'GET /servers/visual-server/members': ids.members,
       if (ctx.props['routeSet'] == 'fr-bell')
         ...Map<String, dynamic>.from(
@@ -106,10 +107,9 @@ WorkspaceController _workspace(ParityContext ctx) {
       ..._tabBarRoutes(ctx),
     },
   );
-  if (avatarReset) {
-    final routes = (frame['routeSets'] as Map)['fr-avatar-reset'] as Map;
+  if (avatarResetRoutes != null) {
     workspace.sidebarOrder = Map<String, dynamic>.from(
-      routes['GET /servers/visual-server/sidebar-order'] as Map,
+      avatarResetRoutes['GET /servers/visual-server/sidebar-order'] as Map,
     );
   }
   return workspace;

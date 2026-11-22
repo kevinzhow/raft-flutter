@@ -78,6 +78,7 @@ def build_fixture():
     route_sets['fr-avatar-reset'] = {
         **route_sets['fr-mobile'],
         sidebar_order: avatar_order,
+        'GET /agents': [],
     }
     route_sets['fr-topbar-drag'] = {
         **route_sets['fr-mobile'],

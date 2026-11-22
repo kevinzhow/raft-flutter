@@ -2009,7 +2009,8 @@
     "peerName": "jiacheng",
     "peerDisplayName": "Jiacheng",
     "peerDescription": null
-   }
+   },
+   "GET /agents": []
   },
   "fr-topbar-drag": {
    "GET /servers/visual-server/sidebar-order": {
