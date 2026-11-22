@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:raft_flutter/features/desktop_navigation_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
@@ -112,7 +113,9 @@ void main() {
           if (mode == 'late') {
             await t.pump(const Duration(milliseconds: 151));
           } else {
-            await t.tap(find.byTooltip('Close Detail'));
+            expect(find.byTooltip('Close Detail'), findsNothing);
+            DesktopNavigationState(navigation: w.navigation).closeTarget();
+            w.notifyListeners();
             expect(w.location.route, RaftRoute.activity);
             expect(w.location.content, isNull);
             await t.pump();

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:raft_client/raft_client.dart';
 
+import 'channel_access_loss.dart';
 import 'conversation_window.dart';
 import 'message_gap_sync.dart';
 import 'message_window_snapshot.dart';
@@ -181,12 +182,14 @@ class WorkspaceMessageNavigation {
           await m.transport.client.get('/channels/$channelId'),
         ),
       );
-    } catch (_) {
+    } catch (error) {
       // Source ChannelById/ensureChannel resolves failed metadata to its
       // unavailable body. UI callbacks may not await this request; neither a
       // global async exception nor a retained conversation owns the failure.
       if (request.current) {
         m.presentation.assignMissingConversationChannelId(channelId);
+        ChannelAccessLoss.of(m.transport.client)
+            .noteOpenResult(channelId, error);
         m.context.changed();
       }
       return;
@@ -194,6 +197,7 @@ class WorkspaceMessageNavigation {
     if (!request.current || !m.context.can('viewChannel', resource: next)) {
       return;
     }
+    ChannelAccessLoss.of(m.transport.client).noteOpenResult(channelId, null);
     if (messageId == null) {
       await m.entries.selectChannel(next, navigate: navigate);
       return;
