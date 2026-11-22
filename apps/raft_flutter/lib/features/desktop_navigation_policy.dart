@@ -152,6 +152,17 @@ class DesktopNavigationState {
       ? navigation.section
       : null;
 
+  DesktopContentTarget? get directorySelection {
+    final profile = navigation.location.profile;
+    final kind = switch (profile?.kind) {
+      RaftProfileKind.human => DesktopContentKind.human,
+      RaftProfileKind.agent => DesktopContentKind.agent,
+      RaftProfileKind.computer => DesktopContentKind.computer,
+      _ => null,
+    };
+    return kind == null ? target : DesktopContentTarget(kind, profile!.id);
+  }
+
   DesktopContentTarget? get target {
     final location = navigation.location;
     final entityKind = switch (location.route) {

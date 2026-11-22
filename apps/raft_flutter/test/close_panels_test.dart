@@ -191,7 +191,9 @@ void main() {
     'directory-human-detail': (t, size) async {
       final w = await mountAt(t, size, '/s/demo/human/bob');
       return SurfaceProbe(
-        isOpen: () => w.location.route == RaftRoute.human,
+        isOpen: () =>
+            w.location.route == RaftRoute.human ||
+            w.location.profile?.kind == RaftProfileKind.human,
         back: find.byTooltip('Back'),
         x: find.byTooltip('Close Profile'),
       );

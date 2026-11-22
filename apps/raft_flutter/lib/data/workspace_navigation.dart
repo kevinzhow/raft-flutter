@@ -212,7 +212,10 @@ class WorkspaceNavigation {
   ///   the conversation page above its list (the list is the Back entry).
   /// * wide: `channelPage=` is dropped (the caller opens the matching dialog);
   ///   if the page was pushed in this session its history entry is removed.
-  LayoutTranslation? translateForLayout({required bool compact}) {
+  LayoutTranslation? translateForLayout({
+    required bool compact,
+    bool directoryProfiles = true,
+  }) {
     final from = _location;
     if (_index < 0) return null;
     if (compact) {
@@ -227,8 +230,14 @@ class WorkspaceNavigation {
       ++_taskRevision;
       return LayoutTranslation(from, to);
     }
-    if (!hasPhoneOnlyIdentity(from)) return null;
     final to = locationForWide(from);
+    final directory = directoryProfiles ? directoryProfileLocation(to) : to;
+    if (directory.uri != to.uri) {
+      _entries[_index] = _location = directory;
+      ++_taskRevision;
+      return LayoutTranslation(from, directory);
+    }
+    if (!hasPhoneOnlyIdentity(from)) return null;
     if (_index > 0 && _entries[_index - 1].uri == to.uri) {
       _entries.removeRange(_index, _entries.length);
       _index--;
