@@ -5126,6 +5126,23 @@
       ]
     },
     {
+      "id": "chat.channel-access",
+      "title": "Unavailable conversation",
+      "webEntry": "packages/web/src/features/channel/ChannelAccessLost.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/workspace_channel_access.dart",
+      "states": [
+        {
+          "state": "error",
+          "variant": "lost access or refused conversation link",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": ["components.shell.channel-access.*"],
+          "status": "fixing",
+          "justification": "Compare the loss and refused-link states against the pinned Web route."
+        }
+      ]
+    },
+    {
       "id": "messages.link-unavailable",
       "title": "Unavailable message permalink",
       "webEntry": "packages/web/src/components/deeplinks/MessageLinkUnavailable.tsx",

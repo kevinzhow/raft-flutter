@@ -68,8 +68,8 @@ class DesktopNavigationPolicy {
   ///
   /// Web `RightPanel`: chat routes host both; the Activity / Search content
   /// routes host the Thread panel in column 4 beside a channel / DM detail
-  /// (a thread detail IS column 3 and never gets a second one) and the Profile
-  /// panel beside any detail. The Tasks route hosts a profile beside its task.
+  /// (a thread detail IS column 3 and never gets a second one). The Profile
+  /// panel is available beside every wide route.
   static ({bool thread, bool profile}) sidePanels({
     required String route,
     required bool wide,
@@ -86,10 +86,7 @@ class DesktopNavigationPolicy {
           (route == 'chat' || content && target != null),
       profile:
           location.profile != null &&
-          (chat ||
-              route == 'apps' ||
-              content ||
-              wide && taskSlotId(location) != null),
+          (wide || chat || route == 'apps'),
     );
   }
 

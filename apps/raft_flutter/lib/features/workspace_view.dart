@@ -24,6 +24,7 @@ import 'notification_activation_workspace.dart';
 import '../data/user_error.dart';
 import 'local_error_diagnostics.dart';
 import '../data/workspace_controller.dart';
+import '../data/channel_access_loss.dart';
 import '../platform/route_frame_diagnostics.dart';
 import '../data/workspace_entity_directory.dart';
 import '../data/source_activity_unread_store.dart';
@@ -101,6 +102,7 @@ import 'saved_sidebar_entry.dart' show SavedCountStore;
 import 'system_notification_center.dart';
 import 'workspace_browser.dart';
 import 'workspace_channel_header.dart';
+import 'workspace_channel_access.dart';
 import 'workspace_dm_header.dart';
 import 'workspace_view_sidebar_menus.dart';
 import 'management_support.dart' show managementLaunch;
@@ -121,6 +123,7 @@ export 'workspace_host_scope.dart' show WorkspaceHostScope;
 part 'sidebar_workspace_groups.dart';
 part 'mobile_workspace_route.dart';
 part 'mobile_settings_route.dart';
+part 'workspace_panel_dismissal.dart';
 
 class WorkspaceView extends StatefulWidget {
   const WorkspaceView({
@@ -1027,93 +1030,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   Widget dismissInScaffold(VoidCallback? onEscape, Widget child) =>
       RaftDismissScope(onDismiss: onEscape ?? escapePanel, child: child);
 
-  /// Escape: closes the topmost closable layer and nothing else (Web's
-  /// document listeners do not navigate Back from a plain page).
-  void escapePanel() {
-    if (takeDetailFieldEscape()) return;
-    final layer =
-        mobileHost != null ||
-        w.location.profile != null ||
-        w.location.task != null ||
-        w.location.legacyTask != null ||
-        w.location.channelPage != null ||
-        w.location.thread != null ||
-        wide && desktopNavigation.target != null ||
-        threadSelection.active ||
-        mainSelection.active ||
-        scaffold.currentState?.isDrawerOpen == true ||
-        w.messageDomain.state.threadParent != null && w.section == 'chat';
-    if (layer) dismissPanel();
-  }
-
-  void dismissPanel() {
-    final host = mobileHost;
-    if (host != null) {
-      if (threadSelection.dismiss() || mainSelection.dismiss()) return;
-      host.dismissPanel();
-      return;
-    }
-    if (wide && taskSlotId(w.location) != null && w.location.profile != null) {
-      w.closeProfile();
-      return;
-    }
-    if (w.location.task != null || w.location.legacyTask != null) {
-      if (wide) {
-        w.navigation.back();
-      } else {
-        backMobilePage(w.navigation);
-      }
-      w.notifyListeners();
-      return;
-    }
-    if (threadSelection.dismiss() || mainSelection.dismiss()) return;
-    if (scaffold.currentState?.isDrawerOpen == true) {
-      scaffold.currentState?.closeDrawer();
-      return;
-    }
-    if (wide && desktopNavigation.target != null) {
-      // Column 4 (profile, then thread) closes before its column-3 detail.
-      final panels = DesktopNavigationPolicy.sidePanels(
-        route: w.section,
-        wide: wide,
-        location: w.location,
-        target: desktopNavigation.target?.kind,
-      );
-      if (panels.profile) {
-        w.closeProfile();
-      } else if (panels.thread) {
-        closeThreadPanel();
-      } else {
-        closeDesktopDetail();
-      }
-      return;
-    }
-    // A thread parent kept in the message domain without a thread in the
-    // location is a visible panel only on a wide window. On a phone the pages
-    // are the location: consuming Back here would leave the Navigator one
-    // page short of the location (a blank page) and Back would do nothing.
-    if (wide &&
-        w.messageDomain.state.threadParent != null &&
-        w.location.thread == null &&
-        w.section == 'chat') {
-      w.closeThread();
-      return;
-    }
-    final previous = w.location;
-    final next = wide ? w.navigation.back() : backMobilePage(w.navigation);
-    pendingDesktopSelection = false;
-    if (next.thread == null) w.closeThread(navigate: false);
-    mobileSettingsRevision++;
-    w.notifyListeners();
-    if ({RaftRoute.channel, RaftRoute.dm}.contains(next.route) &&
-        (w.channel?.id != next.entityId ||
-            next.messageId != null && next.messageId != previous.messageId)) {
-      unawaited(
-        w.jumpToMessage(next.entityId!, next.messageId, navigate: false),
-      );
-    }
-    setState(() {});
-  }
+  void refreshPanelDismissal() => setState(() {});
 
   int adoptedHostSearchEntry = 0;
 
@@ -1347,6 +1264,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   Widget buildWorkspace(BuildContext context) => QuietListenableBuilder(
     listenable: Listenable.merge([
       w,
+      ChannelAccessLoss.of(w.client),
       presentation,
       railSideStore,
       shellIdentities,
@@ -1391,9 +1309,16 @@ class _WorkspaceViewState extends State<WorkspaceView>
       final route = location.route == RaftRoute.settings
           ? 'settings'
           : w.section;
+      final channelRoute = {
+        RaftRoute.channel,
+        RaftRoute.dm,
+      }.contains(location.route);
+      final access = channelRoute
+          ? WorkspaceChannelAccess.forChannel(w, location.entityId)
+          : null;
       final unresolvedChannelRoute =
-          {RaftRoute.channel, RaftRoute.dm}.contains(location.route) &&
-          w.channel?.id != location.entityId;
+          channelRoute &&
+          (w.channel?.id != location.entityId || access != null);
       if (route == 'search' &&
           channelSearchSeed == null &&
           !channelSearchRevoked &&
@@ -1408,7 +1333,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         location: location,
         target: desktopNavigation.target?.kind,
       );
-      final thread = sidePanels.thread;
+      final thread = access == null && sidePanels.thread;
       final phoneChatDirect =
           widget.mobileRoutePage &&
           (location.route == RaftRoute.channel ||
@@ -1554,6 +1479,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
               ).bodyBackground,
               child: sidebar(mobileHome: true),
             )
+          : access != null
+          ? WorkspaceChannelAccessPage(workspace: w, access: access, wide: wide)
           : route == 'chat' && unresolvedChannelRoute
           ? w.missingConversationChannelId == location.entityId
                 ? RaftChannelResolutionBody(

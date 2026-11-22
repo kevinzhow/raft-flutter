@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
+import 'channel_access_loss.dart';
 import 'conversation_presentation_state.dart';
 import 'navigation_registry.dart';
 import 'raft_location.dart';
@@ -277,6 +278,7 @@ class WorkspacePresentation {
         }
         real = RaftChannel(Map<String, dynamic>.from(data));
         if (!can('viewChannel', resource: real)) return;
+        ChannelAccessLoss.of(client).clear(id);
         if (real.type == 'dm') {
           dms = [...dms.where((c) => c.id != id), real];
         } else {
@@ -289,8 +291,11 @@ class WorkspacePresentation {
         navigate: false,
         preserveThread: preserveThread,
       );
-    } catch (_) {
-      if (current()) _missingConversationChannelId = id;
+    } catch (error) {
+      if (current()) {
+        _missingConversationChannelId = id;
+        ChannelAccessLoss.of(client).noteOpenResult(id, error);
+      }
     } finally {
       if (current() && _resolvingConversationChannelId == id) {
         _resolvingConversationChannelId = null;
