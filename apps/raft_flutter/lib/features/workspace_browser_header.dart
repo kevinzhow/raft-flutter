@@ -4,6 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import '../platform/desktop_title_bar.dart';
+import 'quick_switcher_host.dart';
 import 'workspace_host_scope.dart';
 import 'workspace_history_controls.dart';
 import 'paused_notifications_indicator.dart';
@@ -19,6 +20,7 @@ class WorkspaceBrowserHeader extends StatelessWidget {
     required this.workspace,
     required this.working,
     required this.controller,
+    required this.quickSwitcher,
     required this.onSearch,
     required this.onBilling,
     required this.onFeedback,
@@ -27,6 +29,7 @@ class WorkspaceBrowserHeader extends StatelessWidget {
   final FocusNode? searchFocus;
   final Widget workspace, working;
   final WorkspaceController controller;
+  final QuickSwitcherHost quickSwitcher;
   final VoidCallback onSearch, onBilling, onFeedback;
 
   @override
@@ -46,7 +49,10 @@ class WorkspaceBrowserHeader extends StatelessWidget {
           defaultTargetPlatform == TargetPlatform.macOS &&
           native?.onDragStart != null,
       navigation: desktop
-          ? WorkspaceHistoryControls(controller: controller)
+          ? WorkspaceHistoryControls(
+              controller: controller,
+              quickSwitcher: quickSwitcher,
+            )
           : null,
       workspace: workspace,
       onSearch: onSearch,

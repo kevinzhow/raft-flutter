@@ -20,6 +20,7 @@ import 'computers_rack/computers_rack_page.dart';
 import 'workspace_host_scope.dart';
 import 'stale_counts_notice.dart';
 import 'workspace_browser_header.dart';
+import 'workspace_history_controls.dart' show handleWorkspaceHistoryShortcut;
 import 'notification_activation_workspace.dart';
 import '../data/user_error.dart';
 import 'local_error_diagnostics.dart';
@@ -646,6 +647,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     workspace: workspaceServerMenu(topBar: true),
     working: workingSummary(onFrame: true),
     controller: w,
+    quickSwitcher: quickSwitcher,
     onSearch: openSearchFromRail,
     onBilling: () => select('billing'),
     onFeedback: () => openHelpSettings('feedback'),
@@ -2334,12 +2336,23 @@ class _WorkspaceViewState extends State<WorkspaceView>
     }
     final key = event.logicalKey;
     if (event is! KeyDownEvent ||
-        key != LogicalKeyboardKey.keyK && key != LogicalKeyboardKey.comma ||
         !mounted ||
         ModalRoute.of(context)?.isCurrent != true) {
       return false;
     }
     final keyboard = HardwareKeyboard.instance;
+    if (WorkspaceHostScope.nativeDesktopOf(context) &&
+        handleWorkspaceHistoryShortcut(
+          w,
+          key,
+          keyboard,
+          defaultTargetPlatform,
+        )) {
+      return true;
+    }
+    if (key != LogicalKeyboardKey.keyK && key != LogicalKeyboardKey.comma) {
+      return false;
+    }
     // Source isGlobalSearchShortcut: Cmd alone on macOS, Ctrl alone elsewhere.
     if (keyboard.isShiftPressed ||
         keyboard.isAltPressed ||
