@@ -4,6 +4,28 @@ import 'package:raft_ui/raft_ui.dart';
 
 enum WorkspaceOfflinePresentation { indicator, compactIndicator, banner }
 
+String workspaceOfflineMessagesReason(BuildContext context) => raftTextZh(
+  context,
+  "Messages can't be opened right now. They load again once you're back online.",
+  '现在无法打开消息。恢复联网后会重新加载。',
+);
+
+class WorkspaceOfflineMessagesBanner extends StatelessWidget {
+  const WorkspaceOfflineMessagesBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(RaftSpace.x4),
+    child: RaftBanner(
+      key: const Key('offline-messages-notice'),
+      title: raftTextZh(context, 'Offline', '离线'),
+      description: workspaceOfflineMessagesReason(context),
+      status: RaftBannerRecipeStatus.info,
+      glyph: RaftGlyph.info,
+    ),
+  );
+}
+
 class WorkspaceOfflineNotice extends StatefulWidget {
   const WorkspaceOfflineNotice({
     super.key,

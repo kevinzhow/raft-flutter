@@ -186,6 +186,11 @@ void main() {
     );
     await settle(t);
     final zoom = find.byKey(const ValueKey('announcement-picture-zoom'));
+    final picture = find.byKey(const ValueKey('announcement-picture'));
+    expect(
+      t.getSize(picture).width,
+      t.getSize(find.byType(RaftAnnouncementMarkdown)).width,
+    );
     await t.tap(zoom);
     await settle(t);
     expect(zoom, findsNothing);
@@ -193,7 +198,7 @@ void main() {
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(t);
     expect(zoom, findsOneWidget);
-    expect(t.widget<RaftButton>(zoom).focusNode!.hasFocus, isTrue);
+    expect(t.widget<RaftInteractive>(zoom).focusNode!.hasFocus, isTrue);
     expect(f.count('POST /announcements/'), 0);
   });
 

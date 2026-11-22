@@ -367,6 +367,10 @@ class WorkspaceSession
 
   void event(RaftEvent event) {
     if (context.disposed) return;
+    if (event.name == 'session:degraded' || event.name == 'session:recovered') {
+      context.changed();
+      return;
+    }
     ensureSyncIdentity();
     if (!ownsClient &&
         !const {

@@ -1,9 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'copy_message_link.dart';
 import 'message_menu_targets.dart';
 import 'message_task_actions.dart';
+import 'workspace_offline_notice.dart';
 
 /// The message context menu's content (Web v1.24 MessageItem context menu,
 /// MessageItem.tsx:4777-5000): the reaction row, then the sections by what
@@ -31,6 +38,7 @@ RaftMessageContextMenu messageContextMenu(
   required bool? follow,
   required MessageMenuTargets targets,
 }) {
+  final offline = w.client.restoredOffline;
   RaftMessageContextMenuItem item(String value, String label, Widget icon) =>
       RaftMessageContextMenuItem(
         key: ValueKey('message-menu-$value'),
@@ -46,7 +54,7 @@ RaftMessageContextMenu messageContextMenu(
     onReact: onReact,
     sections: [
       [
-        if (thread)
+        if (thread && !offline)
           item(
             'thread',
             'Reply in thread',
@@ -57,7 +65,7 @@ RaftMessageContextMenu messageContextMenu(
               ),
             ),
           ),
-        if (follow != null)
+        if (follow != null && !offline)
           follow
               ? item(
                   'unfollow',
@@ -69,9 +77,9 @@ RaftMessageContextMenu messageContextMenu(
                   'Follow thread',
                   raftMessageMenuIcon(RaftGlyph.messageCirclePlus),
                 ),
-        if (targets.markThread != null)
+        if (targets.markThread != null && !offline)
           item('mark-thread-unread', 'Mark thread as unread', unreadIcon),
-        if (taskItems)
+        if (taskItems && !offline)
           task == null
               ? messageTaskMenuItem(w, item)
               : task['status'] == 'done'
@@ -99,7 +107,7 @@ RaftMessageContextMenu messageContextMenu(
             'Select text',
             raftMessageMenuIcon(RaftGlyph.squareDashedText),
           ),
-        if (targets.forward)
+        if (targets.forward && !offline)
           item('forward', 'Forward', raftMessageMenuIcon(RaftGlyph.forward)),
         if (select)
           item(
@@ -109,15 +117,16 @@ RaftMessageContextMenu messageContextMenu(
           ),
       ],
       [
-        item(
-          'save',
-          saved ? 'Remove from Saved' : 'Save',
-          raftMessageMenuIcon(
-            saved ? RaftGlyph.bookmarkMinus : RaftGlyph.bookmark,
+        if (!offline)
+          item(
+            'save',
+            saved ? 'Remove from Saved' : 'Save',
+            raftMessageMenuIcon(
+              saved ? RaftGlyph.bookmarkMinus : RaftGlyph.bookmark,
+            ),
           ),
-        ),
         // Translating… while the request is pending.
-        if (translate != null)
+        if (translate != null && !offline)
           RaftMessageContextMenuItem(
             key: const ValueKey('message-menu-translate'),
             label: raftText(
@@ -127,7 +136,7 @@ RaftMessageContextMenu messageContextMenu(
             icon: raftMessageMenuIcon(RaftGlyph.languages),
             onPressed: translate ? null : () => pick('translate'),
           ),
-        if (targets.markConversation != null)
+        if (targets.markConversation != null && !offline)
           item(
             'mark-conversation-unread',
             targets.dm ? 'Mark DM as unread' : 'Mark channel as unread',
@@ -136,4 +145,74 @@ RaftMessageContextMenu messageContextMenu(
       ],
     ],
   );
+}
+
+const _cachedChoices = {'copy-link', 'copy-markdown', 'select-text', 'select'};
+
+Future<void> runMessageContextMenuChoice(
+  BuildContext context,
+  WorkspaceController workspace,
+  RaftMessage message,
+  String choice, {
+  required Map<String, dynamic>? task,
+  required MessageMenuTargets targets,
+  required VoidCallback onSelect,
+  required Future<void> Function() onThread,
+  required Future<void> Function(String) onReact,
+  required Future<void> Function() onSave,
+  required String Function() time,
+  required ValueChanged<String> quote,
+}) async {
+  if (workspace.client.restoredOffline && !_cachedChoices.contains(choice)) {
+    showRaftToast(context, workspaceOfflineMessagesReason(context));
+    return;
+  }
+  final followedThreads = workspace.services.followedThreads;
+  try {
+    switch (choice) {
+      case 'copy-link':
+        await copyMessageLink(workspace, message);
+      case 'copy-markdown':
+        await Clipboard.setData(ClipboardData(text: message.content));
+      case 'translate':
+        unawaited(workspace.services.translations.translate(message));
+      case 'select':
+        onSelect();
+      case 'thread':
+        await onThread();
+      case 'save':
+        await onSave();
+      case 'follow':
+        await followedThreads.follow(message.id);
+      case 'unfollow':
+        if (targets.threadChannelId case final threadId?) {
+          await followedThreads.unfollow(message.id, threadChannelId: threadId);
+        }
+      case 'task' || 'task-from-message':
+        await runMessageTaskAction(context, workspace, message, choice);
+      case final reaction when reaction.startsWith('react:'):
+        await onReact(reaction.substring(6));
+    }
+    if (context.mounted) {
+      await targets.run(
+        context,
+        workspace,
+        message,
+        choice,
+        time: time,
+        quote: quote,
+      );
+    }
+    if ((choice == 'task-done' || choice == 'task-reopen') && task != null) {
+      await workspace.command(
+        'PATCH',
+        '/tasks/${task['id']}/status',
+        data: {'status': choice == 'task-done' ? 'done' : 'todo'},
+      );
+    }
+  } catch (error) {
+    if (context.mounted) {
+      showRaftToast(context, userErrorText(error, where: 'message action'));
+    }
+  }
 }

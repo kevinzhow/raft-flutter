@@ -120,6 +120,12 @@ void main() {
           await t.sendKeyEvent(LogicalKeyboardKey.escape);
           await t.pumpAndSettle();
           expect(find.byKey(const Key('server-switcher-menu')), findsNothing);
+          if (!desktop) {
+            final stripRight = t.getRect(other).right;
+            t.view.physicalSize = Size(360 + 2 * (stripRight + 8 + 5), 944);
+            await t.pumpAndSettle();
+            expect(other, findsOneWidget);
+          }
           t.view.physicalSize = const Size(768, 944);
           await t.pumpAndSettle();
           expect(

@@ -444,6 +444,7 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
     String Function(int count)? attachmentsOnlyBody,
     void Function(int window)? onWindowRefreshed,
   }) async {
+    if (client.restoredOffline) return false;
     if (entrypoints.conversationPaused) {
       presentationWrites.assignError('Channel conversion in progress');
       context.changed();

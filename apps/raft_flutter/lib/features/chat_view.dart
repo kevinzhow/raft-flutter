@@ -55,12 +55,10 @@ import 'lounge_channel_presentation.dart';
 import 'message_context_menu_sections.dart';
 import 'message_menu_targets.dart';
 import '../data/reaction_favorite.dart';
-import 'message_task_actions.dart';
 import 'message_sender_menu.dart';
 import 'message_preparation.dart';
 import 'pending_mention_actions.dart';
 import 'message_reference_directory.dart';
-import 'copy_message_link.dart';
 import 'private_route_guard.dart';
 import 'message_selection.dart';
 import 'system_message_grouping.dart';
@@ -94,6 +92,7 @@ import 'message_task_projection.dart';
 import 'saved_sidebar_entry.dart';
 import 'attachment_comment_ref.dart';
 import 'composer_slot.dart';
+import 'workspace_offline_notice.dart';
 import 'dm_read_status.dart';
 import 'channel_activity_session.dart';
 
@@ -652,7 +651,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       onForward: guard(() {
         forwardSelection();
       }),
-      forwardDisabledReason: canForward
+      forwardDisabledReason: w.client.restoredOffline
+          ? workspaceOfflineMessagesReason(context)
+          : canForward
           ? null
           : raftText(
               context,
@@ -730,7 +731,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   bool ordinary(RaftMessage m) => messageForwardable(m);
   Future<void> forwardSelection() async {
     final messages = selection.selected.map((r) => r.message).toList();
-    if (capturingSelection ||
+    if (w.client.restoredOffline ||
+        capturingSelection ||
         messages.isEmpty ||
         messages.length > 20 ||
         !messages.every(ordinary)) {
@@ -1589,57 +1591,25 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     if (!mounted || authority != workspaceAuthority(w) || choice == null) {
       return;
     }
-    try {
-      if (choice == 'copy-link') {
-        await copyMessageLink(w, message);
-      }
-      if (choice == 'copy-markdown') {
-        await Clipboard.setData(ClipboardData(text: message.content));
-      }
-      if (choice == 'translate') {
-        unawaited(w.services.translations.translate(message));
-      }
-      if (choice == 'select') selection.enter(message.id);
-      if (choice == 'thread') await _messages.threads.openThread(message);
-      if (choice == 'save') await saveMessage(message);
-      // Optimistic in the shared store; it reverts before rethrowing.
-      if (choice == 'follow') await followedThreads.follow(message.id);
-      final threadId = targets.threadChannelId;
-      if (choice == 'unfollow' && threadId != null) {
-        await followedThreads.unfollow(message.id, threadChannelId: threadId);
-      }
-      if (choice.startsWith('react:')) {
-        await react(message, choice.substring(6));
-      }
-      if ((choice == 'task' || choice == 'task-from-message') && mounted) {
-        await runMessageTaskAction(context, w, message, choice);
-      }
-      if (mounted) {
-        await targets.run(
-          context,
-          w,
-          message,
-          choice,
-          time: () => timeFormatter.messageTime(message.createdAt),
-          quote: composerHandle.quoteSelection,
-        );
-      }
-      if ((choice == 'task-done' || choice == 'task-reopen') && task != null) {
-        await w.command(
-          'PATCH',
-          '/tasks/${task['id']}/status',
-          data: {'status': choice == 'task-done' ? 'done' : 'todo'},
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        showRaftToast(context, userErrorText(e, where: 'message action'));
-      }
-    }
+    await runMessageContextMenuChoice(
+      context,
+      w,
+      message,
+      choice,
+      task: task,
+      targets: targets,
+      onSelect: () => selection.enter(message.id),
+      onThread: () => _messages.threads.openThread(message),
+      onReact: (emoji) => react(message, emoji),
+      onSave: () => saveMessage(message),
+      time: () => timeFormatter.messageTime(message.createdAt),
+      quote: composerHandle.quoteSelection,
+    );
   }
 
   bool get canReact =>
       presentationActive &&
+      !w.client.restoredOffline &&
       w.client.user != null &&
       w.server?.string('role') != 'guest' &&
       !w.conversationPaused &&
@@ -2121,10 +2091,15 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         onReactionPicker: canReact
             ? (anchor) => openReactionPicker(message, anchor)
             : null,
-        onForward: presentationActive && messageForwardable(message)
+        onForward:
+            presentationActive &&
+                !w.client.restoredOffline &&
+                messageForwardable(message)
             ? () => forwardMessages(context, w, [message])
             : null,
-        onSave: presentationActive ? () => saveMessage(message) : null,
+        onSave: presentationActive && !w.client.restoredOffline
+            ? () => saveMessage(message)
+            : null,
         onMore: selection.active
             ? null
             : (anchor) {
@@ -2169,7 +2144,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           raftText(context, 'Add reaction'),
           (row) => openReactionPicker(message, row),
         ),
-      if (presentationActive)
+      if (presentationActive && !w.client.restoredOffline)
         RaftMessageSemanticsAction(
           raftText(context, saved ? 'Remove from Saved' : 'Save'),
           (_) => saveMessage(message),
@@ -2192,8 +2167,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     ];
   }
 
-  Future<void> saveMessage(RaftMessage message) =>
-      toggleSavedMessage(context, w, message, () => mounted);
+  Future<void> saveMessage(RaftMessage message) async {
+    if (!w.client.restoredOffline) {
+      await toggleSavedMessage(context, w, message, () => mounted);
+    }
+  }
 
   Widget senderAvatar(RaftMessage message, {bool compact = false}) {
     final local =
@@ -3333,10 +3311,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       allHidden: true,
                       fill: true,
                     )
-                  : RaftEmptyState(
-                      title: raftText(context, 'No messages yet'),
-                      detail: raftText(context, 'Start the conversation.'),
-                    ),
+                  : RaftEmptyState(title: raftText(context, 'No messages yet')),
             ),
           ),
         ),
@@ -3381,6 +3356,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
 
   Widget buildView(BuildContext context) {
     final thread = widget.thread;
+    final offline = w.client.restoredOffline;
     scheduleBodyPreparation(context);
     if (thread &&
         w.threadChannelId == null &&
@@ -3460,6 +3436,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       bool forceTask = false,
     }) async {
       if (!presentationActive || !currentComposer()) return false;
+      if (w.client.restoredOffline) {
+        showRaftToast(context, workspaceOfflineMessagesReason(context));
+        return false;
+      }
       final submittedTask = !thread && (alsoCreateTask || forceTask);
       final submittedTaskRevision = taskChoiceRevision;
       final accepted = await w.send(
@@ -3501,6 +3481,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       child: Column(
         children: [
           RaftToastPortal(controller: selectionToast),
+          if (offline) const WorkspaceOfflineMessagesBanner(),
           ?threadFindBar(context, w, boundSearch, searchInput, searchFocus),
           ?loungeAudienceNotice(context, w, thread: thread),
           Expanded(
@@ -3646,15 +3627,15 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                           d.checking ||
                           (d.error == null && d.id == null && !d.queued),
                     ),
-                // Web MessageInput `conversionBlocked`: the composer stays and
-                // Send is disabled with the conversion notice as its title.
-                submitTooltip: w.conversationPaused
+                submitTooltip: offline
+                    ? workspaceOfflineMessagesReason(context)
+                    : w.conversationPaused
                     ? raftText(context, 'Channel conversion in progress')
                     : composerSendBlockTitle(
                         context,
                         w.uploads(thread: thread),
                       ),
-                onSendBlocked: w.conversationPaused
+                onSendBlocked: offline || w.conversationPaused
                     ? null
                     : () => raiseComposerSendBlockNotice(
                         context,
@@ -3665,6 +3646,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                     ? threadComposerHint(context, widget.hideThreadParent)
                     : channelComposerHint(context, w),
                 enabled:
+                    !offline &&
                     presentationActive &&
                     (thread
                         ? _messages.threadParentMessageId != null &&
@@ -3672,6 +3654,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                               _messages.threadSourceChannel?.joined == true
                         : w.channel?.archived != true),
                 canSend:
+                    !offline &&
                     !w.conversationPaused &&
                     !w.sharedBlocked(thread: thread) &&
                     w.uploadsReady(thread: thread),

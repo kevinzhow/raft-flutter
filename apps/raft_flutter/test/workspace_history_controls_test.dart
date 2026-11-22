@@ -159,12 +159,13 @@ void main() {
       expect(w.navigation.entries, hasLength(depth));
       await t.tap(find.byKey(const Key('topbar-history')));
       await t.pumpAndSettle();
-      await t.tap(
-        find.descendant(
-          of: find.byKey(const Key('topbar-history-menu')),
-          matching: find.text('first'),
-        ),
+      final popup = find.byKey(const Key('topbar-history-menu'));
+      expect(t.getSize(popup).width, 240);
+      expect(
+        t.getTopLeft(find.text('Recent conversations')) - t.getTopLeft(popup),
+        const Offset(14, 12),
       );
+      await t.tap(find.descendant(of: popup, matching: find.text('first')));
       await t.pumpAndSettle();
       expect(w.channel?.id, 'c1');
       expect(w.navigation.entries, hasLength(depth + 1));

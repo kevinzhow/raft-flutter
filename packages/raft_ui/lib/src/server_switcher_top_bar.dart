@@ -403,16 +403,9 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
         ).root;
         final stripButtonWidth = button.width ?? button.height ?? 36;
         final stripStride = stripButtonWidth + stripGap;
-        // The desktop layout already reserves the gap before History.
-        final historyGap = desktop == null ? RaftSpace.x2 : 0.0;
         final free = math.max(
           0.0,
-          box.maxWidth -
-              nameSlot -
-              stripLead -
-              historyGap +
-              stripGap -
-              extraDividerWidth,
+          box.maxWidth - nameSlot - stripLead + stripGap - extraDividerWidth,
         );
         final fit = math.min(widget.rows.length, (free / stripStride).floor());
         final n = fit >= 2 ? fit : 0;

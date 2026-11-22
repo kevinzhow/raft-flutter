@@ -292,19 +292,12 @@ class WorkspaceHistoryControls extends StatelessWidget {
           key: ValueKey('topbar-history-$authority'),
           label: raftText(context, 'History'),
           tooltip: 'History',
+          kind: RaftMenuKind.dropdownMenu,
           width: 240,
           sideOffset: 4,
           surfaceKey: const Key('topbar-history-menu'),
-          header: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Text(
-              raftText(context, 'Recent conversations'),
-              style: RaftTypography.body(
-                RaftTokens.of(context),
-                size: 12,
-                line: 16,
-              ),
-            ),
+          header: RaftDropdownMenuLabel(
+            label: raftText(context, 'Recent conversations'),
           ),
           triggerBuilder: (context, focus, open) => Focus(
             focusNode: focus,

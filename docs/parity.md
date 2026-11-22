@@ -2115,6 +2115,10 @@ behaviour checklists (`docs/behavior-parity/`).
 * **No local-session handoff.** "Take over a local session" needs the Electron desktop shell's local-session bridge;
   the app has none. Rows `ui:agents.handoff-local-session` and `ui:global-ui.desktop-handoff-local-session` are ➖.
 
+## Offline conversation vs Web v1.24.0
+
+Offline, Flutter keeps the cached conversation read-only under the Web offline banner; Web shows only the banner (Kevin 2026-11-22).
+
 ## Notifications vs Web v1.24.0 (WP-NOTIF): differences that stay
 
 Settings › Notifications, the level menus, the server stream and presence follow Web v1.24; these remain different, each for the reason given.
