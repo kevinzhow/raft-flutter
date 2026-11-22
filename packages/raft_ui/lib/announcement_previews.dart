@@ -26,3 +26,13 @@ Widget announcementModalCtaPreview() => RaftAnnouncementModal(
   onCta: () {},
   onDismiss: () {},
 );
+
+@RaftPreviews('Announcement sidebar stack', size: Size(240, 560))
+Widget announcementSidebarPreview() => RaftAnnouncementSidebarCard(
+  title: "What's new in Raft",
+  body: _body,
+  position: 1,
+  total: 3,
+  onDismiss: () {},
+  onNext: () {},
+);

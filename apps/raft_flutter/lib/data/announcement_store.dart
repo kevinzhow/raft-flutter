@@ -16,10 +16,6 @@ class AnnouncementPageData {
 class AnnouncementCta {
   const AnnouncementCta({required this.label, required this.href});
   final String label, href;
-
-  /// Web `activate`: a leading `/` or `?` navigates inside the app, anything
-  /// else opens in a new browsing context.
-  bool get internal => href.startsWith('/') || href.startsWith('?');
 }
 
 /// `Announcement.image`: a picture served by `GET /announcements/images/:id`
@@ -47,6 +43,7 @@ class Announcement {
     this.locale,
     this.deliveryVersion,
     this.deliveryServerId,
+    this.displayMode,
   });
 
   final String id, title;
@@ -68,6 +65,8 @@ class Announcement {
   /// is delivered for. Null is the account scope (also the omitted legacy
   /// value).
   final String? deliveryServerId;
+  final String? displayMode;
+  bool get sidebar => displayMode == 'sidebar';
 
   static Announcement? fromJson(Object? raw) {
     if (raw is! Map) return null;
@@ -114,6 +113,7 @@ class Announcement {
       startsAt: text('startsAt'),
       endsAt: text('endsAt'),
       locale: text('locale'),
+      displayMode: text('displayMode'),
       deliveryVersion: raw['deliveryVersion'] is int
           ? raw['deliveryVersion'] as int
           : null,
@@ -190,6 +190,8 @@ class AnnouncementStore extends ChangeNotifier {
 
   List<Announcement> pending = const [];
   bool loaded = false;
+  bool _completedThisEntry = false;
+  int stackTotal = 0;
 
   /// Ids reported read-complete this session (idempotence of [markRead]).
   List<String> markedReadIds = const [];
@@ -242,7 +244,7 @@ class AnnouncementStore extends ChangeNotifier {
     _syncContext();
     // A presented row is owned by this presentation until the user closes
     // it; another device's dismissal must not pull it away.
-    if (pending.isNotEmpty) return Future.value();
+    if (_completedThisEntry || pending.isNotEmpty) return Future.value();
     final inFlight = _inFlight;
     if (inFlight != null) return inFlight;
     final generation = _generation;
@@ -255,12 +257,11 @@ class AnnouncementStore extends ChangeNotifier {
         final after = skipped.isEmpty ? null : skipped.last;
         final data = await get(
           '/announcements/active',
-          query: after == null && requestContext == 'account'
-              ? null
-              : {
-                  'after': ?after,
-                  if (requestContext != 'account') 'server_id': requestContext,
-                },
+          query: {
+            'after': ?after,
+            if (requestContext != 'account') 'server_id': requestContext,
+            'sidebar_limit': 5,
+          },
         );
         if (_disposed || generation != _generation) return;
         final rows = data is Map && data['announcements'] is List
@@ -281,6 +282,7 @@ class AnnouncementStore extends ChangeNotifier {
             for (final row in rows)
               if (!hidden.contains(row.id)) row,
           ];
+          stackTotal = pending.length;
         }
         notifyListeners();
       } catch (error) {
@@ -326,19 +328,27 @@ class AnnouncementStore extends ChangeNotifier {
     }
   }
 
-  /// Local visibility only.
+  /// Ends this entry without recording a dismissal.
   void close(String id) {
     if (_disposed || !pending.any((a) => a.id == id)) return;
-    pending = [
-      for (final a in pending)
-        if (a.id != id) a,
-    ];
+    _completedThisEntry = true;
+    _generation++;
+    _inFlight = null;
+    pending = const [];
     notifyListeners();
   }
 
   /// Account dismissal + local hide, shared by every dismissal action.
   Future<void> dismiss(String id) {
     close(id);
+    return markRead(id);
+  }
+
+  Future<void> advance(String id) {
+    if (_disposed || current?.id != id) return Future.value();
+    if (pending.length == 1) return dismiss(id);
+    pending = pending.sublist(1);
+    notifyListeners();
     return markRead(id);
   }
 
@@ -356,6 +366,8 @@ class AnnouncementStore extends ChangeNotifier {
         writeFailedIds.isNotEmpty;
     pending = const [];
     loaded = false;
+    _completedThisEntry = false;
+    stackTotal = 0;
     markedReadIds = const [];
     writeFailedIds = const [];
     if (changed && !_disposed) notifyListeners();

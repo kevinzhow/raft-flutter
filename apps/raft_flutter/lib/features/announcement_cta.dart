@@ -11,6 +11,17 @@ String announcementImageUrl(String origin, String assetId) =>
         .resolve('/api/announcements/images/${Uri.encodeComponent(assetId)}')
         .toString();
 
+String? announcementInAppPath(String origin, String href) {
+  if (href.startsWith('?') || href.startsWith('#')) return href;
+  final base = ContentLinks.originFor(origin);
+  final parsed = Uri.tryParse(href);
+  if (parsed == null) return null;
+  final uri = base.resolveUri(parsed);
+  if (!uri.hasAuthority || uri.origin != base.origin) return null;
+  return '${uri.path}${uri.hasQuery ? '?${uri.query}' : ''}'
+      '${uri.hasFragment ? '#${uri.fragment}' : ''}';
+}
+
 /// The Web CTA `navigate(href)` for an internal href (`/...` or `?...`).
 ///
 /// * `?dialog=create-joint-channel` is the feature-owned link intent of
@@ -26,7 +37,7 @@ void openAnnouncementInternalLink(
   String href, {
   required void Function(String href) openExternal,
 }) {
-  final uri = Uri.tryParse(href);
+  var uri = Uri.tryParse(href);
   if (uri == null) return;
   if (href.startsWith('?')) {
     if (uri.queryParameters['dialog'] == 'create-joint-channel') {
@@ -35,6 +46,27 @@ void openAnnouncementInternalLink(
     return;
   }
   final slug = w.server?.string('slug');
+  if (href.startsWith('#')) {
+    uri = w.location.uri.resolveUri(uri);
+  } else if (slug != null &&
+      !const {
+        's',
+        'servers',
+        'download',
+        'artifacts',
+        'connections',
+        'appsumo',
+        'dev',
+        'palette-audit',
+        'login',
+        'login-with-raft',
+        'login-with-slock',
+        'login-with-slock-human',
+        'community',
+        'integration-invites',
+      }.contains(uri.pathSegments.firstOrNull)) {
+    uri = uri.replace(pathSegments: ['', 's', slug, ...uri.pathSegments]);
+  }
   final segments = uri.pathSegments;
   if (slug != null &&
       slug.isNotEmpty &&
@@ -42,11 +74,14 @@ void openAnnouncementInternalLink(
       segments[0] == 's' &&
       segments[1] == slug) {
     try {
-      w.navigation.navigate(RaftLocation.fromUri(uri));
-      // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
-      w.notifyListeners();
-      return;
-    } on ArgumentError {
+      final location = RaftLocation.fromUri(uri);
+      if (location.route != RaftRoute.unknown) {
+        w.navigation.navigate(location);
+        // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
+        w.notifyListeners();
+        return;
+      }
+    } on FormatException {
       // Not a route the app knows: the browser opens it.
     }
   }

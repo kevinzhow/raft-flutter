@@ -111,17 +111,22 @@ class Fixture {
       client.requests.where((r) => r.startsWith(request)).length;
 }
 
-Widget app(Fixture f, {String deployment = 'production', Widget? home}) =>
-    MaterialApp(
-      theme: raftTheme(),
-      // The error notice is the app-wide toast (Web `toast.error`).
-      builder: (context, child) => RaftToastHost(child: child!),
-      home: AnnouncementHost(
-        controller: f.w,
-        deployment: deployment,
-        child: home ?? const Scaffold(body: Text('workspace')),
-      ),
-    );
+Widget app(
+  Fixture f, {
+  String deployment = 'production',
+  Widget? home,
+  bool sidebar = false,
+}) => MaterialApp(
+  theme: raftTheme(),
+  // The error notice is the app-wide toast (Web `toast.error`).
+  builder: (context, child) => RaftToastHost(child: child!),
+  home: AnnouncementHost(
+    controller: f.w,
+    deployment: deployment,
+    preferSidebar: sidebar,
+    child: home ?? const Scaffold(body: Text('workspace')),
+  ),
+);
 
 Future<void> settle(WidgetTester t) async {
   // The dialog route fades in and out over 150 ms.
@@ -133,6 +138,65 @@ Future<void> settle(WidgetTester t) async {
 final modal = find.byKey(const ValueKey('announcement-modal'));
 
 void main() {
+  testWidgets('Next advances and closing ends the sidebar stack', (t) async {
+    final f = Fixture()
+      ..active = [
+        for (final id in ['a1', 'a2', 'a3'])
+          {...announcement(id), 'displayMode': 'sidebar'},
+      ];
+    await t.pumpWidget(
+      app(
+        f,
+        sidebar: true,
+        home: const Scaffold(body: AnnouncementSidebarSlot()),
+      ),
+    );
+    await settle(t);
+    expect(modal, findsNothing);
+    expect(find.text('1 / 3'), findsOneWidget);
+    await t.tap(find.text('Next'));
+    await settle(t);
+    expect(find.text('What is new a2'), findsOneWidget);
+    expect(find.text('2 / 3'), findsOneWidget);
+    await t.tap(find.byTooltip('Dismiss'));
+    await settle(t);
+    expect(find.text('What is new a3'), findsNothing);
+    expect(f.count('POST /announcements/a1/dismiss'), 1);
+    expect(f.count('POST /announcements/a2/dismiss'), 1);
+    expect(f.count('POST /announcements/a3/dismiss'), 0);
+  });
+
+  testWidgets('closing the expanded picture restores the unread card', (
+    t,
+  ) async {
+    final f = Fixture()
+      ..active = [
+        {
+          ...announcement('a1'),
+          'displayMode': 'sidebar',
+          'image': {'assetId': 'picture', 'alt': 'Release artwork'},
+        },
+      ];
+    await t.pumpWidget(
+      app(
+        f,
+        sidebar: true,
+        home: const Scaffold(body: AnnouncementSidebarSlot()),
+      ),
+    );
+    await settle(t);
+    final zoom = find.byKey(const ValueKey('announcement-picture-zoom'));
+    await t.tap(zoom);
+    await settle(t);
+    expect(zoom, findsNothing);
+    expect(modal, findsOneWidget);
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle(t);
+    expect(zoom, findsOneWidget);
+    expect(t.widget<RaftButton>(zoom).focusNode!.hasFocus, isTrue);
+    expect(f.count('POST /announcements/'), 0);
+  });
+
   testWidgets(
     'entry read shows the oldest row, page one only; Got it dismisses',
     (t) async {
@@ -157,12 +221,10 @@ void main() {
       expect(f.client.requests.where((r) => r.startsWith('POST')), [
         'POST /announcements/a1/dismiss {server_id: s1}',
       ]);
-      // Foreground return: a fresh read, the row is gone locally.
-      f.active = [];
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await settle(t);
-      expect(f.count('GET /announcements/active'), 2);
+      expect(f.count('GET /announcements/active'), 1);
       expect(modal, findsNothing);
     },
   );
@@ -190,6 +252,7 @@ void main() {
       expect(f.count('POST /announcements/a1/dismiss'), 1);
 
       f.active = [announcement('a2')];
+      f.w.announcements.reset();
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await settle(t);
       expect(find.text('What is new a2'), findsOneWidget);
@@ -199,6 +262,7 @@ void main() {
       expect(f.count('POST /announcements/a2/dismiss'), 1);
 
       f.active = [announcement('a3')];
+      f.w.announcements.reset();
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await settle(t);
       // A press inside the card does not close it; one on the backdrop does.

@@ -110,7 +110,7 @@ void main() {
   ) async {
     final (f, opened) = await mount(
       t,
-      row(cta: {'label': 'Open', 'href': '/s/visual/tasks'}),
+      row(cta: {'label': 'Open', 'href': 'https://fixture.invalid/tasks'}),
     );
     await t.tap(find.byKey(const ValueKey('announcement-ok')));
     await host.settle(t);
@@ -157,7 +157,7 @@ void main() {
     )!;
     expect(full.label, 'Release');
     expect(full.cta?.label, 'Go');
-    expect(full.cta?.internal, isTrue);
+    expect(full.cta?.href, '?dialog=create-joint-channel');
     expect(full.image?.assetId, assetId);
     final bad = Announcement.fromJson({
       ...row(),
@@ -169,10 +169,8 @@ void main() {
     expect(bad.cta, isNull);
     expect(bad.image, isNull);
     expect(
-      Announcement.fromJson(
-        row(cta: {'label': 'x', 'href': 'https://example.com'}),
-      )!.cta!.internal,
-      isFalse,
+      announcementInAppPath('https://fixture.invalid', 'https://example.com'),
+      isNull,
     );
   });
 }

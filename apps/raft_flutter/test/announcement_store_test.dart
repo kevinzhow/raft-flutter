@@ -42,13 +42,33 @@ class Wire {
 
 void main() {
   test(
+    'closing a sidebar stack leaves later cards unread for another entry',
+    () async {
+      final wire = Wire()
+        ..answer = (_) => {
+          'announcements': [
+            for (final id in ['a1', 'a2'])
+              {...row(id), 'displayMode': 'sidebar'},
+          ],
+        };
+      final store = wire.store();
+      await store.load();
+      await store.dismiss('a1');
+      expect(store.current, isNull);
+      await store.load();
+      expect(wire.gets, hasLength(1));
+      expect(wire.posts, ['/announcements/a1/dismiss']);
+    },
+  );
+
+  test(
     'load presents the oldest unread row from /announcements/active',
     () async {
       final wire = Wire();
       final store = wire.store();
       await store.load();
       expect(wire.gets.single.$1, '/announcements/active');
-      expect(wire.gets.single.$2, isNull);
+      expect(wire.gets.single.$2, {'sidebar_limit': 5});
       expect(store.loaded, isTrue);
       expect(store.current?.id, 'a1');
       expect(store.current?.pages.single.body, 'Body 0');
@@ -77,13 +97,16 @@ void main() {
     expect(store.current?.id, 'a1');
   });
 
-  test('close is local: no write, the row returns on the next load', () async {
+  test('close is local: the unread row returns in a new entry', () async {
     final wire = Wire();
     final store = wire.store();
     await store.load();
     store.close('a1');
     expect(store.current, isNull);
     expect(wire.posts, isEmpty);
+    await store.load();
+    expect(store.current, isNull);
+    store.reset();
     await store.load();
     expect(store.current?.id, 'a1');
   });
@@ -104,15 +127,14 @@ void main() {
   test('a failed write is skipped this session via ?after=', () async {
     final wire = Wire()..failPost = true;
     final store = wire.store();
-    await store.load();
-    await store.dismiss('a1');
+    await store.markRead('a1');
     expect(store.writeFailedIds, ['a1']);
     expect(store.markedReadIds, isEmpty);
     wire.answer = (query) => {
       'announcements': [query?['after'] == 'a1' ? row('a2') : row('a1')],
     };
     await store.load();
-    expect(wire.gets.last.$2, {'after': 'a1'});
+    expect(wire.gets.last.$2, {'after': 'a1', 'sidebar_limit': 5});
     expect(store.current?.id, 'a2');
   });
 
