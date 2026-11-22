@@ -5,6 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/message_window_snapshot.dart';
 
 import '../integration_test/perf_lab/fixtures.dart';
+import '../integration_test/perf_lab/list_scenes.dart';
 import '../integration_test/perf_lab_test.dart' as lab;
 
 void main() {
@@ -24,6 +25,7 @@ void main() {
   );
   lab.registerActivityArrivalTest();
   lab.registerRebuildCounterControlTest();
+  registerSidebarArrivalTest();
   testWidgets(
     'arrival observes the visible portion of a tall row but excludes an offscreen row',
     (t) async {
