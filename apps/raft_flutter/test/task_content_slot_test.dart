@@ -118,6 +118,7 @@ Future<WorkspaceController> mountTasks(
     };
   }
   api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': tasks};
+  api.routes['GET /tasks/channel/c1/number/8'] = (_) => {'task': v2Task};
   api.routes['GET /messages/channel/task-conv'] = (_) => {
     'messages': discussionMessages,
   };
@@ -240,7 +241,7 @@ void main() {
       await mouse.moveTo(t.getCenter(titleEdit));
       await mouse.down(t.getCenter(titleEdit));
       await mouse.up();
-      await t.pump();
+      await settle(t);
       final titleInput = find.descendant(
         of: find.byKey(const ValueKey('task-head-title-input')),
         matching: find.byType(EditableText),

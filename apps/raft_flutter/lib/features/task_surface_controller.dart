@@ -680,6 +680,32 @@ class TaskSurfaceController extends ChangeNotifier {
     }
   }
 
+  int? _draftRevision;
+
+  Future<bool> prepareAmend() async {
+    if (!canAmend || deleted) return false;
+    final id = task['id'];
+    final opened = revision;
+    final path =
+        '/tasks/channel/${task['channelId']}/number/${task['taskNumber']}';
+    final full = await RaftClient.runFresh(() => parent.query(path));
+    if (!canAmend || deleted || task['id'] != id) return false;
+    if (revision != opened) {
+      throw const RaftUserError('The task changed. Open the editor again.');
+    }
+    if (full is! Map || full['task'] is! Map || full['task']['id'] != id) {
+      throw const FormatException('Invalid task response');
+    }
+    task = Map<String, dynamic>.from(full['task']);
+    _draftRevision = switch (task['revision']) {
+      final num version => version.toInt(),
+      _ => null,
+    };
+    retryRevision = null;
+    changed();
+    return canAmend;
+  }
+
   /// Web taskStore.amendTask (PATCH /tasks/:id): the title, or the
   /// description (blank removes it). A 409 carrying `currentRevision` is a
   /// lost race: the editor says so and keeps the draft.
@@ -689,9 +715,7 @@ class TaskSurfaceController extends ChangeNotifier {
   ) async {
     if (!canAmend) return const RaftTaskAmendFailed();
     final retry = retryRevision;
-    final revision = task['revision'] is num
-        ? (task['revision'] as num).toInt()
-        : null;
+    final revision = _draftRevision;
     final expected = retry != null && (revision == null || retry > revision)
         ? retry
         : revision;

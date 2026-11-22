@@ -69,7 +69,11 @@ Map<String, dynamic> _profile(String id, {String status = 'active'}) => {
   'gravatarHash': '',
 };
 
-Future<_Client> _open(WidgetTester t, Map<String, dynamic> profile) async {
+Future<_Client> _open(
+  WidgetTester t,
+  Map<String, dynamic> profile, {
+  String role = 'member',
+}) async {
   FileSelectorPlatform.instance = _Picker();
   t.view
     ..physicalSize = const Size(900, 1400)
@@ -78,7 +82,7 @@ Future<_Client> _open(WidgetTester t, Map<String, dynamic> profile) async {
   final client = _Client()..user = RaftRecord({'id': 'me'});
   client.selectServer(_server);
   final w = _Workspace(client, profile)
-    ..server = RaftRecord({'id': _server, 'role': 'member'});
+    ..server = RaftRecord({'id': _server, 'role': role});
   addTearDown(w.dispose);
   await t.pumpWidget(
     MaterialApp(
@@ -164,6 +168,34 @@ void main() {
     expect(client.patches, hasLength(2));
     expect((client.patches.last.$2 as Map).containsKey('description'), true);
     expect((client.patches.last.$2 as Map)['description'], isNull);
+  });
+
+  testDesktop('the description draft uses the current account profile', (
+    t,
+  ) async {
+    final profile = _profile('me');
+    await _open(t, profile);
+    profile['description'] = 'Changed elsewhere';
+    await t.tap(find.byKey(const ValueKey('member-edit-description')));
+    await t.pumpAndSettle();
+    expect(
+      t.widget<EditableText>(find.byType(EditableText).last).controller.text,
+      'Changed elsewhere',
+    );
+  });
+
+  testDesktop('the role editor selects the current server role', (t) async {
+    final profile = _profile('other');
+    await _open(t, profile, role: 'owner');
+    profile['role'] = 'admin';
+    await t.tap(find.byKey(const ValueKey('member-edit-role')));
+    await t.pumpAndSettle();
+    expect(
+      t
+          .widget<RaftInlineRoleEditor>(find.byType(RaftInlineRoleEditor))
+          .selectedId,
+      'admin',
+    );
   });
 
   testDesktop('a description over 3000 characters is refused before sending', (

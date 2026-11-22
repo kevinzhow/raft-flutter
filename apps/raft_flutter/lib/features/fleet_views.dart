@@ -1064,22 +1064,52 @@ class _FleetDetailState extends State<FleetDetail> {
     }
   }
 
+  bool _readingAgentForEdit = false;
+
+  Future<Map<String, dynamic>?> _readAgentForEdit() async {
+    if (_readingAgentForEdit || !allowed('editAgents')) return null;
+    _readingAgentForEdit = true;
+    try {
+      final result = await RaftClient.runFresh(() => w.query(base));
+      if (!allowed('editAgents')) return null;
+      if (result is! Map || result['id'] != id || result['deletedAt'] != null) {
+        throw const RaftApiException('Agent unavailable');
+      }
+      return Map<String, dynamic>.from(result);
+    } catch (failure) {
+      if (mounted && current) {
+        showRaftToast(
+          context,
+          userErrorText(
+            failure,
+            fallback: raftGenericErrorText,
+            where: 'agent editor',
+          ),
+        );
+      }
+      return null;
+    } finally {
+      _readingAgentForEdit = false;
+    }
+  }
+
   /// AgentProfileEditDialog: one field per pencil (display name, description,
   /// role); the change is PATCHed to the agent.
   Future<void> editField(String field) async {
-    require('editAgents');
+    final agent = await _readAgentForEdit();
+    if (!mounted || agent == null || !allowed('editAgents')) return;
     // Role options the viewer may assign (`canChangeAgentRole`): owners and
     // admins choose between Admin and Member.
-    final role = '${row['serverRole'] ?? ''}';
+    final role = '${agent['serverRole'] ?? ''}';
     await _fleetDialog<bool>(
       context,
       w,
       () => allowed('editAgents'),
       (_) => RaftAgentProfileEditDialog(
         field: field,
-        displayName: '${row['displayName'] ?? ''}',
-        description: '${row['description'] ?? ''}',
-        namePlaceholder: '${row['name'] ?? ''}',
+        displayName: '${agent['displayName'] ?? ''}',
+        description: '${agent['description'] ?? ''}',
+        namePlaceholder: '${agent['name'] ?? ''}',
         role: role.isEmpty ? null : role,
         roleOptions: const [('admin', 'Admin'), ('member', 'Member')],
         onSave: (fields) async {
@@ -1388,12 +1418,13 @@ class _FleetDetailState extends State<FleetDetail> {
   /// The "Edit runtime config" modal, then the confirmation it asks for
   /// (Web `requestConfirm` closes the modal before the ConfirmDialog opens).
   Future<void> editRuntime() async {
-    if (!allowed('editAgents')) return;
-    final machineId = row['machineId'];
+    final agent = await _readAgentForEdit();
+    if (!mounted || agent == null || !allowed('editAgents')) return;
+    final machineId = agent['machineId'];
     final confirm = await showAgentRuntimeEditor(
       context,
       controller: w,
-      agent: row,
+      agent: agent,
       machine: machineId is String
           ? machines?.where((m) => m['id'] == machineId).firstOrNull
           : null,
@@ -1447,6 +1478,8 @@ class _FleetDetailState extends State<FleetDetail> {
         row['deletedAt'] == null &&
         allowed('editAgents');
     if (!valid() || busy) return;
+    final agent = await _readAgentForEdit();
+    if (!mounted || agent == null || !valid()) return;
     // Web NarrowDialogContent `narrow="sheet"` for the avatar field: a bottom
     // sheet on a narrow window, the centred card otherwise. The dialog guards
     // its own staged change, so the route does not.
@@ -1455,7 +1488,7 @@ class _FleetDetailState extends State<FleetDetail> {
       guardUnsaved: false,
       builder: (_) => AgentAvatarDialog(
         controller: w,
-        agent: row,
+        agent: agent,
         authorized: valid,
         onSaved: (next) {
           if (!valid()) return;

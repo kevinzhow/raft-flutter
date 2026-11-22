@@ -171,10 +171,29 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 
   /// The head field being edited (task v2), keyed by task.
   ({Object? taskId, RaftTaskHeadField field})? editing;
+  bool _preparingAmend = false;
   RaftTaskHeadField? get editingField =>
       editing != null && editing!.taskId == widget.task['id']
       ? editing!.field
       : null;
+
+  Future<void> _startAmend(RaftTaskHeadField field) async {
+    if (_preparingAmend) return;
+    final id = widget.task['id'];
+    final prepare = widget.conversation?.onPrepareAmend;
+    if (prepare != null) {
+      _preparingAmend = true;
+      try {
+        if (!await prepare()) return;
+      } finally {
+        _preparingAmend = false;
+      }
+    }
+    if (mounted && widget.task['id'] == id) {
+      setState(() => editing = (taskId: id, field: field));
+    }
+  }
+
   final popover = MenuController();
   final statusKey = GlobalKey(),
       pullDownStatusKey = GlobalKey(),
@@ -883,12 +902,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                 padding: widget.tasksPage
                     ? const EdgeInsets.only(right: 12)
                     : null,
-                onPressed: () => setState(
-                  () => editing = (
-                    taskId: task['id'],
-                    field: RaftTaskHeadField.description,
-                  ),
-                ),
+                onPressed: () => _startAmend(RaftTaskHeadField.description),
               ),
             ),
           ),
@@ -1005,14 +1019,13 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   /// A head field with its pencil (task v2), or its editor while edited.
   Widget headText(RaftTaskHeadField field, String value, Widget? display) {
     final amend = widget.conversation?.onAmend;
-    final id = widget.task['id'];
     return RaftTaskHeadText(
       field: field,
       value: value,
       display: display ?? const SizedBox.shrink(),
       revealOnHover: widget.tasksPage,
       editing: editingField == field,
-      onEdit: () => setState(() => editing = (taskId: id, field: field)),
+      onEdit: () => _startAmend(field),
       onClose: () => setState(() => editing = null),
       onSave: amend == null ? null : (text) => amend(field, text),
     );

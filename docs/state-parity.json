@@ -55643,7 +55643,7 @@
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@3373/METHOD:membersStrip@55918/FUNCTION:tile@56124": {
+      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@3373/METHOD:membersStrip@58045/FUNCTION:tile@58251": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -58625,13 +58625,13 @@
         "owner": "Raft Flutter component wiring",
         "reason": "Mounts RaftChatView under the task surface navigation receiver."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6124/METHOD:_historyDetail@56422/FUNCTION:badge@56819": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6124/METHOD:_historyDetail@56720/FUNCTION:badge@57117": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6124/METHOD:assigneePanel@50563/FUNCTION:avatar@50922": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@6124/METHOD:assigneePanel@50861/FUNCTION:avatar@51220": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

@@ -174,6 +174,18 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     avatarError = null;
   }
 
+  Future<Map<String, dynamic>> _requestProfile(String server, String id) async {
+    final channelId = widget.channelId;
+    final value = await w.query(
+      '/servers/$server/members/$id/profile',
+      query: channelId == null ? null : {'channelId': channelId},
+    );
+    if (value is! Map || value['name'] is! String) {
+      throw const FormatException('Invalid member profile response.');
+    }
+    return Map<String, dynamic>.from(value);
+  }
+
   @override
   Future<void> loadData(int request, int generation) async {
     // ProfilePanel.tsx:151-156 fetches without a capability gate: the server
@@ -187,13 +199,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     }
     final server = w.server!.id, id = widget.userId;
     final channelId = widget.channelId;
-    final value = await w.query(
-      '/servers/$server/members/$id/profile',
-      query: channelId == null ? null : {'channelId': channelId},
-    );
-    if (value is! Map || value['name'] is! String) {
-      throw const FormatException('Invalid member profile response.');
-    }
+    final value = await _requestProfile(server, id);
     if (accepts(generation, request)) {
       final failure = w.services.entityDirectory
           .state(WorkspaceEntityKind.members)
@@ -203,10 +209,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       }
       // resolveHumanProfile.ts:4–17: accepted live membership wins over a
       // fallback detail projection; preserve detail-only fields.
-      final merged = {
-        ...Map<String, dynamic>.from(value),
-        ...?w.services.entityDirectory.member(id),
-      };
+      final merged = {...value, ...?w.services.entityDirectory.member(id)};
       profile = channelId == null
           ? withPrimedServers(w, merged, server, id)
           : {...merged, 'servers': value['servers']};
@@ -270,34 +273,70 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     });
   }
 
+  bool _readingProfileForEdit = false;
+
+  Future<Map<String, dynamic>?> _readProfileForEdit() async {
+    final server = w.server?.id, id = widget.userId, source = authority;
+    if (server == null || channelRevoked || _readingProfileForEdit) return null;
+    final channelId = widget.channelId;
+    bool accepts() =>
+        source == authority &&
+        id == widget.userId &&
+        channelId == widget.channelId &&
+        !channelRevoked;
+    _readingProfileForEdit = true;
+    try {
+      final value = await RaftClient.runFresh(
+        () => _requestProfile(server, id),
+      );
+      return mounted && accepts() ? value : null;
+    } catch (failure) {
+      if (mounted && accepts()) {
+        showRaftToast(context, userErrorText(failure, where: 'member profile'));
+      }
+      return null;
+    } finally {
+      _readingProfileForEdit = false;
+    }
+  }
+
   /// Your own description (HumanDetailPanel inline editor, as a form).
-  Future<void> editDescription() => scopedDialog<void>(
-    form: true,
-    (context) => ownDescriptionDialog(
-      context,
-      client: w.client,
-      initial: '${profile['description'] ?? ''}',
-      onSaved: () async {
-        await reload();
-        unawaited(
-          w.services.entityDirectory.refresh(
-            WorkspaceEntityKind.members,
-            force: true,
-          ),
-        );
-      },
-    ),
-  );
+  Future<void> editDescription() async {
+    final fresh = await _readProfileForEdit();
+    if (!mounted || fresh == null) return;
+    if (fresh['membershipStatus'] != 'active') {
+      showRaftToast(context, 'This member is no longer available.');
+      return;
+    }
+    await scopedDialog<void>(
+      form: true,
+      (context) => ownDescriptionDialog(
+        context,
+        client: w.client,
+        initial: '${fresh['description'] ?? ''}',
+        onSaved: () async {
+          await reload();
+          unawaited(
+            w.services.entityDirectory.refresh(
+              WorkspaceEntityKind.members,
+              force: true,
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   /// `getEditableHumanServerRoles`: the roles the viewer may assign
   /// (`canTransitionServerRole`; Guest only while guest invites are on).
-  List<String> editableRoles({required bool self}) => editableHumanServerRoles(
-    actorRole: w.server?.string('role'),
-    targetRole: profile['role'] is String ? profile['role'] as String : null,
-    isSelf: self,
-    ownerCount: _ownerCount,
-    serverGuestEnabled: guestEnabled,
-  );
+  List<String> editableRoles({required bool self, required Object? role}) =>
+      editableHumanServerRoles(
+        actorRole: w.server?.string('role'),
+        targetRole: role is String ? role : null,
+        isSelf: self,
+        ownerCount: _ownerCount,
+        serverGuestEnabled: guestEnabled,
+      );
 
   int get _ownerCount => w.services.entityDirectory
       .rows(WorkspaceEntityKind.members)
@@ -336,6 +375,38 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
   String roleValue = 'member';
   // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the role editor is opened or cancelled, when a save starts, and when the viewed member or server/account changes (clearData); a late failure for another member is ignored.
   String? roleError;
+
+  Future<void> editRole() async {
+    final fresh = await _readProfileForEdit();
+    if (!mounted || fresh == null || fresh['role'] is! String) return;
+    final role = fresh['role'] as String;
+    final roles = editableRoles(
+      self: widget.userId == w.client.user?.id,
+      role: role,
+    );
+    if (!canEditHumanRole(
+      membershipStatus: fresh['membershipStatus'],
+      remoteJoint:
+          isChannelSummaryHuman(fresh) ||
+          isRemoteJointHuman(fresh, w.server?.id),
+      hasChangeMemberRoles: w.can('changeMemberRoles'),
+      editableRoles: roles,
+    )) {
+      showRaftToast(context, 'This action is no longer available.');
+      return;
+    }
+    if (!guestFlagRequested) {
+      guestFlagRequested = true;
+      unawaited(loadGuestFlag());
+    }
+    setState(() {
+      profile = {...profile, 'role': role};
+      roleValue = role;
+      rolePickerOpen = true;
+      roleError = null;
+      editingRole = true;
+    });
+  }
 
   Future<void> saveRole() async {
     final server = w.server!.id, id = widget.userId, source = authority;
@@ -633,7 +704,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     // active member.
     final editOwn = self && status == 'active';
     final roles = w.can('changeMemberRoles')
-        ? editableRoles(self: self)
+        ? editableRoles(self: self, role: profile['role'])
         : const <String>[];
     final canRole = canEditHumanRole(
       membershipStatus: status,
@@ -745,22 +816,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                 editKey: const ValueKey('member-edit-role'),
                 helpKey: const ValueKey('member-role-help'),
                 onHelp: () => showRaftRolePermissionHelp(context, agent: false),
-                onEdit: canRole
-                    ? () {
-                        // `useServerFeatureFlag(server_guest_v0)`: read when the
-                        // role editor is first needed.
-                        if (!guestFlagRequested) {
-                          guestFlagRequested = true;
-                          unawaited(loadGuestFlag());
-                        }
-                        setState(() {
-                          roleValue = role;
-                          rolePickerOpen = true;
-                          roleError = null;
-                          editingRole = true;
-                        });
-                      }
-                    : null,
+                onEdit: canRole ? editRole : null,
                 editor: canRole && editingRole
                     ? _roleEditor(context, t, roles)
                     : null,

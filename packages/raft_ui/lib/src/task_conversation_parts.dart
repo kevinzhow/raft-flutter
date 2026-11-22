@@ -29,6 +29,7 @@ class RaftTaskConversation {
     this.onSearch,
     this.onDelete,
     this.onAmend,
+    this.onPrepareAmend,
     this.source,
     this.createdAt,
     this.earlierDiscussion,
@@ -58,6 +59,9 @@ class RaftTaskConversation {
     String value,
   )?
   onAmend;
+
+  /// Allows the host to read the current values before the editor is seeded.
+  final Future<bool> Function()? onPrepareAmend;
 
   /// The Source property's value; null: no row.
   final Widget? source;
