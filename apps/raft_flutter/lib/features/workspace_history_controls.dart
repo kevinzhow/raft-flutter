@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -10,6 +12,10 @@ import '../platform/content_coordinator.dart';
 import '../platform/content_links.dart';
 import '../platform/content_target.dart';
 import 'apps_route.dart';
+import 'quick_switcher.dart';
+import 'quick_switcher_host.dart';
+import 'resource_search.dart';
+import 'sender_avatar_projection.dart';
 
 /// Visits an observed entry without appending another history entry. Only the
 /// bound workspace owns these entries; late popup actions cannot cross epochs.
@@ -123,68 +129,144 @@ void restoreAcceptedConversation(
   );
 }
 
-String _historyLabel(
-  BuildContext context,
-  WorkspaceController w,
-  RaftLocation entry,
+VoidCallback? _historyStep(
+  WorkspaceController workspace, {
+  required bool forward,
+}) {
+  final history = workspace.navigation;
+  final entries = history.entries;
+  final index = nextRaftHistoryPlace(
+    [for (final entry in entries) entry.uri],
+    history.index,
+    forward: forward,
+  );
+  if (index == null) return null;
+  final expectedUri = entries[index].uri;
+  final authority = workspace.navigationAuthority;
+  return () => unawaited(
+    visitWorkspaceHistory(
+      workspace,
+      index,
+      authority: authority,
+      expectedUri: expectedUri,
+    ),
+  );
+}
+
+bool handleWorkspaceHistoryShortcut(
+  WorkspaceController workspace,
+  LogicalKeyboardKey key,
+  HardwareKeyboard keyboard,
+  TargetPlatform platform,
 ) {
-  final channel = w.channels.where((c) => c.id == entry.entityId).firstOrNull;
-  final name = channel?.name;
-  if ((entry.route == RaftRoute.channel || entry.route == RaftRoute.dm) &&
-      name != null) {
-    return entry.route == RaftRoute.channel ? '#$name' : name;
+  if (keyboard.isControlPressed || keyboard.isShiftPressed) return false;
+  final mac = platform == TargetPlatform.macOS;
+  if (keyboard.isMetaPressed != mac || keyboard.isAltPressed == mac) {
+    return false;
   }
-  final label = switch (entry.route) {
-    RaftRoute.home => 'Home',
-    RaftRoute.channel || RaftRoute.dm => 'Chat',
-    RaftRoute.agent => 'Agent',
-    RaftRoute.human => 'Member',
-    RaftRoute.computer => 'Computer',
-    RaftRoute.members => 'Members',
-    RaftRoute.computers => 'Computers',
-    RaftRoute.artifacts => 'Artifacts',
-    RaftRoute.apps => 'Apps',
-    RaftRoute.search => 'Search',
-    RaftRoute.settings => 'Settings',
-    RaftRoute.activity => 'Activity',
-    RaftRoute.tasks => 'Tasks',
-    RaftRoute.saved => 'Saved',
-    RaftRoute.drafts => 'Drafts',
-    RaftRoute.releaseNotes => 'Release notes',
-    RaftRoute.unknown => 'Home',
-  };
-  return raftText(context, label);
+  final back = mac
+      ? LogicalKeyboardKey.bracketLeft
+      : LogicalKeyboardKey.arrowLeft;
+  final forward = mac
+      ? LogicalKeyboardKey.bracketRight
+      : LogicalKeyboardKey.arrowRight;
+  if (key != back && key != forward) return false;
+  _historyStep(workspace, forward: key == forward)?.call();
+  return true;
+}
+
+Widget _recentIdentity(SearchEntity entity, QuickSwitcherData data) {
+  if (entity.kind == 'channel') {
+    return RaftIcon(switch (entity.row['type']) {
+      'private' => RaftGlyph.lock,
+      _ => RaftGlyph.hash,
+    }, size: 16);
+  }
+  final agent = entity.kind == 'agent';
+  final kind = agent ? RaftAvatarKind.agent : RaftAvatarKind.human;
+  final avatar = projectSenderAvatar(
+    origin: data.origin,
+    senderId: entity.id,
+    senderType: agent ? 'agent' : 'user',
+    agents: data.agents,
+    members: data.members,
+    currentUser: data.currentUser,
+  );
+  return RaftAvatar(
+    name: entity.title,
+    kind: kind,
+    size: 20,
+    content: RaftAvatarContent(
+      name: entity.title,
+      kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
+      uploadedUrl: avatar.uploadedUrl,
+      pixelKey: agent ? avatar.pixelKey ?? 'robot' : null,
+    ),
+  );
+}
+
+List<RaftMenuEntry> _recentEntries(
+  BuildContext context,
+  WorkspaceController workspace,
+  QuickSwitcherHost host,
+) {
+  final data = host.data(includeComputers: false);
+  final recent = data.catalog.recent(
+    visited: data.visited,
+    excludeChannelId: data.excludeChannelId,
+    fillFromActivity: false,
+  );
+  if (recent.isEmpty) {
+    return [
+      RaftMenuEntry(label: raftText(context, 'No recent conversations yet')),
+    ];
+  }
+  return [
+    for (final entity in recent)
+      RaftMenuEntry(
+        label: entity.title,
+        leading: SizedBox.square(
+          dimension: 20,
+          child: Center(child: _recentIdentity(entity, data)),
+        ),
+        onPressed: () {
+          final channel = [...workspace.channels, ...workspace.dms]
+              .where(
+                (channel) =>
+                    channel.id == data.catalog.conversationIdOf(entity),
+              )
+              .firstOrNull;
+          if (channel != null)
+            unawaited(host.actions.openConversation(channel));
+        },
+      ),
+  ];
 }
 
 /// Desktop history shares the same accepted locations as phone Back and deep
 /// links. Narrow desktop rows put Back/Forward in the history menu.
 class WorkspaceHistoryControls extends StatelessWidget {
-  const WorkspaceHistoryControls({super.key, required this.controller});
+  const WorkspaceHistoryControls({
+    super.key,
+    required this.controller,
+    required this.quickSwitcher,
+  });
   final WorkspaceController controller;
+  final QuickSwitcherHost quickSwitcher;
 
   @override
-  Widget build(BuildContext context) {
-    final w = controller, history = w.navigation;
-    final entries = history.entries;
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: quickSwitcher.recents,
+    builder: _buildControls,
+  );
+
+  Widget _buildControls(BuildContext context, Widget? child) {
+    final w = controller;
     final authority = w.navigationAuthority;
     final compact = MediaQuery.sizeOf(context).width < 1000;
-    VoidCallback? visit(int? index) => index == null
-        ? null
-        : () => unawaited(
-            visitWorkspaceHistory(
-              w,
-              index,
-              authority: authority,
-              expectedUri: entries[index].uri,
-            ),
-          );
-    final places = entries.map((entry) => entry.uri).toList(growable: false);
-    final back = visit(
-      nextRaftHistoryPlace(places, history.index, forward: false),
-    );
-    final forward = visit(
-      nextRaftHistoryPlace(places, history.index, forward: true),
-    );
+    final back = _historyStep(w, forward: false);
+    final forward = _historyStep(w, forward: true);
+    final mac = defaultTargetPlatform == TargetPlatform.macOS;
     // AppTopBar places the history controls in a gap-0.5 group.
     final historyGap = RaftTokens.of(context).desktop ? RaftSpace.half : 0.0;
     return Row(
@@ -196,7 +278,7 @@ class WorkspaceHistoryControls extends StatelessWidget {
             key: const Key('topbar-back'),
             uiVariant: RaftButtonVariant.onFrame,
             glyph: RaftGlyph.arrowLeft,
-            tooltip: 'Go back',
+            tooltip: '${raftText(context, 'Go back')} ${mac ? '⌘[' : 'Alt+←'}',
             semanticLabel: raftText(context, 'Go back'),
             onPressed: back,
           ),
@@ -204,7 +286,8 @@ class WorkspaceHistoryControls extends StatelessWidget {
             key: const Key('topbar-forward'),
             uiVariant: RaftButtonVariant.onFrame,
             glyph: RaftGlyph.arrowRight,
-            tooltip: 'Go forward',
+            tooltip:
+                '${raftText(context, 'Go forward')} ${mac ? '⌘]' : 'Alt+→'}',
             semanticLabel: raftText(context, 'Go forward'),
             onPressed: forward,
           ),
@@ -213,7 +296,20 @@ class WorkspaceHistoryControls extends StatelessWidget {
           key: ValueKey('topbar-history-$authority'),
           label: raftText(context, 'History'),
           tooltip: 'History',
-          width: 280,
+          width: 240,
+          sideOffset: 4,
+          surfaceKey: const Key('topbar-history-menu'),
+          header: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              raftText(context, 'Recent conversations'),
+              style: RaftTypography.body(
+                RaftTokens.of(context),
+                size: 12,
+                line: 16,
+              ),
+            ),
+          ),
           triggerBuilder: (context, focus, open) => Focus(
             focusNode: focus,
             child: RaftIconButton(
@@ -239,16 +335,7 @@ class WorkspaceHistoryControls extends StatelessWidget {
               ),
               const RaftMenuEntry.separator(),
             ],
-            for (
-              var i = entries.length - 1;
-              i >= (entries.length - 30).clamp(0, entries.length);
-              i--
-            )
-              RaftMenuEntry(
-                label: _historyLabel(context, w, entries[i]),
-                glyph: i == history.index ? RaftGlyph.check : null,
-                onPressed: i == history.index ? null : visit(i),
-              ),
+            ..._recentEntries(context, w, quickSwitcher),
           ],
         ),
       ],

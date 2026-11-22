@@ -183,10 +183,10 @@ class QuickSwitcherHost {
   String? _principal;
   List<Map<String, dynamic>> _computers = const [];
 
-  QuickSwitcherData data() {
+  QuickSwitcherData data({bool includeComputers = true}) {
     final directory = w.services.entityDirectory;
     final principal = w.client.user?.id;
-    final machines = w.can('viewMachines');
+    final machines = includeComputers && w.can('viewMachines');
     if (machines) directory.ensure(const [WorkspaceEntityKind.computers]);
     final agents = directory.authorAgents, members = directory.authorMembers;
     final hidden = w.sidebarOrder['hiddenDmIds'];

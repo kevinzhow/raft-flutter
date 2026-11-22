@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/raft_navigation_history.dart';
+import 'package:raft_flutter/features/quick_switcher_host.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/features/workspace_history_controls.dart';
 
@@ -26,13 +27,34 @@ void main() {
           t.view.physicalSize = Size(width, 800);
           t.view.devicePixelRatio = 1;
           addTearDown(t.view.reset);
+          final host = QuickSwitcherHost(
+            controller: w,
+            actions: QuickSwitcherActions(
+              openConversation: (channel) => w.selectChannel(channel),
+              openDirectory: (_, _) {},
+              openThread: ({
+                required parentChannelId,
+                required parentMessageId,
+                required messageId,
+                required threadChannelId,
+              }) async {},
+              openMessage: (_, _) async {},
+              searchAll: (_) {},
+            ),
+          );
+          addTearDown(host.dispose);
           Future<void> mount() => t.pumpWidget(
             MaterialApp(
               locale: Locale(language),
               supportedLocales: const [Locale('en'), Locale('zh')],
               localizationsDelegates: GlobalMaterialLocalizations.delegates,
               theme: raftTheme(),
-              home: Scaffold(body: WorkspaceHistoryControls(controller: w)),
+              home: Scaffold(
+                body: WorkspaceHistoryControls(
+                  controller: w,
+                  quickSwitcher: host,
+                ),
+              ),
             ),
           );
           void button(String label, {required bool enabled}) {
@@ -145,11 +167,16 @@ void main() {
       expect(w.navigation.entries, hasLength(depth));
       await t.tap(find.byKey(const Key('topbar-history')));
       await t.pumpAndSettle();
-      await t.tap(find.text('#first').last);
+      await t.tap(
+        find.descendant(
+          of: find.byKey(const Key('topbar-history-menu')),
+          matching: find.text('first'),
+        ),
+      );
       await t.pumpAndSettle();
       expect(w.channel?.id, 'c1');
-      expect(w.navigation.entries, hasLength(depth));
-      expect(w.navigation.entries.last.entityId, 'c2');
+      expect(w.navigation.entries, hasLength(depth + 1));
+      expect(w.navigation.entries.last.entityId, 'c1');
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox.shrink());
     }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
