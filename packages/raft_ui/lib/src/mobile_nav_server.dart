@@ -201,10 +201,8 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
     setState(() => open = true);
     portal.show();
     widget.onOpenChanged?.call(true);
-    // The popover is built next frame; focus goes in once it exists: the
-    // current row (Web v1.24 does so for a touch open too, which differs from
-    // the raft-ui comment; the app's rows are not text fields, so no keyboard
-    // comes up), else the popover itself.
+    // Web focuses the current row on touch, mouse and keyboard open. The
+    // row's interactive recipe decides whether that focus is visible.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !open) return;
       final row = handle.currentFocus;
@@ -302,27 +300,41 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
     );
   }
 
-  Widget _avatar(BuildContext context) {
-    final size = RaftMobileNavServerRecipe.resolve(
-      tokens: RaftTokens.of(context).recipeTokens,
-    ).item.target(':is(& > *)[data-slot="avatar"]');
-    final px = size?.width ?? 22;
+  Widget _avatar(BuildContext context, {bool docked = false}) {
+    final tokens = RaftTokens.of(context).recipeTokens;
+    final size = RaftMobileNavServerRecipe.resolve(tokens: tokens).item
+        .target(':is(& > *)[data-slot="avatar"]');
+
+    Widget? dot;
+    var offset = -RaftStatusSize.sm.px / 2;
+    if (widget.attention && docked) {
+      final avatar = RaftAvatarRecipe.resolve(
+        type_: RaftAvatarRecipeType.server,
+        size: RaftAvatarRecipeSize.xs,
+        tokens: tokens,
+      );
+      final border = avatar.root.border(tokens)!.top.width;
+      // AvatarBadge [100%, 0] is relative to the avatar padding box.
+      offset =
+          raftControlBorderPx(context, border) - RaftAvatarSize.xs.badge / 2;
+      dot = RaftAvatarBadge.serverAttention(key: widget.attentionKey);
+    } else if (widget.attention) {
+      dot = RaftStatus(
+        key: widget.attentionKey,
+        size: RaftStatusSize.sm,
+        variant: RaftStatusVariant.accent,
+      );
+    }
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        SizedBox.square(dimension: px, child: widget.avatar),
-        if (widget.attention)
-          // Centred on the avatar's top-right corner: (100%, 0).
+        SizedBox.square(dimension: size?.width ?? 22, child: widget.avatar),
+        if (dot != null)
           Positioned(
-            top: -4,
-            right: -4,
-            child: ExcludeSemantics(
-              child: RaftStatus(
-                key: widget.attentionKey,
-                size: RaftStatusSize.sm,
-                variant: RaftStatusVariant.accent,
-              ),
-            ),
+            top: offset,
+            right: offset,
+            child: ExcludeSemantics(child: dot),
           ),
       ],
     );
@@ -399,7 +411,7 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (g.glyphs) g.box(_avatar(context)),
+                        if (g.glyphs) g.box(_avatar(context, docked: true)),
                         if (g.glyphs && g.labels)
                           SizedBox(height: g.n('space.mobileNavGlyphLabel', 7)),
                         if (g.labels) text,
@@ -638,8 +650,12 @@ class _RenderPopoverSizer extends RenderBox
     final floor = natural - m.natural + m.min;
     final cap = math.min(math.max(_preferred, floor), _available);
     final height = math.min(natural, math.max(cap, floor));
-    child.layout(BoxConstraints.tightFor(width: w, height: height));
-    size = Size(w, height);
+    // Keep height loose so a late destination can invalidate this measurement.
+    child.layout(
+      BoxConstraints(minWidth: w, maxWidth: w, maxHeight: height),
+      parentUsesSize: true,
+    );
+    size = Size(w, child.size.height);
   }
 
   @override

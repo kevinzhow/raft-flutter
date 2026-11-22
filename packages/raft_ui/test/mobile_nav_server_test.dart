@@ -149,6 +149,17 @@ Future<void> _settle(WidgetTester t) async {
   await t.pump(const Duration(milliseconds: 400));
 }
 
+Iterable<Color?> _rowFills(WidgetTester t, String label) sync* {
+  for (final box in t.widgetList<DecoratedBox>(
+    find.descendant(
+      of: find.widgetWithText(RaftMobileNavServerPopoverRow, label),
+      matching: find.byType(DecoratedBox),
+    ),
+  )) {
+    if (box.decoration case BoxDecoration(:final color)) yield color;
+  }
+}
+
 void main() {
   tearDown(() => debugDefaultTargetPlatformOverride = null);
 
@@ -339,6 +350,8 @@ void main() {
       final row = FocusManager.instance.primaryFocus!.context!
           .findAncestorWidgetOfExactType<RaftMobileNavServerPopoverRow>();
       expect(row?.label, 'Server 1');
+      final tokens = RaftTokens.of(t.element(_tab));
+      expect(_rowFills(t, 'Server 1'), contains(tokens.colors['brand-soft']));
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await _settle(t);
       expect(fx.focus.hasPrimaryFocus, isTrue);
@@ -389,6 +402,90 @@ void main() {
       expect(pop.bottom, closeTo(bar.top - 8, .01));
       // Content height: list (3 two-line rows + p-1) + footer + destinations.
       expect(pop.height, lessThan(.6 * 844));
+    });
+
+    testWidgets('an already open popover grows when a destination arrives', (
+      t,
+    ) async {
+      await _size(t, const Size(390, 844));
+      final fixture = _Fixture();
+      final destinations = ValueNotifier(4);
+      addTearDown(destinations.dispose);
+      await t.pumpWidget(
+        _app(
+          fixture,
+          content: (f) => ValueListenableBuilder<int>(
+            valueListenable: destinations,
+            builder: (_, count, _) => _content(
+              f,
+              current: 0,
+              footer: 3,
+              reorder: true,
+              destinations: count,
+            ),
+          ),
+        ),
+      );
+      await t.tap(_tab);
+      await _settle(t);
+      final third = find.byKey(const ValueKey('server-2')).hitTestable();
+      expect(third, findsOneWidget);
+      final initial = t.getRect(_pop);
+
+      destinations.value = 5;
+      await _settle(t);
+
+      final expanded = t.getRect(_pop);
+      expect(expanded.bottom, initial.bottom);
+      expect(expanded.height, greaterThan(initial.height));
+      expect(
+        find.byKey(const ValueKey('dest-4')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(third, findsOneWidget);
+    });
+
+    testWidgets('the float shadow feathers across the gap above the bar', (
+      t,
+    ) async {
+      await _size(t, const Size(390, 844));
+      const screen = ValueKey('screen');
+      await t.pumpWidget(
+        RepaintBoundary(key: screen, child: _app(_Fixture(), dark: true)),
+      );
+      await t.tap(_tab);
+      await _settle(t);
+      final pop = t.getRect(_pop);
+      final boundary = t.renderObject<RenderRepaintBoundary>(
+        find.byKey(screen),
+      );
+      final x = (pop.center.dx * 2).round();
+      final y = (pop.bottom * 2).round() + 2;
+      Future<List<int>> sampleGap() async => (await t.runAsync(() async {
+        final image = await boundary.toImage(pixelRatio: 2);
+        try {
+          final pixels = (await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          ))!;
+          return [
+            for (var i = 0; i < 12; i++)
+              pixels.getUint8(((y + i) * image.width + x) * 4),
+          ];
+        } finally {
+          image.dispose();
+        }
+      }))!;
+
+      final open = await sampleGap();
+      await t.tap(_tab);
+      await _settle(t);
+      expect(_pop, findsNothing);
+      final closed = await sampleGap();
+      final darkening = [
+        for (var i = 0; i < open.length; i++) closed[i] - open[i],
+      ];
+      expect(darkening.first, greaterThan(0), reason: '$darkening');
+      expect(darkening.last, lessThan(darkening.first), reason: '$darkening');
     });
 
     testWidgets('at most 60% of the viewport, the list scrolls inside', (
@@ -542,10 +639,12 @@ void main() {
       );
       final avatar = t.getRect(find.byKey(const ValueKey('avatar')));
       final dot = t.getRect(
-        find.descendant(of: _tab, matching: find.byType(RaftStatus)),
+        find.descendant(of: _tab, matching: find.byType(RaftAvatarBadge)),
       );
-      expect(dot.center.dx, closeTo(avatar.right, .01));
-      expect(dot.center.dy, closeTo(avatar.top, .01));
+      // At DPR 1 the avatar's 1.5px CSS border paints as one pixel.
+      expect(dot.size, const Size.square(7));
+      expect(dot.center.dx, closeTo(avatar.right - 1, .01));
+      expect(dot.center.dy, closeTo(avatar.top + 1, .01));
       await t.tap(_tab);
       await _settle(t);
       final dest = t.getRect(find.byKey(const ValueKey('dest-0')));
@@ -922,6 +1021,27 @@ void main() {
         await _settle(t);
         expect(fills('Server 1'), contains(tokens.colors['brand-soft']));
         expect(fills('Server 0'), isNot(contains(tokens.colors['brand-soft'])));
+      });
+    }
+
+    for (final kind in [PointerDeviceKind.touch, PointerDeviceKind.mouse]) {
+      testWidgets('${kind.name} open keeps row focus without keyboard fill', (
+        t,
+      ) async {
+        await _size(t, const Size(390, 844));
+        final fx = _Fixture();
+        await t.pumpWidget(_app(fx));
+        final tokens = RaftTokens.of(t.element(_tab));
+        await t.tap(_tab, kind: kind);
+        await _settle(t);
+        final focused = FocusManager.instance.primaryFocus!.context!
+            .findAncestorWidgetOfExactType<RaftMobileNavServerPopoverRow>();
+        expect(focused?.label, 'Server 1');
+        expect(focused?.current, isTrue);
+        expect(
+          _rowFills(t, 'Server 1'),
+          isNot(contains(tokens.colors['brand-soft'])),
+        );
       });
     }
   });

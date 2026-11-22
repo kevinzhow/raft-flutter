@@ -100,49 +100,10 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
       );
     }
     if (mobile) {
-      // TasksPanel is a tab-root header with its own Web markup (no back
-      // control): the Sidebar navbar bar at `px-5`, h2 `font-bold text-base
-      // leading-tight` over a `font-mono text-xs text-foreground-muted` count.
-      final root = RaftMobileRootHeaderRecipe(
-        t,
-        viewportHeight: MediaQuery.sizeOf(context).height,
-        inset: 16, // Web TasksPanel TabRootBar: `px-4` in the band
-      );
-      return RaftMobilePageHeader(
-        background: t.colors['layer-section-header-mobile'],
-        border: root.border,
-        headerHeight: root.height,
-        inset: root.inset,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: t.option('listGroup.frame', or: 'framed') == 'plain'
-                  ? t.scale(
-                      RaftTypeScale.headline,
-                      color: t.colors['foreground-on-frame'],
-                    )
-                  : RaftTypography.heading(t, size: 16, line: 20),
-            ),
-            if (subtitle?.isNotEmpty == true)
-              Text(
-                subtitle!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: t.option('listGroup.frame', or: 'framed') == 'plain'
-                    ? t.scale(
-                        RaftTypeScale.caption,
-                        weight: FontWeight.w500,
-                        color: t.colors['foreground-on-frame-muted'],
-                      )
-                    : RaftTypography.mono(t, color: t.muted),
-              ),
-          ],
-        ),
+      // Tasks and Activity use the same phone TabRootBar chrome.
+      return RaftMobileRootHeader(
+        title: title,
+        subtitle: subtitle,
         actions: actions,
       );
     }

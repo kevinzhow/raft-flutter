@@ -28,13 +28,14 @@ import 'large_content_viewer.dart';
 import 'dismiss_scope.dart';
 import 'interaction.dart';
 import 'popover_surface.dart';
+import 'recipes/avatar.g.dart';
 import 'recipes/mobile_nav_server.g.dart';
 import 'recipes/popover.g.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeStates, RaftSlotStyle;
-import 'raft/status.dart' show RaftStatus, RaftStatusSize, RaftStatusVariant;
-
+import 'raft/avatar.dart' show RaftAvatarBadge, RaftAvatarSize;
 import 'raft/blink_snap.dart';
 import 'raft/css_box.dart' show RaftCssBox, raftControlBorderPx;
+import 'raft/status.dart' show RaftStatus, RaftStatusSize, RaftStatusVariant;
 import 'raft/ui_tokens.dart' show RaftTokensUi;
 import 'panel_layout.dart' show RaftCssText, RaftCssFocusOutline;
 
@@ -826,32 +827,48 @@ class RaftMobileRootHeader extends StatelessWidget {
         ),
       );
     }
-    final name = Text(
-      raftText(context, title ?? ''),
-      style: recipe.title,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
     final t = recipe.tokens;
-    final titleBlock = subtitle?.isNotEmpty != true
+    final caption = subtitle;
+    final countHeader =
+        caption != null && t.option('listGroup.frame', or: 'framed') == 'plain';
+    final lines = RaftScaled.grows(context) ? null : 1;
+    final name = countHeader
+        ? RaftCssText(
+            raftText(context, title ?? ''),
+            style: recipe.title,
+            maxLines: lines,
+            overflow: TextOverflow.ellipsis,
+          )
+        : Text(
+            raftText(context, title ?? ''),
+            style: recipe.title,
+            maxLines: lines,
+            overflow: TextOverflow.ellipsis,
+          );
+    final titleBlock = caption == null || caption.isEmpty
         ? name
         : Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               name,
-              Text(
-                subtitle!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: t.option('listGroup.frame', or: 'framed') == 'plain'
-                    ? t.scale(
-                        RaftTypeScale.caption,
-                        weight: FontWeight.w500,
-                        color: t.colors['foreground-on-frame-muted'],
-                      )
-                    : RaftTypography.mono(t, color: t.muted),
-              ),
+              if (countHeader)
+                RaftCssText.rich(
+                  _countCaption(caption, t),
+                  style: t.scale(
+                    RaftTypeScale.caption,
+                    color: t.colors['foreground-on-frame-muted'],
+                  ),
+                  maxLines: lines,
+                  overflow: TextOverflow.ellipsis,
+                )
+              else
+                Text(
+                  caption,
+                  maxLines: lines,
+                  overflow: TextOverflow.ellipsis,
+                  style: RaftTypography.mono(t, color: t.muted),
+                ),
             ],
           );
     return RaftMobilePageHeader(
@@ -867,6 +884,25 @@ class RaftMobileRootHeader extends StatelessWidget {
       ),
       actions: actions,
     );
+  }
+
+  // Web's localized Activity and Tasks captions wrap each count in font-mono.
+  // Keep the translated word order and expose the whole subtitle as one line.
+  TextSpan _countCaption(String caption, RaftTokens t) {
+    final number = TextStyle(fontFamily: t.monoFont);
+    final runs = <TextSpan>[];
+    var start = 0;
+    for (final match in RegExp(r'\d+').allMatches(caption)) {
+      if (match.start > start) {
+        runs.add(TextSpan(text: caption.substring(start, match.start)));
+      }
+      runs.add(TextSpan(text: match[0], style: number));
+      start = match.end;
+    }
+    if (start < caption.length) {
+      runs.add(TextSpan(text: caption.substring(start)));
+    }
+    return TextSpan(children: runs);
   }
 }
 

@@ -27,6 +27,7 @@ import 'recipes/textarea_counter.g.dart';
 import 'label.dart';
 import 'panel_layout.dart' show RaftCssLineBox;
 import 'raft/button.dart' show RaftButton, RaftButtonVariant, RaftButtonSize;
+import 'raft/blink_snap.dart';
 import 'raft/css_box.dart';
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
@@ -1043,6 +1044,7 @@ class RaftInputGroup extends StatefulWidget {
     this.size,
     this.snapBorderToDevicePixels = false,
     this.useEmbeddedControlRecipe = false,
+    this.snapLikeBlink = false,
     this.fitHint = false,
   });
 
@@ -1053,6 +1055,7 @@ class RaftInputGroup extends StatefulWidget {
   final RaftInputGroupRecipeSize? size;
   final bool snapBorderToDevicePixels;
   final bool useEmbeddedControlRecipe;
+  final bool snapLikeBlink;
   final bool fitHint;
   final RaftInputGroupAddon? leading, trailing;
 
@@ -1263,7 +1266,10 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       cursorColor: style.color,
       decoration: _bare(
         hintText: hint,
-        hintStyle: style.copyWith(color: placeholder),
+        hintStyle: style.copyWith(
+          color: placeholder,
+          height: widget.snapLikeBlink ? kTextHeightNone : null,
+        ),
       ),
     );
     final hint = widget.hintText;
@@ -1274,6 +1280,28 @@ class _RaftInputGroupState extends State<RaftInputGroup>
             ),
           )
         : field(hint);
+    Widget fieldColumn = Align(
+      alignment: Alignment.centerLeft,
+      child: widget.snapBorderToDevicePixels || widget.snapLikeBlink
+          ? RaftCssLineBox(
+              style: style,
+              textScaler: MediaQuery.textScalerOf(context),
+              snapBaseline: !widget.snapLikeBlink,
+              child: controlField,
+            )
+          : controlField,
+    );
+    if (widget.snapLikeBlink && widget.enabled) {
+      // The editable column owns the full height between the addons.
+      fieldColumn = TextFieldTapRegion(
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          excludeFromSemantics: true,
+          onTap: focus.requestFocus,
+          child: fieldColumn,
+        ),
+      );
+    }
     final row = Row(
       crossAxisAlignment: widget.fitHint && hint != null
           ? CrossAxisAlignment.center
@@ -1281,19 +1309,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       children: [
         if (widget.leading != null) addon(widget.leading!, start),
         Expanded(
-          child: Padding(
-            padding: padding,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: widget.snapBorderToDevicePixels
-                  ? RaftCssLineBox(
-                      style: style,
-                      textScaler: MediaQuery.textScalerOf(context),
-                      child: controlField,
-                    )
-                  : controlField,
-            ),
-          ),
+          child: Padding(padding: padding, child: fieldColumn),
         ),
         if (trailing != null || actions.isNotEmpty)
           box(
@@ -1377,7 +1393,11 @@ class _RaftInputGroupState extends State<RaftInputGroup>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => widget.snapLikeBlink
+      ? RaftBlinkSnap(child: Builder(builder: _buildControl))
+      : _buildControl(context);
+
+  Widget _buildControl(BuildContext context) {
     final t = RaftTokens.of(context);
     final group = _buildRecipe(context, t);
     if (!widget.clearOnEscape) return group;

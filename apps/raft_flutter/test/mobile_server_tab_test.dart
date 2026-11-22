@@ -136,10 +136,13 @@ void main() {
     );
     await _settle(t);
     final handle = t.ensureSemantics();
-    expect(
-      find.byKey(const Key('mobile-tab-server-unread-dot')),
-      findsOneWidget,
+    final attention = find.byKey(const Key('mobile-tab-server-unread-dot'));
+    expect(attention, findsOneWidget);
+    final badgeSize = Size.copy(t.getSize(attention));
+    final badge = t.widget<RaftCssBox>(
+      find.descendant(of: attention, matching: find.byType(RaftCssBox)),
     );
+    final canvas = RaftTokens.of(t.element(attention)).ui.layerCanvas;
     expect(
       find.bySemanticsLabel(RegExp('Alpha, another server has unread items')),
       findsOneWidget,
@@ -150,6 +153,8 @@ void main() {
     expect(find.byKey(const Key('server-row-unread-a')), findsNothing);
     handle.dispose();
     await f.close(t);
+    expect(badgeSize, const Size.square(7));
+    expect(badge.rings, [RaftRing(2, canvas)]);
   });
 
   testWidgets('the Activity tab shows a dot, never a number, never selected', (
@@ -431,8 +436,15 @@ void main() {
     await _settle(t);
     final w = f.workspace(t);
     final index = w.navigation.index;
-    EditableText field() =>
-        t.widget<EditableText>(find.byType(EditableText).first);
+    final input = find.descendant(
+      of: find.byKey(const Key('search-tab-head')),
+      matching: find.byType(EditableText),
+    );
+    expect(input.hitTestable(), findsOneWidget);
+    EditableText field() => t.widget<EditableText>(input);
+    await t.tap(input);
+    await t.pump();
+    expect(field().focusNode.hasFocus, isTrue);
     FocusManager.instance.primaryFocus?.unfocus();
     await t.pump();
     expect(field().focusNode.hasFocus, isFalse);

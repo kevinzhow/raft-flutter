@@ -13,18 +13,28 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart'
-    show addTearDown, expect, find, findsOneWidget, isTrue;
+    show addTearDown, expect, find, findsNothing, findsOneWidget, isTrue;
+import 'package:raft_client/raft_client.dart' show Session;
+import 'package:raft_flutter/app_root.dart';
+import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/data/workspace_entity_directory.dart';
 import 'package:raft_flutter/features/message_task_actions.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_flutter/platform/app_services.dart';
+import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../app_global_server_selector_test.dart'
+    show RootClient, RootFixture;
 import '../parity_harness.dart';
 import 'ext_frame_keys.g.dart';
 import 'ext_settings.dart' show extSettingsCases;
 import 'ext_shell.dart' show shellWorkspace;
+import 'screens/screen_fixture.dart' show ScreenWire;
 import 'thread_messages/chat_stage.dart' show ParityIdentities;
 import 'thread_composer/fake_workspace.dart' show ParityFakeClient;
 import '../../support/app_services_fixture.dart';
@@ -38,6 +48,22 @@ String? _selected(ParityContext ctx) {
   if (ctx.props['scene'] != 'channel') return null;
   final scenes = (ctx.fixtures['ext:screens'] as Map)['scenes'] as Map;
   return (scenes['channel'] as Map)['selected'] as String?;
+}
+
+const _tabBarPrefix = 'components.frame.phone.tabbar-';
+
+bool _isTabBarPopover(ParityContext ctx) =>
+    ctx.id.startsWith('${_tabBarPrefix}popover-');
+
+Map<String, dynamic> _tabBarRoutes(ParityContext ctx) {
+  if (!ctx.id.startsWith(_tabBarPrefix)) return const {};
+  final fixture = ctx.fixtures['ext:mobile-tabbar'] as Map;
+  return {
+    ...Map<String, dynamic>.from(fixture['routes'] as Map),
+    ...Map<String, dynamic>.from(
+      (fixture['routeSets'] as Map)[ctx.props['routeSet']] as Map,
+    ),
+  };
 }
 
 WorkspaceController _workspace(ParityContext ctx) {
@@ -72,6 +98,7 @@ WorkspaceController _workspace(ParityContext ctx) {
         ...Map<String, dynamic>.from(
           _screenScene(ctx, 'activity')['routes'] as Map,
         ),
+      ..._tabBarRoutes(ctx),
     },
   );
 }
@@ -103,6 +130,20 @@ class _HostState extends State<_Host> {
   }
 
   Future<void> _open() async {
+    if (widget.ctx.id.startsWith(_tabBarPrefix)) {
+      final client = w.client as ParityFakeClient;
+      final user = client.user!.json;
+      client.routes['GET /auth/me'] = user;
+      await client.sessionStore.write(
+        client.origin,
+        Session(accessToken: 'visual-fixture', refreshToken: 'visual-fixture'),
+      );
+      if (!mounted || !await client.restore() || !mounted) return;
+      // Use the same inbox read as a signed-in workspace. The tab reads its
+      // accepted unread count, and the Activity page can reuse that window.
+      await w.services.activityUnread.refresh();
+      return;
+    }
     if (widget.ctx.props['scene'] == 'activity') {
       w.setSection('activity');
       return;
@@ -135,6 +176,94 @@ class _HostState extends State<_Host> {
   );
 }
 
+/// Popover captures need the real AppRoot chooser callback and its initial
+/// server-scoped machine load. The other frame cases keep their existing host.
+class _TabBarPopoverHost extends StatefulWidget {
+  const _TabBarPopoverHost({required this.ctx});
+  final ParityContext ctx;
+
+  @override
+  State<_TabBarPopoverHost> createState() => _TabBarPopoverHostState();
+}
+
+class _TabBarPopoverHostState extends State<_TabBarPopoverHost> {
+  final fixture = RootFixture();
+  static const origin = 'https://parity-fixture.invalid';
+
+  @override
+  void initState() {
+    super.initState();
+    final ctx = widget.ctx;
+    final wire = ScreenWire(ctx.fixtureData);
+    final ids = ParityIdentities(ctx);
+    final shell = ctx.fixtures['ext:shell'] as Map<String, dynamic>;
+    SharedPreferences.setMockInitialValues({
+      'raft.origin': origin,
+      'raft.mode': ctx.dark ? 'dark' : 'light',
+    });
+    addTearDown(DevicePreferences.reset);
+    final now = (ctx.fixtureData['locale']['nowEpochMillis'] as num).toInt();
+    sourceTimeNow = () => DateTime.fromMillisecondsSinceEpoch(now);
+    addTearDown(() => sourceTimeNow = DateTime.now);
+    unawaited(
+      fixture.sessions.write(
+        origin,
+        Session(accessToken: 'visual-fixture', refreshToken: 'visual-fixture'),
+      ),
+    );
+    final routes = <String, Object?>{
+      ..._tabBarRoutes(ctx),
+      'GET /auth/me': wire.me(),
+      'GET /servers': [
+        for (final server in (shell['servers'] as List).cast<Map>())
+          {...ids.server, ...server},
+      ],
+      'GET /agents': ids.agents,
+      'GET /servers/${ids.serverId}/members': ids.members,
+      'GET /servers/${ids.serverId}/machines': wire.machines(),
+      'GET /servers/${ids.serverId}/setup-projection': {
+        'phase': 'complete',
+        'surface': 'complete',
+        'blocksChat': false,
+      },
+      'GET /channels/public': <Object>[],
+      'GET /channels/saved': ctx.fixtures['savedMessagesFixture'],
+    };
+    // The lighter frame host presets these counts in memory. AppRoot restores
+    // the same unread snapshot through the client, which requires a frontier
+    // marker. The shared fixture has no accepted frontiers.
+    final unread = (routes['GET /channels/unread'] as Map)['channels'] as Map;
+    routes['GET /channels/unread'] = {
+      'channels': {
+        for (final entry in unread.entries)
+          entry.key: {
+            ...entry.value as Map,
+            'readState': {'kind': 'absent'},
+          },
+      },
+    };
+    for (final entry in routes.entries) {
+      fixture.adapter.routes[entry.key] = (_) => entry.value;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => RaftApp(
+    services: AppServices.updatesDisabledForTestOrPreview(
+      localNetwork: fixture.network,
+    ),
+    sessionStore: fixture.sessions,
+    initialLocation: Uri(
+      path: '/s/${widget.ctx.fixtureData['server']['slug']}',
+    ),
+    nativeContent: fixture.content,
+    nativeSharing: NativeSharing(supported: false),
+    openWorkspaceCache: () async => fixture.cache,
+    createClient: (origin, store, kind) =>
+        fixture.client = RootClient(origin, store, kind, fixture.adapter),
+  );
+}
+
 Widget _build(ParityContext ctx) {
   final p = ctx.props;
   final crop = p['cw'] == null
@@ -147,7 +276,11 @@ Widget _build(ParityContext ctx) {
         );
   return Stack(
     children: [
-      Positioned.fill(child: _Host(ctx: ctx)),
+      Positioned.fill(
+        child: _isTabBarPopover(ctx)
+            ? _TabBarPopoverHost(ctx: ctx)
+            : _Host(ctx: ctx),
+      ),
       if (crop != null)
         Positioned.fromRect(
           rect: crop,
@@ -170,6 +303,89 @@ final ParityCase _case = ParityCase(
   settle: const Duration(milliseconds: 1200),
   build: _build,
   interact: (t, ctx) async {
+    if (ctx.id.startsWith(_tabBarPrefix)) {
+      final scenario = (ctx.props['extCase'] as String).split('tabbar-').last;
+      final popup = scenario.startsWith('popover-');
+      final selected = popup
+          ? 'chat'
+          : scenario == 'artifacts-return'
+          ? 'tasks'
+          : switch (scenario.split('-').last) {
+              'home' => 'chat',
+              final tab => tab,
+            };
+      final bar = find.byKey(const Key('workspace-mobile-navigation'));
+      await t.pump(const Duration(milliseconds: 400));
+      expect(t.widget<RaftMobileNav>(bar).selectedId, selected);
+      expect(
+        find.byKey(const Key('mobile-server-tab-popover')),
+        popup ? findsOneWidget : findsNothing,
+      );
+      expect(
+        find.byKey(const Key('mobile-server-tab-artifacts')).hitTestable(),
+        scenario == 'popover-on' ? findsOneWidget : findsNothing,
+      );
+      if (popup) {
+        final choose = find.byKey(
+          const Key('mobile-server-tab-switch-or-create'),
+        );
+        expect(choose.hitTestable(), findsOneWidget);
+        final row = t.widget<RaftMobileNavServerPopoverRow>(choose);
+        expect(row.enabled && row.onPressed != null, isTrue);
+        expect(
+          find.byKey(const Key('computers-attention-dot')).hitTestable(),
+          findsOneWidget,
+        );
+        final computers = t.widget<RaftMobileNavServerPopoverDestination>(
+          find.byKey(const Key('mobile-server-tab-computers')),
+        );
+        expect(computers.attention, isTrue);
+        expect(computers.onPressed != null, isTrue);
+        final workspace = t
+            .widget<WorkspaceView>(find.byType(WorkspaceView))
+            .controller;
+        final directory = workspace.services.entityDirectory;
+        const kind = WorkspaceEntityKind.computers;
+        expect(directory.state(kind).loaded, isTrue);
+        final states = {
+          for (final row in directory.rows(kind)) row['id']: row['status'],
+        };
+        expect(states, {
+          for (final row in ScreenWire(ctx.fixtureData).machines())
+            row['id']: row['status'],
+        });
+        final list = t.widget<RaftMobileNavServerPopoverList>(
+          find.byType(RaftMobileNavServerPopoverList),
+        );
+        final serverIds = [for (final server in workspace.servers) server.id];
+        final visibleServerIds = [
+          for (final id in serverIds)
+            if (find
+                .byKey(Key('mobile-server-tab-server-$id'))
+                .hitTestable()
+                .evaluate()
+                .isNotEmpty)
+              id,
+        ];
+        expect(list.children.length, serverIds.length);
+        expect(visibleServerIds, serverIds);
+        ctx.captureEvidence
+          ..['serverDirectoryIds'] = serverIds
+          ..['serverRowCount'] = list.children.length
+          ..['visibleServerRowIds'] = visibleServerIds
+          ..['switchOrCreateEnabled'] = row.enabled
+          ..['computerAttention'] = computers.attention
+          ..['loadedMachineStatuses'] = states;
+      }
+      if (scenario == 'artifacts-return') {
+        final tab = find.byKey(const Key('mobile-tab-server'));
+        expect(
+          t.widget<RaftMobileNavServerTab>(tab).focusNode!.hasFocus,
+          isTrue,
+        );
+      }
+      return;
+    }
     if ((ctx.props['extCase'] as String?)?.endsWith('.bell-open') == true) {
       expect(find.byType(RaftNotificationCenter), findsOneWidget);
       expect(
@@ -249,6 +465,15 @@ final Map<String, ParityCase> extFrameCases = {
   for (final key in _keys)
     for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
       'components.frame.$key.$theme': _case,
+  for (final theme in const ['brutal', 'elegant-dark']) ...{
+    for (final tab in const ['home', 'activity', 'tasks', 'search']) ...{
+      '${_tabBarPrefix}bar-$tab.$theme': _case,
+      '${_tabBarPrefix}header-$tab.$theme': _case,
+    },
+    '${_tabBarPrefix}popover-on.$theme': _case,
+    '${_tabBarPrefix}popover-off.$theme': _case,
+    '${_tabBarPrefix}artifacts-return.$theme': _case,
+  },
   // Control-state cases (tool/parity-ext/build-states-cases.py): the same window, the interactions come from the case.
   for (final key in extStatesKeys)
     for (final theme in const ['brutal', 'elegant', 'elegant-dark'])

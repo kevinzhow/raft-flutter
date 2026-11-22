@@ -57521,12 +57521,6 @@
         "owner": "WP-SIDEBAR",
         "reason": "SDK preview mounts the corresponding shared sidebar component."
       },
-      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78177/METHOD:build@79649/FUNCTION:message@83234": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-SIDEBAR",
-        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
-      },
       "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27541/METHOD:_build@34546/FUNCTION:row@41684": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -59850,6 +59844,126 @@
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Uses the shared focus ring for the installed bot identity reached by an Apps link."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#method:_RaftInputGroupState._buildControl": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7792/METHOD:_bar@9747/FUNCTION:badged@10091": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7792/METHOD:_bar@9747/FUNCTION:item@10810": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#local-function:CLASS:RaftMobileNavServerPopoverDestinations@13824/METHOD:build@14189/FUNCTION:line@14460": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#local-function:CLASS:_RaftMobileNavServerTabState@5442/METHOD:_popover@14309/FUNCTION:barrier@15137": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#local-function:CLASS:_RaftMobileNavServerTabState@5642/METHOD:_popover@14647/FUNCTION:barrier@15475": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:addon@38510": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:box@38200": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:resolve@36974": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/mobile_server_tab.dart#local-function:CLASS:_ServerPopoverContentState@4244/METHOD:pages@6920/FUNCTION:page@7232": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78436/METHOD:build@79908/FUNCTION:message@83493": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/mobile_server_tab.dart#local-function:CLASS:_ServerPopoverContentState@4356/METHOD:pages@7032/FUNCTION:page@7344": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78490/METHOD:build@79962/FUNCTION:message@83547": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:addon@38943": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:box@38633": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:field@41295": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Input",
+        "reason": "Builds the canonical InputGroup control with its fitted toolbar hint."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:resolve@37313": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#local-function:CLASS:_RaftMobileNavServerTabState@5442/METHOD:_popover@14320/FUNCTION:barrier@15603": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7873/METHOD:_bar@9828/FUNCTION:badged@10172": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7873/METHOD:_bar@9828/FUNCTION:item@10891": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position after combining PR #696/#698/#699; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -69799,6 +69913,71 @@
         "applicability": "required",
         "owner": "WP-APPS",
         "reason": "The checkbox Field label follows its group's disabled state."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:resolve@36974|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:resolve@36974|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:resolve@36974|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:resolve@36974|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:resolve@36974|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35518/METHOD:_buildRecipe@36788/FUNCTION:resolve@36974|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:resolve@37313|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:resolve@37313|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:resolve@37313|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:resolve@37313|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:resolve@37313|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:resolve@37313|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35741/METHOD:_buildRecipe@37127/FUNCTION:resolve@37313|state:has:focus-visible": {
+        "applicability": "required",
+        "owner": "WP-SEARCH",
+        "reason": "The generated InputGroup paints its focus shadow when the enabled editor holds focus. Search exercises the recipe in both themes."
       }
     },
     "evidence": {},

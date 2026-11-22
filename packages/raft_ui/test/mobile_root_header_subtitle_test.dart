@@ -86,6 +86,16 @@ void main() {
       final withLine = await mount('5 active · 2 unread');
       expect(find.text('Activity'), findsOneWidget);
       expect(find.text('5 active · 2 unread'), findsOneWidget);
+      final caption = t.widget<Text>(find.text('5 active · 2 unread'));
+      final spans = (caption.textSpan as TextSpan?)?.children ?? [];
+      final tokens = RaftTokens.of(t.element(find.byKey(const Key('root'))));
+      expect(
+        spans
+            .whereType<TextSpan>()
+            .where((span) => span.style?.fontFamily == tokens.monoFont)
+            .map((span) => span.text),
+        ['5', '2'],
+      );
       expect(find.byType(RaftBackButton), findsNothing);
       // The line sits under the name, inside the same bar.
       expect(withLine, bare);

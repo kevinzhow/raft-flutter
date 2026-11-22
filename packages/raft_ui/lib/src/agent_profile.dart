@@ -259,6 +259,8 @@ enum RaftAvatarSlotContext {
   // AvatarSlot `compact-list`: `!size-5 !border` (SelectionPopover rows).
   compactList(20, 1),
   creatorLink(22, 1),
+  // MobileNavServer's docked AvatarSlot overrides the library's xs extent.
+  mobileNavServer(22, 1),
   previewMini(14, 1);
 
   const RaftAvatarSlotContext(this.size, this.border);
@@ -375,7 +377,14 @@ class RaftAvatarSlot extends StatelessWidget {
         fill: t.colors['layer-avatar-server']!,
         borderWidth: raftControlBorderPx(context, 1.5),
         borderColor: t.colors['sticker-ink']!,
-        rings: [RaftRing(1.5, raftStickerEdge(t.ui))],
+        rings: [
+          RaftRing(
+            1.5,
+            slot == RaftAvatarSlotContext.mobileNavServer
+                ? t.ui.stickerEdge
+                : raftStickerEdge(t.ui),
+          ),
+        ],
         child: ClipRRect(
           borderRadius: BorderRadius.circular(
             t.size('radius.avatarInner', fallback: 2),

@@ -3524,6 +3524,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             controller: query,
             focusNode: queryFocus,
             matchCssBorderScale: true,
+            phoneTabRoot: mobile && widget.mobileRoot,
             // search.placeholder: the shortcut hint follows on desktop.
             hint: conversation != null
                 ? raftFormat(context, 'Search in {conversation}', {
@@ -3549,7 +3550,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         ? RaftMobileRootHeader(
             key: const Key('search-tab-head'),
             title: 'Search',
-            inset: RaftLayoutMetrics.panelInset,
+            inset: mobile
+                ? RaftSearchInput.phoneTabInset
+                : RaftLayoutMetrics.panelInset,
             content: row,
           )
         : RaftPanelHeaderBar(

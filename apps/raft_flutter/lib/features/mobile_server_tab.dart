@@ -102,7 +102,7 @@ class _MobileServerTabState extends State<MobileServerTab> {
               'name': name,
             })
           : name,
-      avatar: ServerMark(name: name, avatarUrl: url, size: 22),
+      avatar: ServerMark._tab(name: name, avatarUrl: url),
       attention: widget.otherServerUnread,
       attentionKey: const Key('mobile-tab-server-unread-dot'),
       popoverKey: const Key('mobile-server-tab-popover'),
@@ -241,7 +241,7 @@ class _ServerPopoverContentState extends State<_ServerPopoverContent> {
         page(
           id: ServerPage.artifacts,
           key: 'artifacts',
-          glyph: RaftGlyph.fileText,
+          glyph: RaftGlyph.artifact,
           label: 'Artifacts',
         ),
       if (!guest && w.can('viewMembers'))
@@ -350,33 +350,51 @@ class ServerMark extends StatelessWidget {
     required this.name,
     required this.avatarUrl,
     required this.size,
-  });
+  }) : _tab = false;
+
+  const ServerMark._tab({required this.name, required this.avatarUrl})
+    : size = 22,
+      _tab = true;
+
   final String name;
   final String? avatarUrl;
   final double size;
+  final bool _tab;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final initial = Center(
-      child: Text(
-        name.trim().isEmpty ? 'S' : name.trim().characters.first.toUpperCase(),
-        textScaler: RaftChrome.boundedScalerOf(context),
-        style: RaftTypography.body(
-          t,
-          size: size >= 22 ? 11 : 10,
-          line: 14,
-          weight: FontWeight.w700,
-          color: t.colors['foreground-avatar-server'] ?? t.strong,
-        ),
-      ),
-    );
+    final docked =
+        _tab && t.option('mobileNav.style', or: 'docked') == 'docked';
+    final letter = raftAvatarInitials(name, max: 1);
+    final text = letter.isEmpty ? 'S' : letter;
+    final slot = docked
+        ? RaftAvatarSlotContext.mobileNavServer
+        : RaftAvatarSlotContext.compactList;
+    final initial = docked
+        ? RaftAvatarInitials.server(
+            text,
+            size: RaftAvatarSize.nearest(slot.size),
+          )
+        : Center(
+            child: Text(
+              text,
+              textScaler: RaftChrome.boundedScalerOf(context),
+              style: RaftTypography.body(
+                t,
+                size: size >= 22 ? 11 : 10,
+                line: 14,
+                weight: FontWeight.w700,
+                color: t.colors['foreground-avatar-server'] ?? t.strong,
+              ),
+            ),
+          );
     return RaftAvatarSlot(
       name: name,
-      slot: RaftAvatarSlotContext.compactList,
+      slot: slot,
       agent: false,
       server: true,
-      sizeOverride: size,
+      sizeOverride: docked ? null : size,
       content: avatarUrl == null
           ? initial
           : RaftSizedImage.avatar(

@@ -266,22 +266,18 @@ class _DockedNavItem extends StatelessWidget {
         ),
       ),
       if (item.attention)
-        // `ActivityTabUnreadDot`: 10px square at the icon's top-right, x =
-        // icon.right - 6, y = icon.top - 2.
+        // MainLayout's AttentionDot is 10px, with its right edge 4px
+        // beyond the glyph and its top edge 2px above it.
         Positioned(
           top: n('space.mobileNavItemTop', 4) - 2,
-          left: 0,
-          right: 0,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 20),
-              child: _AttentionDot(
-                t,
-                key: item.attentionKey,
-                label: item.attentionLabel,
-              ),
-            ),
+          right: (width - n('size.mobileNavGlyph', 22)) / 2 - 4,
+          child: RaftStatus(
+            key: item.attentionKey,
+            size: RaftStatusSize.md,
+            variant: RaftStatusVariant.accent,
+            semanticLabel: item.attentionLabel == null
+                ? null
+                : raftText(context, item.attentionLabel!),
           ),
         ),
     ],

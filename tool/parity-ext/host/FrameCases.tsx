@@ -14,6 +14,9 @@
 // the top bar, the rail or the tab bar are scored on their own: a frame regression must not
 // drag every page score down with it.
 import parityExtFrShell from "virtual:parity-ext/shell";
+import { useEffect as parityExtFrUseEffect, useState as parityExtFrUseState } from "react";
+import { prefetchServerFeatureFlags as parityExtFrLoadFlags } from "../src/store/serverFeatureFlags";
+import { NavigationDepthTracker as ParityExtFrNavigationDepth } from "../src/hooks/useAppNavigate";
 
 type ParityExtFrProps = {
   raw: string;
@@ -65,6 +68,18 @@ function parityExtFrPrimeStores(p: ParityExtFrProps) {
 
 function ParityExtFrView({ p }: { p: ParityExtFrProps }) {
   useMemo(() => parityExtFrPrimeStores(p), [p]);
+  const [flagsReady, setFlagsReady] = parityExtFrUseState(false);
+  const checkTabBar = p.raw.startsWith("components.frame.phone.tabbar-");
+  parityExtFrUseEffect(() => {
+    if (!checkTabBar) return;
+    // MainLayout is mounted without App. Fetch the signed-in startup flag
+    // snapshot through the same API as App, using the shared fixture response.
+    let active = true;
+    void parityExtFrLoadFlags(fxServer.id).then(() => {
+      if (active) setFlagsReady(true);
+    });
+    return () => { active = false; };
+  }, [checkTabBar]);
   const width = window.innerWidth;
   const height = window.innerHeight;
   return (
@@ -73,12 +88,14 @@ function ParityExtFrView({ p }: { p: ParityExtFrProps }) {
         data-visual-case={p.raw}
         style={{ position: "relative", width, height, overflow: "hidden", display: "flex", flexDirection: "column" }}
       >
+        {checkTabBar ? <ParityExtFrNavigationDepth /> : null}
         <Routes>
           <Route path="/s/:serverSlug/*" element={<MainLayout />} />
         </Routes>
         {p.crop ? (
           <div
             data-testid="frame-crop"
+            data-tabbar-flags-ready={checkTabBar && flagsReady ? "" : undefined}
             style={{ position: "absolute", left: p.crop.x, top: p.crop.y, width: p.crop.w, height: p.crop.h, pointerEvents: "none" }}
           />
         ) : null}

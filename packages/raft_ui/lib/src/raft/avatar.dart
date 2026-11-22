@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import '../icons.dart' show RaftIconViewport;
+import '../recipe_surface.dart' show RaftRecipeBinding;
+import '../recipes/avatar.g.dart';
 import '../tokens/tokens.dart';
 import '../tooltip.dart';
 import 'css_box.dart';
@@ -101,9 +103,16 @@ String raftAvatarInitials(String name, {int max = 2}) {
 
 /// `AvatarFallback` text: `font-sans font-bold leading-none tracking-[-0.01em] text-sticker-ink`.
 class RaftAvatarInitials extends StatelessWidget {
-  const RaftAvatarInitials(this.text, {super.key, required this.size});
+  const RaftAvatarInitials(this.text, {super.key, required this.size})
+    : _server = false;
+
+  /// Server initials use the avatar's foreground against its ink fill.
+  const RaftAvatarInitials.server(this.text, {super.key, required this.size})
+    : _server = true;
+
   final String text;
   final RaftAvatarSize size;
+  final bool _server;
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +133,9 @@ class RaftAvatarInitials extends StatelessWidget {
               .scale(
                 RaftTypeScale.body,
                 weight: FontWeight.w700,
-                color: t.ui.stickerInk,
+                color: _server
+                    ? t.colors['foreground-avatar-server'] ?? t.strong
+                    : t.ui.stickerInk,
                 trackingEm: -0.01,
               )
               .copyWith(fontSize: size.text, height: 1),
@@ -336,9 +347,19 @@ class RaftAvatarBadge extends StatelessWidget {
     this.variant = RaftStatusVariant.default_,
     this.outlineColor,
     this.label,
-  });
+  }) : _serverAttention = false;
+
+  /// The docked server avatar's custom accent Status in the AvatarBadge slot.
+  const RaftAvatarBadge.serverAttention({super.key})
+    : size = RaftAvatarSize.xs,
+      presence = null,
+      variant = RaftStatusVariant.accent,
+      outlineColor = null,
+      label = null,
+      _serverAttention = true;
 
   final RaftAvatarSize size;
+  final bool _serverAttention;
 
   /// The presence light, or (without one) the [variant] colour (`AvatarBadge render={<Status variant=.../>}`).
   final RaftPresence? presence;
@@ -350,7 +371,15 @@ class RaftAvatarBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ui = RaftTokens.of(context).ui;
+    final t = RaftTokens.of(context);
+    final ui = t.ui;
+    final outline = _serverAttention
+        ? RaftAvatarRecipe.resolve(
+            type_: RaftAvatarRecipeType.server,
+            size: RaftAvatarRecipeSize.xs,
+            tokens: t.recipeTokens,
+          ).badge.length('outline-width')
+        : null;
     final dot = RaftCssBox(
       radius: 2,
       fill: RaftStatus.fillOf(ui, presence: presence, variant: variant),
@@ -358,7 +387,7 @@ class RaftAvatarBadge extends StatelessWidget {
       borderColor: ui.stickerInk,
       rings: [
         RaftRing(
-          math.max(1, size.badgeOutline),
+          outline ?? math.max(1, size.badgeOutline),
           outlineColor ?? ui.layerCanvas,
         ),
       ],

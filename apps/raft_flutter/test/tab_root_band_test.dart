@@ -1,4 +1,8 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -7,6 +11,7 @@ import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'mounted_message_navigation_test.dart' show pageFixture, mountPage;
+import 'parity/parity_harness.dart' show loadParityFonts;
 
 /// Web v1.24 TabRootBar on the phone tab roots: the frame band (56 tall, the
 /// seam below, 20px sides) with Home's WorkspaceButton and Search's field as
@@ -70,9 +75,12 @@ void main() {
   }
 
   group('Search tab root', () {
+    const captureKey = Key('search-band-paint');
     late RaftClient client;
     late _Workspace w;
+    late int backCalls;
     setUp(() {
+      backCalls = 0;
       client = RaftClient(
         origin: 'https://fixture.invalid',
         sessionStore: MemorySessionStore(),
@@ -89,6 +97,7 @@ void main() {
       WidgetTester t, {
       required bool dark,
       bool root = true,
+      TargetPlatform platform = TargetPlatform.android,
     }) async {
       t.view.physicalSize = const Size(390, 844);
       t.view.devicePixelRatio = 1;
@@ -97,16 +106,18 @@ void main() {
         MaterialApp(
           supportedLocales: const [Locale('en')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          theme: raftTheme(dark: dark)
-              .copyWith(platform: TargetPlatform.android),
+          theme: raftTheme(dark: dark).copyWith(platform: platform),
           home: Scaffold(
-            body: ResourceView(
-              controller: w,
-              section: 'search',
-              mobileRoot: root,
-              restoreSearchState: false,
-              onBack: () {},
-              onMessage: (_, _) async {},
+            body: RepaintBoundary(
+              key: captureKey,
+              child: ResourceView(
+                controller: w,
+                section: 'search',
+                mobileRoot: root,
+                restoreSearchState: false,
+                onBack: () => backCalls++,
+                onMessage: (_, _) async {},
+              ),
             ),
           ),
         ),
@@ -119,6 +130,7 @@ void main() {
       testWidgets('band $mode: frame fill, seam, field inset 20, no Back', (
         t,
       ) async {
+        await t.runAsync(loadParityFonts);
         await mount(t, dark: dark);
         final head = find.byKey(const Key('search-tab-head'));
         expect(head, findsOneWidget);
@@ -136,20 +148,144 @@ void main() {
           (box.border! as Border).bottom.color,
           tokens.colors['line-seam'],
         );
-        final field = t.getRect(
-          find.descendant(of: head, matching: find.byType(RaftSearchInput)),
+        final field = find.descendant(
+          of: head,
+          matching: find.byType(RaftSearchInput),
         );
-        expect(field.left, 20);
-        expect(390 - field.right, 20);
+        expect(t.getRect(field), const Rect.fromLTWH(20, 5.5, 350, 44));
+        final glyph = find.descendant(
+          of: field,
+          matching: find.byWidgetPredicate(
+            (widget) => widget is RaftIcon && widget.glyph == RaftGlyph.search,
+          ),
+        );
+        expect(t.getRect(glyph), const Rect.fromLTWH(33, 18.5, 18, 18));
+        final input = find.descendant(
+          of: field,
+          matching: find.byType(RaftInputGroup),
+        );
+        final surface = t
+            .widgetList<DecoratedBox>(
+              find.descendant(of: input, matching: find.byType(DecoratedBox)),
+            )
+            .map((widget) => widget.decoration)
+            .whereType<BoxDecoration>()
+            .first;
+        expect(surface.borderRadius, BorderRadius.circular(10));
+        final boundary = t.renderObject<RenderRepaintBoundary>(
+          find.byKey(captureKey),
+        );
+        final paint = (await t.runAsync(() async {
+          final image = await boundary.toImage(pixelRatio: 2);
+          try {
+            final bytes = (await image.toByteData(
+              format: ui.ImageByteFormat.rawRgba,
+            ))!;
+            int pixel(int x, int y) =>
+                bytes.getUint32((y * image.width + x) * 4);
+            final fill = pixel(690, 50) >> 24;
+            final hintStart = [
+              for (var y = 34; y < 82; y++)
+                if (Iterable<int>.generate(
+                  576,
+                  (i) => i + 115,
+                ).any((x) => ((pixel(x, y) >> 24) - fill).abs() > 8))
+                  y,
+            ].first;
+            return (
+              above: pixel(390, 8),
+              before: pixel(390, 10),
+              border: pixel(390, 12),
+              hintStart: hintStart,
+            );
+          } finally {
+            image.dispose();
+          }
+        }))!;
+        expect(paint.before, paint.above, reason: 'paint starts at y=6');
+        final outline = tokens.colors['line-strong']!;
+        expect(paint.border >> 8, outline.toARGB32() & 0xffffff);
+        // Blink @2× starts the hint at physical row 43. Allow one AA row.
+        expect(paint.hintStart, closeTo(43, 1));
         expect(find.byType(RaftMobileBackButton), findsNothing);
         expect(find.byTooltip('Back'), findsNothing);
       });
     }
 
+    for (final (dark, platform) in [
+      (false, TargetPlatform.android),
+      (true, TargetPlatform.android),
+      (false, TargetPlatform.linux),
+    ]) {
+      final mode = dark ? 'dark' : 'light';
+      testWidgets(
+        'phone Search focuses at both vertical field edges ($mode, ${platform.name})',
+        (t) async {
+          await mount(t, dark: dark, platform: platform);
+          final group = find.descendant(
+            of: find.byKey(const Key('search-tab-head')),
+            matching: find.byType(RaftInputGroup),
+          );
+          final editable = find.descendant(
+            of: group,
+            matching: find.byType(EditableText),
+          );
+          final focus = t.widget<EditableText>(editable).focusNode;
+          final box = t.getRect(group);
+          final text = t.getRect(editable);
+          final kind = platform == TargetPlatform.linux
+              ? ui.PointerDeviceKind.mouse
+              : ui.PointerDeviceKind.touch;
+          for (final y in [box.top + 3, box.bottom - 3]) {
+            await t.tapAt(Offset(text.left + 80, y), kind: kind);
+            await t.pumpAndSettle();
+            expect(focus.hasFocus, isTrue, reason: 'InputGroup field at y=$y');
+            focus.unfocus();
+            await t.pumpAndSettle();
+          }
+          for (final x in [box.left + 22, box.right - 10]) {
+            await t.tapAt(Offset(x, box.center.dy), kind: kind);
+            await t.pumpAndSettle();
+            expect(focus.hasFocus, isFalse, reason: 'Search addon at x=$x');
+          }
+        },
+      );
+    }
+
+    testWidgets('native Search field keeps pointer and keyboard focus', (
+      t,
+    ) async {
+      await mount(t, dark: false);
+      final field = find.descendant(
+        of: find.byKey(const Key('search-tab-head')),
+        matching: find.byType(EditableText),
+      );
+      final text = t.widget<EditableText>(field);
+      expect(text.focusNode.hasFocus, isFalse);
+      await t.tap(field.hitTestable());
+      await t.pumpAndSettle();
+      expect(text.focusNode.hasFocus, isTrue);
+      await t.sendKeyEvent(LogicalKeyboardKey.tab);
+      await t.pumpAndSettle();
+      expect(text.focusNode.hasFocus, isFalse);
+      await t.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await t.sendKeyEvent(LogicalKeyboardKey.tab);
+      await t.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await t.pumpAndSettle();
+      expect(text.focusNode.hasFocus, isTrue);
+      t.testTextInput.enterText('roadmap');
+      await t.pumpAndSettle();
+      expect(text.controller.text, 'roadmap');
+    });
+
     testWidgets('a pushed Search (not a tab root) keeps its Back', (t) async {
       await mount(t, dark: false, root: false);
       expect(find.byKey(const Key('search-tab-head')), findsNothing);
-      expect(find.byTooltip('Back'), findsOneWidget);
+      final back = find.byTooltip('Back').hitTestable();
+      expect(back, findsOneWidget);
+      await t.tap(back);
+      await t.pump();
+      expect(backCalls, 1);
     });
 
     testWidgets('filter strip is one line and the chips scroll sideways', (

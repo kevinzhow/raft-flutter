@@ -1,0 +1,551 @@
+{
+ "name": "Phone tab bar on the mounted workspace frame",
+ "routes": {
+  "GET /product-feedback/tickets": {
+   "tickets": [],
+   "unread_total": 0,
+   "next_cursor": null
+  },
+  "GET /servers/unread-summary": [
+   {
+    "serverId": "visual-server",
+    "unreadCount": 7,
+    "serverPushMuted": false,
+    "activityUnreadCount": 3
+   },
+   {
+    "serverId": "shell-server-acme",
+    "unreadCount": 3,
+    "serverPushMuted": false,
+    "activityUnreadCount": 3
+   },
+   {
+    "serverId": "shell-server-side",
+    "unreadCount": 12,
+    "serverPushMuted": true,
+    "activityUnreadCount": 12
+   }
+  ],
+  "GET /servers/visual-server/sidebar-order": {
+   "pinned": [
+    {
+     "kind": "channel",
+     "id": "shell-engineering"
+    },
+    {
+     "kind": "agent",
+     "id": "agent-cindy"
+    }
+   ],
+   "customSections": [],
+   "sectionOrder": [
+    "system:pinned",
+    "system:joint",
+    "system:channels",
+    "system:dms"
+   ],
+   "sectionPlacements": [],
+   "channelSortMode": "manual",
+   "jointChannelSortMode": "manual",
+   "dmSortMode": "manual",
+   "pinnedSortMode": "manual"
+  },
+  "GET /channels/unread": {
+   "channels": {
+    "shell-general": {
+     "unreadCount": 12,
+     "hasMention": false,
+     "hasAnyMention": false
+    },
+    "shell-random": {
+     "unreadCount": 4,
+     "hasMention": false,
+     "hasAnyMention": false
+    },
+    "shell-support": {
+     "unreadCount": 2,
+     "hasMention": true,
+     "hasAnyMention": true
+    },
+    "shell-dm-cindy": {
+     "unreadCount": 2,
+     "hasMention": false,
+     "hasAnyMention": false
+    },
+    "shell-dm-jiacheng": {
+     "unreadCount": 105,
+     "hasMention": false,
+     "hasAnyMention": false
+    }
+   }
+  },
+  "GET /channels": [
+   {
+    "id": "shell-general",
+    "serverId": "visual-server",
+    "name": "general",
+    "description": "Company-wide announcements",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   {
+    "id": "shell-design",
+    "serverId": "visual-server",
+    "name": "design",
+    "description": "Product and UI decisions",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   {
+    "id": "shell-engineering",
+    "serverId": "visual-server",
+    "name": "engineering",
+    "description": "Build and release",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   {
+    "id": "shell-leadership",
+    "serverId": "visual-server",
+    "name": "leadership",
+    "description": "Planning",
+    "type": "private",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   {
+    "id": "shell-random",
+    "serverId": "visual-server",
+    "name": "random",
+    "description": "Off-topic",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true,
+    "activityMuted": true
+   },
+   {
+    "id": "shell-support",
+    "serverId": "visual-server",
+    "name": "support",
+    "description": "Customer questions",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   {
+    "id": "shell-ideas",
+    "serverId": "visual-server",
+    "name": "ideas",
+    "description": "Things to try",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": false
+   },
+   {
+    "id": "shell-long",
+    "serverId": "visual-server",
+    "name": "release-candidate-validation-and-regression-tracking",
+    "description": "Long name",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   {
+    "id": "shell-partner",
+    "serverId": "visual-server",
+    "name": "partner-sync",
+    "description": "Shared with Acme",
+    "type": "joint",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true,
+    "jointRole": "host",
+    "jointPeerStatus": "active",
+    "jointPeerServerName": "Acme"
+   }
+  ],
+  "GET /channels/dm": [
+   {
+    "id": "shell-dm-designer",
+    "serverId": "visual-server",
+    "name": "dm-visual-human-designer",
+    "description": null,
+    "type": "dm",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true,
+    "peerId": "visual-human-designer",
+    "peerType": "user",
+    "peerName": "designer",
+    "peerDisplayName": "Designer",
+    "peerDescription": null
+   },
+   {
+    "id": "shell-dm-cindy",
+    "serverId": "visual-server",
+    "name": "dm-agent-cindy",
+    "description": null,
+    "type": "dm",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true,
+    "peerId": "agent-cindy",
+    "peerType": "agent",
+    "peerName": "Cindy",
+    "peerDisplayName": "Cindy",
+    "peerDescription": "Keeps visual testing release notes aligned."
+   },
+   {
+    "id": "shell-dm-product",
+    "serverId": "visual-server",
+    "name": "dm-agent-product-ux",
+    "description": null,
+    "type": "dm",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true,
+    "peerId": "agent-product-ux",
+    "peerType": "agent",
+    "peerName": "Product-UX-Designer",
+    "peerDisplayName": "Product UX Designer",
+    "peerDescription": "Turns product feedback, screenshots, and release notes into actionable UX specs."
+   },
+   {
+    "id": "shell-dm-jiacheng",
+    "serverId": "visual-server",
+    "name": "dm-visual-human-jiacheng",
+    "description": null,
+    "type": "dm",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true,
+    "peerId": "visual-human-jiacheng",
+    "peerType": "user",
+    "peerName": "jiacheng",
+    "peerDisplayName": "Jiacheng",
+    "peerDescription": null
+   }
+  ],
+  "GET /channels/shell-general": {
+   "id": "shell-general",
+   "serverId": "visual-server",
+   "name": "general",
+   "description": "Company-wide announcements",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/shell-design": {
+   "id": "shell-design",
+   "serverId": "visual-server",
+   "name": "design",
+   "description": "Product and UI decisions",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/shell-engineering": {
+   "id": "shell-engineering",
+   "serverId": "visual-server",
+   "name": "engineering",
+   "description": "Build and release",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/shell-leadership": {
+   "id": "shell-leadership",
+   "serverId": "visual-server",
+   "name": "leadership",
+   "description": "Planning",
+   "type": "private",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/shell-random": {
+   "id": "shell-random",
+   "serverId": "visual-server",
+   "name": "random",
+   "description": "Off-topic",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "activityMuted": true
+  },
+  "GET /channels/shell-support": {
+   "id": "shell-support",
+   "serverId": "visual-server",
+   "name": "support",
+   "description": "Customer questions",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/shell-ideas": {
+   "id": "shell-ideas",
+   "serverId": "visual-server",
+   "name": "ideas",
+   "description": "Things to try",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": false
+  },
+  "GET /channels/shell-long": {
+   "id": "shell-long",
+   "serverId": "visual-server",
+   "name": "release-candidate-validation-and-regression-tracking",
+   "description": "Long name",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/shell-partner": {
+   "id": "shell-partner",
+   "serverId": "visual-server",
+   "name": "partner-sync",
+   "description": "Shared with Acme",
+   "type": "joint",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "jointRole": "host",
+   "jointPeerStatus": "active",
+   "jointPeerServerName": "Acme"
+  },
+  "GET /channels/shell-dm-designer": {
+   "id": "shell-dm-designer",
+   "serverId": "visual-server",
+   "name": "dm-visual-human-designer",
+   "description": null,
+   "type": "dm",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "peerId": "visual-human-designer",
+   "peerType": "user",
+   "peerName": "designer",
+   "peerDisplayName": "Designer",
+   "peerDescription": null
+  },
+  "GET /channels/shell-dm-cindy": {
+   "id": "shell-dm-cindy",
+   "serverId": "visual-server",
+   "name": "dm-agent-cindy",
+   "description": null,
+   "type": "dm",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "peerId": "agent-cindy",
+   "peerType": "agent",
+   "peerName": "Cindy",
+   "peerDisplayName": "Cindy",
+   "peerDescription": "Keeps visual testing release notes aligned."
+  },
+  "GET /channels/shell-dm-product": {
+   "id": "shell-dm-product",
+   "serverId": "visual-server",
+   "name": "dm-agent-product-ux",
+   "description": null,
+   "type": "dm",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "peerId": "agent-product-ux",
+   "peerType": "agent",
+   "peerName": "Product-UX-Designer",
+   "peerDisplayName": "Product UX Designer",
+   "peerDescription": "Turns product feedback, screenshots, and release notes into actionable UX specs."
+  },
+  "GET /channels/shell-dm-jiacheng": {
+   "id": "shell-dm-jiacheng",
+   "serverId": "visual-server",
+   "name": "dm-visual-human-jiacheng",
+   "description": null,
+   "type": "dm",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "peerId": "visual-human-jiacheng",
+   "peerType": "user",
+   "peerName": "jiacheng",
+   "peerDisplayName": "Jiacheng",
+   "peerDescription": null
+  },
+  "GET /channels/inbox": {
+   "hasMore": false,
+   "totalCount": 3,
+   "totalUnreadCount": 3,
+   "items": [
+    {
+     "kind": "thread",
+     "threadChannelId": "thread-msg-agent-reply",
+     "parentMessageId": "msg-agent-reply",
+     "parentChannelId": "channel-design",
+     "parentChannelName": "design",
+     "parentChannelType": "channel",
+     "parentMessagePreview": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "parentMessageSenderType": "agent",
+     "parentMessageSenderId": "agent-cindy",
+     "latestActivityPreview": "Review the Android composer crop before release.",
+     "latestActivitySenderType": "user",
+     "latestActivitySenderId": "visual-user",
+     "latestActivityMessageId": "msg-visual-activity-reply",
+     "firstUnreadMessageId": "msg-visual-activity-reply",
+     "firstMentionMessageId": "msg-visual-activity-reply",
+     "replyCount": 5,
+     "lastActivityAt": "2026-06-22T02:35:00.000Z",
+     "lastReplyAt": "2026-06-22T02:35:00.000Z",
+     "unreadCount": 2,
+     "hasMention": true,
+     "taskNumber": null,
+     "taskStatus": null,
+     "taskClaimedByName": null
+    },
+    {
+     "kind": "channel",
+     "channelId": "channel-android",
+     "channelName": "android-artifacts",
+     "channelType": "channel",
+     "lastMessageId": "msg-visual-activity-android",
+     "firstUnreadMessageId": "msg-visual-activity-android",
+     "firstMentionMessageId": null,
+     "lastMessageAt": "2026-06-19T12:24:00.000Z",
+     "lastMessagePreview": "Captured the previous visual baseline before leaving the workspace.",
+     "lastMessageSenderType": "agent",
+     "lastMessageSenderId": "agent-cindy",
+     "lastMessageSenderName": "Cindy",
+     "unreadCount": 1,
+     "hasMention": false
+    },
+    {
+     "kind": "dm",
+     "channelId": "dm-agent-cindy-artin",
+     "channelName": "Cindy",
+     "channelType": "dm",
+     "lastMessageId": "msg-visual-activity-dm",
+     "firstUnreadMessageId": null,
+     "firstMentionMessageId": null,
+     "lastMessageAt": "2026-06-19T12:24:00.000Z",
+     "lastMessagePreview": "201\u7ee7\u7eed\u63a8\u8fdb",
+     "lastMessageSenderType": "agent",
+     "lastMessageSenderId": "agent-cindy",
+     "lastMessageSenderName": "Cindy",
+     "unreadCount": 0,
+     "hasMention": false
+    }
+   ]
+  },
+  "GET /artifacts/dashboard/all": {
+   "counts": {
+    "total": 0,
+    "filtered": 0,
+    "relevant": 0
+   },
+   "rows": []
+  },
+  "GET /tasks/server": {
+   "tasks": [
+    {
+     "id": "msg-task-visual-214",
+     "messageId": "msg-task-visual-214",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 214,
+     "title": "Align the tabbar capture crops between React and Android",
+     "description": "Both providers must wrap exactly the tabbar at width 390.",
+     "status": "todo",
+     "claimedByType": null,
+     "claimedById": null,
+     "claimedByName": null,
+     "claimedAt": null,
+     "completedAt": null,
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-19T12:24:00.000Z",
+     "updatedAt": "2026-06-19T12:24:00.000Z"
+    },
+    {
+     "id": "msg-task-visual-212",
+     "messageId": "msg-task-visual-212",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 212,
+     "title": "Fill the React fixture gaps before the Android diff",
+     "description": null,
+     "status": "in_progress",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "claimedAt": "2026-06-22T02:30:00.000Z",
+     "completedAt": null,
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:30:00.000Z"
+    },
+    {
+     "id": "msg-task-visual-210",
+     "messageId": "msg-task-visual-210",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 210,
+     "title": "Review the thread header strip baselines",
+     "description": null,
+     "status": "in_review",
+     "claimedByType": "agent",
+     "claimedById": "agent-product-ux",
+     "claimedByName": "Product UX Designer",
+     "claimedAt": "2026-06-19T12:24:00.000Z",
+     "completedAt": null,
+     "createdById": "agent-cindy",
+     "createdByType": "agent",
+     "createdByName": "Cindy",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:35:00.000Z"
+    },
+    {
+     "id": "msg-task-visual-208",
+     "messageId": "msg-task-visual-208",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 208,
+     "title": "Publish the visual parity report",
+     "description": null,
+     "status": "done",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "claimedAt": "2026-06-19T12:24:00.000Z",
+     "completedAt": "2026-06-22T02:35:00.000Z",
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:35:00.000Z"
+    }
+   ]
+  }
+ },
+ "routeSets": {
+  "fr-tabbar-off": {
+   "POST /feature-flags/evaluate": {
+    "evaluations": [
+     {
+      "key": "workspace_artifacts_v0",
+      "enabled": false
+     }
+    ]
+   }
+  },
+  "fr-tabbar-on": {
+   "POST /feature-flags/evaluate": {
+    "evaluations": [
+     {
+      "key": "workspace_artifacts_v0",
+      "enabled": true
+     }
+    ]
+   }
+  }
+ }
+}

@@ -1542,6 +1542,7 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
     required this.style,
     required this.textScaler,
     this.hasInlineWidgets = false,
+    this.snapBaseline = true,
     this.physicalBaseline = false,
     required super.child,
   });
@@ -1550,6 +1551,9 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
 
   /// Widget spans retain the paragraph's fractional layout baseline.
   final bool hasInlineWidgets;
+
+  /// Disables baseline snapping inside a box that already snaps its paint.
+  final bool snapBaseline;
 
   final bool physicalBaseline;
   double _baselineScale(BuildContext context) =>
@@ -1564,6 +1568,7 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
     _windowsChinese(context),
     hasInlineWidgets,
     _baselineScale(context),
+    snapBaseline,
   );
   @override
   void updateRenderObject(BuildContext context, _RenderCssLineBox r) {
@@ -1572,7 +1577,8 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
       ..textScaler = textScaler
       ..windowsChinese = _windowsChinese(context)
       ..hasInlineWidgets = hasInlineWidgets
-      ..baselineScale = _baselineScale(context);
+      ..baselineScale = _baselineScale(context)
+      ..snapBaseline = snapBaseline;
   }
 }
 
@@ -1624,12 +1630,20 @@ class _RenderCssLineBox extends RenderProxyBox {
     this._windowsChinese,
     this._hasInlineWidgets,
     this._baselineScale,
+    this._snapBaseline,
   );
   TextStyle _style;
   TextScaler _textScaler;
   bool _windowsChinese;
   bool _hasInlineWidgets;
   double _baselineScale;
+  bool _snapBaseline;
+
+  set snapBaseline(bool value) {
+    if (value == _snapBaseline) return;
+    _snapBaseline = value;
+    markNeedsPaint();
+  }
 
   set hasInlineWidgets(bool value) {
     if (value == _hasInlineWidgets) return;
@@ -1719,6 +1733,7 @@ class _RenderCssLineBox extends RenderProxyBox {
   double get _shift {
     if (_optical) return 0;
     final flutter = _flutterBaseline;
+    if (!_snapBaseline) return _metrics.baseline - flutter;
     final top = _laidOutGlobalTop(this);
     // Kept-alive sliver children can paint their own repaint boundary while
     // their ancestor has no screen transform. Align locally until attached.
