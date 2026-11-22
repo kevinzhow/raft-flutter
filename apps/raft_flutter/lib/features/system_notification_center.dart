@@ -437,7 +437,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                   child: RaftHoverRegion(
                     onEnter: (_) => closeDelay?.cancel(),
                     onExit: (_) {
-                      if (!widget.mobile) {
+                      if (!widget.mobile && !widget.topBar) {
                         closeDelay = Timer(
                           const Duration(milliseconds: 120),
                           close,
@@ -530,7 +530,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
               context,
               managesBilling ? 'Add seats' : 'Ask an owner',
             ),
-            primary: true,
             onPressed: () {
               if (!live(n, scope)) return;
               final host = context;
@@ -541,7 +540,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         else if (n.destination == SystemNoticeDestination.jointInvite)
           RaftNotificationAction(
             label: raftText(context, 'Accept'),
-            primary: true,
             enabled: acceptingJointInvite == null,
             onPressed: () => unawaited(acceptJointInvite(n, scope)),
           )
@@ -559,7 +557,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                   ? 'View updates'
                   : 'View',
             ),
-            primary: true,
             onPressed: () => navigate(n, scope),
           ),
         if (n.fingerprint != null)
@@ -760,12 +757,21 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     super.dispose();
   }
 
-  /// The mobile navbar bell (32px box, 16px glyph) puts its Status dot
-  /// relative to the glyph. The rail bell's dot is the rail composite.
-  static const attentionInset = (32.0 - 16.0) / 2 - 4;
-
-  /// `absolute -top-2 -end-2` of the 16px glyph inside the bell's box.
-  double get securityInset => ((widget.mobile ? 32.0 : 40.0) - 16.0) / 2 - 8;
+  double get statusEdge {
+    final tokens = RaftTokens.of(context);
+    if (widget.mobile) return (44 - 22) / 2;
+    if (widget.topBar) {
+      final frame = tokens.desktop
+          ? RaftLayoutMetrics.desktopControl
+          : tokens.size('css.frame-item-height', fallback: 36);
+      return (frame - 20) / 2;
+    }
+    final rail = RaftRailRecipe(
+      tokens,
+      viewportHeight: MediaQuery.sizeOf(context).height,
+    );
+    return (40 - rail.glyphSize) / 2;
+  }
 
   bool get securityAlert =>
       store.entries.any((n) => n.id == secondFactorRecoveryNoticeId);
@@ -823,7 +829,10 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                 onFrame: widget.topBar,
                 mobileHeader: widget.mobile,
                 attention:
-                    !widget.mobile && !securityAlert && store.unreadCount > 0,
+                    !widget.mobile &&
+                    !widget.topBar &&
+                    !securityAlert &&
+                    store.unreadCount > 0,
                 onPressed: () => popup == null
                     ? show(
                         keyboard:
@@ -841,8 +850,8 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
               if (securityAlert)
                 Positioned(
                   key: const ValueKey('notification-security-alert'),
-                  right: securityInset,
-                  top: securityInset,
+                  right: statusEdge - 8,
+                  top: statusEdge - 8,
                   child: const IgnorePointer(
                     child: RaftIconTile(
                       glyph: RaftGlyph.shieldAlert,
@@ -851,10 +860,11 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                     ),
                   ),
                 )
-              else if (widget.mobile && store.unreadCount > 0)
+              else if ((widget.mobile || widget.topBar) &&
+                  store.unreadCount > 0)
                 Positioned(
-                  right: attentionInset,
-                  top: attentionInset,
+                  right: statusEdge - 4,
+                  top: statusEdge - 4,
                   child: IgnorePointer(
                     child: RaftNotificationAttention(count: store.unreadCount),
                   ),

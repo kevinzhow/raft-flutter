@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/src/tap_slop.dart';
 import 'package:raft_ui/test_themes.dart';
 
 const _themes = [(false), (true)];
@@ -136,9 +137,9 @@ void main() {
         // previously let its empty ColoredBox shrink to zero width.
         final separator = find.byWidgetPredicate(
           (widget) =>
-              widget is SizedBox &&
-              widget.height == (1) &&
-              widget.child is Padding,
+              widget is PositionedDirectional &&
+              widget.top == 0 &&
+              widget.child is ColoredBox,
         );
         expect(separator, findsOneWidget);
         expect(
@@ -179,7 +180,7 @@ void main() {
     );
 
     testWidgets(
-      'action visual height stays 24 while touch bounds reach 48 $themeName',
+      'action uses the outline button with a 48px touch target $themeName',
       (tester) async {
         final center = RaftNotificationCenter(
           entries: [
@@ -188,38 +189,26 @@ void main() {
               kind: RaftNotificationKind.warning,
               title: 'Computer update available',
               actions: [
-                RaftNotificationAction(
-                  label: 'View',
-                  primary: true,
-                  onPressed: () {},
-                ),
+                RaftNotificationAction(label: 'View', onPressed: () {}),
               ],
             ),
           ],
         );
         await tester.pumpWidget(_host(center, dark: dark));
-        expect(tester.getSize(_action('computer', 'View')).height, 24);
+        final action = _action('computer', 'View');
+        expect(tester.getSize(action).height, 32);
         await tester.pumpWidget(
           _host(center, dark: dark, density: RaftDensity.touch),
         );
-        final bounds = tester.getSize(_action('computer', 'View'));
-        expect(bounds.height, greaterThanOrEqualTo(48));
-        expect(bounds.width, greaterThanOrEqualTo(48));
-        final control = tester.widget<RaftControl>(_action('computer', 'View'));
-        expect(control.visualHeight, 24);
-        expect(control.recipe!.visualHeight, 24);
+        expect(tester.getSize(action).height, 32);
         expect(
-          control.recipe!.radius,
-          RaftControlRecipe(
-            control.recipe!.tokens,
-            variant: RaftControlVariant.primary,
-            visualHeight: 24,
-          ).radius,
+          tester.widget<RaftButton>(action).uiVariant,
+          RaftButtonVariant.outline,
         );
-        expect(
-          control.recipe!.background,
-          control.recipe!.tokens.colors['primary-soft'],
+        final target = tester.widget<RaftTapSlopAnchor>(
+          find.ancestor(of: action, matching: find.byType(RaftTapSlopAnchor)),
         );
+        expect(target.minSize, const Size.square(48));
         expect(tester.takeException(), isNull);
       },
     );
@@ -284,28 +273,19 @@ void main() {
         expect(r.divider.width, 1);
         expect(r.background, t.popover);
         expect(r.headerBackground, Colors.transparent);
-        if (dark) {
-          expect(
-            r.iconFill(RaftNotificationKind.error),
-            const Color(0xffd33c30).withValues(alpha: .3),
-          );
-          expect(
-            r.iconFill(RaftNotificationKind.warning),
-            const Color(0xffac571d).withValues(alpha: .28),
-          );
-          expect(
-            r.iconFill(RaftNotificationKind.info),
-            const Color(0xff007592).withValues(alpha: .28),
-          );
-          expect(
-            r.iconFill(RaftNotificationKind.success),
-            const Color(0xff0c7d43).withValues(alpha: .28),
-          );
-        } else
-          expect(
-            r.iconFill(RaftNotificationKind.info),
-            t.colors['info']!.withValues(alpha: .8),
-          );
+        expect(
+          r.iconFill(RaftNotificationKind.error),
+          t.colors['warning-soft'],
+        );
+        expect(
+          r.iconFill(RaftNotificationKind.warning),
+          t.colors['warning-soft'],
+        );
+        expect(r.iconFill(RaftNotificationKind.info), t.colors['info-soft']);
+        expect(
+          r.iconFill(RaftNotificationKind.success),
+          t.colors['fill-muted'],
+        );
 
         expect(tester.takeException(), isNull);
       },
@@ -332,7 +312,7 @@ void main() {
                       kind: RaftNotificationKind.warning,
                       glyph: RaftGlyph.monitor,
                       title: 'Mounted warning',
-                      iconForeground: t.strong,
+                      iconForeground: t.muted,
                     ),
                   ],
                 );
@@ -354,7 +334,7 @@ void main() {
             glyph.color,
             id == 'generic'
                 ? r.iconForeground(RaftNotificationKind.warning)
-                : t.strong,
+                : t.muted,
           );
           final fill = tester
               .widgetList<Container>(
@@ -368,7 +348,7 @@ void main() {
         }
         if (dark) {
           expect(
-            t.strong,
+            t.muted,
             isNot(r.iconForeground(RaftNotificationKind.warning)),
           );
         }
@@ -464,11 +444,7 @@ void main() {
               title: 'Computers need attention',
               body: '1 needs upgrade · 1 offline',
               actions: [
-                RaftNotificationAction(
-                  label: 'View',
-                  primary: true,
-                  onPressed: () {},
-                ),
+                RaftNotificationAction(label: 'View', onPressed: () {}),
                 RaftNotificationAction(label: 'Dismiss', onPressed: () {}),
               ],
             ),
@@ -485,7 +461,7 @@ void main() {
       const Size(320, 236),
     );
     final row = find.byKey(const ValueKey('notification-entry-computers'));
-    expect(tester.getSize(row), const Size(320, 98));
+    expect(tester.getSize(row), const Size(320, 106));
     final origin = tester.getTopLeft(row);
     expect(
       tester.getTopLeft(find.text('Computers need attention')) - origin,
@@ -587,15 +563,11 @@ void main() {
         // Complete AnimatedTheme transitions before comparing final roles.
         await tester.pumpAndSettle();
         final mark = find.byType(RaftNotificationAttention);
-        final t = RaftTokens.of(tester.element(mark));
         expect(tester.getSize(mark), const Size(10, 10));
-        final container = tester.widget<Container>(
-          find.descendant(of: mark, matching: find.byType(Container)),
+        final status = tester.widget<RaftStatus>(
+          find.descendant(of: mark, matching: find.byType(RaftStatus)),
         );
-        expect(
-          (container.decoration! as BoxDecoration).color,
-          t.colors['primary-400'],
-        );
+        expect(status.variant, RaftStatusVariant.accent);
         expect(
           find.descendant(of: mark, matching: find.byType(GestureDetector)),
           findsNothing,

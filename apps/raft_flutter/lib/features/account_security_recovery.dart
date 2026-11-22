@@ -218,7 +218,6 @@ RaftNotificationEntry secondFactorRecoveryEntry(
     actions: [
       RaftNotificationAction(
         label: raftText(context, 'Cancel reset'),
-        primary: true,
         // Web `disabled: busy`.
         enabled: !store.secondFactorRecoveryCancelling,
         onPressed: () async {
