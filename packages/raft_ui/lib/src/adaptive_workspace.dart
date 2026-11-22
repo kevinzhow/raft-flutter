@@ -670,7 +670,9 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
       final sideThread =
           hasThread &&
           (widget.thread == null
-              ? conversationWidth >= RaftAdaptiveWorkspace.profileMinWidth + 320
+              ? width >= RaftLayoutMetrics.threadOverlayBreakpoint &&
+                    conversationWidth >=
+                        RaftAdaptiveWorkspace.profileMinWidth + 320
               : conversationWidth >= splitMin &&
                     (width >= RaftLayoutMetrics.threadPortraitSplitViewport ||
                         width > MediaQuery.sizeOf(context).height));

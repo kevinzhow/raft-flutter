@@ -32,7 +32,7 @@ import 'space.dart';
 import 'raft/status.dart' show RaftStatus, RaftStatusSize;
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
-import 'text_scaling.dart' show RaftChrome;
+import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'tokens/tokens.dart' show RaftPrimitiveColors, RaftTypeScale;
 
 part 'announcement_sidebar_card.dart';

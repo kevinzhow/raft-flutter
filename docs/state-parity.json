@@ -5883,7 +5883,7 @@
         "owner": "WP-SHELL announcements",
         "reason": "Previews the sidebar announcement card."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@49831/METHOD:build@50291/FUNCTION:withoutRailInset@50529": {
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@49929/METHOD:build@50389/FUNCTION:withoutRailInset@50627": {
         "role": "entry_composition",
         "familyRefs": [
           "workspace-shell"
