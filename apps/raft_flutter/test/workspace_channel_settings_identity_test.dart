@@ -32,6 +32,8 @@ Future<(WorkspaceController, MessageAdapter)> settingsFixture(
     },
   });
   w.channels = [w.channel!];
+  final opening = w.channel!;
+  api.routes['GET /channels/c1'] = (_) => opening.json;
   api.routes['GET /channels/c1/members'] = (_) => {'humans': [], 'agents': []};
   api.routes['GET /channels/c1/message-display-settings'] = (_) => {};
   api.routes['GET /servers/s1/sidebar-order'] = (_) => {'pinned': []};

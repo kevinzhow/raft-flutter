@@ -654,9 +654,44 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       cap('deleteChannels') ||
       cap('federateChannels');
 
+  bool _readingMetadata = false;
+  RaftChannel? _metadataSeed;
+
+  Future<RaftChannel?> _readMetadataForEdit() async {
+    final current = channel, identity = pageIdentity(w);
+    if (_readingMetadata || current.archived || !cap('editChannelMetadata')) {
+      return null;
+    }
+    _readingMetadata = true;
+    bool accepts() =>
+        mounted && identity == pageIdentity(w) && channel.id == current.id;
+    try {
+      final result = await RaftClient.runFresh(
+        () => w.query('/channels/${Uri.encodeComponent(current.id)}'),
+      );
+      if (!accepts() || !cap('editChannelMetadata')) return null;
+      if (result is! Map ||
+          result['id'] != current.id ||
+          result['name'] is! String) {
+        throw const FormatException('Invalid channel response');
+      }
+      final fresh = RaftChannel(Map<String, dynamic>.from(result));
+      if (fresh.archived || !w.can('editChannelMetadata', resource: fresh)) {
+        throw RaftUserError('Channel editing is no longer available.');
+      }
+      return fresh;
+    } catch (failure) {
+      if (accepts()) await failWith(failure, 'Failed to load channel');
+      return null;
+    } finally {
+      _readingMetadata = false;
+    }
+  }
+
   Future<void> editMetadata() async {
-    final c = channel, identity = pageIdentity(w);
-    if (c.archived || !cap('editChannelMetadata')) return;
+    final identity = pageIdentity(w);
+    final c = await _readMetadataForEdit();
+    if (!mounted || c == null || identity != pageIdentity(w)) return;
     await showRaftForm<void>(
       context,
       builder: (_) => RaftFormDialog(
@@ -719,7 +754,14 @@ class _ChannelSettingsState extends State<ChannelSettings> {
               !cap('editChannelMetadata')) {
             throw RaftUserError('Channel editing is no longer available.');
           }
-          await patchChannel(c, values);
+          final updates = {
+            if (values['name'] case final String name when name != c.name)
+              'name': name,
+            if (values['description'] case final String description
+                when description != c.description.trim())
+              'description': description,
+          };
+          if (updates.isNotEmpty) await patchChannel(c, updates);
         },
       ),
     );
@@ -958,8 +1000,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   String? savedLabel;
   Timer? savedTimer;
 
+  RaftChannel get _metadataBase => _metadataSeed ?? channel;
   bool get nameDescDirty =>
-      name.text != channel.name || description.text != channel.description;
+      name.text != _metadataBase.name ||
+      description.text != _metadataBase.description;
 
   /// Mirrors `isDirty`: the host drawer guards every dismissal while true.
   bool get dirty =>
@@ -972,13 +1016,19 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   bool renameUnarchiving = false;
   final editFocus = FocusNode(debugLabel: 'channel details edit');
 
-  void startMetadataEdit() {
+  Future<void> startMetadataEdit() async {
+    final fresh = await _readMetadataForEdit();
+    if (!mounted || fresh == null) return;
+    _metadataSeed = fresh;
     resetDraft();
     setState(() => metadataEditing = true);
   }
 
   void finishMetadataEdit() {
-    setState(() => metadataEditing = false);
+    setState(() {
+      metadataEditing = false;
+      _metadataSeed = null;
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) editFocus.requestFocus();
     });
@@ -1057,8 +1107,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   final jointKey = GlobalKey<ChannelJointSectionState>();
 
   void resetDraft() {
-    name.text = channel.name;
-    description.text = channel.description;
+    name.text = _metadataBase.name;
+    description.text = _metadataBase.description;
     slack.reset();
     clearSaved();
     setState(() {
@@ -1077,7 +1127,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   /// fields and reports `true` when the draft is clean afterwards. Never
   /// closes; callers decide what happens next.
   Future<bool> saveChanges() async {
-    final c = channel;
+    final c = _metadataBase;
     final canEdit =
         cap('editChannelMetadata') ||
         cap('changeChannelVisibility') ||
@@ -1086,7 +1136,17 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         cap('federateChannels');
     setState(() => error = null);
     clearSaved();
-    if (!canEdit || (widget.details && !metadataEditing)) return true;
+    if (widget.details && !metadataEditing) return true;
+    if (widget.details && (channel.archived || !cap('editChannelMetadata'))) {
+      setState(
+        () => error = raftText(
+          context,
+          'Channel editing is no longer available.',
+        ),
+      );
+      return false;
+    }
+    if (!canEdit) return true;
     final all = c.name == 'all';
     if (!all) {
       final invalid = nameError(context, name.text);
@@ -1099,7 +1159,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     try {
       final updates = <String, dynamic>{
         if (!all && name.text.trim() != c.name) 'name': name.text.trim(),
-        if (description.text.trim() != c.description)
+        if (description.text.trim() != c.description.trim())
           'description': description.text.trim(),
       };
       if (updates.isNotEmpty) {
@@ -2032,7 +2092,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       subtitle: settingsPresent ? c.description : null,
       onClose: guardedClose,
       identityContent: widget.details && metadataEditing
-          ? metadataForm(c)
+          ? metadataForm(_metadataBase)
           : null,
       identityAction:
           widget.details && !dm && !archived && cap('editChannelMetadata')

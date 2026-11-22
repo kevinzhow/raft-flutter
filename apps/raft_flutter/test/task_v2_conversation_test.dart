@@ -227,6 +227,49 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  for (final (label, field, action) in [
+    ('title', 'title', 'title-edit'),
+    ('description', 'description', 'description-edit'),
+    ('add description', 'description', 'add-description'),
+  ]) {
+    testWidgets(
+      'cached task $label displays while editing awaits revalidation',
+      (t) async {
+        final (w, adapter, task) = (await t.runAsync(_fixture))!;
+        addTearDown(w.dispose);
+        task['description'] = label == 'add description'
+            ? null
+            : 'Original description';
+        const path = '/tasks/channel/c1/number/7';
+        await t.runAsync(() => w.client.get(path));
+        final fresh = Completer<(int, Object?)>();
+        adapter.routes['GET $path'] = (_) => fresh.future;
+        await _open(t, w);
+        expect(find.text('Ship task v2'), findsWidgets);
+        final pencil = find.byKey(ValueKey('task-modal-$action'));
+        final input = find.descendant(
+          of: find.byKey(ValueKey('task-head-$field-input')),
+          matching: find.byType(EditableText),
+        );
+        await t.ensureVisible(pencil);
+        await t.tap(pencil);
+        await t.pump();
+        final openedEarly = input.evaluate().isNotEmpty;
+        fresh.complete((
+          200,
+          {
+            'task': {...task, field: 'Current $field', 'revision': 3},
+          },
+        ));
+        await _flush(t);
+        expect(openedEarly, isFalse);
+        expect(t.widget<EditableText>(input).controller.text, 'Current $field');
+        await _close(t);
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
+
   testWidgets('a task v2 task opens on its own conversation; the first send '
       'creates it', (t) async {
     final (w, a, _) = (await t.runAsync(_fixture))!;
@@ -374,7 +417,7 @@ void main() {
     };
     await _open(t, w);
     await t.tap(find.byKey(const ValueKey('task-modal-title-edit')));
-    await t.pump();
+    await _flush(t);
     final input = find.descendant(
       of: find.byKey(const ValueKey('task-head-title-input')),
       matching: find.byType(EditableText),

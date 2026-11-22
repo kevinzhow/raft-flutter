@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/source_time_formatter.dart';
+import '../data/user_error.dart';
 import 'task_conversation_facts.dart';
 import 'task_surface_controller.dart';
 import 'task_v2_mode.dart';
@@ -85,6 +86,16 @@ RaftTaskConversation taskConversation(
         ? () => unawaited(confirmTaskDelete(context, o))
         : null,
     onAmend: o.canAmend ? o.amend : null,
+    onPrepareAmend: () async {
+      try {
+        return await o.prepareAmend();
+      } catch (failure) {
+        if (context.mounted && o.current) {
+          showRaftToast(context, userErrorText(failure, where: 'task editor'));
+        }
+        return false;
+      }
+    },
     source: taskSourceValue(
       context,
       w,

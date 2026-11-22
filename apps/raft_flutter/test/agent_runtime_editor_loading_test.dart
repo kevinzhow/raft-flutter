@@ -64,6 +64,7 @@ class _Client extends RaftClient {
     selectServer('s');
   }
   bool v2 = true, formFails = false;
+  Map<String, dynamic> detail = _agent;
   var admissions = Completer<void>();
   final definition = Completer<void>();
   final optionSource = Completer<void>();
@@ -89,7 +90,7 @@ class _Client extends RaftClient {
   }) async {
     calls.add((method, path, data));
     if (path == '/agents') return [_agent];
-    if (path == '/agents/a1') return _agent;
+    if (path == '/agents/a1') return detail;
     if (path.endsWith('/skills')) return {'global': [], 'workspace': []};
     if (path == '/agents/a1/migration') return {'migration': null};
     if (path == '/servers/s/machines') {
@@ -213,6 +214,23 @@ Future<void> _loadingFrames(WidgetTester t, {bool admitted = false}) async {
 }
 
 void main() {
+  testWidgets('the runtime picker starts with the current saved runtime', (
+    t,
+  ) async {
+    final c = await _mount(t);
+    c.detail = {
+      ..._agent,
+      'runtimeConfig': {'runtime': 'claude'},
+    };
+    c.admissions.complete();
+    await _openFirstFrame(t);
+    await t.pumpAndSettle();
+    final picker = t.widget<RaftAgentSelect<String>>(
+      _key('runtime-editor-runtime'),
+    );
+    expect(picker.value, 'claude');
+  });
+
   testWidgets(
     'first route frame waits for admission, form and option sources',
     (t) async {

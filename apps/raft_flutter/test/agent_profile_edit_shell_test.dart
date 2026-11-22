@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
@@ -28,6 +30,71 @@ EditableTextState _editor(WidgetTester t) => t.state<EditableTextState>(
 
 void main() {
   leakDebt(const ['SourceChannelFilesStore']);
+
+  for (final (field, key, value) in [
+    ('displayName', 'display-name', 'Updated agent'),
+    ('description', 'description', 'Updated description'),
+    ('serverRole', 'role', 'admin'),
+  ]) {
+    testWidgets('the $key editor awaits agent detail before seeding', (
+      t,
+    ) async {
+      final (w, api) = await mountWorkspace(t, _desktop);
+      addTearDown(() => t.pumpWidget(const SizedBox.shrink()));
+      api.routes['GET /agents/a1'] = (_) => {
+        'id': 'a1',
+        'name': 'cindy',
+        'serverRole': 'member',
+      };
+      w.openProfile(RaftProfileKind.agent, 'a1');
+      await frames(t, 30);
+      final fresh = Completer<Map<String, dynamic>>();
+      api.routes['GET /agents/a1'] = (_) => fresh.future;
+      final pencil = find.byKey(ValueKey('agent-edit-$key'));
+      await t.ensureVisible(pencil);
+      await t.tap(pencil);
+      await frames(t, 20);
+      final openedEarly = _dialog.evaluate().isNotEmpty;
+      fresh.complete({'id': 'a1', 'name': 'cindy', field: value});
+      await frames(t, 25);
+      expect(openedEarly, isFalse);
+      if (key == 'role') {
+        final radios = find.descendant(
+          of: _dialog,
+          matching: find.byType(RaftRadioGroup<String>),
+        );
+        expect(t.widget<RaftRadioGroup<String>>(radios).value, value);
+      } else {
+        final input = find.descendant(
+          of: find.byKey(ValueKey('agent-profile-edit-$key')),
+          matching: find.byType(EditableText),
+        );
+        expect(t.widget<EditableText>(input).controller.text, value);
+      }
+    });
+  }
+
+  testWidgets('the avatar chooser shows the current installed preset', (
+    t,
+  ) async {
+    final (w, api) = await mountWorkspace(t, _desktop);
+    addTearDown(() => t.pumpWidget(const SizedBox.shrink()));
+    w.openProfile(RaftProfileKind.agent, 'a1');
+    await frames(t, 30);
+    api.routes['GET /agents/a1'] = (_) => {
+      'id': 'a1',
+      'name': 'cindy',
+      'avatarUrl': 'pixel:fox',
+    };
+    await t.tap(find.byKey(const ValueKey('agent-profile-avatar-trigger')));
+    await frames(t, 25);
+    expect(
+      t
+          .widget<RaftAgentAvatarPicker>(find.byType(RaftAgentAvatarPicker))
+          .selectedKey,
+      'fox',
+    );
+  });
 
   for (final (name, from, steps) in [
     ('phone to desktop', _phone, _up),

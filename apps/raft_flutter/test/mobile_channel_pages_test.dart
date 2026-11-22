@@ -1,6 +1,8 @@
 @Tags(['slow'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -37,6 +39,7 @@ void main() {
         w.channels = [w.channel!];
         var channel = w.channel!.json;
         api.routes['GET /channels'] = (_) => [channel];
+        api.routes['GET /channels/c1'] = (_) => channel;
         api.routes['GET /agents'] = (_) => [];
         api.routes['GET /servers/s1/members'] = (_) => [
           {'userId': 'alice', 'name': 'Alice'},
@@ -136,8 +139,17 @@ void main() {
         await t.tap(find.byTooltip('Channel Details and Settings'));
         await flush(t);
         await t.pumpAndSettle();
+        final fresh = Completer<Map<String, dynamic>>();
+        api.routes['GET /channels/c1'] = (_) => fresh.future;
         await t.tap(find.byKey(const ValueKey('channel-details-edit')));
+        await t.pump();
+        expect(find.byType(RaftChannelInfoForm), findsNothing);
+        channel = {...channel, 'description': 'Updated from another session'};
+        fresh.complete(channel);
+        api.routes['GET /channels/c1'] = (_) => channel;
+        await flush(t);
         await t.pumpAndSettle();
+        expect(find.text('Updated from another session'), findsWidgets);
         await t.enterText(
           find.byKey(const ValueKey('channel-settings-name')),
           'renamed',
@@ -167,10 +179,12 @@ void main() {
           'renamed',
         );
         expect(
-          api.calls.where(
-            (r) => r.method == 'PATCH' && r.path == '/channels/c1',
-          ),
-          hasLength(1),
+          api.calls
+              .singleWhere(
+                (r) => r.method == 'PATCH' && r.path == '/channels/c1',
+              )
+              .data,
+          {'name': 'renamed'},
         );
         FocusManager.instance.primaryFocus?.unfocus();
         await t.pumpAndSettle();

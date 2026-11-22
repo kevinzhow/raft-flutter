@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,6 +40,7 @@ void main() {
       'agents': [],
       'externalMembers': [],
     };
+    api.routes['GET /channels/c1'] = (_) => row;
     api.routes['GET /servers/s1/sidebar-order'] = (_) => <String, dynamic>{};
     api.routes['GET /channels/c1/notification-settings'] = (_) => {
       'activityMuted': false,
@@ -116,6 +119,30 @@ void main() {
     await t.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('inline edit seeds from the current channel detail', (t) async {
+    final api = await open(t);
+    final settings = t.widget<ChannelSettings>(find.byType(ChannelSettings));
+    await t.runAsync(() => settings.controller.client.get('/channels/c1'));
+    final fresh = Completer<Map<String, dynamic>>();
+    api.routes['GET /channels/c1'] = (_) => fresh.future;
+    await t.tap(key('channel-details-edit'));
+    await t.pump();
+    expect(key('channel-settings-name'), findsNothing);
+    fresh.complete({
+      ...settings.channel.json,
+      'name': 'current-name',
+      'description': 'Changed on the server',
+    });
+    await t.pumpAndSettle();
+    final input = find.descendant(
+      of: key('channel-settings-name'),
+      matching: find.byType(EditableText),
+    );
+    expect(t.widget<EditableText>(input).controller.text, 'current-name');
+    expect(find.text('Changed on the server'), findsWidgets);
+    await t.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets(
     'archived rename conflict keeps the draft and names the channel',
     (t) async {
@@ -131,6 +158,7 @@ void main() {
       });
       w.channel = channel;
       w.channels = [channel];
+      api.routes['GET /channels/c1'] = (_) => channel.json;
       api.routes['GET /channels/c1/members'] = (_) => {
         'humans': [],
         'agents': [],
