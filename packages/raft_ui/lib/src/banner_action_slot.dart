@@ -302,3 +302,43 @@ class _RenderOverhang extends RenderShiftedBox {
     return false;
   }
 }
+
+/// Routes pointer hits inside a banner's padded box to overhanging children
+/// ([RaftBannerBody] inline actions and [RaftOverhang] close buttons) even
+/// when intermediate [Row]/[Column]/[Padding] boxes are shorter than the
+/// overhanging button.
+class RaftBannerOverhangHost extends SingleChildRenderObjectWidget {
+  const RaftBannerOverhangHost({super.key, required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderBannerOverhangHost();
+}
+
+class _RenderBannerOverhangHost extends RenderProxyBox {
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!size.contains(position)) return false;
+    final overhangs = <RenderBox>[];
+    void collect(RenderObject node) {
+      if (node is _RenderBannerBody || node is _RenderOverhang) {
+        overhangs.add(node as RenderBox);
+      }
+      node.visitChildren(collect);
+    }
+
+    visitChildren(collect);
+    for (final target in overhangs.reversed) {
+      if (!target.attached || !target.hasSize) continue;
+      final transform = target.getTransformTo(this);
+      final inverted = Matrix4.tryInvert(transform);
+      if (inverted == null) continue;
+      final local = MatrixUtils.transformPoint(inverted, position);
+      if (target.hitTestChildren(result, position: local)) {
+        result.add(BoxHitTestEntry(this, position));
+        return true;
+      }
+    }
+    return super.hitTest(result, position: position);
+  }
+}

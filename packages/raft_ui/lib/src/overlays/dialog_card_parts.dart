@@ -200,11 +200,9 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
               surfaceStyle: combined,
               child: Material(
                 type: MaterialType.transparency,
-                // Web pads the ScrollArea content, not the surface. At large
-                // text sizes split that same inset across the pinned parts
-                // and the scrolling content so close/actions stay reachable.
+                // Web pads the ScrollArea content, not the surface.
                 child: Padding(
-                  padding: scaled ? EdgeInsets.zero : contentInset,
+                  padding: scaled || capped ? EdgeInsets.zero : contentInset,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -260,6 +258,22 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
                         // (heading, body, footer) scrolls inside it.
                         Flexible(
                           child: SingleChildScrollView(
+                            padding:
+                                EdgeInsets.fromLTRB(
+                                  contentInset.left,
+                                  contentInset.top,
+                                  contentInset.right,
+                                  actions != null ? 0 : contentInset.bottom,
+                                ).add(
+                                  desktopScrollbar &&
+                                          scrollbarGutter > contentInset.right
+                                      ? EdgeInsetsDirectional.only(
+                                          end:
+                                              scrollbarGutter -
+                                              contentInset.right,
+                                        )
+                                      : EdgeInsets.zero,
+                                ),
                             child: scrollingContent(
                               includeHeading: true,
                               includeFooter: true,
@@ -276,7 +290,7 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
                       ],
                       if (actions != null)
                         Padding(
-                          padding: scaled
+                          padding: scaled || capped
                               ? contentInset.copyWith(top: 0)
                               : EdgeInsets.zero,
                           child: actions,

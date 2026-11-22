@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import 'design_primitives.dart' show RaftDensity, RaftDensityScope;
+import 'tap_slop.dart' show raftTapSlopVisualBoundsOnly;
 import 'text_scaling.dart';
 import 'theme.dart' show RaftTokens;
 
@@ -150,7 +152,9 @@ class _RaftLargeContentViewerState extends State<RaftLargeContentViewer> {
   @override
   Widget build(BuildContext context) {
     final active = widget.enabled && RaftChrome.engagedOf(context);
+    final touch = RaftDensityScope.of(context) == RaftDensity.touch;
     return _ForwardOutsideHits(
+      expand: touch,
       child: RawGestureDetector(
         behavior: HitTestBehavior.translucent,
         gestures: active
@@ -177,20 +181,39 @@ class _RaftLargeContentViewerState extends State<RaftLargeContentViewer> {
 /// Lets a touch target that extends beyond the item's box (the 48dp expander
 /// inside Raft controls) keep working through the viewer's gesture detector:
 /// hits up to the touch-target size around the item are forwarded to the
-/// child at the nearest point inside it.
+/// child at the nearest point inside it. Only active on touch surfaces so
+/// desktop icon toolbars keep exact visual hit bounds.
 class _ForwardOutsideHits extends SingleChildRenderObjectWidget {
-  const _ForwardOutsideHits({required super.child});
+  const _ForwardOutsideHits({required this.expand, required super.child});
+
+  final bool expand;
 
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _RenderForwardOutsideHits();
+      _RenderForwardOutsideHits(expand);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderForwardOutsideHits renderObject,
+  ) {
+    renderObject.expand = expand;
+  }
 }
 
 class _RenderForwardOutsideHits extends RenderProxyBox {
+  _RenderForwardOutsideHits(this._expand);
   static const _minTarget = 48.0;
+
+  bool _expand;
+  set expand(bool value) {
+    if (_expand == value) return;
+    _expand = value;
+  }
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!_expand) return super.hitTest(result, position: position);
     final w = size.width < _minTarget ? _minTarget : size.width;
     final h = size.height < _minTarget ? _minTarget : size.height;
     final target = Rect.fromCenter(
@@ -199,6 +222,9 @@ class _RenderForwardOutsideHits extends RenderProxyBox {
       height: h,
     );
     if (!target.contains(position)) return false;
+    if (!size.contains(position) && raftTapSlopVisualBoundsOnly(this)) {
+      return false;
+    }
     final clamped = Offset(
       position.dx.clamp(0, size.width - 0.01).toDouble(),
       position.dy.clamp(0, size.height - 0.01).toDouble(),

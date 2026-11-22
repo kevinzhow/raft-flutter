@@ -24,6 +24,7 @@ import 'recipes/panel_toggle_action.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'status_bar.dart';
+import 'tap_slop.dart' show RaftTapSlopHost;
 import 'text_measure.dart';
 import 'theme.dart';
 import 'text_scaling.dart' show RaftScaled;
@@ -250,53 +251,55 @@ class RaftConversationHeader extends StatelessWidget {
             ),
           ),
         ),
-        child: Row(
-          children: [
-            if (onBack != null) ...[
-              RaftPanelAction(
-                key: backKey,
-                glyph: RaftGlyph.arrowLeft,
-                tooltip: backLabel,
-                onPressed: onBack,
-                minHitExtent: RaftMetrics.touchTarget,
-              ),
-              SizedBox(width: gap),
-            ],
-            if (identity != null) ...[
-              RaftRecipeBox(
-                key: const ValueKey('conversation-header-icon'),
-                style: recipe.headerIcon,
-                tokens: rt,
-                decorationOverride: (d) => d.copyWith(
-                  boxShadow: [
-                    if (t.size(
-                          'stroke.conversationHeaderIconRing',
-                          fallback: 0,
-                        ) >
-                        0)
-                      BoxShadow(
-                        color: t.colors['line-conversation-icon-ring']!,
-                        spreadRadius: t.size(
-                          'stroke.conversationHeaderIconRing',
-                          fallback: 0,
-                        ),
-                      ),
-                  ],
+        child: RaftTapSlopHost(
+          child: Row(
+            children: [
+              if (onBack != null) ...[
+                RaftPanelAction(
+                  key: backKey,
+                  glyph: RaftGlyph.arrowLeft,
+                  tooltip: backLabel,
+                  onPressed: onBack,
+                  minHitExtent: RaftMetrics.touchTarget,
                 ),
-                alignment: Alignment.center,
-                child: identity,
-              ),
-              SizedBox(width: gap),
-            ],
-            Expanded(child: content),
-            if (actions.isNotEmpty) ...[
-              SizedBox(width: gap),
-              for (var i = 0; i < actions.length; i++) ...[
-                if (i > 0) SizedBox(width: actionGap),
-                actions[i],
+                SizedBox(width: gap),
+              ],
+              if (identity != null) ...[
+                RaftRecipeBox(
+                  key: const ValueKey('conversation-header-icon'),
+                  style: recipe.headerIcon,
+                  tokens: rt,
+                  decorationOverride: (d) => d.copyWith(
+                    boxShadow: [
+                      if (t.size(
+                            'stroke.conversationHeaderIconRing',
+                            fallback: 0,
+                          ) >
+                          0)
+                        BoxShadow(
+                          color: t.colors['line-conversation-icon-ring']!,
+                          spreadRadius: t.size(
+                            'stroke.conversationHeaderIconRing',
+                            fallback: 0,
+                          ),
+                        ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: identity,
+                ),
+                SizedBox(width: gap),
+              ],
+              Expanded(child: content),
+              if (actions.isNotEmpty) ...[
+                SizedBox(width: gap),
+                for (var i = 0; i < actions.length; i++) ...[
+                  if (i > 0) SizedBox(width: actionGap),
+                  actions[i],
+                ],
               ],
             ],
-          ],
+          ),
         ),
       ),
     );
