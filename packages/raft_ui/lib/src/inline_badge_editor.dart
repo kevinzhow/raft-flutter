@@ -16,6 +16,7 @@ import 'recipe_surface.dart';
 import 'raft/ui_tokens.dart';
 import 'panel_layout.dart' show RaftCssText, raftCssBaseline;
 import 'space.dart';
+import 'tap_slop.dart' show raftTapSlopVisualBoundsOnly;
 import '../recipes.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
@@ -903,6 +904,9 @@ class _RenderTouchTargetExpander extends RenderProxyBox {
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
     if (!_target.contains(position)) return false;
+    if (!size.contains(position) && raftTapSlopVisualBoundsOnly(this)) {
+      return false;
+    }
     final clamped = Offset(
       // Box hit tests are half-open: the far edge itself is outside.
       position.dx.clamp(0, size.width - 0.01).toDouble(),

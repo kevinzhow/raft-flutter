@@ -271,47 +271,49 @@ class RaftBanner extends StatelessWidget {
                       .copyWith(color: foregroundColor),
                 ),
           );
-    Widget box(bool wide) => RaftRecipeBox(
-      style: recipe.root,
-      tokens: tokens,
-      decorationOverride: background == null
-          ? null
-          : (d) => d.copyWith(color: background),
-      child: _withLeading(
-        context,
-        recipe,
-        tokens,
-        trailing,
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (hasTitle && !titleIsText) titleWidget!,
-            if (below && hasAction)
-              RaftBannerBody(
-                besideAllowed: wide && footer == null,
-                gap: recipe.root.columnGap ?? 8,
-                belowGap: recipe.action.margin.top,
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: titleIsText
-                        ? [titleWidget!, ?footer]
-                        : [...descriptionWidgets, ?footer],
-                  ),
-                  RaftBannerActionSlot(
-                    style: recipe.action,
-                    inline: true,
-                    children: actions ?? [action!],
-                  ),
-                ],
-              )
-            else ...[
-              ...descriptionWidgets,
-              ?footer,
+    Widget box(bool wide) => RaftBannerOverhangHost(
+      child: RaftRecipeBox(
+        style: recipe.root,
+        tokens: tokens,
+        decorationOverride: background == null
+            ? null
+            : (d) => d.copyWith(color: background),
+        child: _withLeading(
+          context,
+          recipe,
+          tokens,
+          trailing,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (hasTitle && !titleIsText) titleWidget!,
+              if (below && hasAction)
+                RaftBannerBody(
+                  besideAllowed: wide && footer == null,
+                  gap: recipe.root.columnGap ?? 8,
+                  belowGap: recipe.action.margin.top,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: titleIsText
+                          ? [titleWidget!, ?footer]
+                          : [...descriptionWidgets, ?footer],
+                    ),
+                    RaftBannerActionSlot(
+                      style: recipe.action,
+                      inline: true,
+                      children: actions ?? [action!],
+                    ),
+                  ],
+                )
+              else ...[
+                ...descriptionWidgets,
+                ?footer,
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
