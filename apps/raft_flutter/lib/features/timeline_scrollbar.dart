@@ -149,6 +149,9 @@ class _RaftTimelineScrollbarState
   void updateScrollbarPainter() {
     final s = states, track = showScrollbar && trackVisible;
     final light = colors.brightness == Brightness.light;
+    final direction = Directionality.of(context);
+    final inset = EdgeInsetsDirectional.only(end: widget.endInset)
+        .resolve(direction);
     scrollbarPainter
       ..color = thumbColor()
       ..trackColor = track
@@ -161,17 +164,17 @@ class _RaftTimelineScrollbarState
                 colors.onSurface.withValues(alpha: light ? .1 : .25)
           // ds-allow: platform scrollbar chrome; mirrors the Material desktop Scrollbar this replaces (material/scrollbar.dart)
           : const Color(0x00000000)
-      ..textDirection = Directionality.of(context)
+      ..textDirection = direction
       ..thickness =
           theme.thickness?.resolve(s) ??
           (s.contains(WidgetState.hovered) && trackVisible
               ? _thicknessWithTrack
               : _thicknessIdle)
       ..radius = theme.radius ?? _radius
-      ..crossAxisMargin = (theme.crossAxisMargin ?? _margin) + widget.endInset
+      ..crossAxisMargin = theme.crossAxisMargin ?? _margin
       ..mainAxisMargin = theme.mainAxisMargin ?? 0
       ..minLength = theme.minThumbLength ?? _minLength
-      ..padding = MediaQuery.paddingOf(context)
+      ..padding = MediaQuery.paddingOf(context) + inset
       ..ignorePointer = !enableGestures;
   }
 
