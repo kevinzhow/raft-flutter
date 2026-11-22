@@ -43,6 +43,7 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
   /// The rack's side panel keeps its 300 to 600 (the shared width can be
   /// wider, dragged beside the Members list).
   static const rackPanelMax = 600.0;
+  static const expandedRackWidth = 360.0;
 
   String? get selected => widget.target?.kind == DesktopContentKind.computer
       ? widget.target!.id
@@ -96,8 +97,8 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
             rack: ClipRect(
               child: OverflowBox(
                 alignment: Alignment.topLeft,
-                minWidth: expanded ? 360 : null,
-                maxWidth: expanded ? 360 : null,
+                minWidth: expanded ? expandedRackWidth : null,
+                maxWidth: expanded ? expandedRackWidth : null,
                 child: rack,
               ),
             ),

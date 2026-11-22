@@ -19,9 +19,11 @@ import 'components.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
 import 'icons.dart';
+import 'large_content_viewer.dart';
 import 'localization.dart';
 import 'overlays/dialog.dart';
-import 'panel_layout.dart' show RaftCssFocusOutline, RaftCssText;
+import 'panel_layout.dart'
+    show RaftCssFocusOutline, RaftCssText, raftRoundedBorder;
 import 'recipe_surface.dart';
 import 'recipes/announcement.g.dart';
 import 'recipes/button_variants.g.dart';
@@ -30,7 +32,8 @@ import 'space.dart';
 import 'raft/status.dart' show RaftStatus, RaftStatusSize;
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftTypeScale;
+import 'text_scaling.dart' show RaftChrome;
+import 'tokens/tokens.dart' show RaftPrimitiveColors, RaftTypeScale;
 
 part 'announcement_sidebar_card.dart';
 

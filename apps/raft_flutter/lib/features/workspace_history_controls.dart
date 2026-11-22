@@ -226,7 +226,7 @@ List<RaftMenuEntry> _recentEntries(
       RaftMenuEntry(
         label: entity.title,
         leading: SizedBox.square(
-          dimension: 20,
+          dimension: RaftSpace.x5,
           child: Center(child: _recentIdentity(entity, data)),
         ),
         onPressed: () {

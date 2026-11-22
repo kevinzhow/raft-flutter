@@ -60,6 +60,16 @@ class ChannelAccessLoss extends PlainListenable {
     return channelId != null && _unavailable.contains(channelId);
   }
 
+  Future<RaftChannel> readConversation(String id, String? serverId) async {
+    final data = await client.get('/channels/$id');
+    if (data is! Map ||
+        data['id'] != id ||
+        data['serverId'] != null && data['serverId'] != serverId) {
+      throw const RaftApiException('This channel is not available.');
+    }
+    return RaftChannel(Map<String, dynamic>.from(data));
+  }
+
   /// A read about [channelId] failed: mark it lost when the answer says so.
   void noteReadError(String? channelId, Object error) {
     _synchronize();
