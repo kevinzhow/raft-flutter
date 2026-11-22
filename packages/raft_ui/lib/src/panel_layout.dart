@@ -520,12 +520,29 @@ Widget raftProfileExpandAction({
   required BuildContext context,
   required bool expanded,
   required VoidCallback onPressed,
-}) => RaftIconButton(
-  key: const Key('standalone-profile-expand'),
-  glyph: expanded ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
-  tooltip: raftText(context, expanded ? 'Restore' : 'Expand'),
-  onPressed: onPressed,
-);
+}) {
+  final glyph = expanded ? RaftGlyph.minimize2 : RaftGlyph.maximize2;
+  final label = raftText(context, expanded ? 'Restore' : 'Expand');
+  return RaftChrome(
+    key: const Key('standalone-profile-expand'),
+    child: RaftLargeContentViewer(
+      label: label,
+      enabled: true,
+      onActivate: onPressed,
+      iconBuilder: (_, size) => RaftIcon(glyph, size: size),
+      child: RaftButton(
+        glyph: glyph,
+        uiSize: RaftButtonSize.iconMd,
+        uiVariant: RaftButtonVariant.ghost,
+        tooltip: label,
+        onPressed: onPressed,
+        layoutTouchTarget: true,
+        expandTouchTarget: false,
+        semanticContainer: false,
+      ),
+    ),
+  );
+}
 
 class RaftPanelHeaderChrome extends InheritedWidget {
   const RaftPanelHeaderChrome({

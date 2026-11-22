@@ -34,7 +34,7 @@ class RaftAnnouncementSidebarCard extends StatelessWidget {
     final tokens = RaftTokens.of(context);
     final labels = RaftAnnouncementLabels.of(context);
     final picture = image;
-    final pictureRadius = BorderRadius.circular(
+    final pictureRadius = raftRoundedBorder(
       tokens.size('radius.control', fallback: 8),
     );
     final behind = (total - position).clamp(0, 2);
@@ -97,11 +97,24 @@ class RaftAnnouncementSidebarCard extends StatelessWidget {
                                       color: tokens.ui.foregroundMuted,
                                     ),
                                   ),
-                                RaftIconButton(
-                                  glyph: RaftGlyph.x,
-                                  glyphSize: 14,
-                                  tooltip: labels.dismiss,
-                                  onPressed: onDismiss,
+                                RaftChrome(
+                                  child: RaftLargeContentViewer(
+                                    label: labels.dismiss,
+                                    enabled: true,
+                                    onActivate: onDismiss,
+                                    iconBuilder: (_, size) =>
+                                        RaftIcon(RaftGlyph.x, size: size),
+                                    child: RaftButton(
+                                      glyph: RaftGlyph.x,
+                                      uiSize: RaftButtonSize.iconMd,
+                                      uiVariant: RaftButtonVariant.ghost,
+                                      tooltip: labels.dismiss,
+                                      onPressed: onDismiss,
+                                      layoutTouchTarget: true,
+                                      expandTouchTarget: false,
+                                      semanticContainer: false,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -153,7 +166,8 @@ class RaftAnnouncementSidebarCard extends StatelessWidget {
                                             Positioned.fill(
                                               child: DecoratedBox(
                                                 decoration: BoxDecoration(
-                                                  color: Colors.black
+                                                  color: RaftPrimitiveColors
+                                                      .black
                                                       .withValues(alpha: .1),
                                                   borderRadius: pictureRadius,
                                                 ),

@@ -8,7 +8,7 @@ extension _WorkspacePanelDismissal on _WorkspaceViewState {
 
   void escapePanel() {
     if (takeDetailFieldEscape()) return;
-    if (channelSideArea.currentState?.restore() == true) return;
+    if (ChannelSideArea.restoreForWorkspace(this)) return;
     if (mobileHost != null ||
         w.location.channelPage != null ||
         wide && desktopNavigation.target != null ||

@@ -241,7 +241,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
   }
 
   final scaffold = GlobalKey<ScaffoldState>();
-  final channelSideArea = GlobalKey<ChannelSideAreaState>();
   final mainSelection = ChatSelectionHandle(),
       threadSelection = ChatSelectionHandle();
   WorkspaceController get w => widget.controller;
@@ -1864,7 +1863,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                 ? null
                                 : mobileNavigation(rootTab),
                             content: ChannelSideArea(
-                              key: channelSideArea,
+                              key: ChannelSideArea.workspaceKey(this),
                               controller: w,
                               profile: plannedProfile ? profile : null,
                               headerExtent: wide

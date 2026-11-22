@@ -296,8 +296,18 @@ class ChannelSideArea extends StatefulWidget {
   final Widget Function(BuildContext context, ChannelSideSection section)?
   bodyOf;
 
+  static GlobalKey<ChannelSideAreaState> workspaceKey(Object owner) =>
+      _WorkspaceChannelSideKey(owner);
+
+  static bool restoreForWorkspace(Object owner) =>
+      workspaceKey(owner).currentState?.restore() ?? false;
+
   @override
   State<ChannelSideArea> createState() => ChannelSideAreaState();
+}
+
+class _WorkspaceChannelSideKey extends GlobalObjectKey<ChannelSideAreaState> {
+  const _WorkspaceChannelSideKey(super.value);
 }
 
 class _DockSeam {
@@ -737,7 +747,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
         return SizedBox.expand(
           key: const Key('workspace-thread-panel'),
           child: RaftStatusBarSource(
-            color: const Color(0x00000000),
+            color: RaftPrimitiveColors.black.withAlpha(0),
             border: RaftPanelEdge.leftFor(
               tokens,
               RaftPanelPresentation.attached,

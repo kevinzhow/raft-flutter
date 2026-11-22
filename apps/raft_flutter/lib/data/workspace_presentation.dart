@@ -266,19 +266,13 @@ class WorkspacePresentation {
     _resolvingConversationChannelId = id;
     _missingConversationChannelId = null;
     context.changed();
+    final access = ChannelAccessLoss.of(client);
     try {
       var real = [...channels, ...dms].where((c) => c.id == id).firstOrNull;
       if (real == null) {
-        final data = await client.get('/channels/$id');
-        if (!current()) return;
-        if (data is! Map ||
-            data['id'] != id ||
-            data['serverId'] != null && data['serverId'] != server?.id) {
-          throw const RaftApiException('This channel is not available.');
-        }
-        real = RaftChannel(Map<String, dynamic>.from(data));
-        if (!can('viewChannel', resource: real)) return;
-        ChannelAccessLoss.of(client).clear(id);
+        real = await access.readConversation(id, server?.id);
+        if (!current() || !can('viewChannel', resource: real)) return;
+        access.clear(id);
         if (real.type == 'dm') {
           dms = [...dms.where((c) => c.id != id), real];
         } else {
@@ -294,7 +288,7 @@ class WorkspacePresentation {
     } catch (error) {
       if (current()) {
         _missingConversationChannelId = id;
-        ChannelAccessLoss.of(client).noteOpenResult(id, error);
+        access.noteOpenResult(id, error);
       }
     } finally {
       if (current() && _resolvingConversationChannelId == id) {

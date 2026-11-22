@@ -76,11 +76,10 @@ class _WorkspaceOfflineNoticeState extends State<WorkspaceOfflineNotice> {
       );
       if (widget.presentation == WorkspaceOfflinePresentation.banner) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            RaftSpace.x3,
-            RaftSpace.x2,
-            RaftSpace.x3,
-            0,
+          padding: const EdgeInsets.only(
+            left: RaftSpace.x3,
+            top: RaftSpace.x2,
+            right: RaftSpace.x3,
           ),
           child: RaftBanner(
             key: const Key('workspace-offline-reason'),
