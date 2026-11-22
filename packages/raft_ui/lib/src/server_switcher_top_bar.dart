@@ -102,6 +102,8 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
 
   Rect? dragOrigin;
   RaftServerMenuRow? dragRow;
+  static const stripGap = RaftSpace.x1;
+  double get dragStride => dragOrigin!.width + stripGap;
   double dragDx = 0, dropFrom = 0, dropTo = 0;
   String announcement = '';
   bool get reducedMotion => MediaQuery.disableAnimationsOf(context);
@@ -170,7 +172,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
     final moved = dragging;
     if (moved) {
       dropFrom = dragDx;
-      dropTo = cancel ? 0 : ((to! - from!) * 36).toDouble();
+      dropTo = cancel ? 0 : (to! - from!) * dragStride;
       announcement = raftFormat(
         context,
         cancel
@@ -212,9 +214,9 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
 
   double shiftFor(int index) {
     if (!dragging) return 0;
-    if (index == picked) return ((over! - picked!) * 36).toDouble();
-    if (index > picked! && index <= over!) return -36;
-    if (index < picked! && index >= over!) return 36;
+    if (index == picked) return (over! - picked!) * dragStride;
+    if (index > picked! && index <= over!) return -dragStride;
+    if (index < picked! && index >= over!) return dragStride;
     return 0;
   }
 
@@ -391,10 +393,18 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
         final nameSlot =
             math.min(stripLabelCap, widest) +
             (desktop?.chromeWidth(hasLabel: widest > 0) ?? 46);
-        const stripLead = RaftSpace.x2, stripGap = RaftSpace.x1;
+        const stripLead = RaftSpace.x2;
         const extraDividerWidth = stripGap + RaftSpace.hairline;
-        final stripStride =
-            (t.desktop ? RaftLayoutMetrics.desktopControl : 32) + stripGap;
+        final button = RaftButtonRecipe.resolveProps(
+          {
+            'variant': RaftButtonVariant.ghost.css,
+            'size': RaftButtonSize.iconMd.css,
+          },
+          states: t.recipeStates(responsive: true),
+          tokens: t.recipeTokens,
+        )['root']!;
+        final stripButtonWidth = button.width!;
+        final stripStride = stripButtonWidth + stripGap;
         // The desktop layout already reserves the gap before History.
         final historyGap = desktop == null ? RaftSpace.x2 : 0.0;
         final free = math.max(
@@ -553,6 +563,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                         stripButton(
                           indices[slot],
                           n - (outside ? 1 : 0),
+                          width: stripButtonWidth,
                           hiddenUnread:
                               widget.rows[indices[slot]].current &&
                               hiddenUnread,
@@ -579,6 +590,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
   Widget stripButton(
     int index,
     int count, {
+    required double width,
     required bool hiddenUnread,
     required bool draggable,
   }) {
@@ -591,7 +603,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
             ? const Duration(milliseconds: 200)
             : Duration.zero,
         curve: ease,
-        offset: Offset(shiftFor(index) / 32, 0),
+        offset: Offset(shiftFor(index) / width, 0),
         child: Listener(
           key: ValueKey('topbar-strip-item-${row.id}'),
           onPointerDown: sortable
@@ -615,8 +627,13 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
             if (!dragging) beginDrag(index);
             setState(() {
               dragging = true;
-              dragDx = dx.clamp(-index * 36.0, (count - 1 - index) * 36.0);
-              moveOver((index + (dragDx / 36).round()).clamp(0, count - 1));
+              dragDx = dx.clamp(
+                -index * dragStride,
+                (count - 1 - index) * dragStride,
+              );
+              moveOver(
+                (index + (dragDx / dragStride).round()).clamp(0, count - 1),
+              );
             });
           },
           onPointerUp: (_) {
@@ -662,7 +679,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                                 : -1))
                         .clamp(0, count - 1),
                   );
-                  dragDx = ((over! - picked!) * 36).toDouble();
+                  dragDx = (over! - picked!) * dragStride;
                 });
                 return KeyEventResult.handled;
               }
@@ -695,7 +712,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                         leading: avatar(row, hiddenUnread: hiddenUnread),
                         gap: 0,
                         uiVariant: RaftButtonVariant.ghost,
-                        uiSize: RaftButtonSize.iconSm,
+                        uiSize: RaftButtonSize.iconMd,
                         foreground: RaftTokens.of(context)
                             .colors['foreground-on-frame'],
                         onPressed: () {
@@ -708,7 +725,7 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                   if (row.current && !(dragging && picked == index))
                     Positioned(
                       bottom: -6,
-                      left: 9,
+                      left: (width - 14) / 2,
                       child: Container(
                         width: 14,
                         height: 3,

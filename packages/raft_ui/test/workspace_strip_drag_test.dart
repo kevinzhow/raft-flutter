@@ -114,15 +114,7 @@ void main() {
           overlay.width,
           closeTo(platform == TargetPlatform.linux ? 37.4 : 35.2, .001),
         );
-        // With 34px items the lifted copy ends 2px short of the clamp (the strip
-        // still clamps for 32px items): DS4 follow-up, not hidden for touch.
-        expect(
-          overlay.center.dx,
-          closeTo(
-            last.center.dx,
-            platform == TargetPlatform.linux ? 2.001 : .001,
-          ),
-        );
+        expect(overlay.center.dx, closeTo(last.center.dx, .001));
         expect(
           overlay.center.dy,
           closeTo(before.center.dy, .001),
@@ -137,9 +129,7 @@ void main() {
           reason: 'neighbour visibly slides, not just callback',
         );
         await t.pump(const Duration(milliseconds: 101));
-        // Item pitch: 32px + gap with touch, 34px + gap with a mouse.
-        final pitch = platform == TargetPlatform.linux ? 38.25 : 36;
-        expect(paintRect(t, item('c')).left, closeTo(last.left - pitch, .001));
+        expect(paintRect(t, item('c')).left, closeTo(before.left, .001));
         await pointer.moveTo(before.center + const Offset(24, 30));
         await t.pump();
         final released = paintRect(t, floating);
@@ -335,7 +325,7 @@ void main() {
         final h = Harness();
         await h.mount(t, reducedMotion: true);
         await t.tap(item('b'));
-        final before = paintRect(t, item('b'));
+        final first = paintRect(t, item('a'));
         await t.sendKeyEvent(LogicalKeyboardKey.space);
         await t.pump();
         expect(floating, findsOneWidget);
@@ -344,7 +334,7 @@ void main() {
         await t.pump();
         expect(
           paintRect(t, floating).center.dx,
-          closeTo(before.center.dx - 36, .001),
+          closeTo(first.center.dx, .001),
         );
         expect(find.bySemanticsLabel('B is over A.'), findsOneWidget);
         await t.sendKeyEvent(LogicalKeyboardKey.escape);
