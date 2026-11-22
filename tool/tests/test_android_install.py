@@ -326,13 +326,21 @@ class InstallTest(unittest.TestCase):
             self.update()
         self.assertFalse(self.mutations())
 
-    def test_lab_protects_physical_app_but_allows_empty_named_emulator(self):
+    def test_lab_records_official_app_identity_or_confirmed_absence(self):
         tools = ('adb', 'aapt', 'apksigner')
-        self.assertEqual(android.protected_state('owned-test-device', tools, self.fake_call), android.package_state(dump()))
-        absent = lambda _: 'Unable to find package: app.raft.raft_flutter\n'
-        with self.assertRaises(android.SafetyError):
-            android.protected_state('owned-test-device', tools, absent)
-        self.assertIsNone(android.protected_state('emulator-5580', tools, absent))
+        for serial in ('owned-test-device', 'emulator-5580'):
+            with self.subTest(serial=serial):
+                self.old = 'Unable to find package: app.raft.raft_flutter\n'
+                before = android.protected_state(serial, tools, self.fake_call)
+                self.assertIsNone(before)
+                self.assertEqual(self.commands[-1], ['adb', '-s', serial, 'shell', 'dumpsys', 'package', android.PACKAGE])
+                self.old = dump()
+                after = android.protected_state(serial, tools, self.fake_call)
+                self.assertEqual(after, android.package_state(dump()))
+                self.assertNotEqual(before, after)
+                self.old = dump(installed=False)
+                with self.assertRaises(android.SafetyError):
+                    android.protected_state(serial, tools, self.fake_call)
 
 
 if __name__ == '__main__':
