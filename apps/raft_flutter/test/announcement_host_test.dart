@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -154,6 +155,13 @@ void main() {
     await settle(t);
     expect(modal, findsNothing);
     expect(find.text('1 / 3'), findsOneWidget);
+    final close = find.byWidgetPredicate(
+      (widget) => widget is RaftIcon && widget.glyph == RaftGlyph.x,
+    );
+    expect(
+      t.widget<RaftIcon>(close).color,
+      RaftTokens.of(t.element(close)).ui.foregroundMuted,
+    );
     await t.tap(find.text('Next'));
     await settle(t);
     expect(find.text('What is new a2'), findsOneWidget);
@@ -191,14 +199,30 @@ void main() {
       t.getSize(picture).width,
       t.getSize(find.byType(RaftAnnouncementMarkdown)).width,
     );
-    await t.tap(zoom);
+    await t.tap(zoom, kind: PointerDeviceKind.mouse);
     await settle(t);
     expect(zoom, findsNothing);
     expect(modal, findsOneWidget);
+    final primary = find.byKey(const ValueKey('announcement-ok'));
+    final buttonFace = find.descendant(
+      of: primary,
+      matching: find.byType(RaftRecipeBox),
+    );
+    int paintedShadowCount() {
+      final face = t.widget<RaftRecipeBox>(buttonFace);
+      return face.style.cssShadows(face.tokens).length;
+    }
+
+    expect(t.widget<RaftRecipeButton>(primary).focusNode!.hasFocus, isTrue);
+    final pointerShadows = paintedShadowCount();
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(t);
     expect(zoom, findsOneWidget);
     expect(t.widget<RaftInteractive>(zoom).focusNode!.hasFocus, isTrue);
+    await t.sendKeyEvent(LogicalKeyboardKey.enter);
+    await settle(t);
+    expect(modal, findsOneWidget);
+    expect(paintedShadowCount(), greaterThan(pointerShadows));
     expect(f.count('POST /announcements/'), 0);
   });
 

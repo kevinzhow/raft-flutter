@@ -16,6 +16,11 @@ void main() {
         expect(find.text('Server not found'), findsOneWidget);
         expect(find.text('Raft', findRichText: true), findsNothing);
         expect(find.text('Choose a server'), findsOneWidget);
+        final button = t.widget<RaftButton>(
+          find.widgetWithText(RaftButton, 'Choose a server'),
+        );
+        expect(button.resolvedVariant, RaftButtonVariant.standard);
+        expect(button.resolvedSize, RaftButtonSize.md);
         expect(find.byType(GlobalServerSelector), findsNothing);
         expect(f.router(t).currentConfiguration.path, '/s/ghost');
         await t.pump(const Duration(seconds: 4));

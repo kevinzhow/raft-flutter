@@ -10,6 +10,7 @@ import 'components.dart';
 import 'css_pixel_snap.dart';
 import 'design_primitives.dart';
 import 'localization.dart';
+import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
 import 'theme.dart';
 import 'raft/ui_tokens.dart';
@@ -49,28 +50,38 @@ class RaftRootErrorFallback extends StatelessWidget {
   final VoidCallback onReload;
   final VoidCallback? onOpenHome;
 
-  Widget _actions(BuildContext context, RaftButtonRecipeSize size) => Wrap(
-    alignment: WrapAlignment.end,
-    spacing: 8,
-    runSpacing: 8,
-    children: [
-      if (onOpenHome != null)
+  Widget _actions(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    const size = RaftButtonRecipeSize.lg;
+    final height = RaftButtonRecipe.resolve(
+      size: size,
+      tokens: tokens.recipeTokens,
+    ).root.height;
+    return Wrap(
+      alignment: WrapAlignment.end,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        if (onOpenHome != null)
+          RaftButton(
+            key: const ValueKey('root-error-open-home'),
+            label: raftTextZh(context, 'Open Raft home', '回到 Raft 首页'),
+            variant: RaftControlVariant.ghost,
+            size: size,
+            physicalHeight: height,
+            onPressed: onOpenHome,
+          ),
         RaftButton(
-          key: const ValueKey('root-error-open-home'),
-          label: raftTextZh(context, 'Open Raft home', '回到 Raft 首页'),
-          variant: RaftControlVariant.ghost,
+          key: const ValueKey('root-error-reload'),
+          label: raftText(context, 'Reload app'),
+          variant: RaftControlVariant.accent,
           size: size,
-          onPressed: onOpenHome,
+          physicalHeight: height,
+          onPressed: onReload,
         ),
-      RaftButton(
-        key: const ValueKey('root-error-reload'),
-        label: raftText(context, 'Reload app'),
-        variant: RaftControlVariant.accent,
-        size: size,
-        onPressed: onReload,
-      ),
-    ],
-  );
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +173,7 @@ class RaftRootErrorFallback extends StatelessWidget {
                   // `mt-6 flex justify-end` after the `mb-4` boxes.
                   Align(
                     alignment: Alignment.centerRight,
-                    child: _actions(context, RaftButtonRecipeSize.md),
+                    child: _actions(context),
                   ),
                 ],
               ),
@@ -309,10 +320,7 @@ extension on RaftRootErrorFallback {
                 componentStackOpen,
               ),
             const SizedBox(height: 20),
-            Align(
-              alignment: Alignment.centerRight,
-              child: _actions(context, RaftButtonRecipeSize.lg),
-            ),
+            Align(alignment: Alignment.centerRight, child: _actions(context)),
           ],
         ),
       ),

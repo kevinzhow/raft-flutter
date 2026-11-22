@@ -44,6 +44,7 @@ class RaftServerAccessDeniedPage extends StatelessWidget {
                 glyph: RaftGlyph.serverOff,
                 action: RaftButton(
                   key: const ValueKey('server-denied-continue'),
+                  uiVariant: RaftButtonVariant.standard,
                   label: serverName == null
                       ? raftTextZh(context, 'Choose a server', '选择一个服务器')
                       : raftTextZh(

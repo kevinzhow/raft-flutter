@@ -60468,18 +60468,6 @@
         "owner": "Workspace panel header",
         "reason": "Composes shared header actions and layout from the host and the panel recipe."
       },
-      "packages/raft_ui/lib/src/root_error_fallback.dart#local-function:EXTENSION:<anonymous>@7708/METHOD:_web@7754/FUNCTION:code@7909": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/root_error_fallback.dart#local-function:EXTENSION:<anonymous>@7708/METHOD:_web@7754/FUNCTION:disclosure@8451": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/root_error_fallback.dart#method:RaftRootErrorFallback._actions": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -60575,6 +60563,18 @@
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "packages/raft_ui/lib/src/root_error_fallback.dart#local-function:EXTENSION:<anonymous>@8014/METHOD:_web@8060/FUNCTION:code@8215": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/root_error_fallback.dart#local-function:EXTENSION:<anonymous>@8014/METHOD:_web@8060/FUNCTION:disclosure@8757": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {

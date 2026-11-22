@@ -205,7 +205,7 @@ fixture = {
             'GET /channels/dm': DMS,
             'GET /channels/shell-refused': {
                 '$status': 404,
-                'error': 'Channel not found or not visible',
+                '$body': {'error': 'Channel not found or not visible'},
             },
         },
         'row': {
@@ -472,6 +472,8 @@ for platform in ('desktop', 'mobile'):
 if (raft_source() / 'packages/web/src/store/channelAccessLoss.ts').is_file():
     current_themes = {suffix: THEMES[suffix] for suffix in ('brutal', 'elegant-dark')}
     desktop_review = {**DESKTOP, 'height': 900}
+    unavailable = tid('shell-route') + ':has(' + tid('conversation-unavailable') + ')'
+    ANDROID_KEYS[unavailable] = 'shell-route'
     for platform in ('desktop', 'mobile'):
         shell_hint = 'packages/web/src/components/layout/MainLayout.tsx'
         viewport = desktop_review if platform == 'desktop' else MOBILE
@@ -483,7 +485,7 @@ if (raft_source() / 'packages/web/src/store/channelAccessLoss.ts').is_file():
                  props={'extFixture': 'shell', 'routeSet': 'home', 'shell': 'browser'},
                  title='Channel lost after access was revoked', themes=current_themes,
                  hint='packages/web/src/features/channel/ChannelAccessLost.tsx'),
-            spec(platform, 'channel.unavailable', preset='mobile', region='shell-route', viewport=viewport,
+            spec(platform, 'channel.unavailable', preset='mobile', region=unavailable, viewport=viewport,
                  props={'route': 'channel/shell-refused', 'extFixture': 'shell', 'routeSet': 'refused', 'shell': 'browser'},
                  title='Channel link declined', themes=current_themes,
                  hint='packages/web/src/features/channel/ChannelAccessLost.tsx'),
