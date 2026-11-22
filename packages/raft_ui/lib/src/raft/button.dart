@@ -8,6 +8,7 @@ import '../css_opacity.dart';
 import '../design_primitives.dart';
 import '../icons.dart';
 import '../localization.dart';
+import '../panel_layout.dart' show RaftCssText;
 import '../recipes/button_variants.g.dart';
 import '../recipes/recipe_runtime.dart';
 import '../recipes/text_link_variants.g.dart';
@@ -673,6 +674,10 @@ class RaftButton extends StatelessWidget {
         glyphSize ?? profile?.icon ?? svg?.width ?? style.fontSize ?? 16;
     final spacing = gap ?? profile?.gap ?? root.columnGap ?? 0;
     final wraps = autoHeight || RaftScaled.grows(context);
+    final exactLabelHeight =
+        Theme.of(context).platform == TargetPlatform.android &&
+        RaftControlTypography.appliesIn(context) &&
+        RaftScaled.grows(context);
     final iconWidget = iconBuilder != null
         ? iconBuilder!(extent, ink)
         : glyph != null
@@ -698,6 +703,15 @@ class RaftButton extends StatelessWidget {
                 softWrap: wraps,
                 textAlign: TextAlign.center,
                 overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
+              )
+            : exactLabelHeight
+            ? RaftCssText(
+                raftText(context, label),
+                maxLines: wraps ? null : 1,
+                softWrap: wraps,
+                textAlign: TextAlign.center,
+                overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
+                controlLabel: true,
               )
             : Text(
                 raftText(context, label),

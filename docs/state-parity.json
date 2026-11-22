@@ -32690,7 +32690,7 @@
         "owner": "design-system canonical registry",
         "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/button.dart#local-function:CLASS:RaftButtonMetrics@4676/METHOD:of@6297/FUNCTION:resolve@6447": {
+      "packages/raft_ui/lib/src/raft/button.dart#local-function:CLASS:RaftButtonMetrics@4724/METHOD:of@6345/FUNCTION:resolve@6495": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -68006,7 +68006,7 @@
         "owner": "WP-DS1 form controls",
         "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/raft/button.dart#local-function:CLASS:RaftButtonMetrics@4676/METHOD:of@6297/FUNCTION:resolve@6447|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+      "packages/raft_ui/lib/src/raft/button.dart#local-function:CLASS:RaftButtonMetrics@4724/METHOD:of@6345/FUNCTION:resolve@6495|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "unknown",
         "owner": "WP-DS1 form controls",
         "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
