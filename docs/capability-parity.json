@@ -9793,9 +9793,9 @@
    "capability": "Save/enable the app's HTTPS webhook endpoint",
    "background": false,
    "status": "covered",
-   "webEntry": "Editor > Webhook > 'Enable Webhook' switch, 'HTTPS endpoint' field, 'Save endpoint'",
+   "webEntry": "Editor > Webhook > 'Enable webhook' switch, 'HTTPS endpoint' field, 'Save'",
    "gate": "manageIntegrations; app must be saved first",
-   "flutterEntry": "connected_app_editor.dart saveEndpoint() via 'Save endpoint'",
+   "flutterEntry": "connected_app_editor.dart saveEndpoint() via the Webhook 'Save' button",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
@@ -9803,7 +9803,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
-     "needle": "Save endpoint"
+     "needle": "app-notifications-save"
     }
    ],
    "justification": "",

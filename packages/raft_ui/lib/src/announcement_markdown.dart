@@ -508,8 +508,10 @@ class _MarkdownBlocks {
               fontSize: MediaQuery.textScalerOf(context).scale(size),
             );
             final (ascent, descent) = raftCssContentMetrics(scaled);
-            final box =
-                scaled.fontSize! * (scaled.height ?? parent.height ?? 1);
+            final lineBoxSize = relativeSize == null
+                ? scaled.fontSize!
+                : MediaQuery.textScalerOf(context).scale(parent.fontSize ?? 14);
+            final box = lineBoxSize * (scaled.height ?? parent.height ?? 1);
             return SizedBox(
               height: box,
               child: Baseline(

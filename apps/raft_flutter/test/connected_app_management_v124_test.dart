@@ -213,7 +213,7 @@ void main() {
     final identity = find.byKey(const ValueKey('connected-app-enable-bot'));
     final hint = find.byKey(const ValueKey('connected-app-bot-editor-hint'));
     expect(hint, findsOneWidget);
-    expect(tester.getTopLeft(hint).dy - tester.getBottomLeft(identity).dy, 8);
+    expect(tester.getTopLeft(hint).dy - tester.getBottomLeft(identity).dy, 20);
     await _tap(tester, installedLink);
     expect(editor, findsNothing);
     expect(

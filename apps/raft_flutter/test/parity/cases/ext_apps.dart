@@ -47,6 +47,9 @@ final _appsSettings = ParityCase(
     final text = context.props['verifyText'] as String;
     final absent = context.props['absentText'] as String;
     await tester.pump(const Duration(milliseconds: 400));
+    if (context.props['app_bot'] != null && text.isNotEmpty) {
+      await tester.pumpAndSettle();
+    }
     if (key.isNotEmpty) expect(find.byKey(ValueKey(key)), findsOneWidget);
     if (text.isNotEmpty) expect(find.text(text), findsWidgets);
     if (absent.isNotEmpty) expect(find.text(absent), findsNothing);

@@ -853,9 +853,10 @@ case('route', 'bot-removed', '[data-testid="connected-app-bot-section"][data-bot
     ),
 ], shell='apps', route_set='bot-removed', verify_key='connected-app-installed-detail',
      absent_text='Added to server')
-case('route', 'bot-link', '[data-testid="connected-app-bot-section"]',
+case('route', 'bot-link',
+     'body:has([data-testid="installed-app-notifications"]) [data-testid="connected-app-bot-section"]',
      shell='apps', route_set='bot-step-up', bot_link=installed_with_bot['clientId'],
-     verify_key='connected-app-installed-detail')
+     verify_key='connected-app-installed-detail', verify_text='Approve update')
 case('route', 'bot-link-unavailable', '[data-testid="connected-apps-bot-link-not-installed"]',
      shell='apps', bot_link='unknown-app',
      verify_key='connected-apps-bot-link-not-installed')

@@ -180,6 +180,10 @@ void main() {
     await _openRegistration(t);
     expect(find.byKey(editor), findsOneWidget);
     expect(find.text('Create Raft app'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byKey(submit), matching: find.text('Create')),
+      findsOneWidget,
+    );
     expect(find.text('Cancel'), findsOneWidget);
     expect(t.getCenter(find.byKey(submit)).dy, greaterThan(400));
     for (final id in ['profile', 'login', 'permissions', 'notifications']) {
@@ -434,6 +438,12 @@ void main() {
     await _mount(t, w, openMyApps: false);
     await _openRegistration(t);
     expect(t.getSize(find.byType(RaftDialogHeader)).height, closeTo(44, 1));
+    final profileItem = find.widgetWithText(RaftSettingsSidebarItem, 'Profile');
+    final loginItem = find.widgetWithText(
+      RaftSettingsSidebarItem,
+      'Login with Raft',
+    );
+    expect(t.getTopLeft(loginItem).dy - t.getTopLeft(profileItem).dy, 36);
     final webhookItem = find.widgetWithText(RaftSettingsSidebarItem, 'Webhook');
     Focus.of(t.element(webhookItem)).requestFocus();
     await t.pump();

@@ -72,6 +72,29 @@ void main() {
     expect(tester.widget<RichText>(scopeName).text.style?.fontSize, 12.25);
   });
 
+  testWidgets('permission code keeps the desktop callout line box', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
+        home: const Scaffold(
+          body: ConnectedAppPermissionSet(
+            permissions: AppInstallExpectation(scopes: ['openid'], groups: []),
+          ),
+        ),
+      ),
+    );
+    final scope = find.text('openid', findRichText: true);
+    final paintedLabel = find.ancestor(
+      of: scope,
+      matching: find.byType(RaftRecipeBox),
+    );
+    final height = tester.getSize(paintedLabel).height;
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(height, 24);
+  });
+
   testWidgets(
     'approving records the displayed scope, group and text revision',
     (tester) async {

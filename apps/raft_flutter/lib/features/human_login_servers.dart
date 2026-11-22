@@ -65,11 +65,15 @@ Text _boldText(
       children: raftRichText(context, source, {
         'b': (inner) => TextSpan(
           text: inner,
-          style: _body(t, weight: FontWeight.w700, color: t.ink),
+          style: t.scale(
+            RaftTypeScale.callout,
+            weight: FontWeight.w700,
+            color: t.ink,
+          ),
         ),
       }, values: values),
     ),
-    style: _body(t, color: color ?? t.ink),
+    style: t.scale(RaftTypeScale.callout, color: color ?? t.ink),
   );
 }
 

@@ -616,7 +616,11 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
                 {
                   'b': (inner) => TextSpan(
                     text: inner,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    style: t.scale(
+                      RaftTypeScale.callout,
+                      weight: FontWeight.w700,
+                      color: t.muted,
+                    ),
                   ),
                 },
                 values: {'serviceName': serviceName},

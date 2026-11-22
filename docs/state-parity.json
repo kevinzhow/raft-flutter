@@ -59076,7 +59076,7 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "apps/raft_flutter/lib/features/connected_app_bot.dart#local-function:CLASS:_ConnectedAppBotState@1141/METHOD:build@4234/FUNCTION:button@5741": {
+      "apps/raft_flutter/lib/features/connected_app_bot.dart#local-function:CLASS:_ConnectedAppBotState@1163/METHOD:build@5675/FUNCTION:button@7182": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59244,7 +59244,7 @@
         "owner": "WP-APPS",
         "reason": "Composes the shared progress and native login controls."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@50437/FUNCTION:page@50553": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@50544/FUNCTION:page@50660": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59400,19 +59400,19 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@28076/METHOD:build@28401/FUNCTION:head@29624": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@28153/METHOD:build@28478/FUNCTION:head@29701": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23046/METHOD:build@23750/FUNCTION:chip@24065": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23123/METHOD:build@23827/FUNCTION:chip@24142": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23046/METHOD:build@23750/FUNCTION:group@25043": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23123/METHOD:build@23827/FUNCTION:group@25120": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59436,43 +59436,43 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@62001/METHOD:build@62510/FUNCTION:scopeRow@63087": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@61988/METHOD:build@62497/FUNCTION:scopeRow@63074": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5902/METHOD:build@8510/FUNCTION:gap@14539": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5841/METHOD:build@8449/FUNCTION:gap@14478": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5902/METHOD:build@8510/FUNCTION:heading@14637": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5841/METHOD:build@8449/FUNCTION:heading@14576": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29653/METHOD:build@29875/FUNCTION:block@29954": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29592/METHOD:build@29814/FUNCTION:block@29893": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29653/METHOD:build@29875/FUNCTION:line@30073": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29592/METHOD:build@29814/FUNCTION:line@30012": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@28213/METHOD:build@28579/FUNCTION:placeholder@28970": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@28152/METHOD:build@28518/FUNCTION:placeholder@28909": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@57209/METHOD:build@57318/FUNCTION:chip@57594": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@57196/METHOD:build@57305/FUNCTION:chip@57581": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59779,7 +59779,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/connected_app_bot.dart#local-function:CLASS:_ConnectedAppBotState@1141/METHOD:build@4234/FUNCTION:capability@6022": {
+      "apps/raft_flutter/lib/features/connected_app_bot.dart#local-function:CLASS:_ConnectedAppBotState@1163/METHOD:build@5675/FUNCTION:capability@7463": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59791,13 +59791,13 @@
         "owner": "WP-APPS",
         "reason": "Opens the webhook signing-secret warning from the Apps editor; a mounted behavior test checks its confirm action."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@51231/FUNCTION:appTile@52114": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@51338/FUNCTION:appTile@52221": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Projects an Apps Marketplace tile with its independent bot action."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@39234/METHOD:build@39443/FUNCTION:label@39616": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@39173/METHOD:build@39382/FUNCTION:label@39555": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -59844,6 +59844,12 @@
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Uses the canonical InlineCode recipe in permission rows."
+      },
+      "apps/raft_flutter/lib/features/connected_app_bot.dart#method:_ConnectedAppBotState._focusLinkedSection": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-APPS",
+        "reason": "Uses the shared focus ring for the installed bot identity reached by an Apps link."
       }
     },
     "entries": {

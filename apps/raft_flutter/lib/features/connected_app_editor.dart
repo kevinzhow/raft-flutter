@@ -985,7 +985,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
         submitting
             ? 'Saving…'
             : app == null
-            ? 'Register App'
+            ? 'Create'
             : 'Save',
       ),
       onSubmit:
@@ -1255,9 +1255,12 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             warning: true,
           ),
         if (source is Map) sourceInstallation(managementMap(source)),
-        const RaftSeparator(),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: RaftSpace.x3),
+          child: RaftSeparator(),
+        ),
         RaftAppEditorStack(
-          gap: RaftSpace.x2,
+          gap: RaftSpace.x5,
           children: [
             RaftCheckboxRow.caption(
               key: const ValueKey('connected-app-enable-bot'),

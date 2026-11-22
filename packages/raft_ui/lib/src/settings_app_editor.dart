@@ -232,6 +232,7 @@ class _RaftConnectedAppEditorCardState
                   },
                   child: RaftSettingsSidebarItem(
                     active: section.id == active,
+                    height: t.desktop ? RaftDesktopMetrics.rowHeight : null,
                     entry: RaftSettingsNavEntry(
                       id: section.id,
                       label: section.title,

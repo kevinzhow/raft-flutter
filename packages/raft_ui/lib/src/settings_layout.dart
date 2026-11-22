@@ -191,9 +191,11 @@ class RaftSettingsSidebarItem extends StatefulWidget {
     required this.entry,
     this.active = false,
     this.rowKey,
+    this.height,
   });
   final RaftSettingsNavEntry entry;
   final bool active;
+  final double? height;
 
   /// Key of the row box itself (the SidebarItem border box, margin
   /// excluded).
@@ -274,6 +276,7 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
               RaftRecipeBox(
                 style: s,
                 tokens: tokens,
+                height: widget.height,
                 applyText: false,
                 alignment: AlignmentDirectional.centerStart,
                 growWithText: true,

@@ -22,15 +22,17 @@ void main() {
     WidgetTester t,
     FakeHumanLoginApi api, {
     Locale locale = const Locale('en'),
+    TargetPlatform platform = TargetPlatform.android,
+    Size viewport = const Size(390, 1800),
   }) async {
     opened = [];
     t.view
-      ..physicalSize = const Size(390, 1800)
+      ..physicalSize = viewport
       ..devicePixelRatio = 1;
     addTearDown(t.view.reset);
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme().copyWith(platform: platform),
         locale: locale,
         supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -101,6 +103,21 @@ void main() {
     await open(t, waiting(canInstall: true));
     expect(find.text('Install and continue'), findsOneWidget);
     expect(link, findsNothing);
+  });
+
+  testWidgets('the desktop admin message uses the callout line height', (
+    t,
+  ) async {
+    await open(
+      t,
+      waiting(canInstall: false),
+      platform: TargetPlatform.linux,
+      viewport: const Size(1280, 900),
+    );
+    final message = find.textContaining('Only an owner or admin');
+    final height = t.getSize(message).height;
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(height, 66);
   });
 
   testWidgets('it reads in Chinese with the Web zh-cn text', (t) async {
