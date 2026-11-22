@@ -34,10 +34,12 @@ class AnnouncementHost extends StatefulWidget {
       defaultValue: 'production',
     ),
     this.openLink,
+    this.preferSidebar = false,
   });
 
   final WorkspaceController controller;
   final Widget child;
+  final bool preferSidebar;
 
   /// VITE_DEPLOYMENT_ENV: `slockdev` shows the popup for one frame, then
   /// confirms it like OK (Web `shouldAutoDismissSlockdevAnnouncement`).
@@ -59,6 +61,9 @@ class _AnnouncementHostState extends State<AnnouncementHost>
   Route<void>? _route;
   String? _routeId;
   bool _scheduled = false;
+  bool _expandedSidebar = false;
+  final _sidebar = ValueNotifier<Announcement?>(null);
+  final _pictureFocus = FocusNode(debugLabel: 'announcement-picture');
   final _notified = <String>{};
   final _setupReads = <String>{};
 
@@ -95,6 +100,7 @@ class _AnnouncementHostState extends State<AnnouncementHost>
       _unbind(oldWidget.controller);
       _bind(widget.controller);
     }
+    if (oldWidget.preferSidebar != widget.preferSidebar) _changed();
   }
 
   @override
@@ -108,6 +114,8 @@ class _AnnouncementHostState extends State<AnnouncementHost>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _unbind(_bound, disposing: true);
+    _sidebar.dispose();
+    _pictureFocus.dispose();
     super.dispose();
   }
 
@@ -151,19 +159,35 @@ class _AnnouncementHostState extends State<AnnouncementHost>
       }
     }
     final current = store.current;
+    final chat = w.section == 'chat' || w.section == 'home';
     // AnnouncementModal: a row delivered for another server is not presented.
     final visible =
         current != null &&
             current.pages.isNotEmpty &&
+            (!current.sidebar || chat) &&
             !gate.suppressed(serverId) &&
             (current.deliveryServerId == null ||
                 current.deliveryServerId == serverId)
         ? current
         : null;
-    if (visible?.id == _routeId) return;
+    final sidebar = visible?.sidebar == true && widget.preferSidebar;
+    final key = visible == null ? null : _presentationKey(visible);
+    if (_expandedSidebar && (!sidebar || key != _routeId)) _removeRoute();
+    _sidebar.value = sidebar && !_expandedSidebar ? visible : null;
+    if (sidebar && !_expandedSidebar) {
+      _removeRoute();
+      if (widget.deployment == 'slockdev' && visible != null) {
+        unawaited(store.dismiss(visible.id));
+      }
+      return;
+    }
+    if (key == _routeId) return;
     _removeRoute();
     if (visible != null) _present(visible);
   }
+
+  String _presentationKey(Announcement a) =>
+      '${a.id}:${a.deliveryVersion ?? 1}';
 
   /// No setup gate is mounted for this server (a page without conversation
   /// content): read the projection the Web gate would have read.
@@ -189,11 +213,22 @@ class _AnnouncementHostState extends State<AnnouncementHost>
     gate.report(serverId, projection);
   }
 
-  void _present(Announcement a) {
+  RaftAnnouncementImage? _picture(Announcement a) {
+    final image = a.image;
+    return image == null
+        ? null
+        : RaftAnnouncementImage(
+            url: announcementImageUrl(w.client.origin, image.assetId),
+            alt: image.alt,
+          );
+  }
+
+  void _present(Announcement a, {bool expanded = false}) {
     final navigator = Navigator.maybeOf(context, rootNavigator: true);
     if (navigator == null) return;
     final store = w.services.announcements;
-    final cta = a.cta, image = a.image;
+    final cta = a.cta;
+    final path = _ctaPath(cta);
     // AnnouncementModal `activate`: once per presentation.
     var activated = false;
     void activate() {
@@ -201,8 +236,10 @@ class _AnnouncementHostState extends State<AnnouncementHost>
       activated = true;
       // Open synchronously in the user gesture; a failed write still raises
       // the store's save-failed notice.
-      unawaited(store.dismiss(a.id));
-      if (cta != null) _openCta(cta);
+      unawaited(
+        expanded && path == null ? store.advance(a.id) : store.dismiss(a.id),
+      );
+      if (cta != null) _openCta(cta, path);
     }
 
     final route = RaftDialogRoute<void>(
@@ -216,27 +253,37 @@ class _AnnouncementHostState extends State<AnnouncementHost>
         title: a.title,
         body: a.pages.first.body,
         label: a.label,
-        image: image == null
-            ? null
-            : RaftAnnouncementImage(
-                url: announcementImageUrl(w.client.origin, image.assetId),
-                alt: image.alt,
-              ),
-        ctaLabel: cta?.label,
+        image: _picture(a),
+        ctaLabel:
+            cta?.label ??
+            (expanded ? RaftAnnouncementLabels.of(context).gotIt : null),
         onCta: activate,
-        onDismiss: () => unawaited(store.dismiss(a.id)),
+        onDismiss: () {
+          if (expanded) {
+            navigator.pop();
+          } else {
+            unawaited(store.dismiss(a.id));
+          }
+        },
         onLink: widget.openLink ?? _openLink,
       ),
     );
     _route = route;
-    _routeId = a.id;
+    _routeId = _presentationKey(a);
+    _expandedSidebar = expanded;
     navigator.push(route).then((_) {
       // Popped from outside (Escape, the scrim, Android back): the dialog's
       // `onOpenChange(false)`, a dismissal like ✕.
       if (!identical(_route, route)) return;
       _route = null;
       _routeId = null;
-      unawaited(store.dismiss(a.id));
+      _expandedSidebar = false;
+      if (expanded) {
+        _changed();
+        _pictureFocus.requestFocus();
+      } else {
+        unawaited(store.dismiss(a.id));
+      }
     });
     if (widget.deployment == 'slockdev') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -245,15 +292,18 @@ class _AnnouncementHostState extends State<AnnouncementHost>
     }
   }
 
-  void _openCta(AnnouncementCta cta) {
-    if (!cta.internal) {
+  String? _ctaPath(AnnouncementCta? cta) =>
+      cta == null ? null : announcementInAppPath(w.client.origin, cta.href);
+
+  void _openCta(AnnouncementCta cta, String? path) {
+    if (path == null) {
       (widget.openLink ?? _openLink)(cta.href);
       return;
     }
     openAnnouncementInternalLink(
       context,
       w,
-      cta.href,
+      path,
       openExternal: widget.openLink ?? _openLink,
     );
   }
@@ -262,6 +312,7 @@ class _AnnouncementHostState extends State<AnnouncementHost>
     final route = _route;
     _route = null;
     _routeId = null;
+    _expandedSidebar = false;
     if (route == null) return;
     void remove() {
       if (route.isActive) route.navigator?.removeRoute(route);
@@ -283,4 +334,53 @@ class _AnnouncementHostState extends State<AnnouncementHost>
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+class AnnouncementSidebarSlot extends StatelessWidget {
+  const AnnouncementSidebarSlot({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final host = context.findAncestorStateOfType<_AnnouncementHostState>();
+    if (host == null) return const SizedBox.shrink();
+    final store = host.w.services.announcements;
+    return ValueListenableBuilder(
+      valueListenable: host._sidebar,
+      builder: (context, row, _) {
+        if (row == null) return const SizedBox.shrink();
+        final total = store.stackTotal;
+        final cta = row.cta;
+        final path = host._ctaPath(cta);
+        return RaftAnnouncementSidebarCard(
+          key: ValueKey(host._presentationKey(row)),
+          title: row.title,
+          body: row.pages.first.body,
+          label: row.label,
+          image: host._picture(row),
+          pictureFocus: host._pictureFocus,
+          onExpand: () {
+            host._sidebar.value = null;
+            host._present(row, expanded: true);
+          },
+          total: total,
+          position: total - store.pending.length + 1,
+          onDismiss: () => unawaited(store.dismiss(row.id)),
+          onNext: () => unawaited(store.advance(row.id)),
+          ctaLabel: cta?.label,
+          externalCta: cta != null && path == null,
+          onCta: cta == null
+              ? null
+              : () {
+                  unawaited(
+                    path != null
+                        ? store.dismiss(row.id)
+                        : store.advance(row.id),
+                  );
+                  host._openCta(cta, path);
+                },
+          onLink: host.widget.openLink ?? _AnnouncementHostState._openLink,
+        );
+      },
+    );
+  }
 }

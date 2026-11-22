@@ -13,7 +13,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'announcement_markdown.dart';
+import 'components.dart';
+import 'design_primitives.dart';
 import 'dialog_card.dart';
+import 'icons.dart';
 import 'localization.dart';
 import 'overlays/dialog.dart';
 import 'panel_layout.dart' show RaftCssText;
@@ -25,6 +28,8 @@ import 'raft/status.dart' show RaftStatus, RaftStatusSize;
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
+
+part 'announcement_sidebar_card.dart';
 
 /// The announcement's picture (`image { assetId, alt }`): [url] is the public
 /// `GET /announcements/images/:id`.
@@ -395,7 +400,11 @@ class _Picture extends StatelessWidget {
             height: box.maxHeight,
             fit: BoxFit.fill,
             semanticLabel: image.alt,
-            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            errorBuilder: (_, _, _) => Semantics(
+              image: true,
+              label: image.alt,
+              child: const SizedBox.expand(),
+            ),
           ),
         ),
       ),

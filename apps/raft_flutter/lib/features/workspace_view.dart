@@ -1261,7 +1261,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
           : LimitNoticeHost(
               controller: w,
               queue: LimitNoticeQueue.of(w.composer.uploads),
-              child: AnnouncementHost(controller: w, child: body),
+              child: AnnouncementHost(
+                controller: w,
+                preferSidebar: !compact,
+                child: body,
+              ),
             ),
     );
   }
@@ -3435,6 +3439,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 trailing: workingSummary(),
               ),
             StaleCountsNotice.sidebar(w),
+            if (!mobileHome) const AnnouncementSidebarSlot(),
             Expanded(
               child: GestureDetector(
                 // Sidebar.tsx `sidebar-scroll-surface onContextMenu`: rows,

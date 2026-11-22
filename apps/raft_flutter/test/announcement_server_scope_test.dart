@@ -64,11 +64,11 @@ void main() {
         final wire = _Wire();
         final store = wire.store();
         await store.load();
-        expect(wire.gets.single, isNull);
+        expect(wire.gets.single, {'sidebar_limit': 5});
         store.reset();
         wire.server = _s1;
         await store.load();
-        expect(wire.gets.last, {'server_id': _s1});
+        expect(wire.gets.last, {'server_id': _s1, 'sidebar_limit': 5});
       },
     );
 
@@ -104,11 +104,11 @@ void main() {
       expect(store.pending.map((a) => a.id), ['acct']);
       expect(store.loaded, isFalse);
       expect(wire.gets, hasLength(1));
-      store.close('acct');
+      store.reset();
       wire.hold = Completer();
       final held = wire.hold!;
       final stale = store.load();
-      expect(wire.gets.last, {'server_id': _s2});
+      expect(wire.gets.last, {'server_id': _s2, 'sidebar_limit': 5});
       wire.hold = null;
       wire.answer = (_) => {
         'announcements': [_row('b', server: _s1)],
@@ -131,22 +131,21 @@ void main() {
           ..server = _s1
           ..failPosts.add(_s1);
         final store = wire.store();
-        await store.load();
-        await store.dismiss('a1');
+        await store.markRead('a1');
         expect(store.writeFailedIds, ['a1']);
-        store.reset();
-        wire.server = _s1;
         await store.load();
-        await store.dismiss('a1');
-        await store.load();
-        expect(wire.gets.last, {'after': 'a1', 'server_id': _s1});
+        expect(wire.gets.last, {
+          'after': 'a1',
+          'server_id': _s1,
+          'sidebar_limit': 5,
+        });
         wire.server = _s2;
         await store.load();
-        expect(wire.gets.last, {'server_id': _s2});
-        store.close('a1');
+        expect(wire.gets.last, {'server_id': _s2, 'sidebar_limit': 5});
+        store.reset();
         wire.server = null;
         await store.load();
-        expect(wire.gets.last, isNull);
+        expect(wire.gets.last, {'sidebar_limit': 5});
       },
     );
 
@@ -167,7 +166,7 @@ void main() {
 
   group('AnnouncementHost', () {
     testWidgets(
-      'reads and dismisses with server_id and re-reads after a switch',
+      'reads and dismisses with server_id and ends the entry across switches',
       (t) async {
         final requests = <String>[];
         final client = _Client((method, path, query) {
@@ -219,7 +218,7 @@ void main() {
         }
         expect(
           requests.where((r) => r.startsWith('GET /announcements/active')),
-          ['GET /announcements/active {server_id: $_s1}'],
+          ['GET /announcements/active {server_id: $_s1, sidebar_limit: 5}'],
         );
         expect(
           find.byKey(const ValueKey('announcement-modal')),
@@ -242,9 +241,13 @@ void main() {
         }
         expect(
           requests,
-          contains('GET /announcements/active {server_id: $_s2}'),
+          isNot(
+            contains(
+              'GET /announcements/active {server_id: $_s2, sidebar_limit: 5}',
+            ),
+          ),
         );
-        expect(find.text('Title s-$_s2'), findsOneWidget);
+        expect(find.text('Title s-$_s2'), findsNothing);
       },
     );
   });
