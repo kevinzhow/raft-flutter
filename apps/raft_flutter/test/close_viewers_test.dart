@@ -492,8 +492,10 @@ void registerCloseViewerTests(TestPart part) {
     'agent-directory-detail': (t, size) async {
       final w = await mountAt(t, size, '/s/demo/agent/a1');
       expect(find.text('Cindy'), findsWidgets);
+      final panel = find.byKey(const ValueKey('profile-agent-a1'));
       return SurfaceProbe(
-        isOpen: () => w.location.route == RaftRoute.agent,
+        isOpen: () =>
+            w.location.route == RaftRoute.agent || panel.evaluate().isNotEmpty,
         back: find.byTooltip('Back'),
         x: find.byTooltip('Close Profile'),
       );
