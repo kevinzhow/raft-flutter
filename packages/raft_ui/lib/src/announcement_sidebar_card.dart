@@ -34,6 +34,9 @@ class RaftAnnouncementSidebarCard extends StatelessWidget {
     final tokens = RaftTokens.of(context);
     final labels = RaftAnnouncementLabels.of(context);
     final picture = image;
+    final pictureRadius = BorderRadius.circular(
+      tokens.size('radius.control', fallback: 8),
+    );
     final behind = (total - position).clamp(0, 2);
     final next = position < total
         ? raftTextZh(context, 'Next', '下一条')
@@ -122,13 +125,11 @@ class RaftAnnouncementSidebarCard extends StatelessWidget {
                               if (picture != null)
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
-                                  child: RaftButton(
+                                  child: RaftInteractive(
                                     key: const ValueKey(
                                       'announcement-picture-zoom',
                                     ),
-                                    uiVariant: RaftButtonVariant.ghost,
-                                    padding: EdgeInsets.zero,
-                                    autoHeight: true,
+                                    expandTouchTarget: false,
                                     focusNode: pictureFocus,
                                     semanticLabel: raftTextZh(
                                       context,
@@ -136,35 +137,62 @@ class RaftAnnouncementSidebarCard extends StatelessWidget {
                                       '展开公告：{title}',
                                     ).replaceAll('{title}', title),
                                     onPressed: onExpand,
-                                    child: Stack(
-                                      children: [
-                                        _Picture(picture),
-                                        PositionedDirectional(
-                                          end: 8,
-                                          bottom: 8,
-                                          child: ExcludeSemantics(
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                color: tokens.ink.withValues(
-                                                  alpha: .42,
+                                    builder: (context, state) => CustomPaint(
+                                      foregroundPainter: RaftCssFocusOutline(
+                                        enabled: state.focusVisible,
+                                        color: tokens.ui['foreground'],
+                                        radius: pictureRadius,
+                                      ),
+                                      child: Stack(
+                                        children: [
+                                          _Picture(
+                                            picture,
+                                            radius: pictureRadius,
+                                          ),
+                                          if (state.hovered)
+                                            Positioned.fill(
+                                              child: DecoratedBox(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black
+                                                      .withValues(alpha: .1),
+                                                  borderRadius: pictureRadius,
                                                 ),
-                                                shape: BoxShape.circle,
                                               ),
-                                              child: SizedBox.square(
-                                                dimension: 24,
-                                                child: Center(
-                                                  child: RaftIcon(
-                                                    RaftGlyph.maximize2,
-                                                    size: 14,
+                                            ),
+                                          PositionedDirectional(
+                                            end: RaftSpace.x2,
+                                            bottom: RaftSpace.x2,
+                                            child: ExcludeSemantics(
+                                              child: Opacity(
+                                                opacity:
+                                                    state.hovered ||
+                                                        state.focusVisible
+                                                    ? 1
+                                                    : .7,
+                                                child: DecoratedBox(
+                                                  decoration: BoxDecoration(
                                                     color: tokens
-                                                        .ui['foreground-inverse'],
+                                                        .ui['foreground']
+                                                        .withValues(alpha: .6),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: SizedBox.square(
+                                                    dimension: RaftSpace.x6,
+                                                    child: Center(
+                                                      child: RaftIcon(
+                                                        RaftGlyph.maximize2,
+                                                        size: 14,
+                                                        color: tokens
+                                                            .ui['foreground-inverse'],
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),

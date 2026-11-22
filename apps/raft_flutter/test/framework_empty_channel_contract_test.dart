@@ -32,7 +32,6 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        // Mounted ChatPanel.tsx:1620 and en.ts:2359-2360, shared product copy.
         final empty = find.byType(RaftEmptyState);
         expect(empty, findsOneWidget);
         expect(
@@ -44,7 +43,7 @@ void main() {
             of: empty,
             matching: find.text('Start the conversation.'),
           ),
-          findsOneWidget,
+          findsNothing,
         );
         expect(find.text('Send a message to this channel.'), findsNothing);
         {

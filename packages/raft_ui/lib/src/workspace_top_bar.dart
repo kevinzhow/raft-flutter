@@ -184,7 +184,7 @@ class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
     final baseSide = math
         .max((size.width - searchBase) / 2, right.width)
         .clamp(0.0, size.width / 2);
-    final navigationGap = elasticSearch && hasNavigation ? _innerGap : 0.0;
+    final navigationGap = hasNavigation ? _innerGap : 0.0;
     final leadingInsets =
         leadingPadding + nav.width + _innerGap + navigationGap;
     // Size the strip against the preferred field width. The name button's

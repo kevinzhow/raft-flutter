@@ -2040,6 +2040,30 @@ typedef RaftDropdownTriggerBuilder = Widget Function(
   VoidCallback? onPressed,
 );
 
+class RaftDropdownMenuLabel extends StatelessWidget {
+  const RaftDropdownMenuLabel({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = RaftTokens.of(context);
+    final tokens = theme.recipeTokens;
+    final style = RaftDropdownMenuRecipe.resolve(
+      states: theme.recipeStates(responsive: true),
+      tokens: tokens,
+    ).label;
+    return Semantics(
+      header: true,
+      child: RaftMenuItemSurface(
+        style: style,
+        tokens: tokens,
+        child: Text(label),
+      ),
+    );
+  }
+}
+
 class RaftDropdownMenu extends StatefulWidget {
   const RaftDropdownMenu({
     super.key,

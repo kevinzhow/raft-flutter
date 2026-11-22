@@ -44,14 +44,15 @@ class RaftEmptyState extends StatelessWidget {
   const RaftEmptyState({
     super.key,
     required this.title,
-    required this.detail,
+    this.detail,
     this.glyph,
     this.action,
     this.titleHeading = false,
     this.blockPadding,
   });
 
-  final String title, detail;
+  final String title;
+  final String? detail;
   final double? blockPadding;
 
   /// Web `titleHeading`: the title is the heading of an area this empty state
@@ -115,15 +116,17 @@ class RaftEmptyState extends StatelessWidget {
                 Icon(Icons.forum_outlined, size: size, color: iconColor),
               SizedBox(height: t.size('space.emptyIconAfter', fallback: 16)),
               Semantics(header: titleHeading, child: text(title, titleStyle)),
-              const SizedBox(height: 8),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: descriptionMax > 0
-                      ? descriptionMax
-                      : double.infinity,
+              if (detail case final detail?) ...[
+                const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: descriptionMax > 0
+                        ? descriptionMax
+                        : double.infinity,
+                  ),
+                  child: text(detail, bodyStyle),
                 ),
-                child: text(detail, bodyStyle),
-              ),
+              ],
               if (action != null)
                 Padding(
                   padding: EdgeInsets.only(

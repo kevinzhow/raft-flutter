@@ -21,7 +21,7 @@ import 'dialog_card.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'overlays/dialog.dart';
-import 'panel_layout.dart' show RaftCssText;
+import 'panel_layout.dart' show RaftCssFocusOutline, RaftCssText;
 import 'recipe_surface.dart';
 import 'recipes/announcement.g.dart';
 import 'recipes/button_variants.g.dart';
@@ -283,7 +283,10 @@ class RaftAnnouncementCard extends StatelessWidget {
                   ),
                   if (picture != null) ...[
                     SizedBox(height: a.picture.margin.top),
-                    _Picture(picture),
+                    _Picture(
+                      picture,
+                      radius: a.picture.borderRadius ?? BorderRadius.zero,
+                    ),
                   ],
                   // `mt-3`, `mt-5` right after the picture.
                   SizedBox(
@@ -385,15 +388,13 @@ class _Label extends StatelessWidget {
 /// `AnnouncementDialogPicture` as the Raft caller overrides it: `aspect-video
 /// h-auto border-0`, image `object-fill`.
 class _Picture extends StatelessWidget {
-  const _Picture(this.image);
+  const _Picture(this.image, {required this.radius});
   final RaftAnnouncementImage image;
+  final BorderRadiusGeometry radius;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final radius = BorderRadius.circular(
-      t.size('radius.container', fallback: 10),
-    );
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(

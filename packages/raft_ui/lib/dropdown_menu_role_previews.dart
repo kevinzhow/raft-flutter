@@ -32,6 +32,7 @@ class _DropdownMenuRolePreviewState extends State<_DropdownMenuRolePreview> {
         RaftDropdownMenu(
           label: 'Open published menu',
           kind: RaftMenuKind.dropdownMenu,
+          header: const RaftDropdownMenuLabel(label: 'Document actions'),
           entries: [
             RaftMenuEntry(
               label: 'Open details',

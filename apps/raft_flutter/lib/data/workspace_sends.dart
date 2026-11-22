@@ -155,7 +155,8 @@ class WorkspaceSends {
     final scope = visit.scope, sessionCurrent = captureScope(visit.scope);
     final selectedIds = attachments?.toList(growable: false);
     bool current() => sessionCurrent() && visit.current();
-    if (!current()) return false;
+    bool canDispatch() => current() && !client.restoredOffline;
+    if (!canDispatch()) return false;
     final files = List<UploadDraft>.of(uploads.byScope[scope] ?? const []);
     if (files.any((file) => file.queued)) {
       if (queued(scope)) return false;
@@ -165,7 +166,7 @@ class WorkspaceSends {
       unawaited(persistDraft(scope));
       try {
         final limit = await visit.limit();
-        if (!current()) return false;
+        if (!canDispatch()) return false;
         if (limit == null ||
             files.any((f) => f.local != null && f.sizeBytes > limit)) {
           visit.failed(
@@ -178,7 +179,7 @@ class WorkspaceSends {
           return false;
         }
         for (final file in files.where((file) => file.queued)) {
-          if (!current()) return false;
+          if (!canDispatch()) return false;
           await visit.transfer(file);
           if (!current() || file.id == null) return false;
         }
@@ -195,7 +196,7 @@ class WorkspaceSends {
         }
       }
     }
-    if (!current()) return false;
+    if (!canDispatch()) return false;
     if (files.any((file) => file.id == null)) {
       visit.failed(
         const RaftApiException(
@@ -315,12 +316,12 @@ class WorkspaceSends {
 
     try {
       final id = await visit.prepare();
-      if (id == null || !current()) return failed();
+      if (id == null || !canDispatch()) return failed();
       send.channelId = id;
       if (fresh) {
         await persistAttempt(scope, attempt, channelId: visit.parentChannelId);
       }
-      if (!current()) return failed();
+      if (!canDispatch()) return failed();
       final result = await client.sendForVisit(
         visit,
         id,

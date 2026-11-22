@@ -18,6 +18,11 @@ extension ComposerMessageRequest on RaftClient {
     final generation = this.generation;
     // Web sends the sender's zone on every composer send, thread replies included.
     final timezone = await readDeviceTimezone();
+    if (restoredOffline) {
+      throw const RaftApiException(
+        "Messages can't be opened right now. They load again once you're back online.",
+      );
+    }
     if (generation != this.generation || !visit.current()) {
       throw const RaftApiException(
         'The send destination is no longer current.',
