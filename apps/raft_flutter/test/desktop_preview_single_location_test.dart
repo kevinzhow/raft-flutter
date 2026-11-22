@@ -345,7 +345,7 @@ void main() {
         await live('live-hidden-search', 'c2', 3);
         expect(reads('c2'), hiddenSearch);
 
-        // Activity: open the row, close via its real Close control.
+        // Activity: open the row and leave via the rail.
         await _rail(t, 'activity');
         expectPreview('activity', null, null);
         final hiddenMain = reads('c2');
@@ -369,7 +369,9 @@ void main() {
         final visiblePreview = reads('c');
         await live('live-visible-preview', 'c', 5);
         expect(reads('c'), greaterThan(visiblePreview));
-        await t.tap(find.byTooltip('Close Detail'));
+        expect(find.byTooltip('Close Detail'), findsNothing);
+        await _rail(t, 'chat');
+        await _rail(t, 'activity');
         await t.pumpAndSettle();
         expectPreview('activity', null, null);
         final hiddenActivity = reads('c');

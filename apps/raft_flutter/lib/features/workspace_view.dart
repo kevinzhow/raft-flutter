@@ -2053,6 +2053,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       ProfileSidePanel(
         key: profilePanelKeyFor(w),
         controller: w,
+        profileHost: page ? null : w,
         profile: profile,
         agentTab: w.location.agentTab,
         onClose: w.closeProfile,
@@ -2544,30 +2545,31 @@ class _WorkspaceViewState extends State<WorkspaceView>
           : openDirectoryLocation(RaftRoute.agent, id),
     );
     if (profile != null) return profile;
+    final access = WorkspaceChannelAccess.forChannel(w, target.channelId);
+    if (access != null) {
+      return WorkspaceChannelAccessPage(
+        workspace: w,
+        access: access,
+        wide: wide,
+      );
+    }
     final thread = target.kind == DesktopContentKind.thread;
     // The destination is still being resolved: like Source ChannelById, hold a
     // neutral "Loading channel" body instead of the previous channel's name
     // above a bare "Loading thread…".
     final resolving =
         pendingDesktopSelection && w.channel?.id != target.channelId;
-    final channel = resolving ? null : w.channel;
-    final close = RaftIconButton(
-      glyph: RaftGlyph.x,
-      tooltip: 'Close Detail',
-      onPressed: closeDesktopDetail,
-    );
+    final missing = w.missingConversationChannelId == target.channelId;
+    final channel = w.channel?.id == target.channelId ? w.channel : null;
     Widget header() {
       if (thread) return sourceThreadHeader(onClose: closeDesktopDetail);
       if (wide && channel != null && channel.type == 'dm') {
-        return dmHeader(
-          headerKey: const Key('workspace-content-dm-header'),
-          trailingActions: [close],
-        );
+        return dmHeader(headerKey: const Key('workspace-content-dm-header'));
       }
       return RaftPageHeader(
         title: channel?.name ?? '',
         height: raftPageHeaderHeight(context),
-        actions: [close],
+        onBack: wide ? null : closeDesktopDetail,
       );
     }
 
@@ -2576,7 +2578,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
       children: [
         header(),
         Expanded(
-          child: resolving
+          child: !thread && missing && channel == null
+              ? RaftChannelResolutionBody(label: tr('Select a channel'))
+              : resolving || !thread && channel == null
               ? thread
                     ? Center(child: Text(tr('Loading thread…')))
                     : RaftChannelResolutionBody(label: tr('Loading channel'))

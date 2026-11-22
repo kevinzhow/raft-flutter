@@ -101,19 +101,7 @@ void main() {
           expect(find.byType(RaftDmHeader), findsOneWidget);
           expect(row.hitTestable(), findsOneWidget);
 
-          await t.tap(
-            find
-                .byWidgetPredicate(
-                  (widget) =>
-                      widget is RaftIconButton &&
-                      widget.tooltip == 'Close Detail',
-                )
-                .hitTestable(),
-            kind: PointerDeviceKind.mouse,
-          );
-          await t.pumpAndSettle();
-          expect(find.byType(RaftDmHeader), findsNothing);
-          expect(row.hitTestable(), findsOneWidget);
+          expect(find.byTooltip('Close Detail'), findsNothing);
           if (search) {
             expect(
               t
