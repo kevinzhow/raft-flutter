@@ -38,6 +38,7 @@ CROSS_CUTTING = tuple(f'apps/raft_flutter/test/{name}_test.dart' for name in (
     'field_parity_v1_21_23', 'chat_reading_position',
     'close_popups', 'close_panels', 'phone_navigation_placement',
     'statusbar_standard', 'statusbar_standard_part2', 'statusbar_standard_part3', 'tap_target_matrix',
+    'hittest_audit',
 ))
 L10N_CHANGE = re.compile(r'(^|/)lib/src/l10n/')
 L10N_TESTS = ('packages/raft_ui/test/zh_catalog_files_test.dart',)
