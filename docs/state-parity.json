@@ -10086,6 +10086,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/fleet_views.dart#method:_FleetDetailState._readAgentForEdit": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Agent profile",
+        "reason": "Uses the shared toast when agent detail cannot be read at editor entry."
+      },
       "apps/raft_flutter/lib/features/fleet_views.dart#method:_FleetDetailState.confirm": {
         "role": "unresolved",
         "familyRefs": [],
@@ -11252,6 +11258,12 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
+      "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState._readProfileForEdit": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Member profile",
+        "reason": "Routes profile read failures to the shared toast before opening an editor."
+      },
       "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState._roleEditor": {
         "role": "unresolved",
         "familyRefs": [],
@@ -11287,6 +11299,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.editRole": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Member profile",
+        "reason": "Uses the shared toast if the current member role cannot be edited."
       },
       "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.remove": {
         "role": "unresolved",
@@ -62242,6 +62260,35 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:agent-profile.editor-toast": {
+        "owner": "Agent profile",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/fleet_views.dart#method:_FleetDetailState._readAgentForEdit"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "An agent edit action displays the shared toast if current detail is unavailable."
+      },
+      "surface:member-profile.editor-toast": {
+        "owner": "Member profile",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState._readProfileForEdit",
+          "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.editDescription",
+          "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.editRole"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The member profile uses the shared toast when a fresh description or role draft cannot be opened."
+      },
+      "surface:task-conversation.editor-toast": {
+        "owner": "Task conversation",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/task_conversation_surface.dart#function:taskConversation"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The task head uses the shared toast when its fresh detail read fails at editor entry."
       },
       "surface:ActivityUndo._setMute": {
         "owner": "design-system alignment",
