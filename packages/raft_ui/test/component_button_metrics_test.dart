@@ -47,6 +47,16 @@ void main() {
         ),
         _ => RaftServerAccessDeniedPage(onContinue: () => presses++),
       };
+      if (component == 'standaloneContinue') {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(),
+            home: Scaffold(body: child),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.getSize(find.byType(RaftButton)).height, 34);
+      }
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(pack: pack),

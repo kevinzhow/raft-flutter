@@ -19,6 +19,11 @@ class RaftServerAccessDeniedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final hasContinueMetricsOverride =
+        t.themeOverrides?.geometry.keys.any(
+          (token) => token.contains('standaloneContinue'),
+        ) ??
+        false;
     return Material(
       color: t.sidebar,
       child: SafeArea(
@@ -47,6 +52,9 @@ class RaftServerAccessDeniedPage extends StatelessWidget {
                           '回到 {name}',
                         ).replaceAll('{name}', serverName!),
                   size: RaftButtonRecipeSize.md,
+                  metricsKey: hasContinueMetricsOverride
+                      ? 'standaloneContinue'
+                      : null,
                   onPressed: onContinue,
                 ),
               ),
