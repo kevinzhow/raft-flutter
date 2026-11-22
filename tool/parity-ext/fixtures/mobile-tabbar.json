@@ -26,6 +26,23 @@
     "activityUnreadCount": 12
    }
   ],
+  "GET /servers": [
+   {
+    "id": "visual-server",
+    "name": "Visual Server",
+    "slug": "visual"
+   },
+   {
+    "id": "shell-server-acme",
+    "name": "Acme Design",
+    "slug": "acme"
+   },
+   {
+    "id": "shell-server-side",
+    "name": "Side Project",
+    "slug": "side"
+   }
+  ],
   "GET /servers/visual-server/sidebar-order": {
    "pinned": [
     {
