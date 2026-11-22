@@ -19,6 +19,7 @@ import {
 } from "raft-ui";
 import { LeftRail as ParityExtShLeftRail } from "../src/components/layout/LeftRail";
 import { MobileTabBar as ParityExtShMobileTabBar } from "../src/components/layout/MainLayout";
+import { TitleBarHost as ParityExtShTitleBarHost } from "../src/components/topbar/TitleBarHost";
 import ParityExtShConfirmDialog from "../src/components/ConfirmDialog";
 import ParityExtShBanner from "../src/components/ui/Banner";
 import ParityExtShEmptyState from "../src/components/ui/EmptyState";
@@ -37,6 +38,7 @@ import {
   DropdownMenuTrigger as ParityExtShMenuTrigger,
 } from "raft-ui";
 import ParityExtShToastProvider from "../src/components/LocalizedToastProvider";
+import { useRecentConversationStore as parityExtShRecents } from "../src/store/recentConversationStore";
 import { toast as parityExtShToast } from "raft-ui";
 import { Archive as ParityExtShArchive, Bell as ParityExtShBell, Inbox as ParityExtShInbox, Link2 as ParityExtShLink, Search as ParityExtShSearch, Trash2 as ParityExtShTrash } from "lucide-react";
 import parityExtShFixture from "virtual:parity-ext/shell";
@@ -70,6 +72,16 @@ type ParityExtShPreset = {
 
 type ParityExtShServer = { id: string; name: string; slug: string };
 
+const parityExtShAccessModules = import.meta.glob<{
+  useChannelAccessLossStore: {
+    setState: (state: { lost?: Record<string, boolean>; unavailable?: Record<string, boolean> }) => void;
+  };
+}>("../src/store/channelAccessLoss.ts", { eager: true });
+
+const parityExtShPendingModules = import.meta.glob<{
+  PendingServerLayout: (props: { offline: { server: unknown; channels: unknown[] } }) => ParityExtShNode;
+}>("../src/components/layout/PendingServerLayout.tsx", { eager: true });
+
 function parityExtShProps(): ParityExtShProps | null {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get("case") ?? "";
@@ -95,16 +107,18 @@ function parityExtShPreset(p: ParityExtShProps): ParityExtShPreset {
   const p = parityExtShProps();
   if (!p) return;
   const preset = parityExtShPreset(p);
-  const route = new URLSearchParams(window.location.search).get("route");
+  const params = new URLSearchParams(window.location.search);
+  const route = params.get("route");
+  for (const [name, value] of new URLSearchParams(params.get("routeQuery") ?? "")) {
+    params.set(name, value);
+  }
   const dm = preset.selected && parityExtShFixture.dms.some((d: { id: string }) => d.id === preset.selected);
   const path = route
     ? `/s/${fxServer.slug}/${route}`
     : preset.selected
       ? `/s/${fxServer.slug}/${dm ? "dm" : "channel"}/${preset.selected}`
       : `/s/${fxServer.slug}`;
-  if (window.location.pathname !== path) {
-    window.history.replaceState(null, "", `${path}${window.location.search}`);
-  }
+  window.history.replaceState(null, "", `${path}?${params.toString()}`);
 })();
 
 function parityExtShPrimeStores(p: ParityExtShProps) {
@@ -155,6 +169,46 @@ function parityExtShPrimeStores(p: ParityExtShProps) {
 
 function parityExtShShellVars(theme: string): ParityExtShCSSProperties {
   return { ["--shell-header-height" as string]: theme === "brutal-light" ? "62px" : "56px" } as ParityExtShCSSProperties;
+}
+
+function ParityExtShRoute({ p }: { p: ParityExtShProps }) {
+  useMemo(() => {
+    parityExtShPrimeStores(p);
+    if (p.surface === "channel.access-lost") {
+      const id = parityExtShPreset(p).selected!;
+      Object.values(parityExtShAccessModules)[0].useChannelAccessLossStore.setState({ lost: { [id]: true } });
+    }
+    if (p.surface.startsWith("history.")) {
+      parityExtShRecents.setState({
+        scopes: p.surface === "history.recent"
+          ? { [`${fxServer.id}:${fxOwner.id}`]: { channelIds: ["shell-random", "shell-general"], lastTouchedAt: 1 } }
+          : {},
+      });
+    }
+  }, [p]);
+  const routes = (
+    <Routes>
+      <Route path="/s/:serverSlug/*" element={<MainLayout />} />
+    </Routes>
+  );
+  const Pending = Object.values(parityExtShPendingModules)[0]?.PendingServerLayout;
+  const offline = p.surface === "offline.cached" && Pending
+    ? <Pending offline={{
+        server: useServerStore.getState().current,
+        channels: parityExtShFixture.channels.filter((row) => row.joined),
+      }} />
+    : null;
+  return (
+    <div
+      data-visual-case={p.raw}
+      data-testid="shell-route"
+      style={{ width: window.innerWidth, height: window.innerHeight, overflow: "hidden", display: "flex", flexDirection: "column" }}
+    >
+      {p.surface.startsWith("history.")
+        ? <ParityExtShTitleBarHost host={{ historyControls: true, titleBar: true }}>{routes}</ParityExtShTitleBarHost>
+        : offline ?? routes}
+    </div>
+  );
 }
 
 function ParityExtShView({ p }: { p: ParityExtShProps }) {
@@ -394,6 +448,10 @@ function ParityExtShPrimitiveView({ p }: { p: ParityExtShProps }) {
 function parityExtShellElement() {
   const p = parityExtShProps();
   if (!p) return null;
+  if (p.surface.startsWith("history.") || p.surface.startsWith("row.") ||
+      ["home.index", "channel.access-lost", "channel.unavailable", "offline.cached", "rack.profile"].includes(p.surface)) {
+    return <ParityExtShRoute p={p} />;
+  }
   const primitive = ["confirm", "banner", "empty", "bottomsheet", "overflow", "toast"].includes(p.surface.split(".")[0]);
   return primitive ? <ParityExtShPrimitiveView p={p} /> : <ParityExtShView p={p} />;
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -582,6 +583,17 @@ void main() {
       expect(find.byType(MemberProfileView), findsOneWidget);
       expect(find.text('Public profile'), findsOneWidget);
       expect(t.state(find.byType(DesktopDirectoryView)), same(directory));
+      final panel = find.byKey(const Key('workspace-profile-panel'));
+      final width = t.getSize(panel).width;
+      final expand = find.byKey(const Key('standalone-profile-expand'));
+      expect(expand, findsOneWidget);
+      await t.tap(expand);
+      await t.pumpAndSettle();
+      expect(t.getSize(panel).width, greaterThan(width));
+      expect(t.state(find.byType(DesktopDirectoryView)), same(directory));
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await t.pumpAndSettle();
+      expect(t.getSize(panel).width, width);
       // Web v1.24 hosts /human/:id in the ProfilePanel on desktop
       // (useMembersProfileRedirect.tsx:38-52, MainLayout.tsx:814-817):
       // HumanDetailPanel shows the X (`hidden md:flex`) and Escape closes it.

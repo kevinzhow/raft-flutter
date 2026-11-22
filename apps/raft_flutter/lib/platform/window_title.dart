@@ -15,6 +15,7 @@ String serverRouteWindowTitle({
   required String serverSlug,
   String? channelLabel,
   String? threadChannelLabel,
+  String? pageLabel,
 }) {
   String? segment(String? value) {
     final text = value?.trim() ?? '';
@@ -22,6 +23,8 @@ String serverRouteWindowTitle({
   }
 
   final server = segment(serverName) ?? serverSlug;
+  final page = segment(pageLabel);
+  if (page != null) return '$page | $server | $appWindowTitle';
   final thread = segment(threadChannelLabel);
   if (thread != null) return '$thread - Thread | $server | $appWindowTitle';
   final channel = segment(channelLabel);
@@ -65,5 +68,6 @@ String workspaceWindowTitle(WorkspaceController? w) {
     serverSlug: slug,
     channelLabel: inConversation ? label(location.entityId) : null,
     threadChannelLabel: label(location.thread?.channelId),
+    pageLabel: location.route == RaftRoute.artifacts ? 'Artifacts' : null,
   );
 }

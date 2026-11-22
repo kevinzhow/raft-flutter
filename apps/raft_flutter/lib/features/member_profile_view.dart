@@ -574,53 +574,90 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          RaftPanelHeaderBar(
-            title: name,
-            subtitle: handle.isEmpty ? null : '@$handle',
-            profileHandle: true,
-            iconSlot: RaftAvatarSlot(
-              name: name,
-              agent: false,
-              avatarUrl: avatarDrawn,
-              slot: RaftAvatarSlotContext.panelHeader,
-              content: RaftAvatarContent(
-                name: name,
-                uploadedUrl: avatar.uploadedUrl,
-                pixelKey: avatar.pixelKey,
-                fallback: const Center(
-                  child: RaftIcon(RaftGlyph.user, size: 18),
-                ),
-              ),
-            ),
-            onBack: widget.onBack,
-            iconAlwaysVisible: true,
-            profileBody: true,
-            backTooltip: raftText(context, 'Back'),
-            actions: [
-              // canMessageHuman: not for a guest (no existing DM known here).
-              if (widget.onMessage != null &&
+          LayoutBuilder(
+            builder: (context, box) {
+              final chrome = RaftPanelHeaderChrome.maybeOf(context);
+              final moves = chrome?.moves ?? const [];
+              final hasClose = widget.onBack == null && widget.showClose;
+              final showMessage =
+                  widget.onMessage != null &&
                   !isChannelSummaryHuman(profile) &&
                   canMessageHuman(
                     membershipStatus: profile['membershipStatus'],
                     remoteJoint: remoteJoint,
                     actorRole: w.server?.string('role'),
                     targetRole: profile['role'] as String?,
-                  ))
-                RaftPanelIconButton(
-                  icon: (size, color) =>
-                      RaftDirectMessageIcon(size: size, color: color),
-                  tooltip: raftText(context, 'Message'),
-                  onPressed: busy
-                      ? null
-                      : () => run(widget.onMessage!, refresh: false),
-                ),
-              if (widget.onBack == null && widget.showClose)
-                RaftPanelIconButton(
-                  glyph: RaftGlyph.x,
-                  tooltip: raftText(context, 'Close Profile'),
-                  onPressed: widget.onClose,
-                ),
-            ],
+                  );
+              final foldMessage =
+                  showMessage &&
+                  (chrome?.foldsProfileMessage(
+                        context,
+                        width: box.maxWidth,
+                        hasClose: hasClose,
+                        hasMenu: moves.isNotEmpty,
+                      ) ??
+                      false);
+              final messageLabel = raftText(context, 'Message');
+              final onMessage = busy
+                  ? null
+                  : () => run(widget.onMessage!, refresh: false);
+              return RaftPanelHeaderBar(
+                title: name,
+                useHostChrome: true,
+                handlesHostMoves: true,
+                subtitle: handle.isEmpty ? null : '@$handle',
+                profileHandle: true,
+                iconSlot: (chrome?.showsProfileAvatar(box.maxWidth) ?? true)
+                    ? RaftAvatarSlot(
+                        name: name,
+                        agent: false,
+                        avatarUrl: avatarDrawn,
+                        slot: RaftAvatarSlotContext.panelHeader,
+                        content: RaftAvatarContent(
+                          name: name,
+                          uploadedUrl: avatar.uploadedUrl,
+                          pixelKey: avatar.pixelKey,
+                          fallback: const Center(
+                            child: RaftIcon(RaftGlyph.user, size: 18),
+                          ),
+                        ),
+                      )
+                    : null,
+                onBack: widget.onBack,
+                iconAlwaysVisible: true,
+                profileBody: true,
+                backTooltip: raftText(context, 'Back'),
+                actions: [
+                  if (showMessage && !foldMessage)
+                    RaftPanelIconButton(
+                      icon: (size, color) =>
+                          RaftDirectMessageIcon(size: size, color: color),
+                      tooltip: messageLabel,
+                      onPressed: onMessage,
+                    ),
+                  if (foldMessage || moves.isNotEmpty)
+                    RaftOverflowMenuButton(
+                      key: const Key('channel-profile-move'),
+                      tooltip: raftText(context, 'More actions'),
+                      entries: [
+                        if (foldMessage)
+                          RaftMenuEntry(
+                            label: messageLabel,
+                            leading: const RaftDirectMessageIcon(),
+                            onPressed: onMessage,
+                          ),
+                        ...moves,
+                      ],
+                    ),
+                  if (hasClose)
+                    RaftPanelIconButton(
+                      glyph: RaftGlyph.x,
+                      tooltip: raftText(context, 'Close Profile'),
+                      onPressed: widget.onClose,
+                    ),
+                ],
+              );
+            },
           ),
           Expanded(
             child: ListView(

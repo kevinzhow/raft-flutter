@@ -2,6 +2,7 @@ import 'raft/button.dart';
 import 'hover_region.dart';
 import 'focus_visible.dart';
 import 'covered_pane.dart';
+import 'interaction.dart';
 
 import 'dart:math' as math;
 
@@ -12,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'theme.dart';
 import 'localization.dart';
 import 'panel_edge.dart';
+import 'panel_layout.dart' show RaftPanelHeaderChrome, raftProfileExpandAction;
 import 'side_panel_frame.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
@@ -68,6 +70,11 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   static Widget? foldedThreadOf(BuildContext context) => context
       .dependOnInheritedWidgetOfExactType<_FoldedWorkspaceThread>()
       ?.thread;
+
+  static RaftDockedWorkspaceThread? dockedThreadOf(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<_FoldedWorkspaceThread>()
+          ?.docked;
 
   /// Thread focus mode (Web `uiStore.threadMaximized`): while the thread sits
   /// beside its conversation, the conversation column can be hidden so the
@@ -173,12 +180,20 @@ typedef RaftWorkspaceSideRow = ({
   ({double saved, double floor}) Function() widths,
 });
 
+typedef RaftDockedWorkspaceThread = ({Widget child, double width});
+
 class _FoldedWorkspaceThread extends InheritedWidget {
-  const _FoldedWorkspaceThread({required this.thread, required super.child});
+  const _FoldedWorkspaceThread({
+    required this.thread,
+    required this.docked,
+    required super.child,
+  });
   final Widget? thread;
+  final RaftDockedWorkspaceThread? docked;
 
   @override
-  bool updateShouldNotify(_FoldedWorkspaceThread old) => thread != old.thread;
+  bool updateShouldNotify(_FoldedWorkspaceThread old) =>
+      thread != old.thread || docked != old.docked;
 }
 
 /// How the thread slot is presented (read by the thread's own menu): beside
@@ -215,6 +230,7 @@ class RaftThreadPlacement extends InheritedWidget {
 class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   final mainSlot = GlobalKey();
   final threadSlot = GlobalKey();
+  bool profileExpanded = false;
   final profileSlot = GlobalKey();
   // The navigation column keeps its state when it swaps sides.
   final railSlot = GlobalKey();
@@ -243,8 +259,10 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   Widget conversation({
     required bool split,
     bool foldInSideRow = false,
+    bool dockInSideRow = false,
     double threadSize = 0,
     double conversationWidth = 0,
+    double? profileSize,
   }) {
     final hasSide = widget.thread != null || widget.profile != null;
     final folded = hasSide && !split;
@@ -278,12 +296,38 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
         ),
       ),
     );
-    Widget profile() => KeyedSubtree(key: profileSlot, child: widget.profile!);
+    Widget profile() => KeyedSubtree(
+      key: profileSlot,
+      child: split && widget.thread == null
+          ? Actions(
+              actions: {
+                if (profileExpanded)
+                  DismissIntent: CallbackAction<DismissIntent>(
+                    onInvoke: (_) => setState(() => profileExpanded = false),
+                  ),
+              },
+              child: RaftPanelHeaderChrome(
+                actions: [
+                  raftProfileExpandAction(
+                    context: context,
+                    expanded: profileExpanded,
+                    onPressed: () =>
+                        setState(() => profileExpanded = !profileExpanded),
+                  ),
+                ],
+                child: widget.profile!,
+              ),
+            )
+          : widget.profile!,
+    );
     Widget mainContent({required bool visible}) => Visibility(
       visible: visible,
       maintainState: true,
       child: _FoldedWorkspaceThread(
         thread: foldInSideRow ? thread() : null,
+        docked: dockInSideRow && !focused
+            ? (child: thread(), width: threadWidth)
+            : null,
         child: RaftCoveredPane(
           covered: folded && widget.profile != null,
           child: widget.content,
@@ -369,7 +413,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
               ),
               panel(
                 const Key('workspace-profile-panel'),
-                profileWidth,
+                profileSize ?? profileWidth,
                 profile(),
                 sideFrame: false,
               ),
@@ -386,7 +430,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                 ),
                 sideFrame: true,
               )
-            else if (split && widget.thread != null)
+            else if (split && widget.thread != null && !dockInSideRow)
               panel(
                 const Key('workspace-thread-panel'),
                 threadSize,
@@ -396,7 +440,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
             else if (split && widget.profile != null)
               panel(
                 const Key('workspace-profile-panel'),
-                profileWidth,
+                profileSize ?? profileWidth,
                 profile(),
                 sideFrame: false,
               ),
@@ -625,9 +669,28 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
       // index.css thread-layout: real container680 + landscape or viewport xl.
       final sideThread =
           hasThread &&
-          conversationWidth >= splitMin &&
-          (width >= RaftLayoutMetrics.threadPortraitSplitViewport ||
-              width > MediaQuery.sizeOf(context).height);
+          (widget.thread == null
+              ? conversationWidth >= RaftAdaptiveWorkspace.profileMinWidth + 320
+              : conversationWidth >= splitMin &&
+                    (width >= RaftLayoutMetrics.threadPortraitSplitViewport ||
+                        width > MediaQuery.sizeOf(context).height));
+      final dockInSideRow =
+          sideThread && sideRow != null && !RaftInteraction.of(context).touch;
+      final profileMax = math.max(
+        RaftAdaptiveWorkspace.profileMinWidth,
+        math.min(
+          RaftAdaptiveWorkspace.profileMaxWidth,
+          conversationWidth - 320,
+        ),
+      );
+      if (widget.profile == null || !sideThread || widget.thread != null) {
+        profileExpanded = false;
+      }
+      final profileSize = profileExpanded
+          ? conversationWidth - 160
+          : widget.thread == null
+          ? math.min(profileWidth, profileMax)
+          : profileWidth;
       // Keep the main conversation usable while resizing a narrow window.
       final standaloneMax =
           (width - railWidth - (widget.sidebarVisible ? sidebarWidth : 0) - 320)
@@ -666,8 +729,10 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                   child: conversation(
                     split: sideThread,
                     foldInSideRow: !sideThread && sideFloor > 0,
+                    dockInSideRow: dockInSideRow,
                     threadSize: actualThread,
                     conversationWidth: conversationWidth,
+                    profileSize: profileSize,
                   ),
                 ),
               ),
@@ -687,12 +752,18 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                 key: const Key('sidebar-resize-handle'),
                 label: widget.sidebarResizeLabel,
                 value: sidebarWidth,
+                min: 180,
+                max: 320,
+                seamLine: true,
                 // A sidebar on the right grows when dragged left.
                 reversed: onRight,
                 onChanged: resizeSidebar,
               ),
             ),
-          if (sideThread && widget.thread != null && !focusedThread(sideThread))
+          if (sideThread &&
+              widget.thread != null &&
+              !dockInSideRow &&
+              !focusedThread(sideThread))
             Positioned(
               right:
                   (columns(conversationWidth, actualThread)
@@ -710,6 +781,9 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                 key: const Key('thread-resize-handle'),
                 label: widget.threadResizeLabel,
                 value: actualThread,
+                min: threadMin,
+                max: threadMax,
+                seamLine: true,
                 reversed: true,
                 onChanged: (value) => resizeThread(value, threadMax),
               ),
@@ -722,7 +796,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                   columns(conversationWidth, actualThread)))
             Positioned(
               right:
-                  profileWidth -
+                  profileSize -
                   4 +
                   widget.trailingExtent +
                   (onRight
@@ -734,9 +808,15 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
               child: RaftPanelResizeHandle(
                 key: const Key('profile-resize-handle'),
                 label: widget.profileResizeLabel,
-                value: profileWidth,
+                value: profileSize,
+                min: RaftAdaptiveWorkspace.profileMinWidth,
+                max: profileExpanded ? profileSize : profileMax,
+                seamLine: true,
                 reversed: true,
-                onChanged: resizeProfile,
+                onChanged: (width) {
+                  if (profileExpanded) setState(() => profileExpanded = false);
+                  resizeProfile(math.min(width, profileMax));
+                },
                 onChangeEnd: () =>
                     widget.onProfileWidthChanged?.call(profileWidth),
               ),

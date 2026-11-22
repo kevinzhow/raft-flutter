@@ -48,6 +48,7 @@ def build_fixture():
         preset = shell['presets'][name]
         sort = preset['sortModes']
         routes = {
+            'GET /servers': shell['servers'],
             # the sidebar order and the unread snapshot the Flutter provider builds its workspace from (ext_shell.dart)
             'GET /servers/visual-server/sidebar-order': {
                 'pinned': preset['pinned'], 'customSections': preset['customSections'],

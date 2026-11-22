@@ -13,7 +13,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart'
     show expect, find, findsOneWidget, isFalse, isTrue;
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/channel_access_loss.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
+import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -33,14 +35,15 @@ Map<String, dynamic> _preset(ParityContext ctx) {
   );
 }
 
-WorkspaceController _workspace(ParityContext ctx) => shellWorkspace(
-  ctx,
-  routes: ctx.props['extKind'] == 'framework'
-      ? Map<String, dynamic>.from(
-          (ctx.fixtures['ext:framework'] as Map)['routes'] as Map,
-        )
-      : const {},
-);
+WorkspaceController _workspace(ParityContext ctx) {
+  final routeSet = ctx.props['routeSet'];
+  final routes = ctx.props['extKind'] == 'framework'
+      ? (ctx.fixtures['ext:framework'] as Map)['routes'] as Map
+      : routeSet == 'row' || routeSet == 'rack'
+      ? (_fx(ctx)['routeSets'] as Map)[routeSet] as Map
+      : const {};
+  return shellWorkspace(ctx, routes: Map<String, dynamic>.from(routes));
+}
 
 /// The shell workspace (preset `ctx.props['preset']`) of the shell cases; the
 /// composed-screen cases (ext_screens.dart) add their message / inbox
@@ -196,24 +199,91 @@ class _HostState extends State<_Host> {
   @override
   void initState() {
     super.initState();
+    w.client.restoredOffline = widget.ctx.props['surface'] == 'offline.cached';
     WidgetsBinding.instance.addPostFrameCallback((_) => _open());
   }
 
   Future<void> _open() async {
+    final surface = widget.ctx.props['surface'] as String?;
+    if (surface?.startsWith('history.') == true) {
+      if (surface == 'history.recent') {
+        for (final id in ['shell-general', 'shell-random']) {
+          await w.selectChannel(w.channels.firstWhere((row) => row.id == id));
+        }
+      }
+      if (mounted) w.setSection('members');
+      return;
+    }
     if (widget.ctx.props['route'] == 'activity') {
       w.setSection('activity');
       return;
     }
-    final id = _preset(widget.ctx)['selected'] as String?;
+    if (surface == 'rack.profile') {
+      w.setSection('computers');
+      return;
+    }
+    final bool desktopHome =
+        (surface == 'home.index' || surface == 'offline.cached') &&
+        widget.ctx.props['platform'] == 'desktop';
+    final id = desktopHome
+        ? w.channels.firstOrNull?.id
+        : _preset(widget.ctx)['selected'] as String?;
+    if (widget.ctx.props['surface'] == 'channel.unavailable') {
+      const refused = 'shell-refused';
+      w.bindNavigation();
+      w.navigation.navigate(
+        RaftLocation.at(
+          serverSlug: w.location.serverSlug,
+          route: RaftRoute.channel,
+          entityId: refused,
+        ),
+      );
+      ChannelAccessLoss.of(w.client).noteOpenResult(
+        refused,
+        RaftApiException.response(
+          'Channel not found or not visible',
+          status: 404,
+          body: {'error': 'Channel not found or not visible'},
+        ),
+      );
+      w.notifyListeners();
+      return;
+    }
     if (id == null) return;
     final channel = [...w.channels, ...w.dms].firstWhere((c) => c.id == id);
     await w.selectChannel(channel);
+    if (mounted && surface?.startsWith('row.') == true) {
+      if (surface != 'row.profile-expanded') {
+        await w.openThreadIdentity(
+          parentChannelId: id,
+          parentMessageId: 'shell-parent',
+          initialThreadChannelId: 'shell-thread',
+        );
+      }
+      if (mounted) {
+        w.openProfile(RaftProfileKind.human, 'visual-human-designer');
+      }
+    }
+    if (mounted && widget.ctx.props['surface'] == 'channel.access-lost') {
+      ChannelAccessLoss.of(w.client).noteReadError(
+        id,
+        RaftApiException.response(
+          'Access denied',
+          status: 403,
+          body: {'error': 'Access denied'},
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) => withAppServices(
     WorkspaceHostScope(
-      browser: widget.ctx.props['shell'] == 'browser',
+      browser:
+          widget.ctx.props['shell'] == 'browser' &&
+          !(widget.ctx.props['surface'] as String? ?? '').startsWith(
+            'history.',
+          ),
       child: WorkspaceView(
         controller: w,
         presentation: presentation,
@@ -650,6 +720,25 @@ ParityCase _primitive(Widget Function(ParityContext) build, String widget) =>
 /// Historical shell cases keep 3 themes; Help popup bounds add current Raft
 /// light/dark without changing those historical entries.
 final Map<String, ParityCase> extShellCases = {
+  for (final surface in const [
+    'row.profile-expanded',
+    'row.profile-moved',
+    'rack.profile',
+  ])
+    for (final theme in const ['brutal', 'elegant-dark'])
+      'components.shell.desktop.$surface.$theme': _routeCase,
+  for (final surface in const ['history.empty', 'history.recent'])
+    for (final theme in const ['brutal', 'elegant-dark'])
+      'components.shell.desktop.$surface.$theme': _routeCase,
+  for (final platform in const ['desktop', 'mobile'])
+    for (final surface in const [
+      'home.index',
+      'channel.access-lost',
+      'channel.unavailable',
+      'offline.cached',
+    ])
+      for (final theme in const ['brutal', 'elegant-dark'])
+        'components.shell.$platform.$surface.$theme': _routeCase,
   for (final state in const ['default', 'hover', 'focus'])
     for (final theme in const ['raft', 'raft-dark'])
       'components.shell.desktop.sidebar.sort-popup.$state.$theme':
@@ -702,3 +791,12 @@ final Map<String, ParityCase> extShellCases = {
         ),
   },
 };
+
+final _routeCase = ParityCase(
+  widgets: const ['raft_flutter:WorkspaceView'],
+  notes: 'Mounted shell route, using the shared shell workspace fixture.',
+  build: (ctx) => SizedBox.expand(
+    key: const ValueKey('shell-route'),
+    child: shellWorkspaceView(ctx),
+  ),
+);

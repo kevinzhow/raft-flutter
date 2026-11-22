@@ -263,7 +263,7 @@ void main() {
       client.selectServer(null);
       final store = ChannelSideStore.of(w);
       final resized = store.layout.resize(1, 960);
-      store.resizeExpandedDock({1: 960}, 240);
+      store.resizeDock({1: 960}, 240);
       expect((store.layout, store.conversationWidth), (resized, 240));
       expect(client.patches, isEmpty);
       await expectDeviceWidths(resized, 240);
@@ -421,7 +421,7 @@ void main() {
         await boot({_deviceLayout: jsonEncode(other.toJson())});
         w.sidebarOrder = orderWith(null);
         final store = ChannelSideStore.of(w);
-        store.resizeExpandedDock({1: 960}, 240);
+        store.resizeDock({1: 960}, 240);
         expect(store.conversationWidth, 240);
         expect(client.patches.single.data.keys, ['channelSideLayout']);
         client.patches.single.done.completeError(
@@ -437,7 +437,7 @@ void main() {
       await boot({_deviceConversationWidth: '260'});
       w.sidebarOrder = orderWith(saved);
       final store = ChannelSideStore.of(w);
-      store.resizeExpandedDock({1: saved.columns[1].width}, 240);
+      store.resizeDock({1: saved.columns[1].width}, 240);
       expect(store.conversationWidth, 240);
       expect(client.patches.single.layout, saved);
       client.patches.single.done.completeError(StateError('offline'));
@@ -453,7 +453,7 @@ void main() {
           await boot();
           w.sidebarOrder = orderWith(saved);
           final store = ChannelSideStore.of(w);
-          store.resizeExpandedDock({1: 520}, 240);
+          store.resizeDock({1: 520}, 240);
           final first = store.layout;
           store.resizeColumn(1, 540, false, conversationWidth: 220);
           expect(client.patches, hasLength(1));

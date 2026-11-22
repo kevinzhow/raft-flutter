@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/global_server_selector.dart';
 import 'package:raft_flutter/features/workspace_view.dart';

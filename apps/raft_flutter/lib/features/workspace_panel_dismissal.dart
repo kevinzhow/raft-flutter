@@ -1,8 +1,14 @@
 part of 'workspace_view.dart';
 
 extension _WorkspacePanelDismissal on _WorkspaceViewState {
+  Widget workspaceSideThread(bool wide, Widget child) =>
+      wide && !RaftInteraction.of(context).touch
+      ? desktopThreadFocus(child)
+      : child;
+
   void escapePanel() {
     if (takeDetailFieldEscape()) return;
+    if (channelSideArea.currentState?.restore() == true) return;
     if (mobileHost != null ||
         w.location.channelPage != null ||
         wide && desktopNavigation.target != null ||

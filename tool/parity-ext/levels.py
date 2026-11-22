@@ -101,6 +101,7 @@ EXT_AREA_LEVEL = {
 
 # Shell-family cases that are the frame itself (rail + sidebar in their states, the Activity column edge).
 SHELL_FRAME = (
+    'components.shell.*.home.index.*', 'components.shell.*.channel.*',
     'components.shell.*.sidebar.default.*', 'components.shell.*.sidebar.empty.*', 'components.shell.*.sidebar.loading.*',
     'components.shell.*.sidebar.custom.*', 'components.shell.*.sidebar.sorted.*', 'components.shell.*.sidebar.collapsed.*',
     'components.shell.*.sidebar.row-hover.*', 'components.shell.*.activity.frame.*',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/chat_view.dart';
@@ -26,11 +27,13 @@ void main() {
         api.routes['GET /messages/context/parent'] = (_) => {
           'messages': [row('parent', 'c1', 1)],
         };
+        api.routes['PATCH /servers/s1/sidebar-order'] = (request) =>
+            request.data;
         w.messageDomain.ledger.ingest([
           row('parent', 'c1', 1),
         ], expectedGeneration: w.messageDomain.ledger.generation);
         w.messageDomain.visibleIds['c1'] = {'parent'};
-        final details = find.byKey(const Key('channel-side-column-3'));
+        final details = find.byKey(const Key('channel-details-host-c1'));
         final detailsClose = find.byKey(const Key('channel-details-close'));
         final sideThread = find.byKey(const Key('workspace-thread-panel'));
         final threadHeader = find.byKey(const Key('workspace-thread-header'));
@@ -66,6 +69,30 @@ void main() {
           expect(deficit, greaterThan(0));
           expect(t.getSize(sideThread).width, closeTo(400 - deficit / 3, .01));
           expect(t.getSize(details).width, closeTo(400 - deficit * 2 / 3, .01));
+          if (width == 1100) {
+            await t.tap(find.byKey(const Key('channel-thread-move')));
+            await t.pumpAndSettle();
+            expect(find.text('Move right'), findsOneWidget);
+            await t.sendKeyEvent(LogicalKeyboardKey.escape);
+            await t.pumpAndSettle();
+            expect(find.text('Move right'), findsNothing);
+            expect(sideThread, findsOneWidget);
+            final handle = find.byKey(const Key('thread-resize-handle'));
+            final before = t.getSize(sideThread).width;
+            final detailsBefore = t.getSize(details).width;
+            final drag = await t.startGesture(t.getCenter(handle));
+            await drag.moveBy(Offset(before - 160 + 24, 0));
+            await t.pump();
+            expect(t.getSize(sideThread).width, 160);
+            expect(t.getSize(details).width, closeTo(detailsBefore - 24, 1));
+            await drag.up();
+            await t.pump();
+            await t.tap(find.byKey(const Key('channel-thread-move')));
+            await t.pumpAndSettle();
+            await t.tap(find.text('Move right'));
+            await t.pumpAndSettle();
+            expect(t.getRect(details).right, t.getRect(sideThread).left);
+          }
           final detailsState = t.state(find.byType(ChannelSettings));
           final threadState = t.state(threadChat);
           final chatState = t.state(channelChat);

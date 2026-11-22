@@ -82,6 +82,7 @@ class SourceProfileLoadingPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftPanelHeaderBar(
+          useHostChrome: true,
           title: '',
           onBack: onBack,
           backTooltip: raftText(context, 'Back'),
@@ -599,6 +600,32 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     List<RaftMenuEntry> menu,
     double panelWidth,
   ) {
+    final chrome = RaftPanelHeaderChrome.maybeOf(context);
+    final moves = chrome?.moves ?? const [];
+    final showMessage = a['deletedAt'] == null && _canMessage;
+    final inlineCommands = a['deletedAt'] == null && panelWidth > 480;
+    final hasClose =
+        widget.actions.onClose != null &&
+        MediaQuery.sizeOf(context).width >= 768;
+    final foldMessage =
+        showMessage &&
+        (chrome?.foldsProfileMessage(
+              context,
+              width: panelWidth,
+              hasClose: hasClose,
+              hasMenu: menu.isNotEmpty || moves.isNotEmpty,
+            ) ??
+            false);
+    final overflow = [
+      if (foldMessage)
+        RaftMenuEntry(
+          label: raftText(context, 'Direct message'),
+          leading: const RaftDirectMessageIcon(size: 18),
+          onPressed: widget.actions.onMessage,
+        ),
+      if (a['deletedAt'] == null && !inlineCommands) ...menu,
+      ...moves,
+    ];
     return RaftPanelTextScope(
       sans: true,
       child: Column(
@@ -606,6 +633,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         children: [
           RaftPanelHeaderBar(
             title: displayName,
+            useHostChrome: true,
+            handlesHostMoves: true,
             // Web v1.21.12: the `@handle` subtitle.
             subtitle: '@${a['name'] ?? ''}',
             profileHandle: true,
@@ -618,18 +647,18 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                 ? null
                 : widget.actions.onBack,
             backTooltip: raftText(context, 'Back'),
-            iconSlot: RaftAvatarSlot(
-              name: displayName,
-              avatarUrl: agentProfileAvatarUrl(
-                widget.controller.client.origin,
-                a['avatarUrl'] as String?,
-              ),
-              slot: RaftAvatarSlotContext.panelHeader,
-            ),
+            iconSlot: (chrome?.showsProfileAvatar(panelWidth) ?? true)
+                ? RaftAvatarSlot(
+                    name: displayName,
+                    avatarUrl: agentProfileAvatarUrl(
+                      widget.controller.client.origin,
+                      a['avatarUrl'] as String?,
+                    ),
+                    slot: RaftAvatarSlotContext.panelHeader,
+                  )
+                : null,
             actions: [
-              // Web v1.24 AgentProfileOverflowMenu: Direct Message is its own
-              // button at every width, before the other commands.
-              if (a['deletedAt'] == null && _canMessage)
+              if (showMessage && !foldMessage)
                 RaftPanelIconButton(
                   key: const Key('agent-profile-message'),
                   icon: (size, color) =>
@@ -637,22 +666,16 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                   tooltip: raftText(context, 'Direct message'),
                   onPressed: widget.actions.onMessage,
                 ),
-              if (a['deletedAt'] == null && menu.isNotEmpty)
-                // AgentProfileOverflowMenu `responsive`: the inline command
-                // buttons while the panel is wider than 480px (container
-                // query), else the overflow menu.
-                if (panelWidth > 480)
-                  ..._inlineActions(context)
-                else
-                  RaftOverflowMenuButton(
-                    key: const Key('agent-profile-overflow-trigger'),
-                    entries: menu,
-                    tooltip: raftText(context, 'More Actions'),
-                  ),
+              if (inlineCommands && menu.isNotEmpty) ..._inlineActions(context),
+              if (overflow.isNotEmpty)
+                RaftOverflowMenuButton(
+                  key: const Key('agent-profile-overflow-trigger'),
+                  entries: overflow,
+                  tooltip: raftText(context, 'More Actions'),
+                ),
               // AgentDetailHeader `onClose` (`hidden md:flex`): the profile
               // overlay's close action once the back chevron is gone.
-              if (widget.actions.onClose != null &&
-                  MediaQuery.sizeOf(context).width >= 768)
+              if (hasClose)
                 RaftPanelIconButton(
                   glyph: RaftGlyph.x,
                   tooltip: raftText(context, 'Close Profile'),

@@ -16660,7 +16660,7 @@
    "capability": "Back/forward behaviour: browser history, mobile back sync, Escape-to-close, Back from a detail returns to its list",
    "background": false,
    "status": "covered",
-   "webEntry": "hooks/useAppNavigate.ts (NavigationDepthTracker, recordSynchronousMobileBackNavigation), utils/historyTopState.ts, rightPanelUrlSync.ts",
+   "webEntry": "components/topbar/historyNavigation.ts, hooks/useAppNavigate.ts, utils/historyTopState.ts and rightPanelUrlSync.ts",
    "gate": "",
    "flutterEntry": "data/raft_navigation_history.dart RaftNavigationKind history + Android system back/predictive back via PopScope; docs/source-navigation-contract.md",
    "flutterRefs": [
@@ -16680,10 +16680,10 @@
    "capability": "Desktop app Back / Forward / History menu ('Go back', 'Go forward', 'History', 'No recent conversations yet')",
    "background": false,
    "status": "covered",
-   "webEntry": "i18n/messages/en.ts desktop.history.back|forward|menu|empty exist, but no component in packages/web/src consumes them (strings for the native Electron/Tauri app menu outside this package)",
+   "webEntry": "components/topbar/HistoryControls.tsx and components/topbar/HistoryMenu.tsx",
    "gate": "",
    "flutterEntry": "features/workspace_history_controls.dart: shared desktop toolbar Back / Forward / History reuses WorkspaceNavigation, restores accepted channel/thread locations, and rejects stale account/server actions",
-   "justification": "The native desktop toolbar has explicit Back/Forward controls and an observed-history menu. Narrow desktop rows fold the arrows into the menu; the current workspace always contributes its initial entry, so a separate empty-history placeholder is unnecessary.",
+   "justification": "The native desktop toolbar shows Back and Forward beside a menu of recently visited conversations. The menu uses an empty state when no eligible recent conversation exists.",
    "impact": "",
    "size": "",
    "flutterRefs": [

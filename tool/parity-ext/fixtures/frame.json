@@ -30,6 +30,23 @@
  },
  "routeSets": {
   "fr-mobile": {
+   "GET /servers": [
+    {
+     "id": "visual-server",
+     "name": "Visual Server",
+     "slug": "visual"
+    },
+    {
+     "id": "shell-server-acme",
+     "name": "Acme Design",
+     "slug": "acme"
+    },
+    {
+     "id": "shell-server-side",
+     "name": "Side Project",
+     "slug": "side"
+    }
+   ],
    "GET /servers/visual-server/sidebar-order": {
     "pinned": [
      {
@@ -371,6 +388,23 @@
    }
   },
   "fr-default": {
+   "GET /servers": [
+    {
+     "id": "visual-server",
+     "name": "Visual Server",
+     "slug": "visual"
+    },
+    {
+     "id": "shell-server-acme",
+     "name": "Acme Design",
+     "slug": "acme"
+    },
+    {
+     "id": "shell-server-side",
+     "name": "Side Project",
+     "slug": "side"
+    }
+   ],
    "GET /servers/visual-server/sidebar-order": {
     "pinned": [
      {
@@ -712,6 +746,23 @@
    }
   },
   "fr-channel": {
+   "GET /servers": [
+    {
+     "id": "visual-server",
+     "name": "Visual Server",
+     "slug": "visual"
+    },
+    {
+     "id": "shell-server-acme",
+     "name": "Acme Design",
+     "slug": "acme"
+    },
+    {
+     "id": "shell-server-side",
+     "name": "Side Project",
+     "slug": "side"
+    }
+   ],
    "GET /servers/visual-server/sidebar-order": {
     "pinned": [
      {
@@ -1270,6 +1321,23 @@
    }
   },
   "fr-activity": {
+   "GET /servers": [
+    {
+     "id": "visual-server",
+     "name": "Visual Server",
+     "slug": "visual"
+    },
+    {
+     "id": "shell-server-acme",
+     "name": "Acme Design",
+     "slug": "acme"
+    },
+    {
+     "id": "shell-server-side",
+     "name": "Side Project",
+     "slug": "side"
+    }
+   ],
    "GET /servers/visual-server/sidebar-order": {
     "pinned": [
      {

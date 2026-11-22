@@ -85,6 +85,7 @@ Widget _rootError(ParityContext ctx) {
     stack: error['stack'] as String,
     componentStack: error['componentStack'] as String,
     onReload: () {},
+    onOpenHome: () {},
   );
 }
 
@@ -384,14 +385,10 @@ final Map<String, ParityCase> extAuthPagesCases = {
 
 /// Web pages the Flutter app has no widget for: surface name -> why.
 const _missing = <String, String>{
-  'setup-gate.loading':
-      'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no loading page.',
-  'setup-gate.unavailable':
-      'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no unavailable page.',
-  'setup-gate.load-failed':
-      'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no load-failed page.',
-  'setup-gate.complete':
-      'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no completion page.',
+  'setup-gate.loading': 'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no loading page.',
+  'setup-gate.unavailable': 'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no unavailable page.',
+  'setup-gate.load-failed': 'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no load-failed page.',
+  'setup-gate.complete': 'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no completion page.',
 };
 
 /// Cases without a Flutter widget (gap noFlutterSurface), merged into parityUncovered by case_map.dart.

@@ -20,6 +20,7 @@ import 'channel_side_store.dart';
 import 'channel_side_tasks_panel.dart';
 import 'channel_side_web_preview.dart';
 import 'channel_side_web_preview_panel.dart';
+import 'panel_width_store.dart';
 import 'source_channel_files_view.dart';
 
 /// The chat keeps this much beside the columns (Web `MAIN_COLUMN_MIN_WIDTH`).
@@ -107,7 +108,10 @@ ChannelSidePlacement placeChannelSide(
 double _contentFloor(VisibleChannelSideColumn column) =>
     math.min(column.width, column.minWidth).toDouble();
 
-RaftWorkspaceSideRow channelSideRow(WorkspaceController w) {
+RaftWorkspaceSideRow channelSideRow(
+  WorkspaceController w, {
+  bool profile = false,
+}) {
   final store = ChannelSideStore.of(w);
   final preview = WebPreviewStore.of(w);
   final details = ChannelDetailsStore.of(w);
@@ -119,10 +123,10 @@ RaftWorkspaceSideRow channelSideRow(WorkspaceController w) {
       ChannelSideFlags.of(w),
     ]),
     widths: () {
-      final (open, _) = _openChannelSide(w, preview, details);
+      final (open, _) = _openChannelSide(w, preview, details, profile: profile);
       var saved = 0.0;
       var floor = 0.0;
-      for (final column in store.layout.visible(open)) {
+      for (final column in _visibleSideColumns(store, open)) {
         saved += column.width;
         floor += _contentFloor(column);
       }
@@ -134,8 +138,9 @@ RaftWorkspaceSideRow channelSideRow(WorkspaceController w) {
 (Set<ChannelSideSection>, WebPreviewPage?) _openChannelSide(
   WorkspaceController w,
   WebPreviewStore preview,
-  ChannelDetailsStore details,
-) {
+  ChannelDetailsStore details, {
+  required bool profile,
+}) {
   final channel = w.channel;
   final here =
       channel != null && channel.type != 'thread' && w.section == 'chat';
@@ -148,11 +153,54 @@ RaftWorkspaceSideRow channelSideRow(WorkspaceController w) {
               ? ChannelSideSection.tasks
               : ChannelSideSection.files,
       if (page != null) ChannelSideSection.artifact,
+      if (profile) ChannelSideSection.profile,
       if (details.channel != null) ChannelSideSection.details,
     },
     page,
   );
 }
+
+List<VisibleChannelSideColumn> _visibleSideColumns(
+  ChannelSideStore store,
+  Set<ChannelSideSection> open, {
+  double? legacyThreadWidth,
+}) {
+  final columns = store.layout.visible(open);
+  if (legacyThreadWidth != null && store.conversationWidth == null) {
+    final index = columns.indexWhere(
+      (column) =>
+          column.sections.length == 1 &&
+          column.sections.single == ChannelSideSection.thread &&
+          column.width == channelSideSectionWidth(ChannelSideSection.thread),
+    );
+    if (index >= 0) {
+      final column = columns[index];
+      columns[index] = VisibleChannelSideColumn(
+        column: column.column,
+        sections: column.sections,
+        width: legacyThreadWidth.round(),
+        minWidth: column.minWidth,
+      );
+    }
+  }
+  if (!_profileOnly(open) ||
+      columns.single.width !=
+          channelSideSectionWidth(ChannelSideSection.profile)) {
+    return columns;
+  }
+  final column = columns.single;
+  return [
+    VisibleChannelSideColumn(
+      column: column.column,
+      sections: column.sections,
+      width: profilePanelWidth.value.round(),
+      minWidth: column.minWidth,
+    ),
+  ];
+}
+
+bool _profileOnly(Set<ChannelSideSection> sections) =>
+    sections.length == 1 && sections.contains(ChannelSideSection.profile);
 
 List<double> _solveChannelSideWidths(
   List<double> saved,
@@ -220,9 +268,11 @@ class ChannelSideArea extends StatefulWidget {
     this.headerExtent = 0,
     this.onOpenTask,
     this.headWrapper,
+    this.profile,
     @visibleForTesting this.bodyOf,
   });
   final WorkspaceController controller;
+  final Widget? profile;
 
   /// The channel column: header and chat. It stays where it is.
   final Widget child;
@@ -247,32 +297,57 @@ class ChannelSideArea extends StatefulWidget {
   bodyOf;
 
   @override
-  State<ChannelSideArea> createState() => _ChannelSideAreaState();
+  State<ChannelSideArea> createState() => ChannelSideAreaState();
 }
 
-class _ExpandedDockSeam {
-  _ExpandedDockSeam(List<PlacedChannelSideColumn> dock, int index)
-    : column = dock[index].column,
-      initialWidth = dock[index].width.roundToDouble(),
-      neighbor = index > 0 ? dock[index - 1].column : null,
-      initialWidths = {for (final c in dock) c.column: c.width.roundToDouble()};
+class _DockSeam {
+  _DockSeam(this.columns, this.index, this.widths);
 
-  final int column;
-  final int? neighbor;
-  final double initialWidth;
-  final Map<int, double> initialWidths;
+  final List<int> columns;
+  final int index;
+  final List<double> widths;
 
-  double conversationAt(double width) =>
-      channelSideColumnClip + (neighbor == null ? initialWidth - width : 0);
+  int get column => columns[index];
+  double get initialWidth => widths[index + 1];
+  double get maxWidth => math.min(
+    channelSideMaxSavedWidth.toDouble(),
+    initialWidth + _room(widths.take(index + 1)),
+  );
+  double get minWidth => initialWidth - _room(widths.skip(index + 1));
 
-  Map<int, double> atWidth(double width) => {
-    ...initialWidths,
-    column: width,
-    ?neighbor: initialWidths[neighbor]! + initialWidth - width,
-  };
+  double _room(Iterable<double> donors) => donors.fold(
+    0.0,
+    (room, width) => room + math.max(0, width - channelSideColumnClip),
+  );
+
+  ({double conversation, Map<int, double> columns}) atWidth(double width) {
+    final delta = initialWidth - width;
+    final next = [...widths];
+    final direction = delta >= 0 ? 1 : -1;
+    var remaining = delta.abs().roundToDouble();
+    for (
+      var donor = direction > 0 ? index + 1 : index;
+      donor >= 0 && donor < next.length && remaining > 0;
+      donor += direction
+    ) {
+      final taken = math.min(
+        remaining,
+        math.max(0.0, next[donor] - channelSideColumnClip),
+      );
+      next[donor] -= taken;
+      remaining -= taken;
+      next[direction > 0 ? index : index + 1] += taken;
+    }
+    return (
+      conversation: next.first,
+      columns: {
+        for (var i = 0; i < columns.length; i++) columns[i]: next[i + 1],
+      },
+    );
+  }
 }
 
-class _ChannelSideAreaState extends State<ChannelSideArea> {
+class ChannelSideAreaState extends State<ChannelSideArea> {
   WorkspaceController get w => widget.controller;
   late ChannelSideStore store;
   late WebPreviewStore preview;
@@ -281,9 +356,15 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   final drag = ChannelSideDragController();
   final _chatKey = GlobalKey();
   ChannelSideSection? _expanded;
-  ({_ExpandedDockSeam seam, double width})? _resizePreview;
+  ({_DockSeam seam, double width})? _resizePreview;
   late Listenable listenable;
   int previewOpenedAt = 0;
+
+  bool restore() {
+    if (_expanded == null) return false;
+    setState(() => _expanded = null);
+    return true;
+  }
 
   @override
   void initState() {
@@ -351,8 +432,8 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     ),
   );
 
-  void _resizeExpandedDock(_ExpandedDockSeam seam, double width, bool commit) {
-    final shown = math.max(channelSideColumnClip, width).roundToDouble();
+  void _resizeDock(_DockSeam seam, double width, bool commit, bool profile) {
+    final shown = width.clamp(seam.minWidth, seam.maxWidth).roundToDouble();
     final moved = shown != seam.initialWidth;
     if (_resizePreview == null && !moved) return;
     setState(() {
@@ -360,15 +441,28 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
       _resizePreview = commit ? null : (seam: seam, width: shown);
     });
     if (commit && moved) {
-      store.resizeExpandedDock(seam.atWidth(shown), seam.conversationAt(shown));
+      final next = seam.atWidth(shown);
+      if (profile) profilePanelWidth.save(next.columns[seam.column]!);
+      store.resizeDock(next.columns, next.conversation);
     }
   }
 
   Widget _build(BuildContext context, BoxConstraints box) {
-    final (open, page) = _openChannelSide(w, preview, details);
+    final (open, page) = _openChannelSide(
+      w,
+      preview,
+      details,
+      profile: widget.profile != null,
+    );
     final foldedThread = RaftAdaptiveWorkspace.foldedThreadOf(context);
+    final dockedThread = RaftAdaptiveWorkspace.dockedThreadOf(context);
+    if (dockedThread != null) open.add(ChannelSideSection.thread);
     final compact = RaftAdaptiveWorkspace.compactOf(context);
-    final visible = store.layout.visible(open);
+    final visible = _visibleSideColumns(
+      store,
+      open,
+      legacyThreadWidth: dockedThread?.width,
+    );
     final ownsSeam =
         !compact &&
         foldedThread == null &&
@@ -376,14 +470,14 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
         box.maxWidth >= (visible.length + 1) * channelSideColumnClip;
     if (_resizePreview case final active?) {
       if (!ownsSeam ||
-          visible.length != active.seam.initialWidths.length ||
-          visible.any(
-            (column) => !active.seam.initialWidths.containsKey(column.column),
-          )) {
+          !listEquals([
+            for (final column in visible) column.column,
+          ], active.seam.columns)) {
         _resizePreview = null;
       }
     }
     final resizePreview = _resizePreview;
+    final live = resizePreview?.seam.atWidth(resizePreview.width);
     final conversationWidth = ownsSeam && visible.isNotEmpty
         ? store.conversationWidth?.toDouble()
         : null;
@@ -392,10 +486,8 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
       width: box.maxWidth,
       compact: compact,
       threadFolded: foldedThread != null,
-      conversationWidth:
-          resizePreview?.seam.conversationAt(resizePreview.width) ??
-          conversationWidth,
-      dockWidths: resizePreview?.seam.atWidth(resizePreview.width) ?? const {},
+      conversationWidth: live?.conversation ?? conversationWidth,
+      dockWidths: live?.columns ?? const {},
     );
     final beside = placement.mode == ChannelSideMode.beside;
     final columns = placement.columns;
@@ -422,13 +514,47 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
         placement.columns.isNotEmpty;
     final chatWidth = box.maxWidth - shown;
     final hasDock = beside && placement.columns.isNotEmpty;
-    final ownedExpandedSeam = expandedIndex >= 0 && ownsSeam
-        ? _ExpandedDockSeam(docked, expandedIndex)
-        : null;
-    final seam = resizePreview?.seam ?? ownedExpandedSeam;
-    final chatMinimum = conversationWidth != null
-        ? channelSideColumnClip
-        : channelSideChatMinWidth;
+    final dockOrder = [for (final column in docked) column.column];
+    final dockWidths = [
+      chatWidth.roundToDouble(),
+      for (final column in docked) column.width.roundToDouble(),
+    ];
+    ChannelSideResize? resize(int index) {
+      if (expandedIndex >= 0 && expandedIndex != index) return null;
+      final column = docked[index];
+      final active = resizePreview?.seam;
+      final seam = !ownsSeam
+          ? null
+          : active?.column == column.column
+          ? active
+          : _DockSeam(dockOrder, index, dockWidths);
+      final profile = _profileOnly(open);
+      final isThread = column.sections.contains(ChannelSideSection.thread);
+      return ChannelSideResize(
+        column: column.column,
+        key: isThread
+            ? const Key('thread-resize-handle')
+            : profile
+            ? const Key('profile-resize-handle')
+            : null,
+        width: column.width,
+        minWidth: seam?.minWidth ?? channelSideMinSavedWidth.toDouble(),
+        maxWidth:
+            seam?.maxWidth ??
+            column.width + math.max(0, chatWidth - channelSideChatMinWidth),
+        fromPointerDown: seam != null,
+        onResize: (width, commit) {
+          if (seam != null) {
+            _resizeDock(seam, width, commit, profile);
+          } else {
+            if (commit && profile) profilePanelWidth.save(width);
+            store.resizeColumn(column.column, width, commit);
+          }
+        },
+        label: _resizeLabel(context, column.sections, page),
+      );
+    }
+
     final chatContentFloor = hasDock && chatWidth < channelSideChatMinWidth
         ? channelSideChatMinWidth
         : null;
@@ -482,7 +608,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                 ),
               ),
               if (beside)
-                for (final c in docked)
+                for (final (index, c) in docked.indexed)
                   SizedBox(
                     width: c.width,
                     child: _column(
@@ -500,37 +626,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                           ? (section) =>
                                 _moveItems(context, open, visible, section)
                           : null,
-                      resize: _expanded != null && seam?.column != c.column
-                          ? null
-                          : ChannelSideResize(
-                              column: c.column,
-                              width: c.width,
-                              maxWidth: seam?.column == c.column
-                                  ? seam!.initialWidth
-                                  : c.width +
-                                        math.max(0.0, chatWidth - chatMinimum),
-                              fromPointerDown: seam?.column == c.column,
-                              onResize: (width, commit) {
-                                if (seam?.column == c.column) {
-                                  _resizeExpandedDock(seam!, width, commit);
-                                } else {
-                                  store.resizeColumn(
-                                    c.column,
-                                    width,
-                                    commit,
-                                    conversationWidth: conversationWidth == null
-                                        ? null
-                                        : chatWidth +
-                                              c.width -
-                                              width.clamp(
-                                                channelSideMinSavedWidth,
-                                                channelSideMaxSavedWidth,
-                                              ),
-                                  );
-                                }
-                              },
-                              label: _resizeLabel(context, c.sections, page),
-                            ),
+                      resize: resize(index),
                     ),
                   ),
             ],
@@ -544,7 +640,9 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
             left: 0,
             bottom: 0,
             child: _CoverFocus(
-              onBack: () => ChannelSideCards.closeCovering(w),
+              onBack: () => open.contains(ChannelSideSection.profile)
+                  ? w.closeProfile()
+                  : ChannelSideCards.closeCovering(w),
               child: _column(
                 context,
                 placement.mode,
@@ -562,7 +660,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
       actions: {
         if (_expanded != null)
           DismissIntent: CallbackAction<DismissIntent>(
-            onInvoke: (_) => setState(() => _expanded = null),
+            onInvoke: (_) => restore(),
           ),
       },
       child: row,
@@ -576,6 +674,8 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     ChannelSideSection.tasks: raftText(context, 'Tasks'),
     ChannelSideSection.files: raftText(context, 'Files'),
     ChannelSideSection.details: raftText(context, 'Details'),
+    ChannelSideSection.profile: raftText(context, 'Profile'),
+    ChannelSideSection.thread: raftText(context, 'Thread'),
     if (page != null)
       ChannelSideSection.artifact: webPreviewAddressParts(page.url).host,
   };
@@ -630,6 +730,70 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     final channelId = w.channel?.id ?? '';
     final body = widget.bodyOf?.call(context, section);
     switch (section) {
+      case ChannelSideSection.thread:
+        final thread = RaftAdaptiveWorkspace.dockedThreadOf(context)!;
+        final moves = movesOf?.call(section) ?? const [];
+        final tokens = RaftTokens.of(context);
+        return SizedBox.expand(
+          key: const Key('workspace-thread-panel'),
+          child: RaftStatusBarSource(
+            color: const Color(0x00000000),
+            border: RaftPanelEdge.leftFor(
+              tokens,
+              RaftPanelPresentation.attached,
+            ),
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final width = math.max(box.maxWidth, channelSideChatMinWidth);
+                return OverflowBox(
+                  alignment: Alignment.topRight,
+                  minWidth: width,
+                  maxWidth: width,
+                  child: RaftPanelHeaderChrome(
+                    wrap: (context, head) => (widget.headWrapper ?? _wrapHead)(
+                      context,
+                      section,
+                      head,
+                    ),
+                    actions: [
+                      if (moves.isNotEmpty)
+                        RaftOverflowMenuButton(
+                          key: const Key('channel-thread-move'),
+                          tooltip: raftText(context, 'More actions'),
+                          entries: moves,
+                        ),
+                    ],
+                    child: thread.child,
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      case ChannelSideSection.profile:
+        final moves = movesOf?.call(section) ?? const [];
+        final expand = _expandAction(mode, section);
+        final expanded = _expanded == section;
+        return RaftPanelHeaderChrome(
+          wrap: (context, head) =>
+              (widget.headWrapper ?? _wrapHead)(context, section, head),
+          moves: moves,
+          plannedProfile: true,
+          actions: [
+            if (expand != null)
+              raftConversationHeaderToggle(
+                key: const Key('channel-profile-expand'),
+                glyph: expanded ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
+                label: raftText(context, expanded ? 'Restore' : 'Expand'),
+                pressed: expanded,
+                onPressed: expand,
+              ),
+          ],
+          child: KeyedSubtree(
+            key: const Key('workspace-profile-panel'),
+            child: widget.profile!,
+          ),
+        );
       case ChannelSideSection.tasks:
         return ChannelSideCardView(
           section: section,

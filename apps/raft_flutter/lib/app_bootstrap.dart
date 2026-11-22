@@ -32,9 +32,9 @@ void runRaftAppRoot(List<String> args, {DesktopWindows? desktopWindows}) {
   RootErrors.instance.addListener(releaseOnError);
   // Release builds only: dev/local builds and platforms without a GitHub
   // release asset get a disabled service. Starts after the first frame.
-  if (desktopWindows?.isChild == true) {
+  if (desktopWindows != null && desktopWindows.isChild) {
     RaftApp childApp({Uri? initialLocation}) => RaftApp(
-      initialLocation: initialLocation ?? desktopWindows!.initialLocation,
+      initialLocation: initialLocation ?? desktopWindows.initialLocation,
       onStartupReady: allowFirstFrame,
       services: AppServices.updatesDisabledForTestOrPreview(
         desktopWindows: desktopWindows,
@@ -71,7 +71,6 @@ void runRaftAppRoot(List<String> args, {DesktopWindows? desktopWindows}) {
       appUpdate,
       desktopWindows: desktopWindows,
     ),
-    ownsAppUpdate: true,
   );
   runApp(
     RootErrorBoundary(

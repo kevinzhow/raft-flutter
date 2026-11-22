@@ -16,11 +16,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'agent_info_list.dart' show RaftInfoRowBody;
+import 'agent_profile.dart' show RaftOverflowMenuButton;
 import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeScale;
 import 'raft_underline.dart';
 import 'control_typography.dart';
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'icons.dart';
+import 'localization.dart' show raftText;
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 import 'recipes/recipe_runtime.dart';
 import 'recipes/panel_action.g.dart';
@@ -514,6 +516,65 @@ EdgeInsets raftPanelHeaderEdges(
   );
 }
 
+Widget raftProfileExpandAction({
+  required BuildContext context,
+  required bool expanded,
+  required VoidCallback onPressed,
+}) => RaftIconButton(
+  key: const Key('standalone-profile-expand'),
+  glyph: expanded ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
+  tooltip: raftText(context, expanded ? 'Restore' : 'Expand'),
+  onPressed: onPressed,
+);
+
+class RaftPanelHeaderChrome extends InheritedWidget {
+  const RaftPanelHeaderChrome({
+    super.key,
+    required this.actions,
+    this.moves = const [],
+    this.plannedProfile = false,
+    this.wrap,
+    required super.child,
+  });
+
+  final List<Widget> actions;
+  final List<RaftMenuEntry> moves;
+  final bool plannedProfile;
+  final Widget Function(BuildContext, Widget)? wrap;
+
+  static RaftPanelHeaderChrome? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<RaftPanelHeaderChrome>();
+
+  bool showsProfileAvatar(double width) => !plannedProfile || width >= 240;
+
+  bool foldsProfileMessage(
+    BuildContext context, {
+    required double width,
+    required bool hasClose,
+    required bool hasMenu,
+  }) {
+    if (!plannedProfile) return false;
+    final touch = RaftInteraction.of(context).touch;
+    final tokens = RaftTokens.of(context);
+    final extent = tokens.size(
+      touch ? 'size.control.lg' : 'size.control.md',
+      fallback: touch
+          ? RaftMetrics.touchTarget
+          : RaftDesktopMetrics.barButtonSize,
+    );
+    final count = 1 + actions.length + (hasClose ? 1 : 0) + (hasMenu ? 1 : 0);
+    final lead = showsProfileAvatar(width) ? 40 : 0;
+    return width < 20 + 13 + lead + 56 + extent * count + 4 * (count - 1);
+  }
+
+  @override
+  bool updateShouldNotify(RaftPanelHeaderChrome oldWidget) =>
+      actions != oldWidget.actions ||
+      moves != oldWidget.moves ||
+      plannedProfile != oldWidget.plannedProfile ||
+      wrap != oldWidget.wrap;
+}
+
 class RaftPanelHeaderBar extends StatelessWidget {
   const RaftPanelHeaderBar({
     super.key,
@@ -539,7 +600,12 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.leading,
     this.inlineMeta = false,
     this.desktopBar = false,
+    this.useHostChrome = false,
+    this.handlesHostMoves = false,
   });
+
+  final bool useHostChrome;
+  final bool handlesHostMoves;
 
   /// Use the v1.24 fine-pointer column margin and bar-button overhang.
   final bool desktopBar;
@@ -603,7 +669,11 @@ class RaftPanelHeaderBar extends StatelessWidget {
   final String backTooltip;
   final List<Widget> actions;
 
-  Widget _ghostHeader(BuildContext context, RaftTokens t) {
+  Widget _ghostHeader(
+    BuildContext context,
+    RaftTokens t,
+    List<Widget> actions,
+  ) {
     final narrow =
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     final grows = RaftScaled.grows(context);
@@ -758,9 +828,31 @@ class RaftPanelHeaderBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chrome = useHostChrome
+        ? RaftPanelHeaderChrome.maybeOf(context)
+        : null;
+    final actions = chrome == null
+        ? this.actions
+        : [
+            if (this.actions.isNotEmpty)
+              ...this.actions.take(this.actions.length - 1),
+            if (!handlesHostMoves && chrome.moves.isNotEmpty)
+              RaftOverflowMenuButton(
+                key: const Key('channel-profile-move'),
+                tooltip: raftText(context, 'More actions'),
+                entries: chrome.moves,
+              ),
+            ...chrome.actions,
+            if (this.actions.isNotEmpty) this.actions.last,
+          ];
+    final header = _build(context, actions);
+    return chrome?.wrap?.call(context, header) ?? header;
+  }
+
+  Widget _build(BuildContext context, List<Widget> actions) {
     final t = RaftTokens.of(context);
     if (t.option('panelAction.surface', or: 'outline') == 'ghost')
-      return _ghostHeader(context, t);
+      return _ghostHeader(context, t, actions);
     final rt = RaftRecipeTokens(t);
     final width = MediaQuery.sizeOf(context).width;
     final s = RaftPanelHeaderRecipe.resolve(

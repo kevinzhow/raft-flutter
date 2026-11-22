@@ -970,6 +970,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       color: t.colors['layer-canvas-muted'],
       child: RaftPanelHeaderBar(
         title: '${d.name}',
+        useHostChrome: true,
         iconAlwaysVisible: true,
         onBack: widget.onBack,
         backKey: widget.backKey,
@@ -2763,6 +2764,7 @@ class RaftComputerNotFoundPanel extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       RaftPanelHeaderBar(
+        useHostChrome: true,
         title: '',
         onBack: onBack,
         actions: [

@@ -12,4 +12,24 @@ const sideCardSurfaces = <CloseSurface>[
     desktop: {Affordance.x},
     files: ['lib/features/channel_side_card.dart'],
   ),
+  CloseSurface(
+    'channel-profile-column-move',
+    kind: SurfaceKind.popup,
+    web: 'components/layout/rowLayout.ts and RowMoveMenu: Escape and outside press',
+    fold: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    desktop: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    none: {'phone': 'the profile covers the conversation'},
+    files: ['lib/features/channel_side_area.dart'],
+  ),
+  CloseSurface(
+    'channel-thread-column-move',
+    kind: SurfaceKind.popup,
+    web: 'components/layout/MainLayout.tsx SideThreadColumn and RowMoveMenu: Escape and outside press',
+    desktop: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    none: {
+      'phone': 'the thread is a page',
+      'fold': 'the thread occupies the conversation region',
+    },
+    files: ['lib/features/channel_side_area.dart'],
+  ),
 ];

@@ -62,14 +62,20 @@ InlineSpan raftInlineCodeSpan(
 );
 
 class RaftAnnouncementMarkdown extends StatefulWidget {
-  const RaftAnnouncementMarkdown(this.data, {super.key, this.onLink})
-    : documentStyle = false;
+  const RaftAnnouncementMarkdown(
+    this.data, {
+    super.key,
+    this.onLink,
+    this.paragraphSpacing = 12,
+  }) : documentStyle = false;
 
   const RaftAnnouncementMarkdown.document(this.data, {super.key, this.onLink})
-    : documentStyle = true;
+    : documentStyle = true,
+      paragraphSpacing = 12;
 
   final String data;
   final bool documentStyle;
+  final double paragraphSpacing;
   final ValueChanged<String>? onLink;
 
   @override
@@ -111,6 +117,7 @@ class _RaftAnnouncementMarkdownState extends State<RaftAnnouncementMarkdown> {
       onLink,
       _recognizers,
       documentStyle: widget.documentStyle,
+      paragraphSpacing: widget.paragraphSpacing,
     );
     return _layoutBlocks(builder.blocks(nodes), outer: true);
   }
@@ -179,10 +186,12 @@ class _MarkdownBlocks {
     this.onLink,
     this.recognizers, {
     this.documentStyle = false,
+    this.paragraphSpacing = 12,
   }) : t = RaftTokens.of(context),
        base = DefaultTextStyle.of(context).style;
   final BuildContext context;
   final bool documentStyle;
+  final double paragraphSpacing;
   final ValueChanged<String>? onLink;
 
   /// Collects the recognizers created for links (owned by the caller).
@@ -226,7 +235,7 @@ class _MarkdownBlocks {
       case 'p':
         return RaftCssBlock(
           child: _text(_inlineSpans(children, base), base),
-          marginTop: !documentStyle && afterParagraph ? 12 : 0,
+          marginTop: !documentStyle && afterParagraph ? paragraphSpacing : 0,
           marginBottom: documentStyle ? 12 : 0,
         );
       case 'h1' || 'h2' || 'h3':

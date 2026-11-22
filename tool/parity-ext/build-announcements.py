@@ -18,7 +18,7 @@ import sys
 
 here = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(here))
-from builders import manifest_path  # noqa: E402  (tool/parity-ext/builders.py)
+from builders import manifest_path, raft_source  # noqa: E402
 THEMES = {'brutal': 'brutal-light', 'elegant': 'elegant-light', 'elegant-dark': 'elegant-dark'}
 DESKTOP = {'width': 1280, 'height': 800, 'density': 1}
 MOBILE = {'width': 390, 'height': 844, 'density': 3}
@@ -39,6 +39,10 @@ PLATFORMS = {
     'desktop': (DESKTOP, list(KINDS)),
     'mobile': (MOBILE, ['single', 'cta', 'cta-long', 'image', 'rich', 'long', 'overlay']),
 }
+if (raft_source() / 'packages/web/src/components/AnnouncementSidebarCard.tsx').is_file():
+    for kind in ('sidebar', 'expanded'):
+        KINDS[kind] = ('image', False)
+        PLATFORMS['desktop'][1].append(kind)
 HINT = 'packages/web/src/components/AnnouncementModal.tsx (+ raft-ui/wip AnnouncementDialog)'
 
 cases = []
@@ -49,6 +53,8 @@ for platform, (viewport, kinds) in PLATFORMS.items():
             cid = f'components.announcements.{platform}.{kind}.{suffix}'
             props = {'extCase': f'{platform}.{kind}', 'extKind': 'announcement', 'parityTheme': theme,
                      'platform': platform, 'ann': ann}
+            if kind in ('sidebar', 'expanded'):
+                props['sidebar'] = '1'
             capture = {
                 'selector': 'body' if whole else '[data-testid="announcement-modal"]',
                 'crop': 'viewport' if whole else 'element',
@@ -58,6 +64,11 @@ for platform, (viewport, kinds) in PLATFORMS.items():
             }
             if not whole:
                 capture['androidKey'] = 'announcement-modal'
+            if kind == 'sidebar':
+                capture['selector'] = '[data-testid="announcement-sidebar-stack"]'
+                capture['androidKey'] = 'announcement-sidebar'
+            if kind == 'expanded':
+                capture['interactions'] = [{'type': 'click', 'target': '[data-testid="announcement-sidebar-picture-zoom"]'}]
             cases.append({
                 'id': cid,
                 'title': f'Announcement modal {platform} {kind} ({theme})',

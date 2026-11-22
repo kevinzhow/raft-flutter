@@ -78,16 +78,19 @@ class ChannelSideColumnView extends StatefulWidget {
 /// A column's width as the area shows it and the room it may grow into.
 class ChannelSideResize {
   const ChannelSideResize({
+    this.key,
     required this.column,
     required this.width,
+    required this.minWidth,
     required this.maxWidth,
     required this.onResize,
     required this.label,
     this.fromPointerDown = false,
   });
+  final Key? key;
   final bool fromPointerDown;
   final int column;
-  final double width, maxWidth;
+  final double width, minWidth, maxWidth;
 
   /// [commit]: the drag ended (or a key pressed): save.
   final void Function(double width, bool commit) onResize;
@@ -130,14 +133,10 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                   orElse: () => widget.tabGroups.first,
                 )
               : sections;
-          final oneAtATime = channelSideOneAtATime(
-            widget.mode,
-            height,
-            stack.length,
-          );
-          final active = oneAtATime && expanded == null
-              ? _active(stack)
-              : null; // the one showing where only one fits
+          final oneAtATime =
+              expanded == null &&
+              channelSideOneAtATime(widget.mode, height, stack.length);
+          final active = oneAtATime ? _active(stack) : null;
           final shown = active == null ? stack : [active];
           final switchHeight = touch ? 48.0 : _head(context);
           return Stack(
@@ -187,9 +186,11 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                   bottom: 0,
                   width: touch ? RaftSpace.x6 : RaftSpace.x3,
                   child: _SeamHandle(
-                    key: Key(
-                      'channel-side-column-resize-${widget.resize!.column}',
-                    ),
+                    key:
+                        widget.resize!.key ??
+                        Key(
+                          'channel-side-column-resize-${widget.resize!.column}',
+                        ),
                     vertical: true,
                     fromPointerDown: widget.resize!.fromPointerDown,
                     label: widget.resize!.label,
@@ -210,6 +211,10 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                           ? r.width + step
                           : key == LogicalKeyboardKey.arrowRight
                           ? r.width - step
+                          : key == LogicalKeyboardKey.home
+                          ? r.minWidth
+                          : key == LogicalKeyboardKey.end
+                          ? r.maxWidth
                           : null;
                       if (next == null) return false;
                       r.onResize(math.min(r.maxWidth, next), true);

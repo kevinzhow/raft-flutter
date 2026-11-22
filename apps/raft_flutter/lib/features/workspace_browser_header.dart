@@ -9,6 +9,7 @@ import 'workspace_host_scope.dart';
 import 'workspace_history_controls.dart';
 import 'paused_notifications_indicator.dart';
 import 'system_notification_center.dart';
+import 'workspace_offline_notice.dart';
 
 /// Shared browser/native workspace header composition; the workspace supplies navigation actions and
 /// the quick switcher owns the search anchor across openings.
@@ -58,7 +59,13 @@ class WorkspaceBrowserHeader extends StatelessWidget {
       onSearch: onSearch,
       trailing: [
         PausedNotificationsIndicator(controller: controller),
-        working,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            WorkspaceOfflineNotice(client: controller.client),
+            working,
+          ],
+        ),
         SystemNotificationBell(
           key: const Key('topbar-notifications'),
           controller: controller,

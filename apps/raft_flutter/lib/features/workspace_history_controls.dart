@@ -236,15 +236,15 @@ List<RaftMenuEntry> _recentEntries(
                     channel.id == data.catalog.conversationIdOf(entity),
               )
               .firstOrNull;
-          if (channel != null)
+          if (channel != null) {
             unawaited(host.actions.openConversation(channel));
+          }
         },
       ),
   ];
 }
 
-/// Desktop history shares the same accepted locations as phone Back and deep
-/// links. Narrow desktop rows put Back/Forward in the history menu.
+/// Desktop history shares the same accepted locations as phone Back and deep links.
 class WorkspaceHistoryControls extends StatelessWidget {
   const WorkspaceHistoryControls({
     super.key,
@@ -263,7 +263,6 @@ class WorkspaceHistoryControls extends StatelessWidget {
   Widget _buildControls(BuildContext context, Widget? child) {
     final w = controller;
     final authority = w.navigationAuthority;
-    final compact = MediaQuery.sizeOf(context).width < 1000;
     final back = _historyStep(w, forward: false);
     final forward = _historyStep(w, forward: true);
     final mac = defaultTargetPlatform == TargetPlatform.macOS;
@@ -273,25 +272,22 @@ class WorkspaceHistoryControls extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: historyGap,
       children: [
-        if (!compact) ...[
-          RaftIconButton(
-            key: const Key('topbar-back'),
-            uiVariant: RaftButtonVariant.onFrame,
-            glyph: RaftGlyph.arrowLeft,
-            tooltip: '${raftText(context, 'Go back')} ${mac ? '⌘[' : 'Alt+←'}',
-            semanticLabel: raftText(context, 'Go back'),
-            onPressed: back,
-          ),
-          RaftIconButton(
-            key: const Key('topbar-forward'),
-            uiVariant: RaftButtonVariant.onFrame,
-            glyph: RaftGlyph.arrowRight,
-            tooltip:
-                '${raftText(context, 'Go forward')} ${mac ? '⌘]' : 'Alt+→'}',
-            semanticLabel: raftText(context, 'Go forward'),
-            onPressed: forward,
-          ),
-        ],
+        RaftIconButton(
+          key: const Key('topbar-back'),
+          uiVariant: RaftButtonVariant.onFrame,
+          glyph: RaftGlyph.arrowLeft,
+          tooltip: '${raftText(context, 'Go back')} ${mac ? '⌘[' : 'Alt+←'}',
+          semanticLabel: raftText(context, 'Go back'),
+          onPressed: back,
+        ),
+        RaftIconButton(
+          key: const Key('topbar-forward'),
+          uiVariant: RaftButtonVariant.onFrame,
+          glyph: RaftGlyph.arrowRight,
+          tooltip: '${raftText(context, 'Go forward')} ${mac ? '⌘]' : 'Alt+→'}',
+          semanticLabel: raftText(context, 'Go forward'),
+          onPressed: forward,
+        ),
         RaftDropdownMenu(
           key: ValueKey('topbar-history-$authority'),
           label: raftText(context, 'History'),
@@ -321,22 +317,7 @@ class WorkspaceHistoryControls extends StatelessWidget {
               onPressed: open,
             ),
           ),
-          entries: [
-            if (compact) ...[
-              RaftMenuEntry(
-                label: raftText(context, 'Go back'),
-                glyph: RaftGlyph.arrowLeft,
-                onPressed: back,
-              ),
-              RaftMenuEntry(
-                label: raftText(context, 'Go forward'),
-                glyph: RaftGlyph.arrowRight,
-                onPressed: forward,
-              ),
-              const RaftMenuEntry.separator(),
-            ],
-            ..._recentEntries(context, w, quickSwitcher),
-          ],
+          entries: _recentEntries(context, w, quickSwitcher),
         ),
       ],
     );

@@ -258,6 +258,7 @@ class _AnnouncementHostState extends State<AnnouncementHost>
             cta?.label ??
             (expanded ? RaftAnnouncementLabels.of(context).gotIt : null),
         onCta: activate,
+        externalCta: cta != null && path == null,
         onDismiss: () {
           if (expanded) {
             navigator.pop();

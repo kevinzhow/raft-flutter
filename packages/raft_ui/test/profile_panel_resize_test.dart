@@ -105,6 +105,12 @@ void main() {
     await t.pump();
     expect(t.getSize(panel).width, 364);
     expect(reported, [396, 380, 364]);
+    await t.sendKeyEvent(LogicalKeyboardKey.home);
+    await t.pump();
+    expect(t.getSize(panel).width, 300);
+    await t.sendKeyEvent(LogicalKeyboardKey.end);
+    await t.pump();
+    expect(t.getSize(panel).width, 600);
   });
 
   testWidgets('beside a thread the profile handle sits on the profile edge; '

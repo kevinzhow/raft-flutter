@@ -43,132 +43,184 @@ class RaftAnnouncementSidebarCard extends StatelessWidget {
       border: Border.all(color: tokens.ui['line-seam']),
       borderRadius: BorderRadius.circular(tokens.radius),
     );
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Stack(
-        children: [
-          for (var index = behind; index >= 1; index--)
-            Positioned(
-              left: index * 8,
-              right: index * 8,
-              bottom: (behind - index) * 5,
-              height: 16,
-              child: Opacity(
-                opacity: index == 1 ? 1 : .7,
-                child: DecoratedBox(decoration: decoration),
-              ),
-            ),
-          Padding(
-            padding: EdgeInsets.only(bottom: behind * 5),
-            child: Container(
-              constraints: BoxConstraints(
-                maxHeight: math.min(
-                  MediaQuery.sizeOf(context).height * .6,
-                  576,
+    return Material(
+      type: MaterialType.transparency,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Stack(
+          key: const Key('announcement-sidebar'),
+          children: [
+            for (var index = behind; index >= 1; index--)
+              Positioned(
+                left: index * 8,
+                right: index * 8,
+                bottom: (behind - index) * 5,
+                height: 16,
+                child: Opacity(
+                  opacity: index == 1 ? 1 : .7,
+                  child: DecoratedBox(decoration: decoration),
                 ),
               ),
-              decoration: decoration,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 12, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+            Padding(
+              padding: EdgeInsets.only(bottom: behind * 5),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: math.min(
+                    MediaQuery.sizeOf(context).height * .6,
+                    576,
+                  ),
+                ),
+                child: RaftCard(
+                  semanticLabel: title,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: _Label(label ?? labels.latestUpdates),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _Label(label ?? labels.latestUpdates),
+                                ),
+                                if (total > 1)
+                                  RaftCssText(
+                                    '$position / $total',
+                                    style: tokens.scale(
+                                      RaftTypeScale.caption,
+                                      color: tokens.ui.foregroundMuted,
+                                    ),
+                                  ),
+                                RaftIconButton(
+                                  glyph: RaftGlyph.x,
+                                  glyphSize: 14,
+                                  tooltip: labels.dismiss,
+                                  onPressed: onDismiss,
+                                ),
+                              ],
                             ),
-                            if (total > 1)
+                            RaftCardTitle(
                               Text(
-                                '$position / $total',
-                                style: tokens.scale(
-                                  RaftTypeScale.caption,
-                                  color: tokens.ui.foregroundMuted,
+                                title,
+                                style: const TextStyle(
+                                  decoration: TextDecoration.none,
                                 ),
                               ),
-                            RaftIconButton(
-                              glyph: RaftGlyph.x,
-                              tooltip: labels.dismiss,
-                              onPressed: onDismiss,
                             ),
                           ],
                         ),
-                        Text(
-                          title,
-                          style: tokens.scale(
-                            RaftTypeScale.subhead,
-                            weight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Column(
-                        children: [
-                          if (picture != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: RaftButton(
-                                key: const ValueKey(
-                                  'announcement-picture-zoom',
-                                ),
-                                uiVariant: RaftButtonVariant.ghost,
-                                padding: EdgeInsets.zero,
-                                autoHeight: true,
-                                focusNode: pictureFocus,
-                                semanticLabel: raftTextZh(
-                                  context,
-                                  'Open announcement: {title}',
-                                  '展开公告：{title}',
-                                ).replaceAll('{title}', title),
-                                onPressed: onExpand,
-                                child: _Picture(picture),
-                              ),
-                            ),
-                          RaftAnnouncementMarkdown(body, onLink: onLink),
-                        ],
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (ctaLabel case final cta?) ...[
-                          RaftButton(
-                            label: cta,
-                            trailingGlyph: externalCta
-                                ? RaftGlyph.arrowUpRight
-                                : null,
-                            variant: RaftControlVariant.primary,
-                            autoHeight: true,
-                            onPressed: onCta,
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (picture != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: RaftButton(
+                                    key: const ValueKey(
+                                      'announcement-picture-zoom',
+                                    ),
+                                    uiVariant: RaftButtonVariant.ghost,
+                                    padding: EdgeInsets.zero,
+                                    autoHeight: true,
+                                    focusNode: pictureFocus,
+                                    semanticLabel: raftTextZh(
+                                      context,
+                                      'Open announcement: {title}',
+                                      '展开公告：{title}',
+                                    ).replaceAll('{title}', title),
+                                    onPressed: onExpand,
+                                    child: Stack(
+                                      children: [
+                                        _Picture(picture),
+                                        PositionedDirectional(
+                                          end: 8,
+                                          bottom: 8,
+                                          child: ExcludeSemantics(
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                color: tokens.ink.withValues(
+                                                  alpha: .42,
+                                                ),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: SizedBox.square(
+                                                dimension: 24,
+                                                child: Center(
+                                                  child: RaftIcon(
+                                                    RaftGlyph.maximize2,
+                                                    size: 14,
+                                                    color: tokens
+                                                        .ui['foreground-inverse'],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              DefaultTextStyle(
+                                style: tokens
+                                    .scale(
+                                      RaftTypeScale.callout,
+                                      color: tokens.ui.foregroundMuted,
+                                    )
+                                    .copyWith(
+                                      fontFamilyFallback: tokens.fontFallback,
+                                    ),
+                                child: RaftAnnouncementMarkdown(
+                                  body,
+                                  onLink: onLink,
+                                  paragraphSpacing: RaftSpace.x2,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                        ],
-                        RaftButton(
-                          label: next,
-                          variant: ctaLabel == null
-                              ? RaftControlVariant.primary
-                              : RaftControlVariant.ghost,
-                          onPressed: onNext,
                         ),
-                      ],
-                    ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (ctaLabel case final cta?) ...[
+                              RaftButton(
+                                label: cta,
+                                trailingGlyph: externalCta
+                                    ? RaftGlyph.arrowUpRight
+                                    : null,
+                                variant: RaftControlVariant.primary,
+                                autoHeight: true,
+                                onPressed: onCta,
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            RaftButton(
+                              label: next,
+                              variant: ctaLabel == null
+                                  ? RaftControlVariant.primary
+                                  : RaftControlVariant.ghost,
+                              onPressed: onNext,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
