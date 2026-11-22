@@ -174,7 +174,13 @@ class LabImages {
           ui.Paint()..color = ui.Color((0x60 << 24) | random.nextInt(0xffffff)),
         );
       }
-      final image = await recorder.endRecording().toImage(w, h);
+      final picture = recorder.endRecording();
+      final ui.Image image;
+      try {
+        image = await picture.toImage(w, h);
+      } finally {
+        picture.dispose();
+      }
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
       pngs.add((w, h, data!.buffer.asUint8List()));

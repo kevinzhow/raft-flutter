@@ -46,6 +46,30 @@ const listSurfaces = [
 ];
 const listWorkloads = ['steady', 'fling', 'live', 'idle'];
 
+void registerSidebarArrivalTest() {
+  testWidgets('the phone Sidebar fixture exposes scrollable channels', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 2.4375;
+    tester.view.physicalSize = const Size(1080, 2400);
+    addTearDown(tester.view.reset);
+    final images = (await tester.runAsync(LabImages.start))!;
+    addTearDown(() => images.server.close(force: true));
+    final fixture = (await tester.runAsync(
+      () => _ListFixture.open('sidebar', images),
+    ))!;
+    try {
+      await fixture.mount(tester, dark: false);
+      await tester.pumpAndSettle();
+      expect(fixture.rows, isNotEmpty);
+      expect(fixture.scroll?.position.maxScrollExtent, greaterThan(100));
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      fixture.dispose();
+    }
+  });
+}
+
 class ListScenes {
   ListScenes({
     required this.tester,
@@ -74,16 +98,7 @@ class ListScenes {
       if (workloads.isEmpty) continue;
       final fixture = await _ListFixture.open(surface, images);
       try {
-        await tester.pumpWidget(
-          AppServicesScope(
-            services: const AppServices.updatesDisabledForTestOrPreview(),
-            child: MaterialApp(
-              key: ValueKey(surface),
-              theme: raftTheme(dark: dark),
-              home: Scaffold(body: fixture.body),
-            ),
-          ),
-        );
+        await fixture.mount(tester, dark: dark);
         if (surface == 'tasks-board') {
           await idle(const Duration(milliseconds: 600));
           fixture.tasksPage!.visit(serverId: 's1', userId: 'alice').params
@@ -293,6 +308,18 @@ class _ListFixture {
     'directory',
     'sidebar',
   }.contains(surface);
+
+  Future<void> mount(WidgetTester tester, {required bool dark}) =>
+      tester.pumpWidget(
+        AppServicesScope(
+          services: const AppServices.updatesDisabledForTestOrPreview(),
+          child: MaterialApp(
+            key: ValueKey(surface),
+            theme: raftTheme(dark: dark),
+            home: Scaffold(body: body),
+          ),
+        ),
+      );
 
   static Future<_ListFixture> open(String surface, LabImages images) async {
     const kinds = [
@@ -562,6 +589,7 @@ class _ListFixture {
       case 'apps':
         body = IntegrationsView(controller: workspace);
       case 'sidebar':
+        workspace.section = 'home';
         body = WorkspaceView(
           controller: workspace,
           appearance: const RaftAppearance(),
