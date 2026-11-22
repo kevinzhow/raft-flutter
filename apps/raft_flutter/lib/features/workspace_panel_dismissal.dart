@@ -57,7 +57,7 @@ extension _WorkspacePanelDismissal on _WorkspaceViewState {
         location: w.location,
         target: target?.kind,
       );
-      if (panels.profile || panels.thread) {
+      if (panels.profile || panels.thread && (fromEscape || target != null)) {
         if (panels.profile && (!panels.thread || profileOpenedLast())) {
           w.closeProfile();
         } else {
@@ -70,7 +70,9 @@ extension _WorkspacePanelDismissal on _WorkspaceViewState {
         if (!fromEscape || !contentSlot) closeDesktopDetail();
         return;
       }
-      if (w.messageDomain.state.threadParent != null && w.section == 'chat') {
+      if (w.messageDomain.state.threadParent != null &&
+          w.location.thread == null &&
+          w.section == 'chat') {
         closeThreadPanel();
         return;
       }

@@ -480,10 +480,13 @@ void registerCloseViewerTests(TestPart part) {
         },
       );
       expect(find.text('Build Computer'), findsWidgets);
+      final panel = find.byKey(const ValueKey('computers-rack-side-panel'));
       return SurfaceProbe(
-        isOpen: () => w.location.route == RaftRoute.computer,
+        isOpen: () =>
+            w.location.route == RaftRoute.computer ||
+            panel.evaluate().isNotEmpty,
         back: find.byTooltip('Back'),
-        x: find.byTooltip('Close'),
+        x: find.byKey(const ValueKey('machine-panel-close')),
       );
     },
     'agent-directory-detail': (t, size) async {

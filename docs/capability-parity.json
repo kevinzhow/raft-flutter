@@ -2617,10 +2617,10 @@
    "status": "covered",
    "webEntry": "channelStore.ensureChannel (ChannelRoute, notification click, search result) | readReceiptStore.fetchScope (background)",
    "gate": "",
-   "flutterEntry": "channel_repository.dart refreshChannel() via controller facade; workspace_presentation.dart resolveConversationChannel() for unknown/deep-link channels",
+   "flutterEntry": "channel_repository.dart refreshChannel() via controller facade; workspace_presentation.dart resolveConversationChannel() via channel_access_loss.dart readConversation() for unknown/deep-link channels",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/data/workspace_presentation.dart",
+     "file": "apps/raft_flutter/lib/data/channel_access_loss.dart",
      "needle": "final data = await client.get('/channels/$id');"
     },
     {
@@ -3930,7 +3930,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/member_profile_view.dart",
-     "needle": "tooltip: raftText(context, 'Message')"
+     "needle": "tooltip: messageLabel"
     }
    ],
    "justification": "",
@@ -10800,7 +10800,7 @@
    "status": "covered",
    "webEntry": "TasksPanel board drag-and-drop; TaskCard InlineBadgeEditor; TaskProperties Status; MessageItem context menu 'Mark as Done'/'Reopen Task'",
    "gate": "Non-guest; read-only (joint/historical) tasks blocked; members get legal transitions only, owners/admins any status",
-   "flutterEntry": "resource_view.dart board DragTarget + card onStatus; task_surface_controller.dart update('status'); chat_view.dart 'Mark as Done'/'Reopen Task'",
+   "flutterEntry": "resource_view.dart board DragTarget + card onStatus; task_surface_controller.dart update('status'); message_context_menu_sections.dart 'Mark as Done'/'Reopen Task'",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/task_status_request.dart",
@@ -10811,7 +10811,7 @@
      "needle": "taskStatusRequest("
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "task-done"
     }
    ],
@@ -11087,15 +11087,15 @@
    "status": "covered",
    "webEntry": "MessageItem ctx menu (top-level channel message, not external)",
    "gate": "member with write access",
-   "flutterEntry": "chat_view.dart message menu -> message_task_actions.dart messageTaskMenuItem. Server v1.24 task v2 (task_v2_conversations_v0): \"Create task from message\" -> CreateTaskDialog with sourceMessageId; a 409 task_v2_use_create from convert opens the same dialog (message_task_actions.dart).",
+   "flutterEntry": "chat_view.dart message menu -> message_context_menu_sections.dart dispatch -> message_task_actions.dart messageTaskMenuItem. Server v1.24 task v2 (task_v2_conversations_v0): \"Create task from message\" -> CreateTaskDialog with sourceMessageId; a 409 task_v2_use_create from convert opens the same dialog (message_task_actions.dart).",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
      "needle": "Convert to task"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "choice == 'task'"
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
+     "needle": "case 'task' || 'task-from-message':"
     }
    ],
    "justification": "",
@@ -17636,7 +17636,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "key != LogicalKeyboardKey.keyK && key != LogicalKeyboardKey.comma"
+     "needle": "key == LogicalKeyboardKey.comma"
     }
    ],
    "justification": "Flutter is itself the desktop app, so the shortcut is bound in-app instead of via a native menu.",
