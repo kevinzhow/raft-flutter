@@ -203,8 +203,7 @@ def installed_apk(adb_command, run=call):
 def protected_state(serial, tools=None, run=call):
     adb = (tools or sdk_tools())[0]
     text = run([adb, '-s', serial, 'shell', 'dumpsys', 'package', PACKAGE])
-    # Only a named emulator may start without the official App installed.
-    if serial.startswith('emulator-') and 'Unable to find package:' in text:
+    if text.strip() == f'Unable to find package: {PACKAGE}':
         return None
     return package_state(text)
 
