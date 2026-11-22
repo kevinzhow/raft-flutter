@@ -52,6 +52,7 @@ Future<void> main() async {
   final out = Directory(Platform.environment['RAFT_PERF_OUT']!)..createSync(recursive: true);
   final root = Platform.environment['RAFT_LAB_ROOT'] ?? '';
   final trace = Platform.environment['RAFT_LAB_PHASES'] != 'false';
+  final sampleCpu = Platform.environment['RAFT_LAB_CPU_SAMPLES'] != 'false';
   final driver = await FlutterDriver.connect();
   final service = driver.serviceClient;
   final isolateId = driver.appIsolate.id!;
@@ -68,6 +69,7 @@ Future<void> main() async {
   });
 
   bool? cpuProfiling;
+  var greeted = false;
   Future<void> ack(String token) => service.callServiceExtension('ext.raft.lab.ack', isolateId: isolateId,
     args: {'token': token, if (cpuProfiling != null) 'cpuProfiling': '$cpuProfiling'});
 
@@ -134,16 +136,18 @@ Future<void> main() async {
     final label = '${data['theme']}-${data['scenario']}';
     switch (kind) {
       case 'hello':
+        if (greeted) break;
         final flags = (await service.getFlagList()).flags ?? const <Flag>[];
         final streams = (await service.getVMTimelineFlags()).recordedStreams ?? const <String>[];
         // Only the engine (raster attribution) and GC streams: the Dart and
         // Microtask streams would overflow the ring buffer within seconds.
         final recorded = trace ? ['Embedder', 'GC'] : <String>[];
         await service.setVMTimelineFlags(recorded);
-        if (Platform.environment['RAFT_LAB_DETECT'] == 'true') {
-          await service.setFlag('profiler', '$trace');
+        if (!sampleCpu || Platform.environment['RAFT_LAB_DETECT'] == 'true') {
+          final expected = sampleCpu && trace;
+          await service.setFlag('profiler', '$expected');
           final observed = (await service.getFlagList()).flags!.firstWhere((flag) => flag.name == 'profiler').valueAsString;
-          if (observed != '$trace') throw StateError('CPU profiler state could not be verified.');
+          if (observed != '$expected') throw StateError('CPU profiler state could not be verified.');
           cpuProfiling = observed == 'true';
         }
         File('${out.path}/lab-hello.json').writeAsStringSync(_encoder.convert({
@@ -156,13 +160,16 @@ Future<void> main() async {
               if (const {'profile_period', 'max_profile_depth', 'profiler', 'timeline_recorder', 'timeline_streams'}.contains(f.name)) f.name: f.valueAsString,
           },
         }));
+        greeted = true;
+        stdout.writeln('perf lab ready (timeline: $trace, CPU exports: ${sampleCpu && cpuProfiling != false})');
       case 'start':
+        stdout.writeln('perf lab started $label');
         openRound = launchRound;
         launchRound += 1;
         openWarmup = data['warmup'] == true;
         loadAtStart = _loadAvg();
         loadAtEnd = null;
-        if (cpuProfiling != false) await service.clearCpuSamples(isolateId);
+        if (sampleCpu && cpuProfiling != false) await service.clearCpuSamples(isolateId);
         if (trace) await service.clearVMTimeline();
         gcCount = 0;
         gcActive = true;
@@ -191,7 +198,8 @@ Future<void> main() async {
         loadAtEnd = _loadAvg();
       case 'end':
         gcActive = false;
-        final attribution = await attribute(service, isolateId, data, root: root, trace: trace,
+        stdout.writeln('perf lab collecting $label');
+        final attribution = await attribute(service, isolateId, data, root: root, trace: trace, sampleCpu: sampleCpu,
           tracePath: Platform.environment['RAFT_LAB_DETECT'] == 'true' && trace ? '${out.path}/$label.trace.json' : null);
         attribution['gcCount'] = gcCount;
         final endRead = procAtEnd ?? await _readProcThreads(service);
@@ -239,6 +247,7 @@ Future<void> main() async {
           'batch': launchBatch, 'round': openRound, 'warmup': openWarmup, 'record': record,
         })}\n', mode: FileMode.append);
         _appendKeyboardCounts(out, record, batch: launchBatch, round: openRound, warmup: openWarmup);
+        stdout.writeln('perf lab saved ${record['theme']}-${record['scenario']}');
       case 'note':
         final notes = File('${out.path}/lab-notes.jsonl');
         notes.writeAsStringSync('${jsonEncode(data)}\n', mode: FileMode.append);
@@ -278,7 +287,7 @@ List<Map<String, Object>> _top(Map<String, num> m, int n) => (m.entries.toList()
     .map((e) => {'name': e.key, 'value': e.value is double ? (e.value as double).round() : e.value})
     .toList();
 
-Future<Map<String, Object?>> attribute(VmService service, String isolateId, Map<String, dynamic> data, {required String root, required bool trace, String? tracePath}) async {
+Future<Map<String, Object?>> attribute(VmService service, String isolateId, Map<String, dynamic> data, {required String root, required bool trace, required bool sampleCpu, String? tracePath}) async {
   final start = data['startUs'] as int, end = data['endUs'] as int;
   final uiWindows = [for (final w in data['uiWindows'] as List) [(w as List)[0] as int, w[1] as int]];
   final rasterWindows = [for (final w in data['rasterWindows'] as List) [(w as List)[0] as int, w[1] as int]];
@@ -288,11 +297,12 @@ Future<Map<String, Object?>> attribute(VmService service, String isolateId, Map<
   }
 
   // UI thread: Dart CPU samples of the main isolate.
-  final cpu = await service.getCpuSamples(isolateId, start, end - start);
-  if (tracePath != null) {
+  final cpu = sampleCpu ? await service.getCpuSamples(isolateId, start, end - start) : null;
+  result['cpuSamplesCollected'] = cpu != null;
+  if (tracePath != null && cpu != null) {
     File(tracePath.replaceFirst('.trace.json', '.cpu-samples.json')).writeAsStringSync(jsonEncode(cpu.toJson()));
   }
-  final functions = cpu.functions ?? const <ProfileFunction>[];
+  final functions = cpu?.functions ?? const <ProfileFunction>[];
   final names = List<String?>.filled(functions.length, null);
   String name(int i) => names[i] ??= () {
     final f = functions[i];
@@ -326,7 +336,7 @@ Future<Map<String, Object?>> attribute(VmService service, String isolateId, Map<
     return root.isNotEmpty ? url.contains(root) : url.startsWith('file://');
   }
 
-  final samples = cpu.samples ?? const <CpuSample>[];
+  final samples = cpu?.samples ?? const <CpuSample>[];
   Map<String, Object?> aggregate(bool Function(int ts) include) {
     final self = <String, int>{}, inclusive = <String, int>{}, app = <String, int>{}, category = <String, int>{};
     var total = 0;
@@ -358,7 +368,7 @@ Future<Map<String, Object?>> attribute(VmService service, String isolateId, Map<
     };
   }
 
-  if (Platform.environment['RAFT_LAB_DEEP'] == '1') {
+  if (cpu != null && Platform.environment['RAFT_LAB_DEEP'] == '1') {
     // Top-down call tree of all samples, pruned below 0.3 %.
     final root = <String, dynamic>{'n': 0, 'c': <String, dynamic>{}};
     for (final s in samples) {
@@ -384,16 +394,18 @@ Future<Map<String, Object?>> attribute(VmService service, String isolateId, Map<
   }
 
   bool inUi(int ts) => uiWindows.any((w) => ts >= w[0] - 1000 && ts <= w[1] + 1000);
-  result['samplePeriodUs'] = cpu.samplePeriod;
-  result['cpuAll'] = aggregate((ts) => true);
-  result['cpuWorstUiFrames'] = aggregate(inUi);
-  result['cpuPerWorstUiFrame'] = [
-    for (final w in uiWindows)
-      {
-        'window': w,
-        ...(aggregate((ts) => ts >= w[0] - 1000 && ts <= w[1] + 1000)..remove('self')),
-      }..update('inclusive', (v) => (v as List).take(12).toList())..update('appInclusive', (v) => (v as List).take(10).toList()),
-  ];
+  if (cpu != null) {
+    result['samplePeriodUs'] = cpu.samplePeriod;
+    result['cpuAll'] = aggregate((ts) => true);
+    result['cpuWorstUiFrames'] = aggregate(inUi);
+    result['cpuPerWorstUiFrame'] = [
+      for (final w in uiWindows)
+        {
+          'window': w,
+          ...(aggregate((ts) => ts >= w[0] - 1000 && ts <= w[1] + 1000)..remove('self')),
+        }..update('inclusive', (v) => (v as List).take(12).toList())..update('appInclusive', (v) => (v as List).take(10).toList()),
+    ];
+  }
 
   if (!trace) {
     result['threadTime'] = {'collected': false};

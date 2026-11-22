@@ -91,6 +91,7 @@ class BoardHarness {
   final List<Map<String, dynamic>> rows;
   late final TasksPageStore store;
   final selection = TaskSelection();
+  final countCurrent = ValueNotifier(true);
 
   /// What the page reads the columns' totals from (it feeds them to the board).
   late final ValueNotifier<Map<String, int>?> counts;
@@ -137,6 +138,7 @@ Future<BoardHarness> mountBoard(
   final h = BoardHarness(controller, api, rows ?? defaultRows());
   addTearDown(h.store.dispose);
   addTearDown(h.selection.dispose);
+  addTearDown(h.countCurrent.dispose);
   h.counts = ValueNotifier(counts);
   addTearDown(h.counts.dispose);
   BoardHarness.reads.clear();
@@ -182,7 +184,7 @@ Future<BoardHarness> mountBoard(
     filters: filters,
     sort: ServerTaskSort.activity,
     columns: h.counts.value,
-    countCurrent: true,
+    countCurrent: h.countCurrent.value,
     selection: h.selection,
     order: () => [for (final r in h.rows) '${r['id']}'],
     currentTaskId: currentTaskId,
@@ -205,7 +207,11 @@ Future<BoardHarness> mountBoard(
       home: RaftToastHost(
         child: Scaffold(
           body: ListenableBuilder(
-            listenable: Listenable.merge([h.selection, h.counts]),
+            listenable: Listenable.merge([
+              h.selection,
+              h.counts,
+              h.countCurrent,
+            ]),
             builder: (_, _) => composed(),
           ),
         ),
@@ -346,6 +352,32 @@ void main() {
   });
 
   group('cards', () {
+    testWidgets('one live task edit leaves other board columns intact', (
+      tester,
+    ) async {
+      final harness = await mountBoard(tester);
+      Widget lane(String status) => tester.widget(
+        find.descendant(
+          of: column(status),
+          matching: find.byType(RaftTaskBoardColumn),
+        ),
+      );
+      final before = lane('in_progress');
+      final unchangedCard = tester.widget(card('t2'));
+      try {
+        harness.countCurrent.value = false;
+        harness.store.applyLive({
+          't1': {'title': 'Updated from the socket'},
+        });
+        await settle(tester);
+        expect(find.text('Updated from the socket'), findsOneWidget);
+        expect(lane('in_progress'), same(before));
+        expect(tester.widget(card('t2')), same(unchangedCard));
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+      }
+    });
+
     testWidgets('a card shows its replies, assignee, Unassigned and time', (
       t,
     ) async {
@@ -801,6 +833,60 @@ void main() {
   });
 
   group('paging', () {
+    testWidgets('bounded task columns page only when scrolled near the end', (
+      t,
+    ) async {
+      final many = [
+        for (var index = 0; index < 31; index++)
+          boardTask('page-$index', index, 'todo'),
+      ];
+      final h = await mountBoard(
+        t,
+        counts: {...defaultCounts, 'todo': many.length},
+      );
+      try {
+        h.handler = (_, query) => {
+          'tasks': query['cursor'] != null
+              ? many.skip(30).toList()
+              : query['status'] == 'todo'
+              ? many.take(30).toList()
+              : [],
+          'next_cursor': query['status'] == 'todo' && query['cursor'] == null
+              ? 'next'
+              : null,
+        };
+        h.store.reset();
+        await settle(t);
+        final lane = find.descendant(
+          of: column('todo'),
+          matching: find.byType(Scrollable),
+        );
+        expect(card('page-0'), findsOneWidget);
+        expect(card('page-29'), findsNothing);
+        expect(BoardHarness.reads.where((r) => r['cursor'] == 'next'), isEmpty);
+        expect(
+          find.descendant(of: column('todo'), matching: find.byType(Viewport)),
+          findsOneWidget,
+        );
+        final position = t.state<ScrollableState>(lane).position;
+        for (
+          var attempt = 0;
+          attempt < 10 && card('page-30').evaluate().isEmpty;
+          attempt++
+        ) {
+          position.jumpTo(position.maxScrollExtent);
+          await settle(t);
+        }
+        expect(
+          BoardHarness.reads.where((r) => r['cursor'] == 'next'),
+          hasLength(1),
+        );
+        expect(card('page-30'), findsOneWidget);
+      } finally {
+        await t.pumpWidget(const SizedBox());
+      }
+    });
+
     testWidgets('the column end reads the next page, a failure waits for a '
         'press', (t) async {
       final many = [

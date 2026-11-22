@@ -1190,6 +1190,195 @@ class RaftNavItem extends StatelessWidget {
             ],
           )
         : titleContent(context);
+    final cappedMetadata =
+        uniform &&
+        !_channel &&
+        unread <= 0 &&
+        (hasDraft || metadata?.isNotEmpty == true);
+    Widget rowContent(BuildContext context, {double? metadataWidth}) => Row(
+      crossAxisAlignment: wrap
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
+      children: [
+        if (conversation?.glyphSlotSize case final double slot)
+          SizedBox.square(
+            dimension: slot,
+            child: Center(child: leading),
+          )
+        else
+          leading,
+        SizedBox(width: t.size('space.sidebarItemGap', fallback: 6)),
+        Expanded(
+          child: activity != null && !uniform
+              ? LayoutBuilder(
+                  builder: (context, box) => Row(
+                    children: [
+                      Expanded(child: titleWithIndicators(context)),
+                      const SizedBox(width: 8),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: box.maxWidth * .58,
+                        ),
+                        child: ExcludeSemantics(
+                          child: RaftSidebarText(
+                            activity,
+                            key: const Key('nav-item-activity'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                            style: RaftTypography.heading(
+                              t,
+                              size: 12,
+                              line: 16,
+                              weight: FontWeight.w500,
+                            ).copyWith(color: t.colors['foreground-muted']),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : titleWithIndicators(context),
+        ),
+        if (_mutedIcon && (unread > 0 || hasDraft)) const SizedBox(width: 4),
+        if (_mention) ...[
+          // gap-1.5 (6) + `ml-1` (4) before the chip, gap-1.5 after it.
+          SizedBox(width: t.size('space.sidebarItemGap', fallback: 6) + 4),
+          RaftSidebarMentionMarker(label: raftText(context, 'Mentioned you')),
+          SizedBox(width: t.size('space.sidebarItemGap', fallback: 6)),
+        ],
+        if (uniform &&
+            !_mention &&
+            (trailing != null ||
+                unread > 0 ||
+                _threadSegment ||
+                _quietNew ||
+                _markedDot ||
+                hasDraft ||
+                metadata?.isNotEmpty == true))
+          SizedBox(width: t.size('space.sidebarItemGap', fallback: 6)),
+        if (metadataWidth != null)
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: metadataWidth),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasDraft) const RaftSidebarDraftIcon(),
+                if (hasDraft && metadata?.isNotEmpty == true)
+                  const SizedBox(width: 6),
+                if (metadata?.isNotEmpty == true)
+                  Flexible(
+                    child: ExcludeSemantics(
+                      child: RaftSidebarText(
+                        metadata!,
+                        key: Key(
+                          activity == null
+                              ? 'nav-item-runtime'
+                              : 'nav-item-activity',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: activity == null
+                            ? RaftTypography.mono(
+                                t,
+                                size: t.size(
+                                  'type.sidebarMeta.size',
+                                  fallback: 12,
+                                ),
+                                line: t.size(
+                                  'type.sidebarMeta.line',
+                                  fallback: 16,
+                                ),
+                                color: selected
+                                    ? t.colors['foreground-sidebar-item-active']
+                                    : t.colors['foreground-sidebar-meta'],
+                              ).copyWith(
+                                fontWeight: raftFontWeight(
+                                  t.size(
+                                    'type.sidebarMeta.weight',
+                                    fallback: 400,
+                                  ),
+                                ),
+                              )
+                            : RaftTypography.heading(
+                                t,
+                                size: t.size(
+                                  'type.sidebarSubtitle.size',
+                                  fallback: 13,
+                                ),
+                                line: t.size(
+                                  'type.sidebarSubtitle.line',
+                                  fallback: 18,
+                                ),
+                                weight: raftFontWeight(
+                                  t.size(
+                                    'type.sidebarSubtitle.weight',
+                                    fallback: 400,
+                                  ),
+                                ),
+                                color: selected
+                                    ? t.colors['foreground-sidebar-item-active']
+                                    : t.colors['foreground-muted'],
+                              ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          )
+        else if (trailing != null)
+          trailing!
+        else if (_threadSegment)
+          Padding(
+            padding: EdgeInsets.only(left: _mention ? 4 : 0),
+            child: RaftSidebarThreadUnreadCount(
+              unread: unread,
+              threads: threadUnread,
+              label: threadUnreadLabel,
+              loud: _loudUnread,
+            ),
+          )
+        else if (unread > 0 && _channel && !_loudUnread)
+          Padding(
+            padding: EdgeInsets.only(left: _mention ? 4 : 0),
+            child: RaftSidebarQuietUnreadCount(count: unread),
+          )
+        else if (unread > 0 && conversationKind != null)
+          // DM rows keep `self-center` in a top-aligned wrap row.
+          wrap && !_channel
+              ? SizedBox(
+                  height: 18,
+                  child: Center(
+                    child: RaftConversationUnreadCount(
+                      count: unread,
+                      kind: conversationKind!,
+                    ),
+                  ),
+                )
+              : RaftConversationUnreadCount(
+                  count: unread,
+                  kind: conversationKind!,
+                )
+        else if (unread > 0)
+          RaftSidebarUnreadCount(count: unread)
+        else if (_quietNew)
+          RaftSidebarQuietNewDot(label: raftText(context, 'New messages'))
+        else if (_markedDot)
+          KeyedSubtree(
+            key: const ValueKey('sidebar-marked-unread-dot'),
+            child: RaftSidebarQuietNewDot(
+              label: raftText(context, 'Marked as unread'),
+            ),
+          )
+        else if (hasDraft && conversationKind != null)
+          wrap && !_channel
+              ? const SizedBox(
+                  height: 18,
+                  child: Center(child: RaftSidebarDraftIcon()),
+                )
+              : const RaftSidebarDraftIcon(),
+      ],
+    );
     Widget row(bool pointerPressed) => RaftControl(
       recipe: conversationKind == null
           ? null
@@ -1233,198 +1422,12 @@ class RaftNavItem extends StatelessWidget {
             )
           : null,
       variant: selected ? RaftControlVariant.surface : RaftControlVariant.ghost,
-      child: LayoutBuilder(
-        builder: (context, box) => Row(
-          crossAxisAlignment: wrap
-              ? CrossAxisAlignment.start
-              : CrossAxisAlignment.center,
-          children: [
-            if (conversation?.glyphSlotSize case final double slot)
-              SizedBox.square(
-                dimension: slot,
-                child: Center(child: leading),
-              )
-            else
-              leading,
-            SizedBox(width: t.size('space.sidebarItemGap', fallback: 6)),
-            Expanded(
-              child: activity != null && !uniform
-                  ? LayoutBuilder(
-                      builder: (context, box) => Row(
-                        children: [
-                          Expanded(child: titleWithIndicators(context)),
-                          const SizedBox(width: 8),
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: box.maxWidth * .58,
-                            ),
-                            child: ExcludeSemantics(
-                              child: RaftSidebarText(
-                                activity,
-                                key: const Key('nav-item-activity'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.end,
-                                style: RaftTypography.heading(
-                                  t,
-                                  size: 12,
-                                  line: 16,
-                                  weight: FontWeight.w500,
-                                ).copyWith(color: t.colors['foreground-muted']),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : titleWithIndicators(context),
-            ),
-            if (_mutedIcon && (unread > 0 || hasDraft))
-              const SizedBox(width: 4),
-            if (_mention) ...[
-              // gap-1.5 (6) + `ml-1` (4) before the chip, gap-1.5 after it.
-              SizedBox(width: t.size('space.sidebarItemGap', fallback: 6) + 4),
-              RaftSidebarMentionMarker(
-                label: raftText(context, 'Mentioned you'),
-              ),
-              SizedBox(width: t.size('space.sidebarItemGap', fallback: 6)),
-            ],
-            if (uniform &&
-                !_mention &&
-                (trailing != null ||
-                    unread > 0 ||
-                    _threadSegment ||
-                    _quietNew ||
-                    _markedDot ||
-                    hasDraft ||
-                    metadata?.isNotEmpty == true))
-              SizedBox(width: t.size('space.sidebarItemGap', fallback: 6)),
-            if (uniform &&
-                !_channel &&
-                unread <= 0 &&
-                (hasDraft || metadata?.isNotEmpty == true))
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: box.maxWidth * .58),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (hasDraft) const RaftSidebarDraftIcon(),
-                    if (hasDraft && metadata?.isNotEmpty == true)
-                      const SizedBox(width: 6),
-                    if (metadata?.isNotEmpty == true)
-                      Flexible(
-                        child: ExcludeSemantics(
-                          child: RaftSidebarText(
-                            metadata!,
-                            key: Key(
-                              activity == null
-                                  ? 'nav-item-runtime'
-                                  : 'nav-item-activity',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: activity == null
-                                ? RaftTypography.mono(
-                                    t,
-                                    size: t.size(
-                                      'type.sidebarMeta.size',
-                                      fallback: 12,
-                                    ),
-                                    line: t.size(
-                                      'type.sidebarMeta.line',
-                                      fallback: 16,
-                                    ),
-                                    color: selected
-                                        ? t.colors['foreground-sidebar-item-active']
-                                        : t.colors['foreground-sidebar-meta'],
-                                  ).copyWith(
-                                    fontWeight: raftFontWeight(
-                                      t.size(
-                                        'type.sidebarMeta.weight',
-                                        fallback: 400,
-                                      ),
-                                    ),
-                                  )
-                                : RaftTypography.heading(
-                                    t,
-                                    size: t.size(
-                                      'type.sidebarSubtitle.size',
-                                      fallback: 13,
-                                    ),
-                                    line: t.size(
-                                      'type.sidebarSubtitle.line',
-                                      fallback: 18,
-                                    ),
-                                    weight: raftFontWeight(
-                                      t.size(
-                                        'type.sidebarSubtitle.weight',
-                                        fallback: 400,
-                                      ),
-                                    ),
-                                    color: selected
-                                        ? t.colors['foreground-sidebar-item-active']
-                                        : t.colors['foreground-muted'],
-                                  ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              )
-            else if (trailing != null)
-              trailing!
-            else if (_threadSegment)
-              Padding(
-                padding: EdgeInsets.only(left: _mention ? 4 : 0),
-                child: RaftSidebarThreadUnreadCount(
-                  unread: unread,
-                  threads: threadUnread,
-                  label: threadUnreadLabel,
-                  loud: _loudUnread,
-                ),
-              )
-            else if (unread > 0 && _channel && !_loudUnread)
-              Padding(
-                padding: EdgeInsets.only(left: _mention ? 4 : 0),
-                child: RaftSidebarQuietUnreadCount(count: unread),
-              )
-            else if (unread > 0 && conversationKind != null)
-              // DM rows keep `self-center` in a top-aligned wrap row.
-              wrap && !_channel
-                  ? SizedBox(
-                      height: 18,
-                      child: Center(
-                        child: RaftConversationUnreadCount(
-                          count: unread,
-                          kind: conversationKind!,
-                        ),
-                      ),
-                    )
-                  : RaftConversationUnreadCount(
-                      count: unread,
-                      kind: conversationKind!,
-                    )
-            else if (unread > 0)
-              RaftSidebarUnreadCount(count: unread)
-            else if (_quietNew)
-              RaftSidebarQuietNewDot(label: raftText(context, 'New messages'))
-            else if (_markedDot)
-              KeyedSubtree(
-                key: const ValueKey('sidebar-marked-unread-dot'),
-                child: RaftSidebarQuietNewDot(
-                  label: raftText(context, 'Marked as unread'),
-                ),
-              )
-            else if (hasDraft && conversationKind != null)
-              wrap && !_channel
-                  ? const SizedBox(
-                      height: 18,
-                      child: Center(child: RaftSidebarDraftIcon()),
-                    )
-                  : const RaftSidebarDraftIcon(),
-          ],
-        ),
-      ),
+      child: cappedMetadata
+          ? LayoutBuilder(
+              builder: (context, box) =>
+                  rowContent(context, metadataWidth: box.maxWidth * .58),
+            )
+          : Builder(builder: rowContent),
     );
     final semanticLabel = description == null ? label : '$label $description';
     final stateLabel = [

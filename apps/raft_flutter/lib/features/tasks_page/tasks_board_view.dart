@@ -11,6 +11,7 @@
 // keyboard with Space on the focused card (task_board_keyboard_drag.dart).
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -123,6 +124,8 @@ class _TasksBoardViewState extends State<TasksBoardView> {
   _BacklogPrompt? prompt;
   _FocusRequest? focusRequest;
   bool focusQueued = false;
+  final columns = <String, _StatusColumn>{};
+  bool settleQueued = false;
 
   TasksPageStore get store => widget.store;
 
@@ -140,10 +143,27 @@ class _TasksBoardViewState extends State<TasksBoardView> {
       onDrop: keyboardDrop,
       onCancel: keyboardCancel,
     );
+    widget.controller.services.entityDirectory.addListener(directoryChanged);
+  }
+
+  @override
+  void didUpdateWidget(TasksBoardView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.services.entityDirectory.removeListener(
+        directoryChanged,
+      );
+      widget.controller.services.entityDirectory.addListener(directoryChanged);
+    }
+  }
+
+  void directoryChanged() {
+    if (mounted) setState(columns.clear);
   }
 
   @override
   void dispose() {
+    widget.controller.services.entityDirectory.removeListener(directoryChanged);
     keyboard.dispose();
     dragging.dispose();
     scroll.dispose();
@@ -459,6 +479,73 @@ class _TasksBoardViewState extends State<TasksBoardView> {
 
   // ---------------------------------------------------------------- build
 
+  _StatusColumn statusColumn(String status) {
+    final lanes = boardColumnLanes(
+      widget.tab,
+      widget.filters,
+      status,
+      widget.sort,
+    );
+    final view = store.laneView(lanes);
+    final folded = boardColumnFolded(status, widget.filters, store.collapsed);
+    final lifted = dragging.value;
+    final keyboardTask = keyboard.taskId;
+    final total = widget.columns?[status];
+    final previous = columns[status];
+    final inputs = (
+      store: store,
+      controller: widget.controller,
+      folded: folded,
+      total: total,
+      selected: widget.selection.selected,
+      currentTask: widget.currentTaskId,
+      draggedTask: lifted == null ? null : taskOf(lifted),
+      keyboardDrop: keyboard.over == status && keyboardTask != null
+          ? (keyboardTask, taskOf(keyboardTask))
+          : null,
+      loaded: view.loaded,
+      loading: view.loading,
+      hasMore: view.hasMore,
+      failed: view.failed,
+    );
+    if (previous != null &&
+        previous.inputs == inputs &&
+        listEquals(previous.lanes, lanes) &&
+        listEquals(previous.view.tasks, view.tasks)) {
+      return previous;
+    }
+    return columns[status] = _StatusColumn(
+      key: ValueKey('task-board-column-$status'),
+      board: this,
+      status: status,
+      lanes: lanes,
+      view: view,
+      inputs: inputs,
+    );
+  }
+
+  void queueSettle(List<_StatusColumn> visibleColumns) {
+    pendingSettle = visibleColumns;
+    if (settleQueued) return;
+    settleQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      settleQueued = false;
+      if (!mounted) return;
+      for (final column in pendingSettle) {
+        final inputs = column.inputs;
+        if (identical(inputs.store, store)) {
+          store.settleLanes(
+            column.lanes,
+            count: widget.countCurrent ? inputs.total : null,
+            folded: inputs.folded,
+          );
+        }
+      }
+    });
+  }
+
+  List<_StatusColumn> pendingSettle = const [];
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -482,6 +569,12 @@ class _TasksBoardViewState extends State<TasksBoardView> {
           builder: (context, _) {
             // The card may have landed in its column with this change.
             queueFocus();
+            final statuses = boardColumns(widget.filters);
+            final visibleColumns = [
+              for (final status in statuses) statusColumn(status),
+            ];
+            columns.removeWhere((status, _) => !statuses.contains(status));
+            queueSettle(visibleColumns);
             return SingleChildScrollView(
               controller: scroll,
               primary: false,
@@ -496,14 +589,7 @@ class _TasksBoardViewState extends State<TasksBoardView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 // ds-allow: Web TaskBoardRoot `gap-4`
                 spacing: 16,
-                children: [
-                  for (final status in boardColumns(widget.filters))
-                    _StatusColumn(
-                      key: ValueKey('task-board-column-$status'),
-                      board: this,
-                      status: status,
-                    ),
-                ],
+                children: visibleColumns,
               ),
             );
           },
@@ -524,45 +610,42 @@ class _TasksBoardViewState extends State<TasksBoardView> {
 }
 
 /// One status column: its heading, its cards, its drop zone.
-class _StatusColumn extends StatefulWidget {
-  const _StatusColumn({super.key, required this.board, required this.status});
+class _StatusColumn extends StatelessWidget {
+  const _StatusColumn({
+    super.key,
+    required this.board,
+    required this.status,
+    required this.lanes,
+    required this.view,
+    required this.inputs,
+  });
   final _TasksBoardViewState board;
   final String status;
-
-  @override
-  State<_StatusColumn> createState() => _StatusColumnState();
-}
-
-class _StatusColumnState extends State<_StatusColumn> {
-  bool settleQueued = false;
-
-  _TasksBoardViewState get board => widget.board;
-  TasksPageStore get store => board.store;
-
-  /// What the lanes need to show the truth, after every change (Web
-  /// `useMergedTasksLanes`'s effect).
-  void queueSettle(List<LaneSpec> lanes, int? count, bool folded) {
-    if (settleQueued) return;
-    settleQueued = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      settleQueued = false;
-      if (mounted) store.settleLanes(lanes, count: count, folded: folded);
-    });
-  }
+  final List<LaneSpec> lanes;
+  final LaneView view;
+  final ({
+    TasksPageStore store,
+    WorkspaceController controller,
+    bool folded,
+    int? total,
+    Set<String> selected,
+    String? currentTask,
+    Map<String, dynamic>? draggedTask,
+    (String, Map<String, dynamic>?)? keyboardDrop,
+    bool loaded,
+    bool loading,
+    bool hasMore,
+    bool failed,
+  })
+  inputs;
 
   @override
   Widget build(BuildContext context) {
-    final w = board.widget, status = widget.status;
-    final folded = boardColumnFolded(status, w.filters, store.collapsed);
-    final lanes = boardColumnLanes(w.tab, w.filters, status, w.sort);
-    final total = w.columns?[status];
-    final view = store.laneView(lanes);
-    queueSettle(lanes, w.countCurrent ? total : null, folded);
+    final store = inputs.store, folded = inputs.folded, total = inputs.total;
     final empty = total != null && total == 0;
     final hasMore = (total == null || total > 0) && view.hasMore;
     final pendingFirstPage =
         (total == null || total > 0) && !view.loaded && !view.failed;
-    final keyboardOver = board.keyboard.over == status;
     return KeyedSubtree(
       key: board.columnKeys[status],
       child: DragTarget<_BoardDrag>(
@@ -575,7 +658,7 @@ class _StatusColumnState extends State<_StatusColumn> {
           final hoveredId =
               candidates.firstOrNull?.taskId ??
               rejected.firstOrNull?.taskId ??
-              (keyboardOver ? board.keyboard.taskId : null);
+              inputs.keyboardDrop?.$1;
           final hovered = hoveredId == null ? null : board.taskOf(hoveredId);
           final canDrop = hovered != null && board.allowed(hoveredId!, status);
           return RaftTaskBoardColumn(
@@ -636,57 +719,54 @@ class _ColumnBody extends StatelessWidget {
       for (final (index, task) in tasks.indexed)
         'task-board-draggable-${task['id']}': index,
     };
-    final items = <Widget Function(BuildContext)>[
-      if (tasks.isEmpty)
-        (context) => skeleton
-            ? const RaftTaskCardSkeleton(
-                key: ValueKey('task-board-card-skeleton'),
-              )
-            : RaftTaskLaneEmpty(
-                board: true,
-                label: raftFormat(context, 'No {status} tasks', {
-                  'status': raftText(context, raftTaskStatusLabel(status)),
-                }),
-              )
-      else ...[
-        for (final task in tasks)
-          (context) => _BoardCard(
-            key: ValueKey('task-board-draggable-${task['id']}'),
-            board: board,
-            task: task,
-          ),
-        if (skeleton)
-          (context) => const RaftTaskCardSkeleton(
-            key: ValueKey('task-board-card-skeleton'),
-          ),
-      ],
-      if (hasMore)
-        (context) => _LoadMoreEnd(
-          key: ValueKey('task-load-more-$status'),
-          loading: view.loading,
-          failed: view.failed,
-          onLoadMore: () => board.store.loadMore(lanes),
-        ),
-    ];
+    final footerIndex = tasks.length + (tasks.isEmpty || skeleton ? 1 : 0);
+    final itemCount = footerIndex + (hasMore ? 1 : 0);
     // The lifted card is no item of the column: its gap goes with it (the
     // one after it, or the one before it when it was the last).
     final lifted = indices['task-board-draggable-${board.dragging.value}'];
     return ListView.separated(
       key: PageStorageKey(('task-board-lane', status)),
       primary: false,
-      shrinkWrap: true,
       padding: EdgeInsets.zero,
-      itemCount: items.length,
+      itemCount: itemCount,
       separatorBuilder: (_, index) =>
           lifted != null &&
               (index == lifted ||
-                  (index == lifted - 1 && lifted == items.length - 1))
+                  (index == lifted - 1 && lifted == itemCount - 1))
           ? const SizedBox.shrink()
           // ds-allow: Web BoardColumn `TaskBoardColumnItems` `gap-2`
           : const SizedBox(height: 8),
       findItemIndexCallback: (key) =>
           key is ValueKey<String> ? indices[key.value] : null,
-      itemBuilder: (context, index) => items[index](context),
+      itemBuilder: (context, index) {
+        if (index < tasks.length) {
+          final task = tasks[index];
+          return _BoardCard(
+            key: ValueKey('task-board-draggable-${task['id']}'),
+            board: board,
+            task: task,
+          );
+        }
+        if (index == footerIndex) {
+          return _LoadMoreEnd(
+            key: ValueKey('task-load-more-$status'),
+            loading: view.loading,
+            failed: view.failed,
+            onLoadMore: () => board.store.loadMore(lanes),
+          );
+        }
+        if (skeleton) {
+          return const RaftTaskCardSkeleton(
+            key: ValueKey('task-board-card-skeleton'),
+          );
+        }
+        return RaftTaskLaneEmpty(
+          board: true,
+          label: raftFormat(context, 'No {status} tasks', {
+            'status': raftText(context, raftTaskStatusLabel(status)),
+          }),
+        );
+      },
     );
   }
 }

@@ -562,7 +562,7 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
           );
         }
 
-        Widget fileRow(int index) {
+        Widget fileRow(int index, double width) {
           final file = store.files[index];
           bool allowed() => store.contains(file);
           void guarded(Future<void> Function(SourceChannelFileEntry) run) {
@@ -573,6 +573,7 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
             return ChannelFilesCompactRow(
               key: ValueKey('channel-file-${file.id}'),
               file: file,
+              width: width,
               divider: filesAt + index > 0,
               formattedDate: compactDate(file.createdAt),
               fullDate: formatFullDate?.call(file.createdAt),
@@ -585,6 +586,7 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
           return SourceChannelFileRow(
             key: ValueKey('channel-file-${file.id}'),
             file: file,
+            width: width,
             formattedDate: formatCreatedAt(file.createdAt),
             thumbnail: thumbnailBuilder?.call(file, allowed),
             onPreview: () => guarded(onPreview),
@@ -607,66 +609,78 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
               }
               return false;
             },
-            child: ListView.separated(
-              primary: false,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: raftScrollPadding(
-                context,
-                compact ? EdgeInsets.zero : recipe.listInset,
-              ),
-              itemCount: artifactRows + store.files.length + (footer ? 1 : 0),
-              // Compact rows carry their own hairlines.
-              separatorBuilder: (_, _) =>
-                  SizedBox(height: recipe.listGapFor(compact: compact)),
-              itemBuilder: (context, index) {
-                if (index < artifactRows) return artifactRow(index);
-                index -= artifactRows;
-                if (index == store.files.length) {
-                  return Padding(
-                    // Source closes the p-3 FilesList before its p-4 footer.
-                    // Our single scrollable has already inserted listGap.
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      compact
-                          ? 16
-                          : 16 + recipe.listInset.bottom - recipe.listGap,
-                      16,
-                      16,
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (store.error != null)
-                            Padding(
-                              padding: EdgeInsets.only(bottom: recipe.listGap),
-                              child: Text(
-                                raftText(context, 'Could not load more files.'),
-                                style: RaftTypography.body(
-                                  t,
-                                  size: 14,
-                                  color: t.colors['danger'],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final padding = raftScrollPadding(
+                  context,
+                  compact ? EdgeInsets.zero : recipe.listInset,
+                );
+                final width = constraints.deflate(padding).maxWidth;
+                return ListView.separated(
+                  primary: false,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: padding,
+                  itemCount:
+                      artifactRows + store.files.length + (footer ? 1 : 0),
+                  // Compact rows carry their own hairlines.
+                  separatorBuilder: (_, _) =>
+                      SizedBox(height: recipe.listGapFor(compact: compact)),
+                  itemBuilder: (context, index) {
+                    if (index < artifactRows) return artifactRow(index);
+                    index -= artifactRows;
+                    if (index == store.files.length) {
+                      return Padding(
+                        // Source closes the p-3 FilesList before its p-4 footer.
+                        // Our single scrollable has already inserted listGap.
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          compact
+                              ? 16
+                              : 16 + recipe.listInset.bottom - recipe.listGap,
+                          16,
+                          16,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (store.error != null)
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: recipe.listGap,
+                                  ),
+                                  child: Text(
+                                    raftText(
+                                      context,
+                                      'Could not load more files.',
+                                    ),
+                                    style: RaftTypography.body(
+                                      t,
+                                      size: 14,
+                                      color: t.colors['danger'],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          store.loadingMore
-                              ? Text(
-                                  raftText(context, 'Loading more files…'),
-                                  style: RaftTypography.mono(t),
-                                )
-                              : RaftButton(
-                                  label: raftText(context, 'Load more'),
-                                  variant: RaftControlVariant.outline,
-                                  size: RaftButtonRecipeSize.sm,
-                                  onPressed: () => store.load(more: true),
-                                ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                return fileRow(index);
+                              store.loadingMore
+                                  ? Text(
+                                      raftText(context, 'Loading more files…'),
+                                      style: RaftTypography.mono(t),
+                                    )
+                                  : RaftButton(
+                                      label: raftText(context, 'Load more'),
+                                      variant: RaftControlVariant.outline,
+                                      size: RaftButtonRecipeSize.sm,
+                                      onPressed: () => store.load(more: true),
+                                    ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return fileRow(index, width);
+                  },
+                );
               },
             ),
           ),
@@ -859,11 +873,13 @@ class SourceChannelFileRow extends StatefulWidget {
     required this.onOpenSource,
     required this.onDownload,
     this.thumbnail,
+    this.width,
   });
   final SourceChannelFileEntry file;
   final String formattedDate;
   final VoidCallback onPreview, onOpenSource, onDownload;
   final Widget? thumbnail;
+  final double? width;
   @override
   State<SourceChannelFileRow> createState() => _FileRowState();
 }
@@ -925,118 +941,117 @@ class _FileRowState extends State<SourceChannelFileRow> {
         ],
       ),
     );
-    return LayoutBuilder(
-      builder: (context, constraints) => RaftHoverRegion(
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: AnimatedContainer(
-          duration: MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : recipe.hoverTransition,
-          decoration: RaftCssBoxDecoration(
-            color: recipe.rowBackground,
-            borderRadius: recipe.radius,
-            border: Border.fromBorderSide(recipe.border(hovered)),
-            boxShadow: recipe.shadows(hovered),
-          ),
-          padding: recipe.rowInset,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: ChannelFileOpen(
-                  key: ValueKey('channel-file-preview-${widget.file.id}'),
-                  label: raftText(context, 'Preview file'),
-                  onPressed: widget.onPreview,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      visual,
-                      SizedBox(width: recipe.bodyGap),
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.file.filename,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: recipe.filename,
-                            ),
-                            SizedBox(height: recipe.textGap),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: [
-                                Text(
-                                  sourceChannelFileSize(widget.file.sizeBytes),
-                                  style: recipe.metadata,
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    RaftIcon(
-                                      RaftGlyph.clock3,
-                                      size: 12,
-                                      color: recipe.metadata.color,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        widget.formattedDate,
-                                        style: recipe.metadata,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(width: recipe.bodyGap),
-              if (recipe.collapsedActions(
-                constraints.maxWidth,
-                hovered: hovered,
-              ))
-                _overflowMenu(context)
-              else
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+    Widget row(double width) => RaftHoverRegion(
+      onEnter: (_) => setState(() => hovered = true),
+      onExit: (_) => setState(() => hovered = false),
+      child: AnimatedContainer(
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : recipe.hoverTransition,
+        decoration: RaftCssBoxDecoration(
+          color: recipe.rowBackground,
+          borderRadius: recipe.radius,
+          border: Border.fromBorderSide(recipe.border(hovered)),
+          boxShadow: recipe.shadows(hovered),
+        ),
+        padding: recipe.rowInset,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: ChannelFileOpen(
+                key: ValueKey('channel-file-preview-${widget.file.id}'),
+                label: raftText(context, 'Preview file'),
+                onPressed: widget.onPreview,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    RaftControl(
-                      key: ValueKey('channel-file-jump-${widget.file.id}'),
-                      visualHeight: recipe.actionSize,
-                      tooltip: raftText(context, 'Jump to original message'),
-                      variant: RaftControlVariant.ghost,
-                      onPressed: widget.onOpenSource,
-                      child: const ChannelFileGlyph(
-                        SourceChannelFileGlyph.jump,
-                        size: 14,
+                    visual,
+                    SizedBox(width: recipe.bodyGap),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.file.filename,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: recipe.filename,
+                          ),
+                          SizedBox(height: recipe.textGap),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                sourceChannelFileSize(widget.file.sizeBytes),
+                                style: recipe.metadata,
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  RaftIcon(
+                                    RaftGlyph.clock3,
+                                    size: 12,
+                                    color: recipe.metadata.color,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      widget.formattedDate,
+                                      style: recipe.metadata,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                    SizedBox(width: recipe.actionGap),
-                    RaftIconButton(
-                      key: ValueKey('channel-file-download-${widget.file.id}'),
-                      visualSize: recipe.actionSize,
-                      glyphSize: 14,
-                      glyph: RaftGlyph.download,
-                      tooltip: raftText(context, 'Download file'),
-                      variant: RaftControlVariant.ghost,
-                      onPressed: widget.onDownload,
                     ),
                   ],
                 ),
-            ],
-          ),
+              ),
+            ),
+            SizedBox(width: recipe.bodyGap),
+            if (recipe.collapsedActions(width, hovered: hovered))
+              _overflowMenu(context)
+            else
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RaftControl(
+                    key: ValueKey('channel-file-jump-${widget.file.id}'),
+                    visualHeight: recipe.actionSize,
+                    tooltip: raftText(context, 'Jump to original message'),
+                    variant: RaftControlVariant.ghost,
+                    onPressed: widget.onOpenSource,
+                    child: const ChannelFileGlyph(
+                      SourceChannelFileGlyph.jump,
+                      size: 14,
+                    ),
+                  ),
+                  SizedBox(width: recipe.actionGap),
+                  RaftIconButton(
+                    key: ValueKey('channel-file-download-${widget.file.id}'),
+                    visualSize: recipe.actionSize,
+                    glyphSize: 14,
+                    glyph: RaftGlyph.download,
+                    tooltip: raftText(context, 'Download file'),
+                    variant: RaftControlVariant.ghost,
+                    onPressed: widget.onDownload,
+                  ),
+                ],
+              ),
+          ],
         ),
       ),
     );
+    final width = widget.width;
+    return width == null
+        ? LayoutBuilder(builder: (_, constraints) => row(constraints.maxWidth))
+        : row(width);
   }
 }
 

@@ -3,6 +3,45 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'delegated_message.dart';
 
+typedef MessageRowGrouping = ({
+  bool showDay,
+  bool firstDay,
+  bool continuation,
+  RaftMessageFollowedBy? followedBy,
+  bool followsSystem,
+});
+
+MessageRowGrouping messageRowGrouping(
+  RaftMessage message,
+  (RaftMessage?, RaftMessage?) neighbours, {
+  required bool showDates,
+  required String Function(DateTime) dayKey,
+  required bool Function(RaftMessage) standalone,
+}) {
+  final (previous, following) = neighbours;
+  final before = previous?.createdAt, stamp = message.createdAt;
+  return (
+    showDay:
+        showDates &&
+        stamp != null &&
+        (before == null || dayKey(before) != dayKey(stamp)),
+    firstDay: before == null,
+    continuation: messageContinuesGroup(
+      previous,
+      message,
+      dayKey: dayKey,
+      standalone: standalone,
+    ),
+    followedBy: messageFollowedBy(
+      message,
+      following,
+      dayKey: dayKey,
+      standalone: standalone,
+    ),
+    followsSystem: previous?.string('messageType') == 'system',
+  );
+}
+
 /// Source `messageGrouping.ts` computeMessageGrouping: [message] continues
 /// [previous]'s sender group when both are chat rows from the same sender on
 /// the same calendar day and neither is [standalone] (a thread reply or a task

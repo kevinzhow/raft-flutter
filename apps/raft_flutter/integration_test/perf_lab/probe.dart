@@ -165,8 +165,9 @@ class LabSampler {
       _writeStandalone('hello', data);
       return;
     }
-    for (var i = 0; i < 60 && !attached; i++) {
-      attached = await send('hello', data, timeout: const Duration(seconds: 1));
+    for (final seconds in [1, 15, 15, 15, 15]) {
+      attached = await send('hello', data, timeout: Duration(seconds: seconds));
+      if (attached) return;
     }
   }
 }

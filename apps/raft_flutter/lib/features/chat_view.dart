@@ -506,15 +506,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       ++windowRevision;
     }
     widget.viewportHandle?.bind(this, jumpToBeginning, jumpToOutline);
-    referenceDirectory = MessageReferenceDirectory(w)
-      ..addListener(referencesChanged);
-    agentPresentation = MessageAgentPresentation(w, referenceDirectory)
-      ..addListener(referencesChanged);
-    composerDirectory = ComposerDirectory(
-      w,
-      agentPresentation: agentPresentation,
-      thread: widget.thread,
-    )..addListener(referencesChanged);
+    bindMessageDirectories();
     taskProjection = MessageTaskProjection(w)..addListener(referencesChanged);
     selection = ChannelActivitySelection(activity, () => rows)
       ..addListener(selectionChanged);
@@ -558,15 +550,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         composerDirectory.dispose();
         agentPresentation.dispose();
         referenceDirectory.dispose();
-        referenceDirectory = MessageReferenceDirectory(w)
-          ..addListener(referencesChanged);
-        agentPresentation = MessageAgentPresentation(w, referenceDirectory)
-          ..addListener(referencesChanged);
-        composerDirectory = ComposerDirectory(
-          w,
-          agentPresentation: agentPresentation,
-          thread: widget.thread,
-        )..addListener(referencesChanged);
+        bindMessageDirectories();
         taskProjection = MessageTaskProjection(w)
           ..addListener(referencesChanged);
         w.addListener(sync);
@@ -575,11 +559,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         // The thread/channel scope picks the roster the composer suggests
         // from; the mobile shell reuses this State across the two.
         composerDirectory.dispose();
-        composerDirectory = ComposerDirectory(
-          w,
-          agentPresentation: agentPresentation,
-          thread: widget.thread,
-        )..addListener(referencesChanged);
+        bindComposerDirectory();
       }
       selection = ChannelActivitySelection(activity, () => rows)
         ..addListener(selectionChanged);
@@ -920,6 +900,33 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         presentationActive &&
         !RouteTransitionGate.defer(preparationRoute, referencesChanged)) {
       setState(() {});
+    }
+  }
+
+  void bindMessageDirectories() {
+    referenceDirectory = MessageReferenceDirectory(w)
+      ..addListener(referencesChanged);
+    agentPresentation = MessageAgentPresentation(w, referenceDirectory)
+      ..addListener(referencesChanged);
+    bindComposerDirectory();
+  }
+
+  void bindComposerDirectory() {
+    composerDirectory = ComposerDirectory(
+      w,
+      agentPresentation: agentPresentation,
+      thread: widget.thread,
+    )..addListener(composerDirectoryChanged);
+  }
+
+  void composerDirectoryChanged() {
+    if (mounted &&
+        presentationActive &&
+        !RouteTransitionGate.defer(
+          preparationRoute,
+          composerDirectoryChanged,
+        )) {
+      super.setState(() {});
     }
   }
 
@@ -2925,14 +2932,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   );
 
   Widget datedTile(
-    RaftMessage message, {
-    bool captureFocus = true,
+    RaftMessage message,
+    int index,
+    MessageRowGrouping group, {
     bool dmRead = false,
   }) {
     final stamp = message.createdAt;
     final key = _messages.messageKey(message);
-    final index = windowIndexOf(key);
-    final systemState = index == null ? null : systemStateAt(index);
+    final systemState = systemStateAt(index);
     if (systemState is SystemGroupHide) {
       return RaftRowExtentRecorder(
         scope: rowExtentScope(context),
@@ -2969,36 +2976,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         ),
       );
     }
-    DateTime? previous;
-    if (index != null) {
-      previous = index > 0 ? adapter.messages[index - 1].createdAt : null;
-    } else {
-      final current = rows;
-      final at = current.indexWhere((row) => _messages.messageKey(row) == key);
-      previous = at > 0 ? current[at - 1].createdAt : null;
-    }
-    final showDay =
-        !activity.mode &&
-        stamp != null &&
-        (previous == null ||
-            timeFormatter.dayKey(previous) != timeFormatter.dayKey(stamp));
-    final neighbours = displayedNeighbours(key, index);
-    final continuation = continuesGroup(neighbours.$1, message);
-    final following = neighbours.$2;
-    final followedBy = messageFollowedBy(
-      message,
-      following,
-      dayKey: timeFormatter.dayKey,
-      standalone: standalone,
-    );
-    final followsSystem = neighbours.$1?.string('messageType') == 'system';
     return RaftRowExtentRecorder(
       scope: rowExtentScope(context),
       id: key,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (showDay &&
+          if (group.showDay &&
               const RaftTimelineCompositionRecipe().emitsDayDivider(
                 widget.thread
                     ? RaftTimelineHost.threadPanel
@@ -3010,7 +2994,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 context,
                 w,
                 timeFormatter.dayLabel(stamp),
-                first: previous == null && !widget.thread,
+                first: group.firstDay && !widget.thread,
               ),
             ),
           Padding(
@@ -3020,33 +3004,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             ),
             child: tile(
               message,
-              captureFocus: captureFocus,
               dmRead: dmRead,
-              continuation: continuation,
-              followedBy: followedBy,
-              followsSystem: followsSystem,
+              continuation: group.continuation,
+              followedBy: group.followedBy,
+              followsSystem: group.followsSystem,
             ),
           ),
         ],
       ),
-    );
-  }
-
-  /// The displayed rows before and after [key] (over the window when it is
-  /// indexed, else over [rows]).
-  (RaftMessage?, RaftMessage?) displayedNeighbours(String key, int? index) {
-    if (index != null) {
-      final list = adapter.messages;
-      return (
-        index > 0 ? source(list[index - 1]) : null,
-        index + 1 < list.length ? source(list[index + 1]) : null,
-      );
-    }
-    final current = rows;
-    final at = current.indexWhere((row) => _messages.messageKey(row) == key);
-    return (
-      at > 0 ? current[at - 1] : null,
-      at >= 0 && at + 1 < current.length ? current[at + 1] : null,
     );
   }
 
@@ -3055,14 +3020,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       _messages.threadSummaries[m.id] != null ||
       taskProjection.presentFor(m) != null ||
       taskProjection.taskListFor(m) != null;
-
-  bool continuesGroup(RaftMessage? previous, RaftMessage message) =>
-      messageContinuesGroup(
-        previous,
-        message,
-        dayKey: timeFormatter.dayKey,
-        standalone: standalone,
-      );
 
   String rowExtentScope(BuildContext context) {
     final tokens = RaftTokens.of(context);
@@ -3141,6 +3098,17 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final thread = widget.thread;
     final timelineAdapter = adapter;
     final messages = timelineAdapter.messages;
+    final times = timeFormatter;
+    MessageRowGrouping groupingAt(int index) => messageRowGrouping(
+      source(messages[index]),
+      (
+        index > 0 ? source(messages[index - 1]) : null,
+        index + 1 < messages.length ? source(messages[index + 1]) : null,
+      ),
+      showDates: !activity.mode,
+      dayKey: times.dayKey,
+      standalone: standalone,
+    );
     timelineKeys.progress
       ..bind(w, thread: thread, visible: presentationActive, changed: sync)
       ..update(w, messages.map(source), systemStateAt, thread: thread);
@@ -3215,12 +3183,15 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         ),
       ];
     }
-    final rowStyle = timelineKeys.rowStyle(
-      context,
-      authority: (w, workspaceAuthority(w), activity.mode),
-      user: w.client.user,
-      interactive: canReact,
-      day: timeFormatter.dayKey(sourceTimeNow()),
+    final rowStyle = (
+      timelineKeys.rowStyle(
+        context,
+        authority: (w, workspaceAuthority(w), activity.mode),
+        user: w.client.user,
+        interactive: canReact,
+        day: times.dayKey(sourceTimeNow()),
+      ),
+      composerDirectory.rosterRevision,
     );
     Widget? timelineWidget;
     double? timelineWidth;
@@ -3254,6 +3225,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               key: ValueKey('chat-list-${thread ? 'thread' : 'channel'}'),
               controller: viewport,
               retainRow: timelineKeys.retainRows(messages, source),
+              trackNeighbourVersions: false,
               rowRevision: (i) => timelineKeys.rowState(
                 w,
                 messages,
@@ -3262,6 +3234,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   rowStyle,
                   width,
                   systemStateAt(i),
+                  groupingAt(i),
                   source(messages[i]).id == dmReadId,
                   timelineKeys.progress.revision(source(messages[i]).id),
                 ),
@@ -3282,6 +3255,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 source(messages[index]),
                 datedTile(
                   source(messages[index]),
+                  index,
+                  groupingAt(index),
                   dmRead: source(messages[index]).id == dmReadId,
                 ),
               ),

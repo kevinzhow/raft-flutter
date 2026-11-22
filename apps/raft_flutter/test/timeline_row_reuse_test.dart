@@ -1,9 +1,93 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/message_timeline.dart';
 
 void main() {
+  testWidgets('one live insert reuses the retained rows and their layout', (
+    tester,
+  ) async {
+    final controller = RaftTimelineScrollController(
+      bottomAnchored: false,
+      initial: RaftTimelineAlignment.start,
+    );
+    addTearDown(controller.dispose);
+    final messages = ValueNotifier([
+      for (var index = 0; index < 80; index++)
+        chat.Message.text(
+          id: '$index',
+          authorId: 'fixture',
+          text: 'row-$index',
+        ),
+    ]);
+    addTearDown(messages.dispose);
+    final builds = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ValueListenableBuilder(
+          valueListenable: messages,
+          builder: (context, rows, _) => RaftMessageTimeline(
+            controller: controller,
+            messages: rows,
+            centerIndex: 0,
+            epoch: 0,
+            cacheExtent: 0,
+            extentRevision: 0,
+            rowRevision: (_) => 0,
+            retainRow: (_) => true,
+            indexOfId: (id) {
+              final index = rows.indexWhere((row) => row.id == id);
+              return index < 0 ? null : index;
+            },
+            estimateRow: (_) => 40,
+            rowBuilder: (context, index) {
+              builds.add(rows[index].id);
+              return SizedBox(
+                height: 40,
+                child: Text((rows[index] as chat.TextMessage).text),
+              );
+            },
+            slivers: (history, forward) => [history, forward],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(builds.length, greaterThan(10));
+    final anchor = tester.getRect(find.text('row-2'));
+    builds.clear();
+    final initialProfiling = debugProfileLayoutsEnabled;
+    final initialCollection = FlutterTimeline.debugCollectionEnabled;
+    debugProfileLayoutsEnabled = true;
+    FlutterTimeline.debugCollectionEnabled = true;
+    try {
+      final rows = messages.value;
+      messages.value = [
+        ...rows.take(5),
+        chat.Message.text(
+          id: 'arrival',
+          authorId: 'fixture',
+          text: 'New arrival',
+        ),
+        ...rows.skip(5),
+      ];
+      await tester.pumpAndSettle();
+      final rowLayouts = FlutterTimeline.debugCollect().timedBlocks.where(
+        (block) => block.name == '_RenderLayoutBuilder',
+      );
+      expect(find.text('New arrival'), findsOneWidget);
+      expect(tester.getRect(find.text('row-2')), anchor);
+      expect(builds.toSet(), {'4', 'arrival', '5'});
+      expect(rowLayouts.length, lessThanOrEqualTo(5));
+    } finally {
+      debugProfileLayoutsEnabled = initialProfiling;
+      FlutterTimeline.debugCollectionEnabled = initialCollection;
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
   testWidgets(
     'unchanged rows and extents survive updates; edits refresh their grouping neighbours',
     (tester) async {

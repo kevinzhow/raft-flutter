@@ -56,24 +56,79 @@ class TimelineRowRetention with WidgetsBindingObserver {
   }
 }
 
+class TimelineMountedRows {
+  final _rows = <String, _TimelineReusableRowState>{};
+
+  TimelineReusableRow row({
+    required chat.Message message,
+    required chat.Message? before,
+    required chat.Message? after,
+    required Object? revision,
+    required WidgetBuilder builder,
+    required TimelineRowRetention? retention,
+  }) {
+    final mounted = _rows[message.id]?.widget;
+    if (mounted != null &&
+        mounted.matches(message, before, after, revision) &&
+        identical(mounted.retention, retention)) {
+      mounted._builder.build = builder;
+      return mounted;
+    }
+    return TimelineReusableRow._(
+      owner: this,
+      message: message,
+      before: before,
+      after: after,
+      revision: revision,
+      builder: _TimelineRowBuilder(builder),
+      retention: retention,
+    );
+  }
+
+  void _attach(_TimelineReusableRowState row) =>
+      _rows[row.widget.message.id] = row;
+
+  void _detach(_TimelineReusableRowState row) {
+    final id = row.widget.message.id;
+    if (identical(_rows[id], row)) _rows.remove(id);
+  }
+}
+
+class _TimelineRowBuilder {
+  _TimelineRowBuilder(this.build);
+  WidgetBuilder build;
+}
+
 /// A row cache owned by its lazy element, so retirement releases its subtree.
 /// The caller includes non-message inputs in [revision]; message grouping also
 /// depends on the neighbouring immutable message versions.
 class TimelineReusableRow extends StatefulWidget {
-  const TimelineReusableRow({
-    super.key,
+  const TimelineReusableRow._({
+    required this._owner,
     required this.message,
     required this.before,
     required this.after,
     required this.revision,
-    required this.builder,
-    this.retention,
+    required this._builder,
+    required this.retention,
   });
+  final TimelineMountedRows _owner;
+  final _TimelineRowBuilder _builder;
   final chat.Message message;
   final chat.Message? before, after;
   final Object? revision;
-  final WidgetBuilder builder;
   final TimelineRowRetention? retention;
+
+  bool matches(
+    chat.Message message,
+    chat.Message? before,
+    chat.Message? after,
+    Object? revision,
+  ) =>
+      identical(this.message, message) &&
+      identical(this.before, before) &&
+      identical(this.after, after) &&
+      this.revision == revision;
 
   @override
   State<TimelineReusableRow> createState() => _TimelineReusableRowState();
@@ -82,6 +137,7 @@ class TimelineReusableRow extends StatefulWidget {
 class _TimelineReusableRowState extends State<TimelineReusableRow>
     with AutomaticKeepAliveClientMixin {
   Widget? _child;
+  Widget? _layout;
   bool _retained = false;
 
   @override
@@ -90,6 +146,7 @@ class _TimelineReusableRowState extends State<TimelineReusableRow>
   @override
   void initState() {
     super.initState();
+    widget._owner._attach(this);
     _retained = widget.retention != null;
     widget.retention?._add(this);
   }
@@ -109,7 +166,12 @@ class _TimelineReusableRowState extends State<TimelineReusableRow>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _invalidate();
+  }
+
+  void _invalidate() {
     _child = null;
+    _layout = null;
   }
 
   @override
@@ -121,11 +183,13 @@ class _TimelineReusableRowState extends State<TimelineReusableRow>
       widget.retention?._add(this);
       updateKeepAlive();
     }
-    if (!identical(oldWidget.message, widget.message) ||
-        !identical(oldWidget.before, widget.before) ||
-        !identical(oldWidget.after, widget.after) ||
-        oldWidget.revision != widget.revision) {
-      _child = null;
+    if (!oldWidget.matches(
+      widget.message,
+      widget.before,
+      widget.after,
+      widget.revision,
+    )) {
+      _invalidate();
     }
   }
 
@@ -135,14 +199,17 @@ class _TimelineReusableRowState extends State<TimelineReusableRow>
     // A kept-alive sliver child can rebuild without being laid out. Updating
     // its rich text then lets selection registrars sort unlaid-out fragments
     // and lose existing entries. Reconcile the cached row during real layout.
-    if (widget.retention == null) return _child ??= widget.builder(context);
-    return LayoutBuilder(
-      builder: (context, constraints) => _child ??= widget.builder(context),
+    Widget body(BuildContext context) =>
+        _child ??= widget._builder.build(context);
+    if (widget.retention == null) return body(context);
+    return _layout ??= LayoutBuilder(
+      builder: (context, constraints) => body(context),
     );
   }
 
   @override
   void dispose() {
+    widget._owner._detach(this);
     widget.retention?._remove(this);
     super.dispose();
   }

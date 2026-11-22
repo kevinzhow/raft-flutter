@@ -808,6 +808,31 @@ class ReceiptAndNaturalLoadTest(unittest.TestCase):
                 lab.concurrent_run('linux')
 
 
+class TraceCaptureTest(unittest.TestCase):
+    def test_framework_traces_can_run_without_cpu_exports(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'run'
+
+            def driver(argv, **kwargs):
+                self.assertIn('--dart-define=RAFT_LAB_PHASES=true', argv)
+                self.assertEqual(kwargs['env'].get('RAFT_LAB_CPU_SAMPLES'), 'false')
+                return argparse.Namespace(returncode=0)
+
+            def summary(path):
+                (path / 'summary.md').write_text('Finished.')
+
+            with patch.dict(lab.os.environ, {'DISPLAY': ':test'}), \
+                 patch.object(lab, 'concurrent_run', return_value=False), \
+                 patch.object(lab, 'flutter_guard'), patch.object(lab, 'wait_for_display'), \
+                 patch.object(lab, 'wait_for_quiet_host'), \
+                 patch.object(lab, 'environment', return_value={'loadavg': [0, 0, 0]}), \
+                 patch.object(lab.subprocess, 'run', side_effect=driver) as launch, \
+                 patch.object(lab, 'summarize', side_effect=summary), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(lab.main(['run', '--out', str(output), '--device', 'linux',
+                                           '--no-cpu-samples']), 0)
+                launch.assert_called_once()
+
+
 class AndroidRunSafetyTest(unittest.TestCase):
     def test_changed_official_app_fails_even_when_metric_comparison_passes(self):
         with tempfile.TemporaryDirectory(prefix='raft-lab-safety-') as directory:
