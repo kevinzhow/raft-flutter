@@ -134,10 +134,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   RaftClient? anonymousClient;
 
   /// `/s/<slug>` of a server this account does not have: App.tsx
-  /// ServerResolver shows ServerAccessDeniedPage, then redirects.
+  /// ServerResolver keeps the requested URL visible until the user leaves it.
   String? deniedSlug;
   RaftRecord? deniedFallback;
-  Timer? deniedTimer;
 
   /// `/s/community` for an account that has not joined it: the app joins on
   /// arrival ("Joining community…"); an agreement to accept opens the dialog
@@ -1090,26 +1089,19 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         : null;
   }
 
-  /// ServerAccessDeniedPage: names the server the redirect goes to (the
-  /// current one, else the last used, else the first) and goes there after
-  /// 3 seconds, or when the button is pressed.
   Future<void> showAccessDenied(String slug, [bool Function()? current]) async {
     final w = workspace;
     if (w == null || w.servers.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     if (!mounted || (current != null && !current())) return;
     final last = prefs.getString('$serverMemoryKey.last');
-    final fallback =
+    deniedFallback =
         w.servers.where((s) => s.id == w.server?.id).firstOrNull ??
-        w.servers.where((s) => s.string('slug') == last).firstOrNull ??
-        w.servers.first;
-    deniedTimer?.cancel();
+        w.servers.where((s) => s.string('slug') == last).firstOrNull;
     deniedSlug = slug;
-    deniedFallback = fallback;
     showServerSelector = true;
     appRouter.publish(requestedLocation);
     setState(() {});
-    deniedTimer = Timer(const Duration(seconds: 3), leaveAccessDenied);
   }
 
   void clearAccessDenied() {
@@ -1118,8 +1110,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       communityDialogOpen = false;
       appRouter.navigatorKey.currentState?.pop();
     }
-    deniedTimer?.cancel();
-    deniedTimer = null;
     deniedSlug = null;
     deniedFallback = null;
   }
