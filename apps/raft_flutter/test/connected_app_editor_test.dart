@@ -401,6 +401,12 @@ void main() {
 
     t.view.physicalSize = const Size(390, 844);
     await t.pumpAndSettle();
+    await t.ensureVisible(input);
+    await t.pumpAndSettle();
+    final slugLabel = t.widget<Text>(find.text('Target server'));
+    expect(slugLabel.style?.fontSize, 12);
+    expect(t.widget<EditableText>(shareInput).autocorrect, isFalse);
+    expect(t.widget<EditableText>(shareInput).enableSuggestions, isFalse);
     final created = find.byKey(const ValueKey('connected-app-share-created'));
     final shareUrl = find.descendant(
       of: created,

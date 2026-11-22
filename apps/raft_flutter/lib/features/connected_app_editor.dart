@@ -1599,8 +1599,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x3,
       children: [
-        RaftAppEditorField(
-          label: 'Target server',
+        RaftField(
+          label: tr('Target server'),
+          compact: true,
           hint: "The server's slug, from its address after /s/. Raft doesn't say whether that server exists, so check the slug: a link for the wrong one never works.",
           error: shareTargetError == null ? null : tr(shareTargetError!),
           child: Row(
@@ -1612,6 +1613,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
                   controller: shareTarget,
                   focusNode: shareTargetFocus,
                   mono: true,
+                  autocorrect: false,
                   hintText: 'server-slug',
                   invalid: shareTargetError != null,
                   semanticLabel: tr('Target server'),
