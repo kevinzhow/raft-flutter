@@ -60,6 +60,7 @@ void main() {
   });
 
   tearDown(() async {
+    DevicePreferences.reset();
     workspace.dispose();
     await client.dispose();
   });
@@ -599,6 +600,7 @@ void main() {
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       await DevicePreferences.load();
+      addTearDown(DevicePreferences.reset);
       const post = 'POST $_artifact/comments';
       client.answers[post] = (body) => {
         'comment': {
