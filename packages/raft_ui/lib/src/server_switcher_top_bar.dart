@@ -708,7 +708,11 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
                         label: '',
                         semanticLabel: row.name,
                         // Keep the tooltip node mounted while a pointer is down.
-                        tooltip: dragging ? '' : row.name,
+                        tooltip: dragging
+                            ? ''
+                            : row.shortcutLabel == null
+                            ? row.name
+                            : '${row.name}  ${row.shortcutLabel}',
                         leading: avatar(row, hiddenUnread: hiddenUnread),
                         gap: 0,
                         uiVariant: RaftButtonVariant.ghost,

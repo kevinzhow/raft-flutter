@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -6,6 +7,18 @@ import '../data/source_server_unread.dart';
 import '../data/workspace_controller.dart';
 import 'public_avatar_url.dart';
 import 'workspace_desktop_window.dart';
+
+const workspaceShortcutKeys = [
+  LogicalKeyboardKey.digit1,
+  LogicalKeyboardKey.digit2,
+  LogicalKeyboardKey.digit3,
+  LogicalKeyboardKey.digit4,
+  LogicalKeyboardKey.digit5,
+  LogicalKeyboardKey.digit6,
+  LogicalKeyboardKey.digit7,
+  LogicalKeyboardKey.digit8,
+  LogicalKeyboardKey.digit9,
+];
 
 /// What the Home server switcher and the phone's server tab list: the same
 /// servers in the same order with the same unread rules (Web `useServerSwitcher`
@@ -16,8 +29,9 @@ List<RaftServerMenuRow> serverMenuRows(
   required int? Function(String serverId) activityCountOf,
   required SourceServerUnreadStore serverUnread,
   required void Function(RaftRecord server) onSelect,
+  bool desktopShortcuts = false,
 }) => [
-  for (final server in w.servers)
+  for (final (index, server) in w.servers.indexed)
     RaftServerMenuRow(
       id: server.id,
       name: server.name,
@@ -30,6 +44,9 @@ List<RaftServerMenuRow> serverMenuRows(
       publicPageLive: server.json['publicPageLive'] == true,
       activityUnreadCount: activityCountOf(server.id),
       pushMuted: serverUnread[server.id]?.pushMuted ?? false,
+      shortcutLabel: desktopShortcuts && index < workspaceShortcutKeys.length
+          ? '${usesCommandShortcuts() ? '⌘' : 'Ctrl+'}${index + 1}'
+          : null,
       onSelected: () => onSelect(server),
       onAuxiliary: serverWindowAction(context, w, server),
       onOpenWindow: nativeServerWindowAction(context, w, server),

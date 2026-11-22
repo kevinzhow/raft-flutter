@@ -36,6 +36,7 @@ void main() {
         api.routes['GET /servers/s1/members'] = (_) => [];
         api.routes['GET /servers/unread-summary'] = (_) => [];
         final writes = <dynamic>[];
+        final selected = <String>[];
         api.routes['PATCH /servers/order'] = (request) {
           writes.add(request.data);
           return request.data;
@@ -53,6 +54,9 @@ void main() {
                 onAppearance: (_) async {},
                 onLogout: () async {},
                 onChooseServer: () {},
+                onSwitchServer: (server, _) async {
+                  selected.add(server.id);
+                },
               ),
             ),
           ),
@@ -95,6 +99,11 @@ void main() {
           },
         ]);
         expect(w.servers.map((s) => s.id), ['s2', 's3', 's1']);
+        expect(find.byTooltip('Beta  Ctrl+1'), findsOneWidget);
+        await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await t.sendKeyEvent(LogicalKeyboardKey.digit1);
+        await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        expect(selected, ['s2']);
         w.server = RaftRecord({...w.server!.json, 'role': 'member'});
         w.notifyListeners();
         await frames(t, () {});

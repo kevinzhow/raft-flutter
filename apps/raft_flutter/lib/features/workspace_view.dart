@@ -2348,7 +2348,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
       return false;
     }
     final keyboard = HardwareKeyboard.instance;
-    if (WorkspaceHostScope.nativeDesktopOf(context) &&
+    final native = WorkspaceHostScope.nativeDesktopOf(context);
+    if (native &&
         handleWorkspaceHistoryShortcut(
           w,
           key,
@@ -2357,19 +2358,22 @@ class _WorkspaceViewState extends State<WorkspaceView>
         )) {
       return true;
     }
-    if (key != LogicalKeyboardKey.keyK && key != LogicalKeyboardKey.comma) {
-      return false;
-    }
-    // Source isGlobalSearchShortcut: Cmd alone on macOS, Ctrl alone elsewhere.
     if (keyboard.isShiftPressed ||
         keyboard.isAltPressed ||
         !primaryShortcutModifierDown(keyboard)) {
       return false;
     }
+    final index = native ? workspaceShortcutKeys.indexOf(key) : -1;
+    if (index >= 0 && index < w.servers.length) {
+      unawaited(selectMenuServer(w.servers[index], mobileAuthority));
+      return true;
+    }
     if (key == LogicalKeyboardKey.keyK) {
       openSearchShortcut();
-    } else {
+    } else if (key == LogicalKeyboardKey.comma) {
       select('settings');
+    } else {
+      return false;
     }
     return true;
   }
@@ -2760,6 +2764,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         w,
         activityCountOf: activityCountOf,
         serverUnread: serverUnread,
+        desktopShortcuts: topBar && WorkspaceHostScope.nativeDesktopOf(context),
         onSelect: (server) =>
             unawaited(selectMenuServer(server, scope, mobile: mobile)),
       ),
