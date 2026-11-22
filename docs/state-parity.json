@@ -60407,14 +60407,6 @@
         "owner": "WP-SHELL announcements",
         "reason": "Previews the sidebar announcement card."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@49831/METHOD:build@50291/FUNCTION:withoutRailInset@50529": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "workspace-shell"
-        ],
-        "owner": "Shared desktop chrome",
-        "reason": "Projects safe-area insets for the mounted keyboard layout beside a rail."
-      },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9211/METHOD:conversation@10268/FUNCTION:mainContent@12620": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -60575,6 +60567,14 @@
         ],
         "owner": "Shared desktop chrome",
         "reason": "Measures names for the mounted workspace switcher and its quick-switch capacity."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@49929/METHOD:build@50389/FUNCTION:withoutRailInset@50627": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Projects safe-area insets for the mounted keyboard layout beside a rail."
       }
     },
     "entries": {

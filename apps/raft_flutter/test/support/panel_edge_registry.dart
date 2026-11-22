@@ -84,7 +84,10 @@ const panelEdgeSurfaces = <PanelEdgeSurface>[
   PanelEdgeSurface(
     'workspace-thread-panel',
     web: 'ThreadPanelRoot / ThreadPanel in the right column',
-    files: ['$_ui/side_panel_frame.dart'],
+    files: [
+      '$_ui/side_panel_frame.dart',
+      'lib/features/channel_side_area.dart',
+    ],
     style: RaftPanelEdgeStyle.attachedPanel,
   ),
   PanelEdgeSurface(

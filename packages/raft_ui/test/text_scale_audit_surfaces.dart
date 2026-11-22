@@ -314,6 +314,13 @@ final auditSurfaces = <AuditSurface>[
     Size(900, 640),
   ),
   AuditSurface(
+    'announcementSidebarPreview',
+    'Announcement sidebar stack',
+    announcementSidebarPreview,
+    Size(240, 560),
+    representative: true,
+  ),
+  AuditSurface(
     'appIconChoicesPreview',
     'App icon choices',
     appIconChoicesPreview,

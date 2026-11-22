@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'workspace_channel_settings_identity_test.dart' show settingsFixture;
@@ -47,7 +48,7 @@ void main() {
         );
         try {
           const splitWidth = 1380.0;
-          await mountPage(t, w, false, width: splitWidth);
+          await mountPage(t, w, width == 928, width: splitWidth);
           await t.tap(find.byKey(const Key('channel-overflow-trigger')));
           await t.pumpAndSettle();
           expect(detailsClose.hitTestable(), findsOneWidget);
@@ -61,6 +62,20 @@ void main() {
           await frames(t, () {});
           await t.pumpAndSettle();
           expect(sideThread, findsOneWidget);
+          final statusBarEdge = find
+              .descendant(
+                of: sideThread,
+                matching: find.byWidgetPredicate(
+                  (widget) =>
+                      widget is RaftStatusBarSource && widget.border != null,
+                ),
+              )
+              .first;
+          final tokens = RaftTokens.of(t.element(sideThread));
+          expect(
+            t.widget<RaftStatusBarSource>(statusBarEdge).border?.left,
+            BorderSide(color: tokens.ui.lineSeam),
+          );
           expect(detailsClose.hitTestable(), findsOneWidget);
           final available = splitWidth - t.getRect(channelChat).left;
           // 360 for chat and 400 saved for each column. The thread has 40
