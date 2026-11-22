@@ -58964,25 +58964,25 @@
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5990/METHOD:buildWorkspace@47863/FUNCTION:<anonymous>@48081/FUNCTION:conversation@51195": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5930/METHOD:buildWorkspace@47803/FUNCTION:<anonymous>@48021/FUNCTION:conversation@51135": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5990/METHOD:buildWorkspace@47863/FUNCTION:<anonymous>@48081/FUNCTION:workspace@65407": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5930/METHOD:buildWorkspace@47803/FUNCTION:<anonymous>@48021/FUNCTION:workspace@65355": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5990/METHOD:desktopContentDetail@99042/FUNCTION:header@100752": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5930/METHOD:desktopContentDetail@99018/FUNCTION:header@100728": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5990/METHOD:settingsRailAction@106154/FUNCTION:action@106188": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5930/METHOD:settingsRailAction@106066/FUNCTION:action@106100": {
         "role": "entry_composition",
         "familyRefs": [
           "workspace-shell"
