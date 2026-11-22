@@ -48,10 +48,32 @@ final Map<String, ParityCase> homeTaskCases = {
 
 final Map<String, ParityUncovered> homeTaskUncovered = {};
 
-// Owner-authorized repair of the empty reference fixture. Both hosts use the
-// same explicit warning/info entries. The actual raft_ui button is tapped to
-// open the actual center; this tests presentation, not authenticated delivery
-// or SystemNotificationBell's store/permission/lifecycle adapter.
+bool _usesLiveNotificationFixture(ParityContext ctx) =>
+    (ctx.caseJson['capture'] as Map)['interactions'] != null;
+
+final _liveNotificationEntries = [
+  RaftNotificationEntry(
+    id: 'visual-agent-offline',
+    kind: RaftNotificationKind.warning,
+    title: 'Android-Developer lost connection',
+    body: 'Last heartbeat was 4 minutes ago.',
+    actions: [
+      RaftNotificationAction(label: 'View', onPressed: () {}),
+      RaftNotificationAction(label: 'Dismiss', onPressed: () {}),
+    ],
+  ),
+  RaftNotificationEntry(
+    id: 'visual-release-blocker',
+    kind: RaftNotificationKind.info,
+    title: 'Release gate needs review',
+    body: 'Two visual cases changed in the latest run.',
+    actions: [
+      RaftNotificationAction(label: 'Open', onPressed: () {}),
+      RaftNotificationAction(label: 'Dismiss', onPressed: () {}),
+    ],
+  ),
+];
+
 final ParityCase _notificationCenter = ParityCase(
   widgets: const [
     'raft_ui:RaftMobileNotificationButton',
@@ -59,20 +81,27 @@ final ParityCase _notificationCenter = ParityCase(
     'raft_ui:RaftNotificationCenter',
   ],
   notes:
-      'Repaired public component fixture: original 390x844 frame, '
-      'production raft_ui controls, shared notification-center.json entries. '
-      'Popup placement follows mobile trigger end/bottom plus 8px. '
-      'Not a SystemNotificationBell authorization/API/delivery test.',
+      'Pinned Web NotificationCenterVisualCaseView warning and info entries '
+      'with actions in the official 390x844 frame. The mobile Bell opens '
+      'the center after the same pointer interaction as the Web fixture.',
   build: (ctx) => _NotificationReferenceCase(ctx),
   interact: (t, ctx) async {
     expect(find.byType(RaftNotificationCenter), findsNothing);
     await t.tap(find.byType(RaftMobileNotificationButton));
     await t.pump();
     expect(find.byType(RaftNotificationCenter), findsOneWidget);
-    final fixture = ctx.fixtures['notificationCenterFixture'] as Map;
-    for (final entry in fixture['entries'] as List) {
-      expect(find.text(entry['title'] as String), findsOneWidget);
-      expect(find.text(entry['body'] as String), findsOneWidget);
+    if (_usesLiveNotificationFixture(ctx)) {
+      for (final entry in _liveNotificationEntries) {
+        expect(find.text(entry.title), findsOneWidget);
+        expect(find.text(entry.body!), findsOneWidget);
+      }
+      expect(find.text('Dismiss'), findsNWidgets(2));
+    } else {
+      final fixture = ctx.fixtures['notificationCenterFixture'] as Map;
+      for (final entry in fixture['entries'] as List) {
+        expect(find.text(entry['title'] as String), findsOneWidget);
+        expect(find.text(entry['body'] as String), findsOneWidget);
+      }
     }
     expect(find.text('2 items'), findsOneWidget);
   },
@@ -92,38 +121,45 @@ class _NotificationReferenceState extends State<_NotificationReferenceCase> {
   Widget build(BuildContext context) {
     final fixture = widget.ctx.fixtures['notificationCenterFixture'] as Map;
     final frame = fixture['frame'] as Map, trigger = fixture['trigger'] as Map;
-    final entries = [
-      for (final row in fixture['entries'] as List)
-        RaftNotificationEntry(
-          id: row['id'] as String,
-          kind: RaftNotificationKind.values.byName(row['kind'] as String),
-          title: row['title'] as String,
-          body: row['body'] as String,
-        ),
-    ];
+    final current = _usesLiveNotificationFixture(widget.ctx);
+    final entries = current
+        ? _liveNotificationEntries
+        : [
+            for (final row in fixture['entries'] as List)
+              RaftNotificationEntry(
+                id: row['id'] as String,
+                kind: RaftNotificationKind.values.byName(row['kind'] as String),
+                title: row['title'] as String,
+                body: row['body'] as String,
+              ),
+          ];
+    final inset = current ? 8.0 : (frame['sideInset'] as num).toDouble();
+    final top = current ? 6.0 : (frame['topInset'] as num).toDouble();
+    final extent = current ? 44.0 : (trigger['size'] as num).toDouble();
     return Scaffold(
       body: widget.ctx.target(
         SizedBox(
           width: (frame['width'] as num).toDouble(),
           height: (frame['height'] as num).toDouble(),
           child: ColoredBox(
-            color: Colors.white,
+            color: RaftTokens.of(context).canvas,
             child: Stack(
               children: [
                 Positioned(
-                  top: (frame['topInset'] as num).toDouble(),
-                  right: (frame['sideInset'] as num).toDouble(),
+                  top: top,
+                  right: inset,
                   child: Stack(
                     children: [
                       RaftMobileNotificationButton(
                         open: open,
+                        mobileHeader: current,
                         semanticLabel: 'Notification center, 2 notifications',
                         onPressed: () => setState(() => open = !open),
                       ),
-                      const Positioned(
-                        top: 4,
-                        right: 4,
-                        child: IgnorePointer(
+                      Positioned(
+                        top: current ? 7 : 4,
+                        right: current ? 7 : 4,
+                        child: const IgnorePointer(
                           child: RaftNotificationAttention(count: 2),
                         ),
                       ),
@@ -132,13 +168,12 @@ class _NotificationReferenceState extends State<_NotificationReferenceCase> {
                 ),
                 if (open)
                   Positioned(
-                    right: (frame['sideInset'] as num).toDouble(),
-                    top:
-                        ((frame['topInset'] as num) +
-                                (trigger['size'] as num) +
-                                (trigger['popupGap'] as num))
-                            .toDouble(),
-                    child: RaftNotificationCenter(entries: entries),
+                    right: inset,
+                    top: top + extent + (trigger['popupGap'] as num),
+                    child: RaftNotificationCenter(
+                      width: current ? widget.ctx.width - 2 * inset : 320,
+                      entries: entries,
+                    ),
                   ),
               ],
             ),
