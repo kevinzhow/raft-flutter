@@ -88,6 +88,18 @@ class ProfileSidePanel extends StatelessWidget {
             ? null
             : () => onMessage!(RaftProfileKind.human, profile.id),
       ),
+      RaftProfileKind.computer => FleetDetail(
+        key: key,
+        controller: w,
+        computers: true,
+        initial:
+            w.services.entityDirectory.computer(profile.id) ??
+            {'id': profile.id},
+        onClose: onBack ?? onClose,
+        closeAction: true,
+        onOpenAgent: (id) => profiles.openProfile(RaftProfileKind.agent, id),
+        onOpenCreator: profileHost == null ? null : profiles.openProfile,
+      ),
       RaftProfileKind.external => ExternalProfileSource(
         key: key,
         controller: profiles,

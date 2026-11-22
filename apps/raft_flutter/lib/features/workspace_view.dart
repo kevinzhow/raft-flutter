@@ -403,7 +403,10 @@ class _WorkspaceViewState extends State<WorkspaceView>
     // already; only a slot the wide layout made needs translating.
     final translation = compact && !crossed
         ? null
-        : w.navigation.translateForLayout(compact: compact);
+        : w.navigation.translateForLayout(
+            compact: compact,
+            directoryProfiles: w.server?.string('role') != 'guest',
+          );
     if (crossed) {
       w.navigation.markLayoutCrossing(
         translated: translation != null && compact,
@@ -1336,6 +1339,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         target: desktopNavigation.target?.kind,
       );
       final thread = access == null && sidePanels.thread;
+      final rackProfile = wide && route == 'computers' && sidePanels.profile;
       final phoneChatDirect =
           widget.mobileRoutePage &&
           (location.route == RaftRoute.channel ||
@@ -1434,7 +1438,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
               controller: w,
               activities: liveActivities,
               mobileRoot: !wide,
-              selected: desktopNavigation.target,
+              selected: desktopNavigation.directorySelection,
               onSelected: selectDesktopDirectoryTarget,
               onOpenDm: messageDesktopProfile,
             )
@@ -1443,9 +1447,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 ? ComputersRackDesktopPage(
                     key: ValueKey('computers-rack-$mobileAuthority'),
                     controller: w,
-                    target: desktopNavigation.target,
+                    target: desktopNavigation.directorySelection,
                     onSelected: selectDesktopDirectoryTarget,
-                    detail: desktopContentDetail(),
+                    detail: rackProfile
+                        ? profileSidePanel(location.profile!)
+                        : desktopContentDetail(),
                   )
                 : wide
                 ? DesktopDirectoryView(
@@ -1963,7 +1969,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                     ),
                                   )
                                 : null,
-                            profile: sidePanels.profile
+                            profile: sidePanels.profile && !rackProfile
                                 ? profileSidePanel(
                                     location.profile!,
                                     page: !wide,

@@ -29,7 +29,7 @@ enum RaftMobileTab { chat, tasks, members, settings }
 /// `?open=task:<taskId>` beside `?task=<channelId>:task:<taskId>`).
 enum RaftContentKind { channel, dm, thread, agent, human, machine, task }
 
-enum RaftProfileKind { agent, human, external }
+enum RaftProfileKind { agent, human, computer, external }
 
 enum RaftChannelPage { settings, members }
 
@@ -128,9 +128,15 @@ class RaftProfileLocation {
     final split = value.indexOf(':');
     if (split <= 0 || split == value.length - 1) return null;
     final prefix = value.substring(0, split), id = value.substring(split + 1);
-    if (prefix == 'agent' || prefix == 'human') {
+    final kind = switch (prefix) {
+      'agent' => RaftProfileKind.agent,
+      'human' => RaftProfileKind.human,
+      'computer' => RaftProfileKind.computer,
+      _ => null,
+    };
+    if (kind != null) {
       return RaftProfileLocation(
-        prefix == 'agent' ? RaftProfileKind.agent : RaftProfileKind.human,
+        kind,
         id,
         channelId: prefix == 'human' ? humanChannelId : null,
       );

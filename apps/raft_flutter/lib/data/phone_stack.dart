@@ -104,6 +104,31 @@ RaftLocation locationForWide(RaftLocation location) =>
     ? _tidy(location.withQuery({'channelPage': null, 'channelPageAdd': null}))
     : location;
 
+RaftLocation directoryProfileLocation(RaftLocation location) {
+  final kind = switch (location.route) {
+    RaftRoute.human => RaftProfileKind.human,
+    RaftRoute.agent => RaftProfileKind.agent,
+    RaftRoute.computer => RaftProfileKind.computer,
+    _ => null,
+  };
+  if (kind == null) {
+    final open = location.content;
+    return location.route == RaftRoute.computers &&
+            open?.kind == RaftContentKind.agent
+        ? location
+              .withQuery({'open': null})
+              .withProfile(RaftProfileKind.agent, open!.id)
+        : location;
+  }
+  final root = kind == RaftProfileKind.computer ? 'computers' : 'members';
+  return RaftLocation.fromUri(
+    location.uri.replace(pathSegments: ['', 's', location.serverSlug, root]),
+  ).withQuery({
+    'profile': RaftProfileLocation(kind, location.entityId!).toString(),
+    'profileChannel': location.query('profileChannel'),
+  });
+}
+
 /// One overlay level removed, topmost first: channel page, task, legacy task,
 /// profile, thread. Each slot owns its own query keys.
 RaftLocation? _withoutTopOverlay(RaftLocation location) {

@@ -49,9 +49,7 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
 
   /// The panel holds a computer, or an agent opened from its rack slot (Web
   /// AgentRackSlot openProfile: the same ProfilePanel, no row selected).
-  bool get panelOpen =>
-      widget.detail != null &&
-      (selected != null || widget.target?.kind == DesktopContentKind.agent);
+  bool get panelOpen => widget.detail != null;
 
   @override
   Widget build(BuildContext context) {

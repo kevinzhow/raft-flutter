@@ -3,10 +3,29 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/profile_side_panel.dart';
+import 'package:raft_flutter/features/desktop_directory_view.dart';
 
 import 'mounted_message_navigation_test.dart' show mountPage, pageFixture;
 
 void main() {
+  testWidgets('wide human link opens the shared directory profile slot', (
+    tester,
+  ) async {
+    final (workspace, _) = await pageFixture(tester);
+    final direct = RaftLocation.at(
+      serverSlug: workspace.location.serverSlug,
+      route: RaftRoute.human,
+      entityId: 'alice',
+    );
+    workspace.navigation.navigate(direct);
+    await mountPage(tester, workspace, false, width: 1280);
+    expect(workspace.location.route, RaftRoute.members);
+    expect(workspace.location.profile?.id, 'alice');
+    expect(find.byType(DesktopDirectoryView), findsOneWidget);
+    expect(find.byType(ProfileSidePanel), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
   testWidgets('a profile opened on Members stays beside the directory', (
     tester,
   ) async {
