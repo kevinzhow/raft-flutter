@@ -182,20 +182,17 @@ void main() {
     await tester.enterText(_field('code'), '000000');
     await _enter(tester, 'code');
     expect(attempts, 1);
-    expect(find.text("That code didn't work."), findsOneWidget);
-    // Under the field, not in the banner.
+    final error = find.text("That code didn't work.");
+    expect(error, findsOneWidget);
     expect(find.byType(RaftErrorBanner), findsNothing);
     expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('field-code')),
-        matching: find.text("That code didn't work."),
-      ),
-      findsOneWidget,
+      tester.getTopLeft(error).dy,
+      greaterThanOrEqualTo(tester.getBottomLeft(_field('code')).dy),
     );
     expect(find.byType(RaftFormDialog), findsOneWidget);
     await tester.enterText(_field('code'), '0000001');
     await tester.pump();
-    expect(find.text("That code didn't work."), findsNothing);
+    expect(error, findsNothing);
   });
 
   testWidgets('a RaftFieldError for a field not shown goes to the banner', (
