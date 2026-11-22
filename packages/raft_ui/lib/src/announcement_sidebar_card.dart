@@ -163,6 +163,7 @@ class RaftAnnouncementSidebarCard extends StatelessWidget {
                         glyph: RaftGlyph.x,
                         uiSize: RaftButtonSize.iconMd,
                         uiVariant: RaftButtonVariant.ghost,
+                        foreground: tokens.ui.foregroundMuted,
                         tooltip: labels.dismiss,
                         onPressed: onDismiss,
                         layoutTouchTarget: true,

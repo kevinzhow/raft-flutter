@@ -1000,7 +1000,9 @@
    ],
    "GET /channels/shell-refused": {
     "$status": 404,
-    "error": "Channel not found or not visible"
+    "$body": {
+     "error": "Channel not found or not visible"
+    }
    }
   },
   "row": {

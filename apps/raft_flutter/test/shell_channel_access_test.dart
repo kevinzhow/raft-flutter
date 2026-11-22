@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/channel_access_loss.dart';
 import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'mounted_message_navigation_test.dart' show mountPage, pageFixture;
 
@@ -27,6 +28,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(title, findsOneWidget);
+      expectBackButtonOutline(tester);
       final index = workspace.navigation.index;
       await tester.tap(find.text('Back to channels'));
       await tester.pumpAndSettle();
@@ -56,6 +58,7 @@ void main() {
     await tester.pumpAndSettle();
     final title = find.text("This conversation isn't available to you");
     expect(title, findsOneWidget);
+    expectBackButtonOutline(tester);
     await tester.tap(find.text('Back to conversations'));
     await tester.pumpAndSettle();
     expect(workspace.location.route, RaftRoute.home);
@@ -88,4 +91,12 @@ void main() {
     expect(title, findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+}
+
+void expectBackButtonOutline(WidgetTester tester) {
+  final button = tester.widget<RaftButton>(
+    find.byKey(const Key('channel-access-lost-back')),
+  );
+  expect(button.resolvedVariant, RaftButtonVariant.standard);
+  expect(button.resolvedSize, RaftButtonSize.md);
 }

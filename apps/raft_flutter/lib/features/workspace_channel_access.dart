@@ -78,6 +78,7 @@ class WorkspaceChannelAccessPage extends StatelessWidget {
           RaftIcon(RaftGlyph.messageSquare, size: size, color: color),
       action: RaftButton(
         key: const Key('channel-access-lost-back'),
+        uiVariant: RaftButtonVariant.standard,
         label: raftText(
           context,
           guest

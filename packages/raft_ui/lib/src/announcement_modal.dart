@@ -113,29 +113,16 @@ class RaftAnnouncementModal extends StatefulWidget {
 class _RaftAnnouncementModalState extends State<RaftAnnouncementModal> {
   final primary = FocusNode(debugLabel: 'announcement-primary');
 
-  /// Web focuses the action on open (`:focus-visible`); the ring stays while
-  /// that button keeps focus, including after it is clicked.
-  bool ring = true;
-  bool _hadFocus = false;
-
   @override
   void initState() {
     super.initState();
-    primary.addListener(_primaryFocus);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) primary.requestFocus();
     });
   }
 
-  void _primaryFocus() {
-    if (_hadFocus && !primary.hasFocus && ring) setState(() => ring = false);
-    _hadFocus = primary.hasFocus;
-    if (mounted) setState(() {});
-  }
-
   @override
   void dispose() {
-    primary.removeListener(_primaryFocus);
     primary.dispose();
     super.dispose();
   }
@@ -178,7 +165,6 @@ class _RaftAnnouncementModalState extends State<RaftAnnouncementModal> {
         onDismiss: widget.onDismiss,
         onPrimary: _primaryAction,
         primaryFocusNode: primary,
-        primaryFocusRing: ring,
         onLink: widget.onLink,
       ),
     );
