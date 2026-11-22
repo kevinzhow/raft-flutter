@@ -62,16 +62,11 @@ function parityExtFrPrimeStores(p: ParityExtFrProps) {
   } as never);
   if (p.sidePanels) setServerFeatureFlagForTests(fxServer.id, "task_v2_conversations_v0", true);
   if (p.raw.includes(".agent-avatar-reset.")) {
-    const order = parityExtFrFixture.routeSets["fr-avatar-reset"]["GET /servers/visual-server/sidebar-order"];
-    useServerStore.setState((state) => ({ sidebarOrder: { ...state.sidebarOrder, ...order } }));
-    useChannelStore.setState((state) => ({
-      dmChannels: state.dmChannels.map((dm) =>
-        dm.id === "shell-dm-cindy" ? { ...dm, peerAvatarUrl: "pixel:owl" } : dm),
+    const routes = parityExtFrFixture.routeSets["fr-avatar-reset"];
+    useServerStore.setState((state) => ({
+      sidebarOrder: { ...state.sidebarOrder, ...routes["GET /servers/visual-server/sidebar-order"] },
     }));
-    useAgentStore.setState((state) => ({
-      agents: state.agents.map((agent) =>
-        agent.id === "agent-cindy" ? { ...agent, avatarUrl: null } : agent),
-    }));
+    useAgentStore.setState({ agents: routes["GET /agents"], agentActivities: {} });
   }
   void parityExtFrShell;
 }
