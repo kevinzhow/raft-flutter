@@ -137,6 +137,13 @@ void main() {
     await tester.pump();
     expect(titles.last, '#design - Thread | Alpha | Raft');
 
+    w.navigation.navigate(
+      RaftLocation.parse('/s/demo/artifacts?thread=c2%3Aroot'),
+    );
+    w.notifyListeners();
+    await tester.pump();
+    expect(titles.last, 'Artifacts | Alpha | Raft');
+
     // A page that is no conversation names the workspace only; an unchanged
     // title is not sent twice.
     w.navigation.navigate(RaftLocation.parse('/s/demo/tasks'));

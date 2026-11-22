@@ -13,7 +13,14 @@ import 'member_profile_view.dart';
 const desktopDetailKeys = <Key>[
   ValueKey('desktop-profile-detail'),
   ValueKey('computers-rack-side-panel'),
+  Key('profile-panel'),
 ];
+
+Widget desktopThreadFocus(Widget thread) => DesktopDetailFocus(
+  open: true,
+  restoreOnUnmount: true,
+  builder: (scope) => FocusScope(node: scope, child: thread),
+);
 
 /// A text field editing inside an open detail panel takes the first Escape
 /// (Web: the field marks it handled): it only loses focus. True when it did.
@@ -44,9 +51,13 @@ class DesktopDetailFocus extends StatefulWidget {
     super.key,
     required this.open,
     required this.builder,
+    this.restoreOnUnmount = false,
+    this.moveFocus = true,
   });
   final bool open;
   final Widget Function(FocusScopeNode scope) builder;
+  final bool restoreOnUnmount;
+  final bool moveFocus;
 
   @override
   State<DesktopDetailFocus> createState() => _DesktopDetailFocusState();
@@ -59,15 +70,14 @@ class _DesktopDetailFocusState extends State<DesktopDetailFocus> {
   @override
   void initState() {
     super.initState();
-    if (widget.open) _enter();
+    if (widget.open) _open();
   }
 
   @override
   void didUpdateWidget(DesktopDetailFocus old) {
     super.didUpdateWidget(old);
     if (!old.open && widget.open) {
-      opener = FocusManager.instance.primaryFocus;
-      _enter();
+      _open();
     } else if (old.open && !widget.open) {
       final back = opener;
       opener = null;
@@ -79,6 +89,11 @@ class _DesktopDetailFocusState extends State<DesktopDetailFocus> {
     }
   }
 
+  void _open() {
+    opener = FocusManager.instance.primaryFocus;
+    if (widget.moveFocus) _enter();
+  }
+
   void _enter() => WidgetsBinding.instance.addPostFrameCallback((_) {
     if (!mounted || !widget.open) return;
     scope.requestFocus();
@@ -87,6 +102,12 @@ class _DesktopDetailFocusState extends State<DesktopDetailFocus> {
 
   @override
   void dispose() {
+    final back = opener;
+    if (widget.restoreOnUnmount && back != null && scope.hasFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (back.context != null) back.requestFocus();
+      });
+    }
     scope.dispose();
     super.dispose();
   }

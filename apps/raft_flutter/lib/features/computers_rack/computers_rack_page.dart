@@ -38,6 +38,7 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
     profilePanelWidth.min,
     rackPanelMax,
   );
+  bool expanded = false;
 
   /// The rack's side panel keeps its 300 to 600 (the shared width can be
   /// wider, dragged beside the Members list).
@@ -54,36 +55,79 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
   @override
   Widget build(BuildContext context) {
     final selected = this.selected;
+    if (!panelOpen) expanded = false;
     return DesktopDetailFocus(
       open: panelOpen,
-      builder: (scope) => RaftRackSidePanelLayout(
-        width: width,
-        onResize: (value) => setState(
-          () => width = value.clamp(profilePanelWidth.min, rackPanelMax),
-        ),
-        onResizeEnd: () => profilePanelWidth.save(width),
-        resizeLabel: raftText(context, 'Resize profile'),
-        resizeMin: profilePanelWidth.min,
-        resizeMax: rackPanelMax,
-        resizeDefault: profilePanelWidth.fallback,
-        rack: ComputersRackView(
-          controller: widget.controller,
-          selectedId: selected,
-          onOpenAgent: (id) => widget.onSelected(
-            DesktopContentTarget(DesktopContentKind.agent, id),
-          ),
-          onOpenComputer: (row) {
-            final id = row['id'];
-            if (id is String) {
-              widget.onSelected(
-                DesktopContentTarget(DesktopContentKind.computer, id),
-              );
-            }
-          },
-        ),
-        panel: panelOpen
-            ? FocusScope(node: scope, child: widget.detail!)
-            : null,
+      builder: (scope) => LayoutBuilder(
+        builder: (context, box) {
+          final canExpand = !RaftInteraction.of(context).touch;
+          final max = (box.maxWidth - 160).clamp(
+            profilePanelWidth.min,
+            double.infinity,
+          );
+          final shown = expanded
+              ? max
+              : width.clamp(profilePanelWidth.min, max);
+          final rack = ComputersRackView(
+            controller: widget.controller,
+            selectedId: selected,
+            onOpenAgent: (id) => widget.onSelected(
+              DesktopContentTarget(DesktopContentKind.agent, id),
+            ),
+            onOpenComputer: (row) {
+              final id = row['id'];
+              if (id is String) {
+                widget.onSelected(
+                  DesktopContentTarget(DesktopContentKind.computer, id),
+                );
+              }
+            },
+          );
+          return RaftRackSidePanelLayout(
+            width: shown,
+            onResize: (value) => setState(
+              () => width = value.clamp(profilePanelWidth.min, rackPanelMax),
+            ),
+            onResizeEnd: () => profilePanelWidth.save(width),
+            resizeLabel: raftText(context, 'Resize profile'),
+            resizeMin: profilePanelWidth.min,
+            resizeMax: rackPanelMax,
+            resizeDefault: profilePanelWidth.fallback,
+            rack: ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.topLeft,
+                minWidth: expanded ? 360 : null,
+                maxWidth: expanded ? 360 : null,
+                child: rack,
+              ),
+            ),
+            panel: panelOpen
+                ? FocusScope(
+                    node: scope,
+                    child: Actions(
+                      actions: {
+                        if (expanded)
+                          DismissIntent: CallbackAction<DismissIntent>(
+                            onInvoke: (_) => setState(() => expanded = false),
+                          ),
+                      },
+                      child: RaftPanelHeaderChrome(
+                        actions: [
+                          if (canExpand)
+                            raftProfileExpandAction(
+                              context: context,
+                              expanded: expanded,
+                              onPressed: () =>
+                                  setState(() => expanded = !expanded),
+                            ),
+                        ],
+                        child: widget.detail!,
+                      ),
+                    ),
+                  )
+                : null,
+          );
+        },
       ),
     );
   }

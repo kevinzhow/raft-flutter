@@ -79,7 +79,8 @@ void main() {
           // `--frame-item-height: var(--control-height)`; Web AppTopBar frame items).
           for (final key in [
             'topbar-history',
-            if (width >= 1000) ...['topbar-back', 'topbar-forward'],
+            'topbar-back',
+            'topbar-forward',
           ]) {
             final action = find.byKey(Key(key));
             final face = find
@@ -92,16 +93,13 @@ void main() {
             );
             expect(t.widget<RaftIcon>(glyph).size, 20, reason: key);
           }
-          if (width >= 1000) {
-            button(back, enabled: true);
-            button(forward, enabled: false);
-            // Both disabled and enabled navigation buttons keep their names.
-            w.navigation.back();
-            await mount();
-            await t.pumpAndSettle();
-            button(back, enabled: false);
-            button(forward, enabled: true);
-          }
+          button(back, enabled: true);
+          button(forward, enabled: false);
+          w.navigation.back();
+          await mount();
+          await t.pumpAndSettle();
+          button(back, enabled: false);
+          button(forward, enabled: true);
           expect(t.takeException(), isNull);
           await t.pumpWidget(const SizedBox.shrink());
           handle.dispose();
@@ -141,26 +139,20 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Content of c2'), findsWidgets);
       final depth = w.navigation.entries.length, index = w.navigation.index;
-      Future<void> press(String key, String label) async {
-        if (width < 1000) {
-          await t.tap(find.byKey(const Key('topbar-history')));
-          await t.pumpAndSettle();
-          await t.tap(find.text(label).last);
-        } else {
-          await t.tap(find.byKey(Key(key)));
-        }
+      Future<void> press(String key) async {
+        await t.tap(find.byKey(Key(key)));
         await t.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 30)),
         );
         await t.pumpAndSettle();
       }
 
-      await press('topbar-back', 'Go back');
+      await press('topbar-back');
       expect(w.navigation.index, index - 1);
       expect(w.location.entityId, 'c1');
       expect(w.channel?.id, 'c1');
       expect(find.text('Content of c1', findRichText: true), findsWidgets);
-      await press('topbar-forward', 'Go forward');
+      await press('topbar-forward');
       expect(w.navigation.index, index);
       expect(w.channel?.id, 'c2');
       expect(find.text('Content of c2'), findsWidgets);
@@ -236,14 +228,32 @@ void main() {
       // A parent permalink's msg is not a focused reply. A reply permalink
       // uses msg for the thread and must not load it into the main channel.
       await t.runAsync(() => w.jumpToMessage('c1', 'parent'));
-      await t.runAsync(
-        () => w.openThreadIdentity(
-          parentChannelId: 'c1',
-          parentMessageId: 'parent',
-          focusedMessageId: focusReply ? 'reply' : null,
-        ),
-      );
       await mountPage(t, w, false, width: 1280);
+      final composer = find.descendant(
+        of: find.byType(RaftComposer),
+        matching: find.byType(EditableText),
+      );
+      await t.tap(composer);
+      await t.pump();
+      final opener = t.widget<EditableText>(composer).focusNode;
+      expect(opener.hasFocus, isTrue);
+      Future<void> openThread() async {
+        await t.runAsync(
+          () => w.openThreadIdentity(
+            parentChannelId: 'c1',
+            parentMessageId: 'parent',
+            focusedMessageId: focusReply ? 'reply' : null,
+          ),
+        );
+        await t.pumpAndSettle();
+      }
+
+      await openThread();
+      expect(opener.hasFocus, isFalse);
+      await t.tap(find.byKey(const Key('thread-close')));
+      await t.pumpAndSettle();
+      expect(opener.hasFocus, isTrue);
+      await openThread();
       expect(find.byType(RaftThreadHeader), findsOneWidget);
       expect(find.text('Thread reply', findRichText: true), findsWidgets);
       await t.runAsync(() => w.selectChannel(w.channels.last));

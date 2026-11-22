@@ -14,6 +14,14 @@ import ParityExtAnnouncementModal from "../src/components/AnnouncementModal";
 import { useAnnouncementStore as parityExtAnnStore } from "../src/store/announcementStore";
 import parityExtAnnFixture from "virtual:parity-ext/announcements";
 import type { Announcement as ParityExtAnnouncement } from "@botiverse/raft-shared";
+import { useState as parityExtAnnUseState } from "react";
+
+(function parityExtAnnRoute() {
+  if (typeof window === "undefined") return;
+  const query = new URLSearchParams(window.location.search);
+  if (!query.get("case")?.startsWith("components.announcements.") || query.get("sidebar") !== "1") return;
+  window.history.replaceState(null, "", `/s/${fxServer.slug}${window.location.search}`);
+})();
 
 function parityExtAnnProps() {
   const raw = new URLSearchParams(window.location.search).get("case") ?? "";
@@ -22,23 +30,30 @@ function parityExtAnnProps() {
   const key = params.get("ann") ?? "";
   const announcement = (parityExtAnnFixture.announcements as Record<string, ParityExtAnnouncement>)[key];
   if (!announcement) return null;
-  return { raw, announcement };
+  return { raw, announcement, sidebar: params.get("sidebar") === "1" };
 }
 
 function ParityExtAnnView({ p }: { p: NonNullable<ReturnType<typeof parityExtAnnProps>> }) {
+  const [slot, setSlot] = parityExtAnnUseState<HTMLDivElement | null>(null);
   useMemo(() => {
     primeDirectVisualStores(p.raw);
     parityExtAnnStore.setState({
-      pending: [p.announcement],
+      pending: p.sidebar
+        ? [{ ...p.announcement, displayMode: "sidebar" }, { ...p.announcement, id: "next", displayMode: "sidebar" }]
+        : [p.announcement],
+      stackTotal: p.sidebar ? 2 : 1,
       loaded: true,
       markedReadIds: [],
       writeFailedIds: [],
-    });
+    } as Parameters<typeof parityExtAnnStore.setState>[0]);
   }, [p]);
+  const options = p.sidebar ? { preferSidebar: true, sidebarContainer: slot } : {};
   return (
     <main className="min-h-screen bg-white p-0 font-display text-black">
-      <div data-visual-case={p.raw} style={{ width: "100vw", height: "100vh" }} />
-      <ParityExtAnnouncementModal />
+      <div data-visual-case={p.raw} style={{ width: "100vw", height: "100vh" }}>
+        {p.sidebar && <div ref={setSlot} style={{ width: 268 }} />}
+      </div>
+      <ParityExtAnnouncementModal {...options} />
     </main>
   );
 }

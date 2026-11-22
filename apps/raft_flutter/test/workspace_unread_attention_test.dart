@@ -12,6 +12,60 @@ import 'message_presentation_test.dart' show fixture;
 import 'support/app_services_fixture.dart';
 
 void main() {
+  testWidgets('[051] the mounted shell refreshes the summary on unread edges', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
+    addTearDown(w.dispose);
+    w.loading = false;
+    w.section = 'search';
+    w.servers = [w.server!];
+    api.routes['GET /announcements/active'] = (_) => {'announcements': []};
+    api.routes['GET /servers/s1/setup-projection'] = (_) => {'phase': null};
+    var reads = 0;
+    api.routes['GET /servers/unread-summary'] = (_) {
+      reads++;
+      return [];
+    };
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: withAppServices(
+          WorkspaceView(
+            controller: w,
+            appearance: RaftAppearance(),
+            onAppearance: (_) async {},
+            onLogout: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(reads, 1);
+
+    void unread(int count) {
+      w.conversationReads.unread['c1'] = count;
+      w.notifyListeners();
+    }
+
+    unread(1);
+    await tester.pump(const Duration(milliseconds: 149));
+    expect(reads, 1);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(reads, 2);
+    unread(2);
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(reads, 2);
+    unread(0);
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(reads, 3);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
       '[K09e] ${dark ? 'dark' : 'light'} mounted Chat/Activity attention owns distinct accepted data and suppresses active',

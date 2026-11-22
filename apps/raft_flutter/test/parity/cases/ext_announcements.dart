@@ -88,13 +88,21 @@ class _PictureResponse extends Stream<List<int>> implements HttpClientResponse {
 
 WorkspaceController _workspace(ParityContext ctx) {
   final fx = ctx.fixtures['ext:announcements'] as Map<String, dynamic>;
-  final announcement = (fx['announcements'] as Map)[ctx.props['ann']];
+  final announcement =
+      (fx['announcements'] as Map)[ctx.props['ann']] as Map<String, dynamic>;
+  final sidebar = ctx.props['sidebar'] == '1';
   final wire = ScreenWire(ctx.fixtureData);
   final serverId = wire.server()['id'] as String;
   final client = ScreenFixtureClient(
     (method, path, query) => switch ((method, path)) {
       ('GET', '/announcements/active') => {
-        'announcements': [announcement],
+        'announcements': [
+          if (sidebar) ...[
+            {...announcement, 'displayMode': 'sidebar'},
+            {...announcement, 'id': 'next', 'displayMode': 'sidebar'},
+          ] else
+            announcement,
+        ],
       },
       ('GET', _) when path == '/servers/$serverId/setup-projection' => {
         'phase': null,
@@ -127,10 +135,29 @@ ParityCase _case() => ParityCase(
     for (var i = 0; i < 6; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
-    await t.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 200)),
-    );
     await t.pump(const Duration(milliseconds: 50));
+    if ((ctx.props['extCase'] as String).endsWith('.expanded')) {
+      await t.tap(find.byKey(const Key('announcement-picture-zoom')));
+      for (var frame = 0; frame < 6; frame++) {
+        await t.pump(const Duration(milliseconds: 50));
+      }
+    }
+    final image = find.descendant(
+      of: find.byKey(const Key('announcement-picture')),
+      matching: find.byType(Image),
+    );
+    if (image.evaluate().isNotEmpty) {
+      final element = t.element(image);
+      await t.runAsync(() async {
+        await precacheImage(
+          (element.widget as Image).image,
+          element,
+          onError: (error, stack) =>
+              Error.throwWithStackTrace(error, stack ?? StackTrace.current),
+        ).timeout(const Duration(seconds: 5));
+      });
+      await t.pump();
+    }
   },
   build: (ctx) {
     final picture = File(_pictureFile).readAsBytesSync();
@@ -140,7 +167,16 @@ ParityCase _case() => ParityCase(
     return AnnouncementHost(
       controller: _workspace(ctx),
       deployment: 'production',
-      child: const SizedBox.expand(child: ColoredBox(color: Colors.white)),
+      preferSidebar: ctx.props['sidebar'] == '1',
+      child: const SizedBox.expand(
+        child: ColoredBox(
+          color: Colors.white,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(width: 268, child: AnnouncementSidebarSlot()),
+          ),
+        ),
+      ),
     );
   },
 );
@@ -157,6 +193,8 @@ const _kinds = {
     'long',
     'long-title',
     'overlay',
+    'sidebar',
+    'expanded',
   ],
   'mobile': ['single', 'cta', 'cta-long', 'image', 'rich', 'long', 'overlay'],
 };

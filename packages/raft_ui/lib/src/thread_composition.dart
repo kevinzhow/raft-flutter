@@ -233,6 +233,7 @@ class RaftThreadHeader extends StatelessWidget {
         usesDesktopBar(context);
     final header = RaftPanelHeaderBar(
       title: threadLabel,
+      useHostChrome: desktopSidePanel,
       desktopBar: desktopBar,
       titleSlot: meta == null
           ? Align(alignment: AlignmentDirectional.centerStart, child: title)

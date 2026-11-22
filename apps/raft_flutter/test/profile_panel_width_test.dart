@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_flutter/features/channel_side_cards.dart';
+import 'package:raft_flutter/features/channel_side_store.dart';
+import 'package:raft_flutter/features/message_task_actions.dart';
 import 'package:raft_flutter/features/panel_width_store.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -69,6 +73,7 @@ void main() {
     };
     api.routes['GET /agents'] = (_) => [];
     api.routes['GET /servers/s1/members'] = (_) => [];
+    api.routes['PATCH /servers/s1/sidebar-order'] = (request) => request.data;
     await t.pumpWidget(
       MaterialApp(
         theme: raftTheme(),
@@ -108,6 +113,29 @@ void main() {
     await t.pump();
     expect(t.getSize(panel).width, 560);
     expect(profilePanelWidth.value, 560);
+
+    await t.tap(find.byKey(const Key('channel-profile-expand')));
+    await t.pump();
+    expect(t.getSize(panel).width, greaterThan(560));
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await t.pump();
+    expect(t.getSize(panel).width, 560);
+
+    TaskV2ConversationsFlag.of(w).markEnabled();
+    ChannelSideCards.toggle(w, ChannelSideCard.tasks);
+    await t.pumpAndSettle();
+    final tasks = find.byKey(const Key('channel-side-card-tasks'));
+    expect(t.getRect(tasks).right, closeTo(t.getRect(panel).left, 1));
+    await t.tap(find.byKey(const Key('channel-profile-move')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Move left'));
+    await t.pumpAndSettle();
+    expect(t.getRect(panel).right, closeTo(t.getRect(tasks).left, 1));
+    expect(w.location.profile?.id, 'm1');
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await t.pump();
+    expect(panel, findsNothing);
+
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 3));
   });

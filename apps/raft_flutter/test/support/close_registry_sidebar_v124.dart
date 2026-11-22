@@ -5,6 +5,15 @@ const _modal = {..._dialog, Affordance.scrim};
 
 const sidebarV124Surfaces = [
   CloseSurface(
+    'workspace-history-menu',
+    kind: SurfaceKind.popup,
+    web: 'components/topbar/HistoryMenu.tsx DropdownMenu: Escape and outside press',
+    fold: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    desktop: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    none: {'phone': 'native navigation uses the page stack'},
+    files: ['lib/features/workspace_history_controls.dart'],
+  ),
+  CloseSurface(
     'sidebar-channel-leave-confirmation',
     kind: SurfaceKind.dialog,
     web: 'LeaveChannelConfirmDialog.tsx ConfirmDialog',

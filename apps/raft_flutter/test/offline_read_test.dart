@@ -5,9 +5,12 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/workspace_offline_notice.dart';
 import 'package:raft_flutter/platform/workspace_cache.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 class _Transport implements HttpClientAdapter {
   @override
@@ -44,7 +47,69 @@ class _Transport implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+class _NoticeClient extends RaftClient {
+  _NoticeClient()
+    : super(
+        origin: 'https://example.invalid',
+        sessionStore: MemorySessionStore(),
+      );
+
+  final messages = StreamController<RaftEvent>.broadcast(sync: true);
+
+  @override
+  Stream<RaftEvent> get events => messages.stream;
+}
+
 void main() {
+  testWidgets(
+    'cached startup is marked offline until the session is accepted',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        final client = _NoticeClient()..restoredOffline = true;
+        addTearDown(client.messages.close);
+        addTearDown(client.dispose);
+
+        final badge = find.byKey(const Key('workspace-offline-indicator'));
+        final reason = find.byKey(const Key('workspace-offline-reason'));
+        Widget view() => MaterialApp(
+          theme: raftTheme(),
+          home: Column(
+            children: [
+              WorkspaceOfflineNotice(
+                client: client,
+                presentation: WorkspaceOfflinePresentation.compactIndicator,
+              ),
+              WorkspaceOfflineNotice(
+                client: client,
+                presentation: WorkspaceOfflinePresentation.banner,
+              ),
+            ],
+          ),
+        );
+        await tester.pumpWidget(view());
+        expect(badge, findsOneWidget);
+        expect(find.text('Offline'), findsOneWidget);
+        expect(reason, findsOneWidget);
+
+        client.messages.add(const RaftEvent('session:degraded', null));
+        await tester.pump();
+        expect(badge, findsOneWidget);
+
+        client.restoredOffline = false;
+        client.messages.add(const RaftEvent('session:recovered', null));
+        await tester.pump();
+        expect(badge, findsNothing);
+        expect(reason, findsNothing);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(view());
+        expect(badge, findsNothing);
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
   test('a failed secondary unread refresh cannot turn an accepted command into a failed creation', () async {
     final client = RaftClient(
       origin: 'https://example.invalid',

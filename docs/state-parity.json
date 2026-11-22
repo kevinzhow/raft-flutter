@@ -779,6 +779,18 @@
       "flutterEntry": "apps/raft_flutter/lib/features/announcement_host.dart",
       "states": [
         {
+          "state": "partial",
+          "variant": "sidebar stack and expanded picture",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.announcements.desktop.sidebar.*",
+            "components.announcements.desktop.expanded.*"
+          ],
+          "status": "fixing",
+          "justification": "The v1.24 stack presents one card at a time. Closing its enlarged picture reveals the unread card again."
+        },
+        {
           "state": "loading",
           "web": "no",
           "flutter": "yes",
@@ -5136,9 +5148,30 @@
           "variant": "lost access or refused conversation link",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": ["components.shell.channel-access.*"],
+          "parityCase": [
+            "components.shell.*.channel.access-lost.*",
+            "components.shell.*.channel.unavailable.*"
+          ],
           "status": "fixing",
           "justification": "Compare the loss and refused-link states against the pinned Web route."
+        }
+      ]
+    },
+    {
+      "id": "shell.offline",
+      "title": "Cached workspace reconnect",
+      "webEntry": "packages/web/src/components/layout/OfflineServerLayout.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/workspace_offline_notice.dart",
+      "states": [
+        {
+          "state": "partial",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.shell.*.offline.cached.*"
+          ],
+          "status": "fixing",
+          "justification": "Both clients show automatic reconnection. Flutter retains its cache-first conversation view while Web stages read-only channel rows."
         }
       ]
     },
@@ -60209,6 +60242,22 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Source-reviewed canonical control delegation only; current matched-state mounting and visual acceptance remain pending. Required conditions are registered separately; no visual PASS is asserted."
+      },
+      "screen:chat.channel-access": {
+        "owner": "WP-SHELL",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "chat.channel-access",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed",
+        "reason": "The workspace conversation and the Search and Activity content slots mount the shared access error page when the current destination is refused."
+      },
+      "screen:shell.offline": {
+        "owner": "WP-SHELL",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "shell.offline",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed",
+        "reason": "The desktop header and phone Home mount the shared badge and information banner for a restored offline session."
       },
       "screen:chat.thread-panel": {
         "owner": "design-system alignment",

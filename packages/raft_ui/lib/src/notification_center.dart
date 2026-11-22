@@ -103,7 +103,7 @@ class RaftNotificationRecipe {
   EdgeInsetsDirectional get itemInset => const EdgeInsetsDirectional.fromSTEB(
     _NotificationPrimitives.itemInset,
     _NotificationPrimitives.itemInset,
-    37,
+    37, // ds-allow: Web NotificationCenter.tsx pr-[37px]
     _NotificationPrimitives.itemInset,
   );
   double get rowGap => 12;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'components.dart';
-import 'empty_state.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';

@@ -28,13 +28,7 @@ void main() {
       await mountPage(tester, workspace, false, width: width);
 
       Future<void> step(String direction) async {
-        if (width < 1000) {
-          await tester.tap(find.byKey(const Key('topbar-history')));
-          await tester.pumpAndSettle();
-          await tester.tap(find.text('Go $direction').last);
-        } else {
-          await tester.tap(find.byKey(Key('topbar-$direction')));
-        }
+        await tester.tap(find.byKey(Key('topbar-$direction')));
         await tester.pumpAndSettle();
       }
 
@@ -64,6 +58,18 @@ void main() {
     expect(find.text('No recent conversations yet'), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
+    final menu = find.byKey(const Key('topbar-history-menu'));
+    expect(menu, findsNothing);
+    await tester.tap(find.byKey(const Key('topbar-history')));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(1200, 700));
+    await tester.pumpAndSettle();
+    expect(menu, findsNothing);
+    await tester.tap(find.byKey(const Key('topbar-history')));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(menu, findsNothing);
 
     await tester.runAsync(() => workspace.selectChannel(previous));
     await tester.pumpAndSettle();
@@ -72,7 +78,6 @@ void main() {
     final currentIndex = workspace.navigation.index;
     await tester.tap(find.byKey(const Key('topbar-history')));
     await tester.pumpAndSettle();
-    final menu = find.byKey(const Key('topbar-history-menu'));
     final destination = find.descendant(
       of: menu,
       matching: find.text(previous.name),

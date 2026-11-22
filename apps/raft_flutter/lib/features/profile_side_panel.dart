@@ -8,6 +8,7 @@ import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
 import 'agent_detail_view.dart';
 import 'external_identity.dart';
+import 'desktop_detail_host.dart';
 import 'fleet_views.dart';
 import 'member_profile_view.dart';
 
@@ -36,6 +37,7 @@ class ProfileSidePanel extends StatelessWidget {
     this.profileHost,
     this.onBack,
     this.onMessage,
+    this.takeFocus = true,
   });
   final WorkspaceController controller;
   final WorkspaceController? profileHost;
@@ -44,6 +46,7 @@ class ProfileSidePanel extends StatelessWidget {
   /// `?agentTab=` deep link (the hover card's "Recent activity").
   final String? agentTab;
   final VoidCallback onClose;
+  final bool takeFocus;
 
   /// Phone page stack: back leads the header (the panel is a full page).
   final VoidCallback? onBack;
@@ -120,10 +123,20 @@ class ProfileSidePanel extends StatelessWidget {
         ),
       ),
     };
-    return KeyedSubtree(
+    final panel = KeyedSubtree(
       key: const Key('profile-panel'),
       child: RaftProfilePanelSurface(child: body),
     );
+    return takeFocus &&
+            onBack == null &&
+            profile.kind == RaftProfileKind.computer
+        ? DesktopDetailFocus(
+            key: key,
+            open: true,
+            restoreOnUnmount: true,
+            builder: (scope) => FocusScope(node: scope, child: panel),
+          )
+        : panel;
   }
 }
 

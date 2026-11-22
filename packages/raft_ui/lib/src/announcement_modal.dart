@@ -13,6 +13,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'announcement_markdown.dart';
+import 'card.dart';
+import 'card_parts.dart';
 import 'components.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
@@ -24,6 +26,7 @@ import 'recipe_surface.dart';
 import 'recipes/announcement.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'sized_image.dart';
+import 'space.dart';
 import 'raft/status.dart' show RaftStatus, RaftStatusSize;
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
@@ -80,6 +83,7 @@ class RaftAnnouncementModal extends StatefulWidget {
     this.image,
     this.ctaLabel,
     this.onCta,
+    this.externalCta = false,
     this.labels,
     this.onLink,
   }) : assert(ctaLabel == null || onCta != null);
@@ -93,6 +97,7 @@ class RaftAnnouncementModal extends StatefulWidget {
   final String? label;
   final RaftAnnouncementImage? image;
   final String? ctaLabel;
+  final bool externalCta;
   final VoidCallback onDismiss;
   final VoidCallback? onCta;
   final RaftAnnouncementLabels? labels;
@@ -166,6 +171,7 @@ class _RaftAnnouncementModalState extends State<RaftAnnouncementModal> {
         image: widget.image,
         labels: labels,
         ctaLabel: widget.ctaLabel,
+        externalCta: widget.externalCta,
         onDismiss: widget.onDismiss,
         onPrimary: _primaryAction,
         primaryFocusNode: primary,
@@ -189,6 +195,7 @@ class RaftAnnouncementCard extends StatelessWidget {
     required this.onPrimary,
     this.image,
     this.ctaLabel,
+    this.externalCta = false,
     this.primaryFocusNode,
     this.primaryFocusRing = false,
     this.onLink,
@@ -197,6 +204,7 @@ class RaftAnnouncementCard extends StatelessWidget {
   final String title, body, label;
   final RaftAnnouncementImage? image;
   final String? ctaLabel;
+  final bool externalCta;
   final RaftAnnouncementLabels labels;
   final VoidCallback onDismiss, onPrimary;
   final FocusNode? primaryFocusNode;
@@ -308,6 +316,8 @@ class RaftAnnouncementCard extends StatelessWidget {
               focusNode: primaryFocusNode,
               focusRing: primaryFocusRing,
               label: ctaLabel ?? labels.gotIt,
+              glyph: externalCta ? RaftGlyph.arrowUpRight : null,
+              glyphTrailing: externalCta,
               onPressed: onPrimary,
             ),
           ),

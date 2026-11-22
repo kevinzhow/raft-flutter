@@ -24,7 +24,7 @@ import sys
 
 here = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(here))
-from builders import manifest_path  # noqa: E402  (tool/parity-ext/builders.py)
+from builders import manifest_path, raft_source  # noqa: E402
 THEMES = {'brutal': 'brutal-light', 'elegant': 'elegant-light', 'elegant-dark': 'elegant-dark'}
 DESKTOP = {'width': 1280, 'height': 800, 'density': 1}
 MOBILE = {'width': 390, 'height': 844, 'density': 3}
@@ -117,6 +117,30 @@ SERVER_UNREAD = {
     'shell-server-side': {'unreadCount': 12, 'serverPushMuted': True, 'activityUnreadCount': 12},
 }
 
+ROW_PARENT = {
+    'id': 'shell-parent', 'channelId': 'shell-design', 'serverId': SERVER,
+    'messageType': 'chat', 'senderType': 'user', 'senderId': 'visual-human-designer',
+    'senderName': 'Designer', 'content': 'The visual review is ready.',
+    'createdAt': '2026-06-19T12:00:00.000Z', 'seq': 1, 'threadId': 'shell-thread',
+}
+ROW_REPLY = {
+    **ROW_PARENT, 'id': 'shell-reply', 'channelId': 'shell-thread', 'threadId': None,
+    'content': 'I checked the desktop and phone captures.',
+    'createdAt': '2026-06-19T12:01:00.000Z', 'seq': 2,
+}
+ROW_MEMBER = {
+    'id': 'visual-human-designer', 'userId': 'visual-human-designer',
+    'serverId': SERVER, 'name': 'designer', 'displayName': 'Designer',
+    'description': 'Reviews the visual fixtures.', 'role': 'member',
+    'avatarUrl': None, 'joinedAt': CREATED,
+}
+RACK_MACHINES = [{
+    'id': 'shell-rack', 'name': 'Review computer', 'hostname': 'review-computer',
+    'description': 'Captures release fixtures.', 'os': 'linux', 'status': 'online',
+    'statusVersion': 1, 'runtimes': ['codex'], 'isComputer': True,
+    'computerVersion': '0.0.50', 'daemonVersion': '0.65.0', 'createdAt': CREATED,
+}]
+
 PRIMITIVES = {
     'confirms': {
         'danger': {'title': 'Delete channel',
@@ -169,6 +193,48 @@ fixture = {
         'GET /product-feedback/tickets': {'tickets': [], 'unread_total': 0, 'next_cursor': None},
         # The rail refetches the cross-server summary on mount.
         'GET /servers/unread-summary': [{'serverId': k, **v} for k, v in SERVER_UNREAD.items()],
+    },
+    'routeSets': {
+        'home': {
+            'GET /channels': [*CHANNELS, JOINT],
+            'GET /channels/dm': DMS,
+            'GET /messages/channel/shell-general': {'messages': [], 'hasMore': False},
+        },
+        'refused': {
+            'GET /channels': [*CHANNELS, JOINT],
+            'GET /channels/dm': DMS,
+            'GET /channels/shell-refused': {
+                '$status': 404,
+                'error': 'Channel not found or not visible',
+            },
+        },
+        'row': {
+            'GET /channels': [*CHANNELS, JOINT],
+            'GET /channels/dm': DMS,
+            'GET /channels/shell-design': CHANNELS[1],
+            'GET /channels/shell-design/threads/shell-parent': {'threadChannelId': 'shell-thread'},
+            'GET /channels/shell-thread': channel('shell-thread', 'visual-review', kind='thread'),
+            'GET /messages/channel/shell-design': {
+                'messages': [ROW_PARENT], 'hasMore': False,
+                'threadSummariesByParentMessageId': {
+                    'shell-parent': {'threadChannelId': 'shell-thread', 'replyCount': 1},
+                },
+            },
+            'GET /messages/context/shell-parent': {
+                'messages': [ROW_PARENT], 'targetMessageId': 'shell-parent',
+                'hasOlder': False, 'hasNewer': False,
+            },
+            'GET /messages/channel/shell-thread': {'messages': [ROW_REPLY], 'hasMore': False},
+            'GET /tasks/channel/shell-design': [],
+            f'GET /servers/{SERVER}/members/visual-human-designer/profile': ROW_MEMBER,
+            f'PATCH /servers/{SERVER}/sidebar-order': {},
+        },
+        'rack': {
+            f'GET /servers/{SERVER}/machines': {
+                'machines': RACK_MACHINES, 'latestComputerVersion': '0.0.50',
+            },
+            f'GET /servers/{SERVER}/machines/shell-rack/workspaces': [],
+        },
     },
 }
 (here / 'fixtures' / 'shell.json').write_text(json.dumps(fixture, indent=1, ensure_ascii=False) + '\n')
@@ -402,6 +468,76 @@ for platform in ('desktop', 'mobile'):
     for variant in ('success', 'error', 'info', 'plain'):
         SPECS.append(spec(platform, f'toast.{variant}', region=tid('localized-toast-row'), title=f'Toast ({variant})',
                           hint='packages/web/src/components/LocalizedToastProvider.tsx'))
+
+if (raft_source() / 'packages/web/src/store/channelAccessLoss.ts').is_file():
+    current_themes = {suffix: THEMES[suffix] for suffix in ('brutal', 'elegant-dark')}
+    desktop_review = {**DESKTOP, 'height': 900}
+    for platform in ('desktop', 'mobile'):
+        shell_hint = 'packages/web/src/components/layout/MainLayout.tsx'
+        viewport = desktop_review if platform == 'desktop' else MOBILE
+        SPECS.extend([
+            spec(platform, 'home.index', preset='mobile', region='shell-route', viewport=viewport,
+                 props={'extFixture': 'shell', 'routeSet': 'home', 'shell': 'browser'},
+                 title='Home index route', themes=current_themes, hint=shell_hint),
+            spec(platform, 'channel.access-lost', region='shell-route', viewport=viewport,
+                 props={'extFixture': 'shell', 'routeSet': 'home', 'shell': 'browser'},
+                 title='Channel lost after access was revoked', themes=current_themes,
+                 hint='packages/web/src/features/channel/ChannelAccessLost.tsx'),
+            spec(platform, 'channel.unavailable', preset='mobile', region='shell-route', viewport=viewport,
+                 props={'route': 'channel/shell-refused', 'extFixture': 'shell', 'routeSet': 'refused', 'shell': 'browser'},
+                 title='Channel link declined', themes=current_themes,
+                 hint='packages/web/src/features/channel/ChannelAccessLost.tsx'),
+            spec(platform, 'offline.cached', preset='mobile', viewport=viewport, region=(
+                     tid('shell-route') + ':has(' + tid('offline-indicator') + ')'),
+                 props={'extFixture': 'shell', 'shell': 'browser'},
+                 title='Cached workspace while offline', themes=current_themes,
+                 hint='packages/web/src/components/layout/OfflineServerLayout.tsx'),
+        ])
+    profile_open = tid('shell-route') + ':has(' + tid('profile-panel') + ')'
+    offline_open = tid('shell-route') + ':has(' + tid('offline-indicator') + ')'
+    profile_expanded = profile_open + ':has([data-testid="row-expand-profile"][aria-pressed="true"])'
+    thread_open = profile_open + ':has(' + tid('thread-side-column') + ')'
+    rack_open = tid('shell-route') + ':has(' + tid('computer-profile') + ')'
+    for selector in (offline_open, profile_expanded, thread_open, rack_open):
+        ANDROID_KEYS[selector] = 'shell-route'
+    row_props = {
+        'route': 'channel/shell-design', 'routeQuery': 'profile=human:visual-human-designer',
+        'extFixture': 'shell', 'routeSet': 'row', 'shell': 'browser',
+    }
+    SPECS.extend([
+        spec('desktop', 'row.profile-expanded', region=profile_expanded,
+             viewport={'width': 1600, 'height': 900, 'density': 1}, props=row_props,
+             interactions=[click(tid('row-expand-profile'))],
+             android=[tap('channel-profile-expand', scroll=False)],
+             title='Conversation profile expanded', themes=current_themes, hint=shell_hint),
+        spec('desktop', 'row.profile-moved', region=thread_open,
+             viewport={'width': 1600, 'height': 900, 'density': 1},
+             props={**row_props, 'routeQuery': row_props['routeQuery'] + '&thread=shell-design:shell-parent'},
+             interactions=[click(tid('profile-overflow-trigger')), click(tid('column-move-left-profile'))],
+             android=[tap('channel-profile-move', scroll=False), {'type': 'tapText', 'text': 'Move left'}],
+             title='Profile after moving left of the thread', themes=current_themes, hint=shell_hint),
+        spec('desktop', 'rack.profile', preset='mobile', region=rack_open,
+             viewport=desktop_review,
+             props={'route': 'computers', 'extFixture': 'shell', 'routeSet': 'rack', 'shell': 'browser'},
+             interactions=[click(tid('rack-row-name-shell-rack'))],
+             android=[tap('rack-row-shell-rack', scroll=False)],
+             title='Computer profile open beside its rack', themes=current_themes, hint=shell_hint),
+    ])
+
+if (raft_source() / 'packages/web/src/components/topbar/HistoryMenu.tsx').is_file():
+    history_popup = tid('desktop-history-menu')
+    ANDROID_KEYS[history_popup] = 'topbar-history-menu'
+    for variant in ('empty', 'recent'):
+        SPECS.append(spec(
+            'desktop', f'history.{variant}', region=history_popup,
+            viewport={**DESKTOP, 'height': 900},
+            props={'route': 'members', 'extFixture': 'shell', 'routeSet': 'home', 'shell': 'native'},
+            interactions=[click(tid('desktop-history-trigger'))],
+            android=[tap('topbar-history', scroll=False)],
+            title=f'History menu ({variant})',
+            themes={suffix: THEMES[suffix] for suffix in ('brutal', 'elegant-dark')},
+            hint='packages/web/src/components/topbar/HistoryMenu.tsx',
+        ))
 
 
 def build_cases():

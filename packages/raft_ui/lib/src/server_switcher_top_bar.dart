@@ -395,15 +395,13 @@ class _TopBarServerTriggerState extends State<_TopBarServerTrigger>
             (desktop?.chromeWidth(hasLabel: widest > 0) ?? 46);
         const stripLead = RaftSpace.x2;
         const extraDividerWidth = stripGap + RaftSpace.hairline;
-        final button = RaftButtonRecipe.resolveProps(
-          {
-            'variant': RaftButtonVariant.ghost.css,
-            'size': RaftButtonSize.iconMd.css,
-          },
+        final button = RaftButtonRecipe.resolve(
+          variant: RaftButtonRecipeVariant.ghost,
+          size: RaftButtonRecipeSize.iconMd,
           states: t.recipeStates(responsive: true),
           tokens: t.recipeTokens,
-        )['root']!;
-        final stripButtonWidth = button.width!;
+        ).root;
+        final stripButtonWidth = button.width ?? button.height ?? 36;
         final stripStride = stripButtonWidth + stripGap;
         // The desktop layout already reserves the gap before History.
         final historyGap = desktop == null ? RaftSpace.x2 : 0.0;

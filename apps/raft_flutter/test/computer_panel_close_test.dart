@@ -44,6 +44,14 @@ void main() {
 
   testWidgets('Escape closes the panel', (t) async {
     final f = await openPanel(t);
+    final panel = find.byKey(const ValueKey('computers-rack-side-panel'));
+    final width = t.getSize(panel).width;
+    await t.tap(find.byKey(const Key('standalone-profile-expand')));
+    await t.pump();
+    expect(t.getSize(panel).width, greaterThan(width));
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await t.pump();
+    expect(t.getSize(panel).width, width);
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await f.flush(t);
     await t.pump(const Duration(milliseconds: 400));
@@ -52,7 +60,7 @@ void main() {
       findsNothing,
     );
     await f.close(t);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('Escape in the rename field cancels the rename only', (t) async {
     final f = await openPanel(t);

@@ -101,6 +101,7 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
         children: [
           RaftPanelHeaderBar(
             key: const Key('external-identity-header'),
+            useHostChrome: true,
             title: name,
             subtitle: subtitle,
             iconSlot: avatar(t.desktop ? RaftAvatarSize.sm : RaftAvatarSize.md),

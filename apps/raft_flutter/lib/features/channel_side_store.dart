@@ -173,8 +173,7 @@ class ChannelSideStore extends ChangeNotifier {
     double? conversationWidth,
   }) => _resizeColumns({column: width}, commit, conversationWidth);
 
-  /// Save the row after an expanded seam takes its first effective resize.
-  void resizeExpandedDock(Map<int, num> widths, double conversationWidth) =>
+  void resizeDock(Map<int, num> widths, double conversationWidth) =>
       _resizeColumns(widths, true, conversationWidth);
 
   void _resizeColumns(

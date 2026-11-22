@@ -65,6 +65,7 @@ import 'workspace_task_host.dart';
 import 'task_content_slot.dart' show taskSlotId;
 import 'page_layout.dart';
 import 'channel_side_area.dart';
+import 'workspace_offline_notice.dart';
 import 'section_glyph.dart';
 import 'channel_settings.dart';
 import 'channel_details_host.dart';
@@ -240,6 +241,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   }
 
   final scaffold = GlobalKey<ScaffoldState>();
+  final channelSideArea = GlobalKey<ChannelSideAreaState>();
   final mainSelection = ChatSelectionHandle(),
       threadSelection = ChatSelectionHandle();
   WorkspaceController get w => widget.controller;
@@ -1344,6 +1346,14 @@ class _WorkspaceViewState extends State<WorkspaceView>
       );
       final thread = access == null && sidePanels.thread;
       final rackProfile = wide && route == 'computers' && sidePanels.profile;
+      final profile = sidePanels.profile && !rackProfile
+          ? profileSidePanel(location.profile!, page: !wide)
+          : null;
+      final plannedProfile =
+          wide &&
+          route == 'chat' &&
+          access == null &&
+          location.legacyTask == null;
       final phoneChatDirect =
           widget.mobileRoutePage &&
           (location.route == RaftRoute.channel ||
@@ -1454,7 +1464,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     target: desktopNavigation.directorySelection,
                     onSelected: selectDesktopDirectoryTarget,
                     detail: rackProfile
-                        ? profileSidePanel(location.profile!)
+                        ? profileSidePanel(location.profile!, takeFocus: false)
                         : desktopContentDetail(),
                   )
                 : wide
@@ -1747,6 +1757,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
                   child: Column(
                     children: [
                       if (showWorkspaceTopBar) workspaceTopBar(),
+                      if (!wide && route != 'home')
+                        WorkspaceOfflineNotice(
+                          client: w.client,
+                          presentation: WorkspaceOfflinePresentation.banner,
+                        ),
                       if (!wide && rootTab == 'computers' && !thread)
                       // With the rail the header sits beside it, in the content.
                       ...[
@@ -1779,17 +1794,14 @@ class _WorkspaceViewState extends State<WorkspaceView>
                           onDismiss: w.closeProfile,
                           child: RaftAdaptiveWorkspace(
                             key: ValueKey('adaptive-workspace-$authority'),
-                            sideRow:
-                                wide &&
-                                    thread &&
-                                    route == 'chat' &&
-                                    location.legacyTask == null
-                                ? channelSideRow(w)
+                            sideRow: thread && plannedProfile
+                                ? channelSideRow(w, profile: profile != null)
                                 : null,
                             // Focus mode may hide the channel only beside its own
                             // thread on a chat route (Web canToggleChannel).
                             focusScope:
                                 thread &&
+                                    profile == null &&
                                     (route == 'chat' || route == 'home') &&
                                     (w.messageDomain.threadParentChannelId ==
                                             null ||
@@ -1852,7 +1864,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                 ? null
                                 : mobileNavigation(rootTab),
                             content: ChannelSideArea(
+                              key: channelSideArea,
                               controller: w,
+                              profile: plannedProfile ? profile : null,
                               headerExtent: wide
                                   ? raftPageHeaderHeight(context)
                                   : 0,
@@ -1949,36 +1963,34 @@ class _WorkspaceViewState extends State<WorkspaceView>
                               ),
                             ),
                             thread: thread
-                                ? RaftConversationSurface(
-                                    role: RaftConversationSurfaceRole
-                                        .threadTimeline,
-                                    child: Column(
-                                      children: [
-                                        if (wide) sourceThreadHeader(),
-                                        Expanded(
-                                          child: ServerSetupGate(
-                                            controller: w,
-                                            onSwitchServer:
-                                                showWorkspaceSwitcher,
-                                            child: phoneChatDirect
-                                                ? MobileChatDirectRead(
-                                                    channel: false,
-                                                    thread: true,
-                                                    child: _phoneThreadChat(),
-                                                  )
-                                                : _phoneThreadChat(),
+                                ? workspaceSideThread(
+                                    wide,
+                                    RaftConversationSurface(
+                                      role: RaftConversationSurfaceRole
+                                          .threadTimeline,
+                                      child: Column(
+                                        children: [
+                                          if (wide) sourceThreadHeader(),
+                                          Expanded(
+                                            child: ServerSetupGate(
+                                              controller: w,
+                                              onSwitchServer:
+                                                  showWorkspaceSwitcher,
+                                              child: phoneChatDirect
+                                                  ? MobileChatDirectRead(
+                                                      channel: false,
+                                                      thread: true,
+                                                      child: _phoneThreadChat(),
+                                                    )
+                                                  : _phoneThreadChat(),
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   )
                                 : null,
-                            profile: sidePanels.profile && !rackProfile
-                                ? profileSidePanel(
-                                    location.profile!,
-                                    page: !wide,
-                                  )
-                                : null,
+                            profile: plannedProfile ? null : profile,
                           ),
                         ),
                       ),
@@ -2059,17 +2071,21 @@ class _WorkspaceViewState extends State<WorkspaceView>
     onViewBilling: () => select('billing'),
   );
 
-  Widget profileSidePanel(RaftProfileLocation profile, {bool page = false}) =>
-      ProfileSidePanel(
-        key: profilePanelKeyFor(w),
-        controller: w,
-        profileHost: page ? null : w,
-        profile: profile,
-        agentTab: w.location.agentTab,
-        onClose: w.closeProfile,
-        onBack: page ? dismissPanel : null,
-        onMessage: messageProfile,
-      );
+  Widget profileSidePanel(
+    RaftProfileLocation profile, {
+    bool page = false,
+    bool takeFocus = true,
+  }) => ProfileSidePanel(
+    key: profilePanelKeyFor(w),
+    controller: w,
+    profileHost: page ? null : w,
+    profile: profile,
+    agentTab: w.location.agentTab,
+    onClose: w.closeProfile,
+    onBack: page ? dismissPanel : null,
+    onMessage: messageProfile,
+    takeFocus: takeFocus,
+  );
 
   Widget sourceThreadHeader({bool mobile = false, VoidCallback? onClose}) =>
       WorkspaceThreadHeader(
@@ -2623,9 +2639,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
       ],
     );
     return thread
-        ? RaftConversationSurface(
-            role: RaftConversationSurfaceRole.threadTimeline,
-            child: content,
+        ? workspaceSideThread(
+            wide,
+            RaftConversationSurface(
+              role: RaftConversationSurfaceRole.threadTimeline,
+              child: content,
+            ),
           )
         : content;
   }
@@ -2747,6 +2766,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
       attention: otherServerUnread(w, activityCountOf),
       headerActions: mobile
           ? [
+              RaftWideHeaderAction(
+                child: WorkspaceOfflineNotice(
+                  client: w.client,
+                  presentation: WorkspaceOfflinePresentation.compactIndicator,
+                ),
+              ),
               RaftWideHeaderAction(child: workingSummary()),
               SystemNotificationBell(
                 key: const Key('mobile-home-notifications'),
@@ -3437,6 +3462,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
               RaftChatSidebarHeading(
                 label: tr('Chat'),
                 trailing: workingSummary(),
+              ),
+            if (mobileHome)
+              WorkspaceOfflineNotice(
+                client: w.client,
+                presentation: WorkspaceOfflinePresentation.banner,
               ),
             StaleCountsNotice.sidebar(w),
             if (!mobileHome) const AnnouncementSidebarSlot(),

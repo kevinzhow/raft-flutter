@@ -323,20 +323,48 @@ void main() {
       );
     });
 
-    testWidgets('the width stops where the chat would drop under 360', (
+    testWidgets('a seam keeps moving after the adjacent column clips', (
       t,
     ) async {
       final rig = await pumpArea(t, size: desktop);
       rig.store.setCardOpen(ChannelSideCard.tasks, true);
-      await t.pump();
-      final drag = await t.startGesture(
-        t.getCenter(find.byKey(const Key('channel-side-column-resize-1'))),
+      WebPreviewStore.of(rig.w).open(
+        const WebPreviewPage(
+          url: 'https://example.invalid',
+          conversationId: 'c1',
+        ),
       );
-      await drag.moveBy(const Offset(-900, 0));
+      await t.pump();
+      final handle = find.byKey(const Key('channel-side-column-resize-1'));
+      final drag = await t.startGesture(t.getCenter(handle));
+      await drag.moveBy(const Offset(60, 0));
+      await drag.moveBy(const Offset(190, 0));
+      await t.pump();
+      expect(rect(t, 'channel-side-column-1').width, 160);
+      expect(rect(t, 'channel-side-column-2').width, 430);
+      expect(rect(t, 'chat-header').width, 610);
       await drag.up();
       await settle(t);
-      expect(rect(t, 'chat-header').width, closeTo(360, .5));
+      expect(rig.saves, hasLength(1));
+      expect(rig.store.layout.columns[2].width, 430);
     });
+
+    testWidgets(
+      'a desktop seam clips chat to 160 and preserves its content floor',
+      (t) async {
+        final rig = await pumpArea(t, size: desktop);
+        rig.store.setCardOpen(ChannelSideCard.tasks, true);
+        await t.pump();
+        final drag = await t.startGesture(
+          t.getCenter(find.byKey(const Key('channel-side-column-resize-1'))),
+        );
+        await drag.moveBy(const Offset(-900, 0));
+        await drag.up();
+        await settle(t);
+        expect(rect(t, 'channel-side-conversation').width, 160);
+        expect(rect(t, 'chat-header').width, 360);
+      },
+    );
 
     testWidgets('the width handle has a keyboard way and a name', (t) async {
       final rig = await pumpArea(t, size: desktop);
