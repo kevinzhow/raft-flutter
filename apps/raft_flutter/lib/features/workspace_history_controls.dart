@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_location.dart';
-import '../data/raft_navigation_history.dart' show RaftNavigationKind;
+import '../data/raft_navigation_history.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_coordinator.dart';
 import '../platform/content_links.dart';
@@ -27,12 +27,7 @@ Future<void> visitWorkspaceHistory(
     return;
   }
   final previous = w.location;
-  while (history.index > index) {
-    history.back();
-  }
-  while (history.index < index) {
-    if (!history.forward()) return;
-  }
+  if (!history.visit(index)) return;
   final next = w.location;
   if (next.thread == null) w.closeThread(navigate: false);
   w.notifyListeners();
@@ -173,7 +168,7 @@ class WorkspaceHistoryControls extends StatelessWidget {
     final entries = history.entries;
     final authority = w.navigationAuthority;
     final compact = MediaQuery.sizeOf(context).width < 1000;
-    VoidCallback? visit(int index) => index < 0 || index >= entries.length
+    VoidCallback? visit(int? index) => index == null
         ? null
         : () => unawaited(
             visitWorkspaceHistory(
@@ -183,7 +178,13 @@ class WorkspaceHistoryControls extends StatelessWidget {
               expectedUri: entries[index].uri,
             ),
           );
-    final back = visit(history.index - 1), forward = visit(history.index + 1);
+    final places = entries.map((entry) => entry.uri).toList(growable: false);
+    final back = visit(
+      nextRaftHistoryPlace(places, history.index, forward: false),
+    );
+    final forward = visit(
+      nextRaftHistoryPlace(places, history.index, forward: true),
+    );
     // AppTopBar places the history controls in a gap-0.5 group.
     final historyGap = RaftTokens.of(context).desktop ? RaftSpace.half : 0.0;
     return Row(

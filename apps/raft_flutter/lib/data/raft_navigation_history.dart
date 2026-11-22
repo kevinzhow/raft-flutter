@@ -3,6 +3,23 @@ enum RaftNavigationKind { push, pop, replace }
 
 const raftUnknownNavigationEntry = '\u0000unknown-history-entry';
 
+int? nextRaftHistoryPlace(
+  List<Uri> places,
+  int current, {
+  required bool forward,
+}) {
+  if (current < 0 || current >= places.length) return null;
+  final direction = forward ? 1 : -1;
+  for (
+    var index = current + direction;
+    index >= 0 && index < places.length;
+    index += direction
+  ) {
+    if (places[index] != places[current]) return index;
+  }
+  return null;
+}
+
 int nextRaftNavigationDepth(int depth, RaftNavigationKind kind) =>
     switch (kind) {
       RaftNavigationKind.push => depth + 1,

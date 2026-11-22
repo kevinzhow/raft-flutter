@@ -269,13 +269,7 @@ class WorkspaceNavigation {
           _entries[_index - 1].toString(),
           location.toString(),
         )) {
-      final previous = _location;
-      _location = _entries[--_index];
-      if (!taskOnlyTransition(previous, _location) &&
-          !profileOnlyTransition(previous, _location)) {
-        ++_revision;
-      }
-      ++_taskRevision;
+      visit(_index - 1);
     } else {
       // A task modal, profile and thread own independent slots. Closing one
       // must not erase the others (rightPanelUrlSyncContract 385–511).
@@ -306,10 +300,13 @@ class WorkspaceNavigation {
     return location;
   }
 
-  bool forward() {
-    if (_index + 1 >= _entries.length) return false;
+  bool forward() => visit(_index + 1);
+
+  bool visit(int index) {
+    if (index < 0 || index >= _entries.length || index == _index) return false;
     final previous = _location;
-    _location = _entries[++_index];
+    _index = index;
+    _location = _entries[index];
     if (!taskOnlyTransition(previous, _location) &&
         !profileOnlyTransition(previous, _location)) {
       ++_revision;
