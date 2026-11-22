@@ -248,7 +248,14 @@ void main() {
         await tester.tap(identityDisclosure);
         await tester.pumpAndSettle();
         expect(identityScope, findsOneWidget);
+        final monoFont = RaftTokens.of(tester.element(identityScope)).monoFont;
+        expect(tester.widget<Text>(identityScope).style!.fontFamily, monoFont);
         final identityRows = find.byType(RaftDisclosureCard);
+        final profileScope = find.descendant(
+          of: identityRows,
+          matching: find.text('profile'),
+        );
+        expect(tester.widget<Text>(profileScope).style!.fontFamily, monoFont);
         final separators = find.descendant(
           of: identityRows,
           matching: find.byType(RaftSeparator),

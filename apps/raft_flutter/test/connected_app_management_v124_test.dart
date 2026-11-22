@@ -564,6 +564,11 @@ void main() {
     ]);
     expect(find.text('Remove @sprinkler?'), findsNothing);
     expect(find.text('Added to server'), findsNothing);
+    final handle = find.text('@sprinkler');
+    expect(
+      tester.widget<Text>(handle).style!.fontFamily,
+      RaftTokens.of(tester.element(handle)).monoFont,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

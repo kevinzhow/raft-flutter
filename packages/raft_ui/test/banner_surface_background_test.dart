@@ -96,4 +96,39 @@ void main() {
     await _mount(tester, override: custom);
     expect(_paintedBannerColor(tester), custom);
   });
+
+  testWidgets('detail warnings composite over the dark section fill', (
+    tester,
+  ) async {
+    for (final cream in [true, false]) {
+      late Color expected;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(dark: true),
+          home: Builder(
+            builder: (context) {
+              final tokens = RaftTokens.of(context);
+              expected = raftChromeBlend(
+                tokens.colors['layer-banner-warning']!,
+                cream ? tokens.ui.fillMuted : tokens.ui.layerCard,
+              );
+              return RaftSurfaceBackgroundScope(
+                color: _dialogSurface,
+                child: Center(
+                  child: RaftConnectedAppDetailSection(
+                    title: 'App details',
+                    cream: cream,
+                    child: const RaftBanner(description: 'A source warning'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      final painted = _paintedBannerColor(tester);
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(painted, expected, reason: 'cream: $cream');
+    }
+  });
 }

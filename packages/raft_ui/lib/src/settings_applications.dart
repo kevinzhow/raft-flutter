@@ -802,6 +802,7 @@ class _AppsScope extends RaftFitItem {
                     '$count',
                     style: tokens.scale(
                       RaftTypeScale.monoMeta,
+                      mono: true,
                       color: tokens.ui.foregroundHint,
                     ),
                   ),
@@ -1634,23 +1635,26 @@ class RaftConnectedAppDetailSection extends StatelessWidget {
         border: Border.all(color: border),
         borderRadius: t.corner('radius.container', fallback: 10),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          RaftSectionEyebrow(raftText(context, title)),
-          if (description != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              description!,
-              style: t.scale(
-                RaftTypeScale.footnote,
-                color: t.ui.foregroundMuted,
+      child: RaftSurfaceBackgroundScope(
+        color: fill,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RaftSectionEyebrow(raftText(context, title)),
+            if (description != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                description!,
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  color: t.ui.foregroundMuted,
+                ),
               ),
-            ),
+            ],
+            const SizedBox(height: 12),
+            child,
           ],
-          const SizedBox(height: 12),
-          child,
-        ],
+        ),
       ),
     );
   }

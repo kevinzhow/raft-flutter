@@ -324,6 +324,7 @@ class _ConnectedAppBotState extends State<ConnectedAppBot> {
                                   '@$handle',
                                   style: tokens.scale(
                                     RaftTypeScale.monoMeta,
+                                    mono: true,
                                     color: tokens.muted,
                                   ),
                                 ),

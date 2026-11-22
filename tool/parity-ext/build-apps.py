@@ -579,7 +579,7 @@ def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integ
          verify_text=None, verify_key=None, absent_text=None,
          shell='', role='owner', metadata_selector=None, bot_link=None, capture_key=None,
          login_server=None, login_disclosure=False,
-         platforms=('desktop', 'mobile')):
+         platforms=('desktop', 'mobile'), mobile_steps=()):
     if not shell and tab == 'integrations' and role != 'guest':
         shell = 'settings/applications'
     web_target = selector
@@ -591,6 +591,7 @@ def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integ
     for platform, width, height in [('desktop', 1280, 900), ('mobile', 390, 844)]:
         if platform not in platforms:
             continue
+        capture_steps = [*steps, *mobile_steps] if platform == 'mobile' else steps
         for suffix, theme in [('raft', 'raft-light'), ('raft-dark', 'raft-dark')]:
             case_id = f'{PREFIX}{group}.{state}.{platform}.{suffix}'
             cases.append({
@@ -622,14 +623,14 @@ def case(group, state, selector, steps=(), *, route_set='', flags='', tab='integ
                     'interactions': [
                         *([{'type': 'reveal', 'target': '[data-testid="apps-page"]'}]
                           if shell == 'settings/applications' else []),
-                        *web_steps(steps, platform),
+                        *web_steps(capture_steps, platform),
                         *([{'type': 'reveal', 'target': selector}]
                           if web_target != selector else []),
                     ],
                     'androidInteractions': [
                         {'scroll': 'if-needed', **native}
                         if native['type'] in {'tap', 'tapText', 'reveal'} else native
-                        for web, action in steps
+                        for web, action in capture_steps
                         for native in (
                             [
                                 {'type': 'tap', 'key': 'connected-apps-scope-select'},
@@ -809,7 +810,16 @@ case('route', 'share-revoked',
 case('route', 'publish-withdrawn', '[data-testid="connected-app-private-share-card"]',
      [developer, edit_local_app, tap('connected-app-withdraw-publish-button')],
      shell='apps', route_set='withdraw-publish', verify_key='connected-app-share-links',
-     absent_text='Withdraw request')
+     absent_text='Withdraw request', mobile_steps=[
+         (
+             {'type': 'reveal', 'target': 'input[placeholder="db9 Cloud Drive"]'},
+             {'type': 'reveal', 'key': 'connected-app-name', 'scroll': 'fully-visible'},
+         ),
+         (
+             {'type': 'reveal', 'target': f'[data-testid="{share_input}"]'},
+             {'type': 'reveal', 'key': share_input, 'scroll': 'fully-visible'},
+         ),
+     ])
 case('route', 'reject-prompt-text', '[data-testid="app-prompt-text-reject-reason"]',
      [market, detail, reject_prompt], shell='apps', route_set='prompt-review',
      flags='prompt-text', verify_key='app-prompt-text-reject-dialog')
@@ -852,7 +862,16 @@ case('route', 'bot-removed', '[data-testid="connected-app-bot-section"][data-bot
         {'type': 'tap', 'finder': {'text': 'Remove', 'in': 'connected-app-bot-remove-dialog'}},
     ),
 ], shell='apps', route_set='bot-removed', verify_key='connected-app-installed-detail',
-     absent_text='Added to server')
+     absent_text='Added to server', mobile_steps=[
+         (
+             {'type': 'reveal', 'target': '[data-testid="installed-app-notifications"] >> text="App permissions"'},
+             {'type': 'reveal', 'finder': {'text': 'App permissions'}, 'scroll': 'fully-visible'},
+         ),
+         (
+             {'type': 'reveal', 'target': '[data-testid="connected-app-bot-section"][data-bot-grant="revoked"] >> text="Posts as"'},
+             {'type': 'reveal', 'finder': {'text': 'Posts as'}, 'scroll': 'fully-visible'},
+         ),
+     ])
 case('route', 'bot-link',
      'body:has([data-testid="installed-app-notifications"]) [data-testid="connected-app-bot-section"]',
      shell='apps', route_set='bot-step-up', bot_link=installed_with_bot['clientId'],

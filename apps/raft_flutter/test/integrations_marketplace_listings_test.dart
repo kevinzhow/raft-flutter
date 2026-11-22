@@ -85,8 +85,12 @@ void main() {
     await tester.ensureVisible(more);
     await tester.tap(more);
     await tester.pumpAndSettle();
+    final banner = find.byType(RaftConnectedAppsError);
     expect(find.text("Couldn't load more apps."), findsOneWidget);
     expect(find.text('Garden Planner'), findsOneWidget);
+    final controls = find.ancestor(of: more, matching: find.byType(Wrap)).first;
+    final footerGap =
+        tester.getRect(controls).top - tester.getRect(banner).bottom;
 
     await tester.ensureVisible(more);
     await tester.tap(more);
@@ -101,5 +105,7 @@ void main() {
     expect(find.text('Showing 2 / 2'), findsOneWidget);
     expect(find.text("Couldn't load more apps."), findsNothing);
     expect(more, findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(footerGap, 12);
   });
 }

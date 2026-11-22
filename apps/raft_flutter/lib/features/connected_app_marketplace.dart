@@ -101,7 +101,7 @@ class ConnectedAppMarketplaceFooter extends StatelessWidget {
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: RaftSpace.x2,
+      spacing: RaftSpace.x3,
       children: [
         if (page.failed)
           RaftConnectedAppsError(

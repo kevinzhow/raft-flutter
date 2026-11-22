@@ -1109,6 +1109,7 @@ class _TierGroupState extends State<_TierGroup> {
                 scope,
                 style: t.scale(
                   RaftTypeScale.monoMeta,
+                  mono: true,
                   weight: FontWeight.w700,
                   color: t.ui.foreground,
                 ),

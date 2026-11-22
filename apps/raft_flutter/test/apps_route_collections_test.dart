@@ -88,6 +88,7 @@ void main() {
     final client = ScreenFixtureClient(
       (method, path, _) => switch (path) {
         '/mcp/apps' => {'apps': <Object?>[]},
+        '/integrations/marketplace' => [_installed('Garden Journal')],
         '/integrations/marketplace/listings' => {'items': [], 'total': 0},
         _ => const <Object?>[],
       },
@@ -120,6 +121,11 @@ void main() {
     expect(find.text('Third-party apps for this server'), findsNothing);
     await tester.tap(find.byKey(scope));
     await tester.pumpAndSettle();
+    final count = find.text('1');
+    expect(
+      tester.widget<Text>(count).style!.fontFamily,
+      RaftTokens.of(tester.element(count)).monoFont,
+    );
     await tester.tap(find.text('Marketplace'));
     await tester.pumpAndSettle();
     expect(find.byKey(scope), findsOneWidget);
