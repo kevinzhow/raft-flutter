@@ -58,9 +58,11 @@ class RaftServerMenuRow {
     this.onOpenWindow,
     this.activityUnreadCount,
     this.pushMuted = false,
+    this.shortcutLabel,
   });
   final String id, name, slug;
   final String? avatarUrl;
+  final String? shortcutLabel;
   final bool publicPageLive;
   final VoidCallback onSelected;
   final VoidCallback? onAuxiliary, onOpenWindow;
