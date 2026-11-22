@@ -1495,6 +1495,7 @@ def run(args):
         except SafetyError as error:
             sys.exit(f'STOP: staged test APK verification failed: {error}')
     env = environment(device)
+    env['cpuSamplesRequested'] = not getattr(args, 'no_cpu_samples', False)
     if android:
         env['protectedAppBefore'] = protected_before
     (out / 'env.json').write_text(json.dumps(env, indent=1) + '\n')
@@ -1537,6 +1538,7 @@ def run(args):
             suffix = manifest['buildReceipt']['identitySuffix']
             if f'app.raft.raft_flutter{suffix}'.encode() not in Path(manifest['artifact']['path'], 'raft_flutter').read_bytes():
                 sys.exit('Isolated native application identity is absent from the verified executable.')
+        child['RAFT_LAB_CPU_SAMPLES'] = str(env['cpuSamplesRequested']).lower()
         if device == 'linux' and not detection:
             child['GDK_BACKEND'] = os.environ.get('RAFT_LAB_GDK_BACKEND', 'x11')
         argv += [f'--dart-define={k}={v}' for k, v in defines.items()]
@@ -1750,6 +1752,7 @@ def main(argv=None):
     r.add_argument('--semantics', choices=['platform', 'on', 'off'], default='platform',
                    help='platform: as the embedder requests (Linux GTK: always on); on: forced (VoiceOver); off: forced off (usual macOS)')
     r.add_argument('--no-trace', action='store_true', help='disable framework phase collection and engine timeline (cleanest timings, no phase/raster attribution)')
+    r.add_argument('--no-cpu-samples', action='store_true', help='skip Dart CPU sampling and exports while keeping framework and engine traces')
     r.add_argument('--device', help='flutter device id (default: linux or macos)')
     r.add_argument('--reference', type=Path, help='compare against this earlier run directory')
     r.add_argument('--max-load', type=float, help='1-minute load average above which the host counts as noisy (default 0.35 x CPUs)')

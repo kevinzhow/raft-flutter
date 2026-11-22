@@ -94,6 +94,18 @@ void main() {
         );
         await t.pumpAndSettle();
         expect(find.byType(RaftNavItem).evaluate().length, lessThan(30));
+        final name = find.text('Agent 0');
+        expect(name, findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('desktop-directory-agent-long-0')),
+            matching: find.ancestor(
+              of: name,
+              matching: find.byType(LayoutBuilder),
+            ),
+          ),
+          findsNothing,
+        );
         final scrollable = find.descendant(
           of: find.byKey(const Key('desktop-directory-list')),
           matching: find.byType(Scrollable),

@@ -44,6 +44,7 @@ class RaftMessageTimeline extends StatefulWidget {
     this.cacheExtent,
     this.canPrepareNearbyRows,
     this.rowRevision,
+    this.trackNeighbourVersions = true,
     this.retainRow,
     this.extentRevision,
   });
@@ -60,8 +61,10 @@ class RaftMessageTimeline extends StatefulWidget {
   final Widget Function(BuildContext context, int index) rowBuilder;
 
   /// Opt-in reuse: include non-message inputs such as selection, metadata and
-  /// theme here. Message and neighbour versions are checked separately.
+  /// theme here. Set [trackNeighbourVersions] to false when this also captures
+  /// everything the row uses from its neighbours.
   final Object? Function(int index)? rowRevision;
+  final bool trackNeighbourVersions;
   final bool Function(int index)? retainRow;
 
   /// Layout inputs for reusing measured extents across window updates.
@@ -110,6 +113,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
     implements RaftTimelineThumbDriver {
   double nearbyCache = 250;
   final recentRows = TimelineRowRetention();
+  final mountedRows = TimelineMountedRows();
   final _keyboardOlderScroll = _KeyboardOlderScrollAction();
 
   /// Inside the timeline scrollable, so a key here resolves to this list.
@@ -468,10 +472,14 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         final revision = owner.rowRevision;
         final child = revision == null
             ? buildRow(context)
-            : TimelineReusableRow(
+            : mountedRows.row(
                 message: messages[index],
-                before: index == 0 ? null : messages[index - 1],
-                after: index + 1 == messages.length
+                before: !owner.trackNeighbourVersions || index == 0
+                    ? null
+                    : messages[index - 1],
+                after:
+                    !owner.trackNeighbourVersions ||
+                        index + 1 == messages.length
                     ? null
                     : messages[index + 1],
                 revision: revision(index),
@@ -483,7 +491,8 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         final body = extents == null
             ? child
             : _TimelineExtentRecorder(
-                onExtent: (height) => extents.update(index, height),
+                extents: extents,
+                index: index,
                 child: child,
               );
         return KeyedSubtree(
@@ -1344,29 +1353,40 @@ class _EstimatingChildDelegate extends SliverChildBuilderDelegate {
 }
 
 class _TimelineExtentRecorder extends SingleChildRenderObjectWidget {
-  const _TimelineExtentRecorder({required this.onExtent, required super.child});
-  final ValueChanged<double> onExtent;
+  const _TimelineExtentRecorder({
+    required this.extents,
+    required this.index,
+    required super.child,
+  });
+  final TimelineExtentIndex extents;
+  final int index;
+
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _RenderTimelineExtentRecorder(onExtent);
+      _RenderTimelineExtentRecorder(extents, index);
+
   @override
   void updateRenderObject(
     BuildContext context,
     _RenderTimelineExtentRecorder renderObject,
-  ) {
-    renderObject.onExtent = onExtent;
-    // A new delegate may retain an already laid-out child without another
-    // layout. Seed its new index from that size, then update if layout changes.
-    if (renderObject.hasSize) onExtent(renderObject.size.height);
-  }
+  ) => renderObject.track(extents, index);
 }
 
 class _RenderTimelineExtentRecorder extends RenderProxyBox {
-  _RenderTimelineExtentRecorder(this.onExtent);
-  ValueChanged<double> onExtent;
+  _RenderTimelineExtentRecorder(this.extents, this.index);
+  TimelineExtentIndex extents;
+  int index;
+
+  void track(TimelineExtentIndex nextExtents, int nextIndex) {
+    if (identical(extents, nextExtents) && index == nextIndex) return;
+    extents = nextExtents;
+    index = nextIndex;
+    if (hasSize) extents.update(index, size.height);
+  }
+
   @override
   void performLayout() {
     super.performLayout();
-    onExtent(size.height);
+    extents.update(index, size.height);
   }
 }

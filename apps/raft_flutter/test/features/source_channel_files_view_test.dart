@@ -23,6 +23,65 @@ Map<String, dynamic> fileRow(String id) => {
   },
 };
 void main() {
+  testWidgets('files share width measurement across rows at both breakpoints', (
+    tester,
+  ) async {
+    final store = SourceChannelFilesStore(
+      channelId: 'channel',
+      authority: () => 'current',
+      get: (_, {query}) async => {
+        'files': [fileRow('one'), fileRow('two')],
+        'nextCursor': null,
+      },
+    );
+    addTearDown(store.dispose);
+    await store.load();
+    try {
+      for (final (width, action) in [
+        (390.0, 'overflow'),
+        (680.0, 'download'),
+      ]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(),
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: width,
+                  child: SourceChannelFilesProjectionView(
+                    store: store,
+                    formatCreatedAt: (_) => 'Oct 8',
+                    onPreview: (_) async {},
+                    onOpenSource: (_) async {},
+                    onDownload: (_) async {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        for (final id in ['one', 'two']) {
+          expect(
+            find.byKey(ValueKey('channel-file-$action-$id')),
+            findsOneWidget,
+          );
+          final preview = find.byKey(ValueKey('channel-file-preview-$id'));
+          final rowLayouts = find.descendant(
+            of: find.byKey(ValueKey('channel-file-$id')),
+            matching: find.ancestor(
+              of: preview,
+              matching: find.byType(LayoutBuilder),
+            ),
+          );
+          expect(rowLayouts, findsNothing);
+        }
+      }
+    } finally {
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
   test('source channelFiles classification and1024 rounding thresholds', () {
     expect(sourceChannelFileSize(0), '0 B');
     expect(sourceChannelFileSize(1024), '1.0 KB');

@@ -88,9 +88,6 @@ class ChatTimelinePresentation {
         threadSummary: summaries[id],
         highlighted: highlighted == id,
       ),
-      index > 0 && summaries[source(messages[index - 1]).id] != null,
-      index + 1 < messages.length &&
-          summaries[source(messages[index + 1]).id] != null,
     );
   }
 

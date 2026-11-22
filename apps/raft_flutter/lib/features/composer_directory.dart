@@ -233,6 +233,8 @@ class ComposerDirectory extends ChangeNotifier {
   RaftChannel? get scopeChannel =>
       thread ? w.messageDomain.threadSourceChannel : w.channel;
 
+  int get rosterRevision => _shared.revision;
+
   /// Borrow the chat's existing authorized activity adapter; never owns it.
   final MessageAgentPresentation? agentPresentation;
   String? scope, channelId;

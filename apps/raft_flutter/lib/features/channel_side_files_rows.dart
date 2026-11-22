@@ -121,6 +121,7 @@ class ChannelFilesCompactRow extends StatelessWidget {
   const ChannelFilesCompactRow({
     super.key,
     required this.file,
+    required this.width,
     required this.formattedDate,
     required this.onPreview,
     required this.onOpenSource,
@@ -130,6 +131,7 @@ class ChannelFilesCompactRow extends StatelessWidget {
     this.divider = true,
   });
   final SourceChannelFileEntry file;
+  final double width;
   final String formattedDate;
 
   /// Shown on hover over the compact time.
@@ -200,40 +202,36 @@ class ChannelFilesCompactRow extends StatelessWidget {
         ),
       ],
     );
+    final wrapped = m.wraps(width);
+    final main = ChannelFileOpen(
+      key: ValueKey('channel-file-preview-${file.id}'),
+      label: raftText(context, 'Preview file'),
+      onPressed: onPreview,
+      minHeight: 0,
+      child: title,
+    );
     return CompactRowFrame(
       divider: divider,
       onTap: onPreview,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wrapped = m.wraps(constraints.maxWidth);
-          final main = ChannelFileOpen(
-            key: ValueKey('channel-file-preview-${file.id}'),
-            label: raftText(context, 'Preview file'),
-            onPressed: onPreview,
-            minHeight: 0,
-            child: title,
-          );
-          return Padding(
-            padding: EdgeInsetsDirectional.only(
-              start: m.inset,
-              end: m.inset - RaftSpace.x2,
-            ),
-            child: wrapped
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      main,
-                      Align(alignment: Alignment.centerRight, child: trailing),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(child: main),
-                      trailing,
-                    ],
-                  ),
-          );
-        },
+      child: Padding(
+        padding: EdgeInsetsDirectional.only(
+          start: m.inset,
+          end: m.inset - RaftSpace.x2,
+        ),
+        child: wrapped
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  main,
+                  Align(alignment: Alignment.centerRight, child: trailing),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: main),
+                  trailing,
+                ],
+              ),
       ),
     );
   }

@@ -5603,19 +5603,7 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:attachmentGallery@66362/FUNCTION:view@67516": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:buildTimeline@113011/FUNCTION:timelineFor@116713": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:senderAvatar@78940/FUNCTION:avatar@81415": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -56784,12 +56772,6 @@
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "apps/raft_flutter/lib/features/composer_directory.dart#local-function:CLASS:ComposerDirectory@7937/METHOD:build@13112/FUNCTION:add@13439": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-COMPOSE",
-        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
-      },
       "apps/raft_flutter/lib/features/composer_send_key_setting.dart#class:ComposerSendKeySetting": {
         "role": "unresolved",
         "familyRefs": [],
@@ -57326,12 +57308,6 @@
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
-      },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:buildTimeline@113146/FUNCTION:timelineFor@116783": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-THREAD",
-        "reason": "Composes the timeline at the effective message width when the outline gutter is present."
       },
       "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4198/METHOD:build@15974/FUNCTION:row@16728": {
         "role": "unresolved",
@@ -60054,6 +60030,102 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:attachmentGallery@66220/FUNCTION:view@67374": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:senderAvatar@78798/FUNCTION:avatar@81273": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/composer_directory.dart#local-function:CLASS:ComposerDirectory@7937/METHOD:build@13159/FUNCTION:add@13486": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:buildTimeline@111225/FUNCTION:timelineFor@115298": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Composes the timeline at the effective message width when the outline gutter is present."
+      },
+      "apps/raft_flutter/lib/features/channel_side_files_rows.dart#local-function:CLASS:ConversationArtifactsNote@13714/METHOD:build@14086/FUNCTION:button@14427": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Conversation Files",
+        "reason": "Composes the existing artifact retry and pagination buttons in Files."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4333/METHOD:build@16154/FUNCTION:row@16908": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Composes keyed lazy rows and records their measured extents."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4333/METHOD:build@16154/FUNCTION:row@16908/FUNCTION:buildRow@16962": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Builds the message body when its row presentation changes."
+      },
+      "apps/raft_flutter/lib/features/source_channel_files_view.dart#local-function:CLASS:_FileRowState@30142/METHOD:build@30414/FUNCTION:row@32181": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Conversation Files",
+        "reason": "Composes the file preview and actions using the available row width."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_StatusColumn.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks board",
+        "reason": "Connects the existing board column and its cards to pointer and keyboard drop handling."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_TasksBoardViewState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks board",
+        "reason": "Moves the card presentation listener when the board changes workspace controller."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_TasksBoardViewState.queueSettle": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks board",
+        "reason": "Reconciles the displayed lanes after a frame with the current count freshness."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_TasksBoardViewState.statusColumn": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks board",
+        "reason": "Reuses a column while its lane and display inputs stay the same."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_reuse.dart#local-function:CLASS:_TimelineReusableRowState@3999/METHOD:build@5591/FUNCTION:body@5893": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Reuses the current message body while its presentation stays the same."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_reuse.dart#method:TimelineMountedRows.row": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Returns a mounted row for unchanged message, neighbor and presentation versions."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27831/METHOD:_build@34900/FUNCTION:row@49725": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Sidebar navigation",
+        "reason": "Composes the existing navigation row control and its responsive content."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27831/METHOD:_build@34900/FUNCTION:rowContent@42180": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Sidebar navigation",
+        "reason": "Composes navigation row content and applies the trailing metadata width cap when needed."
       }
     },
     "entries": {
