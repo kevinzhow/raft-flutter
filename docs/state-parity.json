@@ -60243,25 +60243,25 @@
         "owner": "design-system alignment",
         "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:attachmentGallery@65221/FUNCTION:view@66375": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:attachmentGallery@65079/FUNCTION:view@66233": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildTimeline@112218/FUNCTION:timelineFor@115855": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildTimeline@110297/FUNCTION:timelineFor@114370": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@121720/FUNCTION:sendCurrent@124974": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@120375/FUNCTION:sendCurrent@123629": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace conversation",
         "reason": "Uses the canonical toast for a send attempted after the session goes offline."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:senderAvatar@78012/FUNCTION:avatar@80487": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:senderAvatar@77870/FUNCTION:avatar@80345": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -64828,7 +64828,7 @@
         "mountStatus": "source_reviewed",
         "reason": "Uses the canonical toast for a send attempted after the session goes offline.",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@121720/FUNCTION:sendCurrent@124974"
+          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@120375/FUNCTION:sendCurrent@123629"
         ]
       },
       "surface:apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.build": {
