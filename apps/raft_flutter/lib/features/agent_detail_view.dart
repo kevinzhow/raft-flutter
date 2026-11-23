@@ -1203,8 +1203,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     );
     final role = a['serverRole'];
     final roleChip = agentServerRoleChip(role, deletedAt: a['deletedAt']);
-    final pending =
-        a['machineId'] is String && widget.machines == null && !external;
+    final machineId = a['machineId'];
+    final pending = machineId is String && widget.machines == null && !external;
     final m = machine;
     final creator = a['creator'];
     // Web `currentRuntimeConfig = hydrateRuntimeConfigForm(agent)`: the
@@ -1688,7 +1688,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         if (_canViewPrivate &&
             a['deletedAt'] == null &&
             a['managedByAppInstallId'] == null &&
-            (!external || a['machineId'] != null))
+            (!external || (machineId is String && machineId.isNotEmpty)))
           AgentSkillsSection(
             controller: widget.controller,
             agentId: '${a['id']}',

@@ -238,30 +238,33 @@ class _RaftExternalCopyBlockState extends State<RaftExternalCopyBlock> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    Widget text = RaftCssText(
-      widget.text,
-      style: _footnote(t, color: t.ui.foreground, mono: true),
-    );
-    if (!open) {
-      // `max-h-24 overflow-hidden`
-      text = ClipRect(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 96),
-          child: SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            child: text,
-          ),
-        ),
-      );
-    }
+    const previewHeight = 96.0;
+    const padding = EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+    final decoration = _boxDecoration(context);
+    final style = _footnote(t, color: t.ui.foreground, mono: true);
+    final lineHeight =
+        MediaQuery.textScalerOf(context).scale(style.fontSize!) * style.height!;
+    final previewLines =
+        ((previewHeight - padding.vertical - decoration.padding.vertical) /
+                lineHeight)
+            .floor();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 8,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: _boxDecoration(context),
-          child: text,
+          height: open ? null : previewHeight,
+          alignment: AlignmentDirectional.topStart,
+          padding: padding,
+          decoration: decoration,
+          child: open || previewLines > 0
+              ? RaftCssText(
+                  widget.text,
+                  style: style,
+                  maxLines: open ? null : previewLines,
+                  overflow: open ? null : TextOverflow.clip,
+                )
+              : null,
         ),
         if (widget.collapsed)
           Align(

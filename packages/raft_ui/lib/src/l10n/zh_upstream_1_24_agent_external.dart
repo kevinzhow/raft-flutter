@@ -19,8 +19,7 @@ const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "Build it with the SDK instead": "改成用 SDK 自己写",
   "Use an existing agent instead": "改成用现成的 agent",
   "1. Send this prompt to your agent": "1. 把这段 prompt 发给你的 agent",
-  "2. Give it the agent credential when it asks":
-      "2. 它要的时候，把 agent credential 给它",
+  "2. Give it the agent credential when it asks": "2. 它要的时候，把 Agent 凭据给它",
   "1. Copy the agent credential": "1. 复制 Agent 凭据",
   "2. Install the SDK and connect": "2. 安装 SDK 并连接",
   "Copy prompt": "复制 prompt",
@@ -35,7 +34,7 @@ const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "You can finish connecting later.": "可以稍后再完成连接。",
   "Discard {name}?": "丢弃 {name}？",
   "The agent and its credential are deleted. Nothing is kept.":
-      "这个 agent 和它的 credential 会一起删除，什么都不留。",
+      "这个 agent 和它的凭据会一起删除，什么都不留。",
   "Keep setting up": "继续设置",
   "Discard": "丢弃",
   "Raft couldn't discard the agent. Try again, or delete it from its page.":
@@ -44,16 +43,16 @@ const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "1. Install or update the Raft CLI:": "1. 安装或更新 Raft CLI：",
   "2. Sign in as this agent:": "2. 以这个 agent 的身份登录：",
   "When it asks for the agent credential, ask me for it. Never put the credential in a command, a file or a message to anyone else.":
-      "它要 agent credential 时，来问我要。不要把 credential 写进命令、文件，也不要发给别人。",
+      "它要 Agent 凭据时，来问我要。不要把凭据写进命令、文件，也不要发给别人。",
   "It has no agent credential yet. Create one below and give it to {name}.":
-      "它还没有 agent credential。在下面创建一个，交给 {name}。",
+      "它还没有 Agent 凭据。在下面创建一个，交给 {name}。",
   "Active {time}": "{time}活跃",
   "Signed in to Raft.": "已登录 Raft。",
   "Offline · last seen {time}": "离线 · 最后在线 {time}",
   "Still connected. Messages wait until it's back.": "仍然连着。消息会等它回来。",
   "{name} is disconnected": "{name} 已断开",
   "Its credentials were revoked. Create a new one and give it to {name} to reconnect.":
-      "它的 credential 都已撤销。新建一个交给 {name}，就能重新连上。",
+      "它的凭据都已撤销。新建一个交给 {name}，就能重新连上。",
   "Send this prompt to your agent": "把这段 prompt 发给你的 agent",
   "Install the SDK and connect": "安装 SDK 并连接",
   "How it connects": "连接方式",
@@ -62,8 +61,7 @@ const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "The one shown when {name} was created can't be shown again.":
       "创建 {name} 时显示的那个不能再显示。",
   "Ask {name} for a credential.": "向 {name} 要一个凭据。",
-  "Ask a server owner or admin for a credential.":
-      "向服务器的所有者或管理员要一个 credential。",
+  "Ask a server owner or admin for a credential.": "向服务器的所有者或管理员要一个凭据。",
   "Raft couldn't create a credential. Try again.": "Raft 没能创建凭据，请重试。",
   "Credentials": "凭据",
   "Loading credentials…": "正在加载凭据…",
@@ -74,11 +72,10 @@ const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "Created {date} · last used {time}": "{date} 创建 · {time}使用过",
   "Created {date} · not used yet": "{date} 创建 · 还没用过",
   "Actions for {credential}": "{credential} 的操作",
-  "Raft couldn't revoke the credential. Try again.":
-      "Raft 没能撤销这个 credential，请重试。",
+  "Raft couldn't revoke the credential. Try again.": "Raft 没能撤销这个凭据，请重试。",
   "Create a new credential?": "新建凭据？",
   "The credential created on this page stops working. Whatever signed in as {name} with it disconnects until you give it the new one.":
-      "在此页面创建的 credential 会失效。用它以 {name} 身份登录的程序会断开，直到你给它新的。",
+      "在此页面创建的凭据会失效。用它以 {name} 身份登录的程序会断开，直到你给它新的。",
   "Revoke this credential?": "撤销这个凭据？",
   "Whatever signed in as {name} with it stops working right away. This can't be undone.":
       "用它以 {name} 身份登录的程序会立即停止工作。无法恢复。",
