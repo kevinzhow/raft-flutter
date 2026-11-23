@@ -228,6 +228,9 @@ class _DesktopBrowserAddressState extends State<DesktopBrowserAddress> {
     return RaftInteractive(
       key: const ValueKey('browser-address'),
       semanticLabel: label,
+      semanticHint: url.scheme == 'http'
+          ? raftText(context, 'Not secure')
+          : null,
       focusNode: _readout,
       onPressed: _edit,
       tooltip: url.toString(),
@@ -236,46 +239,50 @@ class _DesktopBrowserAddressState extends State<DesktopBrowserAddress> {
           tokens.typeSlot('callout'),
           color: tokens.ui.foregroundMuted,
         );
-        return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: RaftSpace.x2 + RaftSpace.half,
-            vertical: RaftDesktopMetrics.controlHitInset,
-          ),
-          child: Row(
-            spacing: RaftSpace.x2,
-            children: [
-              if (url.scheme == 'http')
-                Flexible(
-                  flex: 2,
-                  child: RaftBadge(
-                    label: raftText(context, 'Not secure'),
-                    appearance: RaftBadgeRecipeAppearance.soft,
-                    variant: RaftBadgeRecipeVariant.warning,
-                  ),
-                ),
-              Flexible(
-                flex: 3,
-                child: Text.rich(
-                  TextSpan(
-                    children: [
+        return LayoutBuilder(
+          builder: (context, box) {
+            final showWarning = url.scheme == 'http' && box.maxWidth >= 125;
+            final inset = box.maxWidth < 80 ? RaftSpace.x1 : RaftSpace.x2;
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: RaftDesktopMetrics.controlHitInset,
+              ).copyWith(left: inset, right: inset),
+              child: Row(
+                spacing: RaftSpace.x2,
+                children: [
+                  if (showWarning)
+                    RaftBadge(
+                      label: raftText(context, 'Not secure'),
+                      appearance: RaftBadgeRecipeAppearance.soft,
+                      variant: RaftBadgeRecipeVariant.warning,
+                    ),
+                  Expanded(
+                    child: Text.rich(
                       TextSpan(
-                        text: parts.host,
-                        style: tokens.scale(
-                          tokens.typeSlot('callout'),
-                          weight: FontWeight.w700,
-                          color: tokens.ui.foreground,
-                        ),
+                        children: [
+                          TextSpan(
+                            text: parts.host,
+                            style: tokens.scale(
+                              tokens.typeSlot('callout'),
+                              weight: FontWeight.w700,
+                              color: tokens.ui.foreground,
+                            ),
+                          ),
+                          TextSpan(text: parts.rest),
+                        ],
                       ),
-                      TextSpan(text: parts.rest),
-                    ],
+                      style: style,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: box.maxWidth < 80
+                          ? TextOverflow.clip
+                          : TextOverflow.ellipsis,
+                    ),
                   ),
-                  style: style,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

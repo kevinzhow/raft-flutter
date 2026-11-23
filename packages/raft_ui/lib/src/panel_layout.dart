@@ -213,6 +213,7 @@ class RaftPanelAction extends StatelessWidget {
     this.focusNode,
     this.responsiveRecipe = false,
     this.focusableWhenDisabled = false,
+    this.pressed,
   });
   final RaftGlyph glyph;
   final String tooltip;
@@ -221,6 +222,7 @@ class RaftPanelAction extends StatelessWidget {
   final bool desktopBar;
   final FocusNode? focusNode;
   final bool focusableWhenDisabled;
+  final bool? pressed;
 
   /// Use the responsive PanelAction recipe for headers with its edge spacing.
   final bool responsiveRecipe;
@@ -260,6 +262,8 @@ class RaftPanelAction extends StatelessWidget {
                   focusNode: focusNode,
                   focusableWhenDisabled: focusableWhenDisabled,
                   onPressed: onPressed,
+                  toggled: pressed,
+                  forcePressed: pressed == true,
                 )
               : _currentAction())
         : _interactive(context);
@@ -279,6 +283,7 @@ class RaftPanelAction extends StatelessWidget {
     focusNode: focusNode,
     semanticLabel: tooltip,
     tooltip: tooltip,
+    toggled: pressed,
     builder: (context, state) {
       final tokens = RaftTokens.of(context);
       final recipe = RaftPanelActionRecipe.resolve(
@@ -286,7 +291,7 @@ class RaftPanelAction extends StatelessWidget {
         states: tokens.recipeStates(
           responsive: true,
           hovered: state.hovered,
-          pressed: state.pressed,
+          pressed: pressed == true || state.pressed,
           focusVisible: state.focusVisible,
           disabled: !state.enabled,
         ),
@@ -315,13 +320,14 @@ class RaftPanelAction extends StatelessWidget {
     focusNode: focusNode,
     semanticLabel: tooltip,
     tooltip: tooltip,
+    toggled: pressed,
     builder: (context, state) {
       final t = RaftTokens.of(context),
           rt = RaftRecipeTokens(RaftTokens.of(context));
       final s = RaftPanelActionRecipe.resolve(
         states: RaftRecipeStates({
           if (state.hovered) RaftRecipeStates.hover,
-          if (state.pressed) RaftRecipeStates.active,
+          if (pressed == true || state.pressed) RaftRecipeStates.active,
           if (state.focusVisible) RaftRecipeStates.focusVisible,
           if (!state.enabled) RaftRecipeStates.disabled,
           if (t.dark) RaftRecipeStates.dark,

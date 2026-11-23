@@ -10,6 +10,7 @@ import 'desktop_browser_tabs.dart';
 const _tabMin = 70.0, _tabMax = 168.0, _tabGap = 2.0;
 const _edge = 13.0, _action = RaftDesktopMetrics.barButtonSize, _gap = 4.0;
 const _chipPad = 34.0, _chipDivider = 17.0;
+const _webAction = 32.0;
 
 typedef BrowserHeaderFit = ({int visible, double chipTitle});
 
@@ -20,7 +21,7 @@ BrowserHeaderFit fitBrowserHeader({
   required int controls,
   required bool artifact,
 }) {
-  const bar = _action + _gap;
+  const bar = _webAction + _gap;
   final strip =
       width - 2 * _edge - controls * bar - (artifact ? _chipDivider : 0);
   double need(int visible) =>
@@ -30,7 +31,9 @@ BrowserHeaderFit fitBrowserHeader({
   final titleRoom = artifact ? strip - _chipPad - need(count) - bar : 0.0;
   final title = titleRoom >= 48 ? math.min(132.0, titleRoom) : 0.0;
   final room =
-      strip - (artifact ? (title > 0 ? _chipPad + title : _action) : 0) - bar;
+      strip -
+      (artifact ? (title > 0 ? _chipPad + title : _webAction) : 0) -
+      bar;
   var visible = count;
   while (visible > 1 && need(visible) > room) {
     visible--;
@@ -104,12 +107,16 @@ class DesktopBrowserTabStrip extends StatefulWidget {
     required this.onNew,
     required this.onClose,
     required this.onSelect,
+    required this.onFrontWidth,
+    this.frontWidth,
   });
 
   final DesktopBrowser browser;
   final int shown;
   final VoidCallback onNew;
   final ValueChanged<int> onClose, onSelect;
+  final ValueChanged<double> onFrontWidth;
+  final double? frontWidth;
 
   @override
   State<DesktopBrowserTabStrip> createState() => _DesktopBrowserTabStripState();
@@ -117,6 +124,8 @@ class DesktopBrowserTabStrip extends StatefulWidget {
 
 class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
   final _nodes = <int, FocusNode>{};
+  final _front = GlobalKey();
+  final _more = RaftMenuController();
 
   FocusNode _focus(int id) => _nodes.putIfAbsent(id, FocusNode.new);
 
@@ -131,6 +140,7 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
 
   @override
   void dispose() {
+    _more.dispose();
     for (final node in _nodes.values) {
       node.dispose();
     }
@@ -177,19 +187,28 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
     final full = tabs.length == desktopBrowserTabLimit;
     final moreLabel = raftText(context, 'More tabs');
     final newLabel = raftText(context, 'New tab');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final render = _front.currentContext?.findRenderObject();
+      if (render is RenderBox && render.hasSize) {
+        final width = render.getMaxIntrinsicWidth(render.size.height);
+        widget.onFrontWidth(width.clamp(60.0, _tabMax));
+      }
+    });
     return LayoutBuilder(
       builder: (context, box) {
         final tiny = box.maxWidth < 122;
         final actionWidth = tiny
             ? RaftDesktopMetrics.controlEmbeddedSize
             : _action;
-        final gap = tiny ? RaftSpace.half : _gap;
+        final gap = tiny ? 0.0 : _gap;
         final reserve = (more.isEmpty ? 1 : 2) * (actionWidth + gap);
         final room = math.max(0.0, box.maxWidth - reserve);
         final backCount = row.length - 1;
         final tabRoom = math.max(0.0, room - backCount * _tabGap);
         final activeTabWidth = math.min(
-          browserTabWidth(context, widget.browser.active, active: true),
+          widget.frontWidth ??
+              browserTabWidth(context, widget.browser.active, active: true),
           tabRoom,
         );
         final backRoom = tabRoom - activeTabWidth;
@@ -234,6 +253,7 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
                               focus: _focus(tab.id),
                               close: () => widget.onClose(tab.id),
                               select: () => widget.onSelect(tab.id),
+                              measureKey: tab.id == activeId ? _front : null,
                             ),
                           ),
                       ],
@@ -245,6 +265,7 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
             if (more.isNotEmpty)
               RaftDropdownMenu(
                 key: const ValueKey('browser-more-tabs'),
+                controller: _more,
                 surfaceKey: const ValueKey('browser-more-tabs-menu'),
                 label: moreLabel,
                 kind: RaftMenuKind.dropdownMenu,
@@ -259,12 +280,17 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
                 ],
                 triggerBuilder: (context, focus, press) => SizedBox(
                   width: actionWidth,
-                  child: RaftPanelAction(
-                    glyph: RaftGlyph.chevronDown,
-                    tooltip: moreLabel,
-                    desktopBar: true,
-                    focusNode: focus,
-                    onPressed: press,
+                  child: ListenableBuilder(
+                    listenable: _more,
+                    builder: (context, _) => RaftPanelAction(
+                      glyph: RaftGlyph.chevronDown,
+                      tooltip: moreLabel,
+                      desktopBar: !tiny,
+                      ghostSize: tiny ? RaftButtonSize.iconXs : null,
+                      focusNode: focus,
+                      onPressed: press,
+                      pressed: _more.isOpen,
+                    ),
                   ),
                 ),
               ),
@@ -283,7 +309,8 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
                           {'count': '$desktopBrowserTabLimit'},
                         )
                       : newLabel,
-                  desktopBar: true,
+                  desktopBar: !tiny,
+                  ghostSize: tiny ? RaftButtonSize.iconXs : null,
                   focusableWhenDisabled: full,
                   onPressed: full ? null : widget.onNew,
                 ),
@@ -305,6 +332,7 @@ class _BrowserTab extends StatefulWidget {
     required this.focus,
     required this.close,
     required this.select,
+    this.measureKey,
   });
 
   final DesktopBrowserTab tab;
@@ -312,6 +340,7 @@ class _BrowserTab extends StatefulWidget {
   final double width;
   final FocusNode focus;
   final VoidCallback close, select;
+  final Key? measureKey;
 
   @override
   State<_BrowserTab> createState() => _BrowserTabState();
@@ -324,7 +353,7 @@ class _BrowserTabState extends State<_BrowserTab> {
   Widget build(BuildContext context) {
     final tab = widget.tab;
     final active = widget.active;
-    final compact = widget.width < (active ? 60 : 42);
+    final compact = widget.width < (active ? 76 : 42);
     final hoverClose = !active && _hovered;
     final label = browserTabLabel(context, tab);
     return MouseRegion(
@@ -335,29 +364,42 @@ class _BrowserTabState extends State<_BrowserTab> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            RaftTabButton(
-              key: ValueKey('browser-tab-${tab.id}'),
-              label: compact ? '' : label,
-              semanticLabel: label,
-              focusNode: widget.focus,
-              tooltip: tab.url?.toString(),
-              selected: active,
-              fitLabel: true,
-              padding: compact
-                  ? EdgeInsets.zero
-                  : EdgeInsetsDirectional.only(
-                      start: RaftSpace.x2 + RaftSpace.half,
-                      end: active
-                          ? RaftDesktopMetrics.barButtonSize
-                          : RaftSpace.x2 + RaftSpace.half,
-                    ),
-              icon: compact && active
-                  ? null
-                  : (size, color, weight) => Opacity(
-                      opacity: hoverClose ? 0 : 1,
-                      child: RaftIcon(_tabGlyph(tab), size: size, color: color),
-                    ),
-              onPressed: widget.select,
+            KeyedSubtree(
+              key: compact ? null : widget.measureKey,
+              child: RaftTabButton(
+                key: ValueKey('browser-tab-${tab.id}'),
+                label: label,
+                semanticLabel: label,
+                focusNode: widget.focus,
+                tooltip: tab.url?.toString(),
+                selected: active,
+                fitLabel: true,
+                labelOverflow: active && widget.width < 48
+                    ? TextOverflow.clip
+                    : null,
+                padding: compact
+                    ? EdgeInsetsDirectional.only(
+                        start: RaftSpace.half,
+                        end: active ? RaftSpace.x4 : RaftSpace.half,
+                      )
+                    : EdgeInsetsDirectional.only(
+                        start: RaftSpace.x2 + RaftSpace.half,
+                        end: active
+                            ? RaftDesktopMetrics.barButtonSize
+                            : RaftSpace.x2 + RaftSpace.half,
+                      ),
+                icon: compact && active
+                    ? null
+                    : (size, color, weight) => Opacity(
+                        opacity: hoverClose ? 0 : 1,
+                        child: RaftIcon(
+                          _tabGlyph(tab),
+                          size: size,
+                          color: color,
+                        ),
+                      ),
+                onPressed: widget.select,
+              ),
             ),
             if (active || hoverClose)
               PositionedDirectional(
@@ -374,9 +416,10 @@ class _BrowserTabState extends State<_BrowserTab> {
                     glyph: RaftGlyph.x,
                     uiVariant: RaftButtonVariant.ghost,
                     uiSize: RaftButtonSize.iconXs,
-                    visualWidth: 20,
+                    visualWidth: compact ? RaftSpace.x4 : RaftSpace.x5,
+                    padding: compact ? EdgeInsets.zero : null,
                     physicalHeight: 20,
-                    glyphSize: 14,
+                    glyphSize: compact ? RaftSpace.x3 : 14,
                     onPressed: widget.close,
                   ),
                 ),

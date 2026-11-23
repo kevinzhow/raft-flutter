@@ -272,6 +272,7 @@ class RaftButton extends StatelessWidget {
     this.selected,
     this.checked,
     this.toggled,
+    this.forcePressed = false,
     this.expanded,
     this.inMutuallyExclusiveGroup = false,
     this.inertWhenDisabled = false,
@@ -390,6 +391,7 @@ class RaftButton extends StatelessWidget {
   final bool button, inMutuallyExclusiveGroup, inertWhenDisabled;
   final SemanticsRole? semanticRole;
   final bool? selected, checked, toggled, expanded;
+  final bool forcePressed;
   final Color? foreground;
   final EdgeInsets? padding;
   final (double, double)? textStep;
@@ -503,7 +505,7 @@ class RaftButton extends StatelessWidget {
     final states = t.recipeStates(
       responsive: true,
       hovered: state.hovered && !inactive,
-      pressed: state.pressed && !inactive,
+      pressed: (forcePressed || state.pressed) && !inactive,
       focusVisible:
           state.focusVisible || focusRing && (focusNode?.hasFocus ?? false),
       disabled: inactive && !inert,

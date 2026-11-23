@@ -18,6 +18,7 @@ typedef DesktopBrowserPageEvents = ({
   ValueChanged<BrowserHistoryActions?> history,
   ValueChanged<Uri> openExternal,
   VoidCallback closeTab,
+  VoidCallback closePanel,
 });
 
 typedef DesktopBrowserPageBuilder = Widget Function(
@@ -66,16 +67,7 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
   final _focus = FocusNode();
   final _live = <int>{};
   final _history = <int, BrowserHistoryActions>{};
-
-  @override
-  void didUpdateWidget(DesktopBrowserPanel oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.showing &&
-        !oldWidget.showing &&
-        widget.tabs.forConversation(widget.conversation)?.active.url != null) {
-      _focus.requestFocus();
-    }
-  }
+  ({int tab, String label, double width})? _frontTab;
 
   @override
   void dispose() {
@@ -218,6 +210,7 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
             if (allowed != null) widget.openExternal(allowed);
           },
           closeTab: () => widget.tabs.closeTab(widget.conversation, tab.id),
+          closePanel: _close,
         )),
       ),
     );
@@ -227,9 +220,15 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
     builder: (context, box) {
       final close = raftText(context, 'Close');
       final swap = widget.onShowArtifact;
+      final label = browserTabLabel(context, browser.active);
+      final measured = _frontTab;
+      final frontWidth =
+          measured?.tab == browser.activeId && measured?.label == label
+          ? measured?.width
+          : null;
       final fit = fitBrowserHeader(
         width: box.maxWidth,
-        activeWidth: browserTabWidth(context, browser.active, active: true),
+        activeWidth: frontWidth ?? 120,
         count: browser.tabs.length,
         controls: 1 + (widget.onExpand == null ? 0 : 1),
         artifact: swap != null,
@@ -245,12 +244,17 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
         titleSlot: DesktopBrowserTabStrip(
           browser: browser,
           shown: fit.visible,
+          frontWidth: frontWidth,
+          onFrontWidth: (width) {
+            final next = (tab: browser.activeId, label: label, width: width);
+            if (mounted && next != _frontTab) setState(() => _frontTab = next);
+          },
           onNew: () => widget.tabs.newTab(widget.conversation),
           onClose: (id) => widget.tabs.closeTab(widget.conversation, id),
           onSelect: (id) => widget.tabs.activate(widget.conversation, id),
         ),
         desktopBar: !tiny,
-        itemGap: tiny ? RaftSpace.half : RaftSpace.x1,
+        itemGap: tiny ? 0 : RaftSpace.x1,
         contentInsets: tiny
             ? const EdgeInsets.symmetric(horizontal: RaftSpace.half)
             : null,

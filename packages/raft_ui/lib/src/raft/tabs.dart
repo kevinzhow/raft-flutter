@@ -65,6 +65,7 @@ class RaftTabButton extends StatelessWidget {
     this.iconSize = 16,
     this.growsWithText,
     this.fitLabel = false,
+    this.labelOverflow,
   });
 
   final String label;
@@ -84,6 +85,7 @@ class RaftTabButton extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final double iconSize;
   final bool fitLabel;
+  final TextOverflow? labelOverflow;
 
   /// [height] is a minimum and the tab grows with its label (enlarged text); null follows the text scale.
   final bool? growsWithText;
@@ -137,7 +139,7 @@ class RaftTabButton extends StatelessWidget {
       text,
       maxLines: 1,
       softWrap: false,
-      overflow: fitLabel ? TextOverflow.ellipsis : null,
+      overflow: labelOverflow ?? (fitLabel ? TextOverflow.ellipsis : null),
       style: textStyle,
     );
     final leading = icon != null

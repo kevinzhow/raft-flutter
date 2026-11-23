@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/desktop_browser_panel.dart';
 import 'package:raft_flutter/features/desktop_browser_tabs.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 void main() {
   final first = Uri.parse('https://example.test/a?q=1');
@@ -89,7 +91,7 @@ void main() {
   ) async {
     final tabs = await mount(tester, width: 160, allControls: true);
     for (var number = 2; number <= desktopBrowserTabLimit; number++) {
-      tabs.open('channel', Uri.parse('https://site$number.test/'));
+      tabs.open('channel', Uri.parse('http://site$number.test/a-long-path'));
     }
     await tester.pump();
     for (final key in [
@@ -106,6 +108,29 @@ void main() {
         reason: key,
       );
     }
+    final title = find.descendant(
+      of: find.byKey(const ValueKey('browser-tab-12')),
+      matching: find.text('site12.test'),
+    );
+    final close = find.byKey(const ValueKey('browser-tab-close-12'));
+    final addressText = find.descendant(
+      of: find.byKey(address),
+      matching: find.text('site12.test/a-long-path', findRichText: true),
+    );
+    for (final text in [title, addressText]) {
+      final paragraph = tester.renderObject<RenderParagraph>(text);
+      expect(
+        paragraph.getBoxesForSelection(
+          const TextSelection(baseOffset: 0, extentOffset: 1),
+        ),
+        isNotEmpty,
+        reason: paragraph.text.toPlainText(),
+      );
+    }
+    expect(
+      tester.getRect(title).right,
+      lessThanOrEqualTo(tester.getCenter(close).dx),
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -127,6 +152,27 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('More tabs stays pressed until Escape dismisses its menu', (
+    tester,
+  ) async {
+    final tabs = await mount(tester, width: 224);
+    for (var number = 2; number <= 5; number++) {
+      tabs.open('channel', Uri.parse('https://site$number.test/'));
+    }
+    await tester.pump();
+    final trigger = find.descendant(
+      of: find.byKey(more),
+      matching: find.byType(RaftInteractive),
+    );
+    await tester.tap(find.byKey(more));
+    await tester.pumpAndSettle();
+    expect(tester.widget<RaftInteractive>(trigger).toggled, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(tester.widget<RaftInteractive>(trigger).toggled, isFalse);
+    expect(tabs.forConversation('channel'), isNotNull);
+  });
+
   testWidgets('tab shortcuts close only the active tab', (tester) async {
     final tabs = await mount(tester);
     await tester.tap(find.byKey(plus));
@@ -137,5 +183,54 @@ void main() {
     await tester.pump();
     expect(tabs.forConversation('channel')!.tabs, hasLength(1));
     expect(tabs.forConversation('channel')!.active.url, first);
+  });
+
+  testWidgets('uncovering a previously focused page keeps restored focus', (
+    tester,
+  ) async {
+    final tabs = DesktopBrowserTabs()..open('channel', first);
+    final opener = FocusNode();
+    addTearDown(tabs.dispose);
+    addTearDown(opener.dispose);
+    late StateSetter change;
+    var showing = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              change = setState;
+              return Column(
+                children: [
+                  Focus(
+                    focusNode: opener,
+                    child: const Text('Artifact opener'),
+                  ),
+                  Expanded(
+                    child: Offstage(
+                      offstage: !showing,
+                      child: DesktopBrowserPanel(
+                        tabs: tabs,
+                        conversation: 'channel',
+                        raftHosts: const {},
+                        showing: showing,
+                        pageBuilder: (_, _, _, _) => const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    change(() => showing = false);
+    await tester.pumpAndSettle();
+    opener.requestFocus();
+    change(() => showing = true);
+    await tester.pumpAndSettle();
+    expect(opener.hasFocus, isTrue);
   });
 }
