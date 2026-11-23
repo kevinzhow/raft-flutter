@@ -1,0 +1,455 @@
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
+import 'package:raft_client/raft_client.dart';
+import 'package:raft_ui/raft_ui.dart';
+
+import 'external_sender.dart';
+import 'timeline_row_trace.dart';
+
+typedef TimelineRowPreviewBuilder = Widget? Function(
+  BuildContext context,
+  int index,
+  double height,
+);
+
+typedef TimelineRowHydrationSpec = ({
+  double width,
+  double Function() estimate,
+  Widget? Function(BuildContext, double) preview,
+  bool Function() entering,
+});
+
+typedef TimelineRowRevision = ({Object layout, Object invalidation});
+
+typedef TimelineRowMeasurement = ({
+  String id,
+  Object content,
+  Object? style,
+  int width,
+  TextScaler scale,
+});
+
+class TimelineRowHydrator {
+  TimelineRowHydrator({
+    required this.isVisible,
+    required this.direction,
+    required this.beforeSwap,
+  });
+
+  final bool Function() isVisible;
+  final ScrollDirection Function() direction;
+  final void Function(RenderBox row) beforeSwap;
+  final _versions = Expando<Object>();
+  final _heights = <TimelineRowMeasurement, double>{};
+  final _pending = <_TimelineHydratedRowState>{};
+  bool _scheduled = false;
+
+  void _add(_TimelineHydratedRowState row) {
+    _pending.add(row);
+    schedule();
+  }
+
+  void schedule() {
+    if (_scheduled || _pending.isEmpty || !isVisible()) return;
+    _scheduled = true;
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- consumes one mounted row per frame and only continues while rows are waiting
+    SchedulerBinding.instance.addPostFrameCallback(_hydrate);
+  }
+
+  void _hydrate(Duration _) {
+    _scheduled = false;
+    if (!isVisible()) return;
+    final budget = Stopwatch()..start();
+    final motion = direction();
+    _TimelineHydratedRowState? nearest;
+    RenderBox? nearestBox;
+    var best = double.infinity;
+    for (final row in _pending) {
+      final box = row.context.findRenderObject();
+      if (box is! RenderBox || !box.attached || !box.hasSize) continue;
+      final host = RenderAbstractViewport.maybeOf(box);
+      if (host is! RenderViewport || !_laidOut(box, host)) continue;
+      final top = box.localToGlobal(Offset.zero, ancestor: host).dy;
+      final bottom = top + box.size.height;
+      final viewport = host.size.height;
+      final distance = top >= viewport
+          ? top - viewport + (motion == ScrollDirection.forward ? viewport : 0)
+          : bottom <= 0
+          ? -bottom + (motion == ScrollDirection.reverse ? viewport : 0)
+          : 0.0;
+      if (distance < best) {
+        nearest = row;
+        nearestBox = box;
+        best = distance;
+      }
+      if (budget.elapsedMicroseconds >= 3000) break;
+    }
+    if (nearest == null) return;
+    _pending.remove(nearest);
+    beforeSwap(nearestBox!);
+    nearest.hydrate();
+    schedule();
+  }
+
+  static bool _laidOut(RenderBox box, RenderViewport viewport) {
+    RenderObject child = box;
+    for (var parent = child.parent; parent != null; parent = child.parent) {
+      if (!parent.paintsChild(child)) return false;
+      if (parent == viewport) return true;
+      child = parent;
+    }
+    return false;
+  }
+
+  void _record(TimelineRowMeasurement key, double height) {
+    _heights.remove(key);
+    _heights[key] = height;
+    if (_heights.length > 1024) _heights.remove(_heights.keys.first);
+  }
+}
+
+class TimelineHydratedRow extends StatefulWidget {
+  const TimelineHydratedRow({
+    super.key,
+    required this.hydrator,
+    required this.message,
+    required this.revision,
+    required this.width,
+    required this.estimate,
+    required this.preview,
+    required this.builder,
+    required this.entering,
+  });
+
+  final TimelineRowHydrator hydrator;
+  final chat.Message message;
+  final Object? revision;
+  final double width;
+  final double Function() estimate;
+  final Widget? Function(BuildContext context, double height) preview;
+  final WidgetBuilder builder;
+  final bool entering;
+
+  @override
+  State<TimelineHydratedRow> createState() => _TimelineHydratedRowState();
+}
+
+enum _HydrationPhase { preview, light, full, editing, swapping }
+
+class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
+  Widget? _layout;
+  late var _phase = widget.entering
+      ? _HydrationPhase.preview
+      : _HydrationPhase.full;
+
+  void hydrate() => setState(() {
+    _layout = null;
+    _phase = _HydrationPhase.swapping;
+  });
+
+  Object? _layoutRevision(TimelineHydratedRow row) => switch (row.revision) {
+    final TimelineRowRevision revision => revision.layout,
+    final revision => revision,
+  };
+
+  @override
+  void didUpdateWidget(TimelineHydratedRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ((_phase == _HydrationPhase.full || _phase == _HydrationPhase.editing) &&
+        _layout != null &&
+        _layoutRevision(oldWidget) == _layoutRevision(widget) &&
+        _canDeferEdit(oldWidget.message, widget.message)) {
+      _phase = _HydrationPhase.editing;
+      widget.hydrator._add(this);
+      return;
+    }
+    _phase = switch (_phase) {
+      _HydrationPhase.light => _HydrationPhase.preview,
+      _HydrationPhase.editing || _HydrationPhase.full => _HydrationPhase.full,
+      _ => _phase,
+    };
+    _layout = null;
+    widget.hydrator._pending.remove(this);
+  }
+
+  bool _canDeferEdit(chat.Message before, chat.Message after) {
+    if (identical(before, after) || before.authorId != after.authorId) {
+      return false;
+    }
+    final old = before.metadata;
+    final next = after.metadata;
+    return old?['content'] != next?['content'] &&
+        old?['deletedAt'] == next?['deletedAt'] &&
+        next?['messageType'] != 'system' &&
+        next?['actionMetadata'] == null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_layout case final layout?) return layout;
+    final message = widget.message;
+    final hydrator = widget.hydrator;
+    final key = (
+      id: message.id,
+      content: hydrator._versions[message] ??= Object(),
+      style: _layoutRevision(widget),
+      width: widget.width.round(),
+      scale: MediaQuery.textScalerOf(context),
+    );
+    if (_phase == _HydrationPhase.preview) {
+      final height =
+          hydrator._heights[key] ??
+          widget.estimate() * (key.scale.scale(15) / 15);
+      final preview = timelineRowTrace(
+        'light.build',
+        message.id,
+        () => widget.preview(context, height),
+      );
+      if (preview != null) {
+        _phase = _HydrationPhase.light;
+        hydrator._add(this);
+        return _layout = _TimelineMeasuredRow(id: message.id, child: preview);
+      }
+    }
+    final child = _phase == _HydrationPhase.swapping
+        ? timelineRowTrace('hydrate', message.id, () => widget.builder(context))
+        : widget.builder(context);
+    _phase = _HydrationPhase.full;
+    return _layout = _TimelineMeasuredRow(
+      id: message.id,
+      onLayout: (size) {
+        if (size.width.round() == key.width) hydrator._record(key, size.height);
+      },
+      child: child,
+    );
+  }
+
+  @override
+  void dispose() {
+    widget.hydrator._pending.remove(this);
+    super.dispose();
+  }
+}
+
+Widget? timelineMessagePreview(
+  BuildContext context,
+  RaftMessage message,
+  double height, {
+  required String Function(DateTime?) timestamp,
+  required String? Function(RaftMessage) translated,
+}) {
+  if (message.string('messageType') == 'system' || message.retracted) {
+    return null;
+  }
+  return TimelineRowPreview(
+    author: messageSenderName(context, message),
+    timestamp: timestamp(message.createdAt),
+    content: translated(message) ?? message.content,
+    height: height,
+  );
+}
+
+class TimelineHydrationAnchor {
+  const TimelineHydrationAnchor(
+    this.box,
+    this.offset,
+    this.changing,
+    this.height,
+  );
+
+  final RenderBox box;
+  final double offset;
+  final RenderBox changing;
+  final double height;
+
+  static TimelineHydrationAnchor? capture(
+    RenderViewport view,
+    RenderBox changing,
+    Iterable<RenderBox> rows,
+  ) {
+    RenderBox? firstVisible;
+    var leading = double.infinity;
+    for (final row in rows) {
+      if (row == changing || !TimelineRowHydrator._laidOut(row, view)) {
+        continue;
+      }
+      final top = row.localToGlobal(Offset.zero, ancestor: view).dy;
+      if (top >= view.size.height ||
+          top >= leading ||
+          top + row.size.height <= 0) {
+        continue;
+      }
+      firstVisible = row;
+      leading = top;
+    }
+    return firstVisible == null
+        ? null
+        : TimelineHydrationAnchor(
+            firstVisible,
+            view.getOffsetToReveal(firstVisible, 0).offset,
+            changing,
+            changing.size.height,
+          );
+  }
+
+  double? correction(RenderViewport view) {
+    if (!changing.attached ||
+        !changing.hasSize ||
+        (changing.size.height - height).abs() <= .5 ||
+        !box.attached ||
+        !TimelineRowHydrator._laidOut(box, view)) {
+      return null;
+    }
+    return view.getOffsetToReveal(box, 0).offset - offset;
+  }
+}
+
+class _TimelineMeasuredRow extends SingleChildRenderObjectWidget {
+  const _TimelineMeasuredRow({
+    required this.id,
+    this.onLayout,
+    required super.child,
+  });
+
+  final String id;
+  final ValueChanged<Size>? onLayout;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderTimelineMeasuredRow(id, onLayout);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _RenderTimelineMeasuredRow renderObject,
+  ) => renderObject
+    ..id = id
+    ..onLayout = onLayout;
+}
+
+class _RenderTimelineMeasuredRow extends RenderProxyBox {
+  _RenderTimelineMeasuredRow(this.id, this.onLayout);
+
+  String id;
+  ValueChanged<Size>? onLayout;
+
+  @override
+  void performLayout() {
+    final record = onLayout;
+    if (record == null) {
+      timelineRowTrace('light.layout', id, super.performLayout);
+    } else {
+      super.performLayout();
+      record(size);
+    }
+  }
+}
+
+class TimelineWidth extends StatefulWidget {
+  const TimelineWidth({super.key, required this.builder});
+
+  final Widget Function(BuildContext, double) builder;
+
+  @override
+  State<TimelineWidth> createState() => _TimelineWidthState();
+}
+
+class _TimelineWidthState extends State<TimelineWidth> {
+  double? _width;
+
+  @override
+  Widget build(BuildContext context) => _TimelineWidthObserver(
+    onWidth: (width) {
+      if (mounted && _width != width) setState(() => _width = width);
+    },
+    child: widget.builder(context, _width ?? MediaQuery.sizeOf(context).width),
+  );
+}
+
+class _TimelineWidthObserver extends SingleChildRenderObjectWidget {
+  const _TimelineWidthObserver({required this.onWidth, required super.child});
+
+  final ValueChanged<double> onWidth;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderTimelineWidthObserver(onWidth);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _RenderTimelineWidthObserver renderObject,
+  ) => renderObject.onWidth = onWidth;
+}
+
+class _RenderTimelineWidthObserver extends RenderProxyBox {
+  _RenderTimelineWidthObserver(this.onWidth);
+
+  ValueChanged<double> onWidth;
+  double? _width;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final width = size.width;
+    if (_width == width) return;
+    _width = width;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (attached && _width == width) onWidth(width);
+    });
+  }
+}
+
+class TimelineRowPreview extends StatelessWidget {
+  const TimelineRowPreview({
+    super.key,
+    required this.author,
+    required this.timestamp,
+    required this.content,
+    required this.height,
+  });
+
+  final String author;
+  final String timestamp;
+  final String content;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = raftMessageSemanticsText(context, content);
+    final lineEnd = text.indexOf('\n');
+    final heading = timestamp.isEmpty ? author : '$author, $timestamp';
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: text.isEmpty ? heading : '$heading\n$text',
+      child: ClipRect(
+        child: SizedBox(
+          height: height,
+          child: OverflowBox(
+            alignment: AlignmentDirectional.topStart,
+            minHeight: 0,
+            maxHeight: double.infinity,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(author, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    lineEnd < 0 ? text : text.substring(0, lineEnd),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

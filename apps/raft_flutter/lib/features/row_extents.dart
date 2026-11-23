@@ -32,6 +32,17 @@ class _RowExtentCache {
   Map<String, (double, double)> scope(String scope) =>
       _scopes.putIfAbsent(scope, () => <String, (double, double)>{});
 
+  double estimate(
+    Map<String, (double, double)> measuredRows,
+    String id,
+    Map<String, dynamic> metadata,
+    double width,
+  ) {
+    final measured = measuredRows[id];
+    if (measured != null && (measured.$1 - width).abs() < 1) return measured.$2;
+    return guess(id, metadata, width);
+  }
+
   void record(String scope, String id, double width, double height) {
     final map = this.scope(scope);
     if (!map.containsKey(id)) {

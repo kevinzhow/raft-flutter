@@ -16,6 +16,7 @@ import 'mobile_route_gate.dart';
 import 'message_type_scale.dart';
 export 'mobile_route_gate.dart' show MobileChatDirectRead;
 import 'message_timeline.dart';
+import 'timeline_row_hydration.dart';
 import 'timeline_boundary_change.dart';
 import 'chat_timeline_presentation.dart';
 import 'history_reading_anchor.dart';
@@ -2886,6 +2887,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       day: timeFormatter.dayKey(sourceTimeNow()),
     ),
     composerDirectory.rosterRevision,
+    selection.active,
   );
 
   int? windowIndexOf(String id) =>
@@ -2994,24 +2996,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   String rowExtentScope(BuildContext context) {
     final tokens = RaftTokens.of(context);
     return '${tokens.dark}|${widget.thread}';
-  }
-
-  /// Total-extent estimate for a row not laid out yet: its last measured
-  /// height at this width, otherwise a content-based guess.
-  double estimateRow(
-    Map<String, (double, double)> measuredRows,
-    List<chat.Message> list,
-    int index,
-    double width,
-  ) {
-    if (index < 0 || index >= list.length) return 96;
-    final message = list[index];
-    final measured = measuredRows[message.id];
-    if (measured != null && (measured.$1 - width).abs() < 1) return measured.$2;
-    // Projected model getters create a fresh Map view on each access. Reuse
-    // the canonical row metadata for width-independent extent preparation.
-    final metadata = sources[message]?.json ?? message.metadata;
-    return raftRowExtents.guess(message.id, metadata, width);
   }
 
   Widget tile(
@@ -3161,16 +3145,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       ];
     }
     final rowStyle = timelineRowStyle;
-    Widget? timelineWidget;
-    double? timelineWidth;
-    Widget timelineFor(double width, Widget Function(double) create) {
-      if (timelineWidget != null && timelineWidth == width) {
-        return timelineWidget!;
-      }
-      timelineWidth = width;
-      return timelineWidget = create(width);
-    }
-
     return Chat(
       key: timelineKeys.keyFor(listRevision),
       currentUserId: w.client.user?.id ?? '',
@@ -3186,12 +3160,34 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         scrollToBottomBuilder: (_, animation, callback) =>
             const SizedBox.shrink(),
         composerBuilder: (_) => const SizedBox.shrink(),
-        chatAnimatedListBuilder: (context, _) => LayoutBuilder(
-          builder: (context, constraints) => timelineFor(
-            RaftThreadOutlineGutter.contentWidth(context, constraints.maxWidth),
-            (width) => RaftMessageTimeline(
+        chatAnimatedListBuilder: (context, _) => TimelineWidth(
+          builder: (context, viewportWidth) {
+            final width = RaftThreadOutlineGutter.contentWidth(
+              context,
+              viewportWidth,
+            );
+            return RaftMessageTimeline(
               key: ValueKey('chat-list-${thread ? 'thread' : 'channel'}'),
               controller: viewport,
+              hydration: activity.mode
+                  ? null
+                  : (
+                      width: width,
+                      estimate: (i) => raftRowExtents.guess(
+                        messages[i].id,
+                        source(messages[i]).json,
+                        width,
+                      ),
+                      preview: (context, i, height) => timelineMessagePreview(
+                        context,
+                        source(messages[i]),
+                        height,
+                        timestamp: timeFormatter.messageTime,
+                        translated: (message) => w.services.translations
+                            .present(message)
+                            .translatedContent,
+                      ),
+                    ),
               retainRow: timelineKeys.retainRows(messages, source),
               trackNeighbourVersions: false,
               rowRevision: (i) => timelineKeys.rowState(
@@ -3200,7 +3196,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 i,
                 style: (
                   rowStyle,
-                  width,
+                  width.round(),
                   systemStateAt(i),
                   groupingAt(i),
                   source(messages[i]).id == dmReadId,
@@ -3228,8 +3224,12 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   dmRead: source(messages[index]).id == dmReadId,
                 ),
               ),
-              estimateRow: (index) =>
-                  estimateRow(measuredRows, messages, index, width),
+              estimateRow: (i) => raftRowExtents.estimate(
+                measuredRows,
+                messages[i].id,
+                source(messages[i]).json,
+                width,
+              ),
               slivers: (history, forward) => recipe.centeredSlivers(
                 header: header,
                 history: history,
@@ -3277,8 +3277,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       fill: true,
                     )
                   : RaftEmptyState(title: raftText(context, 'No messages yet')),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

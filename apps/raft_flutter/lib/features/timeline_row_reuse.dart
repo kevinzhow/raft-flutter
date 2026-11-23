@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:raft_client/raft_client.dart';
 
+import 'timeline_row_hydration.dart';
+
 final _diagramFence = RegExp(
   r'(^|\n) {0,3}(?:`{3,}|~{3,})\s*mermaid\b',
   caseSensitive: false,
@@ -57,7 +59,17 @@ class TimelineRowRetention with WidgetsBindingObserver {
 }
 
 class TimelineMountedRows {
+  TimelineMountedRows({this.hydrator});
+
+  final TimelineRowHydrator? hydrator;
   final _rows = <String, _TimelineReusableRowState>{};
+
+  Iterable<RenderBox> get boxes sync* {
+    for (final row in _rows.values) {
+      final box = row.context.findRenderObject();
+      if (box is RenderBox && box.attached && box.hasSize) yield box;
+    }
+  }
 
   TimelineReusableRow row({
     required chat.Message message,
@@ -66,10 +78,12 @@ class TimelineMountedRows {
     required Object? revision,
     required WidgetBuilder builder,
     required TimelineRowRetention? retention,
+    TimelineRowHydrationSpec? hydration,
   }) {
     final mounted = _rows[message.id]?.widget;
     if (mounted != null &&
         mounted.matches(message, before, after, revision) &&
+        (mounted.hydration == null) == (hydration == null) &&
         identical(mounted.retention, retention)) {
       mounted._builder.build = builder;
       return mounted;
@@ -82,6 +96,7 @@ class TimelineMountedRows {
       revision: revision,
       builder: _TimelineRowBuilder(builder),
       retention: retention,
+      hydration: hydration,
     );
   }
 
@@ -111,6 +126,7 @@ class TimelineReusableRow extends StatefulWidget {
     required this.revision,
     required this._builder,
     required this.retention,
+    required this.hydration,
   });
   final TimelineMountedRows _owner;
   final _TimelineRowBuilder _builder;
@@ -118,6 +134,7 @@ class TimelineReusableRow extends StatefulWidget {
   final chat.Message? before, after;
   final Object? revision;
   final TimelineRowRetention? retention;
+  final TimelineRowHydrationSpec? hydration;
 
   bool matches(
     chat.Message message,
@@ -199,8 +216,22 @@ class _TimelineReusableRowState extends State<TimelineReusableRow>
     // A kept-alive sliver child can rebuild without being laid out. Updating
     // its rich text then lets selection registrars sort unlaid-out fragments
     // and lose existing entries. Reconcile the cached row during real layout.
-    Widget body(BuildContext context) =>
-        _child ??= widget._builder.build(context);
+    Widget body(BuildContext context) {
+      final spec = widget.hydration;
+      return _child ??= spec == null
+          ? widget._builder.build(context)
+          : TimelineHydratedRow(
+              hydrator: widget._owner.hydrator!,
+              message: widget.message,
+              revision: widget.revision,
+              width: spec.width,
+              estimate: spec.estimate,
+              preview: spec.preview,
+              builder: (context) => widget._builder.build(context),
+              entering: spec.entering(),
+            );
+    }
+
     if (widget.retention == null) return body(context);
     return _layout ??= LayoutBuilder(
       builder: (context, constraints) => body(context),

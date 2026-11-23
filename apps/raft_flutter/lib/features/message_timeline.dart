@@ -10,6 +10,7 @@ import 'package:raft_ui/raft_ui.dart' show RaftThreadOutlineGutter, raftText;
 import 'message_preparation.dart';
 import 'timeline_scrollbar.dart';
 import 'timeline_row_reuse.dart';
+import 'timeline_row_hydration.dart';
 import 'timeline_row_trace.dart';
 import 'timeline_boundary_change.dart';
 import 'timeline_extents.dart';
@@ -62,6 +63,7 @@ class RaftMessageTimeline extends StatefulWidget {
     this.retainRow,
     this.extentRevision,
     this.extentBoundary,
+    this.hydration,
   });
 
   final RaftTimelineScrollController controller;
@@ -92,6 +94,12 @@ class RaftMessageTimeline extends StatefulWidget {
   extentBoundary;
   final int? Function(String id) indexOfId;
   final double Function(int index)? estimateRow;
+  final ({
+    double width,
+    double Function(int) estimate,
+    TimelineRowPreviewBuilder preview,
+  })?
+  hydration;
 
   /// The scroll view's slivers, top to bottom, around the history and the
   /// forward (center) lists (e.g. header, sentinels, footer).
@@ -135,7 +143,22 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
   ({ScrollDirection direction, double pixels})? preparedEdge;
   ScrollDirection lastMotion = ScrollDirection.idle;
   final recentRows = TimelineRowRetention();
-  final mountedRows = TimelineMountedRows();
+  late final TimelineMountedRows mountedRows = TimelineMountedRows(
+    hydrator: TimelineRowHydrator(
+      isVisible: () => mounted && TickerMode.valuesOf(context).enabled,
+      direction: () => lastMotion,
+      beforeSwap: (box) {
+        final position = singlePosition;
+        if (position is RaftTimelinePosition && position.viewport != null) {
+          position._hydrationAnchor = TimelineHydrationAnchor.capture(
+            position.viewport!,
+            box,
+            mountedRows.boxes,
+          );
+        }
+      },
+    ),
+  );
   final _keyboardOlderScroll = _KeyboardOlderScrollAction();
 
   /// Inside the timeline scrollable, so a key here resolves to this list.
@@ -354,6 +377,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
     if (notification is UserScrollNotification) {
       userDirection = notification.direction;
     } else if (notification is ScrollUpdateNotification) {
+      mountedRows.hydrator?.schedule();
       final delta = notification.scrollDelta ?? 0;
       if (delta != 0 &&
           (userDirection != ScrollDirection.idle ||
@@ -518,6 +542,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
 
   @override
   Widget build(BuildContext context) {
+    mountedRows.hydrator?.schedule();
     widget.controller.olderPending = widget.hasOlder;
     final messages = widget.messages;
     final center = widget.centerIndex.clamp(0, messages.length);
@@ -525,7 +550,16 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         (listsOwner == null || TickerMode.valuesOf(context).enabled)) {
       // Hidden panes keep their existing delegates. Their next visible build
       // accepts the latest presentation before layout and paint.
+      final previous = listsOwner;
       final owner = listsOwner = widget;
+      var entering =
+          previous != null &&
+          previous.epoch == owner.epoch &&
+          (previous.messages.isEmpty ||
+              (owner.indexOfId(previous.messages.first.id) ?? 0) == 0);
+      if (!entering) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => entering = true);
+      }
       final estimate = widget.estimateRow;
       // Seed once for this presentation. Layout updates the measured entries;
       // scrolling queries sums without walking the unbuilt history again.
@@ -541,6 +575,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         }
 
         final revision = owner.rowRevision;
+        final hydration = owner.hydration;
         final child = revision == null
             ? buildRow(context)
             : mountedRows.row(
@@ -558,6 +593,16 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
                 retention: owner.retainRow?.call(index) == true
                     ? recentRows
                     : null,
+                hydration: hydration == null
+                    ? null
+                    : (
+                        width: hydration.width,
+                        estimate: () => hydration.estimate(index),
+                        preview: (context, height) =>
+                            hydration.preview(context, index, height),
+                        entering: () =>
+                            entering && widget.controller.pending == null,
+                      ),
               );
         final cached = revision == null ? null : rowShells[child];
         if (cached != null &&
@@ -927,6 +972,7 @@ class RaftTimelinePosition extends ScrollPositionWithSingleContext {
 
   final RaftTimelineScrollController owner;
   RaftTimelineRenderViewport? viewport;
+  TimelineHydrationAnchor? _hydrationAnchor;
 
   /// The reader is at the latest end: content changes keep it there.
   bool followEnd = false;
@@ -947,7 +993,14 @@ class RaftTimelinePosition extends ScrollPositionWithSingleContext {
 
   @override
   double setPixels(double newPixels) {
-    final overscroll = super.setPixels(newPixels);
+    final motion = activity;
+    final enteringRange =
+        motion is DrivenScrollActivity &&
+        ((motion.velocity > 0 && newPixels < minScrollExtent) ||
+            (motion.velocity < 0 && newPixels > maxScrollExtent));
+    final overscroll = super.setPixels(
+      enteringRange ? _inRange(newPixels) : newPixels,
+    );
     _trackEnd();
     return overscroll;
   }
@@ -1044,6 +1097,8 @@ class RaftTimelinePosition extends ScrollPositionWithSingleContext {
       }
     }
     final pending = owner._pending;
+    final hydrationAnchor = _hydrationAnchor;
+    _hydrationAnchor = null;
     // A user's drag, or the spring of their fling past an edge, owns the
     // position: following an edge would pin the content there every frame
     // while the spring keeps running (no bounce, extra layout rounds). The
@@ -1068,6 +1123,11 @@ class RaftTimelinePosition extends ScrollPositionWithSingleContext {
       target = hi;
     } else if (short && !dragging) {
       target = lo;
+    } else if (view != null && hydrationAnchor != null) {
+      final correction = view.measure(() => hydrationAnchor.correction(view));
+      if (correction != null && correction.abs() > .5) {
+        target = pixels + correction;
+      }
     }
     if (target != null) {
       final clamped = target.clamp(lo, hi);

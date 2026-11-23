@@ -131,13 +131,13 @@ void main() {
       for (var index = 0; index < visible.length; index++)
         if (index != at) visible[index]['id'] as String,
     ];
+    Finder tileKey(String id) =>
+        find.byKey(ValueKey('message-$id'), skipOffstage: false);
     RaftMessageTile tile(String id) =>
-        tester.widget<RaftMessageTile>(find.byKey(ValueKey('message-$id')));
+        tester.widget<RaftMessageTile>(tileKey(id));
     final before = {for (final id in unchanged) id: tile(id)};
     final parent = tile('parent');
-    final parentElement = tester.element(
-      find.byKey(const ValueKey('message-parent')),
-    );
+    final parentElement = tester.element(tileKey('parent'));
     var parentBuilds = 0;
     final previousRebuild = debugOnRebuildDirtyWidget;
     debugOnRebuildDirtyWidget = (element, builtFirstTime) {
@@ -172,6 +172,13 @@ void main() {
       ], expectedGeneration: domain.ledger.generation);
       domain.visibleIds['thread-1']!.add(arrival);
       w.notifyListeners();
+      await tester.pump();
+      expect(
+        find.textContaining('live reply', findRichText: true),
+        findsNothing,
+      );
+      expect(tile(previousId), same(before[previousId]));
+      expect(tile(followingId), same(before[followingId]));
       await tester.pumpAndSettle();
       final layouts = FlutterTimeline.debugCollect().timedBlocks;
       expect(bobRank(), 0);
@@ -212,7 +219,8 @@ void main() {
       expect(tile(previousId).followedBy, RaftMessageFollowedBy.group);
       expect(tile(followingId).continuation, isFalse);
       final avatar = find.byKey(
-        ValueKey('message-avatar-${unchanged.first}-user:alice'),
+        const ValueKey('message-avatar-parent-user:alice'),
+        skipOffstage: false,
       );
       String? pixelKey() =>
           (tester.widget<RaftAvatar>(avatar).content as RaftAvatarContent)
@@ -236,6 +244,118 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 3));
     }
+  });
+
+  testWidgets('a live arrival starts light and settles at the latest edge', (
+    tester,
+  ) async {
+    final w = await open(tester);
+    final arrivals = contextRows('reuse', count: 83)
+        .skip(80)
+        .map(
+          (row) => {
+            ...row,
+            'senderName': 'Alice',
+            'createdAt': '2026-09-15T12:00:00Z',
+          },
+        );
+    w.messageDomain.ledger.ingest(
+      arrivals,
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1']!.addAll(
+      arrivals.map((row) => row['id'] as String),
+    );
+    w.notifyListeners();
+    await tester.pump();
+    final latest = find.byKey(const ValueKey('message-reuse-82'));
+    expect(latest, findsNothing);
+    expect(
+      find.bySemanticsLabel(RegExp(r'Alice, [^\n]+\nreuse message 82')),
+      findsOneWidget,
+    );
+    for (var frame = 0; frame < 6; frame++) {
+      final builds = RaftMessageTimeline.debugRowBuilds;
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(RaftMessageTimeline.debugRowBuilds - builds, lessThanOrEqualTo(1));
+    }
+    for (final index in [80, 81, 82]) {
+      expect(find.byKey(ValueKey('message-reuse-$index')), findsOneWidget);
+    }
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(RaftMessageTimeline),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    expect(position.pixels, closeTo(position.maxScrollExtent, .5));
+  });
+
+  testWidgets('a remounted row uses its measured height until hydration', (
+    tester,
+  ) async {
+    await open(tester);
+    final timeline = find.byType(RaftMessageTimeline);
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(of: timeline, matching: find.byType(Scrollable))
+              .first,
+        )
+        .position;
+    final row = find.byKey(const ValueKey('reuse-79'));
+    final full = find.byKey(const ValueKey('message-reuse-79'));
+    final height = tester.getSize(row).height;
+    position.jumpTo(position.pixels - 1800);
+    await tester.pumpAndSettle();
+    expect(row, findsNothing);
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    expect(full, findsNothing);
+    expect(tester.getSize(row).height, height);
+    await tester.pumpAndSettle();
+    expect(full, findsOneWidget);
+    expect(tester.getSize(row).height, height);
+  });
+
+  testWidgets('a shrinking edit keeps the following visible row anchored', (
+    tester,
+  ) async {
+    final w = await open(tester);
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(RaftMessageTimeline),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    position.jumpTo(position.pixels - 1000);
+    await tester.pumpAndSettle();
+    final edited = tester.renderObject<RenderBox>(
+      find.byKey(const ValueKey('message-reuse-67')),
+    );
+    final viewport = RenderAbstractViewport.of(edited);
+    position.jumpTo(viewport.getOffsetToReveal(edited, 0).offset + 20);
+    await tester.pumpAndSettle();
+    final old = paintedMessage(tester, 'reuse-67')!;
+    final anchor = paintedMessage(tester, 'reuse-68');
+    expect(anchor, isNotNull);
+    w.messageDomain.ledger.ingest([
+      {...contextRows('reuse')[67], 'content': 'Short edit'},
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.notifyListeners();
+    await tester.pump();
+    expect(paintedMessage(tester, 'reuse-67'), old);
+    await tester.pumpAndSettle();
+    expect(find.text('Short edit'), findsOneWidget);
+    expect(paintedMessage(tester, 'reuse-68'), anchor);
   });
 
   testWidgets('a live append on Android lays out only nearby changed rows', (

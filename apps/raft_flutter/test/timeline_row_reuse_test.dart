@@ -6,6 +6,62 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/message_timeline.dart';
 
 void main() {
+  testWidgets('a shrinking scroll range preserves a scroll into that range', (
+    tester,
+  ) async {
+    final controller = RaftTimelineScrollController(
+      bottomAnchored: false,
+      initial: RaftTimelineAlignment.start,
+    );
+    final height = ValueNotifier(300.0);
+    addTearDown(controller.dispose);
+    addTearDown(height.dispose);
+    final messages = [
+      for (var index = 0; index < 30; index++)
+        chat.Message.text(
+          id: '$index',
+          authorId: 'fixture',
+          text: 'row-$index',
+        ),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RaftMessageTimeline(
+          controller: controller,
+          messages: messages,
+          centerIndex: messages.length,
+          epoch: 0,
+          indexOfId: int.tryParse,
+          estimateRow: (index) => index == 0 ? height.value : 100,
+          rowBuilder: (context, index) => index == 0
+              ? ValueListenableBuilder(
+                  valueListenable: height,
+                  builder: (_, height, _) => SizedBox(height: height),
+                )
+              : const SizedBox(height: 100),
+          slivers: (history, forward) => [history, forward],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final target = controller.offset + 650;
+    final animation = controller.animateTo(
+      target,
+      duration: const Duration(milliseconds: 650),
+      curve: Curves.linear,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 16));
+    height.value = 40;
+    for (var frame = 0; frame < 45; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await animation;
+    final offset = controller.offset;
+    await tester.pumpWidget(const SizedBox());
+    expect(offset, closeTo(target, .5));
+  });
+
   testWidgets('one live insert reuses the retained rows and their layout', (
     tester,
   ) async {

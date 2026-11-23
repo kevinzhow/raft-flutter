@@ -17,6 +17,7 @@ import 'agent_read_badge.dart';
 import 'agent_read_progress.dart';
 import 'system_message_grouping.dart';
 import 'timeline_boundary_change.dart';
+import 'timeline_row_hydration.dart';
 import 'timeline_row_trace.dart';
 
 /// Mounted timeline keys and the revision of local row-affecting UI state.
@@ -179,6 +180,7 @@ class ChatTimelinePresentation {
     final id = message.id;
     final key = (
       style(),
+      _rows,
       message.string('messageType') == 'system' ? windowRevision : null,
       progress.revision(id),
       _messageState(
@@ -215,7 +217,7 @@ class ChatTimelinePresentation {
         _ => false,
       };
 
-  Object rowState(
+  TimelineRowRevision rowState(
     WorkspaceController w,
     List<chat.Message> messages,
     int index, {
@@ -227,13 +229,16 @@ class ChatTimelinePresentation {
     final message = source(messages[index]);
     final id = message.id;
     return (
-      style,
-      _messageState(
-        w,
-        message,
-        threadSummary: summaries[id],
-        highlighted: highlighted == id,
+      layout: (
+        style,
+        _messageState(
+          w,
+          message,
+          threadSummary: summaries[id],
+          highlighted: highlighted == id,
+        ),
       ),
+      invalidation: _rows,
     );
   }
 
@@ -268,7 +273,6 @@ class ChatTimelinePresentation {
     required Object day,
   }) {
     final inputs = (
-      _rows,
       authority,
       user,
       interactive,
