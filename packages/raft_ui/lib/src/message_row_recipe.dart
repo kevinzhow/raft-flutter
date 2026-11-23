@@ -602,6 +602,23 @@ class _RenderTrailingBleed extends RenderProxyBox {
   bool hitTestSelf(Offset position) => false;
 }
 
+Widget raftMessagePointerTooltip({
+  required bool coarsePointer,
+  required String message,
+  bool enabled = true,
+  bool excludeFromSemantics = false,
+  bool onlyWhenTruncated = false,
+  required Widget child,
+}) => coarsePointer
+    ? child
+    : RaftTooltip(
+        message: message,
+        enabled: enabled,
+        excludeFromSemantics: excludeFromSemantics,
+        onlyWhenTruncated: onlyWhenTruncated,
+        child: child,
+      );
+
 class RaftMessageRow extends StatefulWidget {
   const RaftMessageRow({
     super.key,
@@ -731,15 +748,18 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   bool secondaryDown = false;
   bool authorMenuHandled = false;
   final portal = OverlayPortalController();
-  final toolbarKey = GlobalKey();
+  late final toolbarKey = GlobalKey();
   final touchTaps = RaftMessageTouchTaps(onPressedChanged: (_) {});
 
   /// Idle rows do not build their action strip. This node holds the strip's
   /// place in keyboard traversal; focusing it reveals the strip and hands
   /// focus to its first (Tab) or last (Shift+Tab) action.
-  late final toolbarProxy = FocusNode(debugLabel: 'message toolbar')
-    ..addListener(toolbarProxyChanged);
-  final toolbarGroup = FocusNode(
+  FocusNode? _toolbarProxy;
+  FocusNode get toolbarProxy =>
+      _toolbarProxy ??= FocusNode(debugLabel: 'message toolbar')
+        ..addListener(toolbarProxyChanged);
+  FocusNode? _toolbarGroup;
+  FocusNode get toolbarGroup => _toolbarGroup ??= FocusNode(
     debugLabel: 'message toolbar actions',
     canRequestFocus: false,
     skipTraversal: true,
@@ -872,8 +892,8 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     if (focusWithin) RaftFocusVisible.shared.removeListener(focusModeChanged);
     RaftFocusVisible.shared.release();
     touchTaps.dispose();
-    toolbarProxy.dispose();
-    toolbarGroup.dispose();
+    _toolbarProxy?.dispose();
+    _toolbarGroup?.dispose();
     visibleFraction.dispose();
     super.dispose(); // OverlayPortal removes its owned overlay on unmount.
   }
@@ -1028,6 +1048,48 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     );
   }
 
+  Widget pointerAttention(Widget child, {required bool compact}) {
+    if (widget.coarsePointer) return child;
+    return Focus(
+      canRequestFocus: false,
+      includeSemantics: !compact,
+      onFocusChange: (value) {
+        if (focusWithin == value) return;
+        if (value) {
+          RaftFocusVisible.shared.addListener(focusModeChanged);
+        } else {
+          RaftFocusVisible.shared.removeListener(focusModeChanged);
+        }
+        attentionChanged(() {
+          focusWithin = value;
+          if (focused) scrollSuppressed = false;
+        });
+      },
+      child: RaftHoverRegion(
+        onEnter: (_) {
+          if (!hovered && RaftPointerIntent.movedSinceScroll) {
+            attentionChanged(() {
+              hovered = true;
+              scrollSuppressed = false;
+            });
+          }
+        },
+        onHover: (event) {
+          if (!hovered && event.delta != Offset.zero) {
+            attentionChanged(() {
+              hovered = true;
+              scrollSuppressed = false;
+            });
+          }
+        },
+        onExit: (_) {
+          if (hovered) attentionChanged(() => hovered = false);
+        },
+        child: child,
+      ),
+    );
+  }
+
   // CSS places line-height leading evenly above and below the glyphs.
   @override
   Widget build(BuildContext context) => DefaultTextHeightBehavior(
@@ -1134,7 +1196,8 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
           if (widget.subtitle != null && widget.subtitle!.isNotEmpty)
             // The description repeats its own text: the tooltip opens only
             // while the single line is cut off.
-            RaftTooltip(
+            raftMessagePointerTooltip(
+              coarsePointer: widget.coarsePointer,
               message: widget.subtitle!,
               onlyWhenTruncated: true,
               excludeFromSemantics: true,
@@ -1160,6 +1223,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     touchTaps
       ..onTap = widget.onTouchTap
       ..onDoubleTap = widget.onTouchDoubleTap
+      ..inlineLinks = compact && widget.coarsePointer
       ..enabled = widget.onTouchTap != null || widget.onTouchDoubleTap != null
       ..listMoving = () =>
           Scrollable.maybeOf(context)?.position.isScrollingNotifier.value ??
@@ -1193,360 +1257,314 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         touchTaps.pointerCancel(event);
         secondaryDown = false;
       },
-      child: Focus(
-        canRequestFocus: false,
-        includeSemantics: !compact,
-        onFocusChange: (value) {
-          if (focusWithin == value) return;
-          if (value) {
-            RaftFocusVisible.shared.addListener(focusModeChanged);
-          } else {
-            RaftFocusVisible.shared.removeListener(focusModeChanged);
-          }
-          attentionChanged(() {
-            focusWithin = value;
-            if (focused) scrollSuppressed = false;
-          });
-        },
-        child: RaftHoverRegion(
-          onEnter: (_) {
-            if (!widget.coarsePointer &&
-                !hovered &&
-                RaftPointerIntent.movedSinceScroll) {
-              attentionChanged(() {
-                hovered = true;
-                scrollSuppressed = false;
-              });
-            }
-          },
-          onHover: (event) {
-            if (!widget.coarsePointer &&
-                !hovered &&
-                event.delta != Offset.zero) {
-              attentionChanged(() {
-                hovered = true;
-                scrollSuppressed = false;
-              });
-            }
-          },
-          onExit: (_) {
-            if (hovered) attentionChanged(() => hovered = false);
-          },
-          child: GestureDetector(
-            excludeFromSemantics: compact,
-            onTap: widget.onTap,
-            onLongPressStart: widget.onActionsAt != null
-                ? (d) {
-                    touchTaps.longPressFired = true;
-                    widget.onActionsAt!(d.globalPosition);
-                  }
-                : widget.onActions == null
-                ? null
-                : (_) {
-                    touchTaps.longPressFired = true;
-                    widget.onActions!();
-                  },
-            onSecondaryTapUp: widget.onActionsAt != null
-                ? null
-                : widget.onActions == null
-                ? null
-                : (_) => widget.onActions!(),
-            behavior: HitTestBehavior.translucent,
-            child: MetaData(
-              metaData: raftMessageTapBoundary,
-              child: Padding(
-                padding: recipe.margin,
-                child: Container(
-                  constraints: BoxConstraints(minHeight: recipe.minimumHeight),
-                  decoration: recipe.decoration,
-                  // Container inserts/removes a wrapper for a nullable foreground
-                  // decoration. Keep that wrapper mounted when focus paint expires
-                  // so rich-content tabs, selection and copy state survive.
-                  foregroundDecoration:
-                      recipe.highlightRing ?? const BoxDecoration(),
-                  child: RaftMessageRowFillScope(
-                    color: recipe.background,
-                    child: portalBody(
-                      context,
-                      recipe,
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          if (railFill > 0)
-                            // The sliver reserves this span for the outline.
-                            // Only fill paint crosses into it.
-                            PositionedDirectional(
-                              end: -railFill - recipe.borderWidth,
-                              top: -recipe.borderWidth,
-                              bottom: -recipe.borderWidth,
-                              width: railFill,
-                              child: ColoredBox(color: recipe.background),
-                            ),
-                          Padding(
-                            padding: recipe.padding,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (widget.selectionLeading != null) ...[
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 6),
-                                    child: widget.selectionLeading,
-                                  ),
-                                  SizedBox(width: recipe.gap),
-                                ],
-                                SizedBox(
-                                  width: recipe.gutterWidth,
-                                  // The hover time (10px, 4px down) grows with
-                                  // the text size and stays inside its box.
-                                  height: widget.continuation
-                                      ? recipe.raftToolbar
-                                            ? math.max(
-                                                14,
-                                                recipe.continuationClockTop +
-                                                    MediaQuery.textScalerOf(
-                                                      context,
-                                                    ).scale(
-                                                      recipe
-                                                          .continuationClockSlot
-                                                          .lineHeight,
-                                                    ),
-                                              )
-                                            : math.max(
-                                                14,
-                                                4 +
-                                                    MediaQuery.textScalerOf(
-                                                      context,
-                                                    ).scale(10),
-                                              )
-                                      : recipe.avatarExtent + recipe.avatarTop,
-                                  child: widget.continuation
-                                      ? Stack(
-                                          clipBehavior: Clip.none,
-                                          children: [
-                                            Positioned(
-                                              left: recipe.raftToolbar
-                                                  ? null
-                                                  : 0,
-                                              right: recipe.raftToolbar ? 0 : 4,
-                                              top: recipe.raftToolbar
-                                                  ? recipe.continuationClockTop
-                                                  : 0,
-                                              bottom: recipe.raftToolbar
-                                                  ? null
-                                                  : 0,
-                                              child: ExcludeSemantics(
-                                                excluding: compact,
-                                                child: RaftTooltip(
-                                                  message: fullTimestamp,
-                                                  enabled:
-                                                      fullTimestamp !=
-                                                      gutterClock,
-                                                  excludeFromSemantics: compact,
-                                                  // Keep the tooltip anchor as tall
-                                                  // as the gutter even when the
-                                                  // clock scales down to its width.
-                                                  child: recipe.raftToolbar
-                                                      // Web `absolute right-0`: the 12px clock spills left
-                                                      // over the row padding; a larger text scale shrinks
-                                                      // it to that room rather than off the row.
-                                                      ? ConstrainedBox(
-                                                          constraints:
-                                                              BoxConstraints(
-                                                                maxWidth:
-                                                                    recipe
-                                                                        .gutterWidth +
-                                                                    recipe
-                                                                        .padding
-                                                                        .left,
-                                                              ),
-                                                          child: FittedBox(
-                                                            fit: BoxFit
-                                                                .scaleDown,
-                                                            alignment: Alignment
-                                                                .topRight,
-                                                            child: Text(
-                                                              gutterClock,
-                                                              maxLines: 1,
-                                                              softWrap: false,
-                                                              style: recipe
-                                                                  .continuationTime,
-                                                            ),
-                                                          ),
-                                                        )
-                                                      : Padding(
-                                                          padding:
-                                                              const EdgeInsets.only(
-                                                                top: 4,
-                                                              ),
-                                                          child: FittedBox(
-                                                            fit: BoxFit
-                                                                .scaleDown,
-                                                            alignment: Alignment
-                                                                .topRight,
-                                                            child: Text(
-                                                              gutterClock,
-                                                              maxLines: 1,
-                                                              softWrap: false,
-                                                              style: recipe
-                                                                  .continuationTime,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : Padding(
-                                          padding: EdgeInsets.only(
-                                            top: recipe.avatarTop,
-                                            left: recipe.avatarInset,
-                                          ),
-                                          child: OverflowBox(
-                                            alignment: Alignment.topLeft,
-                                            minWidth: recipe.avatarExtent,
-                                            maxWidth: recipe.avatarExtent,
-                                            minHeight: recipe.avatarExtent,
-                                            maxHeight: recipe.avatarExtent,
-                                            child: SizedBox.square(
-                                              dimension: recipe.avatarExtent,
-                                              child: ExcludeSemantics(
-                                                excluding: compact,
-                                                child: _AuthorMenuGesture(
-                                                  onMenu: authorMenu,
-                                                  child:
-                                                      widget.avatar ??
-                                                      const SizedBox.shrink(),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+      child: pointerAttention(
+        compact: compact,
+        GestureDetector(
+          excludeFromSemantics: compact,
+          onTap: widget.onTap,
+          onLongPressStart: widget.onActionsAt != null
+              ? (d) {
+                  touchTaps.longPressFired = true;
+                  widget.onActionsAt!(d.globalPosition);
+                }
+              : widget.onActions == null
+              ? null
+              : (_) {
+                  touchTaps.longPressFired = true;
+                  widget.onActions!();
+                },
+          onSecondaryTapUp: widget.onActionsAt != null
+              ? null
+              : widget.onActions == null
+              ? null
+              : (_) => widget.onActions!(),
+          behavior: HitTestBehavior.translucent,
+          child: MetaData(
+            metaData: raftMessageTapBoundary,
+            child: Padding(
+              padding: recipe.margin,
+              child: Container(
+                constraints: BoxConstraints(minHeight: recipe.minimumHeight),
+                decoration: recipe.decoration,
+                // Container inserts/removes a wrapper for a nullable foreground
+                // decoration. Keep that wrapper mounted when focus paint expires
+                // so rich-content tabs, selection and copy state survive.
+                foregroundDecoration:
+                    recipe.highlightRing ?? const BoxDecoration(),
+                child: RaftMessageRowFillScope(
+                  color: recipe.background,
+                  child: portalBody(
+                    context,
+                    recipe,
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        if (railFill > 0)
+                          // The sliver reserves this span for the outline.
+                          // Only fill paint crosses into it.
+                          PositionedDirectional(
+                            end: -railFill - recipe.borderWidth,
+                            top: -recipe.borderWidth,
+                            bottom: -recipe.borderWidth,
+                            width: railFill,
+                            child: ColoredBox(color: recipe.background),
+                          ),
+                        Padding(
+                          padding: recipe.padding,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (widget.selectionLeading != null) ...[
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: widget.selectionLeading,
                                 ),
                                 SizedBox(width: recipe.gap),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (!widget.continuation)
-                                        ExcludeSemantics(
-                                          excluding: compact,
-                                          child: header,
-                                        ),
-                                      Padding(
+                              ],
+                              SizedBox(
+                                width: recipe.gutterWidth,
+                                // The hover time (10px, 4px down) grows with
+                                // the text size and stays inside its box.
+                                height: widget.continuation
+                                    ? recipe.raftToolbar
+                                          ? math.max(
+                                              14,
+                                              recipe.continuationClockTop +
+                                                  MediaQuery.textScalerOf(
+                                                    context,
+                                                  ).scale(
+                                                    recipe
+                                                        .continuationClockSlot
+                                                        .lineHeight,
+                                                  ),
+                                            )
+                                          : math.max(
+                                              14,
+                                              4 +
+                                                  MediaQuery.textScalerOf(
+                                                    context,
+                                                  ).scale(10),
+                                            )
+                                    : recipe.avatarExtent + recipe.avatarTop,
+                                child: widget.continuation
+                                    ? Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Positioned(
+                                            left: recipe.raftToolbar ? null : 0,
+                                            right: recipe.raftToolbar ? 0 : 4,
+                                            top: recipe.raftToolbar
+                                                ? recipe.continuationClockTop
+                                                : 0,
+                                            bottom: recipe.raftToolbar
+                                                ? null
+                                                : 0,
+                                            child: ExcludeSemantics(
+                                              excluding: compact,
+                                              child: raftMessagePointerTooltip(
+                                                coarsePointer:
+                                                    widget.coarsePointer,
+                                                message: fullTimestamp,
+                                                enabled:
+                                                    fullTimestamp !=
+                                                    gutterClock,
+                                                excludeFromSemantics: compact,
+                                                // Keep the tooltip anchor as tall
+                                                // as the gutter even when the
+                                                // clock scales down to its width.
+                                                child: recipe.raftToolbar
+                                                    // Web `absolute right-0`: the 12px clock spills left
+                                                    // over the row padding; a larger text scale shrinks
+                                                    // it to that room rather than off the row.
+                                                    ? ConstrainedBox(
+                                                        constraints: BoxConstraints(
+                                                          maxWidth:
+                                                              recipe
+                                                                  .gutterWidth +
+                                                              recipe
+                                                                  .padding
+                                                                  .left,
+                                                        ),
+                                                        child: FittedBox(
+                                                          fit: BoxFit.scaleDown,
+                                                          alignment: Alignment
+                                                              .topRight,
+                                                          child: Text(
+                                                            gutterClock,
+                                                            maxLines: 1,
+                                                            softWrap: false,
+                                                            style: recipe
+                                                                .continuationTime,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : Padding(
+                                                        padding:
+                                                            const EdgeInsets.only(
+                                                              top: 4,
+                                                            ),
+                                                        child: FittedBox(
+                                                          fit: BoxFit.scaleDown,
+                                                          alignment: Alignment
+                                                              .topRight,
+                                                          child: Text(
+                                                            gutterClock,
+                                                            maxLines: 1,
+                                                            softWrap: false,
+                                                            style: recipe
+                                                                .continuationTime,
+                                                          ),
+                                                        ),
+                                                      ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Padding(
                                         padding: EdgeInsets.only(
-                                          top: recipe.bodyGap,
-                                          bottom: recipe.bodyBottomGap,
+                                          top: recipe.avatarTop,
+                                          left: recipe.avatarInset,
                                         ),
-                                        child: _withBodyTrailing(
-                                          RaftMessageBodyMargin(
-                                            gap: recipe.bodyGap,
-                                            child: DefaultTextStyle.merge(
-                                              style: recipe.body,
-                                              // Only the body reports its collapse.
-                                              child: compact
-                                                  ? RaftMessageSemanticsScope(
-                                                      visibleFraction:
-                                                          visibleFraction,
-                                                      child: widget.content,
-                                                    )
-                                                  : widget.content,
+                                        child: OverflowBox(
+                                          alignment: Alignment.topLeft,
+                                          minWidth: recipe.avatarExtent,
+                                          maxWidth: recipe.avatarExtent,
+                                          minHeight: recipe.avatarExtent,
+                                          maxHeight: recipe.avatarExtent,
+                                          child: SizedBox.square(
+                                            dimension: recipe.avatarExtent,
+                                            child: ExcludeSemantics(
+                                              excluding: compact,
+                                              child: _AuthorMenuGesture(
+                                                onMenu: authorMenu,
+                                                child:
+                                                    widget.avatar ??
+                                                    const SizedBox.shrink(),
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                      if (widget.attachments != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                            // `mt-1` collapses with the body's
-                                            // bottom margin (max, not sum).
-                                            top:
-                                                (recipe.attachmentGap -
-                                                        recipe.bodyBottomGap)
-                                                    .clamp(
-                                                      0.0,
-                                                      double.infinity,
-                                                    ),
+                              ),
+                              SizedBox(width: recipe.gap),
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (!widget.continuation)
+                                      ExcludeSemantics(
+                                        excluding: compact,
+                                        child: header,
+                                      ),
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        top: recipe.bodyGap,
+                                        bottom: recipe.bodyBottomGap,
+                                      ),
+                                      child: _withBodyTrailing(
+                                        RaftMessageBodyMargin(
+                                          gap: recipe.bodyGap,
+                                          child: DefaultTextStyle.merge(
+                                            style: recipe.body,
+                                            // Only the body reports its collapse.
+                                            child: compact
+                                                ? RaftMessageSemanticsScope(
+                                                    mergeInlineActions:
+                                                        widget.coarsePointer,
+                                                    visibleFraction:
+                                                        visibleFraction,
+                                                    child: widget.content,
+                                                  )
+                                                : widget.content,
                                           ),
-                                          child: widget.attachments!,
                                         ),
-                                      // `div.mt-0` keeps the content column's line
-                                      // box (20px, Elegant leading-5.25 = 21px); the
-                                      // 11px inline-flex status sits on its baseline.
-                                      if (widget.translation != null)
-                                        Container(
-                                          // The status line is a minimum height
-                                          // above the default text size.
-                                          height: wrapHeader
-                                              ? null
-                                              : recipe.translationLine,
-                                          constraints: wrapHeader
-                                              ? BoxConstraints(
-                                                  minHeight:
-                                                      recipe.translationLine,
-                                                )
-                                              : null,
-                                          child: Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: recipe.translationLift,
-                                              ),
-                                              child: widget.translation,
+                                      ),
+                                    ),
+                                    if (widget.attachments != null)
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                          // `mt-1` collapses with the body's
+                                          // bottom margin (max, not sum).
+                                          top:
+                                              (recipe.attachmentGap -
+                                                      recipe.bodyBottomGap)
+                                                  .clamp(0.0, double.infinity),
+                                        ),
+                                        child: widget.attachments!,
+                                      ),
+                                    // `div.mt-0` keeps the content column's line
+                                    // box (20px, Elegant leading-5.25 = 21px); the
+                                    // 11px inline-flex status sits on its baseline.
+                                    if (widget.translation != null)
+                                      Container(
+                                        // The status line is a minimum height
+                                        // above the default text size.
+                                        height: wrapHeader
+                                            ? null
+                                            : recipe.translationLine,
+                                        constraints: wrapHeader
+                                            ? BoxConstraints(
+                                                minHeight:
+                                                    recipe.translationLine,
+                                              )
+                                            : null,
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: recipe.translationLift,
                                             ),
+                                            child: widget.translation,
                                           ),
                                         ),
-                                      if (widget.footer != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                            // Source block margins collapse: body
-                                            // bottom6 + footer top6 paint one6 gap.
-                                            top:
-                                                widget.attachments == null &&
-                                                    widget.translation == null
-                                                ? (recipe.footerGap -
-                                                          recipe.bodyBottomGap)
-                                                      .clamp(
-                                                        0.0,
-                                                        double.infinity,
-                                                      )
-                                                : recipe.footerGap,
-                                          ),
-                                          child: widget.footer!,
+                                      ),
+                                    if (widget.footer != null)
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                          // Source block margins collapse: body
+                                          // bottom6 + footer top6 paint one6 gap.
+                                          top:
+                                              widget.attachments == null &&
+                                                  widget.translation == null
+                                              ? (recipe.footerGap -
+                                                        recipe.bodyBottomGap)
+                                                    .clamp(0.0, double.infinity)
+                                              : recipe.footerGap,
                                         ),
-                                      if (widget.inlineReplies != null)
-                                        RaftMessageSizeScope(
-                                          tier: widget.sizeTier,
-                                          child: widget.inlineReplies!,
-                                        ),
-                                      ?widget.readStatus,
-                                      // `mb-px`: the last block's frame sits one
-                                      // pixel above the baseline the followed-by
-                                      // rhythm is measured from (the reply card
-                                      // always; footer, attachments and images
-                                      // when another row follows).
-                                      if (widget.readStatus == null &&
-                                          recipe.trailingPixel(
-                                            attachments:
-                                                widget.attachments != null,
-                                            translation:
-                                                widget.translation != null,
-                                            footer: widget.footer != null,
-                                            inlineReplies:
-                                                widget.inlineReplies != null,
-                                          ))
-                                        // ignore: raft_lints/off_grid_spacing -- Web `mb-px`
-                                        const SizedBox(height: 1),
-                                    ],
-                                  ),
+                                        child: widget.footer!,
+                                      ),
+                                    if (widget.inlineReplies != null)
+                                      RaftMessageSizeScope(
+                                        tier: widget.sizeTier,
+                                        child: widget.inlineReplies!,
+                                      ),
+                                    ?widget.readStatus,
+                                    // `mb-px`: the last block's frame sits one
+                                    // pixel above the baseline the followed-by
+                                    // rhythm is measured from (the reply card
+                                    // always; footer, attachments and images
+                                    // when another row follows).
+                                    if (widget.readStatus == null &&
+                                        recipe.trailingPixel(
+                                          attachments:
+                                              widget.attachments != null,
+                                          translation:
+                                              widget.translation != null,
+                                          footer: widget.footer != null,
+                                          inlineReplies:
+                                              widget.inlineReplies != null,
+                                        ))
+                                      // ignore: raft_lints/off_grid_spacing -- Web `mb-px`
+                                      const SizedBox(height: 1),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1578,6 +1596,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
           fraction,
         );
         return RaftMessageRowSemantics(
+          mergeInlineActions: widget.coarsePointer,
           label: text.isEmpty
               ? widget.semanticsLabel!
               : '${widget.semanticsLabel}\n$text',

@@ -36,30 +36,51 @@ class _TapMarker {
 Widget raftMessageTapControlRegion(Widget child) =>
     MetaData(metaData: raftMessageTapControl, child: child);
 
+class RaftMessageTapLink {
+  const RaftMessageTapLink(this.onTap);
+
+  final VoidCallback onTap;
+}
+
+abstract interface class RaftMessageLinkHit implements HitTestTarget {
+  RaftMessageTapLink? get tapLink;
+}
+
 /// Whether a touch at [position] lands on a control inside the message row
 /// (anything between the hit target and [raftMessageTapBoundary] that acts on
 /// a tap by itself).
-bool raftTouchLandsOnControl(Offset position, int viewId) {
+bool raftTouchLandsOnControl(Offset position, int viewId) =>
+    _touchHit(position, viewId).control;
+
+({bool control, RaftMessageTapLink? link}) _touchHit(
+  Offset position,
+  int viewId,
+) {
   final result = HitTestResult();
   WidgetsBinding.instance.hitTestInView(result, position, viewId);
   for (final entry in result.path) {
     final target = entry.target;
+    if (target case RaftMessageLinkHit(tapLink: final link?)) {
+      return (control: true, link: link);
+    }
     if (target is RenderMetaData) {
-      if (identical(target.metaData, raftMessageTapBoundary)) return false;
-      if (identical(target.metaData, raftMessageTapControl)) return true;
+      final data = target.metaData;
+      if (data is RaftMessageTapLink) return (control: true, link: data);
+      if (identical(data, raftMessageTapBoundary)) break;
+      if (identical(data, raftMessageTapControl)) {
+        return (control: true, link: null);
+      }
     }
-    if (target is TextSpan && target.recognizer != null) return true;
-    if (target is RenderEditable) return true;
-    if (target is RenderMouseRegion &&
-        target.cursor == SystemMouseCursors.click) {
-      return true;
-    }
-    if (target is RenderSemanticsGestureHandler &&
-        (target.onTap != null || target.onLongPress != null)) {
-      return true;
+    if (target is TextSpan && target.recognizer != null ||
+        target is RenderEditable ||
+        target is RenderMouseRegion &&
+            target.cursor == SystemMouseCursors.click ||
+        target is RenderSemanticsGestureHandler &&
+            (target.onTap != null || target.onLongPress != null)) {
+      return (control: true, link: null);
     }
   }
-  return false;
+  return (control: false, link: null);
 }
 
 /// The tap / double-tap state of one message row (Web useMessageTouchTaps).
@@ -78,6 +99,7 @@ class RaftMessageTouchTaps {
 
   /// False while the row has no tap gestures (select mode, pending rows).
   bool enabled = true;
+  bool inlineLinks = false;
 
   /// Set when the touch's long press opened the menu: then it was no tap.
   bool longPressFired = false;
@@ -85,7 +107,7 @@ class RaftMessageTouchTaps {
   /// Whether the list the row is in is still moving: the touch stops it.
   bool Function() listMoving = () => false;
 
-  ({Offset start, bool tap})? _touch;
+  ({Offset start, bool tap, RaftMessageTapLink? link})? _touch;
   int? _pointer;
   // Pointer event time stamps (not the wall clock): the window is measured
   // between the events themselves.
@@ -111,7 +133,9 @@ class RaftMessageTouchTaps {
       (a - b).distance <= raftMessageTapMoveTolerance;
 
   void pointerDown(PointerDownEvent event) {
-    if (!enabled || event.kind != PointerDeviceKind.touch) return;
+    final touch = event.kind == PointerDeviceKind.touch;
+    if ((!enabled || !touch) && !inlineLinks) return;
+    if (event.buttons != kPrimaryButton) return;
     if (_pointer != null) {
       // A second finger: a pinch, never a tap.
       _touch = null;
@@ -124,20 +148,24 @@ class RaftMessageTouchTaps {
         event.timeStamp - previous.at > raftMessageDoubleTapWindow) {
       _lastTap = null;
     }
-    final tap =
-        !listMoving() && !raftTouchLandsOnControl(event.position, event.viewId);
+    final moving = listMoving();
+    final hit = _touchHit(event.position, event.viewId);
     if (_pending != null) {
       _clearPending();
       _owed = true;
     }
-    _touch = (start: event.position, tap: tap);
+    _touch = (
+      start: event.position,
+      tap: touch && enabled && !moving && !hit.control,
+      link: inlineLinks && !moving ? hit.link : null,
+    );
   }
 
   void pointerMove(PointerMoveEvent event) {
     final touch = _touch;
-    if (touch == null || event.pointer != _pointer || !touch.tap) return;
+    if (touch == null || event.pointer != _pointer) return;
     if (!_within(touch.start, event.position)) {
-      _touch = (start: touch.start, tap: false);
+      _touch = (start: touch.start, tap: false, link: null);
     }
   }
 
@@ -161,6 +189,14 @@ class RaftMessageTouchTaps {
       _owed = false;
       _lastTap = null;
       _setPressed(false);
+      return;
+    }
+    if (touch.link case final link? when _within(touch.start, event.position)) {
+      _lastTap = null;
+      _payOwedTap();
+      if (identical(_touchHit(event.position, event.viewId).link, link)) {
+        link.onTap();
+      }
       return;
     }
     if (!touch.tap || !_within(touch.start, event.position)) {

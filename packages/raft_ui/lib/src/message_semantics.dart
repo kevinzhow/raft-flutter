@@ -40,19 +40,22 @@ class RaftMessageSemanticsScope extends InheritedWidget {
   const RaftMessageSemanticsScope({
     super.key,
     required this.visibleFraction,
+    this.mergeInlineActions = false,
     required super.child,
   });
 
   /// Fraction of the message text that is visible while the content is
   /// collapsed; null when it is fully shown. Reported by [RaftCollapsible].
   final ValueNotifier<double?> visibleFraction;
+  final bool mergeInlineActions;
 
   static RaftMessageSemanticsScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<RaftMessageSemanticsScope>();
 
   @override
   bool updateShouldNotify(RaftMessageSemanticsScope oldWidget) =>
-      !identical(visibleFraction, oldWidget.visibleFraction);
+      !identical(visibleFraction, oldWidget.visibleFraction) ||
+      mergeInlineActions != oldWidget.mergeInlineActions;
 }
 
 /// The text a collapsed row announces: the leading part that is on screen,
@@ -219,6 +222,8 @@ List<RaftMessageSemanticsLink> raftTreeSemanticsLinks(List<md.Node> nodes) {
 /// A link or identity reference rendered inside message prose.
 typedef RaftMessageSemanticsLink = ({String label, String href});
 
+const _messageLinkActions = SemanticsTag('message link actions');
+
 final _linkCache = LinkedHashMap<String, List<RaftMessageSemanticsLink>>();
 
 /// Links in prepared message Markdown (after [raftMessageReferences]), in
@@ -298,6 +303,28 @@ class RaftMessageProseSemantics extends StatelessWidget {
   Widget build(BuildContext context) {
     final prose = ExcludeSemantics(child: child);
     if (links.isEmpty) return prose;
+    if (RaftMessageSemanticsScope.maybeOf(context)?.mergeInlineActions ==
+        true) {
+      final open = onLink;
+      if (open == null) return prose;
+      final counts = <String, int>{};
+      for (final link in links) {
+        counts.update(link.label, (count) => count + 1, ifAbsent: () => 1);
+      }
+      return Semantics(
+        tagForChildren: _messageLinkActions,
+        customSemanticsActions: {
+          for (final link in links)
+            CustomSemanticsAction(
+              label: counts[link.label] == 1
+                  ? link.label
+                  : '${link.label}, ${link.href}',
+            ): () =>
+                open(link.href),
+        },
+        child: prose,
+      );
+    }
     return Stack(
       children: [
         prose,
@@ -341,12 +368,14 @@ class RaftMessageRowSemantics extends SingleChildRenderObjectWidget {
     required this.actions,
     required this.onAction,
     this.onLongPress,
+    this.mergeInlineActions = false,
     super.child,
   });
   final String label;
   final List<String> actions;
   final ValueChanged<int> onAction;
   final VoidCallback? onLongPress;
+  final bool mergeInlineActions;
 
   @override
   RenderObject createRenderObject(BuildContext context) =>
@@ -355,6 +384,7 @@ class RaftMessageRowSemantics extends SingleChildRenderObjectWidget {
         actions: actions,
         onAction: onAction,
         onLongPress: onLongPress,
+        mergeInlineActions: mergeInlineActions,
         textDirection: Directionality.of(context),
       );
 
@@ -368,6 +398,7 @@ class RaftMessageRowSemantics extends SingleChildRenderObjectWidget {
       actions: actions,
       onAction: onAction,
       onLongPress: onLongPress,
+      mergeInlineActions: mergeInlineActions,
       textDirection: Directionality.of(context),
     );
   }
@@ -379,12 +410,14 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     required this.actions,
     required this.onAction,
     required this.onLongPress,
+    required this.mergeInlineActions,
     required this.textDirection,
   });
   String label;
   List<String> actions;
   ValueChanged<int> onAction;
   VoidCallback? onLongPress;
+  bool mergeInlineActions;
   TextDirection textDirection;
   Map<CustomSemanticsAction, VoidCallback>? customActions;
 
@@ -393,6 +426,7 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     required List<String> actions,
     required ValueChanged<int> onAction,
     required VoidCallback? onLongPress,
+    required bool mergeInlineActions,
     required TextDirection textDirection,
   }) {
     // Callbacks are read when an action fires; replacing them is silent.
@@ -403,6 +437,7 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     if (this.label == label &&
         listEquals(this.actions, actions) &&
         this.textDirection == textDirection &&
+        this.mergeInlineActions == mergeInlineActions &&
         !longPressChanged) {
       return;
     }
@@ -410,6 +445,7 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     if (!listEquals(this.actions, actions)) customActions = null;
     this.actions = actions;
     this.textDirection = textDirection;
+    this.mergeInlineActions = mergeInlineActions;
     markNeedsSemanticsUpdate();
   }
 
@@ -418,15 +454,41 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     super.describeSemanticsConfiguration(config);
     config
       ..isSemanticBoundary = true
-      ..explicitChildNodes = true
+      ..explicitChildNodes = !mergeInlineActions
       ..label = label
-      ..textDirection = textDirection
-      // A stable map: SemanticsNode compares handlers by identity, so fresh
-      // closures would re-send the row after every relayout below it.
-      ..customSemanticsActions = customActions ??= {
-        for (var i = 0; i < actions.length; i++)
-          CustomSemanticsAction(label: actions[i]): () => onAction(i),
-      };
+      ..textDirection = textDirection;
+    if (mergeInlineActions) {
+      config.childConfigurationsDelegate = mergeActions;
+    } else {
+      config.customSemanticsActions = rowActions;
+    }
     if (onLongPress != null) config.onLongPress = () => onLongPress?.call();
+  }
+
+  Map<CustomSemanticsAction, VoidCallback> get rowActions => customActions ??= {
+    for (var i = 0; i < actions.length; i++)
+      CustomSemanticsAction(label: actions[i]): () => onAction(i),
+  };
+
+  ChildSemanticsConfigurationsResult mergeActions(
+    List<SemanticsConfiguration> children,
+  ) {
+    final actions = {...rowActions};
+    final result = ChildSemanticsConfigurationsResultBuilder();
+    final remaining = <SemanticsConfiguration>[];
+    for (final child in children) {
+      if (child.tagsChildrenWith(_messageLinkActions)) {
+        actions.addAll(child.customSemanticsActions);
+      } else {
+        remaining.add(child);
+      }
+    }
+    if (actions.isNotEmpty) {
+      result.markAsMergeUp(
+        SemanticsConfiguration()..customSemanticsActions = actions,
+      );
+    }
+    remaining.forEach(result.markAsMergeUp);
+    return result.build();
   }
 }

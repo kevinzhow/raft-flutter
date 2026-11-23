@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'theme.dart';
+import 'message_touch_taps.dart';
 
 /// Link identity survives Markdown's TextSpan flattening. The Markdown state
 /// owns and disposes this recognizer, including non-interactive export links.
@@ -84,6 +85,39 @@ class RaftUnderlineSpan extends TextSpan {
   @override
   int get hashCode =>
       Object.hash(super.hashCode, color, active, offset, thickness);
+}
+
+class RaftMessageTapSpan extends RaftUnderlineSpan
+    implements RaftMessageLinkHit {
+  const RaftMessageTapSpan({
+    required super.text,
+    required super.style,
+    required this.tapLink,
+    super.color,
+    super.active,
+  });
+
+  @override
+  final RaftMessageTapLink? tapLink;
+
+  @override
+  RenderComparison compareTo(InlineSpan other) {
+    final comparison = super.compareTo(other);
+    return other is RaftMessageTapSpan &&
+            !identical(tapLink, other.tapLink) &&
+            comparison == RenderComparison.identical
+        ? RenderComparison.metadata
+        : comparison;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is RaftMessageTapSpan &&
+      super == other &&
+      identical(tapLink, other.tapLink);
+
+  @override
+  int get hashCode => Object.hash(super.hashCode, tapLink);
 }
 
 /// An inline run with a background (inline code, the search `mark`).

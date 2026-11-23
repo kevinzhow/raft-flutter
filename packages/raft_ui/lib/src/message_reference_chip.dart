@@ -14,6 +14,7 @@ import 'raft/css_box.dart';
 import 'hover_card.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'message_touch_taps.dart';
 import 'mounted_task_chip.dart';
 import 'panel_layout.dart' show raftCssBaseline;
 import 'recipe_surface.dart'
@@ -150,6 +151,7 @@ InlineSpan raftReferenceSpan(
   RaftReferenceAppearance? appearance,
   TextStyle? linkStyle,
   VoidCallback? onTap,
+  bool delegateTouch = false,
 }) {
   final t = RaftTokens.of(context);
   final resolver = RaftRecipeTokens(t);
@@ -180,13 +182,16 @@ InlineSpan raftReferenceSpan(
       ? appearance?.agentRead
       : null;
   if (read == true) child = _AgentReadMark(child: child);
-  Widget link = _ReferenceLink(
-    label: label,
-    href: href,
-    onTap: onTap,
-    child: child,
-  );
-  if (appearance?.hoverCard case final card?) {
+  Widget link = delegateTouch
+      ? onTap == null
+            ? child
+            : MetaData(
+                behavior: HitTestBehavior.opaque,
+                metaData: RaftMessageTapLink(onTap),
+                child: child,
+              )
+      : _ReferenceLink(label: label, href: href, onTap: onTap, child: child);
+  if (appearance?.hoverCard case final card? when !delegateTouch) {
     link = RaftHoverCard(card: card, child: link);
   }
   return WidgetSpan(

@@ -5,6 +5,7 @@ import 'interaction.dart';
 import 'idle_work.dart';
 import 'hover_region.dart';
 import 'mermaid_toolbar_recipe.dart';
+import 'message_block_layout.dart';
 import 'message_content_family.dart';
 import 'message_markdown.dart';
 import 'message_touch_taps.dart';
@@ -552,6 +553,14 @@ class RaftMessageBody extends StatelessWidget {
       content,
       () => _splitBody(content),
     );
+    final blockLimit =
+        mountedMessage &&
+            !documentMode &&
+            !exportMode &&
+            chunks.length == 1 &&
+            Directionality.of(context) == TextDirection.ltr
+        ? RaftMessageBlockLimit.maybeOf(context)
+        : null;
     final highlight = raftNormalizeSearchHighlight(searchHighlight);
     final recipe = MessageContentRecipe(
       t,
@@ -587,12 +596,16 @@ class RaftMessageBody extends StatelessWidget {
     final anchorBuilder = documentMode
         ? RaftMarkdownAnchorFragment.of(context)?.builder()
         : null;
+    final delegateTouch =
+        compactSemantics &&
+        RaftMessageSemanticsScope.maybeOf(context)?.mergeInlineActions == true;
     final builders = <String, MarkdownElementBuilder>{
       'a': _MessageLinkBuilder(
         onLink,
         referenceAppearance,
         permalinkAppearance: permalinkAppearance,
         inlineLinkBuilder: inlineLinkBuilder,
+        delegateTouch: delegateTouch,
       ),
       'code': _MessageInlineCodeBuilder(highlight: highlight),
       raftMathDisplayTag: _DisplayMathBuilder(recipe.body),
@@ -629,6 +642,7 @@ class RaftMessageBody extends StatelessWidget {
               data: chunk.text,
               blockWrapper: anchorBuilder?.wrap(chunk.text),
               afterLinkBlockBuilder: afterLinkBlockBuilder,
+              blockLimit: blockLimit,
               treeInputs: inputs,
               styleSheet: resolveStyleSheets().$1,
               resolvedStyleSheet: resolveStyleSheets().$2,
@@ -971,6 +985,7 @@ class _RaftMarkdown extends MarkdownBody {
     this.joinSelection = false,
     this.blockWrapper,
     this.afterLinkBlockBuilder,
+    this.blockLimit,
   }) : super(softLineBreak: true);
 
   /// Inside a message selection area: wrap the blocks so a copy keeps its
@@ -978,6 +993,7 @@ class _RaftMarkdown extends MarkdownBody {
   final bool joinSelection;
   final Widget Function(md.Element, Widget)? blockWrapper;
   final Widget? Function(BuildContext, String)? afterLinkBlockBuilder;
+  final RaftMessageBlockLimit? blockLimit;
 
   /// What the tree for [data] depends on besides its source.
   final _TreeInputs treeInputs;
@@ -1088,7 +1104,13 @@ class _RaftMarkdownState extends State<MarkdownWidget>
   _RaftMarkdown get markdown => widget as _RaftMarkdown;
   List<Widget>? children;
   final recognizers = <GestureRecognizer>[];
-  final underlines = GlobalKey();
+  late final underlines = GlobalKey();
+  bool paintsDelegatedLinks = false;
+
+  _MessageLinkBuilder? get linkBuilder =>
+      widget.builders['a'] as _MessageLinkBuilder?;
+
+  void openLink(String href) => linkBuilder?.onLink?.call(href);
 
   @override
   void didChangeDependencies() {
@@ -1105,7 +1127,12 @@ class _RaftMarkdownState extends State<MarkdownWidget>
         widget.styleSheet != oldWidget.styleSheet ||
         markdown.searchHighlight != oldWidget.searchHighlight ||
         markdown.builderKey != oldWidget.builderKey ||
-        markdown.blockWrapper != oldWidget.blockWrapper) {
+        markdown.blockWrapper != oldWidget.blockWrapper ||
+        linkBuilder?.delegateTouch !=
+            (oldWidget.builders['a'] as _MessageLinkBuilder?)?.delegateTouch ||
+        (linkBuilder?.onLink == null) !=
+            ((oldWidget.builders['a'] as _MessageLinkBuilder?)?.onLink ==
+                null)) {
       rebuildChildren();
     }
   }
@@ -1129,7 +1156,11 @@ class _RaftMarkdownState extends State<MarkdownWidget>
     final afterLink = markdown.afterLinkBlockBuilder;
     final seen = <String>{};
     final wrap = markdown.blockWrapper;
-    final linkBuilder = widget.builders['a'];
+    final link = linkBuilder;
+    final ownedLinks = link?.withRecognizers(
+      recognizers,
+      link.onLink == null ? null : openLink,
+    );
     final built =
         MarkdownBuilder(
           delegate: this,
@@ -1142,16 +1173,12 @@ class _RaftMarkdownState extends State<MarkdownWidget>
           bulletBuilder: widget.bulletBuilder,
           builders: {
             for (final entry in widget.builders.entries)
-              entry.key: entry.value is _MessageLinkBuilder
-                  ? (entry.value as _MessageLinkBuilder).withRecognizers(
-                      recognizers,
-                    )
+              entry.key: entry.key == 'a' && ownedLinks != null
+                  ? ownedLinks
                   : entry.value,
           },
           paddingBuilders: markdown.paddingBuilderFactory(),
-          inlineTextWrapper:
-              linkBuilder is _MessageLinkBuilder &&
-                  linkBuilder.inlineLinkBuilder != null
+          inlineTextWrapper: link?.inlineLinkBuilder != null
               ? _alignInlineLinks
               : null,
           blockWrapper: afterLink == null
@@ -1187,6 +1214,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
                   markdown.searchHighlight,
                 ),
         );
+    paintsDelegatedLinks = ownedLinks?.paintsDelegatedLinks ?? false;
     final gap = markdown.resolvedStyleSheet.blockSpacing ?? 0;
     children = [
       for (final child in built)
@@ -1226,7 +1254,10 @@ class _RaftMarkdownState extends State<MarkdownWidget>
 
   @override
   Widget build(BuildContext context) {
-    final body = children!.length == 1
+    final limit = markdown.blockLimit;
+    final body = limit != null && children!.length > 1
+        ? RaftMessageBlockList(limit: limit.height, blocks: children!)
+        : children!.length == 1
         // ignore: raft_lints/avoid_render_single -- Inside the `children!.length == 1` branch; children is set in initState.
         ? children!.single
         : Column(
@@ -1240,6 +1271,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
     // Inline code and search marks paint their background in RaftUnderlines
     // (below the selection highlight), so they need it too.
     final paintsInline =
+        paintsDelegatedLinks ||
         recognizers.any((r) => r is MessageLinkRecognizer) ||
         markdown.data.contains('`') ||
         markdown.searchHighlight.isNotEmpty;
@@ -1268,7 +1300,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
                     ),
                     child: RaftUnderlines(key: underlines, child: body),
                   )
-                : RaftUnderlines(key: underlines, child: body),
+                : RaftUnderlines(child: body),
           )
         : body;
   }
@@ -1929,21 +1961,27 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     this.recognizers,
     this.permalinkAppearance,
     this.inlineLinkBuilder,
+    this.delegateTouch = false,
   });
   final ValueChanged<String>? onLink;
   final RaftReferenceAppearance? Function(String href)? appearanceOf;
   final RaftReferenceAppearance? Function(String href)? permalinkAppearance;
   final Widget? Function(BuildContext, String)? inlineLinkBuilder;
   final List<GestureRecognizer>? recognizers;
+  final bool delegateTouch;
+  bool paintsDelegatedLinks = false;
 
-  _MessageLinkBuilder withRecognizers(List<GestureRecognizer> owned) =>
-      _MessageLinkBuilder(
-        onLink,
-        appearanceOf,
-        recognizers: owned,
-        permalinkAppearance: permalinkAppearance,
-        inlineLinkBuilder: inlineLinkBuilder,
-      );
+  _MessageLinkBuilder withRecognizers(
+    List<GestureRecognizer> owned,
+    ValueChanged<String>? open,
+  ) => _MessageLinkBuilder(
+    open,
+    appearanceOf,
+    recognizers: owned,
+    permalinkAppearance: permalinkAppearance,
+    inlineLinkBuilder: inlineLinkBuilder,
+    delegateTouch: delegateTouch,
+  );
 
   InlineSpan _reference(
     BuildContext context,
@@ -1959,6 +1997,7 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     linkStyle: linkStyle,
     appearance: appearanceOf?.call(href),
     onTap: onLink == null ? null : () => onLink!(href),
+    delegateTouch: delegateTouch,
   );
 
   /// Returns a `Text.rich` so flutter_markdown merges the link (or the inline
@@ -2002,6 +2041,7 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
                       permalink.kind == RaftReferenceKind.permalinkUnavailable
                   ? null
                   : () => onLink!(href),
+              delegateTouch: delegateTouch,
             ),
           ],
         ),
@@ -2028,13 +2068,37 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     // underline that turns full under a mouse.
     final tokens = RaftTokens.of(context);
     final faint = !(only is md.Element && only.tag == 'mark');
-    final recognizer = MessageLinkRecognizer(faintUnderline: faint)
-      ..onTap = onLink == null ? null : () => onLink!(href);
-    recognizers?.add(recognizer);
     final style = linkStyle.copyWith(
       decoration: TextDecoration.none,
       color: tokens.colors['foreground-link'],
     );
+    if (delegateTouch) {
+      final open = onLink;
+      final tap = open == null ? null : RaftMessageTapLink(() => open(href));
+      if (!faint) {
+        return Text.rich(
+          _searchMarkSpan(context, only.textContent, style, tapLink: tap),
+        );
+      }
+      paintsDelegatedLinks = true;
+      final color = style.color;
+      return Text.rich(
+        TextSpan(
+          children: [
+            for (final child in children)
+              RaftMessageTapSpan(
+                text: (child as md.Node).textContent,
+                style: style,
+                color: color?.withValues(alpha: color.a * .4),
+                tapLink: tap,
+              ),
+          ],
+        ),
+      );
+    }
+    final recognizer = MessageLinkRecognizer(faintUnderline: faint)
+      ..onTap = onLink == null ? null : () => onLink!(href);
+    recognizers?.add(recognizer);
     if (only is md.Element && only.tag == 'mark') {
       return Text.rich(
         _searchMarkSpan(
@@ -2562,6 +2626,7 @@ InlineSpan _searchMarkSpan(
   String text,
   TextStyle base, {
   GestureRecognizer? recognizer,
+  RaftMessageTapLink? tapLink,
 }) {
   final t = RaftTokens.of(context);
   final tokens = t.recipeTokens;
@@ -2569,17 +2634,28 @@ InlineSpan _searchMarkSpan(
     tokens: tokens,
     states: t.recipeStates(),
   ).searchMatch;
+  final textStyle = base.copyWith(
+    backgroundColor: Colors.transparent,
+    color: style.text(tokens).color,
+  );
   return RaftBackgroundSpan(
-    text: text,
+    text: tapLink == null ? text : null,
+    children: tapLink == null
+        ? null
+        : [
+            RaftMessageTapSpan(
+              text: text,
+              style: textStyle,
+              tapLink: tapLink,
+              active: false,
+            ),
+          ],
     recognizer: recognizer,
     mouseCursor: recognizer == null ? null : SystemMouseCursors.click,
     background: style.backgroundColor?.resolve(tokens) ?? Colors.transparent,
     radius: style.borderRadius?.topLeft.x ?? 0,
     verticalInset: style.padding.top,
-    style: base.copyWith(
-      backgroundColor: Colors.transparent,
-      color: style.text(tokens).color,
-    ),
+    style: textStyle,
   );
 }
 

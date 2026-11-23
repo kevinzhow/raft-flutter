@@ -1798,6 +1798,15 @@ class RaftMessageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final touch = RaftInteraction.of(context).touch;
+    final mergeActions = coarsePointer && compactSemantics;
+    final visibleReactions = [
+      for (final reaction in reactions)
+        if (reaction
+            case {'emoji': final String emoji, 'count': final int count}
+            when count > 0)
+          (data: reaction, emoji: emoji, count: count),
+    ];
     final effectiveBodyFontSize =
         bodyFontSize ?? RaftMessageSizeTier.md.bodySizeFor(t);
     final recipe = RaftMessageRowRecipe(
@@ -1817,12 +1826,24 @@ class RaftMessageTile extends StatelessWidget {
               ?departureLabel,
               if (badge != null && badge!.trim().isNotEmpty) badge!,
               if (timestamp.isNotEmpty) timestamp,
+              if (mergeActions)
+                for (final reaction in visibleReactions)
+                  '${reaction.emoji}: ${reaction.count}',
             ].join(', ')
           : null,
       semanticsText: compactSemantics
           ? raftMessageSemanticsText(context, semanticsContent ?? content)
           : '',
-      semanticsActions: semanticsActions,
+      semanticsActions: mergeActions && onReaction != null
+          ? [
+              ...semanticsActions,
+              for (final reaction in visibleReactions)
+                RaftMessageSemanticsAction(
+                  '${reaction.emoji}: ${reaction.count}',
+                  (_) => onReaction!(reaction.emoji),
+                ),
+            ]
+          : semanticsActions,
       avatar: avatar ?? RaftAvatar(name: author, size: 32),
       onAuthor: onAuthor,
       onAuthorMenu: onAuthorMenu,
@@ -1856,7 +1877,8 @@ class RaftMessageTile extends StatelessWidget {
               children: [
                 if (modelLabel != null && modelLabel!.trim().isNotEmpty)
                   Flexible(
-                    child: RaftTooltip(
+                    child: raftMessagePointerTooltip(
+                      coarsePointer: coarsePointer,
                       onlyWhenTruncated: true,
                       message: modelLabel!,
                       child: RaftCssText(
@@ -2028,49 +2050,40 @@ class RaftMessageTile extends StatelessWidget {
                       ?taskReference,
                       ?savedIndicator,
                       ?threadRepliesBadge,
-                      ...reactions
-                          .where(
-                            (r) =>
-                                r['emoji'] is String &&
-                                r['count'] is int &&
-                                r['count'] > 0,
-                          )
-                          .map((r) {
-                            final reacted = reactedEmojis.contains(r['emoji']);
-                            final reactors = raftReactionReactors(
-                              context,
-                              r,
-                              viewerId: reactionViewerId,
-                              reacted: reacted,
-                            );
-                            return RaftReactionReactorsHover(
-                              key: ValueKey('reaction-reactors-${r['emoji']}'),
-                              emoji: r['emoji'],
-                              names: reactors.names,
-                              hiddenCount: reactors.hidden,
-                              child: RaftMountedReaction(
-                                key: ValueKey('reaction-${r['emoji']}'),
-                                label: '${r['emoji']}: ${r['count']}',
-                                glyph: RaftReactionGlyph(r['emoji']),
-                                count: r['count'],
-                                reacted: reacted,
-                                failure: failedReactionEmojis.contains(
-                                  r['emoji'],
-                                ),
-                                onPressed: onReaction == null
-                                    ? null
-                                    : () => onReaction!(r['emoji']),
-                              ),
-                            );
-                          })
-                          .toList(),
-                      if (RaftInteraction.of(context).touch &&
-                          reactions.any(
-                            (r) =>
-                                r['emoji'] is String &&
-                                r['count'] is int &&
-                                r['count'] > 0,
-                          ) &&
+                      ...visibleReactions.map((entry) {
+                        final (data: r, :emoji, :count) = entry;
+                        final reacted = reactedEmojis.contains(emoji);
+                        final reaction = RaftMountedReaction(
+                          key: ValueKey('reaction-$emoji'),
+                          label: '$emoji: $count',
+                          glyph: RaftReactionGlyph(emoji),
+                          count: count,
+                          reacted: reacted,
+                          failure: failedReactionEmojis.contains(emoji),
+                          onPressed: onReaction == null
+                              ? null
+                              : () => onReaction!(emoji),
+                        );
+                        if (mergeActions) {
+                          return ExcludeSemantics(child: reaction);
+                        }
+                        if (touch) return reaction;
+                        final reactors = raftReactionReactors(
+                          context,
+                          r,
+                          viewerId: reactionViewerId,
+                          reacted: reacted,
+                        );
+                        return RaftReactionReactorsHover(
+                          key: ValueKey('reaction-reactors-$emoji'),
+                          emoji: emoji,
+                          names: reactors.names,
+                          hiddenCount: reactors.hidden,
+                          child: reaction,
+                        );
+                      }).toList(),
+                      if (touch &&
+                          visibleReactions.isNotEmpty &&
                           (onReactionAdd != null || onReact != null))
                         Builder(
                           builder: (anchor) => RaftMountedReactionAdd(

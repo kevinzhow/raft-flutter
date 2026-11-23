@@ -9,6 +9,7 @@ import 'localization.dart';
 import 'raft_underline.dart';
 import 'design_primitives.dart';
 import 'message_content_tokens.dart';
+import 'message_block_layout.dart';
 import 'message_semantics.dart';
 import 'theme.dart';
 
@@ -44,7 +45,6 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
   bool expanded = false;
   String? toggleLabel;
   Widget? toggleWidget;
-  final contentKey = GlobalKey();
   bool get overflow => natural > MessageContentPrimitive.collapseHeight;
   bool get collapsed => widget.enabled && overflow && !expanded;
   @override
@@ -67,13 +67,13 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
   }
 
   void expandHiddenFocus() {
+    if (!mounted || expanded) return;
     final focus = FocusManager.instance.primaryFocus?.context
         ?.findRenderObject();
-    final content = contentKey.currentContext?.findRenderObject();
-    if (!mounted ||
-        expanded ||
-        focus is! RenderBox ||
-        content is! RenderBox ||
+    final layout = context.findRenderObject();
+    final content = layout is _RenderCollapsibleLayout ? layout._content : null;
+    if (focus is! RenderBox ||
+        content == null ||
         !focus.hasSize ||
         !content.hasSize) {
       return;
@@ -144,7 +144,6 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
         },
         child: ClipRect(
           child: Align(
-            key: contentKey,
             alignment: Alignment.topLeft,
             heightFactor: 1,
             child: RaftContentMeasure(
@@ -154,7 +153,14 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
                   ? MessageContentPrimitive.collapseHeight
                   : null,
               onLayout: measured,
-              child: widget.child,
+              child: widget.enabled
+                  ? RaftMessageBlockLimit(
+                      height: expanded
+                          ? null
+                          : MessageContentPrimitive.collapseHeight,
+                      child: widget.child,
+                    )
+                  : widget.child,
             ),
           ),
         ),
