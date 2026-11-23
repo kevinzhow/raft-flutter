@@ -907,11 +907,16 @@ class MessagePresentation extends StatelessWidget {
           ? (button) => _externalWebLink(button.url)
           : null,
     );
-    if (exportMode || !localAuthority || raftCardButtons(card.root).isEmpty) {
-      return cardOf();
-    }
+    if (exportMode || !localAuthority) return cardOf();
+    final buttons = raftCardButtons(card.root);
+    if (buttons.isEmpty) return cardOf();
+    final availability = webPreviewAvailability(
+      controller,
+      evaluate: buttons.any((button) => button.beside),
+    );
+    if (availability == null) return cardOf();
     return ListenableBuilder(
-      listenable: webPreviewAvailability(controller),
+      listenable: availability,
       builder: (_, _) => cardOf(interactive: true),
     );
   }
@@ -956,7 +961,7 @@ class MessagePresentation extends StatelessWidget {
     Widget? Function(BuildContext, String)? afterBlock,
     Object? revision,
   }) {
-    return RaftMessageBody(
+    Widget body({bool browserLinks = false}) => RaftMessageBody(
       mountedMessage: true,
       messagePipeline: true,
       // A compact timeline row already announces this text in its label.
@@ -972,24 +977,26 @@ class MessagePresentation extends StatelessWidget {
       references: references,
       taskHref: taskReferenceHref,
       onLink: exportMode ? null : (href) => open(context, href),
-      webLinkActions: (href) {
-        final external = _externalWebLink(href);
-        return external == null
-            ? null
-            : (
-                openExternal: external,
-                openMenu: (position) => unawaited(
-                  showDesktopWebLinkMenu(
-                    context,
-                    controller,
-                    href,
-                    message.channelId,
-                    position,
-                    external,
-                  ),
-                ),
-              );
-      },
+      webLinkActions: !browserLinks
+          ? null
+          : (href) {
+              final external = _externalWebLink(href);
+              return external == null
+                  ? null
+                  : (
+                      openExternal: external,
+                      openMenu: (position) => unawaited(
+                        showDesktopWebLinkMenu(
+                          context,
+                          controller,
+                          href,
+                          message.channelId,
+                          position,
+                          external,
+                        ),
+                      ),
+                    );
+            },
       knownTaskNumber: knowsTaskNumber,
       referenceAppearance: appearance,
       permalinkAppearance: (href) => permalinkAppearance(context, href),
@@ -1000,9 +1007,19 @@ class MessagePresentation extends StatelessWidget {
         unavailablePermalink,
         controller.channels.length,
         controller.dms.length,
+        browserLinks,
         // The read markers on agent mentions follow the channel's frontiers.
         controller.readReceipts.scope(message.channelId),
       ),
+    );
+    final changes = exportMode || !localAuthority
+        ? null
+        : desktopBrowserLinkChanges(controller, message.channelId);
+    if (changes == null) return body();
+    return ListenableBuilder(
+      listenable: changes,
+      builder: (_, _) =>
+          body(browserLinks: desktopBrowserLinksEnabled(controller)),
     );
   }
 

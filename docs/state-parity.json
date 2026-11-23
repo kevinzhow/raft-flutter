@@ -5719,6 +5719,494 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@2331/FUNCTION:viewer@3056": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-ART3",
+        "reason": "Same compact preview and wide dialog viewer after adding the batch bar import."
+      },
+      "apps/raft_flutter/lib/features/channel_browser_place.dart#class:ChannelBrowserPlace": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "side-panel-frame",
+          "panel-header"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the browser and Artifact in the conversation side window."
+      },
+      "apps/raft_flutter/lib/features/channel_browser_place.dart#class:_ChannelBrowserPlaceState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "side-panel-frame",
+          "panel-header"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the browser and Artifact in the conversation side window."
+      },
+      "apps/raft_flutter/lib/features/channel_browser_place.dart#method:ChannelBrowserPlace.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "side-panel-frame",
+          "panel-header"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the browser and Artifact in the conversation side window."
+      },
+      "apps/raft_flutter/lib/features/channel_browser_place.dart#method:_ChannelBrowserPlaceState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "side-panel-frame",
+          "panel-header"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the browser and Artifact in the conversation side window."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@11213/METHOD:_build@14211/FUNCTION:chatContent@18352": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Mounts the chat or folded thread inside the clipped conversation region."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_address.dart#class:DesktopBrowserAddress": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "panel-header",
+          "side-panel-frame"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the editable address and native navigation controls under the tab strip."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_address.dart#class:_DesktopBrowserAddressState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "panel-header",
+          "side-panel-frame"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the editable address and native navigation controls under the tab strip."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_address.dart#method:DesktopBrowserAddress.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "panel-header",
+          "side-panel-frame"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the editable address and native navigation controls under the tab strip."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_address.dart#method:_DesktopBrowserAddressState._action": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "panel-header",
+          "side-panel-frame"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the editable address and native navigation controls under the tab strip."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_address.dart#method:_DesktopBrowserAddressState._display": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "panel-header",
+          "side-panel-frame"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the editable address and native navigation controls under the tab strip."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_address.dart#method:_DesktopBrowserAddressState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "panel-header",
+          "side-panel-frame"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the editable address and native navigation controls under the tab strip."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#class:BrowserRendererFailure": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#class:DesktopBrowserNativePage": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#class:_SystemBrowserPage": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#class:_SystemBrowserPageState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#method:BrowserRendererFailure.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#method:DesktopBrowserNativePage.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#method:_SystemBrowserPage.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#method:_SystemBrowserPageState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_native_page.dart#method:_SystemBrowserPageState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts the system webview and handles the unavailable renderer state."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#class:BrowserSwitchChip": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#class:DesktopBrowserPanel": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#class:_DesktopBrowserPanelState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#method:BrowserSwitchChip.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#method:DesktopBrowserPanel.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#method:_DesktopBrowserPanelState._head": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#method:_DesktopBrowserPanelState._page": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#method:_DesktopBrowserPanelState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#method:_DesktopBrowserPanelState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "side-panel-frame",
+          "tabs",
+          "button"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Composes the browser chrome, active native page, and Artifact switch."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#class:DesktopBrowserTabStrip": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#class:_BrowserTab": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#class:_BrowserTabState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#class:_DesktopBrowserTabStripState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#method:DesktopBrowserTabStrip.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#method:_BrowserTab.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#method:_BrowserTabState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#method:_DesktopBrowserTabStripState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#method:_DesktopBrowserTabStripState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "tabs",
+          "button",
+          "menu",
+          "fit_toolbar"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Fits the tab list and delegates overflow to the anchored dropdown."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_windows_page.dart#class:DesktopBrowserWindowsPage": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts WebView2 for a browser tab and uses the shared fallback when the renderer is unavailable."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_windows_page.dart#class:_DesktopBrowserWindowsPageState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts WebView2 for a browser tab and uses the shared fallback when the renderer is unavailable."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_windows_page.dart#method:DesktopBrowserWindowsPage.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts WebView2 for a browser tab and uses the shared fallback when the renderer is unavailable."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_windows_page.dart#method:_DesktopBrowserWindowsPageState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts WebView2 for a browser tab and uses the shared fallback when the renderer is unavailable."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_windows_page.dart#method:_DesktopBrowserWindowsPageState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-BROWSER",
+        "reason": "Hosts WebView2 for a browser tab and uses the shared fallback when the renderer is unavailable."
+      },
+      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5977/METHOD:_body@32371/FUNCTION:body@32575": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-BROWSER",
+        "reason": "Mounts the shared message body with desktop link handling supplied by the conversation."
+      },
+      "apps/raft_flutter/lib/features/web_link_open.dart#function:showDesktopWebLinkMenu": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu",
+          "popover"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Uses the message context menu to choose where to open a desktop link."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71776/METHOD:build@81033/FUNCTION:toggle@81263": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu",
+          "popover"
+        ],
+        "owner": "DropdownMenu",
+        "reason": "Toggles the anchored dropdown or submenu from its mounted trigger and keeps a mouse-opened submenu active on click."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:addon@39046": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:box@38736": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:field@41398": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Input",
+        "reason": "Builds the canonical InputGroup control with its fitted toolbar hint."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:resolve@37416": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13405/METHOD:build@18324/FUNCTION:anchoredOther@21505": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13405/METHOD:build@18324/FUNCTION:compactProse@21028": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13405/METHOD:build@18324/FUNCTION:selectable@21390": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36591/METHOD:build@37173/FUNCTION:failed@37329": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@56084/METHOD:build@56580/FUNCTION:<anonymous>@56689/FUNCTION:control@57926": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4882/METHOD:buildTimeline@113011/FUNCTION:timelineFor@116713": {
         "role": "unresolved",
         "familyRefs": [],
@@ -61035,6 +61523,24 @@
       }
     },
     "entries": {
+      "surface:apps/raft_flutter/lib/features/web_link_open.dart#function:showDesktopWebLinkMenu": {
+        "owner": "WP-BROWSER",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "Uses the message context menu to choose where to open a desktop link.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/web_link_open.dart#function:showDesktopWebLinkMenu"
+        ]
+      },
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71776/METHOD:build@81033/FUNCTION:toggle@81263": {
+        "owner": "DropdownMenu",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71776/METHOD:build@81033/FUNCTION:toggle@81263"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Toggles the anchored dropdown or submenu from its mounted trigger and keeps a mouse-opened submenu active on click."
+      },
       "screen:auth.sso-required": {
         "owner": "server v1.24 compatibility",
         "kind": "route_or_panel_candidate",
@@ -68290,6 +68796,41 @@
       "iconInlineEnd": "has:data-icon=inline-end"
     },
     "stateUses": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:resolve@37416|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:resolve@37416|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:resolve@37416|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:resolve@37416|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:resolve@37416|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:resolve@37416|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35844/METHOD:_buildRecipe@37230/FUNCTION:resolve@37416|state:has:focus-visible": {
+        "applicability": "required",
+        "owner": "WP-SEARCH",
+        "reason": "The generated InputGroup paints its focus shadow when the enabled editor holds focus. Search exercises the recipe in both themes."
+      },
       "packages/raft_ui/lib/src/design_primitives.dart#method:RaftDropdownMenuLabel.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "owner": "DropdownMenu",
         "applicability": "required",

@@ -173,8 +173,9 @@ class DesktopBrowserTabs extends ChangeNotifier {
 
   void newTab(String conversation) {
     final browser = forConversation(conversation);
-    if (browser == null || browser.tabs.length >= desktopBrowserTabLimit)
+    if (browser == null || browser.tabs.length >= desktopBrowserTabLimit) {
       return;
+    }
     final tab = DesktopBrowserTab._create(++_sequence, null);
     _put(
       conversation,

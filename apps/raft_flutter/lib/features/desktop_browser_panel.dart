@@ -269,7 +269,7 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
                 label: widget.artifactTitle == null
                     ? raftText(context, 'Back to Artifact')
                     : raftFormat(context, 'Back to {title}', {
-                        'title': widget.artifactTitle!,
+                        'title': widget.artifactTitle,
                       }),
                 onPressed: swap,
                 text: fit.chipTitle > 0 ? widget.artifactTitle : null,
@@ -290,7 +290,7 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
                   widget.expanded ? 'Restore' : 'Expand',
                 ),
                 pressed: widget.expanded,
-                onPressed: widget.onExpand!,
+                onPressed: widget.onExpand,
                 desktopBar: !tiny,
                 size: tiny ? RaftButtonSize.iconXs : RaftButtonSize.iconSm,
               ),

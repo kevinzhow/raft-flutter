@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/desktop_browser_panel.dart';
 import 'package:raft_flutter/features/desktop_browser_tabs.dart';
-import 'package:raft_ui/raft_ui.dart';
 
 void main() {
   final first = Uri.parse('https://example.test/a?q=1');

@@ -71,8 +71,9 @@ class ChannelArtifactPlace extends ChangeNotifier {
     final artifact = _open[channel];
     if (artifact == null ||
         artifact.target != target ||
-        artifact.title == title)
+        artifact.title == title) {
       return;
+    }
     _open[channel] = (
       target: artifact.target,
       seed: artifact.seed,

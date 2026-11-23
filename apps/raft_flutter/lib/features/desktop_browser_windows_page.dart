@@ -121,8 +121,9 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
           onTitleChanged: (_, _) => _navigationChanged(),
           onUpdateVisitedHistory: (_, _, _) => _navigationChanged(),
           onReceivedError: (_, request, _) {
-            if (request.isForMainFrame == true)
+            if (request.isForMainFrame == true) {
               _navigationChanged(loading: false);
+            }
           },
           onPermissionRequest: (_, request) => PermissionResponse(
             resources: request.resources,

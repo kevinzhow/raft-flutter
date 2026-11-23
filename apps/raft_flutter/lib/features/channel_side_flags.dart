@@ -44,6 +44,8 @@ class ChannelSideFlags extends ChangeNotifier {
   static ChannelSideFlags of(WorkspaceController w) =>
       _owners[w] ??= ChannelSideFlags._(w);
 
+  static ChannelSideFlags? existingOf(WorkspaceController w) => _owners[w];
+
   static const taskV2Key = RaftFeatureFlags.taskV2Conversations;
   static const webPreviewKey = RaftFeatureFlags.webPreview;
   static const desktopBrowserKey = RaftFeatureFlags.desktopWebPreviewView;

@@ -129,10 +129,19 @@ Future<bool> openWebLinkByPreference(
 
 /// What [webPreviewAvailable] depends on, for a widget that draws by it (the
 /// card button's panel icon).
-Listenable webPreviewAvailability(WorkspaceController w) => Listenable.merge([
-  ChannelSideFlags.of(w),
-  WebPreviewStore.of(w).platform.voiceOverState,
-]);
+Listenable? webPreviewAvailability(
+  WorkspaceController w, {
+  required bool evaluate,
+}) {
+  final flags = evaluate
+      ? ChannelSideFlags.of(w)
+      : ChannelSideFlags.existingOf(w);
+  if (flags == null) return null;
+  return Listenable.merge([
+    flags,
+    WebPreviewStore.of(w).platform.voiceOverState,
+  ]);
+}
 
 /// A card button `open: "beside"` (Web `MessageCardBody` `openBeside`): true
 /// when it opened the page beside the conversation, false when the caller
@@ -149,9 +158,25 @@ bool desktopBrowserLinkAvailable(
   String href,
   String conversationId,
 ) =>
-    desktopBrowserAvailable(w) &&
+    desktopBrowserLinksEnabled(w) &&
     webPreviewTarget(href, raftAppHostnames(w)) != null &&
     webPreviewConversationHost(w, conversationId) != null;
+
+bool desktopBrowserLinksEnabled(WorkspaceController w) =>
+    ChannelSideFlags.existingOf(w)?.desktopBrowser == true &&
+    WebPreviewStore.of(w).platform.hasDesktopBrowser;
+
+Listenable? desktopBrowserLinkChanges(
+  WorkspaceController w,
+  String conversationId,
+) {
+  if (ChannelSideFlags.existingOf(w) == null ||
+      webPreviewConversationHost(w, conversationId) == null ||
+      !WebPreviewStore.of(w).platform.hasDesktopBrowser) {
+    return null;
+  }
+  return webPreviewAvailability(w, evaluate: false);
+}
 
 Future<void> showDesktopWebLinkMenu(
   BuildContext context,

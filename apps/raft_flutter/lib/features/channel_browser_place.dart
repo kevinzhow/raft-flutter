@@ -114,7 +114,7 @@ class _ChannelBrowserPlaceState extends State<ChannelBrowserPlace> {
                               widget.expanded ? 'Restore' : 'Expand',
                             ),
                             pressed: widget.expanded,
-                            onPressed: widget.onExpand!,
+                            onPressed: widget.onExpand,
                             desktopBar: true,
                           ),
                       ],
