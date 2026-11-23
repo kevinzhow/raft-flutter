@@ -96,6 +96,7 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
         forward: () => _navigate(linux.goForward),
         reload: () => _navigate(linux.reload),
       ));
+      _syncMedia();
       _load(widget.tab.url!);
     } catch (_) {
       _fail();
@@ -115,7 +116,16 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
       forward: () => _navigate(() => channel.invokeMethod<void>('forward')),
       reload: () => _navigate(() => channel.invokeMethod<void>('reload')),
     ));
+    _syncMedia();
     _load(widget.tab.url!);
+  }
+
+  void _syncMedia() {
+    final muted = !widget.visible || _failed;
+    final update =
+        _linux?.setBrowserMuted(muted) ??
+        _appKit?.invokeMethod<void>('setMuted', muted);
+    if (update != null) unawaited(update.catchError((Object _) {}));
   }
 
   void _event(Map<Object?, Object?> fields) {
@@ -137,10 +147,11 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
         widget.events.openExternal(url);
       case 'closeTab' when widget.visible:
         widget.events.closeTab();
-      case 'closePanel' when widget.visible:
-        widget.events.closePanel();
       case 'navigationStarted':
-        if (_failed) setState(() => _failed = false);
+        if (_failed) {
+          setState(() => _failed = false);
+          _syncMedia();
+        }
       case 'failed':
         _fail(url);
     }
@@ -149,6 +160,7 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
   void _fail([Uri? target]) {
     if (!mounted || _failed) return;
     setState(() => _failed = true);
+    _syncMedia();
     final page = widget.tab.page;
     widget.events.state((
       url: target ?? page.url,
@@ -160,7 +172,10 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
   }
 
   void _navigate(Future<void> Function() command) {
-    if (_failed) setState(() => _failed = false);
+    if (_failed) {
+      setState(() => _failed = false);
+      _syncMedia();
+    }
     unawaited(Future<void>.sync(command).catchError((Object _) => _fail()));
   }
 
@@ -178,6 +193,7 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
   @override
   void didUpdateWidget(_SystemBrowserPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.visible != oldWidget.visible) _syncMedia();
     if (widget.tab.navigation == oldWidget.tab.navigation) return;
     final target = widget.tab.requested;
     if (target != null) _load(target);

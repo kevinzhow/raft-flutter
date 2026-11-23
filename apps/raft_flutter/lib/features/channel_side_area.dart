@@ -22,6 +22,7 @@ import 'channel_side_store.dart';
 import 'channel_side_tasks_panel.dart';
 import 'channel_side_web_preview.dart';
 import 'channel_side_web_preview_panel.dart';
+import 'mobile_route_gate.dart';
 import 'panel_width_store.dart';
 import 'source_channel_files_view.dart';
 
@@ -371,7 +372,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   late ChannelFilesMedia media;
   final drag = ChannelSideDragController();
   final _chatKey = GlobalKey();
-  ChannelBrowserPanes _browserPanes = ChannelBrowserPanes();
+  late ChannelBrowserPanes _browserPanes;
   ChannelSideSection? _expanded;
   ({_DockSeam seam, double width})? _resizePreview;
   late Listenable listenable;
@@ -409,7 +410,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       details,
     ]);
     previewOpenedAt = preview.openedAt;
-    _browserPanes = ChannelBrowserPanes();
+    _browserPanes = ChannelBrowserPanes.of(w);
     _previewConversation = w.channel?.id;
     desktopPlaceOpenedAt = ChannelSideCards.latestDesktopOpen(w);
   }
@@ -457,7 +458,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     child: ListenableBuilder(
       listenable: listenable,
       builder: (context, _) {
-        previewChanged();
+        if (!MobileRouteGate.coveredReader(context)()) previewChanged();
         return LayoutBuilder(builder: _build);
       },
     ),
@@ -485,6 +486,10 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       details,
       profile: widget.profile != null,
     );
+    final ownsBrowser = !MobileRouteGate.coveredReader(context)();
+    if (page == null && (!ownsBrowser || MobileRouteGate.holds(context, w))) {
+      open.remove(ChannelSideSection.artifact);
+    }
     final foldedThread = RaftAdaptiveWorkspace.foldedThreadOf(context);
     final dockedThread = RaftAdaptiveWorkspace.dockedThreadOf(context);
     if (dockedThread != null) open.add(ChannelSideSection.thread);
@@ -522,7 +527,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     );
     final beside = placement.mode == ChannelSideMode.beside;
     final columns = placement.columns;
-    final browserEnabled = desktopBrowserAvailable(w);
+    final browserEnabled = ownsBrowser && desktopBrowserAvailable(w);
     final activeBrowser =
         browserEnabled &&
             columns.any(
@@ -530,11 +535,13 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
             )
         ? w.channel?.id
         : null;
-    _browserPanes.update(
-      preview.browserTabs,
-      activeBrowser,
-      enabled: browserEnabled,
-    );
+    if (ownsBrowser) {
+      _browserPanes.update(
+        preview.browserTabs,
+        activeBrowser,
+        enabled: browserEnabled,
+      );
+    }
     final expandedIndex = beside
         ? columns.indexWhere((column) => column.sections.contains(_expanded))
         : -1;
@@ -626,7 +633,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     final row = Stack(
       clipBehavior: Clip.none,
       children: [
-        ..._browserPanes.parked(w, activeBrowser),
+        if (ownsBrowser) ..._browserPanes.parked(w, activeBrowser),
         Positioned.fill(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -930,6 +937,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
             workspace: w,
             conversation: channelId,
             browserKey: _browserPanes.keyFor(channelId),
+            showing: fold.showing,
             covering: mode == ChannelSideMode.overlay,
             collapsed: fold.collapsed,
             expanded: _expanded == section,

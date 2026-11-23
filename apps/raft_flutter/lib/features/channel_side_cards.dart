@@ -20,7 +20,7 @@ abstract final class ChannelSideCards {
     final browser = WebPreviewStore.of(w).browserTabs
         .forConversation(conversation);
     final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
-    final browserOpened = browser?.openedAt ?? 0;
+    final browserOpened = browser?.frontAt ?? 0;
     final artifactOpened = artifact?.openedAt ?? 0;
     return browserOpened > artifactOpened ? browserOpened : artifactOpened;
   }

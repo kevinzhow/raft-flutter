@@ -72,6 +72,7 @@ final _referencesMemo = RaftLruCache<_ReferenceInputs, List<RaftTextReference>>(
 // retaining a retired server's directory beyond the existing bounded memo.
 final _directoryTextIndexes = Expando<_ReferenceTextIndex>();
 final _channelTextIndexes = Expando<_ReferenceTextIndex>();
+final _noWebPreviewChanges = Listenable.merge(const []);
 
 class _ReferenceTextNode {
   final children = <int, _ReferenceTextNode>{};
@@ -917,7 +918,7 @@ class MessagePresentation extends StatelessWidget {
             evaluate: buttons.any((button) => button.beside),
           );
     return ListenableBuilder(
-      listenable: Listenable.merge([availability]),
+      listenable: availability ?? _noWebPreviewChanges,
       builder: (_, _) => cardOf(interactive: availability != null),
     );
   }
@@ -1017,7 +1018,7 @@ class MessagePresentation extends StatelessWidget {
         ? null
         : desktopBrowserLinkChanges(controller, message.channelId);
     return ListenableBuilder(
-      listenable: Listenable.merge([changes]),
+      listenable: changes ?? _noWebPreviewChanges,
       builder: (_, _) => body(
         browserLinks: changes != null && desktopBrowserLinksEnabled(controller),
       ),

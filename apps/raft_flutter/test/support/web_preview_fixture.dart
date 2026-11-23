@@ -16,6 +16,7 @@ Future<(WorkspaceController, MessageAdapter)> webPreviewFixture({
   bool flag = true,
   String os = 'android',
   bool desktopBrowser = false,
+  bool tasks = false,
   ValueListenable<bool>? voiceOver,
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -31,6 +32,7 @@ Future<(WorkspaceController, MessageAdapter)> webPreviewFixture({
     {
       ChannelSideFlags.webPreviewKey: flag,
       RaftFeatureFlags.desktopWebPreviewView: desktopBrowser,
+      if (tasks) ChannelSideFlags.taskV2Key: true,
     },
   );
   final off = voiceOver ?? ValueNotifier(false);

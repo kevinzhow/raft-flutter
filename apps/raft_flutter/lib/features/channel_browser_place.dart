@@ -13,6 +13,11 @@ import 'desktop_browser_panel.dart';
 import 'desktop_browser_tabs.dart';
 
 class ChannelBrowserPanes {
+  static final _owners = Expando<ChannelBrowserPanes>();
+
+  static ChannelBrowserPanes of(WorkspaceController workspace) =>
+      _owners[workspace] ??= ChannelBrowserPanes();
+
   final _keys = <String, GlobalKey>{};
 
   void update(
@@ -105,12 +110,14 @@ class ChannelBrowserPlace extends StatelessWidget {
     required this.expanded,
     required this.onExpand,
     required this.headWrapper,
+    this.showing = true,
     this.browserKey,
   });
 
   final WorkspaceController workspace;
   final String conversation;
   final bool covering, collapsed, expanded;
+  final bool showing;
   final VoidCallback? onExpand;
   final ChannelSideHeadWrapper headWrapper;
   final GlobalKey? browserKey;
@@ -202,7 +209,7 @@ class ChannelBrowserPlace extends StatelessWidget {
                       key: browserKey,
                       workspace: workspace,
                       conversation: conversation,
-                      showing: browserInFront,
+                      showing: showing && browserInFront,
                       covering: covering,
                       expanded: expanded,
                       collapsed: collapsed,

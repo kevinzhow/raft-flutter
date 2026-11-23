@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -17,24 +18,31 @@ void main() {
     WidgetTester tester, {
     double width = 480,
     bool allControls = false,
+    RaftHoverDismissController? hover,
   }) async {
     final tabs = DesktopBrowserTabs()..open('channel', first);
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Align(
-            alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: width,
-              height: 500,
-              child: DesktopBrowserPanel(
-                tabs: tabs,
-                conversation: 'channel',
-                raftHosts: const {'raft.test'},
-                onShowArtifact: allControls ? () {} : null,
-                onExpand: allControls ? () {} : null,
-                pageBuilder: (context, tab, visible, events) =>
-                    Text('Page ${tab.id}'),
+      RaftHoverDismissScope(
+        controller: hover,
+        navigation: tabs,
+        location: () => 'channel',
+        child: MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.linux),
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: width,
+                height: 500,
+                child: DesktopBrowserPanel(
+                  tabs: tabs,
+                  conversation: 'channel',
+                  raftHosts: const {'raft.test'},
+                  onShowArtifact: allControls ? () {} : null,
+                  onExpand: allControls ? () {} : null,
+                  pageBuilder: (context, tab, visible, events) =>
+                      Text('Page ${tab.id}'),
+                ),
               ),
             ),
           ),
@@ -64,6 +72,35 @@ void main() {
       Uri.parse('http://localhost:8040/service'),
     );
     expect(find.text('Not secure'), findsOneWidget);
+  });
+
+  testWidgets('Enter dismisses hover and keeps the narrow security hint', (
+    tester,
+  ) async {
+    final hover = RaftHoverDismissController();
+    addTearDown(hover.dispose);
+    final tabs = await mount(tester, width: 224, hover: hover);
+    await tester.tap(find.byKey(address));
+    await tester.pump();
+    await tester.enterText(find.byKey(input), 'localhost:8040/service');
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    await mouse.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('browser-open-tab'))),
+    );
+    await tester.pumpAndSettle(const Duration(milliseconds: 800));
+    expect(find.text('Open in browser'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.text('Open in browser'), findsNothing);
+    expect(find.byKey(input), findsNothing);
+    expect(tabs.forConversation('channel')!.active.url!.scheme, 'http');
+    expect(
+      tester.widget<RaftInteractive>(find.byKey(address)).semanticHint,
+      'Not secure',
+    );
   });
 
   testWidgets(
@@ -117,16 +154,18 @@ void main() {
       of: find.byKey(address),
       matching: find.text('site12.test/a-long-path', findRichText: true),
     );
-    for (final text in [title, addressText]) {
-      final paragraph = tester.renderObject<RenderParagraph>(text);
-      expect(
-        paragraph.getBoxesForSelection(
-          const TextSelection(baseOffset: 0, extentOffset: 1),
-        ),
-        isNotEmpty,
-        reason: paragraph.text.toPlainText(),
-      );
-    }
+    final paragraph = tester.renderObject<RenderParagraph>(title);
+    expect(
+      paragraph.getBoxesForSelection(
+        const TextSelection(baseOffset: 0, extentOffset: 1),
+      ),
+      isNotEmpty,
+    );
+    expect(addressText, findsNothing);
+    expect(
+      tester.widget<RaftInteractive>(find.byKey(address)).tooltip,
+      contains('Not secure'),
+    );
     expect(
       tester.getRect(title).right,
       lessThanOrEqualTo(tester.getCenter(close).dx),

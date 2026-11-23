@@ -114,9 +114,10 @@ class _DesktopBrowserAddressState extends State<DesktopBrowserAddress> {
       _field.requestFocus();
       return;
     }
+    RaftHoverDismissScope.maybeOf(context)?.dismiss();
     widget.navigate(url);
     _leave();
-    _readout.requestFocus();
+    _field.unfocus();
   }
 
   @override
@@ -233,7 +234,9 @@ class _DesktopBrowserAddressState extends State<DesktopBrowserAddress> {
           : null,
       focusNode: _readout,
       onPressed: _edit,
-      tooltip: url.toString(),
+      tooltip: url.scheme == 'http'
+          ? '${raftText(context, 'Not secure')}\n$url'
+          : url.toString(),
       builder: (context, state) {
         final style = tokens.scale(
           tokens.typeSlot('callout'),
@@ -241,8 +244,10 @@ class _DesktopBrowserAddressState extends State<DesktopBrowserAddress> {
         );
         return LayoutBuilder(
           builder: (context, box) {
-            final showWarning = url.scheme == 'http' && box.maxWidth >= 125;
-            final inset = box.maxWidth < 80 ? RaftSpace.x1 : RaftSpace.x2;
+            final insecure = url.scheme == 'http';
+            final showWarning = insecure && box.maxWidth >= 80;
+            final showAddress = box.maxWidth >= (showWarning ? 125 : 52);
+            final inset = box.maxWidth < 125 ? RaftSpace.x1 : RaftSpace.x2;
             return Padding(
               padding: const EdgeInsets.symmetric(
                 vertical: RaftDesktopMetrics.controlHitInset,
@@ -256,29 +261,34 @@ class _DesktopBrowserAddressState extends State<DesktopBrowserAddress> {
                       appearance: RaftBadgeRecipeAppearance.soft,
                       variant: RaftBadgeRecipeVariant.warning,
                     ),
-                  Expanded(
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: parts.host,
-                            style: tokens.scale(
-                              tokens.typeSlot('callout'),
-                              weight: FontWeight.w700,
-                              color: tokens.ui.foreground,
-                            ),
-                          ),
-                          TextSpan(text: parts.rest),
-                        ],
-                      ),
-                      style: style,
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: box.maxWidth < 80
-                          ? TextOverflow.clip
-                          : TextOverflow.ellipsis,
+                  if (!showWarning && !showAddress && box.maxWidth >= 24)
+                    RaftIcon(
+                      insecure ? RaftGlyph.shieldAlert : RaftGlyph.globe,
+                      size: 14,
+                      color: tokens.ui.foregroundMuted,
                     ),
-                  ),
+                  if (showAddress)
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: parts.host,
+                              style: tokens.scale(
+                                tokens.typeSlot('callout'),
+                                weight: FontWeight.w700,
+                                color: tokens.ui.foreground,
+                              ),
+                            ),
+                            TextSpan(text: parts.rest),
+                          ],
+                        ),
+                        style: style,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                 ],
               ),
             );

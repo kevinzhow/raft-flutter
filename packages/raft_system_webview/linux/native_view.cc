@@ -1,28 +1,50 @@
 #include "native_view.h"
 #include "extension_paths.h"
-#include <dlfcn.h>
 #include <libsoup/soup.h>
+#include <xkbcommon/xkbcommon.h>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <map>
-#include <optional>
 #include <set>
 #include <sstream>
 
-struct _WebKitFrameInfo;
-
 namespace {
-std::optional<bool> BrowserSubframe(WebKitNavigationAction* action) {
-  using TargetFrame = _WebKitFrameInfo* (*)(WebKitNavigationAction*);
-  using IsMain = gboolean (*)(_WebKitFrameInfo*);
-  static const auto target_frame = reinterpret_cast<TargetFrame>(
-      dlsym(RTLD_DEFAULT, "webkit_navigation_action_get_target_frame_info"));
-  static const auto is_main = reinterpret_cast<IsMain>(
-      dlsym(RTLD_DEFAULT, "webkit_frame_info_is_main_frame"));
-  if (!target_frame || !is_main) return std::nullopt;
-  auto* target = target_frame(action);
-  return target && !is_main(target);
+guint BrowserShortcutKey(GdkEventKey* event) {
+  const guint key = gdk_keyval_to_lower(event->keyval);
+  if (key >= GDK_KEY_space && key <= GDK_KEY_asciitilde) return key;
+  auto* keymap = gdk_keymap_get_for_display(gdk_window_get_display(event->window));
+  GdkKeymapKey* entries = nullptr;
+  guint* values = nullptr;
+  gint count = 0;
+  guint latin = 0;
+  if (gdk_keymap_get_entries_for_keycode(
+          keymap, event->hardware_keycode, &entries, &values, &count)) {
+    for (gint index = 0; index < count; ++index) {
+      const guint value = gdk_keyval_to_lower(values[index]);
+      if (entries[index].level == 0 && value >= GDK_KEY_a && value <= GDK_KEY_z) {
+        latin = value;
+        break;
+      }
+    }
+  }
+  g_free(entries);
+  g_free(values);
+  if (latin) return latin;
+  if (!g_unichar_isalpha(gdk_keyval_to_unicode(key))) return key;
+  static const std::unique_ptr<xkb_keymap, decltype(&xkb_keymap_unref)> fallback(
+      [] {
+        auto* context = xkb_context_new(XKB_CONTEXT_NO_ENVIRONMENT_NAMES);
+        if (!context) return static_cast<xkb_keymap*>(nullptr);
+        const xkb_rule_names names = {nullptr, nullptr, "us", nullptr, nullptr};
+        auto* map = xkb_keymap_new_from_names(context, &names, XKB_KEYMAP_COMPILE_NO_FLAGS);
+        xkb_context_unref(context);
+        return map;
+      }(), xkb_keymap_unref);
+  const xkb_keysym_t* symbols = nullptr;
+  return fallback && xkb_keymap_key_get_syms_by_level(
+                         fallback.get(), event->hardware_keycode, 0, 0, &symbols) == 1
+      ? symbols[0] : key;
 }
 
 FlValue* Field(FlValue* map, const char* key) {
@@ -164,6 +186,7 @@ NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenge
   g_signal_connect(web_, "web-process-terminated", G_CALLBACK(Terminated), this);
   g_signal_connect(context_, "download-started", G_CALLBACK(BrowserDownload), this);
   if (browsing_) {
+    webkit_web_view_set_is_muted(web_, TRUE);
     g_signal_connect(web_, "key-press-event", G_CALLBACK(BrowserKeys), this);
     for (const char* signal : {"notify::uri", "notify::title", "notify::is-loading"}) {
       g_signal_connect(web_, signal, G_CALLBACK(+[](GObject*, GParamSpec*, gpointer data) {
@@ -211,6 +234,21 @@ void NativeView::Handle(FlMethodCall* call) {
   FlValue* args = fl_method_call_get_args(call);
   if (g_str_equal(method, "dispose")) { Reply(call); Close(); return; }
   if (browsing_) {
+    if (g_str_equal(method, "setMuted") && args &&
+        fl_value_get_type(args) == FL_VALUE_TYPE_BOOL) {
+      const bool muted = fl_value_get_bool(args);
+      webkit_web_view_set_is_muted(web_, muted);
+      if (muted) {
+        download_activation_ = 0;
+        download_target_.clear();
+      }
+      Reply(call); return;
+    }
+    if (g_str_equal(method, "load") || g_str_equal(method, "back") ||
+        g_str_equal(method, "forward") || g_str_equal(method, "reload")) {
+      download_target_.clear();
+      download_activation_ = 0;
+    }
     if (g_str_equal(method, "load")) {
       const char* address = String(args, "url");
       if (!BrowserAddress(address)) { Error(call, "invalid_url"); return; }
@@ -410,12 +448,7 @@ void NativeView::BrowserState() {
 gboolean NativeView::BrowserKeys(GtkWidget*, GdkEventKey* event, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
   const auto modifiers = event->state & gtk_accelerator_get_default_mod_mask();
-  if (event->keyval == GDK_KEY_Escape && modifiers == 0) {
-    self->Event("closePanel");
-    return TRUE;
-  }
-  constexpr guint kPhysicalW = 25;
-  if (event->hardware_keycode != kPhysicalW || modifiers != GDK_CONTROL_MASK) return FALSE;
+  if (modifiers != GDK_CONTROL_MASK || BrowserShortcutKey(event) != GDK_KEY_w) return FALSE;
   self->Event("closeTab");
   return TRUE;
 }
@@ -424,6 +457,17 @@ void NativeView::OpenBrowserExternal(const char* address) {
   g_autoptr(FlValue) fields = fl_value_new_map();
   fl_value_set_string_take(fields, "url", fl_value_new_string(address));
   Event("openExternal", fields);
+}
+void NativeView::OpenBrowserDownload(const char* address, bool direct) {
+  if (!BrowserAddress(address) || webkit_web_view_get_is_muted(web_) ||
+      !download_activation_) return;
+  const bool matches_navigation = download_target_ == address;
+  const bool recent_input =
+      g_get_monotonic_time() - download_activation_ <= G_TIME_SPAN_SECOND;
+  if (!matches_navigation && !(direct && recent_input && download_target_.empty())) return;
+  download_activation_ = 0;
+  download_target_.clear();
+  OpenBrowserExternal(address);
 }
 WebKitWebView* NativeView::CreateWindow(WebKitWebView*, WebKitNavigationAction* action, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
@@ -438,7 +482,7 @@ void NativeView::BrowserDownload(WebKitWebContext*, WebKitDownload* download, gp
     auto* owner = webkit_download_get_web_view(download);
     if (owner && owner != self->web_) return;
     if (owner) {
-      self->OpenBrowserExternal(webkit_uri_request_get_uri(webkit_download_get_request(download)));
+      self->OpenBrowserDownload(webkit_uri_request_get_uri(webkit_download_get_request(download)), true);
     }
   }
   webkit_download_cancel(download);
@@ -456,7 +500,7 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
         if (headers) soup_message_headers_get_content_disposition(headers, &disposition, nullptr);
         if (webkit_response_policy_decision_is_mime_type_supported(response) &&
             (!disposition || g_ascii_strcasecmp(disposition, "attachment") != 0)) return FALSE;
-        self->OpenBrowserExternal(address);
+        self->OpenBrowserDownload(address, false);
       }
       webkit_policy_decision_ignore(decision);
       return TRUE;
@@ -464,11 +508,15 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
     auto* action = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
     const char* address = webkit_uri_request_get_uri(webkit_navigation_action_get_request(action));
     if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
-      const auto subframe = BrowserSubframe(action);
       const bool local_document = address &&
           (g_str_equal(address, "about:blank") || g_str_equal(address, "about:srcdoc") ||
            g_str_has_prefix(address, "blob:") || g_str_has_prefix(address, "data:"));
-      if (self->BrowserAddress(address) || subframe.value_or(local_document)) {
+      if (self->BrowserAddress(address) || local_document) {
+        if (webkit_navigation_action_is_user_gesture(action) &&
+            self->download_activation_ &&
+            g_get_monotonic_time() - self->download_activation_ <= G_TIME_SPAN_SECOND) {
+          self->download_target_ = address;
+        }
         webkit_policy_decision_use(decision);
         return TRUE;
       }
@@ -528,6 +576,10 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
 void NativeView::Loaded(WebKitWebView* view, WebKitLoadEvent event, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
   if (self->browsing_) {
+    if (event == WEBKIT_LOAD_COMMITTED || event == WEBKIT_LOAD_FINISHED) {
+      if (!self->download_target_.empty()) self->download_activation_ = 0;
+      self->download_target_.clear();
+    }
     if ((event == WEBKIT_LOAD_STARTED || event == WEBKIT_LOAD_REDIRECTED) &&
         !self->BrowserAddress(webkit_web_view_get_uri(view))) {
       webkit_web_view_stop_loading(view);
@@ -624,6 +676,16 @@ void NativeView::Terminated(WebKitWebView*, WebKitWebProcessTerminationReason, g
 gboolean NativeView::ObserveInput(GtkWidget*, GdkEvent* event, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
   if (self->closed_ || !event) return FALSE;
+  if (self->browsing_ && !event->any.send_event &&
+      !webkit_web_view_get_is_muted(self->web_) &&
+      ((event->type == GDK_BUTTON_RELEASE &&
+        (event->button.button == 1 || event->button.button == 2)) ||
+       (event->type == GDK_KEY_PRESS &&
+        (event->key.keyval == GDK_KEY_Return || event->key.keyval == GDK_KEY_KP_Enter ||
+         event->key.keyval == GDK_KEY_space)))) {
+    self->download_activation_ = g_get_monotonic_time();
+    self->download_target_.clear();
+  }
   const char* type;
   switch (event->type) {
     case GDK_MOTION_NOTIFY:type="motion";break;

@@ -1,6 +1,28 @@
+import Carbon
 import Cocoa
 import FlutterMacOS
 import WebKit
+
+func desktopBrowserAllowsNavigation(_ url: URL?, blockedHosts: Set<String>,
+                                    mainFrame: Bool) -> Bool {
+  guard let url, let scheme = url.scheme?.lowercased() else { return false }
+  if !mainFrame && (scheme == "blob" || scheme == "data" ||
+      ["about:blank", "about:srcdoc"].contains(url.absoluteString.lowercased())) {
+    return true
+  }
+  guard scheme == "https" || scheme == "http",
+        let host = url.host?.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".")),
+        !host.isEmpty, url.user == nil, url.password == nil else { return false }
+  return !blockedHosts.contains(host)
+}
+
+func desktopBrowserCloseShortcut(_ character: String?, latinFallback: () -> String?) -> Bool {
+  guard let character = character?.lowercased() else { return false }
+  if character.utf8.allSatisfy({ $0 < 128 }) {
+    return character == "w"
+  }
+  return latinFallback()?.lowercased() == "w"
+}
 
 final class DesktopBrowserViewFactory: NSObject, FlutterPlatformViewFactory {
   private let messenger: FlutterBinaryMessenger
@@ -70,6 +92,10 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
   private let blockedHosts: Set<String>
   private var observations: [NSKeyValueObservation] = []
   private var retryURL: URL?
+  private var inputMonitor: Any?
+  private var downloadInput: TimeInterval?
+  private var downloadTarget: URL?
+  private var muted = true
 
   init(configuration: WKWebViewConfiguration, blockedHosts: Set<String>, channel: FlutterMethodChannel) {
     self.channel = channel
@@ -77,6 +103,12 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
     super.init(frame: .zero, configuration: configuration)
     navigationDelegate = self
     uiDelegate = self
+    setAllMediaPlaybackSuspended(true, completionHandler: nil)
+    inputMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp, .keyDown]) {
+      [weak self] event in
+      self?.observeDownloadInput(event)
+      return event
+    }
     observations = [
       observe(\.url) { [weak self] _, _ in self?.report() },
       observe(\.title) { [weak self] _, _ in self?.report() },
@@ -94,17 +126,29 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
           result(FlutterError(code: "invalid_url", message: nil, details: nil))
           return
         }
+        self.clearDownloadInput()
         self.load(URLRequest(url: url))
       case "back":
+        self.clearDownloadInput()
         self.goBack()
       case "forward":
+        self.clearDownloadInput()
         self.goForward()
       case "reload":
+        self.clearDownloadInput()
         if let retryURL = self.retryURL {
           self.load(URLRequest(url: retryURL))
         } else {
           self.reload()
         }
+      case "setMuted":
+        guard let muted = call.arguments as? Bool else {
+          result(FlutterError(code: "invalid_mute", message: nil, details: nil))
+          return
+        }
+        self.muted = muted
+        if muted { self.clearDownloadInput() }
+        self.setAllMediaPlaybackSuspended(muted, completionHandler: nil)
       default:
         result(FlutterMethodNotImplemented)
         return
@@ -121,22 +165,19 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
     uiDelegate = nil
     channel.setMethodCallHandler(nil)
     stopLoading()
+    setAllMediaPlaybackSuspended(true, completionHandler: nil)
+    if let inputMonitor { NSEvent.removeMonitor(inputMonitor) }
+    inputMonitor = nil
     isHidden = true
   }
 
   deinit {
+    if let inputMonitor { NSEvent.removeMonitor(inputMonitor) }
     channel.setMethodCallHandler(nil)
   }
 
   private func allows(_ url: URL?) -> Bool {
-    guard let url = url,
-          let scheme = url.scheme?.lowercased(),
-          scheme == "https" || scheme == "http",
-          let host = url.host?.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".")),
-          !host.isEmpty,
-          url.user == nil,
-          url.password == nil else { return false }
-    return !blockedHosts.contains(host)
+    desktopBrowserAllowsNavigation(url, blockedHosts: blockedHosts, mainFrame: true)
   }
 
   private func report() {
@@ -153,28 +194,40 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
 
   func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    let mainFrame = action.targetFrame?.isMainFrame != false
+    let url = action.request.url
+    let recentClick = downloadInput.map { ProcessInfo.processInfo.systemUptime - $0 < 1 } ?? false
+    if mainFrame {
+      downloadTarget = recentClick && action.navigationType == .linkActivated ? url : nil
+    }
     if action.shouldPerformDownload {
-      openExternal(action.request.url)
+      if recentClick && action.navigationType == .linkActivated { openDownload(url) }
       decisionHandler(.cancel)
       return
     }
-    decisionHandler(action.targetFrame?.isMainFrame == false || allows(action.request.url)
-      ? .allow : .cancel)
+    decisionHandler(desktopBrowserAllowsNavigation(url, blockedHosts: blockedHosts,
+                                                   mainFrame: mainFrame) ? .allow : .cancel)
   }
 
   func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse,
                decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
-    guard response.isForMainFrame else { decisionHandler(.allow); return }
     let url = response.response.url
+    guard desktopBrowserAllowsNavigation(url, blockedHosts: blockedHosts,
+                                         mainFrame: response.isForMainFrame) else {
+      decisionHandler(.cancel)
+      return
+    }
+    guard response.isForMainFrame else { decisionHandler(.allow); return }
     let disposition = (response.response as? HTTPURLResponse)?
       .value(forHTTPHeaderField: "Content-Disposition")?.split(separator: ";").first?
       .trimmingCharacters(in: .whitespacesAndNewlines)
     guard response.canShowMIMEType, disposition?.lowercased() != "attachment" else {
-      openExternal(url)
+      if url == downloadTarget { openDownload(url) }
       decisionHandler(.cancel)
       return
     }
-    decisionHandler(allows(url) ? .allow : .cancel)
+    clearDownloadInput()
+    decisionHandler(.allow)
   }
 
   func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
@@ -189,6 +242,34 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
     if let url, allows(url) {
       channel.invokeMethod("event", arguments: ["type": "openExternal", "url": url.absoluteString])
     }
+  }
+
+  private func clearDownloadInput() {
+    downloadInput = nil
+    downloadTarget = nil
+  }
+
+  private func openDownload(_ url: URL?) {
+    guard !muted, downloadInput != nil, allows(url) else { return }
+    clearDownloadInput()
+    openExternal(url)
+  }
+
+  private var ownsKeyboard: Bool {
+    guard let responder = window?.firstResponder as? NSView else { return false }
+    return responder === self || responder.isDescendant(of: self)
+  }
+
+  private func observeDownloadInput(_ event: NSEvent) {
+    guard !muted, let window, event.window === window else { return }
+    if event.type == .leftMouseUp {
+      guard bounds.contains(convert(event.locationInWindow, from: nil)) else { return }
+    } else {
+      guard ownsKeyboard, !event.isARepeat,
+            ["\r", "\u{3}", " "].contains(event.charactersIgnoringModifiers ?? "") else { return }
+    }
+    downloadInput = ProcessInfo.processInfo.systemUptime
+    downloadTarget = nil
   }
 
   func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -222,14 +303,29 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     let modifiers = event.modifierFlags.intersection([.command, .control, .shift, .option])
     if modifiers == .command,
-       event.charactersIgnoringModifiers?.lowercased() == "w",
-       let responder = window?.firstResponder as? NSView,
-       responder === self || responder.isDescendant(of: self) {
+       ownsKeyboard,
+       desktopBrowserCloseShortcut(event.charactersIgnoringModifiers,
+                                  latinFallback: { self.latinKey(event.keyCode) }) {
       if !event.isARepeat {
         channel.invokeMethod("event", arguments: ["type": "closeTab"])
       }
       return true
     }
     return super.performKeyEquivalent(with: event)
+  }
+
+  private func latinKey(_ keyCode: UInt16) -> String? {
+    guard let source = TISCopyCurrentASCIICapableKeyboardLayoutInputSource()?.takeRetainedValue(),
+          let data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData),
+          let bytes = CFDataGetBytePtr(Unmanaged<CFData>.fromOpaque(data).takeUnretainedValue())
+    else { return nil }
+    let layout = UnsafeRawPointer(bytes).assumingMemoryBound(to: UCKeyboardLayout.self)
+    var deadKey: UInt32 = 0
+    var count = 0
+    var characters = [UniChar](repeating: 0, count: 4)
+    let result = UCKeyTranslate(layout, keyCode, UInt16(kUCKeyActionDown), 0,
+                                UInt32(LMGetKbdType()), OptionBits(kUCKeyTranslateNoDeadKeysMask),
+                                &deadKey, characters.count, &count, &characters)
+    return result == noErr ? String(decoding: characters.prefix(count), as: UTF16.self) : nil
   }
 }

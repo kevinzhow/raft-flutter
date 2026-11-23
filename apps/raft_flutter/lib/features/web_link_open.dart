@@ -140,10 +140,7 @@ Listenable? webPreviewAvailability(
       ? ChannelSideFlags.of(w)
       : ChannelSideFlags.existingOf(w);
   if (flags == null) return null;
-  return Listenable.merge([
-    flags,
-    WebPreviewStore.of(w).platform.voiceOverState,
-  ]);
+  return WebPreviewStore.of(w).availabilityChanges;
 }
 
 /// A card button `open: "beside"` (Web `MessageCardBody` `openBeside`): true

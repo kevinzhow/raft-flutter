@@ -24,6 +24,7 @@ const _keyboardStep = 16.0, _keyboardStepLarge = 64.0;
 typedef ChannelSideFold = ({
   bool collapsed,
   bool stackEnd,
+  bool showing,
   ValueChanged<bool>? onCollapsedChanged,
 });
 
@@ -358,6 +359,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                   child: widget.cardOf(context, s, (
                     collapsed: folded(s),
                     stackEnd: s == stackEnd,
+                    showing: shownSet.contains(s),
                     onCollapsedChanged:
                         folds && widget.expanded == null && _card(s) != null
                         ? (v) => store.setCollapsed(_card(s)!, v)

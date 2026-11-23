@@ -85,6 +85,8 @@ class SystemWebViewController {
   Future<Map<Object?, Object?>?> inspect() =>
       _invoke<Map<Object?, Object?>>('inspect');
 
+  Future<void> setBrowserMuted(bool muted) => _invoke<void>('setMuted', muted);
+
   Future<void> updateRegionOverlay(Map<String, Object?> frame) =>
       _invoke<void>('regionOverlay', frame);
 

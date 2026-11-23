@@ -160,6 +160,21 @@ class WebPreviewStore extends ChangeNotifier {
   }
 
   WebPreviewPlatform platform = const WebPreviewPlatform();
+  ({Listenable voiceOver, Listenable changes})? _availability;
+  Listenable get availabilityChanges {
+    final voiceOver = platform.voiceOverState;
+    final cached = _availability;
+    if (cached != null && identical(cached.voiceOver, voiceOver)) {
+      return cached.changes;
+    }
+    final changes = Listenable.merge([
+      ChannelSideFlags.of(_workspace),
+      voiceOver,
+    ]);
+    _availability = (voiceOver: voiceOver, changes: changes);
+    return changes;
+  }
+
   final browserTabs = DesktopBrowserTabs();
   DesktopBrowserSession browserSession = DesktopBrowserSession();
   final WorkspaceController _workspace;
@@ -170,8 +185,10 @@ class WebPreviewStore extends ChangeNotifier {
     final account = _workspace.client.user?.id;
     if (account != _browserAccount) {
       _browserAccount = account;
-      browserSession.dispose();
+      final retired = browserSession;
       browserSession = DesktopBrowserSession();
+      browserTabs.clear();
+      retired.dispose();
     }
     final next = channelSearchPageAuthority(_workspace);
     if (next == _browserAuthority) return;

@@ -6,6 +6,9 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_side_area.dart';
 import 'package:raft_flutter/features/channel_side_store.dart';
 import 'package:raft_flutter/features/channel_side_web_preview.dart';
+import 'package:raft_flutter/features/desktop_browser_panel.dart';
+import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_system_webview/raft_system_webview.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -20,7 +23,10 @@ void main() {
   final pages = <int, List<MethodCall>>{};
   final channels = <int, MethodChannel>{};
 
-  Future<WorkspaceController> mount(WidgetTester tester) async {
+  Future<WorkspaceController> mount(
+    WidgetTester tester, {
+    bool projection = false,
+  }) async {
     requests.clear();
     pages.clear();
     channels.clear();
@@ -68,13 +74,23 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      MaterialApp(
-        theme: raftTheme(),
-        home: Scaffold(
-          body: ChannelSideArea(
-            controller: workspace,
-            child: const SizedBox.expand(),
-          ),
+      AppServicesScope(
+        services: const AppServices.updatesDisabledForTestOrPreview(),
+        child: MaterialApp(
+          theme: raftTheme(),
+          home: projection
+              ? WorkspaceView(
+                  controller: workspace,
+                  appearance: const RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                )
+              : Scaffold(
+                  body: ChannelSideArea(
+                    controller: workspace,
+                    child: const SizedBox.expand(),
+                  ),
+                ),
         ),
       ),
     );
@@ -205,5 +221,89 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     expect(justOpened, 'app');
     expect(onReturn, 'tasks');
+  }, variant: linux);
+
+  testWidgets('opening an existing link brings Browser ahead of Tasks', (
+    tester,
+  ) async {
+    final workspace = await mount(tester);
+    final store = ChannelSideStore.of(workspace);
+    store.focus('tasks');
+    await tester.pumpAndSettle();
+
+    openWebPreviewBeside(workspace, _url.toString(), conversationId: 'c1');
+    await tester.pumpAndSettle();
+    final card = store.activeCard(['app', 'tasks']);
+    final nativePages = channels.length;
+    await tester.pumpWidget(const SizedBox());
+
+    expect(card, 'app');
+    expect(nativePages, 1);
+  }, variant: linux);
+
+  testWidgets('compact layout and conversation changes keep the same page', (
+    tester,
+  ) async {
+    final workspace = await mount(tester, projection: true);
+    await event(tester, 'browserState', {
+      'url': _url.replace(path: '/second').toString(),
+      'title': 'Loaded document',
+      'back': true,
+    });
+    tester.view.physicalSize = const Size(760, 900);
+    await tester.pumpAndSettle();
+    final conversation = workspace.channel!;
+    final other = RaftChannel({'id': 'other', 'name': 'Other', 'joined': true});
+    workspace.channels = [conversation, other];
+    workspace.channel = other;
+    workspace.section = 'chat';
+    workspace.notifyListeners();
+    await tester.pumpAndSettle();
+    workspace.channel = conversation;
+    workspace.section = 'chat';
+    workspace.notifyListeners();
+    await tester.pumpAndSettle();
+    final browser = WebPreviewStore.of(workspace).browserTabs;
+    browser.navigate('c1', browser.forConversation('c1')!.activeId, _url);
+    await tester.pumpAndSettle();
+    expect(find.byType(DesktopBrowserPanel), findsOneWidget);
+    tester.view.physicalSize = const Size(1280, 900);
+    await tester.pumpAndSettle();
+
+    final nativePages = channels.length;
+    final loads = pages.values
+        .expand((calls) => calls)
+        .where((call) => call.method == 'load')
+        .length;
+    await tester.pumpWidget(const SizedBox());
+    expect(nativePages, 1);
+    expect(loads, 2);
+  }, variant: linux);
+
+  testWidgets('Escape restores expanded chrome and leaves both tabs open', (
+    tester,
+  ) async {
+    final workspace = await mount(tester);
+    final tabs = WebPreviewStore.of(workspace).browserTabs;
+    tabs.open('c1', _url.replace(path: '/second'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('browser-expand')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<DesktopBrowserPanel>(find.byType(DesktopBrowserPanel))
+          .expanded,
+      isTrue,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(tabs.forConversation('c1')?.tabs, hasLength(2));
+    expect(
+      tester
+          .widget<DesktopBrowserPanel>(find.byType(DesktopBrowserPanel))
+          .expanded,
+      isFalse,
+    );
+    await tester.pumpWidget(const SizedBox());
   }, variant: linux);
 }

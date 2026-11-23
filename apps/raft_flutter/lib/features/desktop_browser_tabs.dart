@@ -71,12 +71,11 @@ class DesktopBrowser {
     List<DesktopBrowserTab> tabs, {
     required this.activeId,
     required this.frontAt,
-    required this.openedAt,
     this.parkedAt = 0,
   }) : tabs = List.unmodifiable(tabs);
 
   final List<DesktopBrowserTab> tabs;
-  final int activeId, frontAt, openedAt, parkedAt;
+  final int activeId, frontAt, parkedAt;
 
   DesktopBrowserTab get active => tabs.firstWhere((tab) => tab.id == activeId);
 
@@ -87,13 +86,11 @@ class DesktopBrowser {
     List<DesktopBrowserTab>? tabs,
     int? activeId,
     int? frontAt,
-    int? openedAt,
     int? parkedAt,
   }) => DesktopBrowser._(
     tabs ?? this.tabs,
     activeId: activeId ?? this.activeId,
     frontAt: frontAt ?? this.frontAt,
-    openedAt: openedAt ?? this.openedAt,
     parkedAt: parkedAt ?? this.parkedAt,
   );
 
@@ -144,12 +141,7 @@ class DesktopBrowserTabs extends ChangeNotifier {
       final tab = DesktopBrowserTab._create(++_sequence, url);
       _put(
         conversation,
-        DesktopBrowser._(
-          [tab],
-          activeId: tab.id,
-          frontAt: frontAt,
-          openedAt: frontAt,
-        ),
+        DesktopBrowser._([tab], activeId: tab.id, frontAt: frontAt),
       );
       return;
     }
@@ -164,9 +156,7 @@ class DesktopBrowserTabs extends ChangeNotifier {
     } else if (browser.tabs.length == desktopBrowserTabLimit) {
       _put(
         conversation,
-        browser
-            ._replace(browser.active._navigate(url))
-            ._with(frontAt: frontAt, openedAt: frontAt),
+        browser._replace(browser.active._navigate(url))._with(frontAt: frontAt),
       );
     } else {
       final tab = DesktopBrowserTab._create(++_sequence, url);
@@ -176,7 +166,6 @@ class DesktopBrowserTabs extends ChangeNotifier {
           tabs: [...browser.tabs, tab],
           activeId: tab.id,
           frontAt: frontAt,
-          openedAt: frontAt,
         ),
       );
     }

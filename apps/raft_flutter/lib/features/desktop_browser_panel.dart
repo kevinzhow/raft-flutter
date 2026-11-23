@@ -18,7 +18,6 @@ typedef DesktopBrowserPageEvents = ({
   ValueChanged<BrowserHistoryActions?> history,
   ValueChanged<Uri> openExternal,
   VoidCallback closeTab,
-  VoidCallback closePanel,
 });
 
 typedef DesktopBrowserPageBuilder = Widget Function(
@@ -102,7 +101,9 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
       final head = _head(browser);
       return CallbackShortcuts(
         bindings: {
-          const SingleActivator(LogicalKeyboardKey.escape): _close,
+          const SingleActivator(LogicalKeyboardKey.escape): widget.expanded
+              ? widget.onExpand ?? _close
+              : _close,
           const SingleActivator(
             LogicalKeyboardKey.keyW,
             meta: true,
@@ -122,6 +123,7 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
           },
           child: Focus(
             focusNode: _focus,
+            canRequestFocus: widget.showing,
             autofocus: widget.showing && active.url != null,
             descendantsAreFocusable: widget.showing,
             child: Semantics(
@@ -210,7 +212,6 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
             if (allowed != null) widget.openExternal(allowed);
           },
           closeTab: () => widget.tabs.closeTab(widget.conversation, tab.id),
-          closePanel: _close,
         )),
       ),
     );

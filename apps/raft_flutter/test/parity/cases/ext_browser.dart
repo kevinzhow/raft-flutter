@@ -18,6 +18,8 @@ const _states = [
   'narrow',
   'artifact-behind',
   'artifact-front',
+  'short-front',
+  'long-front',
 ];
 
 final Map<String, ParityCase> extBrowserCases = {
@@ -81,16 +83,41 @@ class _BrowserFixture extends StatefulWidget {
 class _BrowserFixtureState extends State<_BrowserFixture> {
   static const _conversation = 'parity-browser';
   final _tabs = DesktopBrowserTabs();
+  bool get _titleFit =>
+      widget.state == 'short-front' || widget.state == 'long-front';
+
+  void _open(String url, {String? title}) {
+    final address = Uri.parse(url);
+    _tabs.open(_conversation, address);
+    if (title == null) return;
+    _tabs.report(
+      _conversation,
+      _tabs.forConversation(_conversation)!.activeId,
+      (url: address, title: title, back: false, forward: false, loading: false),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     if (widget.state == 'overflow' || widget.state == 'narrow') {
       for (var tab = 1; tab < 12; tab++) {
-        _tabs.open(_conversation, Uri.parse('https://site$tab.test/'));
+        _open('https://site$tab.test/');
       }
     }
-    _tabs.open(_conversation, Uri.parse('http://localhost:8040/guide'));
+    if (_titleFit) {
+      for (final name in ['Alpha', 'Bravo', 'Charlie']) {
+        _open('https://${name.toLowerCase()}.test/', title: 'Loopback $name');
+      }
+    }
+    _open(
+      'http://localhost:8040/guide',
+      title: _titleFit
+          ? widget.state == 'short-front'
+                ? 'Echo'
+                : 'Loopback Delta'
+          : null,
+    );
   }
 
   @override
@@ -113,6 +140,7 @@ class _BrowserFixtureState extends State<_BrowserFixture> {
             tabs: _tabs,
             conversation: _conversation,
             raftHosts: const {},
+            onExpand: _titleFit ? () {} : null,
             onShowArtifact:
                 widget.state == 'artifact-behind' || widget.state == 'narrow'
                 ? () => _tabs.park(_conversation)

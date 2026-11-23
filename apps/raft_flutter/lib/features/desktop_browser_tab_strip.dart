@@ -187,8 +187,7 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
       if (!mounted) return;
       final render = _front.currentContext?.findRenderObject();
       if (render is RenderBox && render.hasSize) {
-        final width = render.getMaxIntrinsicWidth(render.size.height);
-        widget.onFrontWidth(width.clamp(60.0, _tabMax));
+        widget.onFrontWidth(render.size.width.roundToDouble());
       }
     });
     return LayoutBuilder(
@@ -258,7 +257,9 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
                               focus: _focus(tab.id),
                               close: () => widget.onClose(tab.id),
                               select: () => widget.onSelect(tab.id),
-                              measureKey: tab.id == activeId ? _front : null,
+                              measureKey: tab.id == activeId && room >= _tabMax
+                                  ? _front
+                                  : null,
                             ),
                           ),
                       ],
@@ -361,6 +362,34 @@ class _BrowserTabState extends State<_BrowserTab> {
     final compact = active && widget.width < 76;
     final hoverClose = !active && _hovered;
     final label = browserTabLabel(context, tab);
+    final button = RaftTabButton(
+      key: ValueKey('browser-tab-${tab.id}'),
+      label: label,
+      semanticLabel: label,
+      focusNode: widget.focus,
+      tooltip: tab.url?.toString(),
+      selected: active,
+      fitLabel: true,
+      labelOverflow: active && widget.width < 48 ? TextOverflow.clip : null,
+      padding: compact
+          ? const EdgeInsetsDirectional.only(
+              start: RaftSpace.half,
+              end: RaftSpace.x4,
+            )
+          : EdgeInsetsDirectional.only(
+              start: RaftSpace.x2 + RaftSpace.half,
+              end: active
+                  ? RaftDesktopMetrics.barButtonSize
+                  : RaftSpace.x2 + RaftSpace.half,
+            ),
+      icon: compact
+          ? null
+          : (size, color, weight) => Opacity(
+              opacity: hoverClose ? 0 : 1,
+              child: RaftIcon(_tabGlyph(tab), size: size, color: color),
+            ),
+      onPressed: widget.select,
+    );
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -369,43 +398,17 @@ class _BrowserTabState extends State<_BrowserTab> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            KeyedSubtree(
-              key: compact ? null : widget.measureKey,
-              child: RaftTabButton(
-                key: ValueKey('browser-tab-${tab.id}'),
-                label: label,
-                semanticLabel: label,
-                focusNode: widget.focus,
-                tooltip: tab.url?.toString(),
-                selected: active,
-                fitLabel: true,
-                labelOverflow: active && widget.width < 48
-                    ? TextOverflow.clip
-                    : null,
-                padding: compact
-                    ? const EdgeInsetsDirectional.only(
-                        start: RaftSpace.half,
-                        end: RaftSpace.x4,
-                      )
-                    : EdgeInsetsDirectional.only(
-                        start: RaftSpace.x2 + RaftSpace.half,
-                        end: active
-                            ? RaftDesktopMetrics.barButtonSize
-                            : RaftSpace.x2 + RaftSpace.half,
-                      ),
-                icon: compact
-                    ? null
-                    : (size, color, weight) => Opacity(
-                        opacity: hoverClose ? 0 : 1,
-                        child: RaftIcon(
-                          _tabGlyph(tab),
-                          size: size,
-                          color: color,
-                        ),
-                      ),
-                onPressed: widget.select,
-              ),
-            ),
+            if (widget.measureKey case final measure?)
+              ClipRect(
+                child: OverflowBox(
+                  alignment: AlignmentDirectional.centerStart,
+                  minWidth: 0,
+                  maxWidth: _tabMax,
+                  child: IntrinsicWidth(key: measure, child: button),
+                ),
+              )
+            else
+              button,
             if (active || hoverClose)
               PositionedDirectional(
                 start: hoverClose ? 7 : null,

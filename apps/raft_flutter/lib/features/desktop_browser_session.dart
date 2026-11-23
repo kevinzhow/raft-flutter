@@ -47,54 +47,96 @@ class DesktopBrowserSession {
 }
 
 class DesktopBrowserWindowsProfile {
-  Future<DesktopHtmlEnvironment>? _environment;
-  PlatformHeadlessInAppWebView? _keeper;
+  DesktopBrowserWindowsProfile({
+    Future<DesktopHtmlEnvironment> Function()? createEnvironment,
+  }) : _createEnvironment =
+           createEnvironment ??
+           (() => DesktopHtmlEnvironment.create(TargetPlatform.windows));
+
+  final Future<DesktopHtmlEnvironment> Function() _createEnvironment;
+  Future<_WindowsProfile>? _opening;
+  _WindowsProfile? _current;
   bool _closed = false;
 
-  Future<DesktopHtmlEnvironment> open() {
+  Future<DesktopHtmlEnvironment> open() async {
     if (_closed) throw StateError('The browser session is closed.');
-    return _environment ??= _open();
+    if (_current case final current?) return current.environment;
+    return (await (_opening ??= _open())).environment;
   }
 
-  Future<DesktopHtmlEnvironment> _open() async {
-    final environment = await DesktopHtmlEnvironment.create(
-      TargetPlatform.windows,
-    );
+  Future<_WindowsProfile> _open() async {
     try {
-      final keeper = _keeper = PlatformHeadlessInAppWebView(
-        PlatformHeadlessInAppWebViewCreationParams(
-          webViewEnvironment: environment.platform,
-          initialSettings: InAppWebViewSettings(
-            incognito: true,
-            javaScriptEnabled: false,
-            javaScriptBridgeEnabled: false,
-          ),
-        ),
+      final environment = await Future.sync(_createEnvironment);
+      final profile = _WindowsProfile(
+        environment,
+        environment.platform == null
+            ? null
+            : PlatformHeadlessInAppWebView(
+                PlatformHeadlessInAppWebViewCreationParams(
+                  webViewEnvironment: environment.platform,
+                  initialSettings: InAppWebViewSettings(
+                    incognito: true,
+                    javaScriptEnabled: false,
+                    javaScriptBridgeEnabled: false,
+                  ),
+                ),
+              ),
       );
-      await keeper.run();
-      return environment;
-    } catch (_) {
-      await _keeper?.dispose();
-      await environment.dispose();
-      rethrow;
+      var exited = false;
+      final browser = environment.platform;
+      if (browser != null) {
+        final previous = browser.onBrowserProcessExited;
+        browser.onBrowserProcessExited = (detail) {
+          exited = true;
+          previous?.call(detail);
+          invalidate(environment);
+        };
+      }
+      try {
+        await profile.keeper?.run();
+        if (_closed || exited) {
+          throw StateError('The browser environment closed during startup.');
+        }
+      } catch (_) {
+        _retire(profile);
+        rethrow;
+      }
+      return _current = profile;
+    } finally {
+      _opening = null;
     }
+  }
+
+  void invalidate(DesktopHtmlEnvironment environment) {
+    final current = _current;
+    if (current == null || !identical(current.environment, environment)) {
+      return;
+    }
+    _current = null;
+    _retire(current);
+  }
+
+  void _retire(_WindowsProfile profile) {
+    unawaited(profile.dispose().catchError((Object _) {}));
   }
 
   void dispose() {
     _closed = true;
-    final environment = _environment;
-    if (environment != null) {
-      unawaited(
-        environment
-            .then((created) async {
-              try {
-                await _keeper?.dispose();
-              } finally {
-                await created.dispose();
-              }
-            })
-            .catchError((Object _) {}),
-      );
+    if (_current case final profile?) invalidate(profile.environment);
+  }
+}
+
+class _WindowsProfile {
+  const _WindowsProfile(this.environment, this.keeper);
+
+  final DesktopHtmlEnvironment environment;
+  final PlatformHeadlessInAppWebView? keeper;
+
+  Future<void> dispose() async {
+    try {
+      await keeper?.dispose();
+    } finally {
+      await environment.dispose();
     }
   }
 }

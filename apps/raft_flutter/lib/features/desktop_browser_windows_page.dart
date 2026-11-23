@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 
@@ -8,6 +9,20 @@ import 'desktop_browser_native_page.dart';
 import 'desktop_browser_panel.dart';
 import 'desktop_browser_session.dart';
 import 'desktop_browser_tabs.dart';
+
+bool allowsWindowsBrowserNavigation(
+  String? address,
+  Set<String> raftHosts, {
+  required bool mainFrame,
+}) {
+  final local = address?.toLowerCase();
+  return webPreviewTarget(address, raftHosts) != null ||
+      !mainFrame &&
+          (local == 'about:blank' ||
+              local == 'about:srcdoc' ||
+              local?.startsWith('blob:') == true ||
+              local?.startsWith('data:') == true);
+}
 
 class DesktopBrowserWindowsPage extends StatefulWidget {
   const DesktopBrowserWindowsPage({
@@ -37,6 +52,8 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
   bool _failed = false, _loading = true;
   bool _needsRenderer = false;
   Uri? _retryUrl;
+  Uri? _activatedDownload;
+  bool _requestedDocument = false;
   int _sample = 0;
 
   @override
@@ -78,13 +95,27 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
               popup.cancel();
               return NavigationActionPolicy.CANCEL;
             }
-            if (!action.isForMainFrame ||
-                url == 'about:blank' ||
-                webPreviewTarget(url, widget.raftHosts) != null) {
-              return NavigationActionPolicy.ALLOW;
+            final mainFrame = action.isForMainFrame;
+            if (!allowsWindowsBrowserNavigation(
+                  url,
+                  widget.raftHosts,
+                  mainFrame: mainFrame,
+                ) &&
+                !(!_requestedDocument && url == 'about:blank')) {
+              return NavigationActionPolicy.CANCEL;
             }
-            return NavigationActionPolicy.CANCEL;
+            if (mainFrame) {
+              _activatedDownload =
+                  action.navigationType == NavigationType.LINK_ACTIVATED &&
+                      action.isRedirect != true &&
+                      widget.visible
+                  ? webPreviewTarget(url, widget.raftHosts)
+                  : null;
+            }
+            return NavigationActionPolicy.ALLOW;
           },
+          onLaunchingExternalUriScheme: (_, _) =>
+              LaunchingExternalUriSchemeResponse(cancel: true),
           onCreateWindow: (_, action) {
             final raw = action.request.url?.toString();
             final url = webPreviewTarget(raw, widget.raftHosts);
@@ -108,7 +139,10 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
             if (_failed && mounted) setState(() => _failed = false);
             _navigationChanged(loading: true);
           },
-          onLoadStop: (_, _) => _navigationChanged(loading: false),
+          onLoadStop: (_, _) {
+            _activatedDownload = null;
+            _navigationChanged(loading: false);
+          },
           onTitleChanged: (_, _) => _navigationChanged(),
           onUpdateVisitedHistory: (_, _, _) => _navigationChanged(),
           onReceivedError: (_, request, error) {
@@ -126,6 +160,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
           },
           onProcessFailed: (_, detail) {
             if (detail.kind == ProcessFailedKind.BROWSER_PROCESS_EXITED) {
+              widget.profile.invalidate(environment);
               _needsRenderer = true;
               _fail();
             } else if (detail.kind == ProcessFailedKind.RENDER_PROCESS_EXITED) {
@@ -139,12 +174,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
                 key.physicalKeyStatus?.wasKeyDown == true) {
               return;
             }
-            switch (key.virtualKey) {
-              case 0x57:
-                widget.events.closeTab();
-              case 0x1b:
-                widget.events.closePanel();
-            }
+            if (key.virtualKey == 0x57) widget.events.closeTab();
           },
           onPermissionRequest: (_, request) => PermissionResponse(
             resources: request.resources,
@@ -158,7 +188,9 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
               request.url.toString(),
               widget.raftHosts,
             );
-            if (mounted && widget.visible && url != null) {
+            final activated = _activatedDownload;
+            _activatedDownload = null;
+            if (mounted && widget.visible && url != null && url == activated) {
               widget.events.openExternal(url);
             }
             return DownloadStartResponse(
@@ -177,6 +209,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
   void _attach(PlatformInAppWebViewController controller) {
     if (!mounted) return;
     _controller = controller;
+    _syncMedia();
     widget.events.history((
       back: () => _navigate(controller.goBack),
       forward: () => _navigate(controller.goForward),
@@ -219,7 +252,23 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     unawaited(Future<void>.sync(command).catchError((Object _) => _fail()));
   }
 
+  void _syncMedia() {
+    final controller = _controller;
+    if (controller == null) return;
+    final channel = MethodChannel(
+      'com.pichillilorenzo/flutter_inappwebview_${controller.getViewId()}',
+    );
+    unawaited(
+      channel
+          .invokeMethod<void>('setSettings', {
+            'settings': {'raftBrowserMuted': !widget.visible || _failed},
+          })
+          .catchError((Object _) {}),
+    );
+  }
+
   void _navigate(Future<void> Function() command) {
+    _activatedDownload = null;
     ++_sample;
     if (_needsRenderer) {
       _needsRenderer = false;
@@ -232,7 +281,10 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
       unawaited(_start());
       return;
     }
-    if (_failed) setState(() => _failed = false);
+    if (_failed) {
+      setState(() => _failed = false);
+      _syncMedia();
+    }
     _run(command);
   }
 
@@ -241,6 +293,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     ++_sample;
     _loading = false;
     setState(() => _failed = true);
+    _syncMedia();
     final page = widget.tab.page;
     final target = _retryUrl;
     widget.events.state((
@@ -261,6 +314,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
       return;
     }
     _retryUrl = url;
+    _requestedDocument = true;
     _navigate(
       () => controller.loadUrl(
         urlRequest: URLRequest(url: WebUri(url.toString())),
@@ -271,6 +325,10 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
   @override
   void didUpdateWidget(DesktopBrowserWindowsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.visible != oldWidget.visible) {
+      if (!widget.visible) _activatedDownload = null;
+      _syncMedia();
+    }
     if (widget.tab.navigation == oldWidget.tab.navigation) return;
     if (widget.tab.requested case final target?) _load(target);
   }

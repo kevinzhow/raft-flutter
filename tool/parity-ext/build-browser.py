@@ -6,7 +6,10 @@ from builders import manifest_path
 
 
 PREFIX = "components.browser.desktop."
-STATES = ("page", "empty", "editing", "invalid", "overflow", "narrow", "artifact-behind", "artifact-front")
+STATES = (
+    "page", "empty", "editing", "invalid", "overflow", "narrow",
+    "artifact-behind", "artifact-front", "short-front", "long-front",
+)
 
 
 def test_id(name):
