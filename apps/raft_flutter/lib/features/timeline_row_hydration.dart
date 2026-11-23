@@ -2,10 +2,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'external_sender.dart';
 import 'timeline_row_trace.dart';
 
 typedef TimelineRowPreviewBuilder = Widget? Function(
@@ -233,24 +231,6 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
   }
 }
 
-Widget? timelineMessagePreview(
-  BuildContext context,
-  RaftMessage message,
-  double height, {
-  required String Function(DateTime?) timestamp,
-  required String? Function(RaftMessage) translated,
-}) {
-  if (message.string('messageType') == 'system' || message.retracted) {
-    return null;
-  }
-  return TimelineRowPreview(
-    author: messageSenderName(context, message),
-    timestamp: timestamp(message.createdAt),
-    content: translated(message) ?? message.content,
-    height: height,
-  );
-}
-
 class TimelineHydrationAnchor {
   const TimelineHydrationAnchor(
     this.box,
@@ -405,46 +385,89 @@ class _RenderTimelineWidthObserver extends RenderProxyBox {
 class TimelineRowPreview extends StatelessWidget {
   const TimelineRowPreview({
     super.key,
-    required this.author,
-    required this.timestamp,
-    required this.content,
+    required this.tile,
     required this.height,
+    required this.linkGroups,
+    required this.onLink,
   });
 
-  final String author;
-  final String timestamp;
-  final String content;
+  final RaftMessageTile tile;
   final double height;
+  final List<List<RaftMessageSemanticsLink>> linkGroups;
+  final ValueChanged<String> onLink;
 
   @override
   Widget build(BuildContext context) {
-    final text = raftMessageSemanticsText(context, content);
+    final text = raftMessageSemanticsText(
+      context,
+      tile.semanticsContent ?? tile.content,
+    );
     final lineEnd = text.indexOf('\n');
     final firstLine = lineEnd < 0 ? text : text.substring(0, lineEnd);
-    final heading = timestamp.isEmpty ? author : '$author, $timestamp';
-    return Semantics(
-      container: true,
-      excludeSemantics: true,
-      label: text.isEmpty ? heading : '$heading\n$text',
-      child: ClipRect(
-        child: SizedBox(
-          height: height,
-          child: Align(
-            alignment: AlignmentDirectional.topStart,
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(
-                start: RaftSpace.x4,
-                top: RaftSpace.x1,
-                end: RaftSpace.x4,
-              ),
-              child: Text(
-                '$author\n$firstLine',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+    final visibleReactions = tile.visibleReactions;
+    final heading = tile.compactHeading(visibleReactions);
+    final actions = tile.compactActions(visibleReactions);
+    final links =
+        tile.coarsePointer && linkGroups.any((group) => group.isNotEmpty)
+        ? RaftMessageLinkActions()
+        : null;
+    Widget body = ExcludeSemantics(
+      child: Align(
+        alignment: AlignmentDirectional.topStart,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.only(
+            start: RaftSpace.x4,
+            top: RaftSpace.x1,
+            end: RaftSpace.x4,
+          ),
+          child: Text(
+            '${tile.author}\n$firstLine',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
+      ),
+    );
+    if (linkGroups.isNotEmpty) {
+      body = Stack(
+        fit: StackFit.expand,
+        children: [
+          body,
+          for (final group in linkGroups)
+            RaftMessageProseSemantics(
+              links: group,
+              onLink: onLink,
+              linkActions: links,
+              child: const SizedBox.shrink(),
+            ),
+        ],
+      );
+    }
+    return RaftMessageRowSemantics(
+      label: text.isEmpty ? heading : '$heading\n$text',
+      actions: [
+        for (final action in actions) action.label,
+        if (tile.onAuthor != null)
+          raftFormat(context, 'Mention {name}', {'name': tile.author}),
+      ],
+      onAction: (index) {
+        if (index < actions.length) {
+          actions[index].onInvoke(context);
+        } else {
+          tile.onAuthor?.call();
+        }
+      },
+      onLongPress: () {
+        final box = context.findRenderObject();
+        tile.onActionsAt?.call(
+          box is RenderBox && box.hasSize
+              ? box.localToGlobal(box.size.center(Offset.zero))
+              : Offset.zero,
+        );
+      },
+      linkActions: links,
+      child: ClipRect(
+        child: SizedBox(height: height, child: body),
       ),
     );
   }

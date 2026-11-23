@@ -55,6 +55,130 @@ Future<WorkspaceController> open(
 }
 
 void main() {
+  testWidgets('a touch preview preserves the row label and actions', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final workspace = await open(tester, size: const Size(390, 844));
+    final domain = workspace.messageDomain;
+    domain.ledger.ingest([
+      {
+        ...contextRows('reuse').last,
+        'senderName': 'Alice',
+        'createdAt': '2026-11-23T08:00:00Z',
+        'content': 'Open [vault](obsidian://open?vault=test)',
+        'reactions': [
+          {'emoji': '👍', 'count': 2},
+        ],
+      },
+    ], expectedGeneration: domain.ledger.generation);
+    workspace.notifyListeners();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme().copyWith(platform: TargetPlatform.android),
+        home: Scaffold(
+          body: RaftDensityScope(
+            density: RaftDensity.touch,
+            child: RaftChatView(controller: workspace),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(RaftMessageTimeline),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    final row = find.byKey(const ValueKey('reuse-79'));
+    final full = find.byKey(const ValueKey('message-reuse-79'));
+    final initial = tester.getSemantics(full).getSemanticsData();
+    List<String?> actionLabels(SemanticsData data) => [
+      for (final id in data.customSemanticsActionIds ?? [])
+        CustomSemanticsAction.getAction(id)?.label,
+    ];
+    expect(
+      actionLabels(initial),
+      containsAll(['Copy Markdown', '👍: 2', 'vault']),
+    );
+    position.jumpTo(position.pixels - 1800);
+    await tester.pumpAndSettle();
+    expect(row, findsNothing);
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    expect(full, findsNothing);
+    final preview = tester.getSemantics(
+      find.descendant(of: row, matching: find.byType(RaftMessageRowSemantics)),
+    );
+    final actual = preview.getSemanticsData();
+    expect(actual.label, initial.label);
+    expect(actionLabels(actual), actionLabels(initial));
+    expect(actual.hasAction(SemanticsAction.longPress), isTrue);
+    tester.binding.renderViews.first.owner!.semanticsOwner!.performAction(
+      preview.id,
+      SemanticsAction.customAction,
+      CustomSemanticsAction.getIdentifier(
+        const CustomSemanticsAction(label: 'vault'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('custom-protocol-link-confirm')),
+      findsOneWidget,
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('a returning collapsed row keeps its visible excerpt', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final workspace = await open(tester, size: const Size(390, 844));
+    final domain = workspace.messageDomain;
+    domain.ledger.ingest([
+      {
+        ...contextRows('reuse').last,
+        'content':
+            'Visible opening\n\n${'A long paragraph. ' * 120}\n\n'
+            'Hidden ending',
+      },
+    ], expectedGeneration: domain.ledger.generation);
+    workspace.notifyListeners();
+    await tester.pumpAndSettle();
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(RaftMessageTimeline),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    final row = find.byKey(const ValueKey('reuse-79'));
+    final node = find.descendant(
+      of: row,
+      matching: find.byType(RaftMessageRowSemantics),
+    );
+    final initial = tester.getSemantics(node).label;
+    expect(initial, endsWith('…'));
+    expect(initial, isNot(contains('Hidden ending')));
+    position.jumpTo(position.pixels - 1800);
+    await tester.pumpAndSettle();
+    expect(row, findsNothing);
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('message-reuse-79')), findsOneWidget);
+    await tester.pump();
+    expect(tester.getSemantics(node).label, initial);
+    semantics.dispose();
+  });
+
   testWidgets('thread live insert and edit preserve unrelated visible rows', (
     tester,
   ) async {

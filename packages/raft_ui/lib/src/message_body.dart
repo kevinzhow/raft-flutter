@@ -450,6 +450,33 @@ class RaftMessageBody extends StatelessWidget {
     }
   }
 
+  static List<List<RaftMessageSemanticsLink>> semanticsLinkGroups(
+    String content, {
+    required List<RaftTextReference> references,
+    required String Function(int)? taskHref,
+    required bool Function(int)? knownTaskNumber,
+  }) {
+    final inputs = _treeInputs(
+      content,
+      documentMode: false,
+      messagePipeline: true,
+      references: references,
+      taskHref: taskHref,
+      knownTaskNumber: knownTaskNumber,
+    );
+    final chunks = _bodyChunkCache.putIfAbsent(
+      content,
+      () => _splitBody(content),
+    );
+    return [
+      for (final chunk in chunks)
+        if (chunk.markdown)
+          if (raftTreeSemanticsLinks(_parseMarkdown(chunk.text, inputs))
+              case final links when links.isNotEmpty)
+            links,
+    ];
+  }
+
   /// Web MessageItem `a` renderer for Raft message permalinks: the chip for a
   /// link to a message of this server (label, tap), or null for an ordinary
   /// link.

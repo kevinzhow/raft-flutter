@@ -99,6 +99,8 @@ import 'channel_activity_session.dart';
 
 export 'thread_viewport_handle.dart';
 
+part 'chat_timeline_semantics.dart';
+
 /// Opens a task from a message (footer chip, in-body `#N` reference) in the
 /// host's task slot; [refresh] re-reads the message's task facts afterwards.
 typedef ChatTaskOpener = void Function(
@@ -2130,49 +2132,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     w.pendingReactionTargets(m.id),
   );
 
-  /// Screen-reader row actions: the hover toolbar's actions (same conditions),
-  /// copy, and the message menu that holds every other action.
-  List<RaftMessageSemanticsAction> messageSemanticsActions(
-    RaftMessage message, {
-    required bool parent,
-    required bool pending,
-  }) {
-    if (pending) return const [];
-    final saved = SavedCountStore.of(w).isSaved(message.id);
-    return [
-      if (!parent && !widget.thread && presentationActive)
-        RaftMessageSemanticsAction(
-          raftText(context, 'Reply in thread'),
-          (_) => _messages.threads.openThread(message),
-        ),
-      if (canReact)
-        RaftMessageSemanticsAction(
-          raftText(context, 'Add reaction'),
-          (row) => openReactionPicker(message, row),
-        ),
-      if (presentationActive && !w.client.restoredOffline)
-        RaftMessageSemanticsAction(
-          raftText(context, saved ? 'Remove from Saved' : 'Save'),
-          (_) => saveMessage(message),
-        ),
-      RaftMessageSemanticsAction(
-        raftText(context, 'Copy Markdown'),
-        (_) => Clipboard.setData(ClipboardData(text: message.content)),
-      ),
-      ...translationSemanticsActions(message),
-      RaftMessageSemanticsAction(raftText(context, 'Message Actions'), (row) {
-        final box = row.findRenderObject();
-        actions(
-          message,
-          anchor: box is RenderBox && box.hasSize
-              ? box.localToGlobal(box.size.center(Offset.zero))
-              : null,
-          parentTile: parent,
-        );
-      }),
-    ];
-  }
-
   Future<void> saveMessage(RaftMessage message) async {
     if (!w.client.restoredOffline) {
       await toggleSavedMessage(context, w, message, () => mounted);
@@ -2444,18 +2403,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       );
     }
     final quoted = quotedPermalink(m);
-    final body = MessagePresentation(
-      controller: w,
-      navigation: ChatNavigationScope.maybeOf(context),
-      message: m,
-      unavailablePermalink: quoted == null ? null : unavailableQuoted[m.id],
-      content: translation.translatedContent,
-      taskByNumber: taskProjection.taskByNumber,
-      onExternalLink: link,
-      onOpenTask: openTaskRef,
-      directoryReferences: referenceDirectory.references,
+    final body = presentMessageProse(
+      m,
+      translation.translatedContent,
       fontSize: fontSize,
-      searchHighlight: searchActive == m.id ? boundSearch?.query : null,
+      unavailablePermalink: quoted == null ? null : unavailableQuoted[m.id],
     );
     if (!translation.bilingual) return withQuotedPreview(m, quoted, body);
     return withQuotedPreview(
@@ -2696,14 +2648,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               ),
             ),
       compactSemantics: true,
-      semanticsContent:
-          m.json['actionMetadata'] is Map &&
-              const {
-                'action-card',
-                'forwarded-bundle',
-              }.contains(m.json['actionMetadata']['kind'])
-          ? ''
-          : null,
+      semanticsContent: messageSemanticsContent(m),
       semanticsActions: messageSemanticsActions(
         m,
         parent: parent,
@@ -2781,21 +2726,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           mediaMessage: mediaMessage(m),
         ),
       ),
-      reactions: (m.json['reactions'] as List? ?? [])
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList(),
+      reactions: messageTileReactions(m),
       reactedEmojis: ownReactions(m),
       failedReactionEmojis: reactionFailures[m.id] == null
           ? const {}
           // ignore: raft_lints/avoid_render_index_assertion -- Guarded by `reactionFailures[m.id] == null ? const {} : ...` on the line above.
           : {reactionFailures[m.id]!},
       reactionViewerId: w.client.user?.id,
-      onReaction: canReact
-          ? (emoji) {
-              if (!pending) react(m, emoji);
-            }
-          : null,
+      onReaction: messageReactionAction(m, pending: pending),
       onReactionAdd: canReact
           ? (anchor) {
               if (!pending) openReactionPicker(m, anchor);
@@ -3178,15 +3116,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                         source(messages[i]).json,
                         width,
                       ),
-                      preview: (context, i, height) => timelineMessagePreview(
-                        context,
-                        source(messages[i]),
-                        height,
-                        timestamp: timeFormatter.messageTime,
-                        translated: (message) => w.services.translations
-                            .present(message)
-                            .translatedContent,
-                      ),
+                      preview: (context, i, height) =>
+                          previewMessageTile(source(messages[i]), height),
                     ),
               retainRow: timelineKeys.retainRows(messages, source),
               trackNeighbourVersions: false,

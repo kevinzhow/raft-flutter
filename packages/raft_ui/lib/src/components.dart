@@ -1795,18 +1795,44 @@ class RaftMessageTile extends StatelessWidget {
         )
       : prose;
 
+  List<({Map<String, dynamic> data, String emoji, int count})>
+  get visibleReactions => [
+    for (final reaction in reactions)
+      if (reaction case {'emoji': final String emoji, 'count': final int count}
+          when count > 0)
+        (data: reaction, emoji: emoji, count: count),
+  ];
+
+  String compactHeading(
+    List<({Map<String, dynamic> data, String emoji, int count})> visible,
+  ) => [
+    author,
+    ?departureLabel,
+    if (badge != null && badge!.trim().isNotEmpty) badge!,
+    if (timestamp.isNotEmpty) timestamp,
+    if (coarsePointer)
+      for (final reaction in visible) '${reaction.emoji}: ${reaction.count}',
+  ].join(', ');
+
+  List<RaftMessageSemanticsAction> compactActions(
+    List<({Map<String, dynamic> data, String emoji, int count})> visible,
+  ) => coarsePointer && compactSemantics && onReaction != null
+      ? [
+          ...semanticsActions,
+          for (final reaction in visible)
+            RaftMessageSemanticsAction(
+              '${reaction.emoji}: ${reaction.count}',
+              (_) => onReaction!(reaction.emoji),
+            ),
+        ]
+      : semanticsActions;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final touch = RaftInteraction.of(context).touch;
     final mergeActions = coarsePointer && compactSemantics;
-    final visibleReactions = [
-      for (final reaction in reactions)
-        if (reaction
-            case {'emoji': final String emoji, 'count': final int count}
-            when count > 0)
-          (data: reaction, emoji: emoji, count: count),
-    ];
+    final visibleReactions = this.visibleReactions;
     final effectiveBodyFontSize =
         bodyFontSize ?? RaftMessageSizeTier.md.bodySizeFor(t);
     final recipe = RaftMessageRowRecipe(
@@ -1821,29 +1847,12 @@ class RaftMessageTile extends StatelessWidget {
       continuationTimestamp: continuationTimestamp,
       timestampTooltip: timestampTooltip,
       semanticsLabel: compactSemantics
-          ? [
-              author,
-              ?departureLabel,
-              if (badge != null && badge!.trim().isNotEmpty) badge!,
-              if (timestamp.isNotEmpty) timestamp,
-              if (mergeActions)
-                for (final reaction in visibleReactions)
-                  '${reaction.emoji}: ${reaction.count}',
-            ].join(', ')
+          ? compactHeading(visibleReactions)
           : null,
       semanticsText: compactSemantics
           ? raftMessageSemanticsText(context, semanticsContent ?? content)
           : '',
-      semanticsActions: mergeActions && onReaction != null
-          ? [
-              ...semanticsActions,
-              for (final reaction in visibleReactions)
-                RaftMessageSemanticsAction(
-                  '${reaction.emoji}: ${reaction.count}',
-                  (_) => onReaction!(reaction.emoji),
-                ),
-            ]
-          : semanticsActions,
+      semanticsActions: compactActions(visibleReactions),
       avatar: avatar ?? RaftAvatar(name: author, size: 32),
       onAuthor: onAuthor,
       onAuthorMenu: onAuthorMenu,

@@ -328,17 +328,21 @@ class RaftMessageProseSemantics extends StatelessWidget {
     required this.links,
     required this.onLink,
     required this.child,
+    this.linkActions,
   });
   final List<RaftMessageSemanticsLink> links;
   final ValueChanged<String>? onLink;
   final Widget child;
+  final RaftMessageLinkActions? linkActions;
   @override
   Widget build(BuildContext context) {
     final prose = ExcludeSemantics(child: child);
     if (links.isEmpty) return prose;
     final scope = RaftMessageSemanticsScope.maybeOf(context);
-    final row = scope?.linkActions;
-    if (row != null && scope!.mergeInlineActions) {
+    final row =
+        linkActions ??
+        (scope?.mergeInlineActions == true ? scope?.linkActions : null);
+    if (row != null) {
       return _ProseLinkActions(
         links: links,
         onLink: onLink,

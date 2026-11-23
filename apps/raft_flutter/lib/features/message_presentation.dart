@@ -237,6 +237,33 @@ class MessagePresentation extends StatelessWidget {
   List<RaftTextReference> get references =>
       _referencesMemo.putIfAbsent(_ReferenceInputs(this), () => _references);
 
+  static final _possibleProseLink = RegExp(
+    r'[@#:<\[\uE000]|www\.',
+    caseSensitive: false,
+  );
+
+  List<List<RaftMessageSemanticsLink>> get proseSemanticsLinks =>
+      _possibleProseLink.hasMatch(text)
+      ? RaftMessageBody.semanticsLinkGroups(
+          text,
+          references: references,
+          taskHref: taskReferenceHref,
+          knownTaskNumber: knowsTaskNumber,
+        )
+      : const [];
+
+  String Function(int)? get taskReferenceHref => localAuthority
+      ? (number) => Uri(
+          scheme: 'raft-ref',
+          host: 'task',
+          pathSegments: ['$number'],
+        ).toString()
+      : null;
+
+  bool Function(int)? get knowsTaskNumber =>
+      knownTaskNumber ??
+      (taskByNumber == null ? null : (number) => taskByNumber!(number) != null);
+
   List<RaftTextReference> get _references {
     if (!localAuthority) return [];
     final content = text;
@@ -941,17 +968,9 @@ class MessagePresentation extends StatelessWidget {
           ? null
           : (extension, bytes) => saveDiagram(context, extension, bytes),
       references: references,
-      taskHref: localAuthority
-          ? (n) => Uri(
-              scheme: 'raft-ref',
-              host: 'task',
-              pathSegments: ['$n'],
-            ).toString()
-          : null,
+      taskHref: taskReferenceHref,
       onLink: exportMode ? null : (href) => open(context, href),
-      knownTaskNumber:
-          knownTaskNumber ??
-          (taskByNumber == null ? null : (n) => taskByNumber!(n) != null),
+      knownTaskNumber: knowsTaskNumber,
       referenceAppearance: appearance,
       permalinkAppearance: (href) => permalinkAppearance(context, href),
       inlineLinkBuilder: inline,

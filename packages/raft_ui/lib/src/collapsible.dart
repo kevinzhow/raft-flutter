@@ -27,6 +27,7 @@ class RaftCollapsible extends StatefulWidget {
   });
   final Widget child;
   final bool enabled;
+  static const heightLimit = MessageContentPrimitive.collapseHeight;
 
   /// Applied when the row is first mounted. A later value does not move a
   /// message the reader is already looking at.
