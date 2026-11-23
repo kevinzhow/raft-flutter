@@ -110,6 +110,97 @@ void main() {
     });
   }
 
+  // One control per row: two controls with a tap action conflict with each
+  // other and would split out even while a lone control is merged.
+  final longBody = [for (var i = 0; i < 30; i++) 'Paragraph $i.'].join('\n\n');
+  final footerControls = <String, Widget Function(VoidCallback)>{
+    'Show More': (_) => const SizedBox.shrink(),
+    '3 replies': (tap) => RaftThreadRepliesBadge(replyCount: 3, onPressed: tap),
+    'Remove from Saved': (tap) => RaftMessageSavedIndicator(onPressed: tap),
+    'Open task #7': (tap) => RaftMountedMessageTaskChip(
+      number: 7,
+      status: RaftMessageTaskStatus.todo,
+      title: 'Ship it',
+      openLabel: 'Open task #7',
+      onOpen: tap,
+    ),
+  };
+  for (final MapEntry(key: label, value: control) in footerControls.entries) {
+    testWidgets('touch rows keep $label as its own focusable node', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      final tapped = <String>[];
+      final collapsed = label == 'Show More';
+      final content = collapsed ? longBody : 'Hello world';
+      final slot = control(() => tapped.add(label));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: RaftInteractionScope(
+                interaction: RaftInteraction.touchMode,
+                child: RaftMessageTile(
+                  author: 'Alice',
+                  timestamp: '10:00',
+                  content: content,
+                  coarsePointer: true,
+                  compactSemantics: true,
+                  collapseLongMessages: collapsed,
+                  onAuthor: () {},
+                  threadRepliesBadge: label == '3 replies' ? slot : null,
+                  savedIndicator: label == 'Remove from Saved' ? slot : null,
+                  taskReference: label == 'Open task #7' ? slot : null,
+                  body: RaftMessageBody(
+                    content: content,
+                    mountedMessage: true,
+                    compactSemantics: true,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      try {
+        await tester.pumpAndSettle();
+        final row = tester.getSemantics(find.byType(RaftMessageRow));
+        final tree = row.toStringDeep();
+        final children = <SemanticsNode>[];
+        row.visitChildren((child) {
+          children.add(child);
+          return true;
+        });
+        // The text still reads as the row; the control is its only child.
+        expect(row.label, contains('Alice, 10:00'), reason: tree);
+        expect(row.label, isNot(contains(label)), reason: tree);
+        final rowData = row.getSemanticsData();
+        expect(rowData.hasAction(SemanticsAction.tap), isFalse, reason: tree);
+        expect(rowData.customSemanticsActionIds, isNotEmpty, reason: tree);
+        // The Saved badge also reads its visible "Saved" text after its name.
+        expect(children, hasLength(1), reason: tree);
+        final child = children.single.getSemanticsData();
+        expect(child.label, startsWith(label), reason: tree);
+        expect(child.flagsCollection.isButton, isTrue, reason: tree);
+        expect(child.hasAction(SemanticsAction.tap), isTrue, reason: tree);
+        tester.binding.renderViews.first.owner!.semanticsOwner!.performAction(
+          children.single.id,
+          SemanticsAction.tap,
+        );
+        await tester.pumpAndSettle();
+        if (collapsed) {
+          expect(find.bySemanticsLabel('Collapse'), findsOneWidget);
+        } else {
+          expect(tapped, [label]);
+        }
+      } finally {
+        semantics.dispose();
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    });
+  }
+
   testWidgets('touch links and reactions are actions on one message node', (
     tester,
   ) async {

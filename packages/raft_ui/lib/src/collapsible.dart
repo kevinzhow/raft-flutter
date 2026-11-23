@@ -44,6 +44,7 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
   double natural = 0;
   bool expanded = false;
   String? toggleLabel;
+  bool toggleOwnNode = false;
   Widget? toggleWidget;
   bool get overflow => natural > MessageContentPrimitive.collapseHeight;
   bool get collapsed => widget.enabled && overflow && !expanded;
@@ -112,19 +113,24 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
   @override
   Widget build(BuildContext context) {
     final label = raftText(context, expanded ? 'Collapse' : 'Show More');
-    if (toggleLabel != label) {
+    final scope = RaftMessageSemanticsScope.maybeOf(context);
+    final ownNode = scope?.mergeInlineActions ?? false;
+    if (toggleLabel != label || toggleOwnNode != ownNode) {
       toggleLabel = label;
+      toggleOwnNode = ownNode;
+      final control = RaftShowMoreToggle(
+        label: label,
+        onPressed: toggle,
+        expanded: expanded,
+      );
       toggleWidget = Padding(
         padding: const EdgeInsets.only(top: MessageContentPrimitive.toggleGap),
-        child: RaftShowMoreToggle(
-          label: label,
-          onPressed: toggle,
-          expanded: expanded,
-        ),
+        // A merged touch row absorbs every child that is not a semantics
+        // boundary; the toggle stays its own focusable node.
+        child: ownNode ? MergeSemantics(child: control) : control,
       );
     }
     final fade = MessageContentSemantic(RaftTokens.of(context)).collapseFade;
-    final scope = RaftMessageSemanticsScope.maybeOf(context);
     return _CollapsibleLayout(
       enabled: widget.enabled,
       overflow: currentOverflow,

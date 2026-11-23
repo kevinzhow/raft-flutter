@@ -2047,9 +2047,19 @@ class RaftMessageTile extends StatelessWidget {
                     runSpacing: 6,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      ?taskReference,
+                      // A merged touch row absorbs every child that is not
+                      // a semantics boundary: the task chip and the thread
+                      // badge stay their own focusable nodes. The Saved
+                      // badge's touch target is already a boundary.
+                      if (taskReference != null)
+                        mergeActions
+                            ? MergeSemantics(child: taskReference!)
+                            : taskReference!,
                       ?savedIndicator,
-                      ?threadRepliesBadge,
+                      if (threadRepliesBadge != null)
+                        mergeActions
+                            ? MergeSemantics(child: threadRepliesBadge!)
+                            : threadRepliesBadge!,
                       ...visibleReactions.map((entry) {
                         final (data: r, :emoji, :count) = entry;
                         final reacted = reactedEmojis.contains(emoji);
