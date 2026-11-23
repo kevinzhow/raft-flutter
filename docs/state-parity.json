@@ -60842,6 +60842,126 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:attachmentGallery@64360/FUNCTION:view@65514": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116289/FUNCTION:loadingBody@117548": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Composes the existing thread loading body when it is shown."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116289/FUNCTION:sendCurrent@119575": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace conversation",
+        "reason": "Uses the canonical toast for a send attempted after the session goes offline."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:senderAvatar@75607/FUNCTION:avatar@78082": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/composer_directory.dart#local-function:CLASS:ComposerDirectory@7937/METHOD:build@13437/FUNCTION:add@13764": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@5013/METHOD:build@19371/FUNCTION:row@20753": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Composes keyed lazy rows and records their measured extents."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@5013/METHOD:build@19371/FUNCTION:row@20753/FUNCTION:buildRow@20807": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Builds the message body when its row presentation changes."
+      },
+      "packages/raft_ui/lib/src/collapsible.dart#class:RaftMessageCollapseObserver": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/collapsible.dart#method:RaftMessageCollapseObserver.forTile": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/collapsible.dart#method:RaftMessageCollapseObserver.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13441/METHOD:build@19043/FUNCTION:anchoredOther@22620": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13441/METHOD:build@19043/FUNCTION:compactProse@22143": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13441/METHOD:build@19043/FUNCTION:selectable@22505": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@38028/METHOD:build@38610/FUNCTION:failed@38766": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@58154/METHOD:build@58650/FUNCTION:<anonymous>@58759/FUNCTION:control@59996": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/thread_composition.dart#class:_ThreadReplyCount": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/thread_composition.dart#class:_ThreadReplyCountState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/thread_composition.dart#method:_ThreadReplyCount.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/thread_composition.dart#method:_ThreadReplyCountState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/thread_composition.dart#method:_ThreadReplyCountState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
@@ -65142,6 +65262,15 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "The Agent row in the Computer details opened by the notification bell presents the existing Agent detail page."
+      },
+      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116289/FUNCTION:sendCurrent@119575": {
+        "owner": "Workspace conversation",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "Uses the canonical toast for a send attempted after the session goes offline.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116289/FUNCTION:sendCurrent@119575"
+        ]
       }
     },
     "requirements": {
