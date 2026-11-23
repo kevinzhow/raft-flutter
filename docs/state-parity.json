@@ -61518,6 +61518,60 @@
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@11246/METHOD:_build@14597/FUNCTION:chatContent@19371": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Mounts the chat or folded thread inside the clipped conversation region."
+      },
+      "apps/raft_flutter/lib/features/desktop_browser_address.dart#method:_DesktopBrowserAddressState._submit": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-BROWSER",
+        "reason": "Dismisses shared hover state when the address editor submits a navigation."
+      },
+      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@6034/METHOD:_body@33243/FUNCTION:body@33447": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-BROWSER",
+        "reason": "Mounts the shared message body with desktop link handling supplied by the conversation."
+      },
+      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@6034/METHOD:messageCard@29760/FUNCTION:cardOf@30047": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13547/METHOD:build@19248/FUNCTION:anchoredOther@22865": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13547/METHOD:build@19248/FUNCTION:compactProse@22388": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13547/METHOD:build@19248/FUNCTION:selectable@22750": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@38273/METHOD:build@38855/FUNCTION:failed@39011": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@58749/METHOD:build@59245/FUNCTION:<anonymous>@59354/FUNCTION:control@60591": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
