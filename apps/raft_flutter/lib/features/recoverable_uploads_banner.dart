@@ -53,6 +53,9 @@ class RecoverableUploads {
   List<RecoverableUpload> visible(String? channelId, Set<String> owned) {
     if (channelId == null) return const [];
     if (!_rows.containsKey(channelId) && !_generation.containsKey(channelId)) {
+      // Claim the load now: one build can ask for the same channel more than
+      // once before the microtask runs.
+      _generation[channelId] = 0;
       // ignore: raft_lints/avoid_unreviewed_idle_work -- One load per channel (guarded by the generation map), started from build; never repeats.
       scheduleMicrotask(() => refresh(channelId));
     }

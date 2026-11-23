@@ -287,6 +287,20 @@ void main() {
     await sub.cancel();
   });
 
+  test('a channel asked for twice before its load starts is read once', () async {
+    final model = RecoverableUploads.of(w);
+    // The composer slot and the composer both read the accessory in one build.
+    model.visible('channel', const {});
+    model.visible('channel', const {});
+    await pumpEventQueue();
+    expect(
+      client.requests.where(
+        (r) => r == 'GET /attachments/upload-sessions/channel/active',
+      ),
+      hasLength(1),
+    );
+  });
+
   testWidgets(
     'unfinished uploads of the channel show in a banner with Cancel upload',
     (tester) async {
