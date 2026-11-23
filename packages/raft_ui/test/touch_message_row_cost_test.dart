@@ -504,4 +504,156 @@ void main() {
       expect(tester.takeException(), isNull);
     }
   });
+
+  group('touch row link actions', () {
+    late List<String> calls;
+    Widget view(String content, {bool collapse = false}) => MaterialApp(
+      theme: raftTheme(),
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: RaftInteractionScope(
+            interaction: RaftInteraction.touchMode,
+            child: RaftMessageTile(
+              author: 'Alice',
+              timestamp: '10:00',
+              content: content,
+              coarsePointer: true,
+              compactSemantics: true,
+              collapseLongMessages: collapse,
+              onAuthor: () => calls.add('author'),
+              semanticsActions: [
+                RaftMessageSemanticsAction('Save', (_) => calls.add('save')),
+              ],
+              body: RaftMessageBody(
+                content: content,
+                mountedMessage: true,
+                compactSemantics: true,
+                onLink: calls.add,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    Map<String, int> actions(WidgetTester tester) {
+      final row = tester.getSemantics(find.byType(RaftMessageRow));
+      return {
+        for (final id in row.getSemanticsData().customSemanticsActionIds!)
+          CustomSemanticsAction.getAction(id)!.label!: id,
+      };
+    }
+
+    void invoke(WidgetTester tester, String label) {
+      final row = tester.getSemantics(find.byType(RaftMessageRow));
+      tester.binding.renderViews.first.owner!.semanticsOwner!.performAction(
+        row.id,
+        SemanticsAction.customAction,
+        actions(tester)[label],
+      );
+    }
+
+    setUp(() => calls = []);
+
+    testWidgets('a link named like a row action does not replace it', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          view(
+            'Click [Mention Alice](https://evil.example.com) or '
+            '[Save](https://evil2.example.com)',
+          ),
+        );
+        expect(
+          actions(tester).keys,
+          unorderedEquals([
+            'Save',
+            'Mention Alice',
+            'Mention Alice, https://evil.example.com',
+            'Save, https://evil2.example.com',
+          ]),
+        );
+        for (final label in actions(tester).keys) {
+          invoke(tester, label);
+        }
+        expect(
+          calls,
+          unorderedEquals([
+            'save',
+            'author',
+            'https://evil.example.com',
+            'https://evil2.example.com',
+          ]),
+        );
+      } finally {
+        semantics.dispose();
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    });
+
+    testWidgets('same-named links in separate prose chunks both stay', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          view(
+            'See [Docs](https://a.example.com)\n\n'
+            '```dart\nvoid main() {}\n```\n\n'
+            'And [Docs](https://b.example.com)',
+          ),
+        );
+        expect(
+          actions(tester).keys,
+          containsAll([
+            'Docs, https://a.example.com',
+            'Docs, https://b.example.com',
+          ]),
+        );
+        invoke(tester, 'Docs, https://a.example.com');
+        invoke(tester, 'Docs, https://b.example.com');
+        expect(calls, ['https://a.example.com', 'https://b.example.com']);
+      } finally {
+        semantics.dispose();
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    });
+
+    testWidgets('a collapsed row hides the links of hidden paragraphs', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          view(
+            [
+              '[TopLink](https://example.com/top)',
+              for (var i = 1; i < 29; i++) 'Paragraph $i.',
+              '[HiddenLink](https://example.com/hidden)',
+            ].join('\n\n'),
+            collapse: true,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(actions(tester).keys, isNot(contains('HiddenLink')));
+        final toggle = <SemanticsNode>[];
+        tester.getSemantics(find.byType(RaftMessageRow)).visitChildren((n) {
+          if (n.label == 'Show More') toggle.add(n);
+          return true;
+        });
+        tester.binding.renderViews.first.owner!.semanticsOwner!.performAction(
+          toggle.single.id,
+          SemanticsAction.tap,
+        );
+        await tester.pumpAndSettle();
+        expect(actions(tester).keys, containsAll(['TopLink', 'HiddenLink']));
+        invoke(tester, 'HiddenLink');
+        expect(calls, ['https://example.com/hidden']);
+      } finally {
+        semantics.dispose();
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    });
+  });
 }

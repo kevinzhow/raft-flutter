@@ -1598,7 +1598,10 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
           fraction,
         );
         return RaftMessageRowSemantics(
-          linkActions: widget.coarsePointer ? linkActions : null,
+          // Links of a collapsed row are hidden with its content.
+          linkActions: widget.coarsePointer && fraction == null
+              ? linkActions
+              : null,
           label: text.isEmpty
               ? widget.semanticsLabel!
               : '${widget.semanticsLabel}\n$text',
