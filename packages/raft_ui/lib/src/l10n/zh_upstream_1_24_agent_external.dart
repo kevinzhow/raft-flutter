@@ -21,7 +21,7 @@ const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "1. Send this prompt to your agent": "1. 把这段 prompt 发给你的 agent",
   "2. Give it the agent credential when it asks":
       "2. 它要的时候，把 agent credential 给它",
-  "1. Copy the agent credential": "1. 复制 agent credential",
+  "1. Copy the agent credential": "1. 复制 Agent 凭据",
   "2. Install the SDK and connect": "2. 安装 SDK 并连接",
   "Copy prompt": "复制 prompt",
   "Show full prompt": "显示完整 prompt",
@@ -57,29 +57,29 @@ const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "Send this prompt to your agent": "把这段 prompt 发给你的 agent",
   "Install the SDK and connect": "安装 SDK 并连接",
   "How it connects": "连接方式",
-  "Create credential": "创建 credential",
-  "Create new credential": "新建 credential",
+  "Create credential": "创建凭据",
+  "Create new credential": "新建凭据",
   "The one shown when {name} was created can't be shown again.":
       "创建 {name} 时显示的那个不能再显示。",
-  "Ask {name} for a credential.": "向 {name} 要一个 credential。",
+  "Ask {name} for a credential.": "向 {name} 要一个凭据。",
   "Ask a server owner or admin for a credential.":
       "向服务器的所有者或管理员要一个 credential。",
-  "Raft couldn't create a credential. Try again.": "Raft 没能创建 credential，请重试。",
+  "Raft couldn't create a credential. Try again.": "Raft 没能创建凭据，请重试。",
   "Credentials": "凭据",
-  "Loading credentials…": "正在加载 credential…",
-  "Raft couldn't load the credentials.": "Raft 没能加载 credential。",
-  "No credentials yet.": "还没有 credential。",
+  "Loading credentials…": "正在加载凭据…",
+  "Raft couldn't load the credentials.": "Raft 没能加载凭据。",
+  "No credentials yet.": "还没有凭据。",
   "Created on this page": "在此页面创建",
-  "Agent credential": "Agent credential",
+  "Agent credential": "Agent 凭据",
   "Created {date} · last used {time}": "{date} 创建 · {time}使用过",
   "Created {date} · not used yet": "{date} 创建 · 还没用过",
   "Actions for {credential}": "{credential} 的操作",
   "Raft couldn't revoke the credential. Try again.":
       "Raft 没能撤销这个 credential，请重试。",
-  "Create a new credential?": "新建 credential？",
+  "Create a new credential?": "新建凭据？",
   "The credential created on this page stops working. Whatever signed in as {name} with it disconnects until you give it the new one.":
       "在此页面创建的 credential 会失效。用它以 {name} 身份登录的程序会断开，直到你给它新的。",
-  "Revoke this credential?": "撤销这个 credential？",
+  "Revoke this credential?": "撤销这个凭据？",
   "Whatever signed in as {name} with it stops working right away. This can't be undone.":
       "用它以 {name} 身份登录的程序会立即停止工作。无法恢复。",
 };
