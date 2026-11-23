@@ -2240,6 +2240,15 @@
           "gapKind": "case-missing"
         },
         {
+          "state": "partial",
+          "variant": "external agent without a Computer",
+          "web": "yes",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "Web v1.24.0 requests Computer skills on an unmanaged external agent and shows a retryable error when it has no assigned Computer. Flutter omits the inapplicable section and its request. A Computer-backed agent keeps its skills list and retry."
+        },
+        {
           "state": "loading",
           "variant": "hosted runtime usage / connections banners",
           "web": "yes",
@@ -47351,6 +47360,12 @@
         "owner": "design-system alignment",
         "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
       },
+      "apps/raft_flutter/lib/features/external_agent_setup.dart#method:_ExternalAgentSetupState._connectionSection": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-AGENT",
+        "reason": "Composes the connection instructions and credential inventory inside the mounted external agent profile section."
+      },
       "apps/raft_flutter/lib/features/external_agent_setup.dart#method:_ExternalAgentSetupState.credentialStep": {
         "role": "unresolved",
         "familyRefs": [],
@@ -47531,7 +47546,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/external_agent_parts.dart#local-function:CLASS:RaftExternalSetupSteps@13218/METHOD:build@13945/FUNCTION:section@14069": {
+      "packages/raft_ui/lib/src/external_agent_parts.dart#local-function:CLASS:RaftExternalSetupSteps@13481/METHOD:build@14208/FUNCTION:section@14332": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

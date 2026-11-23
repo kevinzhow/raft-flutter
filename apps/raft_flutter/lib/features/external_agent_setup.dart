@@ -608,10 +608,13 @@ class _ExternalAgentSetupState extends State<ExternalAgentSetup> {
             small: true,
             topGap: 8,
           );
-    if (summary != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    if (summary == null && widget.status == null && statusError == null) {
+      return const SizedBox.shrink();
+    }
+    return RaftPanelSection(
+      gap: 0,
+      children: [
+        if (summary != null)
           RaftExternalHostedSection(
             connected: setupState == 'connected',
             child: AgentHostedRuntimeStatus(
@@ -621,78 +624,71 @@ class _ExternalAgentSetupState extends State<ExternalAgentSetup> {
               summary: summary,
               onStatus: widget.onStatus ?? (_) {},
             ),
-          ),
-          ?statusError,
-        ],
-      );
-    }
-    // Without the status read there is nothing to say yet (Web: the card
-    // mounts once the status is in).
-    if (widget.status == null) return statusError ?? const SizedBox.shrink();
-    final name = agentName;
-    final credentials = canIssueCredentials;
-    final step = credentialStep(context);
-    final showSteps = !connected || expanded;
-    final steps = ExternalAgentStepsView(
-      method: method,
-      name: name,
-      agentId: agentId,
-      agentName: '${widget.agent['name'] ?? ''}',
-      serverUrl: w.client.origin,
-      credentialStep: step,
-      onOpenSdkGuide: () => unawaited(openSdkGuide()),
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        RaftExternalConnectionSection(
-          method: method.ui,
-          status: statusCard(context),
-          // Switching how it connects is offered only while it isn't
-          // connected.
-          switchLabel: connected
-              ? null
-              : method == ExternalSetupMethod.sdk
-              ? 'Use an existing agent instead'
-              : 'Build it with the SDK instead',
-          onSwitch: switchMethod,
-          steps: showSteps ? steps : null,
-          below: [
-            if (credentials) ...[
-              RaftExternalCredentialList(
-                credentials: credentialRows(context),
-                loading: loading,
-                listError: listError,
-                disabled: busy,
-                onReplace: (id) => unawaited(ask(_Confirm.replace, id)),
-                onRevoke: (id) => unawaited(ask(_Confirm.revoke, id)),
-              ),
-              if (error == 'revoke')
-                Semantics(
-                  liveRegion: true,
-                  child: RaftExternalWarning(
-                    "Raft couldn't revoke the credential. Try again.",
-                    key: const ValueKey('external-agent-revoke-error'),
-                  ),
-                ),
-              if (error == 'create' && connected)
-                Semantics(
-                  liveRegion: true,
-                  child: RaftExternalWarning(
-                    "Raft couldn't create a credential. Try again.",
-                    key: const ValueKey('external-agent-create-error'),
-                  ),
-                ),
-              if (secret != null && connected)
-                RaftExternalCredentialStep(
-                  name: name,
-                  secret: secret,
-                  showHint: false,
-                ),
-            ],
-          ],
-        ),
+          )
+        else if (widget.status != null)
+          _connectionSection(context),
         ?statusError,
+      ],
+    );
+  }
+
+  Widget _connectionSection(BuildContext context) {
+    final name = agentName;
+    return RaftExternalConnectionSection(
+      method: method.ui,
+      status: statusCard(context),
+      // Switching how it connects is offered only while it isn't
+      // connected.
+      switchLabel: connected
+          ? null
+          : method == ExternalSetupMethod.sdk
+          ? 'Use an existing agent instead'
+          : 'Build it with the SDK instead',
+      onSwitch: switchMethod,
+      steps: !connected || expanded
+          ? ExternalAgentStepsView(
+              method: method,
+              name: name,
+              agentId: agentId,
+              agentName: '${widget.agent['name'] ?? ''}',
+              serverUrl: w.client.origin,
+              credentialStep: credentialStep(context),
+              onOpenSdkGuide: () => unawaited(openSdkGuide()),
+            )
+          : null,
+      below: [
+        if (canIssueCredentials) ...[
+          RaftExternalCredentialList(
+            credentials: credentialRows(context),
+            loading: loading,
+            listError: listError,
+            disabled: busy,
+            onReplace: (id) => unawaited(ask(_Confirm.replace, id)),
+            onRevoke: (id) => unawaited(ask(_Confirm.revoke, id)),
+          ),
+          if (error == 'revoke')
+            Semantics(
+              liveRegion: true,
+              child: RaftExternalWarning(
+                "Raft couldn't revoke the credential. Try again.",
+                key: const ValueKey('external-agent-revoke-error'),
+              ),
+            ),
+          if (error == 'create' && connected)
+            Semantics(
+              liveRegion: true,
+              child: RaftExternalWarning(
+                "Raft couldn't create a credential. Try again.",
+                key: const ValueKey('external-agent-create-error'),
+              ),
+            ),
+          if (secret != null && connected)
+            RaftExternalCredentialStep(
+              name: name,
+              secret: secret,
+              showHint: false,
+            ),
+        ],
       ],
     );
   }

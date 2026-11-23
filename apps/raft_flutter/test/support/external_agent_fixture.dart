@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -66,6 +67,7 @@ class ExternalClient extends RaftClient {
   bool failRevoke = false,
       failList = false,
       failStatus = false,
+      failSkills = false,
       failMethod = false,
       failCreate = false,
       failAgentCreate = false,
@@ -115,7 +117,19 @@ class ExternalClient extends RaftClient {
     }
     if (path == '/agents') return [row];
     if (path == '/agents/ext-1') return row;
-    if (path.endsWith('/skills')) return {'global': [], 'workspace': []};
+    if (path.endsWith('/skills')) {
+      if (failSkills) {
+        throw RaftApiException.response(
+          'Agent has no connected machine',
+          status: 409,
+          body: {
+            'error': 'Agent has no connected machine',
+            'code': 'machine_offline',
+          },
+        );
+      }
+      return {'global': [], 'workspace': []};
+    }
     if (path == '/agents/ext-1/external-status') {
       statusReads++;
       if (failStatus) {
@@ -173,6 +187,7 @@ Future<(WorkspaceController, ExternalClient)> pumpExternal(
   Map<String, dynamic> agent = externalAgentRow,
   Size size = const Size(900, 3200),
   TargetPlatform platform = TargetPlatform.linux,
+  Locale locale = const Locale('en'),
   bool settle = true,
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -189,6 +204,9 @@ Future<(WorkspaceController, ExternalClient)> pumpExternal(
   await tester.pumpWidget(
     MaterialApp(
       theme: raftTheme().copyWith(platform: platform),
+      locale: locale,
+      supportedLocales: const [Locale('en'), Locale('zh')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Scaffold(
         body: FleetDetail(
           key: UniqueKey(),

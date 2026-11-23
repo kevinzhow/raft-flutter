@@ -8004,7 +8004,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "Profile > Skills (AgentSkills embedded)",
-   "gate": "canViewAgentPrivateSurfaces",
+   "gate": "canViewAgentPrivateSurfaces; active agent without an owning app",
    "flutterEntry": "agent_detail_view.dart AgentSkillsSection",
    "flutterRefs": [
     {
@@ -8016,7 +8016,7 @@
      "needle": "/skills"
     }
    ],
-   "justification": "Owner decision (2026-10-18): the section opens and closes on a tap of its header and starts collapsed, so a long skill list does not push the rest of the profile off screen. Web always renders every skill card; the header, count, groups, cards and /command badges are unchanged.",
+   "justification": "Owner decision (2026-10-18): the list starts collapsed and its header toggles visibility. Flutter omits this section for an external agent without an assigned Computer because the mounted skills route requires a Computer.",
    "impact": "",
    "size": ""
   },

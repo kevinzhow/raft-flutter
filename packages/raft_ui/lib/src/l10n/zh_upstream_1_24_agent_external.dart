@@ -1,6 +1,6 @@
 // Chinese (zh) strings, see the catalog header in ../localization.dart.
 // English source text is the key. Part of `raftChinese` (merged by the generated zh_index.g.dart).
-// Web v1.24.0-source.1 en.ts / zh-cn.ts wording verbatim: WP-AGENT (create external agent dialog, external agent connection card).
+// Web v1.24.0-source.1: create external agent dialog and connection card.
 const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "What is this agent for?": "这个 agent 是做什么的？",
   "How will your agent run?": "你的 agent 怎么跑？",
@@ -65,7 +65,7 @@ const Map<String, String> zhCatalogUpstream124AgentExternal = <String, String>{
   "Ask a server owner or admin for a credential.":
       "向服务器的所有者或管理员要一个 credential。",
   "Raft couldn't create a credential. Try again.": "Raft 没能创建 credential，请重试。",
-  "Credentials": "Credentials",
+  "Credentials": "凭据",
   "Loading credentials…": "正在加载 credential…",
   "Raft couldn't load the credentials.": "Raft 没能加载 credential。",
   "No credentials yet.": "还没有 credential。",

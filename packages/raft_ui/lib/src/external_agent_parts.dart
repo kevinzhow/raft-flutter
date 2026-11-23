@@ -13,6 +13,7 @@ import 'design_primitives.dart'
         RaftDropdownAlign,
         RaftDropdownMenu,
         RaftMenuEntry,
+        RaftMenuKind,
         RaftTextLink,
         RaftTextLinkVariant;
 import 'icons.dart';
@@ -336,6 +337,8 @@ class RaftExternalStatusCard extends StatelessWidget {
     if (titleTooltip != null) {
       heading = RaftTooltip(message: titleTooltip!, child: heading);
     }
+    const toggleSize = RaftButtonSize.md;
+    const toggleVariant = RaftButtonVariant.ghost;
     return Container(
       // `rounded-control border border-line px-4 py-3`
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -371,10 +374,17 @@ class RaftExternalStatusCard extends StatelessWidget {
               trailingGlyph: expanded
                   ? RaftGlyph.chevronUp
                   : RaftGlyph.chevronDown,
-              uiVariant: RaftButtonVariant.ghost,
-              uiSize: RaftButtonSize.md,
+              uiVariant: toggleVariant,
+              uiSize: toggleSize,
+              padding: EdgeInsets.symmetric(
+                horizontal: RaftButtonMetrics.of(
+                  toggleSize,
+                  toggleVariant,
+                  t,
+                ).paddingX,
+              ),
               semanticLabel: raftText(context, toggleLabel!),
-              toggled: expanded,
+              expanded: expanded,
               onPressed: onToggle,
             ),
         ],
@@ -594,10 +604,7 @@ class RaftExternalCredentialList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 8,
       children: [
-        RaftCssText(
-          raftText(context, 'Credentials'),
-          style: RaftSectionEyebrow.style(t),
-        ),
+        RaftSectionEyebrow(raftText(context, 'Credentials')),
         if (loading)
           Semantics(
             liveRegion: true,
@@ -685,8 +692,8 @@ class _CredentialItem extends StatelessWidget {
             label: menuLabel,
             tooltip: menuLabel,
             enabled: !disabled,
+            kind: RaftMenuKind.dropdownMenu,
             align: RaftDropdownAlign.end,
-            width: 220,
             triggerBuilder: (context, focusNode, open) => RaftButton(
               glyph: RaftGlyph.ellipsisVertical,
               focusNode: focusNode,

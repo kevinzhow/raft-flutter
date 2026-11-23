@@ -26,10 +26,8 @@ import 'tokens/tokens.dart';
 class RaftExternalEyebrow extends StatelessWidget {
   const RaftExternalEyebrow({super.key});
   @override
-  Widget build(BuildContext context) => RaftCssText(
-    raftText(context, 'External setup'),
-    style: RaftSectionEyebrow.style(RaftTokens.of(context)),
-  );
+  Widget build(BuildContext context) =>
+      RaftSectionEyebrow(raftText(context, 'External setup'));
 }
 
 /// The section of a connectable external agent: eyebrow, [status], the

@@ -1685,9 +1685,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
           ),
         // v1.21.23: no "Created agents" section on an agent profile (a
         // person's profile keeps it).
-        // Web AgentDetailPanel `{canViewPrivateAgentSurfaces && <AgentSkills
-        // embedded />}`, between the profile info and Actions.
-        if (_canViewPrivate && a['deletedAt'] == null)
+        if (_canViewPrivate &&
+            a['deletedAt'] == null &&
+            a['managedByAppInstallId'] == null &&
+            (!external || a['machineId'] != null))
           AgentSkillsSection(
             controller: widget.controller,
             agentId: '${a['id']}',
