@@ -177,13 +177,9 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
   Widget build(BuildContext context) {
     final tabs = widget.browser.tabs;
     final activeId = widget.browser.activeId;
-    final visible = tabs.take(widget.shown).map((tab) => tab.id).toSet();
-    if (!visible.contains(activeId)) {
-      visible.remove(visible.last);
-      visible.add(activeId);
-    }
-    final row = tabs.where((tab) => visible.contains(tab.id)).toList();
-    final more = tabs.where((tab) => !visible.contains(tab.id)).toList();
+    final frontWidth =
+        widget.frontWidth ??
+        browserTabWidth(context, widget.browser.active, active: true);
     final full = tabs.length == desktopBrowserTabLimit;
     final moreLabel = raftText(context, 'More tabs');
     final newLabel = raftText(context, 'New tab');
@@ -202,15 +198,24 @@ class _DesktopBrowserTabStripState extends State<DesktopBrowserTabStrip> {
             ? RaftDesktopMetrics.controlEmbeddedSize
             : _action;
         final gap = tiny ? 0.0 : _gap;
-        final reserve = (more.isEmpty ? 1 : 2) * (actionWidth + gap);
-        final room = math.max(0.0, box.maxWidth - reserve);
+        double available(int shown) =>
+            box.maxWidth - (shown < tabs.length ? 2 : 1) * (actionWidth + gap);
+        var shown = widget.shown;
+        while (shown > 1 &&
+            frontWidth + (shown - 1) * (_tabMin + _tabGap) > available(shown)) {
+          shown--;
+        }
+        final visible = tabs.take(shown).map((tab) => tab.id).toSet();
+        if (!visible.contains(activeId)) {
+          visible.remove(visible.last);
+          visible.add(activeId);
+        }
+        final row = tabs.where((tab) => visible.contains(tab.id)).toList();
+        final more = tabs.where((tab) => !visible.contains(tab.id)).toList();
+        final room = math.max(0.0, available(shown));
         final backCount = row.length - 1;
         final tabRoom = math.max(0.0, room - backCount * _tabGap);
-        final activeTabWidth = math.min(
-          widget.frontWidth ??
-              browserTabWidth(context, widget.browser.active, active: true),
-          tabRoom,
-        );
+        final activeTabWidth = math.min(frontWidth, tabRoom);
         final backRoom = tabRoom - activeTabWidth;
         final minimum = backCount == 0
             ? 0.0
@@ -353,7 +358,7 @@ class _BrowserTabState extends State<_BrowserTab> {
   Widget build(BuildContext context) {
     final tab = widget.tab;
     final active = widget.active;
-    final compact = widget.width < (active ? 76 : 42);
+    final compact = active && widget.width < 76;
     final hoverClose = !active && _hovered;
     final label = browserTabLabel(context, tab);
     return MouseRegion(
@@ -378,9 +383,9 @@ class _BrowserTabState extends State<_BrowserTab> {
                     ? TextOverflow.clip
                     : null,
                 padding: compact
-                    ? EdgeInsetsDirectional.only(
+                    ? const EdgeInsetsDirectional.only(
                         start: RaftSpace.half,
-                        end: active ? RaftSpace.x4 : RaftSpace.half,
+                        end: RaftSpace.x4,
                       )
                     : EdgeInsetsDirectional.only(
                         start: RaftSpace.x2 + RaftSpace.half,
@@ -388,7 +393,7 @@ class _BrowserTabState extends State<_BrowserTab> {
                             ? RaftDesktopMetrics.barButtonSize
                             : RaftSpace.x2 + RaftSpace.half,
                       ),
-                icon: compact && active
+                icon: compact
                     ? null
                     : (size, color, weight) => Opacity(
                         opacity: hoverClose ? 0 : 1,
