@@ -140,6 +140,7 @@ class RaftMessageTimeline extends StatefulWidget {
 class _RaftMessageTimelineState extends State<RaftMessageTimeline>
     implements RaftTimelineThumbDriver {
   double nearbyCache = _activeCache;
+  double editCache = 0;
   ({ScrollDirection direction, double pixels})? preparedEdge;
   ScrollDirection lastMotion = ScrollDirection.idle;
   final recentRows = TimelineRowRetention();
@@ -147,6 +148,9 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
     hydrator: TimelineRowHydrator(
       isVisible: () => mounted && TickerMode.valuesOf(context).enabled,
       direction: () => lastMotion,
+      prepareEdit: (extra) {
+        if (mounted) setState(() => editCache = extra);
+      },
       beforeSwap: (box) {
         final position = singlePosition;
         if (position is RaftTimelinePosition && position.viewport != null) {
@@ -183,7 +187,8 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
   final forwardChildren = Expando<(int, Widget)>();
 
   ({ScrollDirection direction, double pixels})? get directionalCache =>
-      widget.cacheExtent == null &&
+      editCache == 0 &&
+          widget.cacheExtent == null &&
           widget.canPrepareNearbyRows != null &&
           nearbyCache > _activeCache
       ? preparedEdge
@@ -697,7 +702,8 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             semanticChildCount: messages.length,
             scrollCacheExtent: ScrollCacheExtent.pixels(
-              widget.cacheExtent ?? nearbyCache,
+              (widget.cacheExtent ?? nearbyCache) +
+                  math.min(editCache, singlePosition?.viewportDimension ?? 0),
             ),
             slivers: gutter == null
                 ? slivers

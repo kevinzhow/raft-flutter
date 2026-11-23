@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -28,6 +30,7 @@ Widget host(WorkspaceController w, {double scale = 1, bool dark = false}) =>
 Future<WorkspaceController> open(
   WidgetTester tester, {
   Size size = const Size(1280, 800),
+  Future<Map<String, dynamic>>? taskRows,
 }) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = size;
@@ -37,6 +40,9 @@ Future<WorkspaceController> open(
   addTearDown(w.dispose);
   api.routes['GET /agents'] = (_) => [];
   api.routes['GET /servers/s1/members'] = (_) => [];
+  if (taskRows != null) {
+    api.routes['GET /tasks/channel/c1'] = (_) => taskRows;
+  }
   w.messageDomain.ledger.switchServer('s1');
   final rows = contextRows('reuse', count: 80);
   w.messageDomain.ledger.ingest(
@@ -56,6 +62,36 @@ Future<WorkspaceController> open(
 }
 
 void main() {
+  testWidgets('task readback only builds the row whose chip changes', (
+    tester,
+  ) async {
+    final result = Completer<Map<String, dynamic>>();
+    await open(tester, taskRows: result.future);
+    final unaffected = find.byKey(const ValueKey('message-reuse-78'));
+    final chip = find.byKey(const ValueKey('message-task-reuse-79'));
+    final original = tester.widget(unaffected);
+    expect(chip, findsNothing);
+
+    final before = RaftMessageTimeline.debugRowBuilds;
+    result.complete({
+      'tasks': [
+        {
+          'id': 'task-79',
+          'messageId': 'reuse-79',
+          'channelId': 'c1',
+          'taskNumber': 79,
+          'status': 'todo',
+          'title': 'Readback title',
+        },
+      ],
+    });
+    await tester.pumpAndSettle();
+
+    expect(chip, findsOneWidget);
+    expect(tester.widget(unaffected), same(original));
+    expect(RaftMessageTimeline.debugRowBuilds - before, 1);
+  });
+
   testWidgets('a touch preview preserves the row label and actions', (
     tester,
   ) async {

@@ -24,6 +24,9 @@ import 'timeline_row_trace.dart';
 /// Workspace notifications can repaint chrome without invalidating message
 /// subtrees; actual message versions are compared by their lazy row elements.
 class ChatTimelinePresentation {
+  ChatTimelinePresentation({this.taskRevision});
+
+  final Object? Function(RaftMessage)? taskRevision;
   ChannelActivityPresentation? activity;
   final progress = AgentReadProgressPresentation();
   final bodies = ChatBodyPreparation();
@@ -181,6 +184,7 @@ class ChatTimelinePresentation {
     final key = (
       style(),
       _rows,
+      taskRevision?.call(message),
       message.string('messageType') == 'system' ? windowRevision : null,
       progress.revision(id),
       _messageState(
@@ -231,6 +235,7 @@ class ChatTimelinePresentation {
     return (
       layout: (
         style,
+        taskRevision?.call(message),
         _messageState(
           w,
           message,

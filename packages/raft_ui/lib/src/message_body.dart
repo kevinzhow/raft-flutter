@@ -106,13 +106,9 @@ class _ReferencesKey {
       tasks = taskHref == null
           ? null
           : [
-              for (final n in {
-                for (final m in _taskNumberPattern.allMatches(source))
-                  int.parse(m[1]!),
-              })
+              for (final n in raftTaskReferenceNumbers(source).toSet())
                 (n, taskHref(n), knownTaskNumber?.call(n) ?? false),
             ];
-  static final _taskNumberPattern = RegExp(r'#([1-9][0-9]*)');
   final String source;
   final List<(String, String, bool, String?)> references;
   final List<(int, String, bool)>? tasks;
@@ -128,6 +124,14 @@ class _ReferencesKey {
     Object.hashAll(references),
     tasks == null ? null : Object.hashAll(tasks!),
   );
+}
+
+final _taskNumberPattern = RegExp(r'#([1-9][0-9]*)');
+
+Iterable<int> raftTaskReferenceNumbers(String source) sync* {
+  for (final match in _taskNumberPattern.allMatches(source)) {
+    if (int.tryParse(match[1]!) case final number?) yield number;
+  }
 }
 
 /// One rendered block of a message body: a Markdown run, or a fenced code or
@@ -2288,16 +2292,31 @@ class _ScopedCodeRenderer implements HighlightRenderer {
   _ScopedCodeRenderer(this.base, this.theme);
   final TextStyle base;
   final Map<String, TextStyle> theme;
-  final stack = <({TextStyle style, List<InlineSpan> children})>[];
-  final roots = <InlineSpan>[];
-  TextSpan get span => TextSpan(style: base, children: roots);
+  final stack = <TextStyle>[];
+  final runs = <InlineSpan>[];
+  final text = StringBuffer();
+  TextStyle? runStyle;
+
+  TextSpan get span {
+    flush();
+    return TextSpan(style: base, children: runs);
+  }
+
+  void flush() {
+    if (text.isEmpty) return;
+    runs.add(TextSpan(text: text.toString(), style: runStyle));
+    text.clear();
+  }
+
   @override
-  void addText(String text) {
-    final span = TextSpan(
-      text: text,
-      style: stack.isEmpty ? base : stack.last.style,
-    );
-    (stack.isEmpty ? roots : stack.last.children).add(span);
+  void addText(String value) {
+    final tokenStyle = stack.lastOrNull ?? base;
+    final style = tokenStyle == base ? null : tokenStyle;
+    if (runStyle != style) {
+      flush();
+      runStyle = style;
+    }
+    text.write(value);
   }
 
   @override
@@ -2309,19 +2328,11 @@ class _ScopedCodeRenderer implements HighlightRenderer {
       if (style != null || !scope.contains('.')) break;
       scope = scope.substring(0, scope.lastIndexOf('.'));
     }
-    stack.add((
-      style: (stack.isEmpty ? base : stack.last.style).merge(style),
-      children: <InlineSpan>[],
-    ));
+    stack.add((stack.lastOrNull ?? base).merge(style));
   }
 
   @override
-  void closeNode(DataNode node) {
-    final completed = stack.removeLast();
-    (stack.isEmpty ? roots : stack.last.children).add(
-      TextSpan(style: completed.style, children: completed.children),
-    );
-  }
+  void closeNode(DataNode node) => stack.removeLast();
 }
 
 /// Native tokenization uses the same supported language names as Web. The

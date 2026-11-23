@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_ui/raft_ui.dart' show raftTaskReferenceNumbers;
 
 import '../data/message_task_cache.dart';
 import '../data/workspace_controller.dart';
@@ -22,6 +23,28 @@ enum MessageTaskPresence {
   /// The message says it is a task but its details are not known yet; the
   /// chip's space is reserved so the row never grows later.
   reserved,
+}
+
+class _TaskRowFacts {
+  const _TaskRowFacts(this.chip, this.list, this.references);
+
+  final Object? chip;
+  final List<Map<String, dynamic>>? list;
+  final List<(int, Object?)> references;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _TaskRowFacts &&
+      other.chip == chip &&
+      listEquals(other.list, list) &&
+      listEquals(other.references, references);
+
+  @override
+  int get hashCode => Object.hash(
+    chip,
+    Object.hashAll(list ?? const []),
+    Object.hashAll(references),
+  );
 }
 
 /// A task row built from the message's own live task projection
@@ -68,6 +91,8 @@ class MessageTaskProjection extends ChangeNotifier {
   String? scope;
   RaftChannel? channelRecord;
   bool ended = false;
+  int _revision = 0;
+  final _rowFacts = Expando<({int revision, _TaskRowFacts? facts})>();
   bool get permitted =>
       !ended &&
       w.client.user != null &&
@@ -115,13 +140,18 @@ class MessageTaskProjection extends ChangeNotifier {
     }
     revalidateIfStale();
     if (permitted) unawaited(taskV2.ensure());
-    notifyListeners();
+    _publish();
   }
 
   void cacheChanged() {
     if (ended) return;
     // A reconnect or an unrecognised task event marks buckets stale.
     revalidateIfStale();
+    _publish();
+  }
+
+  void _publish() {
+    _revision++;
     notifyListeners();
   }
 
@@ -185,6 +215,43 @@ class MessageTaskProjection extends ChangeNotifier {
 
   Map<String, dynamic>? taskFor(RaftMessage message) =>
       owns(message) ? byMessage[message.id] : null;
+
+  Object? rowRevision(RaftMessage message) {
+    final old = _rowFacts[message];
+    if (old?.revision == _revision) return old!.facts;
+    final chip = presentFor(message);
+    final references = <(int, Object?)>[];
+    if (byMessage.isNotEmpty) {
+      final translated = w.services.translations
+          .present(message)
+          .translatedContent;
+      for (final text in [message.content, ?translated]) {
+        for (final number in raftTaskReferenceNumbers(text)) {
+          if (taskByNumber(number) case final task?) {
+            references.add((number, task['status']));
+          }
+        }
+      }
+    }
+    final list = taskListFor(message);
+    final facts = chip == null && list == null && references.isEmpty
+        ? null
+        : _TaskRowFacts(
+            chip == null
+                ? null
+                : (
+                    chip.presence,
+                    chip.presence == MessageTaskPresence.accepted
+                        ? chip.task
+                        : null,
+                    taskV2.enabled,
+                  ),
+            list,
+            references,
+          );
+    _rowFacts[message] = (revision: _revision, facts: facts);
+    return facts;
+  }
 
   /// The footer chip to present for [message], from the first frame: the
   /// accepted task, else (until the channel's rows are accepted) one built

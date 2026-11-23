@@ -36,15 +36,44 @@ class TimelineRowHydrator {
     required this.isVisible,
     required this.direction,
     required this.beforeSwap,
+    required this.prepareEdit,
   });
 
   final bool Function() isVisible;
   final ScrollDirection Function() direction;
   final void Function(RenderBox row) beforeSwap;
+  final void Function(double extra) prepareEdit;
   final _versions = Expando<Object>();
   final _heights = <TimelineRowMeasurement, double>{};
   final _pending = <_TimelineHydratedRowState>{};
   bool _scheduled = false;
+  _TimelineHydratedRowState? _preparing;
+  _TimelineHydratedRowState? _reserved;
+  Duration? _fullBuildFrame;
+
+  bool _claimColdBuild() {
+    if (_preparing == null) return true;
+    final frame = SchedulerBinding.instance.currentFrameTimeStamp;
+    if (_reserved != null || _fullBuildFrame == frame) return false;
+    _fullBuildFrame = frame;
+    return true;
+  }
+
+  void _startSwap(_TimelineHydratedRowState row) {
+    if (_reserved == row) _reserved = null;
+    _fullBuildFrame = SchedulerBinding.instance.currentFrameTimeStamp;
+  }
+
+  ({RenderBox box, RenderViewport viewport})? _geometry(
+    _TimelineHydratedRowState row,
+  ) {
+    final box = row.context.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+    final host = RenderAbstractViewport.maybeOf(box);
+    return host is RenderViewport && _laidOut(box, host)
+        ? (box: box, viewport: host)
+        : null;
+  }
 
   void _add(_TimelineHydratedRowState row) {
     _pending.add(row);
@@ -52,7 +81,11 @@ class TimelineRowHydrator {
   }
 
   void schedule() {
-    if (_scheduled || _pending.isEmpty || !isVisible()) return;
+    if (_scheduled ||
+        (_pending.isEmpty && _preparing == null) ||
+        !isVisible()) {
+      return;
+    }
     _scheduled = true;
     // ignore: raft_lints/avoid_unreviewed_idle_work -- consumes one mounted row per frame and only continues while rows are waiting
     SchedulerBinding.instance.addPostFrameCallback(_hydrate);
@@ -67,10 +100,12 @@ class TimelineRowHydrator {
     RenderBox? nearestBox;
     var best = double.infinity;
     for (final row in _pending) {
-      final box = row.context.findRenderObject();
-      if (box is! RenderBox || !box.attached || !box.hasSize) continue;
-      final host = RenderAbstractViewport.maybeOf(box);
-      if (host is! RenderViewport || !_laidOut(box, host)) continue;
+      if (_preparing != null && row._phase == _HydrationPhase.editing) {
+        continue;
+      }
+      final geometry = _geometry(row);
+      if (geometry == null) continue;
+      final (box: box, viewport: host) = geometry;
       final top = box.localToGlobal(Offset.zero, ancestor: host).dy;
       final bottom = top + box.size.height;
       final viewport = host.size.height;
@@ -86,11 +121,42 @@ class TimelineRowHydrator {
       }
       if (budget.elapsedMicroseconds >= 3000) break;
     }
-    if (nearest == null) return;
-    _pending.remove(nearest);
+    if (nearest == null) {
+      final edit = _preparing;
+      if (edit == null) return;
+      final box = _pending.contains(edit) ? _geometry(edit)?.box : null;
+      if (box == null) {
+        _finishPreparation();
+        schedule();
+        return;
+      }
+      nearest = edit;
+      nearestBox = box;
+    } else if (_preparing == null && nearest._mayRevealRows(nearestBox!)) {
+      _preparing = nearest;
+      prepareEdit(nearestBox.size.height);
+      schedule();
+      return;
+    }
+    final row = nearest;
+    final finishing = row == _preparing;
+    _pending.remove(row);
+    _reserved = row;
     beforeSwap(nearestBox!);
-    nearest.hydrate();
-    schedule();
+    row.hydrate();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (_reserved == row) _reserved = null;
+      if (finishing && _preparing == row) {
+        _finishPreparation();
+        schedule();
+      }
+    });
+    if (!finishing) schedule();
+  }
+
+  void _finishPreparation() {
+    _preparing = null;
+    prepareEdit(0);
   }
 
   static bool _laidOut(RenderBox box, RenderViewport viewport) {
@@ -186,6 +252,10 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
         next?['actionMetadata'] == null;
   }
 
+  bool _mayRevealRows(RenderBox box) =>
+      _phase == _HydrationPhase.editing &&
+      box.size.height - widget.estimate() > 128;
+
   @override
   Widget build(BuildContext context) {
     if (_layout case final layout?) return layout;
@@ -209,15 +279,26 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
         message.id,
         () => widget.preview(context, extent),
       );
-      if (preview != null) {
+      if (preview != null || !hydrator._claimColdBuild()) {
         _phase = _HydrationPhase.light;
         hydrator._add(this);
-        return _layout = _TimelineMeasuredRow(id: message.id, child: preview);
+        return _layout = _TimelineMeasuredRow(
+          id: message.id,
+          child: preview ?? SizedBox(height: extent.height),
+        );
       }
     }
-    final child = _phase == _HydrationPhase.swapping
-        ? timelineRowTrace('hydrate', message.id, () => widget.builder(context))
-        : widget.builder(context);
+    final Widget child;
+    if (_phase == _HydrationPhase.swapping) {
+      hydrator._startSwap(this);
+      child = timelineRowTrace(
+        'hydrate',
+        message.id,
+        () => widget.builder(context),
+      );
+    } else {
+      child = widget.builder(context);
+    }
     _phase = _HydrationPhase.full;
     return _layout = _TimelineMeasuredRow(
       id: message.id,

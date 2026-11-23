@@ -6,6 +6,89 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/message_timeline.dart';
 
 void main() {
+  testWidgets('a shrinking swap admits one full row per frame', (tester) async {
+    final controller = RaftTimelineScrollController(
+      bottomAnchored: false,
+      initial: RaftTimelineAlignment.start,
+    );
+    chat.Message row(int index, {required bool tall}) => chat.Message.text(
+      id: '$index',
+      authorId: 'fixture',
+      text: 'row-$index',
+      metadata: {'content': tall ? 'expanded' : 'short'},
+    );
+    final messages = ValueNotifier([
+      for (var index = 0; index < 30; index++) row(index, tall: index == 0),
+    ]);
+    addTearDown(controller.dispose);
+    addTearDown(messages.dispose);
+    final builds = <String>[];
+    final layouts = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ValueListenableBuilder(
+          valueListenable: messages,
+          builder: (context, rows, _) => RaftMessageTimeline(
+            controller: controller,
+            messages: rows,
+            centerIndex: 0,
+            epoch: 0,
+            cacheExtent: 0,
+            indexOfId: int.tryParse,
+            trackNeighbourVersions: false,
+            rowRevision: (_) => 0,
+            estimateRow: (_) => 70,
+            hydration: (
+              width: 800,
+              estimate: (_) => 70,
+              preview: (_, _, extent) => null,
+            ),
+            rowBuilder: (_, index) {
+              final message = rows[index];
+              final tall = message.metadata!['content'] == 'expanded';
+              builds.add(message.id);
+              return LayoutBuilder(
+                builder: (_, _) {
+                  layouts.add(message.id);
+                  return SizedBox(
+                    height: tall ? 440 : 70,
+                    child: Text(
+                      '${message.id} / ${message.metadata!['content']}',
+                    ),
+                  );
+                },
+              );
+            },
+            slivers: (history, forward) => [history, forward],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('0 / expanded'), findsOneWidget);
+    expect(find.text('7 / short'), findsNothing);
+    messages.value = [row(0, tall: false), ...messages.value.skip(1)];
+    final frames = <({List<String> builds, List<String> layouts})>[];
+    var editPresented = false;
+    for (var frame = 0; frame < 12; frame++) {
+      builds.clear();
+      layouts.clear();
+      await tester.pump(const Duration(milliseconds: 16));
+      frames.add((builds: builds.toList(), layouts: layouts.toList()));
+      if (!editPresented && find.text('0 / short').evaluate().isNotEmpty) {
+        expect(find.text('7 / short').hitTestable(), findsOneWidget);
+        editPresented = true;
+      }
+    }
+    expect(editPresented, isTrue);
+    final bursts = frames.where(
+      (frame) => frame.builds.length > 1 || frame.layouts.length > 1,
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    expect(bursts, isEmpty, reason: 'Full-row work by frame: $frames');
+  });
+
   testWidgets('a shrinking scroll range preserves a scroll into that range', (
     tester,
   ) async {

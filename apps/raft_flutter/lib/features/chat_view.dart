@@ -211,7 +211,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
 
   bool presentationActive = true;
   int presentationRevision = 0;
-  final timelineKeys = ChatTimelinePresentation();
+  late final timelineKeys = ChatTimelinePresentation(
+    taskRevision: (message) => taskProjection.rowRevision(message),
+  );
   @override
   void setState(VoidCallback fn) {
     timelineKeys.invalidateRows();
@@ -509,7 +511,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     }
     widget.viewportHandle?.bind(this, jumpToBeginning, jumpToOutline);
     bindMessageDirectories();
-    taskProjection = MessageTaskProjection(w)..addListener(referencesChanged);
     selection = ChannelActivitySelection(activity, () => rows)
       ..addListener(selectionChanged);
     w.services.translations.addListener(referencesChanged);
@@ -553,8 +554,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         agentPresentation.dispose();
         referenceDirectory.dispose();
         bindMessageDirectories();
-        taskProjection = MessageTaskProjection(w)
-          ..addListener(referencesChanged);
         w.addListener(sync);
       }
       if (!controllerChanged) {
@@ -913,6 +912,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       ..addListener(referencesChanged);
     agentPresentation = MessageAgentPresentation(w, referenceDirectory)
       ..addListener(referencesChanged);
+    taskProjection = MessageTaskProjection(w)..addListener(chromeChanged);
     bindComposerDirectory();
   }
 
@@ -921,16 +921,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       w,
       agentPresentation: agentPresentation,
       thread: widget.thread,
-    )..addListener(composerDirectoryChanged);
+    )..addListener(chromeChanged);
   }
 
-  void composerDirectoryChanged() {
+  void chromeChanged() {
     if (mounted &&
         presentationActive &&
-        !RouteTransitionGate.defer(
-          preparationRoute,
-          composerDirectoryChanged,
-        )) {
+        !RouteTransitionGate.defer(preparationRoute, chromeChanged)) {
       super.setState(() {});
     }
   }
