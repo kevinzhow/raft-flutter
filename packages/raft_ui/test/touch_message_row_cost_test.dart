@@ -44,7 +44,11 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  for (final size in [const Size(856, 944), const Size(390, 844)]) {
+  for (final size in [
+    const Size(856, 944),
+    const Size(944, 856),
+    const Size(390, 844),
+  ]) {
     testWidgets('message chrome follows input mode at $size', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = size;
