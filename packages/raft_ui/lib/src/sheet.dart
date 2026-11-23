@@ -19,7 +19,6 @@ import 'recipes/recipe_runtime.dart'
 import 'settings_layout.dart' show RaftSpace;
 import 'surface_background_scope.dart';
 import 'system_inset.dart';
-import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 
 // RaftSheet: the design system's bottom sheet. One look on every platform: the
@@ -383,14 +382,9 @@ class RaftSheet extends StatelessWidget {
     final controller = RaftSheetScope.maybeOf(context)?.scrollController;
     final t = RaftTokens.of(context);
     final headFill = headerColor ?? t.canvas;
-    final scaledHeaderExtent = header == null
-        ? 0.0
-        : RaftScaled.extent(context, headerExtent);
     final headerSlot = header == null
         ? null
-        : showHandle
-        ? SizedBox(height: scaledHeaderExtent, child: header)
-        : RaftScaled.lineBox(context, height: headerExtent, child: header!);
+        : SizedBox(height: headerExtent, child: header);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -423,7 +417,7 @@ class RaftSheet extends StatelessWidget {
                     pinned: true,
                     delegate: _PinnedHeader(
                       extent: math.max(
-                        RaftSheetMetrics.handleBox(t) + scaledHeaderExtent,
+                        RaftSheetMetrics.handleBox(t) + headerExtent,
                         RaftSheetMetrics.minDragTarget,
                       ),
                       color: RaftSheetMetrics.fill(t),

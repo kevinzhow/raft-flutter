@@ -38,7 +38,7 @@ class _SheetPreview extends StatelessWidget {
             ),
           ),
         ),
-        headerExtent: 48,
+        headerExtent: RaftScaled.extent(context, 48),
         padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

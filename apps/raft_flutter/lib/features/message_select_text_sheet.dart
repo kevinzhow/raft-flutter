@@ -71,7 +71,10 @@ class _SelectTextSheetState extends State<_SelectTextSheet> {
     return KeyedSubtree(
       key: const ValueKey('message-select-text'),
       child: RaftSheet(
-        headerExtent: RaftSheetMetrics.minDragTarget,
+        headerExtent: RaftScaled.extent(
+          context,
+          RaftSheetMetrics.minDragTarget,
+        ),
         header: Padding(
           padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
           child: Row(
