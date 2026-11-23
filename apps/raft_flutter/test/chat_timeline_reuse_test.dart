@@ -134,6 +134,17 @@ void main() {
     RaftMessageTile tile(String id) =>
         tester.widget<RaftMessageTile>(find.byKey(ValueKey('message-$id')));
     final before = {for (final id in unchanged) id: tile(id)};
+    final parent = tile('parent');
+    final parentElement = tester.element(
+      find.byKey(const ValueKey('message-parent')),
+    );
+    var parentBuilds = 0;
+    final previousRebuild = debugOnRebuildDirtyWidget;
+    debugOnRebuildDirtyWidget = (element, builtFirstTime) {
+      if (identical(element, parentElement)) parentBuilds++;
+      previousRebuild?.call(element, builtFirstTime);
+    };
+    addTearDown(() => debugOnRebuildDirtyWidget = previousRebuild);
     final anchor = paintedMessage(tester, unchanged.first);
     int? bobRank() => tester
         .widget<RaftComposer>(find.byType(RaftComposer))
@@ -180,6 +191,12 @@ void main() {
       for (final id in unchanged) {
         expect(tile(id), same(before[id]), reason: 'Unchanged visible row $id');
       }
+      expect(
+        parentBuilds,
+        0,
+        reason: 'Reply ticks leave the parent unchanged.',
+      );
+      expect(tile('parent'), same(parent));
       expect(RaftMessageTimeline.debugRowBuilds - builds, lessThanOrEqualTo(2));
       expect(
         layouts.where((block) => block.name == '_RenderRowExtentRecorder'),

@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'timeline_row_trace.dart';
+
 /// Last measured (width, height) of message rows, grouped by a theme/host
 /// scope and keyed by message id. Feeds the timeline's total-extent estimate
 /// so the scrollbar stays stable. The timeline seeds its extent index from
@@ -129,8 +131,9 @@ class RaftRowExtentRecorder extends SingleChildRenderObjectWidget {
   });
   final String scope, id;
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderRowExtentRecorder(scope, id);
+  RenderObject createRenderObject(BuildContext context) => traceTimelineRows
+      ? _TracedRowExtentRecorder(scope, id)
+      : _RenderRowExtentRecorder(scope, id);
   @override
   void updateRenderObject(BuildContext context, RenderObject renderObject) =>
       (renderObject as _RenderRowExtentRecorder)
@@ -154,6 +157,17 @@ class _RenderRowExtentRecorder extends RenderProxyBox
     super.performLayout();
     raftRowExtents.record(scope, id, size.width, size.height);
   }
+}
+
+class _TracedRowExtentRecorder extends _RenderRowExtentRecorder {
+  _TracedRowExtentRecorder(super.scope, super.id);
+
+  @override
+  void performLayout() => timelineRowTrace('layout', id, super.performLayout);
+
+  @override
+  void paint(PaintingContext context, Offset offset) =>
+      timelineRowTrace('paint', id, () => super.paint(context, offset));
 }
 
 /// Rough rendered height of a message row before it is laid out. Only a

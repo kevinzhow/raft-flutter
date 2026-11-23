@@ -10,6 +10,7 @@ import 'package:raft_ui/raft_ui.dart' show RaftThreadOutlineGutter, raftText;
 import 'message_preparation.dart';
 import 'timeline_scrollbar.dart';
 import 'timeline_row_reuse.dart';
+import 'timeline_row_trace.dart';
 import 'timeline_boundary_change.dart';
 import 'timeline_extents.dart';
 
@@ -131,6 +132,10 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         widget.cacheExtent == null &&
         (widget.canPrepareNearbyRows?.call() ?? false),
   );
+  final rowShells =
+      Expando<({TimelineExtentIndex? extents, int index, Widget shell})>();
+  final historyChildren = Expando<(int, Widget)>();
+  final forwardChildren = Expando<(int, Widget)>();
 
   void prepareNearbyRows() {
     if (singlePosition?.viewportDimension == nearbyCache) {
@@ -466,7 +471,11 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       Widget row(BuildContext context, int index) {
         Widget buildRow(BuildContext context) {
           RaftMessageTimeline.debugRowBuilds++;
-          return owner.rowBuilder(context, index);
+          return timelineRowTrace(
+            'build',
+            messages[index].id,
+            () => owner.rowBuilder(context, index),
+          );
         }
 
         final revision = owner.rowRevision;
@@ -488,6 +497,12 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
                     ? recentRows
                     : null,
               );
+        final cached = revision == null ? null : rowShells[child];
+        if (cached != null &&
+            identical(cached.extents, extents) &&
+            cached.index == index) {
+          return cached.shell;
+        }
         final body = extents == null
             ? child
             : _TimelineExtentRecorder(
@@ -495,16 +510,21 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
                 index: index,
                 child: child,
               );
-        return KeyedSubtree(
+        final shell = KeyedSubtree(
           key: ValueKey<String>(messages[index].id),
           child: body,
         );
+        if (revision != null) {
+          rowShells[child] = (extents: extents, index: index, shell: shell);
+        }
+        return shell;
       }
 
       historyList = SliverList(
         key: ValueKey('timeline-history-${widget.epoch}'),
         delegate: _EstimatingChildDelegate(
-          (context, i) => row(context, center - 1 - i),
+          _TimelineChildBuilder((context, i) => row(context, center - 1 - i)),
+          children: historyChildren,
           childCount: center,
           remainingExtent: extents == null
               ? null
@@ -520,7 +540,8 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       forwardList = SliverList(
         key: forwardKey,
         delegate: _EstimatingChildDelegate(
-          (context, i) => row(context, center + i),
+          _TimelineChildBuilder((context, i) => row(context, center + i)),
+          children: forwardChildren,
           childCount: messages.length - center,
           remainingExtent: extents == null
               ? null
@@ -613,7 +634,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         previous != null &&
         index != null;
     final change = reuse
-        ? TimelineBoundaryChange.between(previous, messages)
+        ? TimelineBoundaryChange.between(previous, messages, allowEdits: true)
         : null;
     if (change != null) {
       index!.prepend(change.before, estimate);
@@ -621,6 +642,9 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         change.after,
         (i) => estimate(messages.length - change.after + i),
       );
+      for (final edited in change.edits) {
+        index.update(edited, estimate(edited));
+      }
       extentRows = messages;
       return index;
     }
@@ -1332,12 +1356,26 @@ class _ThumbModel {
 /// extrapolation (stable scrollbar for rows of very different heights).
 class _EstimatingChildDelegate extends SliverChildBuilderDelegate {
   _EstimatingChildDelegate(
-    super.builder, {
+    this.row, {
+    required this.children,
     required int super.childCount,
     required this.remainingExtent,
     super.findChildIndexCallback,
-  });
+  }) : super(row.build);
+  final _TimelineChildBuilder row;
+  final Expando<(int, Widget)> children;
   final double Function(int firstUnbuiltIndex)? remainingExtent;
+
+  @override
+  Widget? build(BuildContext context, int index) {
+    final wrapped = super.build(context, index);
+    final child = row.take();
+    if (child == null || wrapped == null) return wrapped;
+    final cached = children[child];
+    if (cached != null && cached.$1 == index) return cached.$2;
+    children[child] = (index, wrapped);
+    return wrapped;
+  }
 
   @override
   double? estimateMaxScrollOffset(
@@ -1349,6 +1387,21 @@ class _EstimatingChildDelegate extends SliverChildBuilderDelegate {
     final remaining = remainingExtent;
     if (remaining == null) return null;
     return trailingScrollOffset + remaining(lastIndex + 1);
+  }
+}
+
+class _TimelineChildBuilder {
+  _TimelineChildBuilder(this._build);
+  final IndexedWidgetBuilder _build;
+  Widget? _child;
+
+  Widget build(BuildContext context, int index) =>
+      _child = _build(context, index);
+
+  Widget? take() {
+    final child = _child;
+    _child = null;
+    return child;
   }
 }
 

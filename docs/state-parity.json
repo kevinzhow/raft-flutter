@@ -60087,13 +60087,13 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:attachmentGallery@66220/FUNCTION:view@67374": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4981/METHOD:attachmentGallery@65113/FUNCTION:view@66267": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:senderAvatar@78798/FUNCTION:avatar@81273": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4981/METHOD:senderAvatar@77904/FUNCTION:avatar@80379": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -60105,7 +60105,7 @@
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4976/METHOD:buildTimeline@111225/FUNCTION:timelineFor@115298": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4981/METHOD:buildTimeline@111173/FUNCTION:timelineFor@114994": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -60117,17 +60117,59 @@
         "owner": "Conversation Files",
         "reason": "Composes the existing artifact retry and pagination buttons in Files."
       },
-      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4333/METHOD:build@16154/FUNCTION:row@16908": {
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4367/METHOD:build@16388/FUNCTION:row@17142": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Message timeline",
         "reason": "Composes keyed lazy rows and records their measured extents."
       },
-      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4333/METHOD:build@16154/FUNCTION:row@16908/FUNCTION:buildRow@16962": {
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4367/METHOD:build@16388/FUNCTION:row@17142/FUNCTION:buildRow@17196": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Message timeline",
         "reason": "Builds the message body when its row presentation changes."
+      },
+      "apps/raft_flutter/lib/features/chat_timeline_presentation.dart#method:ChatTimelinePresentation.threadParent": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Retains the composed thread parent while its message and presentation inputs match."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#method:_RaftChatViewState.threadParentTile": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Supplies the current thread parent and tile inputs to the mounted timeline."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4981/METHOD:buildView@120999/FUNCTION:loadingBody@122258": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Composes the existing thread loading body when it is shown."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#method:_EstimatingChildDelegate.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Reuses the sliver wrappers for an unchanged row at its existing semantic index."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#method:_TimelineChildBuilder.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Builds the row given to the sliver delegate and records its identity."
+      },
+      "apps/raft_flutter/lib/features/message_timeline.dart#method:_TimelineChildBuilder.take": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Returns the row identity built by the delegate."
+      },
+      "apps/raft_flutter/lib/features/row_extents.dart#class:_TracedRowExtentRecorder": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Records row layout and paint spans around the existing render object in lab profiles."
       },
       "apps/raft_flutter/lib/features/source_channel_files_view.dart#local-function:CLASS:_FileRowState@30142/METHOD:build@30414/FUNCTION:row@32181": {
         "role": "entry_composition",
@@ -60267,7 +60309,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@120375/FUNCTION:sendCurrent@123629": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4981/METHOD:buildView@120999/FUNCTION:sendCurrent@124147": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace conversation",
@@ -64834,13 +64876,13 @@
           "apps/raft_flutter/lib/features/agent_detail_view.dart#method:_AgentDetailPanelState._panel"
         ]
       },
-      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@121720/FUNCTION:sendCurrent@124974": {
+      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4981/METHOD:buildView@120999/FUNCTION:sendCurrent@124147": {
         "owner": "Workspace conversation",
         "kind": "surface_factory",
         "mountStatus": "source_reviewed",
         "reason": "Uses the canonical toast for a send attempted after the session goes offline.",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@120375/FUNCTION:sendCurrent@123629"
+          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4981/METHOD:buildView@120999/FUNCTION:sendCurrent@124147"
         ]
       },
       "surface:apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.build": {

@@ -16,6 +16,7 @@ import 'mobile_route_gate.dart';
 import 'message_type_scale.dart';
 export 'mobile_route_gate.dart' show MobileChatDirectRead;
 import 'message_timeline.dart';
+import 'timeline_row_trace.dart';
 import 'timeline_boundary_change.dart';
 import 'chat_timeline_presentation.dart';
 import 'history_reading_anchor.dart';
@@ -2879,11 +2880,42 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         loading: loading,
         showSummary: showSummary,
         parentSlot: widget.threadParentSlot,
-        parent: widget.hideThreadParent || w.presentedThreadParent == null
-            ? null
-            : tile(w.presentedThreadParent!, parent: true),
+        parent: threadParentTile(),
         replyCount: rows.length,
       );
+
+  Widget? threadParentTile() => timelineKeys.threadParent(
+    widget.hideThreadParent ? null : w.presentedThreadParent,
+    (message) => (
+      timelineRowStyle,
+      listRevision,
+      widget.onTask,
+      message.string('messageType') == 'system' ? windowRevision : null,
+      timelineKeys.progress.revision(message.id),
+      timelineKeys.messageState(
+        w,
+        message.id,
+        threadSummary: _messages.threadSummaries[message.id],
+        highlighted: _messages.state.highlightedMessageId == message.id,
+      ),
+    ),
+    (message) => timelineRowTrace(
+      'parent',
+      message.id,
+      () => tile(message, parent: true),
+    ),
+  );
+
+  Object get timelineRowStyle => (
+    timelineKeys.rowStyle(
+      context,
+      authority: (w, workspaceAuthority(w), activity.mode),
+      user: w.client.user,
+      interactive: canReact,
+      day: timeFormatter.dayKey(sourceTimeNow()),
+    ),
+    composerDirectory.rosterRevision,
+  );
 
   // Index the displayed window once, avoiding whole-channel scans per row.
   List<chat.Message>? indexedWindow;
@@ -3161,16 +3193,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         ),
       ];
     }
-    final rowStyle = (
-      timelineKeys.rowStyle(
-        context,
-        authority: (w, workspaceAuthority(w), activity.mode),
-        user: w.client.user,
-        interactive: canReact,
-        day: times.dayKey(sourceTimeNow()),
-      ),
-      composerDirectory.rosterRevision,
-    );
+    final rowStyle = timelineRowStyle;
     Widget? timelineWidget;
     double? timelineWidth;
     Widget timelineFor(double width, Widget Function(double) create) {
@@ -3361,11 +3384,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       );
       return widget.threadParentSlot == null ? body : taskLoadingBody(body);
     }
-    final loadingBody = RaftThreadRepliesLoadingBody(
+    Widget loadingBody() => RaftThreadRepliesLoadingBody(
       loadingLabel: raftText(context, 'Loading thread…'),
-      parent: widget.hideThreadParent || w.presentedThreadParent == null
-          ? null
-          : tile(w.presentedThreadParent!, parent: true),
+      parent: threadParentTile(),
     );
     final (channelFooter, channelGraceBanner) = thread
         ? (threadFooterWidget(), null)
@@ -3381,8 +3402,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         RaftAdaptiveWorkspace.compactOf(context);
     final currentTimeline = thread && _messages.state.threadLoading
         ? widget.threadParentSlot == null
-              ? loadingBody
-              : taskLoadingBody(loadingBody)
+              ? loadingBody()
+              : taskLoadingBody(loadingBody())
         : buildTimeline(aboveChannelComposer || aboveCompactThreadComposer);
     final historyWindow = thread
         ? _messages.threadWindow?.hasNewer == true

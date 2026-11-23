@@ -57,9 +57,31 @@ class ChatTimelinePresentation {
 
   final _keys = <int, GlobalKey>{};
   Object _rows = Object();
+  ({RaftMessage message, Object revision, Widget child})? _parent;
 
   GlobalKey keyFor(int window) => _keys.putIfAbsent(window, GlobalKey.new);
   void invalidateRows() => _rows = Object();
+
+  Widget? threadParent(
+    RaftMessage? message,
+    Object Function(RaftMessage) revision,
+    Widget Function(RaftMessage) build,
+  ) {
+    if (message == null) {
+      _parent = null;
+      return null;
+    }
+    final key = revision(message);
+    final cached = _parent;
+    if (cached != null &&
+        identical(cached.message, message) &&
+        cached.revision == key) {
+      return cached.child;
+    }
+    final child = build(message);
+    _parent = (message: message, revision: key, child: child);
+    return child;
+  }
 
   bool Function(int)? retainRows(
     List<chat.Message> messages,

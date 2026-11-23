@@ -141,6 +141,21 @@ void main() {
       await tester.pumpAndSettle();
       expect(estimates, 40);
       final anchor = tester.getRect(find.text('row-0 / 0'));
+      final unchangedWrappers = find
+          .ancestor(
+            of: find.text('row-0 / 0'),
+            matching: find.byType(AutomaticKeepAlive),
+          )
+          .evaluate()
+          .toSet();
+      expect(unchangedWrappers, isNotEmpty);
+      var wrapperBuilds = 0;
+      final previousRebuild = debugOnRebuildDirtyWidget;
+      debugOnRebuildDirtyWidget = (element, builtFirstTime) {
+        if (unchangedWrappers.contains(element)) wrapperBuilds++;
+        previousRebuild?.call(element, builtFirstTime);
+      };
+      addTearDown(() => debugOnRebuildDirtyWidget = previousRebuild);
       built.clear();
       await tester.pumpWidget(view());
       await tester.pumpAndSettle();
@@ -175,6 +190,11 @@ void main() {
       expect(built.toSet(), {'1', '2', '3'});
       expect(estimates, 42);
       expect(find.text('edited / 0'), findsOneWidget);
+      expect(
+        wrapperBuilds,
+        0,
+        reason: 'The unchanged row keeps its sliver wrapper.',
+      );
       built.clear();
       revision++;
       await tester.pumpWidget(view());
