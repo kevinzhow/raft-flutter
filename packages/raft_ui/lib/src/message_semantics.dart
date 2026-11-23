@@ -22,7 +22,9 @@ import 'markdown_autolink.dart';
 /// which is the path on Linux AT-SPI where Flutter does not name custom
 /// actions). Only interactive content keeps child nodes: links and mentions,
 /// code blocks (copy), attachments, reactions, task chips, thread badges and
-/// the Show more toggle.
+/// the Show more toggle. On a touch row links, mentions and reactions are
+/// actions of the row node instead ([RaftMessageLinkActions]); every other
+/// control keeps its own node.
 @immutable
 class RaftMessageSemanticsAction {
   const RaftMessageSemanticsAction(this.label, this.onInvoke);
@@ -41,6 +43,7 @@ class RaftMessageSemanticsScope extends InheritedWidget {
     super.key,
     required this.visibleFraction,
     this.mergeInlineActions = false,
+    this.linkActions,
     required super.child,
   });
 
@@ -49,13 +52,45 @@ class RaftMessageSemanticsScope extends InheritedWidget {
   final ValueNotifier<double?> visibleFraction;
   final bool mergeInlineActions;
 
+  /// Where prose publishes its links as actions of the row node, when the
+  /// row is a touch row ([mergeInlineActions]).
+  final RaftMessageLinkActions? linkActions;
+
   static RaftMessageSemanticsScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<RaftMessageSemanticsScope>();
 
   @override
   bool updateShouldNotify(RaftMessageSemanticsScope oldWidget) =>
       !identical(visibleFraction, oldWidget.visibleFraction) ||
-      mergeInlineActions != oldWidget.mergeInlineActions;
+      mergeInlineActions != oldWidget.mergeInlineActions ||
+      !identical(linkActions, oldWidget.linkActions);
+}
+
+/// The link actions a touch row's prose lifts onto the row node.
+///
+/// Links are published here instead of being merged up through the
+/// semantics tree: merging would need the row to absorb its descendants,
+/// and then every interactive control in it that is not its own semantics
+/// boundary (cards, attachments, thread previews, footer controls) would
+/// disappear into the row node.
+class RaftMessageLinkActions {
+  final _published = <Object, Map<CustomSemanticsAction, VoidCallback>>{};
+  Map<CustomSemanticsAction, VoidCallback>? _all;
+  VoidCallback? _listener;
+
+  /// Every published action in publication (reading) order.
+  Map<CustomSemanticsAction, VoidCallback> get all =>
+      _all ??= {for (final actions in _published.values) ...actions};
+
+  void _publish(Object owner, Map<CustomSemanticsAction, VoidCallback>? to) {
+    if (to == null) {
+      if (_published.remove(owner) == null) return;
+    } else {
+      _published[owner] = to;
+    }
+    _all = null;
+    _listener?.call();
+  }
 }
 
 /// The text a collapsed row announces: the leading part that is on screen,
@@ -222,8 +257,6 @@ List<RaftMessageSemanticsLink> raftTreeSemanticsLinks(List<md.Node> nodes) {
 /// A link or identity reference rendered inside message prose.
 typedef RaftMessageSemanticsLink = ({String label, String href});
 
-const _messageLinkActions = SemanticsTag('message link actions');
-
 final _linkCache = LinkedHashMap<String, List<RaftMessageSemanticsLink>>();
 
 /// Links in prepared message Markdown (after [raftMessageReferences]), in
@@ -303,25 +336,13 @@ class RaftMessageProseSemantics extends StatelessWidget {
   Widget build(BuildContext context) {
     final prose = ExcludeSemantics(child: child);
     if (links.isEmpty) return prose;
-    if (RaftMessageSemanticsScope.maybeOf(context)?.mergeInlineActions ==
-        true) {
-      final open = onLink;
-      if (open == null) return prose;
-      final counts = <String, int>{};
-      for (final link in links) {
-        counts.update(link.label, (count) => count + 1, ifAbsent: () => 1);
-      }
-      return Semantics(
-        tagForChildren: _messageLinkActions,
-        customSemanticsActions: {
-          for (final link in links)
-            CustomSemanticsAction(
-              label: counts[link.label] == 1
-                  ? link.label
-                  : '${link.label}, ${link.href}',
-            ): () =>
-                open(link.href),
-        },
+    final scope = RaftMessageSemanticsScope.maybeOf(context);
+    final row = scope?.linkActions;
+    if (row != null && scope!.mergeInlineActions) {
+      return _ProseLinkActions(
+        links: links,
+        onLink: onLink,
+        row: row,
         child: prose,
       );
     }
@@ -355,6 +376,71 @@ class RaftMessageProseSemantics extends StatelessWidget {
   }
 }
 
+/// Publishes a prose block's links as custom actions of its row node.
+class _ProseLinkActions extends StatefulWidget {
+  const _ProseLinkActions({
+    required this.links,
+    required this.onLink,
+    required this.row,
+    required this.child,
+  });
+  final List<RaftMessageSemanticsLink> links;
+  final ValueChanged<String>? onLink;
+  final RaftMessageLinkActions row;
+  final Widget child;
+  @override
+  State<_ProseLinkActions> createState() => _ProseLinkActionsState();
+}
+
+class _ProseLinkActionsState extends State<_ProseLinkActions> {
+  @override
+  void initState() {
+    super.initState();
+    publish();
+  }
+
+  @override
+  void didUpdateWidget(_ProseLinkActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.row, widget.row)) {
+      oldWidget.row._publish(this, null);
+    } else if (listEquals(oldWidget.links, widget.links) &&
+        (oldWidget.onLink == null) == (widget.onLink == null)) {
+      // Handlers read the current onLink; the published map stays stable.
+      return;
+    }
+    publish();
+  }
+
+  /// A stable map: SemanticsNode compares handlers by identity, so fresh
+  /// closures would re-send the row each rebuild.
+  void publish() {
+    if (widget.onLink == null) return widget.row._publish(this, null);
+    final counts = <String, int>{};
+    for (final link in widget.links) {
+      counts.update(link.label, (count) => count + 1, ifAbsent: () => 1);
+    }
+    widget.row._publish(this, {
+      for (final link in widget.links)
+        CustomSemanticsAction(
+          label: counts[link.label] == 1
+              ? link.label
+              : '${link.label}, ${link.href}',
+        ): () =>
+            widget.onLink?.call(link.href),
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.row._publish(this, null);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 /// The single semantics node of a compact message row.
 ///
 /// A plain [Semantics] widget marks its node dirty on every rebuild (its
@@ -368,14 +454,16 @@ class RaftMessageRowSemantics extends SingleChildRenderObjectWidget {
     required this.actions,
     required this.onAction,
     this.onLongPress,
-    this.mergeInlineActions = false,
+    this.linkActions,
     super.child,
   });
   final String label;
   final List<String> actions;
   final ValueChanged<int> onAction;
   final VoidCallback? onLongPress;
-  final bool mergeInlineActions;
+
+  /// Prose links of a touch row, added to the row's own actions.
+  final RaftMessageLinkActions? linkActions;
 
   @override
   RenderObject createRenderObject(BuildContext context) =>
@@ -384,7 +472,7 @@ class RaftMessageRowSemantics extends SingleChildRenderObjectWidget {
         actions: actions,
         onAction: onAction,
         onLongPress: onLongPress,
-        mergeInlineActions: mergeInlineActions,
+        linkActions: linkActions,
         textDirection: Directionality.of(context),
       );
 
@@ -398,7 +486,7 @@ class RaftMessageRowSemantics extends SingleChildRenderObjectWidget {
       actions: actions,
       onAction: onAction,
       onLongPress: onLongPress,
-      mergeInlineActions: mergeInlineActions,
+      linkActions: linkActions,
       textDirection: Directionality.of(context),
     );
   }
@@ -410,14 +498,14 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     required this.actions,
     required this.onAction,
     required this.onLongPress,
-    required this.mergeInlineActions,
+    required this.linkActions,
     required this.textDirection,
   });
   String label;
   List<String> actions;
   ValueChanged<int> onAction;
   VoidCallback? onLongPress;
-  bool mergeInlineActions;
+  RaftMessageLinkActions? linkActions;
   TextDirection textDirection;
   Map<CustomSemanticsAction, VoidCallback>? customActions;
 
@@ -426,7 +514,7 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     required List<String> actions,
     required ValueChanged<int> onAction,
     required VoidCallback? onLongPress,
-    required bool mergeInlineActions,
+    required RaftMessageLinkActions? linkActions,
     required TextDirection textDirection,
   }) {
     // Callbacks are read when an action fires; replacing them is silent.
@@ -434,10 +522,19 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     final longPressChanged =
         (onLongPress == null) != (this.onLongPress == null);
     this.onLongPress = onLongPress;
+    if (!identical(this.linkActions, linkActions)) {
+      if (attached) {
+        _unlisten();
+        this.linkActions = linkActions;
+        _listen();
+      } else {
+        this.linkActions = linkActions;
+      }
+      linksChanged();
+    }
     if (this.label == label &&
         listEquals(this.actions, actions) &&
         this.textDirection == textDirection &&
-        this.mergeInlineActions == mergeInlineActions &&
         !longPressChanged) {
       return;
     }
@@ -445,50 +542,50 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
     if (!listEquals(this.actions, actions)) customActions = null;
     this.actions = actions;
     this.textDirection = textDirection;
-    this.mergeInlineActions = mergeInlineActions;
     markNeedsSemanticsUpdate();
+  }
+
+  void _listen() => linkActions?._listener = linksChanged;
+  void _unlisten() {
+    if (linkActions?._listener == linksChanged) linkActions!._listener = null;
+  }
+
+  void linksChanged() {
+    customActions = null;
+    markNeedsSemanticsUpdate();
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _listen();
+  }
+
+  @override
+  void detach() {
+    _unlisten();
+    super.detach();
   }
 
   @override
   void describeSemanticsConfiguration(SemanticsConfiguration config) {
     super.describeSemanticsConfiguration(config);
+    // Children keep their own nodes, as interactive content must; the prose
+    // excludes its text (the label announces it) and publishes its links.
     config
       ..isSemanticBoundary = true
-      ..explicitChildNodes = !mergeInlineActions
+      ..explicitChildNodes = true
       ..label = label
-      ..textDirection = textDirection;
-    if (mergeInlineActions) {
-      config.childConfigurationsDelegate = mergeActions;
-    } else {
-      config.customSemanticsActions = rowActions;
-    }
+      ..textDirection = textDirection
+      ..customSemanticsActions = rowActions;
     if (onLongPress != null) config.onLongPress = () => onLongPress?.call();
   }
 
+  /// A stable map: SemanticsNode compares handlers by identity, so fresh
+  /// closures would re-send the row on every update.
   Map<CustomSemanticsAction, VoidCallback> get rowActions => customActions ??= {
     for (var i = 0; i < actions.length; i++)
       CustomSemanticsAction(label: actions[i]): () => onAction(i),
+    ...?linkActions?.all,
   };
-
-  ChildSemanticsConfigurationsResult mergeActions(
-    List<SemanticsConfiguration> children,
-  ) {
-    final actions = {...rowActions};
-    final result = ChildSemanticsConfigurationsResultBuilder();
-    final remaining = <SemanticsConfiguration>[];
-    for (final child in children) {
-      if (child.tagsChildrenWith(_messageLinkActions)) {
-        actions.addAll(child.customSemanticsActions);
-      } else {
-        remaining.add(child);
-      }
-    }
-    if (actions.isNotEmpty) {
-      result.markAsMergeUp(
-        SemanticsConfiguration()..customSemanticsActions = actions,
-      );
-    }
-    remaining.forEach(result.markAsMergeUp);
-    return result.build();
-  }
 }

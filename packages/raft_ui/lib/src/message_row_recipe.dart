@@ -770,6 +770,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   bool portalSyncQueued = false;
   bool tickerEnabled = true, portalMounted = false;
   final visibleFraction = ValueNotifier<double?>(null);
+  final linkActions = RaftMessageLinkActions();
   bool get toolbarActive =>
       tickerEnabled &&
       !covered &&
@@ -1473,6 +1474,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                                                 ? RaftMessageSemanticsScope(
                                                     mergeInlineActions:
                                                         widget.coarsePointer,
+                                                    linkActions: linkActions,
                                                     visibleFraction:
                                                         visibleFraction,
                                                     child: widget.content,
@@ -1596,7 +1598,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
           fraction,
         );
         return RaftMessageRowSemantics(
-          mergeInlineActions: widget.coarsePointer,
+          linkActions: widget.coarsePointer ? linkActions : null,
           label: text.isEmpty
               ? widget.semanticsLabel!
               : '${widget.semanticsLabel}\n$text',

@@ -9,6 +9,45 @@ int elements(Element element) {
   return count;
 }
 
+/// A compact touch row with a linked text body and one interactive slot.
+RaftMessageTile touchRow(
+  Widget text, {
+  Widget? card,
+  Widget? gallery,
+  Widget? threadPreview,
+  Widget? taskReference,
+  Widget? savedIndicator,
+  Widget? threadRepliesBadge,
+  List<Map<String, dynamic>> attachments = const [],
+  ValueChanged<Map<String, dynamic>>? onAttachment,
+  VoidCallback? onThread,
+}) => RaftMessageTile(
+  author: 'Alice',
+  timestamp: '10:00',
+  content: 'Docs',
+  coarsePointer: true,
+  compactSemantics: true,
+  onAuthor: () {},
+  body: card == null
+      ? text
+      : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [text, card],
+        ),
+  attachments: gallery == null
+      ? attachments
+      : const [
+          {'filename': 'gallery'},
+        ],
+  attachmentGallery: gallery,
+  onAttachment: onAttachment,
+  threadPreview: threadPreview,
+  taskReference: taskReference,
+  savedIndicator: savedIndicator,
+  threadRepliesBadge: threadRepliesBadge,
+  onThread: onThread,
+);
+
 void main() {
   testWidgets('measure a mounted plain touch message row', (tester) async {
     await tester.pumpWidget(
@@ -113,27 +152,189 @@ void main() {
   // One control per row: two controls with a tap action conflict with each
   // other and would split out even while a lone control is merged.
   final longBody = [for (var i = 0; i < 30; i++) 'Paragraph $i.'].join('\n\n');
-  final footerControls = <String, Widget Function(VoidCallback)>{
-    'Show More': (_) => const SizedBox.shrink(),
-    '3 replies': (tap) => RaftThreadRepliesBadge(replyCount: 3, onPressed: tap),
-    'Remove from Saved': (tap) => RaftMessageSavedIndicator(onPressed: tap),
-    'Open task #7': (tap) => RaftMountedMessageTaskChip(
-      number: 7,
-      status: RaftMessageTaskStatus.todo,
-      title: 'Ship it',
-      openLabel: 'Open task #7',
-      onOpen: tap,
-    ),
+  final forwarded = {
+    'kind': 'forwarded-bundle',
+    'version': 1,
+    'forwardedItems': [
+      {
+        'index': 0,
+        'provenanceState': 'available',
+        'sourceAuthorSnapshot': {'type': 'user', 'uniqueName': 'bob'},
+        'contentSnapshot': [for (var i = 0; i < 20; i++) 'Line $i'].join('\n'),
+        'sourceCreatedAt': '2026-10-07T09:00:00Z',
+        'sourceMessageSeq': 1,
+      },
+    ],
   };
-  for (final MapEntry(key: label, value: control) in footerControls.entries) {
-    testWidgets('touch rows keep $label as its own focusable node', (
+  // label: the control's own node; tap: whether activating it calls back
+  // (null: the control has no tap action, as on the base branch).
+  final controls =
+      <
+        ({
+          String label,
+          bool? tap,
+          RaftMessageTile Function(VoidCallback tap, Widget text) row,
+        })
+      >[
+        (
+          label: 'Show More',
+          tap: false,
+          row: (_, _) => RaftMessageTile(
+            author: 'Alice',
+            timestamp: '10:00',
+            content: longBody,
+            coarsePointer: true,
+            compactSemantics: true,
+            collapseLongMessages: true,
+            onAuthor: () {},
+            body: RaftMessageBody(
+              content: longBody,
+              mountedMessage: true,
+              compactSemantics: true,
+            ),
+          ),
+        ),
+        (
+          label: '3 replies',
+          tap: true,
+          row: (tap, text) => touchRow(
+            text,
+            threadRepliesBadge: RaftThreadRepliesBadge(
+              replyCount: 3,
+              onPressed: tap,
+            ),
+          ),
+        ),
+        (
+          label: 'Remove from Saved',
+          tap: true,
+          row: (tap, text) => touchRow(
+            text,
+            savedIndicator: RaftMessageSavedIndicator(onPressed: tap),
+          ),
+        ),
+        (
+          label: 'Open task #7',
+          tap: true,
+          row: (tap, text) => touchRow(
+            text,
+            taskReference: RaftMountedMessageTaskChip(
+              number: 7,
+              status: RaftMessageTaskStatus.todo,
+              title: 'Ship it',
+              openLabel: 'Open task #7',
+              onOpen: tap,
+            ),
+          ),
+        ),
+        (
+          label: 'Open thread with 2 replies',
+          tap: true,
+          row: (tap, text) => touchRow(
+            text,
+            threadPreview: RaftInlineThreadSurface(
+              replyCount: 2,
+              replies: const [
+                RaftInlineReply(
+                  id: 'r1',
+                  author: 'Bob',
+                  preview: 'Sure',
+                  senderType: 'user',
+                ),
+              ],
+              summary: const Text('2 replies'),
+              semanticLabel: 'Open thread with 2 replies',
+              onOpen: tap,
+            ),
+          ),
+        ),
+        (
+          label: 'Design Spec',
+          tap: true,
+          row: (tap, text) => touchRow(
+            text,
+            gallery: RaftCard.item(
+              onTap: tap,
+              child: const Text('Design Spec'),
+            ),
+          ),
+        ),
+        (
+          label: 'View All 1 Message',
+          tap: false,
+          row: (_, text) =>
+              touchRow(text, card: RaftForwardedBundle(metadata: forwarded)),
+        ),
+        (
+          // The card's link button has no tap action on the base branch either.
+          label: 'Open Dashboard · example.com',
+          tap: null,
+          row: (tap, text) => touchRow(
+            text,
+            card: RaftMessageCard(
+              root: const RaftCardButton(
+                label: 'Open Dashboard',
+                url: 'https://example.com',
+                domain: 'example.com',
+              ),
+              relativeTime: (_) => '',
+              duration: (_, _) => '',
+              onOpen: (_) => tap(),
+            ),
+          ),
+        ),
+        (
+          label: 'Saved as Artifact',
+          tap: true,
+          row: (tap, text) => touchRow(
+            text,
+            gallery: RaftTextLink(label: 'Saved as Artifact', onPressed: tap),
+          ),
+        ),
+        (
+          label: 'Download to View',
+          tap: true,
+          row: (tap, text) => touchRow(
+            text,
+            gallery: RaftInlineAudio(
+              filename: 'memo.m4a',
+              state: RaftInlineMediaState.failed,
+              onDownload: tap,
+            ),
+          ),
+        ),
+        (
+          label: 'notes.txt',
+          tap: true,
+          row: (tap, text) => touchRow(
+            text,
+            attachments: const [
+              {'filename': 'notes.txt'},
+            ],
+            onAttachment: (_) => tap(),
+          ),
+        ),
+        (
+          label: 'Reply in thread',
+          tap: true,
+          row: (tap, text) => touchRow(text, onThread: tap),
+        ),
+      ];
+  for (final control in controls) {
+    testWidgets('touch rows keep ${control.label} as its own node', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
       final tapped = <String>[];
-      final collapsed = label == 'Show More';
-      final content = collapsed ? longBody : 'Hello world';
-      final slot = control(() => tapped.add(label));
+      final row = control.row(
+        () => tapped.add(control.label),
+        RaftMessageBody(
+          content: '[Docs](https://example.com/docs)',
+          mountedMessage: true,
+          compactSemantics: true,
+          onLink: (_) {},
+        ),
+      );
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(),
@@ -141,23 +342,7 @@ void main() {
             body: SingleChildScrollView(
               child: RaftInteractionScope(
                 interaction: RaftInteraction.touchMode,
-                child: RaftMessageTile(
-                  author: 'Alice',
-                  timestamp: '10:00',
-                  content: content,
-                  coarsePointer: true,
-                  compactSemantics: true,
-                  collapseLongMessages: collapsed,
-                  onAuthor: () {},
-                  threadRepliesBadge: label == '3 replies' ? slot : null,
-                  savedIndicator: label == 'Remove from Saved' ? slot : null,
-                  taskReference: label == 'Open task #7' ? slot : null,
-                  body: RaftMessageBody(
-                    content: content,
-                    mountedMessage: true,
-                    compactSemantics: true,
-                  ),
-                ),
+                child: row,
               ),
             ),
           ),
@@ -165,34 +350,53 @@ void main() {
       );
       try {
         await tester.pumpAndSettle();
-        final row = tester.getSemantics(find.byType(RaftMessageRow));
-        final tree = row.toStringDeep();
-        final children = <SemanticsNode>[];
-        row.visitChildren((child) {
-          children.add(child);
+        final node = tester.getSemantics(find.byType(RaftMessageRow));
+        final tree = node.toStringDeep();
+        final nodes = <SemanticsNode>[];
+        bool collect(SemanticsNode child) {
+          nodes.add(child);
+          child.visitChildren(collect);
           return true;
-        });
-        // The text still reads as the row; the control is its only child.
-        expect(row.label, contains('Alice, 10:00'), reason: tree);
-        expect(row.label, isNot(contains(label)), reason: tree);
-        final rowData = row.getSemanticsData();
+        }
+
+        node.visitChildren(collect);
+        // The text still reads as the row; the control is a node below it.
+        final rowData = node.getSemanticsData();
+        expect(rowData.label, contains('Alice, 10:00'), reason: tree);
+        expect(rowData.label, isNot(contains(control.label)), reason: tree);
         expect(rowData.hasAction(SemanticsAction.tap), isFalse, reason: tree);
-        expect(rowData.customSemanticsActionIds, isNotEmpty, reason: tree);
-        // The Saved badge also reads its visible "Saved" text after its name.
-        expect(children, hasLength(1), reason: tree);
-        final child = children.single.getSemanticsData();
-        expect(child.label, startsWith(label), reason: tree);
-        expect(child.flagsCollection.isButton, isTrue, reason: tree);
-        expect(child.hasAction(SemanticsAction.tap), isTrue, reason: tree);
+        expect(
+          [
+            for (final id in rowData.customSemanticsActionIds!)
+              CustomSemanticsAction.getAction(id)!.label,
+          ],
+          control.label == 'Show More'
+              ? ['Mention Alice']
+              : ['Mention Alice', 'Docs'],
+          reason: tree,
+        );
+        final own = nodes.where(
+          (n) => n.getSemanticsData().label.startsWith(control.label),
+        );
+        expect(own, hasLength(1), reason: tree);
+        final data = own.single.getSemanticsData();
+        if (control.tap == null) return;
+        expect(data.hasAction(SemanticsAction.tap), isTrue, reason: tree);
         tester.binding.renderViews.first.owner!.semanticsOwner!.performAction(
-          children.single.id,
+          own.single.id,
           SemanticsAction.tap,
         );
         await tester.pumpAndSettle();
-        if (collapsed) {
-          expect(find.bySemanticsLabel('Collapse'), findsOneWidget);
+        // Show More and the bundle toggle expand in place.
+        if (control.tap!) {
+          expect(tapped, [control.label]);
         } else {
-          expect(tapped, [label]);
+          expect(
+            find.byWidgetPredicate(
+              (w) => w is RaftShowMoreToggle && w.label == 'Collapse',
+            ),
+            findsOneWidget,
+          );
         }
       } finally {
         semantics.dispose();

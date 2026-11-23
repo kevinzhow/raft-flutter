@@ -30751,6 +30751,18 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
+      "packages/raft_ui/lib/src/message_semantics.dart#class:_ProseLinkActions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Publishes a touch row prose block's links as custom actions of the row semantics node; draws nothing."
+      },
+      "packages/raft_ui/lib/src/message_semantics.dart#class:_ProseLinkActionsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Publishes a touch row prose block's links as custom actions of the row semantics node; draws nothing."
+      },
       "packages/raft_ui/lib/src/message_semantics.dart#class:_RenderMessageRowSemantics": {
         "role": "unresolved",
         "familyRefs": [],
@@ -30774,6 +30786,24 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_semantics.dart#method:_ProseLinkActions.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Publishes a touch row prose block's links as custom actions of the row semantics node; draws nothing."
+      },
+      "packages/raft_ui/lib/src/message_semantics.dart#method:_ProseLinkActionsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Publishes a touch row prose block's links as custom actions of the row semantics node; draws nothing."
+      },
+      "packages/raft_ui/lib/src/message_semantics.dart#method:_ProseLinkActionsState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Publishes a touch row prose block's links as custom actions of the row semantics node; draws nothing."
       },
       "packages/raft_ui/lib/src/message_toolbar_glyphs.dart#class:RaftMessageAddReactionGlyph": {
         "role": "unresolved",
