@@ -8,6 +8,7 @@ import 'channel_side_web_preview.dart';
 import 'desktop_browser_tabs.dart';
 
 const _tabMin = 70.0, _tabMax = 168.0, _tabGap = 2.0;
+const _frontTabMin = 60.0;
 const _edge = 13.0, _action = RaftDesktopMetrics.barButtonSize, _gap = 4.0;
 const _chipPad = 34.0, _chipDivider = 17.0;
 const _webAction = 32.0;
@@ -92,7 +93,7 @@ double browserTabWidth(
     textScaler: MediaQuery.textScalerOf(context),
   )..layout();
   final width = (painter.width.ceilToDouble() + (active ? 62 : 44)).clamp(
-    active ? 60.0 : _tabMin,
+    active ? _frontTabMin : _tabMin,
     _tabMax,
   );
   painter.dispose();
@@ -402,7 +403,7 @@ class _BrowserTabState extends State<_BrowserTab> {
               ClipRect(
                 child: OverflowBox(
                   alignment: AlignmentDirectional.centerStart,
-                  minWidth: 0,
+                  minWidth: _frontTabMin,
                   maxWidth: _tabMax,
                   child: IntrinsicWidth(key: measure, child: button),
                 ),
