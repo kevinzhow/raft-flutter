@@ -1255,8 +1255,8 @@ class RaftTimelineRenderViewport extends RenderViewport {
     super.scrollCacheExtent,
     super.paintOrder,
     super.clipBehavior,
-    ({ScrollDirection direction, double pixels})? directionalCache,
-  }) : _directionalCache = directionalCache;
+    this._directionalCache,
+  });
 
   ({ScrollDirection direction, double pixels})? _directionalCache;
 

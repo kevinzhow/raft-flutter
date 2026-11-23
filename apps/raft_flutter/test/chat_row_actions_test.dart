@@ -156,7 +156,13 @@ void main() {
         {'peerKind': 'agent', 'peerId': 'ada-id', 'maxReadSeq': 9},
       ],
     };
-    await mount(t, RaftChatView(controller: w));
+    await mount(
+      t,
+      RaftInteractionScope(
+        interaction: RaftInteraction.pointerMode,
+        child: RaftChatView(controller: w),
+      ),
+    );
     await t.pumpAndSettle();
     expect(calls(transport, 'GET', '/channels/c1'), 1);
     final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);

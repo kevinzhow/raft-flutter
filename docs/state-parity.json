@@ -5692,35 +5692,77 @@
         "owner": "WP-THREAD",
         "reason": "Message content projects the published message search match into its selectable span."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13299/METHOD:build@18119/FUNCTION:anchoredOther@21260": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13335/METHOD:build@18155/FUNCTION:anchoredOther@21732": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "task299 Markdown section comments",
         "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13299/METHOD:build@18119/FUNCTION:compactProse@20783": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13335/METHOD:build@18155/FUNCTION:compactProse@21255": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13299/METHOD:build@18119/FUNCTION:selectable@21145": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13335/METHOD:build@18155/FUNCTION:selectable@21617": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36346/METHOD:build@36928/FUNCTION:failed@37084": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36920/METHOD:build@37502/FUNCTION:failed@37658": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@55839/METHOD:build@56335/FUNCTION:<anonymous>@56444/FUNCTION:control@57681": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@57046/METHOD:build@57542/FUNCTION:<anonymous>@57651/FUNCTION:control@58888": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_block_layout.dart#class:RaftMessageBlockLimit": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Passes the collapsed height from the message container to its Markdown layout."
+      },
+      "packages/raft_ui/lib/src/message_block_layout.dart#class:RaftMessageBlockList": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Mounts Markdown blocks up to the existing collapsed height."
+      },
+      "packages/raft_ui/lib/src/message_block_layout.dart#class:_RenderMessageBlockList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Positions and paints existing Markdown blocks. Message body layout has no registered family."
+      },
+      "packages/raft_ui/lib/src/message_block_layout.dart#method:RaftMessageBlockLimit.maybeOf": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Reads the collapsed height within the message."
+      },
+      "packages/raft_ui/lib/src/message_block_layout.dart#method:RaftMessageBlockLimit.updateShouldNotify": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message body",
+        "reason": "Updates the Markdown layout when the collapse constraint changes."
+      },
+      "packages/raft_ui/lib/src/message_row_recipe.dart#function:raftMessagePointerTooltip": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row",
+        "reason": "Mounts the existing RaftTooltip on pointer message rows."
+      },
+      "packages/raft_ui/lib/src/message_row_recipe.dart#method:_RaftMessageRowState.pointerAttention": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row",
+        "reason": "Mounts the existing row focus and hover behavior on pointer input."
       },
       "packages/raft_ui/lib/src/presentation.dart#local-function:CLASS:RaftPresentedRoute@4833/METHOD:_buildSheet@11419/FUNCTION:surface@11717": {
         "role": "unresolved",
@@ -60120,7 +60162,7 @@
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildTimeline@110325/FUNCTION:timelineFor@114146": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildTimeline@109654/FUNCTION:timelineFor@113560": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -60132,13 +60174,13 @@
         "owner": "Conversation Files",
         "reason": "Composes the existing artifact retry and pagination buttons in Files."
       },
-      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4367/METHOD:build@16388/FUNCTION:row@17142": {
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4833/METHOD:build@18501/FUNCTION:row@19255": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Message timeline",
         "reason": "Composes keyed lazy rows and records their measured extents."
       },
-      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4367/METHOD:build@16388/FUNCTION:row@17142/FUNCTION:buildRow@17196": {
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4833/METHOD:build@18501/FUNCTION:row@19255/FUNCTION:buildRow@19309": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Message timeline",
@@ -60156,7 +60198,7 @@
         "owner": "Message timeline",
         "reason": "Supplies the current thread parent and tile inputs to the mounted timeline."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@120151/FUNCTION:loadingBody@121410": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@119576/FUNCTION:loadingBody@120835": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Message timeline",
@@ -60312,7 +60354,7 @@
         "owner": "design-system alignment",
         "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:attachmentGallery@65079/FUNCTION:view@66233": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:attachmentGallery@64798/FUNCTION:view@65952": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -60324,13 +60366,13 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@120151/FUNCTION:sendCurrent@123299": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@119576/FUNCTION:sendCurrent@122724": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace conversation",
         "reason": "Uses the canonical toast for a send attempted after the session goes offline."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:senderAvatar@77870/FUNCTION:avatar@80345": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:senderAvatar@77589/FUNCTION:avatar@80064": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -64891,13 +64933,13 @@
           "apps/raft_flutter/lib/features/agent_detail_view.dart#method:_AgentDetailPanelState._panel"
         ]
       },
-      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@120151/FUNCTION:sendCurrent@123299": {
+      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@119576/FUNCTION:sendCurrent@122724": {
         "owner": "Workspace conversation",
         "kind": "surface_factory",
         "mountStatus": "source_reviewed",
         "reason": "Uses the canonical toast for a send attempted after the session goes offline.",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@120151/FUNCTION:sendCurrent@123299"
+          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@119576/FUNCTION:sendCurrent@122724"
         ]
       },
       "surface:apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.build": {
