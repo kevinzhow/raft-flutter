@@ -34,25 +34,31 @@ void main() {
     messenger.setMockMethodCallHandler(child, null);
   });
 
-  test('browser mode has a private host policy and history commands', () async {
-    final browser = await SystemWebViewController.createBrowser({'raft.test'});
-    final target = Uri.parse('http://localhost:8080/');
-    await browser.load(target);
-    await browser.goBack();
-    await browser.goForward();
-    await browser.reload();
-    await browser.dispose();
-    expect(calls.map((call) => call.method), [
-      'createBrowser',
-      'load',
-      'back',
-      'forward',
-      'reload',
-      'dispose',
-    ]);
-    expect(calls.first.arguments, {
-      'blockedHosts': ['raft.test'],
-    });
-    expect(calls[1].arguments, {'url': target.toString()});
-  });
+  test(
+    'browser mode sends its host policy, session and history commands',
+    () async {
+      final browser = await SystemWebViewController.createBrowser({
+        'raft.test',
+      });
+      final target = Uri.parse('http://localhost:8080/');
+      await browser.load(target);
+      await browser.goBack();
+      await browser.goForward();
+      await browser.reload();
+      await browser.dispose();
+      expect(calls.map((call) => call.method), [
+        'createBrowser',
+        'load',
+        'back',
+        'forward',
+        'reload',
+        'dispose',
+      ]);
+      expect(calls.first.arguments, {
+        'blockedHosts': ['raft.test'],
+        'session': 0,
+      });
+      expect(calls[1].arguments, {'url': target.toString()});
+    },
+  );
 }

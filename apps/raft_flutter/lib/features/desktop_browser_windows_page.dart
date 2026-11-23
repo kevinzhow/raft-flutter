@@ -3,29 +3,11 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 
-import '../platform/attachment_html_desktop_environment.dart';
 import 'channel_side_web_preview.dart';
 import 'desktop_browser_native_page.dart';
 import 'desktop_browser_panel.dart';
+import 'desktop_browser_session.dart';
 import 'desktop_browser_tabs.dart';
-
-class DesktopBrowserWindowsProfile {
-  Future<DesktopHtmlEnvironment>? _environment;
-
-  Future<DesktopHtmlEnvironment> open() =>
-      _environment ??= DesktopHtmlEnvironment.create(TargetPlatform.windows);
-
-  void dispose() {
-    final environment = _environment;
-    if (environment != null) {
-      unawaited(
-        environment
-            .then((created) => created.dispose())
-            .catchError((Object _) {}),
-      );
-    }
-  }
-}
 
 class DesktopBrowserWindowsPage extends StatefulWidget {
   const DesktopBrowserWindowsPage({
@@ -53,6 +35,8 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
   PlatformInAppWebViewController? _controller;
   final _popupLoads = <String, Timer>{};
   bool _failed = false, _loading = true;
+  bool _needsRenderer = false;
+  Uri? _retryUrl;
   int _sample = 0;
 
   @override
@@ -80,6 +64,8 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
             javaScriptCanOpenWindowsAutomatically: false,
             mediaPlaybackRequiresUserGesture: true,
             useShouldOverrideUrlLoading: true,
+            useOnDownloadStart: true,
+            handleAcceleratorKeyPressed: true,
             isInspectable: false,
             allowModalDialogs: false,
           ),
@@ -92,7 +78,8 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
               popup.cancel();
               return NavigationActionPolicy.CANCEL;
             }
-            if (url == 'about:blank' ||
+            if (!action.isForMainFrame ||
+                url == 'about:blank' ||
                 webPreviewTarget(url, widget.raftHosts) != null) {
               return NavigationActionPolicy.ALLOW;
             }
@@ -116,13 +103,47 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
             }
             return false;
           },
-          onLoadStart: (_, _) => _navigationChanged(loading: true),
+          onLoadStart: (_, _) {
+            _retryUrl = null;
+            if (_failed && mounted) setState(() => _failed = false);
+            _navigationChanged(loading: true);
+          },
           onLoadStop: (_, _) => _navigationChanged(loading: false),
           onTitleChanged: (_, _) => _navigationChanged(),
           onUpdateVisitedHistory: (_, _, _) => _navigationChanged(),
-          onReceivedError: (_, request, _) {
-            if (request.isForMainFrame == true) {
-              _navigationChanged(loading: false);
+          onReceivedError: (_, request, error) {
+            if (request.isForMainFrame == true &&
+                error.type !=
+                    WebResourceErrorType
+                        .FRAME_LOAD_INTERRUPTED_BY_POLICY_CHANGE &&
+                error.type != WebResourceErrorType.CANCELLED) {
+              _retryUrl = webPreviewTarget(
+                request.url.toString(),
+                widget.raftHosts,
+              );
+              _fail();
+            }
+          },
+          onProcessFailed: (_, detail) {
+            if (detail.kind == ProcessFailedKind.BROWSER_PROCESS_EXITED) {
+              _needsRenderer = true;
+              _fail();
+            } else if (detail.kind == ProcessFailedKind.RENDER_PROCESS_EXITED) {
+              _fail();
+            }
+          },
+          onAcceleratorKeyPressed: (_, key) {
+            if (!mounted ||
+                !widget.visible ||
+                key.keyEventKind != 0 ||
+                key.physicalKeyStatus?.wasKeyDown == true) {
+              return;
+            }
+            switch (key.virtualKey) {
+              case 0x57:
+                widget.events.closeTab();
+              case 0x1b:
+                widget.events.closePanel();
             }
           },
           onPermissionRequest: (_, request) => PermissionResponse(
@@ -132,10 +153,19 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
           onReceivedServerTrustAuthRequest: (_, _) => ServerTrustAuthResponse(
             action: ServerTrustAuthResponseAction.CANCEL,
           ),
-          onDownloadStarting: (_, _) => DownloadStartResponse(
-            handled: true,
-            action: DownloadStartResponseAction.CANCEL,
-          ),
+          onDownloadStarting: (_, request) {
+            final url = webPreviewTarget(
+              request.url.toString(),
+              widget.raftHosts,
+            );
+            if (mounted && widget.visible && url != null) {
+              widget.events.openExternal(url);
+            }
+            return DownloadStartResponse(
+              handled: true,
+              action: DownloadStartResponseAction.CANCEL,
+            );
+          },
         ),
       );
       setState(() => _renderer = renderer);
@@ -148,18 +178,25 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     if (!mounted) return;
     _controller = controller;
     widget.events.history((
-      back: () => _run(controller.goBack),
-      forward: () => _run(controller.goForward),
-      reload: () => _run(controller.reload),
+      back: () => _navigate(controller.goBack),
+      forward: () => _navigate(controller.goForward),
+      reload: () {
+        final retryUrl = _retryUrl;
+        if (_needsRenderer || retryUrl == null) {
+          _navigate(controller.reload);
+        } else {
+          _load(retryUrl);
+        }
+      },
     ));
-    _load(widget.tab.url!);
+    _load(_retryUrl ?? widget.tab.url!);
   }
 
   void _navigationChanged({bool? loading}) {
     _loading = loading ?? _loading;
     final ticket = ++_sample;
     final controller = _controller;
-    if (controller == null || !mounted) return;
+    if (controller == null || !mounted || _failed) return;
     _run(() async {
       final (url, title, back, forward) = await (
         controller.getUrl(),
@@ -182,14 +219,35 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     unawaited(Future<void>.sync(command).catchError((Object _) => _fail()));
   }
 
+  void _navigate(Future<void> Function() command) {
+    ++_sample;
+    if (_needsRenderer) {
+      _needsRenderer = false;
+      _controller = null;
+      _renderer?.dispose();
+      setState(() {
+        _renderer = null;
+        _failed = false;
+      });
+      unawaited(_start());
+      return;
+    }
+    if (_failed) setState(() => _failed = false);
+    _run(command);
+  }
+
   void _fail() {
     if (!mounted || _failed) return;
+    ++_sample;
+    _loading = false;
     setState(() => _failed = true);
+    final page = widget.tab.page;
+    final target = _retryUrl;
     widget.events.state((
-      url: null,
-      title: '',
-      back: false,
-      forward: false,
+      url: target ?? page.url,
+      title: target == null || target == page.url ? page.title : '',
+      back: page.back,
+      forward: page.forward,
       loading: false,
     ));
   }
@@ -202,9 +260,8 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
       _fail();
       return;
     }
-    ++_sample;
-    if (_failed) setState(() => _failed = false);
-    _run(
+    _retryUrl = url;
+    _navigate(
       () => controller.loadUrl(
         urlRequest: URLRequest(url: WebUri(url.toString())),
       ),
@@ -232,7 +289,11 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     fit: StackFit.expand,
     children: [
       if (_renderer case final renderer?)
-        Offstage(offstage: _failed, child: renderer.build(context)),
+        Offstage(
+          key: ObjectKey(renderer),
+          offstage: _failed,
+          child: renderer.build(context),
+        ),
       if (_failed)
         BrowserRendererFailure(
           url: widget.tab.url!,

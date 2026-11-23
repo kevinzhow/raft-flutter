@@ -1,14 +1,30 @@
 #include "native_view.h"
 #include "extension_paths.h"
+#include <dlfcn.h>
 #include <libsoup/soup.h>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <map>
+#include <optional>
 #include <set>
 #include <sstream>
 
+struct _WebKitFrameInfo;
+
 namespace {
+std::optional<bool> BrowserSubframe(WebKitNavigationAction* action) {
+  using TargetFrame = _WebKitFrameInfo* (*)(WebKitNavigationAction*);
+  using IsMain = gboolean (*)(_WebKitFrameInfo*);
+  static const auto target_frame = reinterpret_cast<TargetFrame>(
+      dlsym(RTLD_DEFAULT, "webkit_navigation_action_get_target_frame_info"));
+  static const auto is_main = reinterpret_cast<IsMain>(
+      dlsym(RTLD_DEFAULT, "webkit_frame_info_is_main_frame"));
+  if (!target_frame || !is_main) return std::nullopt;
+  auto* target = target_frame(action);
+  return target && !is_main(target);
+}
+
 FlValue* Field(FlValue* map, const char* key) {
   return map && fl_value_get_type(map) == FL_VALUE_TYPE_MAP ? fl_value_lookup_string(map, key) : nullptr;
 }
@@ -54,8 +70,6 @@ gboolean DenyAuthentication(WebKitWebView*, WebKitAuthenticationRequest* request
 gboolean DenyDialog(WebKitWebView*, WebKitScriptDialog* dialog, gpointer) {
   webkit_script_dialog_close(dialog); return TRUE;
 }
-WebKitWebView* DenyWindow(WebKitWebView*, WebKitNavigationAction*, gpointer) { return nullptr; }
-void DenyDownload(WebKitWebContext*, WebKitDownload* download, gpointer) { webkit_download_cancel(download); }
 gboolean DenyContext(WebKitWebView*, WebKitContextMenu*, GdkEvent*, WebKitHitTestResult*, gpointer) { return TRUE; }
 bool Sandboxed(WebKitURIResponse* response) {
   SoupMessageHeaders* headers = webkit_uri_response_get_http_headers(response);
@@ -144,11 +158,11 @@ NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenge
   g_signal_connect(web_, "run-file-chooser", G_CALLBACK(DenyFile), this);
   g_signal_connect(web_, "authenticate", G_CALLBACK(DenyAuthentication), this);
   g_signal_connect(web_, "script-dialog", G_CALLBACK(DenyDialog), this);
-  g_signal_connect(web_, "create", G_CALLBACK(DenyWindow), this);
+  g_signal_connect(web_, "create", G_CALLBACK(CreateWindow), this);
   g_signal_connect(web_, "context-menu", G_CALLBACK(DenyContext), this);
   g_signal_connect(web_, "load-failed-with-tls-errors", G_CALLBACK(TlsFailed), this);
   g_signal_connect(web_, "web-process-terminated", G_CALLBACK(Terminated), this);
-  g_signal_connect(context_, "download-started", G_CALLBACK(DenyDownload), this);
+  g_signal_connect(context_, "download-started", G_CALLBACK(BrowserDownload), this);
   if (browsing_) {
     g_signal_connect(web_, "key-press-event", G_CALLBACK(BrowserKeys), this);
     for (const char* signal : {"notify::uri", "notify::title", "notify::is-loading"}) {
@@ -212,7 +226,12 @@ void NativeView::Handle(FlMethodCall* call) {
       Reply(call); return;
     }
     if (g_str_equal(method, "reload")) {
-      webkit_web_view_reload(web_);
+      if (failed_ && BrowserAddress(browser_retry_.c_str())) {
+        const std::string retry = browser_retry_;
+        webkit_web_view_load_uri(web_, retry.c_str());
+      } else {
+        webkit_web_view_reload(web_);
+      }
       Reply(call); return;
     }
     if (g_str_equal(method, "evaluate") || g_str_equal(method, "regionOverlay")) {
@@ -389,27 +408,72 @@ void NativeView::BrowserState() {
   Event("browserState", fields);
 }
 gboolean NativeView::BrowserKeys(GtkWidget*, GdkEventKey* event, gpointer data) {
-  if (event->keyval != GDK_KEY_w ||
-      (event->state & gtk_accelerator_get_default_mod_mask()) != GDK_CONTROL_MASK) return FALSE;
-  static_cast<NativeView*>(data)->Event("closeTab");
+  auto* self = static_cast<NativeView*>(data);
+  const auto modifiers = event->state & gtk_accelerator_get_default_mod_mask();
+  if (event->keyval == GDK_KEY_Escape && modifiers == 0) {
+    self->Event("closePanel");
+    return TRUE;
+  }
+  constexpr guint kPhysicalW = 25;
+  if (event->hardware_keycode != kPhysicalW || modifiers != GDK_CONTROL_MASK) return FALSE;
+  self->Event("closeTab");
   return TRUE;
+}
+void NativeView::OpenBrowserExternal(const char* address) {
+  if (!BrowserAddress(address)) return;
+  g_autoptr(FlValue) fields = fl_value_new_map();
+  fl_value_set_string_take(fields, "url", fl_value_new_string(address));
+  Event("openExternal", fields);
+}
+WebKitWebView* NativeView::CreateWindow(WebKitWebView*, WebKitNavigationAction* action, gpointer data) {
+  auto* self = static_cast<NativeView*>(data);
+  if (self->browsing_ && webkit_navigation_action_is_user_gesture(action)) {
+    self->OpenBrowserExternal(webkit_uri_request_get_uri(webkit_navigation_action_get_request(action)));
+  }
+  return nullptr;
+}
+void NativeView::BrowserDownload(WebKitWebContext*, WebKitDownload* download, gpointer data) {
+  auto* self = static_cast<NativeView*>(data);
+  if (self->browsing_) {
+    auto* owner = webkit_download_get_web_view(download);
+    if (owner && owner != self->web_) return;
+    if (owner) {
+      self->OpenBrowserExternal(webkit_uri_request_get_uri(webkit_download_get_request(download)));
+    }
+  }
+  webkit_download_cancel(download);
 }
 gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebKitPolicyDecisionType type, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
   if (self->browsing_) {
-    if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE) return FALSE;
+    if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE) {
+      auto* response = WEBKIT_RESPONSE_POLICY_DECISION(decision);
+      if (!webkit_response_policy_decision_is_main_frame_main_resource(response)) return FALSE;
+      const char* address = webkit_uri_request_get_uri(webkit_response_policy_decision_get_request(response));
+      if (self->BrowserAddress(address)) {
+        auto* headers = webkit_uri_response_get_http_headers(webkit_response_policy_decision_get_response(response));
+        g_autofree char* disposition = nullptr;
+        if (headers) soup_message_headers_get_content_disposition(headers, &disposition, nullptr);
+        if (webkit_response_policy_decision_is_mime_type_supported(response) &&
+            (!disposition || g_ascii_strcasecmp(disposition, "attachment") != 0)) return FALSE;
+        self->OpenBrowserExternal(address);
+      }
+      webkit_policy_decision_ignore(decision);
+      return TRUE;
+    }
     auto* action = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
     const char* address = webkit_uri_request_get_uri(webkit_navigation_action_get_request(action));
-    if (self->BrowserAddress(address)) {
-      if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
+    if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
+      const auto subframe = BrowserSubframe(action);
+      const bool local_document = address &&
+          (g_str_equal(address, "about:blank") || g_str_equal(address, "about:srcdoc") ||
+           g_str_has_prefix(address, "blob:") || g_str_has_prefix(address, "data:"));
+      if (self->BrowserAddress(address) || subframe.value_or(local_document)) {
         webkit_policy_decision_use(decision);
         return TRUE;
       }
-      if (webkit_navigation_action_is_user_gesture(action)) {
-        g_autoptr(FlValue) fields = fl_value_new_map();
-        fl_value_set_string_take(fields, "url", fl_value_new_string(address));
-        self->Event("openExternal", fields);
-      }
+    } else if (webkit_navigation_action_is_user_gesture(action)) {
+      self->OpenBrowserExternal(address);
     }
     webkit_policy_decision_ignore(decision);
     return TRUE;
@@ -461,10 +525,21 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
   }
   webkit_policy_decision_ignore(decision); return TRUE;
 }
-void NativeView::Loaded(WebKitWebView*, WebKitLoadEvent event, gpointer data) {
+void NativeView::Loaded(WebKitWebView* view, WebKitLoadEvent event, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
   if (self->browsing_) {
-    if (event == WEBKIT_LOAD_FINISHED) {
+    if ((event == WEBKIT_LOAD_STARTED || event == WEBKIT_LOAD_REDIRECTED) &&
+        !self->BrowserAddress(webkit_web_view_get_uri(view))) {
+      webkit_web_view_stop_loading(view);
+      return;
+    }
+    if (event == WEBKIT_LOAD_STARTED) {
+      self->loaded_ = false;
+      self->failed_ = false;
+      self->browser_retry_.clear();
+      self->Event("navigationStarted");
+    }
+    if (event == WEBKIT_LOAD_FINISHED && !self->failed_) {
       self->loaded_ = true;
       self->Event("loaded");
     }
@@ -481,7 +556,13 @@ void NativeView::Loaded(WebKitWebView*, WebKitLoadEvent event, gpointer data) {
 }
 gboolean NativeView::Failed(WebKitWebView*, WebKitLoadEvent, gchar* uri, GError* error, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
-  if (self->browsing_) return FALSE;
+  if (self->browsing_) {
+    if (!(error->domain == WEBKIT_NETWORK_ERROR && error->code == WEBKIT_NETWORK_ERROR_CANCELLED) &&
+        !(error->domain == WEBKIT_POLICY_ERROR && error->code == WEBKIT_POLICY_ERROR_FRAME_LOAD_INTERRUPTED_BY_POLICY_CHANGE)) {
+      self->Fail(uri);
+    }
+    return TRUE;
+  }
   if (!self->loaded_ && g_strcmp0(uri, self->url_.c_str()) == 0 &&
       !(error->domain == WEBKIT_NETWORK_ERROR && error->code == WEBKIT_NETWORK_ERROR_CANCELLED)) {
     self->Fail();
@@ -512,9 +593,18 @@ void NativeView::AfterInput(GtkWidget*, GdkEvent* event, gpointer data) {
   }
 }
 
-void NativeView::Fail() {
+void NativeView::Fail(const char* browser_address) {
   if (closed_ || failed_) return;
   failed_ = true; loaded_ = false;
+  if (browsing_) {
+    g_autoptr(FlValue) fields = fl_value_new_map();
+    if (BrowserAddress(browser_address)) browser_retry_ = browser_address;
+    if (!browser_retry_.empty()) {
+      fl_value_set_string_take(fields, "url", fl_value_new_string(browser_retry_.c_str()));
+    }
+    Event("failed", fields);
+    return;
+  }
   SetPaintOccluded(false);
   if (web_) webkit_web_view_stop_loading(web_);
   if (cancellable_) g_cancellable_cancel(cancellable_);
@@ -524,8 +614,8 @@ void NativeView::Fail() {
   if (clip_) host_->Layout(id_, clip_, last_clip_, false);
   Event("failed");
 }
-gboolean NativeView::TlsFailed(WebKitWebView*, gchar*, GTlsCertificate*, GTlsCertificateFlags, gpointer data) {
-  static_cast<NativeView*>(data)->Fail(); return TRUE;
+gboolean NativeView::TlsFailed(WebKitWebView*, gchar* address, GTlsCertificate*, GTlsCertificateFlags, gpointer data) {
+  static_cast<NativeView*>(data)->Fail(address); return TRUE;
 }
 void NativeView::Terminated(WebKitWebView*, WebKitWebProcessTerminationReason, gpointer data) {
   static_cast<NativeView*>(data)->Fail();

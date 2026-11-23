@@ -9,6 +9,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../platform/linux_dependencies.dart';
 import 'channel_side_web_preview.dart';
 import 'desktop_browser_panel.dart';
+import 'desktop_browser_session.dart';
 import 'desktop_browser_tabs.dart';
 import 'desktop_browser_windows_page.dart';
 
@@ -19,14 +20,14 @@ class DesktopBrowserNativePage extends StatelessWidget {
     required this.visible,
     required this.events,
     required this.raftHosts,
-    required this.windows,
+    required this.session,
   });
 
   final DesktopBrowserTab tab;
   final bool visible;
   final DesktopBrowserPageEvents events;
   final Set<String> raftHosts;
-  final DesktopBrowserWindowsProfile windows;
+  final DesktopBrowserSession session;
 
   @override
   Widget build(BuildContext context) =>
@@ -36,13 +37,14 @@ class DesktopBrowserNativePage extends StatelessWidget {
           visible: visible,
           raftHosts: raftHosts,
           events: events,
-          profile: windows,
+          profile: session.windows,
         )
       : _SystemBrowserPage(
           tab: tab,
           visible: visible,
           raftHosts: raftHosts,
           events: events,
+          session: session,
         );
 }
 
@@ -52,12 +54,14 @@ class _SystemBrowserPage extends StatefulWidget {
     required this.visible,
     required this.raftHosts,
     required this.events,
+    required this.session,
   });
 
   final DesktopBrowserTab tab;
   final bool visible;
   final Set<String> raftHosts;
   final DesktopBrowserPageEvents events;
+  final DesktopBrowserSession session;
 
   @override
   State<_SystemBrowserPage> createState() => _SystemBrowserPageState();
@@ -80,9 +84,7 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
     try {
       await LinuxDependencies.instance.ensure(LinuxDependency.webkit);
       if (!mounted) return;
-      final linux = await SystemWebViewController.createBrowser(
-        widget.raftHosts,
-      );
+      final linux = await widget.session.openLinux(widget.raftHosts);
       if (!mounted) {
         await linux.dispose();
         return;
@@ -90,9 +92,9 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
       _subscription = linux.events.listen(_event);
       setState(() => _linux = linux);
       widget.events.history((
-        back: () => _run(linux.goBack),
-        forward: () => _run(linux.goForward),
-        reload: () => _run(linux.reload),
+        back: () => _navigate(linux.goBack),
+        forward: () => _navigate(linux.goForward),
+        reload: () => _navigate(linux.reload),
       ));
       _load(widget.tab.url!);
     } catch (_) {
@@ -109,9 +111,9 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
       }
     });
     widget.events.history((
-      back: () => _run(() => channel.invokeMethod<void>('back')),
-      forward: () => _run(() => channel.invokeMethod<void>('forward')),
-      reload: () => _run(() => channel.invokeMethod<void>('reload')),
+      back: () => _navigate(() => channel.invokeMethod<void>('back')),
+      forward: () => _navigate(() => channel.invokeMethod<void>('forward')),
+      reload: () => _navigate(() => channel.invokeMethod<void>('reload')),
     ));
     _load(widget.tab.url!);
   }
@@ -123,7 +125,7 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
         ? webPreviewTarget(rawUrl, widget.raftHosts)
         : null;
     switch (fields['type']) {
-      case 'browserState':
+      case 'browserState' when !_failed:
         widget.events.state((
           url: url,
           title: fields['title'] is String ? fields['title'] as String : '',
@@ -135,24 +137,30 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
         widget.events.openExternal(url);
       case 'closeTab' when widget.visible:
         widget.events.closeTab();
+      case 'closePanel' when widget.visible:
+        widget.events.closePanel();
+      case 'navigationStarted':
+        if (_failed) setState(() => _failed = false);
       case 'failed':
-        _fail();
+        _fail(url);
     }
   }
 
-  void _fail() {
+  void _fail([Uri? target]) {
     if (!mounted || _failed) return;
     setState(() => _failed = true);
+    final page = widget.tab.page;
     widget.events.state((
-      url: null,
-      title: '',
-      back: false,
-      forward: false,
+      url: target ?? page.url,
+      title: target == null || target == page.url ? page.title : '',
+      back: page.back,
+      forward: page.forward,
       loading: false,
     ));
   }
 
-  void _run(Future<void> Function() command) {
+  void _navigate(Future<void> Function() command) {
+    if (_failed) setState(() => _failed = false);
     unawaited(Future<void>.sync(command).catchError((Object _) => _fail()));
   }
 
@@ -161,10 +169,9 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
       _fail();
       return;
     }
-    if (_failed) setState(() => _failed = false);
-    if (_linux case final linux?) _run(() => linux.load(target));
+    if (_linux case final linux?) _navigate(() => linux.load(target));
     if (_appKit case final channel?) {
-      _run(() => channel.invokeMethod<void>('load', target.toString()));
+      _navigate(() => channel.invokeMethod<void>('load', target.toString()));
     }
   }
 
@@ -198,7 +205,7 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
             child: AppKitView(
               viewType: 'app.raft/desktop_browser',
               onPlatformViewCreated: _startMac,
-              creationParams: widget.raftHosts.toList(),
+              creationParams: widget.session.macArguments(widget.raftHosts),
               creationParamsCodec: const StandardMessageCodec(),
             ),
           ),
@@ -211,19 +218,23 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
       );
     }
     final linux = _linux;
-    if (_failed) {
-      return BrowserRendererFailure(
-        url: widget.tab.url!,
-        openExternal: widget.events.openExternal,
-      );
-    }
-    if (linux == null) return const SizedBox.expand();
     final occlusion = RaftNativeSurfaceOcclusion.forView(context);
-    return SystemWebView(
-      controller: linux,
-      visible: widget.visible,
-      occlusion: occlusion,
-      isOccluded: occlusion.overlaps,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (linux != null)
+          SystemWebView(
+            controller: linux,
+            visible: widget.visible && !_failed,
+            occlusion: occlusion,
+            isOccluded: occlusion.overlaps,
+          ),
+        if (_failed)
+          BrowserRendererFailure(
+            url: widget.tab.url!,
+            openExternal: widget.events.openExternal,
+          ),
+      ],
     );
   }
 }

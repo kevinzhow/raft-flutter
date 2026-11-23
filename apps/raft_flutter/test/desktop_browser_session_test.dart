@@ -1,0 +1,209 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/channel_side_area.dart';
+import 'package:raft_flutter/features/channel_side_store.dart';
+import 'package:raft_flutter/features/channel_side_web_preview.dart';
+import 'package:raft_system_webview/raft_system_webview.dart';
+import 'package:raft_ui/raft_ui.dart';
+
+import 'support/web_preview_fixture.dart';
+
+const _failure = 'This page can’t be shown here';
+final _url = Uri.parse('https://example.test/fixture');
+
+void main() {
+  final linux = TargetPlatformVariant({TargetPlatform.linux});
+  final requests = <MethodCall>[];
+  final pages = <int, List<MethodCall>>{};
+  final channels = <int, MethodChannel>{};
+
+  Future<WorkspaceController> mount(WidgetTester tester) async {
+    requests.clear();
+    pages.clear();
+    channels.clear();
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      const MethodChannel('app.raft/linux_dependencies'),
+      (_) async => {
+        'protocol': 1,
+        'features': {
+          'webkit': {
+            'status': 'available',
+            'available': true,
+            'registered': true,
+          },
+        },
+      },
+    );
+    messenger.setMockMethodCallHandler(SystemWebViewController.rootChannel, (
+      call,
+    ) async {
+      requests.add(call);
+      if (call.method != 'createBrowser') return null;
+      final id = channels.length + 1;
+      final calls = pages[id] = [];
+      final channel = channels[id] = MethodChannel(
+        'app.raft/system_webview/$id',
+      );
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return null;
+      });
+      return {
+        'id': id,
+        'protocol': 1,
+        'browser': true,
+        'ephemeral': true,
+        'sandboxed': true,
+      };
+    });
+    final (workspace, _) = (await tester.runAsync(
+      () => webPreviewFixture(flag: false, os: 'linux', desktopBrowser: true),
+    ))!;
+    addTearDown(workspace.dispose);
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: ChannelSideArea(
+            controller: workspace,
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ),
+    );
+    openWebPreviewBeside(workspace, _url.toString(), conversationId: 'c1');
+    await tester.pumpAndSettle();
+    return workspace;
+  }
+
+  Future<void> event(
+    WidgetTester tester,
+    String type, [
+    Map<String, Object?> fields = const {},
+  ]) async {
+    await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+      channels[1]!.name,
+      const StandardMethodCodec().encodeMethodCall(
+        MethodCall('event', {'type': type, ...fields}),
+      ),
+      (_) {},
+    );
+    await tester.pump();
+  }
+
+  testWidgets(
+    'a failed page can reload or move through history and fail again',
+    (tester) async {
+      await mount(tester);
+      await event(tester, 'browserState', {
+        'url': _url.toString(),
+        'back': true,
+        'forward': true,
+      });
+      final result = <(bool, bool, String)>[];
+      for (final (key, method) in [
+        ('refresh', 'reload'),
+        ('history-back', 'back'),
+        ('history-forward', 'forward'),
+      ]) {
+        await event(tester, 'failed');
+        final failed = find.text(_failure).evaluate().isNotEmpty;
+        await tester.tap(find.byKey(ValueKey('browser-$key')));
+        await tester.pump();
+        result.add((
+          failed,
+          find.text(_failure).evaluate().isEmpty,
+          pages[1]!.where((call) => call.method == method).isEmpty
+              ? 'missing'
+              : method,
+        ));
+      }
+      await tester.pumpWidget(const SizedBox());
+      expect(result, [
+        (true, true, 'reload'),
+        (true, true, 'back'),
+        (true, true, 'forward'),
+      ]);
+    },
+    variant: linux,
+  );
+
+  testWidgets(
+    'a loaded native page and its history survive a conversation switch',
+    (tester) async {
+      final workspace = await mount(tester);
+      await event(tester, 'browserState', {
+        'url': _url.replace(path: '/second').toString(),
+        'title': 'Loaded document',
+        'back': true,
+      });
+      final conversation = workspace.channel!;
+      workspace.channel = RaftChannel({'id': 'other', 'joined': true});
+      workspace.notifyListeners();
+      await tester.pumpAndSettle();
+      final hidden = find
+          .byKey(const ValueKey('browser-history-back'))
+          .evaluate()
+          .isEmpty;
+      final retired = pages[1]!.any((call) => call.method == 'dispose');
+      workspace.channel = conversation;
+      workspace.notifyListeners();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('browser-history-back')));
+      await tester.pump();
+      final hadHistory = pages[1]!.any((call) => call.method == 'back');
+      final started = channels.length;
+      await tester.pumpWidget(const SizedBox());
+      expect(hidden, isTrue);
+      expect(retired, isFalse);
+      expect(started, 1);
+      expect(hadHistory, isTrue);
+    },
+    variant: linux,
+  );
+
+  testWidgets('changing account retires the native browsing data store', (
+    tester,
+  ) async {
+    final workspace = await mount(tester);
+    final store = WebPreviewStore.of(workspace);
+    store.browserTabs.close('c1');
+    await tester.pumpAndSettle();
+    final beforeAccountSwitch = requests.map((call) => call.method).toList();
+    workspace.client.user = RaftRecord({'id': 'other-account'});
+    workspace.notifyListeners();
+    await tester.pumpAndSettle();
+    final afterAccountSwitch = requests.map((call) => call.method).toList();
+    await tester.pumpWidget(const SizedBox());
+    expect(beforeAccountSwitch, ['createBrowser']);
+    expect(afterAccountSwitch, ['createBrowser', 'retireBrowserSession']);
+  }, variant: linux);
+
+  testWidgets('returning to an open browser preserves the last picked card', (
+    tester,
+  ) async {
+    final workspace = await mount(tester);
+    final store = ChannelSideStore.of(workspace);
+    const cards = ['app', 'tasks'];
+    final justOpened = store.activeCard(cards);
+    store.focus('tasks');
+    final conversation = workspace.channel!;
+    workspace.channel = RaftChannel({'id': 'other', 'joined': true});
+    workspace.notifyListeners();
+    await tester.pumpAndSettle();
+    workspace.channel = conversation;
+    workspace.notifyListeners();
+    await tester.pumpAndSettle();
+    final onReturn = store.activeCard(cards);
+    await tester.pumpWidget(const SizedBox());
+    expect(justOpened, 'app');
+    expect(onReturn, 'tasks');
+  }, variant: linux);
+}

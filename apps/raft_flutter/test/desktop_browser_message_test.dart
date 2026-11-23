@@ -231,7 +231,7 @@ void main() {
     expect(external, [_url]);
   }, variant: linux);
   testWidgets(
-    'a default card opens beside and an explicit tab opens externally',
+    'Web v1.24 automatic cards open beside with the browser preference set',
     (tester) async {
       final (workspace, external, _) = await _mount(tester, card: true);
       WebLinkOpenPreferences.instance.write(WebLinkOpenPreference.browser);

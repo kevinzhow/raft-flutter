@@ -10,6 +10,7 @@ import '../platform/content_links.dart';
 import '../platform/macos_voice_over.dart';
 import 'artifacts/artifact_frame_bridge.dart';
 import 'channel_side_flags.dart';
+import 'desktop_browser_session.dart';
 import 'desktop_browser_tabs.dart';
 import 'private_route_guard.dart' show channelSearchPageAuthority;
 
@@ -143,7 +144,8 @@ class WebPreviewPlatform {
 /// [WorkspaceController].
 class WebPreviewStore extends ChangeNotifier {
   WebPreviewStore._(this._workspace)
-    : _browserAuthority = channelSearchPageAuthority(_workspace) {
+    : _browserAuthority = channelSearchPageAuthority(_workspace),
+      _browserAccount = _workspace.client.user?.id {
     _workspace.addListener(_authorityChanged);
   }
 
@@ -159,10 +161,18 @@ class WebPreviewStore extends ChangeNotifier {
 
   WebPreviewPlatform platform = const WebPreviewPlatform();
   final browserTabs = DesktopBrowserTabs();
+  DesktopBrowserSession browserSession = DesktopBrowserSession();
   final WorkspaceController _workspace;
   String _browserAuthority;
+  String? _browserAccount;
 
   void _authorityChanged() {
+    final account = _workspace.client.user?.id;
+    if (account != _browserAccount) {
+      _browserAccount = account;
+      browserSession.dispose();
+      browserSession = DesktopBrowserSession();
+    }
     final next = channelSearchPageAuthority(_workspace);
     if (next == _browserAuthority) return;
     _browserAuthority = next;
@@ -228,6 +238,7 @@ class WebPreviewStore extends ChangeNotifier {
   void dispose() {
     _workspace.removeListener(_authorityChanged);
     browserTabs.dispose();
+    browserSession.dispose();
     super.dispose();
   }
 }

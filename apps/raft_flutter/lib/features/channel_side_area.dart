@@ -371,11 +371,13 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   late ChannelFilesMedia media;
   final drag = ChannelSideDragController();
   final _chatKey = GlobalKey();
+  ChannelBrowserPanes _browserPanes = ChannelBrowserPanes();
   ChannelSideSection? _expanded;
   ({_DockSeam seam, double width})? _resizePreview;
   late Listenable listenable;
   int previewOpenedAt = 0;
   int desktopPlaceOpenedAt = 0;
+  String? _previewConversation;
 
   bool restore() {
     if (_expanded == null) return false;
@@ -407,7 +409,9 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       details,
     ]);
     previewOpenedAt = preview.openedAt;
-    desktopPlaceOpenedAt = 0;
+    _browserPanes = ChannelBrowserPanes();
+    _previewConversation = w.channel?.id;
+    desktopPlaceOpenedAt = ChannelSideCards.latestDesktopOpen(w);
   }
 
   @override
@@ -418,13 +422,16 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
 
   /// The page that opened last is the one showing where only one fits.
   void previewChanged() {
-    final desktopOpened = ChannelSideCards.desktopPlaceOpenedAt(w);
+    final conversation = w.channel?.id;
+    final desktopOpened = ChannelSideCards.latestDesktopOpen(w);
     if ((preview.page != null && preview.openedAt != previewOpenedAt) ||
-        (desktopOpened != 0 && desktopOpened != desktopPlaceOpenedAt)) {
+        (conversation == _previewConversation &&
+            desktopOpened > desktopPlaceOpenedAt)) {
       store.focus(ChannelSideCards.appCardKey);
     }
     previewOpenedAt = preview.openedAt;
     desktopPlaceOpenedAt = desktopOpened;
+    _previewConversation = conversation;
   }
 
   @override
@@ -515,6 +522,19 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     );
     final beside = placement.mode == ChannelSideMode.beside;
     final columns = placement.columns;
+    final browserEnabled = desktopBrowserAvailable(w);
+    final activeBrowser =
+        browserEnabled &&
+            columns.any(
+              (column) => column.sections.contains(ChannelSideSection.artifact),
+            )
+        ? w.channel?.id
+        : null;
+    _browserPanes.update(
+      preview.browserTabs,
+      activeBrowser,
+      enabled: browserEnabled,
+    );
     final expandedIndex = beside
         ? columns.indexWhere((column) => column.sections.contains(_expanded))
         : -1;
@@ -606,6 +626,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     final row = Stack(
       clipBehavior: Clip.none,
       children: [
+        ..._browserPanes.parked(w, activeBrowser),
         Positioned.fill(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -908,6 +929,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
             key: ValueKey('channel-browser-place-$channelId'),
             workspace: w,
             conversation: channelId,
+            browserKey: _browserPanes.keyFor(channelId),
             covering: mode == ChannelSideMode.overlay,
             collapsed: fold.collapsed,
             expanded: _expanded == section,

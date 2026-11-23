@@ -29,7 +29,10 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   bool BrowserAddress(const char* url) const;
   void BrowserState();
   static gboolean BrowserKeys(GtkWidget*, GdkEventKey*, gpointer);
-  void Fail();
+  void Fail(const char* browser_address = nullptr);
+  void OpenBrowserExternal(const char* address);
+  static WebKitWebView* CreateWindow(WebKitWebView*, WebKitNavigationAction*, gpointer);
+  static void BrowserDownload(WebKitWebContext*, WebKitDownload*, gpointer);
   void SetPaintOccluded(bool occluded);
   static gboolean Policy(WebKitWebView*, WebKitPolicyDecision*, WebKitPolicyDecisionType, gpointer);
   static void Loaded(WebKitWebView*, WebKitLoadEvent, gpointer);
@@ -51,7 +54,7 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   GtkWidget* clip_ = nullptr;
   FlMethodChannel* channel_ = nullptr;
   GCancellable* cancellable_ = nullptr;
-  std::string url_, nonce_;
+  std::string url_, nonce_, browser_retry_;
   std::unique_ptr<TrustedNavigation> navigation_;
   std::shared_ptr<NativeSnapshot> snapshot_;
   std::unique_ptr<NativeRegionOverlay> region_;

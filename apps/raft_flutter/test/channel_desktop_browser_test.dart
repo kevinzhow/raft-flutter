@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/artifacts/artifact_models.dart';
 import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
+import 'package:raft_flutter/features/channel_artifact_place.dart';
 import 'package:raft_flutter/features/channel_side_area.dart';
 import 'package:raft_flutter/features/channel_side_web_preview.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -10,7 +11,49 @@ import 'package:raft_ui/raft_ui.dart';
 import 'support/web_preview_fixture.dart';
 
 void main() {
-  testWidgets('the side area switches between the Artifact and retained tabs', (
+  testWidgets('closing an Artifact returns focus while uncovering a browser', (
+    tester,
+  ) async {
+    final (workspace, _) = (await tester.runAsync(
+      () => webPreviewFixture(flag: false, os: 'linux', desktopBrowser: true),
+    ))!;
+    addTearDown(workspace.dispose);
+    final opener = FocusNode();
+    addTearDown(opener.dispose);
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: ChannelSideArea(
+            controller: workspace,
+            child: Focus(focusNode: opener, child: const SizedBox.expand()),
+          ),
+        ),
+      ),
+    );
+    openWebPreviewBeside(
+      workspace,
+      'https://example.test/preview',
+      conversationId: 'c1',
+    );
+    await tester.pumpAndSettle();
+    ChannelArtifactPlace.of(workspace).show(
+      'c1',
+      const ArtifactLinkTarget('fixture'),
+      returnFocus: opener.requestFocus,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('artifact-viewer-close')));
+    await tester.pumpAndSettle();
+    final focused = opener.hasFocus;
+    await tester.pumpWidget(const SizedBox());
+    expect(focused, isTrue);
+  }, variant: TargetPlatformVariant({TargetPlatform.linux}));
+
+  testWidgets('the side area switches between the Artifact and an empty tab', (
     tester,
   ) async {
     final (workspace, _) = (await tester.runAsync(

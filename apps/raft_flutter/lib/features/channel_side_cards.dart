@@ -14,6 +14,17 @@ import 'channel_side_store.dart';
 import 'channel_side_web_preview.dart';
 
 abstract final class ChannelSideCards {
+  static int latestDesktopOpen(WorkspaceController w) {
+    if (!desktopBrowserAvailable(w)) return 0;
+    final conversation = w.channel?.id;
+    final browser = WebPreviewStore.of(w).browserTabs
+        .forConversation(conversation);
+    final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
+    final browserOpened = browser?.openedAt ?? 0;
+    final artifactOpened = artifact?.openedAt ?? 0;
+    return browserOpened > artifactOpened ? browserOpened : artifactOpened;
+  }
+
   static int desktopPlaceOpenedAt(WorkspaceController w) {
     if (!desktopBrowserAvailable(w)) return 0;
     final conversation = w.channel?.id;

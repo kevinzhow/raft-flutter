@@ -10,9 +10,92 @@ import 'channel_side_layout.dart';
 import 'channel_side_web_preview.dart';
 import 'desktop_browser_native_page.dart';
 import 'desktop_browser_panel.dart';
-import 'desktop_browser_windows_page.dart';
+import 'desktop_browser_tabs.dart';
 
-class ChannelBrowserPlace extends StatefulWidget {
+class ChannelBrowserPanes {
+  final _keys = <String, GlobalKey>{};
+
+  void update(
+    DesktopBrowserTabs tabs,
+    String? active, {
+    required bool enabled,
+  }) {
+    if (!enabled) {
+      _keys.clear();
+      return;
+    }
+    _keys.removeWhere(
+      (conversation, _) => tabs.forConversation(conversation) == null,
+    );
+    if (active != null && tabs.forConversation(active) != null) {
+      _keys[active] = _keys.remove(active) ?? GlobalKey();
+    }
+    if (_keys.length > 2) _keys.remove(_keys.keys.first);
+  }
+
+  GlobalKey? keyFor(String conversation) => _keys[conversation];
+
+  Iterable<Widget> parked(WorkspaceController workspace, String? active) sync* {
+    for (final MapEntry(key: conversation, value: key) in _keys.entries) {
+      if (conversation != active) {
+        yield Positioned.fill(
+          key: ValueKey(conversation),
+          child: Offstage(
+            child: TickerMode(
+              enabled: false,
+              child: channelBrowserPanel(
+                key: key,
+                workspace: workspace,
+                conversation: conversation,
+                showing: false,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+}
+
+DesktopBrowserPanel channelBrowserPanel({
+  required Key? key,
+  required WorkspaceController workspace,
+  required String conversation,
+  required bool showing,
+  bool covering = false,
+  bool expanded = false,
+  bool collapsed = false,
+  String? artifactTitle,
+  VoidCallback? onShowArtifact,
+  VoidCallback? onExpand,
+  ChannelSideHeadWrapper? headWrapper,
+}) {
+  final preview = WebPreviewStore.of(workspace);
+  final hosts = raftAppHostnames(workspace);
+  return DesktopBrowserPanel(
+    key: key,
+    tabs: preview.browserTabs,
+    conversation: conversation,
+    raftHosts: hosts,
+    showing: showing,
+    covering: covering,
+    expanded: expanded,
+    collapsed: collapsed,
+    artifactTitle: artifactTitle,
+    onShowArtifact: onShowArtifact,
+    onExpand: onExpand,
+    headWrapper: headWrapper,
+    pageBuilder: (context, tab, visible, events) => DesktopBrowserNativePage(
+      tab: tab,
+      visible: visible,
+      events: events,
+      raftHosts: hosts,
+      session: preview.browserSession,
+    ),
+  );
+}
+
+class ChannelBrowserPlace extends StatelessWidget {
   const ChannelBrowserPlace({
     super.key,
     required this.workspace,
@@ -22,6 +105,7 @@ class ChannelBrowserPlace extends StatefulWidget {
     required this.expanded,
     required this.onExpand,
     required this.headWrapper,
+    required this.browserKey,
   });
 
   final WorkspaceController workspace;
@@ -29,27 +113,12 @@ class ChannelBrowserPlace extends StatefulWidget {
   final bool covering, collapsed, expanded;
   final VoidCallback? onExpand;
   final ChannelSideHeadWrapper headWrapper;
-
-  @override
-  State<ChannelBrowserPlace> createState() => _ChannelBrowserPlaceState();
-}
-
-class _ChannelBrowserPlaceState extends State<ChannelBrowserPlace> {
-  final _windows = DesktopBrowserWindowsProfile();
-
-  @override
-  void dispose() {
-    _windows.dispose();
-    super.dispose();
-  }
+  final GlobalKey? browserKey;
 
   @override
   Widget build(BuildContext context) {
-    final workspace = widget.workspace;
-    final conversation = widget.conversation;
     final tabs = WebPreviewStore.of(workspace).browserTabs;
     final artifacts = ChannelArtifactPlace.of(workspace);
-    final raftHosts = raftAppHostnames(workspace);
     return ListenableBuilder(
       listenable: Listenable.merge([tabs.placement, artifacts]),
       builder: (context, _) {
@@ -73,9 +142,9 @@ class _ChannelBrowserPlaceState extends State<ChannelBrowserPlace> {
                       session: ArtifactSession.of(workspace),
                       target: artifact.target,
                       seed: artifact.seed,
-                      page: widget.covering,
+                      page: covering,
                       inline: true,
-                      collapsed: widget.collapsed,
+                      collapsed: collapsed,
                       onClose: () => artifacts.close(conversation),
                       onShownTitle: (title) => artifacts.rename(
                         conversation,
@@ -97,24 +166,24 @@ class _ChannelBrowserPlaceState extends State<ChannelBrowserPlace> {
                               count: browser.tabs.length,
                               onPressed: () => tabs.raise(conversation),
                             ),
-                      wrapHeader: (context, head) => widget.headWrapper(
+                      wrapHeader: (context, head) => headWrapper(
                         context,
                         ChannelSideSection.artifact,
                         head,
                       ),
                       headerActions: [
-                        if (widget.onExpand != null)
+                        if (onExpand != null)
                           raftConversationHeaderToggle(
                             key: const ValueKey('inline-artifact-expand'),
-                            glyph: widget.expanded
+                            glyph: expanded
                                 ? RaftGlyph.minimize2
                                 : RaftGlyph.maximize2,
                             label: raftText(
                               context,
-                              widget.expanded ? 'Restore' : 'Expand',
+                              expanded ? 'Restore' : 'Expand',
                             ),
-                            pressed: widget.expanded,
-                            onPressed: widget.onExpand,
+                            pressed: expanded,
+                            onPressed: onExpand,
                             desktopBar: true,
                           ),
                       ],
@@ -127,29 +196,23 @@ class _ChannelBrowserPlaceState extends State<ChannelBrowserPlace> {
                 offstage: !browserInFront,
                 child: TickerMode(
                   enabled: browserInFront,
-                  child: DesktopBrowserPanel(
+                  child: KeyedSubtree(
                     key: const ValueKey('channel-desktop-browser'),
-                    tabs: tabs,
-                    conversation: conversation,
-                    raftHosts: raftHosts,
-                    showing: browserInFront,
-                    covering: widget.covering,
-                    expanded: widget.expanded,
-                    collapsed: widget.collapsed,
-                    artifactTitle: artifact?.title,
-                    onShowArtifact: artifact == null
-                        ? null
-                        : () => tabs.park(conversation),
-                    onExpand: widget.onExpand,
-                    headWrapper: widget.headWrapper,
-                    pageBuilder: (context, tab, visible, events) =>
-                        DesktopBrowserNativePage(
-                          tab: tab,
-                          visible: visible,
-                          events: events,
-                          raftHosts: raftHosts,
-                          windows: _windows,
-                        ),
+                    child: channelBrowserPanel(
+                      key: browserKey,
+                      workspace: workspace,
+                      conversation: conversation,
+                      showing: browserInFront,
+                      covering: covering,
+                      expanded: expanded,
+                      collapsed: collapsed,
+                      artifactTitle: artifact?.title,
+                      onShowArtifact: artifact == null
+                          ? null
+                          : () => tabs.park(conversation),
+                      onExpand: onExpand,
+                      headWrapper: headWrapper,
+                    ),
                   ),
                 ),
               ),

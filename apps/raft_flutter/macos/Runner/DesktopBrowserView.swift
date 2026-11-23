@@ -4,14 +4,34 @@ import WebKit
 
 final class DesktopBrowserViewFactory: NSObject, FlutterPlatformViewFactory {
   private let messenger: FlutterBinaryMessenger
-  private let dataStore = WKWebsiteDataStore.nonPersistent()
+  private var sessions: [Int64: BrowserSession] = [:]
+
+  private final class BrowserSession {
+    let dataStore = WKWebsiteDataStore.nonPersistent()
+    let views = NSHashTable<DesktopBrowserWebView>.weakObjects()
+  }
 
   static func register(with registry: FlutterPluginRegistry) {
     let registrar = registry.registrar(forPlugin: "RaftDesktopBrowser")
+    let factory = DesktopBrowserViewFactory(messenger: registrar.messenger)
     registrar.register(
-      DesktopBrowserViewFactory(messenger: registrar.messenger),
+      factory,
       withId: "app.raft/desktop_browser"
     )
+    let channel = FlutterMethodChannel(
+      name: "app.raft/desktop_browser",
+      binaryMessenger: registrar.messenger
+    )
+    channel.setMethodCallHandler { [weak factory] call, result in
+      guard call.method == "retireBrowserSession",
+            let session = call.arguments as? NSNumber else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      factory?.sessions.removeValue(forKey: session.int64Value)?.views.allObjects
+        .forEach { $0.retire() }
+      result(nil)
+    }
   }
 
   private init(messenger: FlutterBinaryMessenger) {
@@ -23,18 +43,25 @@ final class DesktopBrowserViewFactory: NSObject, FlutterPlatformViewFactory {
   }
 
   func create(withViewIdentifier viewId: Int64, arguments args: Any?) -> NSView {
+    guard let args = args as? [String: Any],
+          let id = (args["session"] as? NSNumber)?.int64Value,
+          let blockedHosts = args["blockedHosts"] as? [String] else { return NSView() }
+    let session = sessions[id] ?? BrowserSession()
+    sessions[id] = session
     let configuration = WKWebViewConfiguration()
-    configuration.websiteDataStore = dataStore
+    configuration.websiteDataStore = session.dataStore
     configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
     let channel = FlutterMethodChannel(
       name: "app.raft/desktop_browser/\(viewId)",
       binaryMessenger: messenger
     )
-    return DesktopBrowserWebView(
+    let view = DesktopBrowserWebView(
       configuration: configuration,
-      blockedHosts: Set((args as? [String] ?? []).map { $0.lowercased() }),
+      blockedHosts: Set(blockedHosts.map { $0.lowercased() }),
       channel: channel
     )
+    session.views.add(view)
+    return view
   }
 }
 
@@ -42,6 +69,7 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
   private let channel: FlutterMethodChannel
   private let blockedHosts: Set<String>
   private var observations: [NSKeyValueObservation] = []
+  private var retryURL: URL?
 
   init(configuration: WKWebViewConfiguration, blockedHosts: Set<String>, channel: FlutterMethodChannel) {
     self.channel = channel
@@ -72,7 +100,11 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
       case "forward":
         self.goForward()
       case "reload":
-        self.reload()
+        if let retryURL = self.retryURL {
+          self.load(URLRequest(url: retryURL))
+        } else {
+          self.reload()
+        }
       default:
         result(FlutterMethodNotImplemented)
         return
@@ -82,6 +114,15 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
   }
 
   required init?(coder: NSCoder) { return nil }
+
+  func retire() {
+    observations.removeAll()
+    navigationDelegate = nil
+    uiDelegate = nil
+    channel.setMethodCallHandler(nil)
+    stopLoading()
+    isHidden = true
+  }
 
   deinit {
     channel.setMethodCallHandler(nil)
@@ -112,18 +153,47 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
 
   func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-    decisionHandler(allows(action.request.url) ? .allow : .cancel)
+    if action.shouldPerformDownload {
+      openExternal(action.request.url)
+      decisionHandler(.cancel)
+      return
+    }
+    decisionHandler(action.targetFrame?.isMainFrame == false || allows(action.request.url)
+      ? .allow : .cancel)
+  }
+
+  func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse,
+               decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+    guard response.isForMainFrame else { decisionHandler(.allow); return }
+    let url = response.response.url
+    let disposition = (response.response as? HTTPURLResponse)?
+      .value(forHTTPHeaderField: "Content-Disposition")?.split(separator: ";").first?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    guard response.canShowMIMEType, disposition?.lowercased() != "attachment" else {
+      openExternal(url)
+      decisionHandler(.cancel)
+      return
+    }
+    decisionHandler(allows(url) ? .allow : .cancel)
   }
 
   func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-    if action.targetFrame == nil,
-       action.navigationType == .linkActivated,
-       let url = action.request.url,
-       allows(url) {
-      channel.invokeMethod("event", arguments: ["type": "openExternal", "url": url.absoluteString])
+    if action.targetFrame == nil {
+      openExternal(action.request.url)
     }
     return nil
+  }
+
+  private func openExternal(_ url: URL?) {
+    if let url, allows(url) {
+      channel.invokeMethod("event", arguments: ["type": "openExternal", "url": url.absoluteString])
+    }
+  }
+
+  func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+    retryURL = nil
+    channel.invokeMethod("event", arguments: ["type": "navigationStarted"])
   }
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
@@ -131,9 +201,22 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
   }
 
   func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-    if (error as NSError).code != NSURLErrorCancelled {
-      channel.invokeMethod("event", arguments: ["type": "failed"])
-    }
+    reportFailure(error)
+  }
+
+  func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+    reportFailure(error)
+  }
+
+  private func reportFailure(_ error: Error) {
+    let failure = error as NSError
+    if (failure.domain == NSURLErrorDomain && failure.code == NSURLErrorCancelled) ||
+       (failure.domain == "WebKitErrorDomain" && failure.code == 102) { return }
+    let failedURL = failure.userInfo[NSURLErrorFailingURLErrorKey] as? URL
+    retryURL = allows(failedURL) ? failedURL : nil
+    var event = ["type": "failed"]
+    if let retryURL { event["url"] = retryURL.absoluteString }
+    channel.invokeMethod("event", arguments: event)
   }
 
   override func performKeyEquivalent(with event: NSEvent) -> Bool {

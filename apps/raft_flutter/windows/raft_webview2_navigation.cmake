@@ -25,7 +25,17 @@ function(raft_fix_webview2_navigation)
                 }]=])
   set(old_request "std::make_unique<WebResourceRequest>(url, navigationAction->request->method, navigationAction->request->headers, navigationAction->isForMainFrame)")
   set(new_request "std::make_unique<WebResourceRequest>(navigationAction->request->url, navigationAction->request->method, navigationAction->request->headers, navigationAction->isForMainFrame)")
-  foreach(fragment IN ITEMS old_navigation old_request)
+  set(old_accelerator "auto handled = settings->handleAcceleratorKeyPressed;")
+  set(new_accelerator [=[UINT key = 0;
+            args->get_VirtualKey(&key);
+            const bool ctrl = GetKeyState(VK_CONTROL) < 0;
+            const bool alt = GetKeyState(VK_MENU) < 0;
+            const bool shift = GetKeyState(VK_SHIFT) < 0;
+            const bool logo = GetKeyState(VK_LWIN) < 0 || GetKeyState(VK_RWIN) < 0;
+            const bool handled = settings->handleAcceleratorKeyPressed &&
+                !alt && !shift && !logo &&
+                ((ctrl && key == 'W') || (!ctrl && key == VK_ESCAPE));]=])
+  foreach(fragment IN ITEMS old_navigation old_request old_accelerator)
     string(FIND "${patched}" "${${fragment}}" found)
     if(found EQUAL -1)
       message(FATAL_ERROR "The reviewed WebView2 navigation patch no longer matches")
@@ -33,6 +43,7 @@ function(raft_fix_webview2_navigation)
   endforeach()
   string(REPLACE "${old_navigation}" "${new_navigation}" patched "${patched}")
   string(REPLACE "${old_request}" "${new_request}" patched "${patched}")
+  string(REPLACE "${old_accelerator}" "${new_accelerator}" patched "${patched}")
   # This one translation unit moves to the build directory. Anchor its quoted
   # includes upstream without changing flags or recompiling every plugin file.
   string(REGEX REPLACE "#include \"([^\"]+)\""

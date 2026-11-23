@@ -12130,7 +12130,7 @@
      "needle": "class ChannelBrowserPlace"
     }
    ],
-   "justification": "The browser holds at most 12 tabs per conversation, with history per mounted native view and a switch to the Artifact sharing the side window. Native keyboard and popup behavior still need platform acceptance.",
+   "justification": "The browser holds up to 12 tabs per conversation. The two most recently shown panes retain their mounted pages and history. The account owns the temporary browsing profile, which survives panel closure and is retired on account change. The same side window switches between the browser and the Artifact. Native macOS and Windows behavior still needs platform acceptance.",
    "impact": "Embedded WebView focus and page-driven window behavior can differ by operating system.",
    "size": "M"
   },

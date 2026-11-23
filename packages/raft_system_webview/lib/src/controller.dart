@@ -23,16 +23,23 @@ class SystemWebViewController {
   static Future<SystemWebViewController> create() => _create();
 
   static Future<SystemWebViewController> createBrowser(
-    Set<String> blockedHosts,
-  ) => _create(blockedHosts: blockedHosts);
+    Set<String> blockedHosts, {
+    int session = 0,
+  }) => _create(blockedHosts: blockedHosts, session: session);
+
+  static Future<void> retireBrowserSession(int session) =>
+      rootChannel.invokeMethod<void>('retireBrowserSession', session);
 
   static Future<SystemWebViewController> _create({
     Set<String>? blockedHosts,
+    int session = 0,
   }) async {
     final browsing = blockedHosts != null;
     final value = await rootChannel.invokeMapMethod<String, Object?>(
       browsing ? 'createBrowser' : 'create',
-      browsing ? {'blockedHosts': blockedHosts.toList()} : null,
+      browsing
+          ? {'blockedHosts': blockedHosts.toList(), 'session': session}
+          : null,
     );
     if (value?['id'] is! int ||
         (value!['id'] as int) <= 0 ||

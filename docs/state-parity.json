@@ -5736,7 +5736,25 @@
         "owner": "WP-BROWSER",
         "reason": "Hosts the browser and Artifact in the conversation side window."
       },
-      "apps/raft_flutter/lib/features/channel_browser_place.dart#class:_ChannelBrowserPlaceState": {
+      "apps/raft_flutter/lib/features/channel_browser_place.dart#class:ChannelBrowserPanes": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "side-panel-frame",
+          "panel-header"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Parks native browser panes when the conversation changes."
+      },
+      "apps/raft_flutter/lib/features/channel_browser_place.dart#method:ChannelBrowserPanes.parked": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "side-panel-frame",
+          "panel-header"
+        ],
+        "owner": "WP-BROWSER",
+        "reason": "Mounts hidden browser panes in the conversation side window."
+      },
+      "apps/raft_flutter/lib/features/channel_browser_place.dart#method:ChannelBrowserPlace.build": {
         "role": "entry_composition",
         "familyRefs": [
           "side-panel-frame",
@@ -5745,25 +5763,16 @@
         "owner": "WP-BROWSER",
         "reason": "Hosts the browser and Artifact in the conversation side window."
       },
-      "apps/raft_flutter/lib/features/channel_browser_place.dart#method:ChannelBrowserPlace.createState": {
+      "apps/raft_flutter/lib/features/channel_browser_place.dart#function:channelBrowserPanel": {
         "role": "entry_composition",
         "familyRefs": [
           "side-panel-frame",
           "panel-header"
         ],
         "owner": "WP-BROWSER",
-        "reason": "Hosts the browser and Artifact in the conversation side window."
+        "reason": "Composes the browser panel for either its visible or parked position."
       },
-      "apps/raft_flutter/lib/features/channel_browser_place.dart#method:_ChannelBrowserPlaceState.build": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "side-panel-frame",
-          "panel-header"
-        ],
-        "owner": "WP-BROWSER",
-        "reason": "Hosts the browser and Artifact in the conversation side window."
-      },
-      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@11213/METHOD:_build@14211/FUNCTION:chatContent@18352": {
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@11213/METHOD:_build@14532/FUNCTION:chatContent@19052": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace side panels",
@@ -5989,17 +5998,6 @@
         "owner": "WP-BROWSER",
         "reason": "Composes the browser chrome, active native page, and Artifact switch."
       },
-      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#method:_DesktopBrowserPanelState.didUpdateWidget": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "panel-header",
-          "side-panel-frame",
-          "tabs",
-          "button"
-        ],
-        "owner": "WP-BROWSER",
-        "reason": "Composes the browser chrome, active native page, and Artifact switch."
-      },
       "apps/raft_flutter/lib/features/desktop_browser_tab_strip.dart#class:DesktopBrowserTabStrip": {
         "role": "entry_composition",
         "familyRefs": [
@@ -6129,7 +6127,7 @@
         "owner": "WP-BROWSER",
         "reason": "Hosts WebView2 for a browser tab and uses the shared fallback when the renderer is unavailable."
       },
-      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5977/METHOD:_body@32371/FUNCTION:body@32575": {
+      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5977/METHOD:_body@32396/FUNCTION:body@32600": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-BROWSER",
