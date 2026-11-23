@@ -105,7 +105,7 @@ class ChannelBrowserPlace extends StatelessWidget {
     required this.expanded,
     required this.onExpand,
     required this.headWrapper,
-    required this.browserKey,
+    this.browserKey,
   });
 
   final WorkspaceController workspace;
