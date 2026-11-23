@@ -420,6 +420,7 @@ class TimelineRowPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = raftMessageSemanticsText(context, content);
     final lineEnd = text.indexOf('\n');
+    final firstLine = lineEnd < 0 ? text : text.substring(0, lineEnd);
     final heading = timestamp.isEmpty ? author : '$author, $timestamp';
     return Semantics(
       container: true,
@@ -428,23 +429,18 @@ class TimelineRowPreview extends StatelessWidget {
       child: ClipRect(
         child: SizedBox(
           height: height,
-          child: OverflowBox(
+          child: Align(
             alignment: AlignmentDirectional.topStart,
-            minHeight: 0,
-            maxHeight: double.infinity,
             child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(author, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text(
-                    lineEnd < 0 ? text : text.substring(0, lineEnd),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+              padding: const EdgeInsetsDirectional.only(
+                start: RaftSpace.x4,
+                top: RaftSpace.x1,
+                end: RaftSpace.x4,
+              ),
+              child: Text(
+                '$author\n$firstLine',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),

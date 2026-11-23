@@ -246,7 +246,7 @@ void main() {
     }
   });
 
-  testWidgets('a live arrival starts light and settles at the latest edge', (
+  testWidgets('a live arrival lays out once at the followed latest edge', (
     tester,
   ) async {
     final w = await open(tester);
@@ -269,15 +269,11 @@ void main() {
     w.notifyListeners();
     await tester.pump();
     final latest = find.byKey(const ValueKey('message-reuse-82'));
-    expect(latest, findsNothing);
-    expect(
-      find.bySemanticsLabel(RegExp(r'Alice, [^\n]+\nreuse message 82')),
-      findsOneWidget,
-    );
+    expect(latest, findsOneWidget);
+    final bounds = tester.getRect(latest);
     for (var frame = 0; frame < 6; frame++) {
-      final builds = RaftMessageTimeline.debugRowBuilds;
       await tester.pump(const Duration(milliseconds: 16));
-      expect(RaftMessageTimeline.debugRowBuilds - builds, lessThanOrEqualTo(1));
+      expect(tester.getRect(latest), bounds);
     }
     for (final index in [80, 81, 82]) {
       expect(find.byKey(ValueKey('message-reuse-$index')), findsOneWidget);
@@ -317,6 +313,13 @@ void main() {
     await tester.pump();
     expect(full, findsNothing);
     expect(tester.getSize(row).height, height);
+    expect(
+      find.descendant(
+        of: row,
+        matching: find.bySemanticsLabel(RegExp(r'\nreuse message 79')),
+      ),
+      findsOneWidget,
+    );
     await tester.pumpAndSettle();
     expect(full, findsOneWidget);
     expect(tester.getSize(row).height, height);

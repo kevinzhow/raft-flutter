@@ -552,9 +552,14 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       // accepts the latest presentation before layout and paint.
       final previous = listsOwner;
       final owner = listsOwner = widget;
+      final position = singlePosition;
+      final followsLatest =
+          position is RaftTimelinePosition && position.followEnd;
       var entering =
           previous != null &&
           previous.epoch == owner.epoch &&
+          (!followsLatest ||
+              previous.messages.lastOrNull?.id == messages.lastOrNull?.id) &&
           (previous.messages.isEmpty ||
               (owner.indexOfId(previous.messages.first.id) ?? 0) == 0);
       if (!entering) {

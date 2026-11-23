@@ -60192,29 +60192,131 @@
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildTimeline@109654/FUNCTION:timelineFor@113560": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-THREAD",
-        "reason": "Composes the timeline at the effective message width when the outline gutter is present."
-      },
       "apps/raft_flutter/lib/features/channel_side_files_rows.dart#local-function:CLASS:ConversationArtifactsNote@13714/METHOD:build@14086/FUNCTION:button@14427": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Conversation Files",
         "reason": "Composes the existing artifact retry and pagination buttons in Files."
       },
-      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4833/METHOD:build@18501/FUNCTION:row@19255": {
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@5013/METHOD:build@19225/FUNCTION:row@20607": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Message timeline",
         "reason": "Composes keyed lazy rows and records their measured extents."
       },
-      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4833/METHOD:build@18501/FUNCTION:row@19255/FUNCTION:buildRow@19309": {
+      "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@5013/METHOD:build@19225/FUNCTION:row@20607/FUNCTION:buildRow@20661": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Message timeline",
         "reason": "Builds the message body when its row presentation changes."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:TimelineHydratedRow": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Hosts the preview and the full row at one message identity."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:TimelineRowPreview": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Shows the author and first line until the full message row mounts."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:TimelineWidth": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Supplies the actual viewport width for row extent measurement."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:_RenderTimelineMeasuredRow": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Records the extent of the laid-out message row."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:_RenderTimelineWidthObserver": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Reports viewport width changes from layout."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:_TimelineHydratedRowState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Reconciles each preview or edited row on its scheduled frame."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:_TimelineMeasuredRow": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Attaches a message identity and extent observer to the row."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:_TimelineWidthObserver": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Attaches the viewport width observer."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#class:_TimelineWidthState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Retains the last laid-out viewport width across rebuilds."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#function:timelineMessagePreview": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Supplies the preview with the message author, time, and body."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#method:TimelineHydratedRow.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Creates the row state that holds a preview across frames."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#method:TimelineRowPreview.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Composes the clipped preview and gives it a full text label."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#method:TimelineWidth.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Creates the state that retains the measured layout width."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#method:_TimelineHydratedRowState._layoutRevision": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Extracts the row presentation inputs that affect layout."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#method:_TimelineHydratedRowState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Mounts the preview or the existing full row at its measured extent."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#method:_TimelineHydratedRowState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Keeps an edited row mounted until its replacement is scheduled."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_hydration.dart#method:_TimelineWidthState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Builds the timeline with its last observed viewport width."
+      },
+      "apps/raft_flutter/lib/features/timeline_row_reuse.dart#local-function:CLASS:_TimelineReusableRowState@4532/METHOD:build@6124/FUNCTION:body@6426": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Retains the row body and attaches its hydration state."
       },
       "apps/raft_flutter/lib/features/chat_timeline_presentation.dart#method:ChatTimelinePresentation.threadParent": {
         "role": "entry_composition",
@@ -60228,7 +60330,7 @@
         "owner": "Message timeline",
         "reason": "Supplies the current thread parent and tile inputs to the mounted timeline."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@119576/FUNCTION:loadingBody@120835": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4985/METHOD:buildView@119487/FUNCTION:loadingBody@120746": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Message timeline",
@@ -60384,7 +60486,7 @@
         "owner": "design-system alignment",
         "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:attachmentGallery@64798/FUNCTION:view@65952": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4985/METHOD:attachmentGallery@64836/FUNCTION:view@65990": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -60396,13 +60498,13 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@119576/FUNCTION:sendCurrent@122724": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4985/METHOD:buildView@119487/FUNCTION:sendCurrent@122635": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace conversation",
         "reason": "Uses the canonical toast for a send attempted after the session goes offline."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:senderAvatar@77589/FUNCTION:avatar@80064": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4985/METHOD:senderAvatar@77627/FUNCTION:avatar@80102": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -64963,13 +65065,13 @@
           "apps/raft_flutter/lib/features/agent_detail_view.dart#method:_AgentDetailPanelState._panel"
         ]
       },
-      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@119576/FUNCTION:sendCurrent@122724": {
+      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4985/METHOD:buildView@119487/FUNCTION:sendCurrent@122635": {
         "owner": "Workspace conversation",
         "kind": "surface_factory",
         "mountStatus": "source_reviewed",
         "reason": "Uses the canonical toast for a send attempted after the session goes offline.",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4947/METHOD:buildView@119576/FUNCTION:sendCurrent@122724"
+          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4985/METHOD:buildView@119487/FUNCTION:sendCurrent@122635"
         ]
       },
       "surface:apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.build": {
