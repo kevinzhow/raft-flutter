@@ -5,6 +5,7 @@
 // marker and unread count the second. Opening goes to the object; Done takes it
 // out; there is no Mark as unread and no right swipe.
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_inbox_row.dart';
@@ -269,6 +270,7 @@ class _ObjectLine extends StatelessWidget {
           child: OverflowBox(
             alignment: AlignmentDirectional.centerStart,
             maxWidth: double.infinity,
+            fit: OverflowBoxFit.deferToChild,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               spacing: _pieceGap,

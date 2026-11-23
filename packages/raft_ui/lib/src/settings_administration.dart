@@ -6,6 +6,8 @@
 //   MemberPermissionsSection.
 // Presentation only: the app owns data, permission gates and requests and
 // passes values plus callbacks; every class list is resolved here.
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -964,11 +966,15 @@ class RaftAdminDateTimeField extends StatelessWidget {
         final style = s
             .text(tokens, base: DefaultTextStyle.of(context).style)
             .copyWith(fontSize: 14, height: 20 / 14);
+        final grows = s.height != null && RaftScaled.grows(context);
+        final minHeight = grows
+            ? math.max(s.minHeight ?? 0, s.height!)
+            : s.minHeight;
         return Container(
-          height: s.height,
-          constraints: s.minHeight == null
+          height: grows ? null : s.height,
+          constraints: minHeight == null
               ? null
-              : BoxConstraints(minHeight: s.minHeight!),
+              : BoxConstraints(minHeight: minHeight),
           decoration: s.decoration(tokens),
           padding: s.padding,
           alignment: s.height == null ? null : Alignment.centerLeft,
@@ -979,6 +985,7 @@ class RaftAdminDateTimeField extends StatelessWidget {
                   format(value),
                   maxLines: 1,
                   softWrap: false,
+                  overflow: TextOverflow.ellipsis,
                   style: style,
                 ),
               ),

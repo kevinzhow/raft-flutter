@@ -1813,9 +1813,31 @@ class _RenderCssLineBox extends RenderProxyBox {
       (_style.height == RaftControlTypography.androidChineseLineHeight ||
           _windowsChinese);
 
+  RenderParagraph? _findSingleParagraph(RenderObject? node) {
+    var current = node;
+    while (current != null) {
+      if (current is RenderParagraph) return current;
+      if (current is RenderEditable || current is RenderAbstractViewport) {
+        return null;
+      }
+      if (current is RenderObjectWithChildMixin<RenderBox>) {
+        current = current.child;
+        continue;
+      }
+      return null;
+    }
+    return null;
+  }
+
+  bool get _scaled => _textScaler.scale(14) > 14.0 + 1e-6;
+
+  bool _growsPastCssHeight = false;
+
   int get _lines {
     final c = child;
     if (c == null || !c.hasSize) return 1;
+    final paragraph = _findSingleParagraph(c);
+    if (paragraph?.maxLines == 1) return 1;
     final m = _metrics;
     return (c.size.height / m.lineHeight).round().clamp(1, 1 << 20);
   }
@@ -1823,10 +1845,21 @@ class _RenderCssLineBox extends RenderProxyBox {
   @override
   void performLayout() {
     final c = child!;
-    c.layout(constraints.loosen().copyWith(minHeight: 0), parentUsesSize: true);
-    size = constraints.constrain(
-      Size(c.size.width, _lines * _metrics.lineHeight),
-    );
+    final paragraph = _findSingleParagraph(c);
+    final childConstraints = paragraph != null
+        ? constraints.loosen().copyWith(
+            minHeight: 0,
+            maxHeight: double.infinity,
+          )
+        : constraints.loosen().copyWith(minHeight: 0);
+    c.layout(childConstraints, parentUsesSize: true);
+    final cssHeight = _lines * _metrics.lineHeight;
+    _growsPastCssHeight =
+        _scaled &&
+        paragraph != null &&
+        c.size.height > cssHeight.ceilToDouble();
+    final boxHeight = _growsPastCssHeight ? c.size.height : cssHeight;
+    size = constraints.constrain(Size(c.size.width, boxHeight));
     // SkParagraph reports the fractional even-leading baseline but draws the
     // glyphs at that baseline rounded to a whole logical pixel (measured: a
     // 12/20 Hanken line reports 14.182 and paints at 14, a 14/20 line reports
@@ -1844,7 +1877,8 @@ class _RenderCssLineBox extends RenderProxyBox {
   // getDistanceToBaseline would re-enter the baseline assertion when an ancestor
   // (an inline line box, a baseline Row) is measuring this label.
   @override
-  double? computeDistanceToActualBaseline(TextBaseline baseline) => _optical
+  double? computeDistanceToActualBaseline(TextBaseline baseline) =>
+      _optical || _growsPastCssHeight
       ? child?.getDistanceToActualBaseline(baseline)
       : _metrics.baseline;
 
@@ -1852,12 +1886,12 @@ class _RenderCssLineBox extends RenderProxyBox {
   double? computeDryBaseline(
     BoxConstraints constraints,
     TextBaseline baseline,
-  ) => _optical
+  ) => _optical || _growsPastCssHeight
       ? child?.getDryBaseline(constraints.loosen(), baseline)
       : _metrics.baseline;
 
   double get _shift {
-    if (_optical) return 0;
+    if (_optical || _growsPastCssHeight) return 0;
     final flutter = _flutterBaseline;
     if (!_snapBaseline) return _metrics.baseline - flutter;
     final top = _laidOutGlobalTop(this);
@@ -1892,12 +1926,26 @@ class _RenderCssLineBox extends RenderProxyBox {
 
   @override
   Size computeDryLayout(BoxConstraints constraints) {
-    final measured = child!.getDryLayout(
-      constraints.loosen().copyWith(minHeight: 0),
-    );
+    final paragraph = _findSingleParagraph(child);
+    final childConstraints = paragraph != null
+        ? constraints.loosen().copyWith(
+            minHeight: 0,
+            maxHeight: double.infinity,
+          )
+        : constraints.loosen().copyWith(minHeight: 0);
+    final measured = child!.getDryLayout(childConstraints);
     final line = _metrics.lineHeight;
-    final count = (measured.height / line).round().clamp(1, 1 << 20);
-    return constraints.constrain(Size(measured.width, count * line));
+    final count = paragraph?.maxLines == 1
+        ? 1
+        : (measured.height / line).round().clamp(1, 1 << 20);
+    final cssHeight = count * line;
+    final boxHeight =
+        _scaled &&
+            paragraph != null &&
+            measured.height > cssHeight.ceilToDouble()
+        ? measured.height
+        : cssHeight;
+    return constraints.constrain(Size(measured.width, boxHeight));
   }
 }
 

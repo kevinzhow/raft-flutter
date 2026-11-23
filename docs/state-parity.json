@@ -35310,7 +35310,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAgreementBody@32652/METHOD:build@34258/FUNCTION:item@34588": {
+      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAgreementBody@32922/METHOD:build@34528/FUNCTION:item@34858": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -53764,13 +53764,13 @@
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@46941/METHOD:build@47878/FUNCTION:secondLevel@49377": {
+      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@47211/METHOD:build@48148/FUNCTION:secondLevel@49647": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@46941/METHOD:build@47878/FUNCTION:switchRow@48096": {
+      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@47211/METHOD:build@48148/FUNCTION:switchRow@48366": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

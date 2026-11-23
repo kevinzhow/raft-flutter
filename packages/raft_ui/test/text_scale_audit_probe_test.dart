@@ -5,7 +5,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_ui/raft_ui.dart' show RaftCssText;
+import 'package:raft_ui/raft_ui.dart'
+    show RaftCssLineBox, RaftCssText, RaftListRowSender;
 
 import '../../../tool/testing/text_scale_audit.dart';
 
@@ -288,4 +289,61 @@ void main() {
     );
     expect(clip.hardCut, isNotEmpty);
   });
+
+  testWidgets(
+    'WidgetSpan baseline push in tight box is caught as inkClipped, and RaftCssLineBox prevents clipping',
+    (t) async {
+      const previewStyle = TextStyle(
+        fontFamily: 'packages/raft_ui/SpaceGrotesk',
+        fontSize: 14,
+        height: 20 / 14,
+        leadingDistribution: TextLeadingDistribution.even,
+      );
+      Widget buildPreview({required bool wrapped}) {
+        final text = Text.rich(
+          TextSpan(
+            style: previewStyle,
+            children: [
+              RaftListRowSender.face(const SizedBox.square(dimension: 19)),
+              const TextSpan(
+                text: 'Cindy: Captured the previous gjpqy visual baseline before leaving the workspace.',
+              ),
+            ],
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+        return Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 240,
+            height: 20,
+            child: wrapped
+                ? Builder(
+                    builder: (context) => RaftCssLineBox(
+                      style: previewStyle,
+                      textScaler: MediaQuery.textScalerOf(context),
+                      child: text,
+                    ),
+                  )
+                : text,
+          ),
+        );
+      }
+
+      final clipped = await run(
+        t,
+        () => buildPreview(wrapped: false),
+        mode: AuditMode.base,
+      );
+      expect(clipped.inkClipped, isNotEmpty);
+
+      final fixed = await run(
+        t,
+        () => buildPreview(wrapped: true),
+        mode: AuditMode.base,
+      );
+      expect(fixed.inkClipped, isEmpty, reason: fixed.failures.join('\n'));
+    },
+  );
 }

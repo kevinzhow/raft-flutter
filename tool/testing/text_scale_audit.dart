@@ -421,13 +421,11 @@ Future<void> inspectPumped(
     final clips = <(Rect, String)>[];
     var selfClip = false;
     if (box is RenderParagraph) {
-      final natural = box.getMaxIntrinsicHeight(box.size.width);
+      final textSize = box.textSize;
       selfClip =
           didExceed ||
-          box.size.height + 0.01 < natural ||
-          (!softWrap &&
-              box.size.width + 0.01 <
-                  box.getMaxIntrinsicWidth(double.infinity));
+          box.size.height + 0.01 < textSize.height ||
+          box.size.width + 0.01 < textSize.width;
       if (overflow == TextOverflow.visible) selfClip = false;
       if (selfClip)
         clips.add((
@@ -664,6 +662,12 @@ void _collectGlyphs(RenderObject r, List<Rect> out) {
       Offset.zero & wrapper.size,
     );
   }
+  var hasPlaceholder = false;
+  box.text.visitChildren((s) {
+    if (s is PlaceholderSpan) hasPlaceholder = true;
+    return !hasPlaceholder;
+  });
+  if (hasPlaceholder) return (false, null);
   // One line: wrapping at the laid-out width gives the same height as no wrap
   // (a taller label is a paragraph, not a pill label).
   if (box.getMaxIntrinsicHeight(double.infinity) < line - 0.5 ||
@@ -732,15 +736,87 @@ Future<Rect?> _inkRect(
   TextAlign align,
   Matrix4 xf,
 ) async {
-  var hasPlaceholder = false;
+  final placeholders = <PlaceholderSpan>[];
   span.visitChildren((s) {
-    if (s is PlaceholderSpan) hasPlaceholder = true;
+    if (s is PlaceholderSpan) placeholders.add(s);
     return true;
   });
   final constraintsMax = box.constraints.maxWidth;
-  if (hasPlaceholder) {
-    // Line-metric bounds (font ascent/descent) of the whole paragraph.
-    return MatrixUtils.transformRect(xf, Offset.zero & box.size);
+  List<PlaceholderDimensions>? placeholderDims;
+  if (placeholders.isNotEmpty) {
+    if (box is! RenderParagraph) {
+      return MatrixUtils.transformRect(xf, Offset.zero & box.size);
+    }
+    final children = <RenderBox>[];
+    box.visitChildren((child) {
+      if (child is RenderBox) children.add(child);
+    });
+    if (children.length != placeholders.length) {
+      return MatrixUtils.transformRect(xf, Offset.zero & box.size);
+    }
+    final plain = span.toPlainText();
+    final placeholderOffsets = <int>[
+      for (var i = 0; i < plain.length; i++)
+        if (plain.codeUnitAt(i) == 0xFFFC) i,
+    ];
+    final firstTextIndex = () {
+      for (var i = 0; i < plain.length; i++) {
+        if (plain.codeUnitAt(i) != 0xFFFC && plain[i].trim().isNotEmpty) {
+          return i;
+        }
+      }
+      return -1;
+    }();
+    double? paragraphBaseline;
+    if (firstTextIndex >= 0) {
+      final textBoxes = box.getBoxesForSelection(
+        TextSelection(
+          baseOffset: firstTextIndex,
+          extentOffset: firstTextIndex + 1,
+        ),
+      );
+      if (textBoxes.isNotEmpty) {
+        final probe = TextPainter(
+          text: TextSpan(text: plain[firstTextIndex], style: span.style),
+          textDirection: dir,
+          textScaler: scaler,
+          locale: locale,
+          strutStyle: strut,
+          textHeightBehavior: thb,
+        )..layout();
+        paragraphBaseline =
+            textBoxes.first.top +
+            probe.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+        probe.dispose();
+      }
+    }
+    placeholderDims = [
+      for (var i = 0; i < placeholders.length; i++)
+        () {
+          final p = placeholders[i];
+          final child = children[i];
+          double? baselineOffset;
+          if (p.alignment == PlaceholderAlignment.baseline &&
+              paragraphBaseline != null &&
+              i < placeholderOffsets.length) {
+            final pBoxes = box.getBoxesForSelection(
+              TextSelection(
+                baseOffset: placeholderOffsets[i],
+                extentOffset: placeholderOffsets[i] + 1,
+              ),
+            );
+            if (pBoxes.isNotEmpty) {
+              baselineOffset = paragraphBaseline - pBoxes.first.top;
+            }
+          }
+          return PlaceholderDimensions(
+            size: child.hasSize ? child.size : Size.zero,
+            alignment: p.alignment,
+            baseline: p.baseline,
+            baselineOffset: baselineOffset,
+          );
+        }(),
+    ];
   }
   final painter = TextPainter(
     text: span,
@@ -754,6 +830,9 @@ Future<Rect?> _inkRect(
     textHeightBehavior: thb,
     textAlign: align,
   );
+  if (placeholderDims != null) {
+    painter.setPlaceholderDimensions(placeholderDims);
+  }
   // RenderParagraph constrains nowrap text too when it draws an ellipsis.
   // An unbounded replica measures hidden letters, not the displayed glyphs.
   if (softWrap || overflow == TextOverflow.ellipsis) {
