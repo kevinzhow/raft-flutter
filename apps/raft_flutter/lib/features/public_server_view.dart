@@ -238,7 +238,7 @@ class _PublicServerViewState extends State<PublicServerView> {
   List<Map<String, dynamic>> channels = [];
   String? selectedId;
   List<PublicServerMessage> messages = [];
-  bool loadingMessages = false, hasOlder = false;
+  bool loadingMessages = false, hasOlder = false, unavailable = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Page load error: cleared at the start of every server/messages/older load and on a server reload.
   String error = '';
   int serverRequest = 0, messageRequest = 0;
@@ -414,6 +414,7 @@ class _PublicServerViewState extends State<PublicServerView> {
       messages = [];
       loadingMessages = false;
       hasOlder = false;
+      unavailable = false;
       error = '';
       // A join failure belongs to the server (and visitor) it was raised for.
       joinError = '';
@@ -432,6 +433,10 @@ class _PublicServerViewState extends State<PublicServerView> {
       if (!mounted || request != serverRequest) return;
       if (e.status == 404) {
         PublicServerMemory.forget(key);
+        setState(() {
+          server = null;
+          unavailable = true;
+        });
         widget.onUnavailable();
         return;
       }
@@ -1200,6 +1205,7 @@ class _PublicServerViewState extends State<PublicServerView> {
 
   @override
   Widget build(BuildContext context) {
+    if (unavailable) return const SizedBox.shrink();
     if (server == null && error.isEmpty) {
       return RaftPublicServerLoading(label: tr('Loading server…'));
     }

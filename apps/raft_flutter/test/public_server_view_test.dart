@@ -142,6 +142,7 @@ Future<void> _mount(
 
 void main() {
   setUpAll(initializeSourceTimeFormatting);
+  setUp(PublicServerMemory.clear);
   _loadOlderTests();
   testWidgets('raft preserves account time and offers no guest join', (
     t,
