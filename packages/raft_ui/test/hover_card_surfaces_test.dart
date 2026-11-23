@@ -6,8 +6,8 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'task_typography_test.dart' show loadTaskFonts;
 
-Widget surfaceHost(Widget child) => MaterialApp(
-  theme: raftTheme(),
+Widget surfaceHost(Widget child, {TargetPlatform? platform}) => MaterialApp(
+  theme: raftTheme().copyWith(platform: platform),
   home: Scaffold(body: Center(child: child)),
 );
 
@@ -41,6 +41,7 @@ void main() {
               onReaction: (_) {},
             ),
           ),
+          platform: TargetPlatform.linux,
         );
 
     testWidgets('names the viewer first, five names, then +N more', (
@@ -160,6 +161,7 @@ void main() {
               ],
             ),
           ),
+          platform: TargetPlatform.linux,
         ),
       );
       final chip = find.byKey(const ValueKey('reaction-👍')).first;
