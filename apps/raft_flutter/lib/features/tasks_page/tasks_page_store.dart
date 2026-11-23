@@ -513,14 +513,14 @@ class TasksPageStore extends ChangeNotifier {
     final reading = CountsEntry(
       data: current?.data,
       loading: true,
-      revision: revision,
+      revision: current?.revision ?? -1,
       readAt: readAt,
       failures: failures,
     );
     counts[key] = reading;
     bool currentRead() =>
         generation == _generation && identical(counts[key], reading);
-    _changed(counts: false);
+    if (reading.data == null) _changed(counts: false);
     try {
       final data = await query('/tasks/server/counts', filters.filterParams());
       if (!currentRead()) return;
