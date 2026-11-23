@@ -187,6 +187,53 @@ void main() {
     await t.pumpWidget(const SizedBox());
   });
 
+  testWidgets('an open thread parent updates its @agent read mark', (t) async {
+    final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
+    addTearDown(w.dispose);
+    w.messageDomain.state.threadParent = RaftMessage(
+      message(
+        'parent',
+        10,
+        sender: 'alice',
+        content: '@Ada please look',
+        mentions: [
+          {'type': 'agent', 'id': 'ada-id', 'name': 'Ada'},
+        ],
+      ),
+    );
+    w.threadChannelId = 'thread-c1';
+    transport.routes['GET /agents'] = (_) => [];
+    transport.routes['GET /servers/s1/members'] = (_) => [];
+    transport.routes['GET /channels/c1'] = (_) => {
+      'id': 'c1',
+      'peerReadStates': [
+        {'peerKind': 'agent', 'peerId': 'ada-id', 'maxReadSeq': 9},
+      ],
+    };
+    try {
+      await mount(t, RaftChatView(controller: w, thread: true));
+      expect(find.text('@Ada'), findsOneWidget);
+      expect(calls(transport, 'GET', '/channels/c1'), 1);
+      final mark = find.descendant(
+        of: find.byKey(const ValueKey('message-parent')),
+        matching: find.byKey(const ValueKey('mention-read-read')),
+      );
+      expect(mark, findsNothing);
+      w.readReceipts.consumeEvent(
+        const RaftEvent('scope_read:updated', {
+          'scopeId': 'c1',
+          'peerKind': 'agent',
+          'peerId': 'ada-id',
+          'maxReadSeq': 12,
+        }),
+      );
+      await t.pumpAndSettle();
+      expect(mark, findsOneWidget);
+    } finally {
+      await t.pumpWidget(const SizedBox());
+    }
+  });
+
   testWidgets(
     'the thread panel root offers Follow Thread, its replies do not',
     (t) async {

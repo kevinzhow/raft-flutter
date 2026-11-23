@@ -16,7 +16,6 @@ import 'mobile_route_gate.dart';
 import 'message_type_scale.dart';
 export 'mobile_route_gate.dart' show MobileChatDirectRead;
 import 'message_timeline.dart';
-import 'timeline_row_trace.dart';
 import 'timeline_boundary_change.dart';
 import 'chat_timeline_presentation.dart';
 import 'history_reading_anchor.dart';
@@ -2885,25 +2884,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       );
 
   Widget? threadParentTile() => timelineKeys.threadParent(
+    w,
     widget.hideThreadParent ? null : w.presentedThreadParent,
-    (message) => (
-      timelineRowStyle,
-      listRevision,
-      widget.onTask,
-      message.string('messageType') == 'system' ? windowRevision : null,
-      timelineKeys.progress.revision(message.id),
-      timelineKeys.messageState(
-        w,
-        message.id,
-        threadSummary: _messages.threadSummaries[message.id],
-        highlighted: _messages.state.highlightedMessageId == message.id,
-      ),
-    ),
-    (message) => timelineRowTrace(
-      'parent',
-      message.id,
-      () => tile(message, parent: true),
-    ),
+    style: () => (timelineRowStyle, listRevision, widget.onTask),
+    windowRevision: windowRevision,
+    build: (message) => tile(message, parent: true),
   );
 
   Object get timelineRowStyle => (
@@ -2917,21 +2902,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     composerDirectory.rosterRevision,
   );
 
-  // Index the displayed window once, avoiding whole-channel scans per row.
-  List<chat.Message>? indexedWindow;
-  int indexedRevision = -1;
-  final windowIndex = <String, int>{};
-  int? windowIndexOf(String id) {
-    final list = adapter.messages;
-    if (!identical(list, indexedWindow) || indexedRevision != windowRevision) {
-      windowIndex
-        ..clear()
-        ..addAll({for (var i = 0; i < list.length; i++) list[i].id: i});
-      indexedWindow = list;
-      indexedRevision = windowRevision;
-    }
-    return windowIndex[id];
-  }
+  int? windowIndexOf(String id) =>
+      timelineKeys.windowIndexOf(id, adapter.messages, windowRevision);
 
   SystemGroupState? systemStateAt(int index) => timelineKeys.systemStateAt(
     context,
