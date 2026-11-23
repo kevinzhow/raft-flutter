@@ -238,23 +238,48 @@ class ComposerDirectory extends ChangeNotifier {
   /// Borrow the chat's existing authorized activity adapter; never owns it.
   final MessageAgentPresentation? agentPresentation;
   String? scope, channelId;
-  Object? stamp, checked;
+  Object? stamp;
   bool ended = false;
-  List<RaftComposerSuggestion> people = [];
-  List<RaftComposerSuggestion> get suggestions => [
-    ...people,
-    for (final c in w.channels)
-      // Web `channelAutocompleteCandidates`: archived channels stay listed
-      // (`GET /channels?archived=include`) with an `archived` Badge.
-      if (['channel', 'private', 'joint'].contains(c.type))
-        RaftComposerSuggestion(
-          type: 'channel',
-          id: c.id,
-          name: c.name,
-          archived: c.archived,
-          detail: c.description.isEmpty ? null : c.description,
-        ),
-  ];
+  final suggestionChanges = ValueNotifier<Object?>(null);
+  Object? _peopleStamp, _suggestionsStamp;
+  List<RaftComposerSuggestion> _people = const [];
+  List<RaftComposerSuggestion> _suggestions = const [];
+  List<RaftComposerSuggestion> get people {
+    final channel = w.server == null ? null : scopeChannel;
+    final key = (stamp, _recency(channel));
+    if (_peopleStamp != key) {
+      _peopleStamp = key;
+      _people = ended || channel == null
+          ? const []
+          : build(
+              directoryAuthority(w),
+              channel,
+              recent: threadRecency(key.$2),
+            );
+    }
+    return _people;
+  }
+
+  List<RaftComposerSuggestion> get suggestions {
+    final people = this.people;
+    final key = (people, w.channels);
+    if (key == _suggestionsStamp) return _suggestions;
+    _suggestionsStamp = key;
+    return _suggestions = [
+      ...people,
+      for (final c in w.channels)
+        // Web `channelAutocompleteCandidates`: archived channels stay listed
+        // (`GET /channels?archived=include`) with an `archived` Badge.
+        if (['channel', 'private', 'joint'].contains(c.type))
+          RaftComposerSuggestion(
+            type: 'channel',
+            id: c.id,
+            name: c.name,
+            archived: c.archived,
+            detail: c.description.isEmpty ? null : c.description,
+          ),
+    ];
+  }
 
   void changed() {
     if (ended) return;
@@ -277,20 +302,6 @@ class ComposerDirectory extends ChangeNotifier {
         });
       }
     }
-    final recency = threadRecency(channel);
-    // Agent presence patches leave every input below unchanged.
-    final inputs = (
-      authority,
-      channel?.id,
-      channel?.type,
-      w.client.user?.json['name'],
-      w.services.entityDirectory.authorRevision,
-      w.services.entityDirectory.computerRevision,
-      _shared.revision,
-      recency,
-    );
-    if (inputs == checked) return;
-    checked = inputs;
     final next = (
       authority,
       channel?.id,
@@ -298,40 +309,36 @@ class ComposerDirectory extends ChangeNotifier {
       w.client.user?.json['name'],
       w.services.entityDirectory.authorRevision,
       _shared.revision,
-      recency,
     );
-    if (next == stamp) return;
+    final changed = next != stamp;
     stamp = next;
-    people = channel == null ? [] : build(authority, channel, recent: _recent);
-    notifyListeners();
+    suggestionChanges.value = (next, _recency(channel), w.channels);
+    if (changed) notifyListeners();
   }
 
   /// Web `buildRecentParticipantRanks`: sender ids of the thread's messages,
   /// newest speaker first. Only a thread over a non-DM channel prioritises
   /// them (ThreadPanel `isChannelThreadInput`). Returns a cheap change token.
-  Object? threadRecency(RaftChannel? channel) {
+  (String, int)? _recency(RaftChannel? channel) {
     final id = w.threadChannelId;
     if (!thread || channel == null || channel.type == 'dm' || id == null) {
-      _recent = const {};
       return null;
     }
-    final token = (id, w.messageDomain.ledger.revision);
-    if (token == _recencyToken) return token;
-    _recencyToken = token;
+    return (id, w.messageDomain.ledger.revision);
+  }
+
+  Map<String, int> threadRecency((String, int)? token) {
+    if (token == null) return const {};
     final ranks = <String, int>{};
-    final rows = w.messageDomain.ledger.messages(id);
+    final rows = w.messageDomain.ledger.messages(token.$1);
     for (var i = rows.length - 1; i >= 0; i--) {
       final sender = rows[i]['senderId'];
       if (sender is String && sender.isNotEmpty && !ranks.containsKey(sender)) {
         ranks[sender] = ranks.length;
       }
     }
-    _recent = ranks;
-    return token;
+    return ranks;
   }
-
-  Map<String, int> _recent = const {};
-  (String, int)? _recencyToken;
 
   void event(RaftEvent event) {
     if (ended) return;
@@ -487,7 +494,9 @@ class ComposerDirectory extends ChangeNotifier {
   @override
   void dispose() {
     ended = true;
-    people = [];
+    _people = const [];
+    _suggestions = const [];
+    suggestionChanges.dispose();
     events?.cancel();
     w.removeListener(changed);
     w.services.entityDirectory.removeListener(changed);

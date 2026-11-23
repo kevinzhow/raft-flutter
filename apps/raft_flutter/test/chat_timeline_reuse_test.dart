@@ -31,6 +31,7 @@ Future<WorkspaceController> open(
   WidgetTester tester, {
   Size size = const Size(1280, 800),
   Future<Map<String, dynamic>>? taskRows,
+  Future<Map<String, dynamic>>? translationSettings,
 }) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = size;
@@ -42,6 +43,10 @@ Future<WorkspaceController> open(
   api.routes['GET /servers/s1/members'] = (_) => [];
   if (taskRows != null) {
     api.routes['GET /tasks/channel/c1'] = (_) => taskRows;
+  }
+  if (translationSettings != null) {
+    api.routes['GET /servers/s1/translation-settings'] = (_) =>
+        translationSettings;
   }
   w.messageDomain.ledger.switchServer('s1');
   final rows = contextRows('reuse', count: 80);
@@ -62,6 +67,19 @@ Future<WorkspaceController> open(
 }
 
 void main() {
+  testWidgets('a disabled translation readback leaves mounted rows intact', (
+    tester,
+  ) async {
+    final settings = Completer<Map<String, dynamic>>();
+    final workspace = await open(tester, translationSettings: settings.future);
+    expect(workspace.services.translations.settingsLoading, isTrue);
+    final builds = RaftMessageTimeline.debugRowBuilds;
+    settings.complete({'translationEnabled': false});
+    await tester.pumpAndSettle();
+    expect(workspace.services.translations.settingsLoading, isFalse);
+    expect(RaftMessageTimeline.debugRowBuilds, builds);
+  });
+
   testWidgets('task readback only builds the row whose chip changes', (
     tester,
   ) async {
@@ -238,10 +256,62 @@ void main() {
     expect(previews, isNotEmpty);
     expect(
       previews.map((preview) => preview.tile.content),
-      everyElement(matches(r'^reuse message \d+$')),
+      everyElement(matches(r'^reuse message (\d+)(\nreuse message \1)*$')),
     );
     await tester.pumpAndSettle();
     expect(find.byType(TimelineRowPreview), findsNothing);
+  });
+
+  testWidgets('cold code and markdown queue behind the same admission', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final workspace = await open(tester, size: const Size(390, 844));
+    final domain = workspace.messageDomain;
+    final rows = contextRows('reuse');
+    domain.ledger.ingest([
+      {...rows[53], 'content': '```ts\nconst answer = 42;\n```'},
+      {...rows[54], 'content': '**Markdown body**'},
+    ], expectedGeneration: domain.ledger.generation);
+    workspace.notifyListeners();
+    await tester.pumpAndSettle();
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(RaftMessageTimeline),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    final buildCount = RaftMessageTimeline.debugRowBuilds;
+    position.jumpTo(position.pixels - 2200);
+    await tester.pump();
+    Finder row(String id) => find.byKey(ValueKey(id));
+    Finder preview(String id) =>
+        find.descendant(of: row(id), matching: find.byType(TimelineRowPreview));
+    Finder node(String id) => find.descendant(
+      of: row(id),
+      matching: find.byType(RaftMessageRowSemantics),
+    );
+    final ids = ['reuse-53', 'reuse-54'];
+    final labels = <String, String>{};
+    for (final id in ids) {
+      expect(preview(id), findsOneWidget);
+      labels[id] = tester.getSemantics(node(id)).label;
+    }
+    expect(RaftMessageTimeline.debugRowBuilds, buildCount);
+    for (var frame = 0; frame < 24; frame++) {
+      final before = RaftMessageTimeline.debugRowBuilds;
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(RaftMessageTimeline.debugRowBuilds - before, lessThanOrEqualTo(1));
+    }
+    for (final id in ids) {
+      expect(preview(id), findsNothing);
+      expect(tester.getSemantics(node(id)).label, labels[id]);
+    }
+    semantics.dispose();
   });
 
   testWidgets('thread live insert and edit preserve unrelated visible rows', (
@@ -328,9 +398,11 @@ void main() {
     final parent = tile('parent');
     final parentElement = tester.element(tileKey('parent'));
     var parentBuilds = 0;
+    var composerBuilds = 0;
     final previousRebuild = debugOnRebuildDirtyWidget;
     debugOnRebuildDirtyWidget = (element, builtFirstTime) {
       if (identical(element, parentElement)) parentBuilds++;
+      if (element.widget is RaftComposer) composerBuilds++;
       previousRebuild?.call(element, builtFirstTime);
     };
     addTearDown(() => debugOnRebuildDirtyWidget = previousRebuild);
@@ -371,6 +443,11 @@ void main() {
       await tester.pumpAndSettle();
       final layouts = FlutterTimeline.debugCollect().timedBlocks;
       expect(bobRank(), 0);
+      expect(
+        composerBuilds,
+        0,
+        reason: 'Reply ticks leave the editor unchanged.',
+      );
       expect(
         find.textContaining('live reply', findRichText: true),
         findsOneWidget,

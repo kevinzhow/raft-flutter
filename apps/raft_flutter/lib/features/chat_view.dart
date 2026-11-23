@@ -212,12 +212,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   bool presentationActive = true;
   int presentationRevision = 0;
   late final timelineKeys = ChatTimelinePresentation(
-    taskRevision: (message) => taskProjection.rowRevision(message),
+    externalRowRevision: externalRowRevision,
   );
-  @override
-  void setState(VoidCallback fn) {
+  void setRowState(VoidCallback fn) {
     timelineKeys.invalidateRows();
-    super.setState(fn);
+    setState(fn);
   }
 
   bool atBottom = true, returningLatest = false;
@@ -407,7 +406,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final active = search.activeMessageId;
     final changed = active != searchActive;
     searchActive = active;
-    if (presentationActive) setState(() {});
+    if (presentationActive) setRowState(() {});
     if (changed && active != null) revealSearchMatch(active);
   }
 
@@ -513,7 +512,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     bindMessageDirectories();
     selection = ChannelActivitySelection(activity, () => rows)
       ..addListener(selectionChanged);
-    w.services.translations.addListener(referencesChanged);
+    w.services.translations.addListener(chromeChanged);
     bindThreadSearch();
     w.addListener(sync);
     sync();
@@ -546,9 +545,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       if (controllerChanged) {
         oldWidget.controller.removeListener(sync);
         oldWidget.controller.services.translations.removeListener(
-          referencesChanged,
+          chromeChanged,
         );
-        w.services.translations.addListener(referencesChanged);
+        w.services.translations.addListener(chromeChanged);
         taskProjection.dispose();
         composerDirectory.dispose();
         agentPresentation.dispose();
@@ -595,7 +594,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     if (mounted &&
         presentationActive &&
         !RouteTransitionGate.defer(preparationRoute, selectionChanged)) {
-      setState(() {});
+      setRowState(() {});
     }
   }
 
@@ -899,19 +898,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   RaftMessage source(chat.Message message) =>
       sources[message] ?? RaftMessage(message.metadata!);
 
-  void referencesChanged() {
-    if (mounted &&
-        presentationActive &&
-        !RouteTransitionGate.defer(preparationRoute, referencesChanged)) {
-      setState(() {});
-    }
-  }
-
   void bindMessageDirectories() {
     referenceDirectory = MessageReferenceDirectory(w)
-      ..addListener(referencesChanged);
+      ..addListener(chromeChanged);
     agentPresentation = MessageAgentPresentation(w, referenceDirectory)
-      ..addListener(referencesChanged);
+      ..addListener(chromeChanged);
     taskProjection = MessageTaskProjection(w)..addListener(chromeChanged);
     bindComposerDirectory();
   }
@@ -991,7 +982,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     composerDirectory.dispose();
     agentPresentation.dispose();
     referenceDirectory.dispose();
-    w.services.translations.removeListener(referencesChanged);
+    w.services.translations.removeListener(chromeChanged);
     w.removeListener(sync);
     adapter.dispose();
     viewport.dispose();
@@ -1359,7 +1350,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         return;
       }
       revealing = null;
-      setState(() {
+      super.setState(() {
         revealPending = false;
         preservingFocus = false;
         returningLatest = false;
@@ -1443,11 +1434,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }
 
   Future<void> link(String url) => openMessageLink(context, url);
-
-  /// Web MessageInput rows above the composer card: the error banner, then
-  /// the pending-mention strip.
-  Widget? composerAccessory() =>
-      raftComposerAccessory(context, w, thread: widget.thread);
 
   /// Web `openDraftImagePreview`: the local picture of a ready image in the
   /// lightbox.
@@ -1580,7 +1566,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       Navigator.of(menuContext).pop();
     }
 
-    setState(() => menuMessageId = message.id);
+    setRowState(() => menuMessageId = message.id);
     await showRaftMessageContextMenu<void>(
       context: context,
       anchor: origin,
@@ -1604,7 +1590,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         targets: targets,
       ),
     );
-    if (mounted) setState(() => menuMessageId = null);
+    if (mounted) setRowState(() => menuMessageId = null);
     final choice = result;
     if (!mounted || authority != workspaceAuthority(w) || choice == null) {
       return;
@@ -1653,16 +1639,16 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       }
       if (current() && reactionFailures[m.id] == emoji) {
         reactionFailureTimers.remove(m.id)?.cancel();
-        setState(() => reactionFailures.remove(m.id));
+        setRowState(() => reactionFailures.remove(m.id));
       }
     } catch (_) {
       if (mounted && current()) {
         reactionFailureTimers.remove(m.id)?.cancel();
-        setState(() => reactionFailures[m.id] = emoji);
+        setRowState(() => reactionFailures[m.id] = emoji);
         reactionFailureTimers[m.id] = Timer(
           const Duration(milliseconds: 400),
           () {
-            if (current()) setState(() => reactionFailures.remove(m.id));
+            if (current()) setRowState(() => reactionFailures.remove(m.id));
           },
         );
         // Web surfaces a failed toggle as the 400ms chip flash only.
@@ -2005,7 +1991,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     reactionPicker?.dispose();
     reactionPicker = null;
     pickerMessageId = pickerAuthority = null;
-    if (rebuild && mounted) setState(() {});
+    if (rebuild && mounted) setRowState(() {});
   }
 
   /// Opens the reaction bar at [anchor]; with [at] (a double tap's global
@@ -2077,7 +2063,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       ),
     );
     overlay.insert(reactionPicker!);
-    setState(() {});
+    setRowState(() {});
   }
 
   Widget messageToolbar(RaftMessage message, {required bool parent}) =>
@@ -2482,7 +2468,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               // is dropped; the row repaints after the current frame.
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted && unavailableQuoted[m.id] != quoted.rawUrl) {
-                  setState(() => unavailableQuoted[m.id] = quoted.rawUrl);
+                  setRowState(() => unavailableQuoted[m.id] = quoted.rawUrl);
                 }
               });
             },
@@ -2864,7 +2850,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             toggleKey: const ValueKey('system-message-group-toggle'),
             summary: systemState.summary,
             expanded: expanded,
-            onToggle: () => setState(() {
+            onToggle: () => setRowState(() {
               if (!expandedSystemGroups.remove(systemState.groupId)) {
                 expandedSystemGroups.add(systemState.groupId);
               }
@@ -3107,11 +3093,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                         source(messages[i]).json,
                         width,
                       ),
-                      preview: (context, i, extent) => previewMessageTile(
-                        source(messages[i]),
-                        width,
-                        extent,
-                      ),
+                      preview: (context, i, extent) =>
+                          previewMessageTile(source(messages[i]), extent),
                     ),
               retainRow: timelineKeys.retainRows(messages, source),
               trackNeighbourVersions: false,
@@ -3316,6 +3299,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             (thread ? _messages.threadGeneration : _messages.channelGeneration);
     final onlyOne = raftFormat(context, '[{count} attachment]', {'count': 1});
     final manyBody = raftText(context, '[{count} attachments]');
+    final composerHint = thread
+        ? threadComposerHint(context, widget.hideThreadParent)
+        : channelComposerHint(context, w);
     String attachmentsOnlyBody(int count) =>
         count == 1 ? onlyOne : manyBody.replaceAll('{count}', '$count');
     Future<bool> sendCurrent(
@@ -3427,6 +3413,22 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             ComposerSlot(
               controller: w,
               thread: thread,
+              inputs:
+                  w.uploads(thread: thread).isNotEmpty ||
+                      raftComposerAccessory(context, w, thread: thread) != null
+                  ? null
+                  : (
+                      (
+                        w,
+                        thread,
+                        composeScope,
+                        composeAuthority,
+                        composeWindow,
+                      ),
+                      composerDirectory,
+                      presentationActive,
+                      (alsoCreateTask, composerHint, onlyOne, manyBody),
+                    ),
               builder: (context) => RaftComposer(
                 // Web MessageInput drag-and-drop, paste and keyboard images.
                 frame: (_, composer, enabled) => ComposerFileDropTarget(
@@ -3451,7 +3453,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   active: () => presentationActive && currentComposer(),
                 ),
                 clearOnSubmit: true,
-                accessoryRow: composerAccessory(),
+                accessoryRow: raftComposerAccessory(context, w, thread: thread),
                 // Main conversations take initial keyboard focus. Selecting a
                 // channel in Activity/Search keeps focus in that list until the
                 // user enters the preview's composer; threads keep their policy.
@@ -3530,9 +3532,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                         w,
                         thread: thread,
                       ),
-                hint: thread
-                    ? threadComposerHint(context, widget.hideThreadParent)
-                    : channelComposerHint(context, w),
+                hint: composerHint,
                 enabled:
                     !offline &&
                     presentationActive &&
@@ -3546,7 +3546,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                     !w.conversationPaused &&
                     !w.sharedBlocked(thread: thread) &&
                     w.uploadsReady(thread: thread),
-                suggestions: composerDirectory.suggestions,
+                loadSuggestions: () => composerDirectory.suggestions,
+                suggestionsChanged: composerDirectory.suggestionChanges,
                 onSuggestionsRequested: (prefix) {
                   if (presentationActive && currentComposer()) {
                     composerDirectory.request(prefix);

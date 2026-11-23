@@ -566,6 +566,24 @@ class MessageTranslationStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Object? rowRevision(RaftMessage message) {
+    final current = settings;
+    final target = current.targetLanguage;
+    if (target == null || !_translatable(message)) return null;
+    if (current.mode != MessageTranslationMode.manual &&
+        message.string('senderType') == 'user' &&
+        message.senderId == w.client.user?.id) {
+      return null;
+    }
+    final entry = _entries[message.id];
+    return (
+      target,
+      current.mode,
+      current.display,
+      entry?.targetLanguage == target ? entry : null,
+    );
+  }
+
   /// Web MessageItem's derived translation fields for [message].
   MessageTranslationPresentation present(RaftMessage message) {
     final s = settings;

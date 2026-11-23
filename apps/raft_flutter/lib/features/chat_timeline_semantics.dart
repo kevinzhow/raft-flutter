@@ -1,6 +1,18 @@
 part of 'chat_view.dart';
 
 extension _ChatTimelineSemantics on _RaftChatViewState {
+  Object externalRowRevision(RaftMessage message) => (
+    taskProjection.rowRevision(message),
+    w.services.translations.rowRevision(message),
+    referenceDirectory.revision,
+    message.string('senderType') == 'agent'
+        ? (
+            agentPresentation.authorized,
+            agentPresentation.modelLabels.catalog?.machines,
+          )
+        : null,
+  );
+
   double get timelineMessageBodySize => messagePreferenceDisplaySize(
     context,
     PersonalPresentationScope.bodyFontSize(
@@ -92,31 +104,21 @@ extension _ChatTimelineSemantics on _RaftChatViewState {
 
   Widget? previewMessageTile(
     RaftMessage message,
-    double width,
     TimelinePreviewExtent extent,
   ) {
-    if (message.string('messageType') == 'system' ||
-        message.retracted ||
-        message.json['actionMetadata'] is Map) {
+    if (!extent.preparing &&
+        (message.string('messageType') == 'system' ||
+            message.retracted ||
+            message.json['actionMetadata'] is Map ||
+            selection.active)) {
       return null;
     }
     final translations = w.services.translations.present(message);
-    if (longMessagesCollapse(message.json, w.channel?.json)) {
-      final fits = extent.measured
-          ? extent.height < RaftCollapsible.heightLimit
-          : !selection.active &&
-                translations.translatedContent == null &&
-                !translations.skeleton &&
-                RaftMessageTile.plainBodyFits(
-                  context,
-                  message.content,
-                  rowWidth: width,
-                  rowContext: widget.thread
-                      ? RaftMessageRowContext.thread
-                      : RaftMessageRowContext.main,
-                  fontSize: timelineMessageBodySize,
-                );
-      if (!fits) return null;
+    if (!extent.preparing &&
+        extent.measured &&
+        extent.height >= RaftCollapsible.heightLimit &&
+        longMessagesCollapse(message.json, w.channel?.json)) {
+      return null;
     }
     final prose = presentMessageProse(message, translations.translatedContent);
     final pending = WorkspaceMessages.isPendingSend(message);
@@ -126,6 +128,7 @@ extension _ChatTimelineSemantics on _RaftChatViewState {
         author: messageSenderName(context, message),
         timestamp: timeFormatter.messageTime(message.createdAt),
         content: prose.text,
+        semanticsContent: messageSemanticsContent(message),
         departureLabel: senderDepartureLabel(message),
         compactSemantics: true,
         coarsePointer: RaftDensityScope.of(context) == RaftDensity.touch,

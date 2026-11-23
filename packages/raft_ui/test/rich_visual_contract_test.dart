@@ -54,6 +54,44 @@ void main() {
     expect(find.byTooltip('Copied'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('collapsed code shapes a prefix and still copies all lines', (
+    tester,
+  ) async {
+    final source = [
+      for (var index = 0; index < 31; index++) 'const line$index = $index;',
+    ].join('\n');
+    String? copied;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: RaftCollapsible(
+              child: RaftMessageBody(
+                content: '```ts\n$source\n```',
+                mountedMessage: true,
+                onCopyCode: (value) async => copied = value,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final code = find.byKey(const ValueKey('code-container'));
+    final laidOut = find.descendant(of: code, matching: find.byType(RichText));
+    String paragraph() => tester
+        .widgetList<RichText>(laidOut)
+        .map((text) => text.text.toPlainText())
+        .singleWhere((text) => text.startsWith('const line0'));
+    expect(paragraph().split('\n').length, lessThanOrEqualTo(20));
+    await tester.tap(find.byTooltip('Copy Code'));
+    await tester.pumpAndSettle();
+    expect(copied, source);
+    await tester.tap(find.text('Show More'));
+    await tester.pumpAndSettle();
+    expect(paragraph(), source);
+  });
   testWidgets('diagram exports actual rendered PNG and discards byte lease', (
     tester,
   ) async {

@@ -2245,7 +2245,9 @@ class RaftComposer extends StatefulWidget {
     this.initialDraft = '',
     this.draftRevision = 0,
     this.onDraftChanged,
-    this.suggestions = const [],
+    List<RaftComposerSuggestion> suggestions = const [],
+    this.loadSuggestions,
+    this.suggestionsChanged,
     this.onSendWithMentions,
     this.onForceTaskSendWithMentions,
     this.onSuggestionsRequested,
@@ -2255,8 +2257,13 @@ class RaftComposer extends StatefulWidget {
     this.onContentInserted,
     this.frame,
     this.previewBuilder,
-  }) : assert(bottomSafeInset == null || bottomSafeInset >= 0);
-  final List<RaftComposerSuggestion> suggestions;
+  }) : _suggestions = suggestions,
+       assert(bottomSafeInset == null || bottomSafeInset >= 0);
+  final List<RaftComposerSuggestion> _suggestions;
+  final List<RaftComposerSuggestion> Function()? loadSuggestions;
+  final Listenable? suggestionsChanged;
+  List<RaftComposerSuggestion> get suggestions =>
+      loadSuggestions?.call() ?? _suggestions;
   final Future<bool> Function(String, List<Map<String, dynamic>>)?
   onSendWithMentions;
   final Future<bool> Function(String, List<Map<String, dynamic>>)?
@@ -2785,6 +2792,7 @@ class _RaftComposerState extends State<RaftComposer> {
   void initState() {
     super.initState();
     focusVisibility.addRingListener(focusRingChanged);
+    widget.suggestionsChanged?.addListener(refreshSuggestions);
     controller = RaftMarkdownEditingController(
       text: raftProgrammaticEditingText(widget.initialDraft),
     );
@@ -2799,6 +2807,10 @@ class _RaftComposerState extends State<RaftComposer> {
   @override
   void didUpdateWidget(covariant RaftComposer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.suggestionsChanged != widget.suggestionsChanged) {
+      oldWidget.suggestionsChanged?.removeListener(refreshSuggestions);
+      widget.suggestionsChanged?.addListener(refreshSuggestions);
+    }
     queueInitialFocus();
     if (oldWidget.handle != widget.handle) {
       oldWidget.handle?._release(this);
@@ -2953,6 +2965,7 @@ class _RaftComposerState extends State<RaftComposer> {
   @override
   void dispose() {
     focusVisibility.removeRingListener(focusRingChanged);
+    widget.suggestionsChanged?.removeListener(refreshSuggestions);
     toastHost?.unavoid(toastAvoidKey);
     widget.handle?._release(this);
     RaftTextInputRefresh.release();
@@ -2964,6 +2977,12 @@ class _RaftComposerState extends State<RaftComposer> {
     expandedChanges.dispose();
     suggestionScroll.dispose();
     super.dispose();
+  }
+
+  void refreshSuggestions() {
+    if (!presentationActive || trigger == null) return;
+    rebuild();
+    updateSuggestionPortal(defer: true);
   }
 
   void updateSuggestionPortal({bool defer = false}) {

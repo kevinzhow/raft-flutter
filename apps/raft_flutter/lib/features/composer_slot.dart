@@ -24,10 +24,12 @@ class ComposerSlot extends StatefulWidget {
     super.key,
     required this.controller,
     required this.thread,
+    this.inputs,
     required this.builder,
   });
   final WorkspaceController controller;
   final bool thread;
+  final Object? inputs;
 
   /// Builds the composer. It runs again when the conversation's draft changes
   /// (the composer follows drafts that arrive from elsewhere).
@@ -48,6 +50,8 @@ class _ComposerSlotState extends State<ComposerSlot> {
   late final _SlotRegistry registry = _registries[widget.controller] ??=
       _SlotRegistry();
   String? slot;
+  Widget? _draftBuilder;
+  Object? _draftInputs;
 
   @override
   void initState() {
@@ -99,13 +103,35 @@ class _ComposerSlotState extends State<ComposerSlot> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: widget.controller.draftChanges(thread: widget.thread),
+    final w = widget.controller;
+    final thread = widget.thread;
+    final listenable = w.draftChanges(thread: thread);
+    final channel = w.channel;
+    final source = w.messageDomain.threadSourceChannel;
+    final inputs = (
+      listenable,
+      widget.inputs,
+      w.section,
+      w.client.restoredOffline,
+      channel?.id,
+      channel?.type,
+      channel?.archived,
+      w.messageDomain.threadParentMessageId,
+      source?.joined,
+      source?.archived,
+      w.conversationPaused,
+      w.sharedBlocked(thread: thread),
+      !thread && w.can('viewChannel', resource: channel),
+    );
+    if (widget.inputs != null && inputs == _draftInputs) return _draftBuilder!;
+    _draftInputs = inputs;
+    return _draftBuilder = ValueListenableBuilder<int>(
+      valueListenable: listenable,
       builder: (context, _, _) {
         final composer = NotificationActivationComposer(
           controller: widget.controller,
           thread: widget.thread,
-          child: widget.builder(context),
+          child: RepaintBoundary(child: widget.builder(context)),
         );
         final name = slot;
         if (name == null) return composer;

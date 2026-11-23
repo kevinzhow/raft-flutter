@@ -6,7 +6,11 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'timeline_row_trace.dart';
 
-typedef TimelinePreviewExtent = ({double height, bool measured});
+typedef TimelinePreviewExtent = ({
+  double height,
+  bool measured,
+  bool preparing,
+});
 
 typedef TimelineRowPreviewBuilder = Widget? Function(
   BuildContext context,
@@ -273,6 +277,7 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
       final extent = (
         height: measured ?? widget.estimate() * (key.scale.scale(15) / 15),
         measured: measured != null,
+        preparing: hydrator._preparing != null,
       );
       final preview = timelineRowTrace(
         'light.build',
@@ -284,7 +289,15 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
         hydrator._add(this);
         return _layout = _TimelineMeasuredRow(
           id: message.id,
-          child: preview ?? SizedBox(height: extent.height),
+          child:
+              preview ??
+              SizedBox(
+                height: extent.height,
+                child: Text(
+                  (message.metadata?['content'] ?? '').toString(),
+                  maxLines: 2,
+                ),
+              ),
         );
       }
     }

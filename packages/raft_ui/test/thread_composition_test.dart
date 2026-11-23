@@ -6,6 +6,50 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
+  testWidgets('an offscreen reply count shapes only the latest label', (
+    tester,
+  ) async {
+    final scroll = ScrollController();
+    final count = ValueNotifier('40 replies');
+    addTearDown(scroll.dispose);
+    addTearDown(count.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: ValueListenableBuilder(
+          valueListenable: count,
+          builder: (context, label, _) => CustomScrollView(
+            controller: scroll,
+            slivers: [
+              RaftThreadTimelineTopSliver(
+                hasMore: false,
+                historyLimited: false,
+                loadingOlder: false,
+                loadingOlderLabel: 'Loading',
+                historyLimitedLabel: 'History limited',
+                beginningLabel: 'Beginning of replies',
+                replyCountLabel: label,
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 2400)),
+            ],
+          ),
+        ),
+      ),
+    );
+    expect(find.text('40 replies'), findsOneWidget);
+    scroll.jumpTo(1300);
+    await tester.pump();
+    count.value = '41 replies';
+    await tester.pump();
+    expect(find.text('41 replies', skipOffstage: false), findsNothing);
+    count.value = '42 replies';
+    await tester.pump();
+    expect(find.text('42 replies', skipOffstage: false), findsNothing);
+    scroll.jumpTo(0);
+    await tester.pump();
+    expect(find.text('42 replies').hitTestable(), findsOneWidget);
+  });
+
   test(
     'mounted history precedence keeps sentinel as sole pagination owner',
     () {

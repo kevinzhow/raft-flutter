@@ -725,6 +725,10 @@ class RaftMessageBody extends StatelessWidget {
                           ? null
                           : recipe.body.height! * recipe.body.fontSize!,
                       joinsSelection: proseSelection,
+                      collapseHeight:
+                          mountedMessage && !documentMode && !exportMode
+                          ? RaftMessageBlockLimit.maybeOf(context)?.height
+                          : null,
                     ),
                   ),
                 ),
@@ -2348,6 +2352,7 @@ class RaftCodeBlock extends StatefulWidget {
     this.fontSize = 14,
     this.lineHeight,
     this.joinsSelection = false,
+    this.collapseHeight,
   });
   final String code;
   final String? language;
@@ -2361,6 +2366,7 @@ class RaftCodeBlock extends StatefulWidget {
   /// the rest of the message) instead of a [SelectableText] with a selection
   /// of its own.
   final bool joinsSelection;
+  final double? collapseHeight;
   final Future<void> Function(String)? onCopy;
   final bool exportMode;
   final double fontSize;
@@ -2433,6 +2439,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
     final textStyle = spanStyle.copyWith(
       height: line != null ? line / widget.fontSize : null,
     );
+    final scale = MediaQuery.textScalerOf(context);
     final key = (
       widget.code,
       widget.language,
@@ -2440,15 +2447,41 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
       t,
       widget.joinsSelection,
       touch,
+      widget.collapseHeight,
+      scale,
+      Directionality.of(context),
     );
     if (codeBox != null && key == codeBoxKey) return codeBox!;
     codeBoxKey = key;
-    final span = raftCodeSpan(
-      widget.code,
-      widget.language,
-      spanStyle,
-      dark: t.dark,
-    );
+    var source = widget.code;
+    var language = widget.language;
+    var omittedHeight = 0.0;
+    if (widget.collapseHeight case final height?) {
+      final painter = TextPainter(
+        text: TextSpan(text: ' ', style: textStyle),
+        textScaler: scale,
+        textDirection: TextDirection.ltr,
+      );
+      final lineHeight = painter.preferredLineHeight;
+      painter.dispose();
+      if (lineHeight > 0) {
+        final maxLines = (height / lineHeight).ceil() + 2;
+        var end = -1;
+        for (var count = 0; count < maxLines; count++) {
+          end = source.indexOf('\n', end + 1);
+          if (end == -1) break;
+        }
+        if (end != -1) {
+          final omittedLines = '\n'.allMatches(source, end).length;
+          if (source.length > 50 * 1024 || maxLines + omittedLines > 500) {
+            language = null;
+          }
+          omittedHeight = omittedLines * lineHeight;
+          source = source.substring(0, end);
+        }
+      }
+    }
+    final span = raftCodeSpan(source, language, spanStyle, dark: t.dark);
     final text = widget.joinsSelection || touch
         ? Text.rich(span, style: textStyle, textAlign: TextAlign.left)
         : SelectableText.rich(
@@ -2466,6 +2499,12 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
       },
       child: scroll,
     );
+    if (omittedHeight > 0) {
+      scroll = Padding(
+        padding: EdgeInsets.only(bottom: omittedHeight),
+        child: scroll,
+      );
+    }
     return codeBox = Container(
       key: const ValueKey('code-container'),
       width: double.infinity,

@@ -374,22 +374,62 @@ Widget raftTaskPinnedHead({
   required Widget? head,
   required Widget child,
   double? frameHeight,
-}) => LayoutBuilder(
-  builder: (context, constraints) => Column(
-    children: [
-      if (head != null)
-        ConstrainedBox(
+}) => CustomMultiChildLayout(
+  delegate: _TaskPinnedHeadLayout(frameHeight),
+  children: [
+    if (head != null)
+      LayoutId(
+        id: _TaskPinnedHeadSlot.head,
+        child: SingleChildScrollView(
           key: const ValueKey('task-conversation-head'),
-          constraints: BoxConstraints(
-            maxHeight: ((frameHeight ?? constraints.maxHeight) * .45).clamp(
-              0.0,
-              constraints.maxHeight,
-            ),
-          ),
-          child: SingleChildScrollView(child: head),
+          child: head,
         ),
-
-      Expanded(child: child),
-    ],
-  ),
+      ),
+    LayoutId(id: _TaskPinnedHeadSlot.discussion, child: child),
+  ],
 );
+
+enum _TaskPinnedHeadSlot { head, discussion }
+
+class _TaskPinnedHeadLayout extends MultiChildLayoutDelegate {
+  _TaskPinnedHeadLayout(this.frameHeight);
+
+  final double? frameHeight;
+
+  @override
+  void performLayout(Size size) {
+    var headHeight = 0.0;
+    if (hasChild(_TaskPinnedHeadSlot.head)) {
+      final maxHeight = ((frameHeight ?? size.height) * .45).clamp(
+        0.0,
+        size.height,
+      );
+      final head = layoutChild(
+        _TaskPinnedHeadSlot.head,
+        BoxConstraints.loose(Size(size.width, maxHeight)),
+      );
+      headHeight = head.height;
+      positionChild(
+        _TaskPinnedHeadSlot.head,
+        Offset((size.width - head.width) / 2, 0),
+      );
+    }
+    final remaining = size.height - headHeight;
+    final discussion = layoutChild(
+      _TaskPinnedHeadSlot.discussion,
+      BoxConstraints(
+        maxWidth: size.width,
+        minHeight: remaining,
+        maxHeight: remaining,
+      ),
+    );
+    positionChild(
+      _TaskPinnedHeadSlot.discussion,
+      Offset((size.width - discussion.width) / 2, headHeight),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_TaskPinnedHeadLayout oldDelegate) =>
+      oldDelegate.frameHeight != frameHeight;
+}
