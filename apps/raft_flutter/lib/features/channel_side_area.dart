@@ -376,6 +376,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   ChannelSideSection? _expanded;
   ({_DockSeam seam, double width})? _resizePreview;
   late Listenable listenable;
+  late Listenable _previewChanges;
   int previewOpenedAt = 0;
   int desktopPlaceOpenedAt = 0;
   String? _previewConversation;
@@ -399,44 +400,53 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     preview = WebPreviewStore.of(w);
     details = ChannelDetailsStore.of(w);
     media = ChannelFilesMedia(w);
-    listenable = Listenable.merge([
+    _previewChanges = Listenable.merge([
       w,
-      store,
       ChannelSideFlags.of(w),
       preview,
       preview.browserTabs.placement,
       ChannelArtifactPlace.of(w),
       preview.platform.voiceOverState,
-      details,
     ]);
+    listenable = Listenable.merge([_previewChanges, store, details]);
     previewOpenedAt = preview.openedAt;
     _browserPanes = ChannelBrowserPanes.of(w);
     _previewConversation = w.channel?.id;
     desktopPlaceOpenedAt = ChannelSideCards.latestDesktopOpen(w);
+    _previewChanges.addListener(previewChanged);
   }
 
   @override
   void didUpdateWidget(ChannelSideArea oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != w) bind();
+    if (oldWidget.controller != w) {
+      _previewChanges.removeListener(previewChanged);
+      bind();
+    }
   }
 
   /// The page that opened last is the one showing where only one fits.
   void previewChanged() {
     final conversation = w.channel?.id;
     final desktopOpened = ChannelSideCards.latestDesktopOpen(w);
-    if ((preview.page != null && preview.openedAt != previewOpenedAt) ||
-        (conversation == _previewConversation &&
-            desktopOpened > desktopPlaceOpenedAt)) {
-      store.focus(ChannelSideCards.appCardKey);
-    }
+    final legacyOpened =
+        preview.page != null && preview.openedAt != previewOpenedAt;
+    final desktopRaised =
+        conversation == _previewConversation &&
+        desktopOpened > desktopPlaceOpenedAt;
     previewOpenedAt = preview.openedAt;
     desktopPlaceOpenedAt = desktopOpened;
     _previewConversation = conversation;
+    final covered = MobileRouteGate.coveredReader(context)();
+    if (legacyOpened && (!covered || !desktopBrowserAvailable(w)) ||
+        desktopRaised && !covered) {
+      store.focus(ChannelSideCards.appCardKey);
+    }
   }
 
   @override
   void dispose() {
+    _previewChanges.removeListener(previewChanged);
     drag.dispose();
     super.dispose();
   }
@@ -457,10 +467,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   Widget build(BuildContext context) => _ChannelSideAreaScope(
     child: ListenableBuilder(
       listenable: listenable,
-      builder: (context, _) {
-        if (!MobileRouteGate.coveredReader(context)()) previewChanged();
-        return LayoutBuilder(builder: _build);
-      },
+      builder: (context, _) => LayoutBuilder(builder: _build),
     ),
   );
 
@@ -931,7 +938,9 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
               (widget.headWrapper ?? _wrapHead)(context, section, header),
         );
       case ChannelSideSection.artifact:
-        if (body == null && ChannelSideCards.hasDesktopPlace(w)) {
+        if (body == null &&
+            !MobileRouteGate.coveredReader(context)() &&
+            ChannelSideCards.hasDesktopPlace(w)) {
           return ChannelBrowserPlace(
             key: ValueKey('channel-browser-place-$channelId'),
             workspace: w,

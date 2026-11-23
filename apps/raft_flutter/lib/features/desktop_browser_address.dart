@@ -117,7 +117,7 @@ class _DesktopBrowserAddressState extends State<DesktopBrowserAddress> {
     RaftHoverDismissScope.maybeOf(context)?.dismiss();
     widget.navigate(url);
     _leave();
-    _field.unfocus();
+    Focus.of(context).requestFocus();
   }
 
   @override

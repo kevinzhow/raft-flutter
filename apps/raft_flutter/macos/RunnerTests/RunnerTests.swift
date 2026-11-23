@@ -32,4 +32,15 @@ class RunnerTests: XCTestCase {
     XCTAssertTrue(desktopBrowserCloseShortcut("ц", latinFallback: { "w" }))
     XCTAssertFalse(desktopBrowserCloseShortcut("\u{1b}", latinFallback: { "w" }))
   }
+
+  func testBrowserMediaSuspensionCallsOnlyForTransitions() {
+    var media = DesktopBrowserMediaSuspension()
+    var calls: [Bool] = []
+    XCTAssertFalse(media.muted)
+    for requested in [false, true, true, false, false, true, false] {
+      media.setMuted(requested) { calls.append($0) }
+    }
+    XCTAssertEqual(calls, [true, false, true, false])
+    XCTAssertFalse(media.muted)
+  }
 }

@@ -61519,17 +61519,23 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@11246/METHOD:_build@14597/FUNCTION:chatContent@19371": {
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@11246/METHOD:_build@14959/FUNCTION:chatContent@19733": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace side panels",
         "reason": "Mounts the chat or folded thread inside the clipped conversation region."
       },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#method:ChannelSideAreaState.previewChanged": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Updates the active side card when a preview opens or the desktop browser is raised."
+      },
       "apps/raft_flutter/lib/features/desktop_browser_address.dart#method:_DesktopBrowserAddressState._submit": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-BROWSER",
-        "reason": "Dismisses shared hover state when the address editor submits a navigation."
+        "reason": "Dismisses shared hover state and returns keyboard focus to browser chrome after a valid address submission."
       },
       "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@6034/METHOD:_body@33243/FUNCTION:body@33447": {
         "role": "entry_composition",

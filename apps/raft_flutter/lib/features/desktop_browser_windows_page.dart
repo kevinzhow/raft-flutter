@@ -24,18 +24,94 @@ bool allowsWindowsBrowserNavigation(
               local?.startsWith('data:') == true);
 }
 
+class WindowsBrowserDownloads {
+  final _clock = Stopwatch()..start();
+  ({Duration at, Uri? direct})? _click;
+  Uri? _navigation;
+
+  void clicked(String address, Set<String> raftHosts) {
+    _navigation = null;
+    _click = (at: _clock.elapsed, direct: _target(address, raftHosts));
+  }
+
+  void navigate(NavigationAction action, Set<String> raftHosts) {
+    if (!action.isForMainFrame) return;
+    final target = _target(action.request.url?.toString(), raftHosts);
+    final click = _recentClick;
+    _click = null;
+    if (action.navigationType != NavigationType.LINK_ACTIVATED) {
+      _navigation = null;
+    } else if (action.isRedirect == true) {
+      if (_navigation != null) _navigation = target;
+    } else {
+      _navigation =
+          click != null && (click.direct == null || click.direct == target)
+          ? target
+          : null;
+    }
+  }
+
+  Uri? consume(DownloadStartRequest request, Set<String> raftHosts) {
+    final target = _target(request.url.toString(), raftHosts);
+    if (target == null || target != (_navigation ?? _recentClick?.direct)) {
+      return null;
+    }
+    clear();
+    return target;
+  }
+
+  void clear() {
+    _click = null;
+    _navigation = null;
+  }
+
+  ({Duration at, Uri? direct})? get _recentClick {
+    final click = _click;
+    return click != null &&
+            _clock.elapsed - click.at <= const Duration(seconds: 1)
+        ? click
+        : null;
+  }
+
+  static Uri? _target(String? address, Set<String> raftHosts) =>
+      webPreviewTarget(address, raftHosts)?.removeFragment();
+}
+
+const _downloadBinding = 'raftBrowserDownloadClick';
+const _downloadWorld = 'raftBrowserDownloads';
+const _downloadScript =
+    '''
+  if (window === window.top) {
+    window.addEventListener('click', event => {
+      if (!event.isTrusted || event.defaultPrevented) return;
+      const path = event.composedPath();
+      const editable = node => node?.isContentEditable ||
+          node instanceof HTMLInputElement &&
+            !['button', 'submit', 'image', 'reset'].includes(node.type) ||
+          node instanceof HTMLTextAreaElement ||
+          node instanceof HTMLSelectElement;
+      if (path.some(editable) ||
+          event.detail === 0 && editable(document.activeElement)) return;
+      const link = path.find(node => node instanceof HTMLAnchorElement &&
+          node.hasAttribute('download'));
+      globalThis.$_downloadBinding(link ? link.href : '');
+    }, true);
+  }
+''';
+
 class DesktopBrowserWindowsPage extends StatefulWidget {
   const DesktopBrowserWindowsPage({
     super.key,
     required this.tab,
     required this.visible,
+    required this.parked,
     required this.raftHosts,
     required this.events,
     required this.profile,
   });
 
   final DesktopBrowserTab tab;
-  final bool visible;
+  final bool visible, parked;
   final Set<String> raftHosts;
   final DesktopBrowserPageEvents events;
   final DesktopBrowserWindowsProfile profile;
@@ -52,7 +128,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
   bool _failed = false, _loading = true;
   bool _needsRenderer = false;
   Uri? _retryUrl;
-  Uri? _activatedDownload;
+  final _downloads = WindowsBrowserDownloads();
   bool _requestedDocument = false;
   int _sample = 0;
 
@@ -87,7 +163,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
             allowModalDialogs: false,
           ),
           onWebViewCreated: (controller) =>
-              _attach(controller as PlatformInAppWebViewController),
+              unawaited(_attach(controller as PlatformInAppWebViewController)),
           shouldOverrideUrlLoading: (_, action) {
             final url = action.request.url?.toString();
             final popup = _popupLoads.remove(url);
@@ -104,14 +180,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
                 !(!_requestedDocument && url == 'about:blank')) {
               return NavigationActionPolicy.CANCEL;
             }
-            if (mainFrame) {
-              _activatedDownload =
-                  action.navigationType == NavigationType.LINK_ACTIVATED &&
-                      action.isRedirect != true &&
-                      widget.visible
-                  ? webPreviewTarget(url, widget.raftHosts)
-                  : null;
-            }
+            if (widget.visible) _downloads.navigate(action, widget.raftHosts);
             return NavigationActionPolicy.ALLOW;
           },
           onLaunchingExternalUriScheme: (_, _) =>
@@ -140,7 +209,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
             _navigationChanged(loading: true);
           },
           onLoadStop: (_, _) {
-            _activatedDownload = null;
+            _downloads.clear();
             _navigationChanged(loading: false);
           },
           onTitleChanged: (_, _) => _navigationChanged(),
@@ -184,13 +253,8 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
             action: ServerTrustAuthResponseAction.CANCEL,
           ),
           onDownloadStarting: (_, request) {
-            final url = webPreviewTarget(
-              request.url.toString(),
-              widget.raftHosts,
-            );
-            final activated = _activatedDownload;
-            _activatedDownload = null;
-            if (mounted && widget.visible && url != null && url == activated) {
+            final url = _downloads.consume(request, widget.raftHosts);
+            if (mounted && widget.visible && url != null) {
               widget.events.openExternal(url);
             }
             return DownloadStartResponse(
@@ -206,7 +270,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     }
   }
 
-  void _attach(PlatformInAppWebViewController controller) {
+  Future<void> _attach(PlatformInAppWebViewController controller) async {
     if (!mounted) return;
     _controller = controller;
     _syncMedia();
@@ -222,7 +286,34 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
         }
       },
     ));
-    _load(_retryUrl ?? widget.tab.url!);
+    try {
+      await controller.addDevToolsProtocolEventListener(
+        eventName: 'Runtime.bindingCalled',
+        callback: (data) {
+          if (data case {'name': _downloadBinding, 'payload': final String url}
+              when mounted &&
+                  widget.visible &&
+                  identical(_controller, controller)) {
+            _downloads.clicked(url, widget.raftHosts);
+          }
+        },
+      );
+      await controller.callDevToolsProtocolMethod(methodName: 'Runtime.enable');
+      await controller.callDevToolsProtocolMethod(
+        methodName: 'Runtime.addBinding',
+        parameters: {
+          'name': _downloadBinding,
+          'executionContextName': _downloadWorld,
+        },
+      );
+      await controller.callDevToolsProtocolMethod(
+        methodName: 'Page.addScriptToEvaluateOnNewDocument',
+        parameters: {'source': _downloadScript, 'worldName': _downloadWorld},
+      );
+    } catch (_) {}
+    if (mounted && identical(_controller, controller)) {
+      _load(_retryUrl ?? widget.tab.url!);
+    }
   }
 
   void _navigationChanged({bool? loading}) {
@@ -261,14 +352,14 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     unawaited(
       channel
           .invokeMethod<void>('setSettings', {
-            'settings': {'raftBrowserMuted': !widget.visible || _failed},
+            'settings': {'raftBrowserMuted': widget.parked},
           })
           .catchError((Object _) {}),
     );
   }
 
   void _navigate(Future<void> Function() command) {
-    _activatedDownload = null;
+    _downloads.clear();
     ++_sample;
     if (_needsRenderer) {
       _needsRenderer = false;
@@ -283,7 +374,6 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     }
     if (_failed) {
       setState(() => _failed = false);
-      _syncMedia();
     }
     _run(command);
   }
@@ -293,7 +383,6 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
     ++_sample;
     _loading = false;
     setState(() => _failed = true);
-    _syncMedia();
     final page = widget.tab.page;
     final target = _retryUrl;
     widget.events.state((
@@ -325,10 +414,8 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
   @override
   void didUpdateWidget(DesktopBrowserWindowsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.visible != oldWidget.visible) {
-      if (!widget.visible) _activatedDownload = null;
-      _syncMedia();
-    }
+    if (!widget.visible) _downloads.clear();
+    if (widget.parked != oldWidget.parked) _syncMedia();
     if (widget.tab.navigation == oldWidget.tab.navigation) return;
     if (widget.tab.requested case final target?) _load(target);
   }

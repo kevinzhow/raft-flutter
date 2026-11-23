@@ -26,6 +26,8 @@ Future<void> main() async {
   final unavailable = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
   final failedPage = base.replace(port: unavailable.port, path: '/recover');
   await unavailable.close();
+  final downloadSmoke =
+      Platform.environment['RAFT_BROWSER_ROUND3'] == 'download';
   server.listen((request) async {
     final path = request.uri.path;
     stdout.writeln('REQUEST $path cookie=${request.cookies.isNotEmpty}');
@@ -59,7 +61,18 @@ Future<void> main() async {
           document.querySelector('audio').addEventListener('playing', () => {
             fetch('/audio-playing');
           });
-          if (location.pathname === '/round2') {
+          if ($downloadSmoke) {
+            const input = document.querySelector('input');
+            setInterval(() => {
+              if (document.activeElement !== input || !input.value) return;
+              const link = document.createElement('a');
+              link.href = '/typed.bin';
+              link.download = '';
+              document.body.append(link);
+              link.click();
+              link.remove();
+            }, 200);
+          } else if (location.pathname === '/round2') {
             setTimeout(() => {
               const link = document.createElement('a');
               link.href = '/timer.bin';
@@ -259,6 +272,10 @@ Future<void> _sideArea(Uri base, {bool projection = false}) async {
       stdout.writeln('SWITCH ${next.id}');
     },
   );
+  final backgroundTab = RaftButton(
+    label: 'Open second tab',
+    onPressed: () => tabs.open(original.id, base.replace(path: '/navigation')),
+  );
   final router = RaftAppRouter(
     onLocation: (_) async {},
     onRootBack: () async => false,
@@ -268,7 +285,10 @@ Future<void> _sideArea(Uri base, {bool projection = false}) async {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                switcher,
+                if (Platform.environment['RAFT_BROWSER_ROUND3'] == 'audio')
+                  Row(children: [switcher, backgroundTab])
+                else
+                  switcher,
                 Expanded(
                   child: WorkspaceView(
                     controller: workspace,

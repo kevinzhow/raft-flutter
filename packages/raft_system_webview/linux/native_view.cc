@@ -458,13 +458,9 @@ void NativeView::OpenBrowserExternal(const char* address) {
   fl_value_set_string_take(fields, "url", fl_value_new_string(address));
   Event("openExternal", fields);
 }
-void NativeView::OpenBrowserDownload(const char* address, bool direct) {
+void NativeView::OpenBrowserDownload(const char* address) {
   if (!BrowserAddress(address) || webkit_web_view_get_is_muted(web_) ||
-      !download_activation_) return;
-  const bool matches_navigation = download_target_ == address;
-  const bool recent_input =
-      g_get_monotonic_time() - download_activation_ <= G_TIME_SPAN_SECOND;
-  if (!matches_navigation && !(direct && recent_input && download_target_.empty())) return;
+      !download_activation_ || download_target_ != address) return;
   download_activation_ = 0;
   download_target_.clear();
   OpenBrowserExternal(address);
@@ -482,7 +478,7 @@ void NativeView::BrowserDownload(WebKitWebContext*, WebKitDownload* download, gp
     auto* owner = webkit_download_get_web_view(download);
     if (owner && owner != self->web_) return;
     if (owner) {
-      self->OpenBrowserDownload(webkit_uri_request_get_uri(webkit_download_get_request(download)), true);
+      self->OpenBrowserDownload(webkit_uri_request_get_uri(webkit_download_get_request(download)));
     }
   }
   webkit_download_cancel(download);
@@ -500,7 +496,7 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
         if (headers) soup_message_headers_get_content_disposition(headers, &disposition, nullptr);
         if (webkit_response_policy_decision_is_mime_type_supported(response) &&
             (!disposition || g_ascii_strcasecmp(disposition, "attachment") != 0)) return FALSE;
-        self->OpenBrowserDownload(address, false);
+        self->OpenBrowserDownload(address);
       }
       webkit_policy_decision_ignore(decision);
       return TRUE;
@@ -676,13 +672,14 @@ void NativeView::Terminated(WebKitWebView*, WebKitWebProcessTerminationReason, g
 gboolean NativeView::ObserveInput(GtkWidget*, GdkEvent* event, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
   if (self->closed_ || !event) return FALSE;
+  if (self->browsing_ && event->type == GDK_KEY_PRESS &&
+      self->download_target_.empty()) {
+    self->download_activation_ = 0;
+  }
   if (self->browsing_ && !event->any.send_event &&
       !webkit_web_view_get_is_muted(self->web_) &&
-      ((event->type == GDK_BUTTON_RELEASE &&
-        (event->button.button == 1 || event->button.button == 2)) ||
-       (event->type == GDK_KEY_PRESS &&
-        (event->key.keyval == GDK_KEY_Return || event->key.keyval == GDK_KEY_KP_Enter ||
-         event->key.keyval == GDK_KEY_space)))) {
+      event->type == GDK_BUTTON_RELEASE &&
+      (event->button.button == 1 || event->button.button == 2)) {
     self->download_activation_ = g_get_monotonic_time();
     self->download_target_.clear();
   }

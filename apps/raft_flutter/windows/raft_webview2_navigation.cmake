@@ -16,13 +16,24 @@ function(raft_fix_webview2_navigation)
   file(READ "${upstream}" patched)
   set(old_navigation "std::optional<NavigationActionType> navigationType = isRedirect ? NavigationActionType::other : std::optional<NavigationActionType>{};")
   set(new_navigation [=[std::optional<NavigationActionType> navigationType = isRedirect ? NavigationActionType::other : std::optional<NavigationActionType>{};
-                // Reuse only this frame/URL's native IsUserInitiated-derived classification.
-                // A script navigation, redirect or missing native event stays untrusted.
-                if (isForMainFrame && !isRedirect && url.has_value() &&
+                if (isForMainFrame && url.has_value() &&
+                    (!isRedirect || settings->useOnDownloadStart) &&
                     lastNavigationAction_ && lastNavigationAction_->request &&
+                    lastNavigationAction_->isRedirect == static_cast<bool>(isRedirect) &&
                     lastNavigationAction_->request->url == url) {
                   navigationType = lastNavigationAction_->navigationType;
                 }]=])
+  set(old_navigation_action [=[          auto urlRequest = std::make_shared<URLRequest>(url, method, headers, std::nullopt);]=])
+  set(new_navigation_action [=[          if (isRedirect && settings->useOnDownloadStart) {
+            UINT64 id;
+            if (SUCCEEDED(args->get_NavigationId(&id))) {
+              auto original = map_at_or_null(navigationActions_, id);
+              if (original && original->navigationType == NavigationActionType::linkActivated) {
+                navigationType = NavigationActionType::linkActivated;
+              }
+            }
+          }
+          auto urlRequest = std::make_shared<URLRequest>(url, method, headers, std::nullopt);]=])
   set(old_request "std::make_unique<WebResourceRequest>(url, navigationAction->request->method, navigationAction->request->headers, navigationAction->isForMainFrame)")
   set(new_request "std::make_unique<WebResourceRequest>(navigationAction->request->url, navigationAction->request->method, navigationAction->request->headers, navigationAction->isForMainFrame)")
   set(old_accelerator "auto handled = settings->handleAcceleratorKeyPressed;")
@@ -48,13 +59,14 @@ function(raft_fix_webview2_navigation)
 ]=])
   string(CONCAT old_mute "${mute_signature}" "${old_mute}")
   string(CONCAT new_mute "${mute_signature}" "${new_mute}")
-  foreach(fragment IN ITEMS old_navigation old_request old_accelerator old_mute)
+  foreach(fragment IN ITEMS old_navigation old_navigation_action old_request old_accelerator old_mute)
     string(FIND "${patched}" "${${fragment}}" found)
     if(found EQUAL -1)
       message(FATAL_ERROR "The reviewed WebView2 navigation patch no longer matches")
     endif()
   endforeach()
   string(REPLACE "${old_navigation}" "${new_navigation}" patched "${patched}")
+  string(REPLACE "${old_navigation_action}" "${new_navigation_action}" patched "${patched}")
   string(REPLACE "${old_request}" "${new_request}" patched "${patched}")
   string(REPLACE "${old_accelerator}" "${new_accelerator}" patched "${patched}")
   string(REPLACE "${old_mute}" "${new_mute}" patched "${patched}")

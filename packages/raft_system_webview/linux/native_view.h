@@ -57,7 +57,7 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   std::string url_, nonce_, browser_retry_;
   gint64 download_activation_ = 0;
   std::string download_target_;
-  void OpenBrowserDownload(const char* address, bool direct);
+  void OpenBrowserDownload(const char* address);
   std::unique_ptr<TrustedNavigation> navigation_;
   std::shared_ptr<NativeSnapshot> snapshot_;
   std::unique_ptr<NativeRegionOverlay> region_;

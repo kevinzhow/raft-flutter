@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_side_area.dart';
+import 'package:raft_flutter/features/channel_side_flags.dart';
 import 'package:raft_flutter/features/channel_side_store.dart';
 import 'package:raft_flutter/features/channel_side_web_preview.dart';
 import 'package:raft_flutter/features/desktop_browser_panel.dart';
@@ -11,13 +12,16 @@ import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_system_webview/raft_system_webview.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:webview_flutter/webview_flutter.dart' show WebViewPlatform;
 
+import 'support/fake_webview.dart';
 import 'support/web_preview_fixture.dart';
 
 const _failure = 'This page can’t be shown here';
 final _url = Uri.parse('https://example.test/fixture');
 
 void main() {
+  setUpAll(() => WebViewPlatform.instance = FakeWebView());
   final linux = TargetPlatformVariant({TargetPlatform.linux});
   final requests = <MethodCall>[];
   final pages = <int, List<MethodCall>>{};
@@ -26,6 +30,8 @@ void main() {
   Future<WorkspaceController> mount(
     WidgetTester tester, {
     bool projection = false,
+    bool legacyPreview = false,
+    bool enableBrowserAfterMount = false,
   }) async {
     requests.clear();
     pages.clear();
@@ -66,11 +72,31 @@ void main() {
         'sandboxed': true,
       };
     });
-    final (workspace, _) = (await tester.runAsync(
-      () => webPreviewFixture(flag: false, os: 'linux', desktopBrowser: true),
+    final (workspace, adapter) = (await tester.runAsync(
+      () => webPreviewFixture(
+        flag: legacyPreview,
+        os: 'linux',
+        desktopBrowser: !legacyPreview,
+        tasks: legacyPreview,
+      ),
     ))!;
     addTearDown(workspace.dispose);
-    tester.view.physicalSize = const Size(1280, 900);
+    if (legacyPreview) {
+      WebPreviewStore.of(workspace).platform = const WebPreviewPlatform(
+        operatingSystem: 'macos',
+      );
+      workspace.section = 'chat';
+      adapter.routes['GET /channels/c1/messages'] = (_) => [];
+      adapter.routes['POST /feature-flags/evaluate'] = (_) => {
+        'evaluations': [
+          {
+            'key': ChannelSideFlags.desktopBrowserKey,
+            'enabled': enableBrowserAfterMount,
+          },
+        ],
+      };
+    }
+    tester.view.physicalSize = Size(legacyPreview ? 390 : 1280, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -94,7 +120,9 @@ void main() {
         ),
       ),
     );
-    openWebPreviewBeside(workspace, _url.toString(), conversationId: 'c1');
+    if (!legacyPreview) {
+      openWebPreviewBeside(workspace, _url.toString(), conversationId: 'c1');
+    }
     await tester.pumpAndSettle();
     return workspace;
   }
@@ -279,6 +307,76 @@ void main() {
     expect(nativePages, 1);
     expect(loads, 2);
   }, variant: linux);
+
+  for (final desktop in [false, true]) {
+    testWidgets(
+      desktop
+          ? 'a retained legacy preview does not duplicate the desktop pane'
+          : 'flag off keeps Tasks selected on Back from a covered route',
+      (tester) async {
+        final workspace = await mount(
+          tester,
+          projection: true,
+          legacyPreview: true,
+          enableBrowserAfterMount: desktop,
+        );
+        final channel = workspace.channel!.id;
+        final original = workspace.location;
+        workspace.navigation.navigate(
+          original.withQuery({'thread': '$channel:parent'}),
+        );
+        workspace.notifyListeners();
+        await tester.pumpAndSettle();
+        expect(workspace.location.thread, isNotNull);
+        expect(
+          find.byType(ChannelSideArea, skipOffstage: false),
+          findsAtLeastNWidgets(2),
+        );
+        expect(
+          openWebPreviewBeside(
+            workspace,
+            _url.toString(),
+            conversationId: channel,
+          ),
+          isTrue,
+        );
+        await tester.pumpAndSettle();
+        final preview = WebPreviewStore.of(workspace);
+        expect(preview.pageFor(channel), isNotNull);
+        if (desktop) {
+          ChannelSideFlags.of(workspace).reevaluate();
+          await tester.pumpAndSettle();
+          expect(
+            openWebPreviewBeside(
+              workspace,
+              _url.replace(path: '/desktop').toString(),
+              conversationId: channel,
+            ),
+            isTrue,
+          );
+          await tester.pumpAndSettle();
+          expect(
+            find.byType(DesktopBrowserPanel, skipOffstage: false),
+            findsOneWidget,
+          );
+          expect(channels, hasLength(1));
+        } else {
+          const cards = ['app', 'tasks'];
+          final store = ChannelSideStore.of(workspace);
+          expect(store.activeCard(cards), 'app');
+          store.focus('tasks');
+          await tester.pumpAndSettle();
+          workspace.navigation.back();
+          workspace.notifyListeners();
+          await tester.pumpAndSettle();
+          expect(workspace.location.uri, original.uri);
+          expect(store.activeCard(cards), 'tasks');
+        }
+        await tester.pumpWidget(const SizedBox());
+      },
+      variant: linux,
+    );
+  }
 
   testWidgets('Escape restores expanded chrome and leaves both tabs open', (
     tester,

@@ -18,13 +18,14 @@ class DesktopBrowserNativePage extends StatelessWidget {
     super.key,
     required this.tab,
     required this.visible,
+    this.parked = false,
     required this.events,
     required this.raftHosts,
     required this.session,
   });
 
   final DesktopBrowserTab tab;
-  final bool visible;
+  final bool visible, parked;
   final DesktopBrowserPageEvents events;
   final Set<String> raftHosts;
   final DesktopBrowserSession session;
@@ -35,6 +36,7 @@ class DesktopBrowserNativePage extends StatelessWidget {
       ? DesktopBrowserWindowsPage(
           tab: tab,
           visible: visible,
+          parked: parked,
           raftHosts: raftHosts,
           events: events,
           profile: session.windows,
@@ -42,6 +44,7 @@ class DesktopBrowserNativePage extends StatelessWidget {
       : _SystemBrowserPage(
           tab: tab,
           visible: visible,
+          parked: parked,
           raftHosts: raftHosts,
           events: events,
           session: session,
@@ -52,13 +55,14 @@ class _SystemBrowserPage extends StatefulWidget {
   const _SystemBrowserPage({
     required this.tab,
     required this.visible,
+    required this.parked,
     required this.raftHosts,
     required this.events,
     required this.session,
   });
 
   final DesktopBrowserTab tab;
-  final bool visible;
+  final bool visible, parked;
   final Set<String> raftHosts;
   final DesktopBrowserPageEvents events;
   final DesktopBrowserSession session;
@@ -121,7 +125,7 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
   }
 
   void _syncMedia() {
-    final muted = !widget.visible || _failed;
+    final muted = widget.parked;
     final update =
         _linux?.setBrowserMuted(muted) ??
         _appKit?.invokeMethod<void>('setMuted', muted);
@@ -150,7 +154,6 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
       case 'navigationStarted':
         if (_failed) {
           setState(() => _failed = false);
-          _syncMedia();
         }
       case 'failed':
         _fail(url);
@@ -160,7 +163,6 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
   void _fail([Uri? target]) {
     if (!mounted || _failed) return;
     setState(() => _failed = true);
-    _syncMedia();
     final page = widget.tab.page;
     widget.events.state((
       url: target ?? page.url,
@@ -174,7 +176,6 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
   void _navigate(Future<void> Function() command) {
     if (_failed) {
       setState(() => _failed = false);
-      _syncMedia();
     }
     unawaited(Future<void>.sync(command).catchError((Object _) => _fail()));
   }
@@ -193,7 +194,7 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
   @override
   void didUpdateWidget(_SystemBrowserPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.visible != oldWidget.visible) _syncMedia();
+    if (widget.parked != oldWidget.parked) _syncMedia();
     if (widget.tab.navigation == oldWidget.tab.navigation) return;
     final target = widget.tab.requested;
     if (target != null) _load(target);

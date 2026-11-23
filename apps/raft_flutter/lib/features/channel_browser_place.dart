@@ -53,6 +53,9 @@ class ChannelBrowserPanes {
                 workspace: workspace,
                 conversation: conversation,
                 showing: false,
+                parked:
+                    workspace.section != 'chat' ||
+                    workspace.channel?.id != conversation,
               ),
             ),
           ),
@@ -67,6 +70,7 @@ DesktopBrowserPanel channelBrowserPanel({
   required WorkspaceController workspace,
   required String conversation,
   required bool showing,
+  bool parked = false,
   bool covering = false,
   bool expanded = false,
   bool collapsed = false,
@@ -93,6 +97,7 @@ DesktopBrowserPanel channelBrowserPanel({
     pageBuilder: (context, tab, visible, events) => DesktopBrowserNativePage(
       tab: tab,
       visible: visible,
+      parked: parked,
       events: events,
       raftHosts: hosts,
       session: preview.browserSession,

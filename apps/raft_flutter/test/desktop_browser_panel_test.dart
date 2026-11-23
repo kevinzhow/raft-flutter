@@ -103,6 +103,31 @@ void main() {
     );
   });
 
+  testWidgets('tab close and Escape work immediately after address submit', (
+    tester,
+  ) async {
+    final tabs = await mount(tester);
+    await tester.tap(find.byKey(plus));
+    await tester.pump();
+    await tester.enterText(find.byKey(input), 'example.test/second');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyW);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(tabs.forConversation('channel')!.tabs, hasLength(1));
+
+    await tester.tap(find.byKey(address));
+    await tester.pump();
+    await tester.enterText(find.byKey(input), 'example.test/third');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(tabs.forConversation('channel'), isNull);
+  });
+
   testWidgets(
     'editing Escape restores the address, then Escape closes the panel',
     (tester) async {
