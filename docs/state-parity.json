@@ -60282,6 +60282,18 @@
         "owner": "Message timeline",
         "reason": "Reads the prose links for the preview without mounting the rendered Markdown body."
       },
+      "apps/raft_flutter/lib/features/chat_timeline_semantics.dart#method:_ChatTimelineSemantics.timelineMessageBodySize": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Supplies the same current body size to the preview measurement and the full row."
+      },
+      "packages/raft_ui/lib/src/components.dart#method:RaftMessageTile.plainBodyFits": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Checks the one-line preview against the existing message row geometry and body typography."
+      },
       "apps/raft_flutter/lib/features/timeline_row_hydration.dart#method:TimelineHydratedRow.createState": {
         "role": "entry_composition",
         "familyRefs": [],

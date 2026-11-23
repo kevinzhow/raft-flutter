@@ -1311,10 +1311,10 @@
    "status": "covered",
    "webEntry": "MessageItem ctx menu > 'Copy Markdown'",
    "gate": "none",
-   "flutterEntry": "chat_view.dart actions() item 'copy-markdown'",
+   "flutterEntry": "message_context_menu_sections.dart 'copy-markdown' item and handler",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Copy Markdown'"
     }
    ],
@@ -1399,10 +1399,10 @@
    "status": "covered",
    "webEntry": "MessageItem ctx menu > 'Save Message' / 'Remove from Saved'",
    "gate": "none",
-   "flutterEntry": "chat_view.dart actions() save item",
+   "flutterEntry": "message_context_menu_sections.dart Save / Remove from Saved item",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "saved ? 'Remove from Saved' : 'Save'"
     }
    ],
@@ -1715,14 +1715,14 @@
    "status": "covered",
    "webEntry": "MessageHoverToolbar buttons (hidden on coarse pointers)",
    "gate": "thread button hidden in thread panel; reaction button needs canReact and non-system message",
-   "flutterEntry": "chat_view.dart messageToolbar(): 'Reply in thread', 'Add reaction', 'Save message'",
+   "flutterEntry": "chat_view.dart messageToolbar() and message_hover_toolbar.dart button labels",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
      "needle": "Widget messageToolbar("
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_hover_toolbar.dart",
      "needle": "'Reply in thread'"
     }
    ],
