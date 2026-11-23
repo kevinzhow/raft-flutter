@@ -321,8 +321,6 @@ class _GeometryBox extends RenderProxyBox {
       }
       final clip = parent.describeApproximatePaintClip(child);
       if (clip != null) {
-        // First prototype accepts rectangular clips only. Unknown/rounded
-        // clipping must not accidentally expose native pixels or input.
         if (parent is RenderClipRRect && parent.clipper == null) {
           final rounded = parent.borderRadius
               .resolve(parent.textDirection)
@@ -340,13 +338,20 @@ class _GeometryBox extends RenderProxyBox {
             return;
           }
           clips.add(accepted);
-        } else if (parent is RenderClipRect) {
+        } else if (parent is RenderClipRRect ||
+            parent is RenderClipRSuperellipse ||
+            parent is RenderClipOval ||
+            parent is RenderClipPath ||
+            parent is RenderPhysicalShape ||
+            (parent is RenderPhysicalModel &&
+                (parent.shape != BoxShape.rectangle ||
+                    parent.borderRadius != BorderRadius.zero))) {
+          onLayout(SystemWebViewLayout.hidden);
+          return;
+        } else {
           clips.add(
             MatrixUtils.transformRect(parent.getTransformTo(root.child), clip),
           );
-        } else {
-          onLayout(SystemWebViewLayout.hidden);
-          return;
         }
       }
       child = parent;

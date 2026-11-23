@@ -907,17 +907,18 @@ class MessagePresentation extends StatelessWidget {
           ? (button) => _externalWebLink(button.url)
           : null,
     );
-    if (exportMode || !localAuthority) return cardOf();
-    final buttons = raftCardButtons(card.root);
-    if (buttons.isEmpty) return cardOf();
-    final availability = webPreviewAvailability(
-      controller,
-      evaluate: buttons.any((button) => button.beside),
-    );
-    if (availability == null) return cardOf();
+    final buttons = exportMode || !localAuthority
+        ? const <RaftCardButton>[]
+        : raftCardButtons(card.root);
+    final availability = buttons.isEmpty
+        ? null
+        : webPreviewAvailability(
+            controller,
+            evaluate: buttons.any((button) => button.beside),
+          );
     return ListenableBuilder(
-      listenable: availability,
-      builder: (_, _) => cardOf(interactive: true),
+      listenable: Listenable.merge([availability]),
+      builder: (_, _) => cardOf(interactive: availability != null),
     );
   }
 
@@ -1015,11 +1016,11 @@ class MessagePresentation extends StatelessWidget {
     final changes = exportMode || !localAuthority
         ? null
         : desktopBrowserLinkChanges(controller, message.channelId);
-    if (changes == null) return body();
     return ListenableBuilder(
-      listenable: changes,
-      builder: (_, _) =>
-          body(browserLinks: desktopBrowserLinksEnabled(controller)),
+      listenable: Listenable.merge([changes]),
+      builder: (_, _) => body(
+        browserLinks: changes != null && desktopBrowserLinksEnabled(controller),
+      ),
     );
   }
 

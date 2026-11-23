@@ -1241,7 +1241,8 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         secondaryDown =
             widget.onActionsAt != null &&
             event.kind == PointerDeviceKind.mouse &&
-            (event.buttons & kSecondaryMouseButton) != 0;
+            (event.buttons & kSecondaryMouseButton) != 0 &&
+            !raftMessageLinkOwnsSecondaryTap(event.position, event.viewId);
       },
       onPointerUp: (event) {
         touchTaps.pointerUp(event);

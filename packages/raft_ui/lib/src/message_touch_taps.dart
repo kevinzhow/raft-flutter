@@ -4,6 +4,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'raft_underline.dart';
+
 // Taps on a message on a touch screen (Web 1.24 useMessageTouchTaps.ts,
 // raft-design "Taps on a touch screen"): a tap opens the thread, a double tap
 // opens the quick-reaction bar where the finger is, press and hold opens the
@@ -44,6 +46,26 @@ class RaftMessageTapLink {
 
 abstract interface class RaftMessageLinkHit implements HitTestTarget {
   RaftMessageTapLink? get tapLink;
+}
+
+bool raftMessageLinkOwnsSecondaryTap(Offset position, int viewId) {
+  final result = HitTestResult();
+  WidgetsBinding.instance.hitTestInView(result, position, viewId);
+  for (final entry in result.path) {
+    final target = entry.target;
+    if (target is RenderMetaData &&
+        identical(target.metaData, raftMessageTapBoundary)) {
+      return false;
+    }
+    if (target
+        case TextSpan(
+          recognizer: MessageLinkRecognizer(:final onSecondaryTapUp),
+        )
+        when onSecondaryTapUp != null) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /// Whether a touch at [position] lands on a control inside the message row

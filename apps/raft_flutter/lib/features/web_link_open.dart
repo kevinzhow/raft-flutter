@@ -111,7 +111,10 @@ Future<bool> openWebLinkByPreference(
     beside();
     return true;
   }
-  final choice = await showWebLinkChoiceDialog(context);
+  final choice = await showWebLinkChoiceDialog(
+    context,
+    desktopBrowser: desktopBrowserAvailable(w),
+  );
   switch (choice) {
     case WebLinkOpenPreference.beside:
       WebLinkOpenPreferences.instance.write(choice);
@@ -248,14 +251,18 @@ bool openCardButtonBeside(
 /// Web `WebLinkChoiceDialog`: asked once, on the first click of a web link.
 /// Each button is a choice that is remembered; Esc, x and the scrim choose
 /// nothing (null).
-Future<WebLinkOpenPreference?> showWebLinkChoiceDialog(BuildContext context) =>
-    showRaftDialog<WebLinkOpenPreference>(
-      context: context,
-      builder: (context) => const WebLinkChoiceDialog(),
-    );
+Future<WebLinkOpenPreference?> showWebLinkChoiceDialog(
+  BuildContext context, {
+  bool desktopBrowser = false,
+}) => showRaftDialog<WebLinkOpenPreference>(
+  context: context,
+  builder: (context) => WebLinkChoiceDialog(desktopBrowser: desktopBrowser),
+);
 
 class WebLinkChoiceDialog extends StatelessWidget {
-  const WebLinkChoiceDialog({super.key});
+  const WebLinkChoiceDialog({super.key, this.desktopBrowser = false});
+
+  final bool desktopBrowser;
 
   @override
   Widget build(BuildContext context) {
@@ -265,8 +272,7 @@ class WebLinkChoiceDialog extends StatelessWidget {
     return RaftDialog.shell(
       surfaceKey: const ValueKey('web-link-choice-dialog'),
       title: raftText(context, 'Open links in Raft?'),
-      // `size="sm"`.
-      maxWidth: 384,
+      maxWidth: desktopBrowser ? 400 : 384,
       onClose: () => choose(null),
       body: Text(
         raftText(
