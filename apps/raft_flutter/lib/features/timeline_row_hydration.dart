@@ -535,8 +535,11 @@ class TimelineRowPreview extends StatelessWidget {
     final visibleReactions = tile.visibleReactions;
     final heading = tile.compactHeading(visibleReactions);
     final actions = tile.compactActions(visibleReactions);
+    // Like the full row: a collapsed row publishes no link actions.
     final links =
-        tile.coarsePointer && linkGroups.any((group) => group.isNotEmpty)
+        tile.coarsePointer &&
+            collapse?.expanded != false &&
+            linkGroups.any((group) => group.isNotEmpty)
         ? RaftMessageLinkActions()
         : null;
     Widget body = ExcludeSemantics(
