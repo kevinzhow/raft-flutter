@@ -6,16 +6,18 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'timeline_row_trace.dart';
 
+typedef TimelinePreviewExtent = ({double height, bool measured});
+
 typedef TimelineRowPreviewBuilder = Widget? Function(
   BuildContext context,
   int index,
-  double height,
+  TimelinePreviewExtent extent,
 );
 
 typedef TimelineRowHydrationSpec = ({
   double width,
   double Function() estimate,
-  Widget? Function(BuildContext, double) preview,
+  Widget? Function(BuildContext, TimelinePreviewExtent) preview,
   bool Function() entering,
 });
 
@@ -126,7 +128,7 @@ class TimelineHydratedRow extends StatefulWidget {
   final Object? revision;
   final double width;
   final double Function() estimate;
-  final Widget? Function(BuildContext context, double height) preview;
+  final Widget? Function(BuildContext, TimelinePreviewExtent) preview;
   final WidgetBuilder builder;
   final bool entering;
 
@@ -197,13 +199,15 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
       scale: MediaQuery.textScalerOf(context),
     );
     if (_phase == _HydrationPhase.preview) {
-      final height =
-          hydrator._heights[key] ??
-          widget.estimate() * (key.scale.scale(15) / 15);
+      final measured = hydrator._heights[key];
+      final extent = (
+        height: measured ?? widget.estimate() * (key.scale.scale(15) / 15),
+        measured: measured != null,
+      );
       final preview = timelineRowTrace(
         'light.build',
         message.id,
-        () => widget.preview(context, height),
+        () => widget.preview(context, extent),
       );
       if (preview != null) {
         _phase = _HydrationPhase.light;

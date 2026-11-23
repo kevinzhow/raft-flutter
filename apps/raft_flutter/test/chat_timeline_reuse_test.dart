@@ -7,6 +7,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/composer_directory.dart';
 import 'package:raft_flutter/features/message_timeline.dart';
+import 'package:raft_flutter/features/timeline_row_hydration.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -177,6 +178,34 @@ void main() {
     await tester.pump();
     expect(tester.getSemantics(node).label, initial);
     semantics.dispose();
+  });
+
+  testWidgets('cold plain rows preview without guessing a collapsed label', (
+    tester,
+  ) async {
+    await open(tester, size: const Size(390, 844));
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(RaftMessageTimeline),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    position.jumpTo(position.pixels - 2200);
+    await tester.pump();
+    final previews = tester
+        .widgetList<TimelineRowPreview>(find.byType(TimelineRowPreview))
+        .toList();
+    expect(previews, isNotEmpty);
+    expect(
+      previews.map((preview) => preview.tile.content),
+      everyElement(matches(r'^reuse message \d+$')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(TimelineRowPreview), findsNothing);
   });
 
   testWidgets('thread live insert and edit preserve unrelated visible rows', (

@@ -1795,6 +1795,51 @@ class RaftMessageTile extends StatelessWidget {
         )
       : prose;
 
+  static final _plainBody = RegExp(
+    r'^[\p{L}\p{N}][\p{L}\p{N} ,!?，。！？]*\.?$',
+    unicode: true,
+  );
+
+  static bool plainBodyFits(
+    BuildContext context,
+    String text, {
+    required double rowWidth,
+    required RaftMessageRowContext rowContext,
+    required double fontSize,
+  }) {
+    if (text.length > 256 || !_plainBody.hasMatch(text)) return false;
+    final tokens = RaftTokens.of(context);
+    final row = RaftMessageRowRecipe(
+      tokens,
+      viewportWidth: MediaQuery.sizeOf(context).width,
+      rowContext: rowContext,
+    );
+    final width =
+        rowWidth -
+        row.margin.horizontal -
+        row.padding.horizontal -
+        row.gutterWidth -
+        row.gap -
+        2 * row.borderWidth;
+    if (width <= 0) return false;
+    final style = MessageContentRecipe(
+      tokens,
+      fontSize: fontSize,
+      mountedMessage: true,
+    ).body;
+    final painter = TextPainter(
+      text: TextSpan(text: text.trimRight(), style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout(maxWidth: width);
+    final fits =
+        !painter.didExceedMaxLines &&
+        painter.height < RaftCollapsible.heightLimit;
+    painter.dispose();
+    return fits;
+  }
+
   List<({Map<String, dynamic> data, String emoji, int count})>
   get visibleReactions => [
     for (final reaction in reactions)

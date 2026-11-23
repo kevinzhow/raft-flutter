@@ -2594,13 +2594,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       );
     }
     final times = timeFormatter;
-    final fontSize = messagePreferenceDisplaySize(
-      context,
-      PersonalPresentationScope.bodyFontSize(
-        context,
-        w.client.user?.string('preferredMessageBodyFontSize'),
-      ),
-    );
+    final fontSize = timelineMessageBodySize;
     final translation = w.services.translations.present(m);
     // Web useTranslationBatch: auto mode asks for the rows in the built
     // window; the store batches them and skips cached / in-flight rows.
@@ -3116,8 +3110,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                         source(messages[i]).json,
                         width,
                       ),
-                      preview: (context, i, height) =>
-                          previewMessageTile(source(messages[i]), height),
+                      preview: (context, i, extent) => previewMessageTile(
+                        source(messages[i]),
+                        width,
+                        extent,
+                      ),
                     ),
               retainRow: timelineKeys.retainRows(messages, source),
               trackNeighbourVersions: false,

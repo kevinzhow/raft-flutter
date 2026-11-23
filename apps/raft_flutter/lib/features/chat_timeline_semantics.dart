@@ -1,6 +1,14 @@
 part of 'chat_view.dart';
 
 extension _ChatTimelineSemantics on _RaftChatViewState {
+  double get timelineMessageBodySize => messagePreferenceDisplaySize(
+    context,
+    PersonalPresentationScope.bodyFontSize(
+      context,
+      w.client.user?.string('preferredMessageBodyFontSize'),
+    ),
+  );
+
   List<RaftMessageSemanticsAction> messageSemanticsActions(
     RaftMessage message, {
     required bool parent,
@@ -82,19 +90,38 @@ extension _ChatTimelineSemantics on _RaftChatViewState {
     searchHighlight: searchActive == message.id ? boundSearch?.query : null,
   );
 
-  Widget? previewMessageTile(RaftMessage message, double height) {
+  Widget? previewMessageTile(
+    RaftMessage message,
+    double width,
+    TimelinePreviewExtent extent,
+  ) {
     if (message.string('messageType') == 'system' ||
         message.retracted ||
-        message.json['actionMetadata'] is Map ||
-        (height >= RaftCollapsible.heightLimit &&
-            longMessagesCollapse(message.json, w.channel?.json))) {
+        message.json['actionMetadata'] is Map) {
       return null;
     }
     final translations = w.services.translations.present(message);
+    if (longMessagesCollapse(message.json, w.channel?.json)) {
+      final fits = extent.measured
+          ? extent.height < RaftCollapsible.heightLimit
+          : !selection.active &&
+                translations.translatedContent == null &&
+                !translations.skeleton &&
+                RaftMessageTile.plainBodyFits(
+                  context,
+                  message.content,
+                  rowWidth: width,
+                  rowContext: widget.thread
+                      ? RaftMessageRowContext.thread
+                      : RaftMessageRowContext.main,
+                  fontSize: timelineMessageBodySize,
+                );
+      if (!fits) return null;
+    }
     final prose = presentMessageProse(message, translations.translatedContent);
     final pending = WorkspaceMessages.isPendingSend(message);
     return TimelineRowPreview(
-      height: height,
+      height: extent.height,
       tile: RaftMessageTile(
         author: messageSenderName(context, message),
         timestamp: timeFormatter.messageTime(message.createdAt),

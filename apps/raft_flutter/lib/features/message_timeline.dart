@@ -603,8 +603,8 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
                     : (
                         width: hydration.width,
                         estimate: () => hydration.estimate(index),
-                        preview: (context, height) =>
-                            hydration.preview(context, index, height),
+                        preview: (context, extent) =>
+                            hydration.preview(context, index, extent),
                         entering: () =>
                             entering && widget.controller.pending == null,
                       ),
