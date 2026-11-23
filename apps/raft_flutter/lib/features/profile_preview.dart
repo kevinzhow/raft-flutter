@@ -641,13 +641,15 @@ Widget externalIdentityPreviewBody(
 /// avatar). Agents and members open the profile card; external senders the
 /// external identity card. [content] is the avatar artwork already resolved
 /// for the row, reused at the card's `mention-card` size.
-Widget senderProfileHoverCard({
+Widget senderProfileHoverCard(
+  BuildContext context, {
   required WorkspaceController controller,
   required RaftMessage message,
   required RaftAvatarContent content,
   required Widget child,
   ValueChanged<String>? onOpenActivity,
 }) {
+  if (RaftInteraction.of(context).touch) return child;
   final type = message.string('senderType');
   final id = message.string('senderId');
   if (type == 'external_projection' || message.json['externalAuthor'] is Map) {

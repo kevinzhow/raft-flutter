@@ -207,7 +207,7 @@ void main() {
   );
 
   testWidgets(
-    'prepared rows survive parent updates; input restores the active margin',
+    'prepared rows survive parent updates and the start of scrolling',
     (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(600, 600);
@@ -251,10 +251,15 @@ void main() {
       idle = false;
       await tester.pumpWidget(view());
       expect(count(), warm);
+      final prepared = find.text('prepared-988', skipOffstage: false);
+      expect(prepared, findsOneWidget);
+      final preparedElement = tester.element(prepared);
+      final beforeScroll = RaftMessageTimeline.debugRowBuilds;
       controller.jumpTo(controller.position.pixels - 50);
       await tester.pump();
-      expect(count(), lessThan(warm));
-      expect(count(), lessThanOrEqualTo(cold + 1));
+      expect(prepared, findsOneWidget);
+      expect(tester.element(prepared), same(preparedElement));
+      expect(RaftMessageTimeline.debugRowBuilds - beforeScroll, lessThan(2));
       await tester.pumpWidget(const SizedBox());
       expect(tester.takeException(), isNull);
     },

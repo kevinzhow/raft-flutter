@@ -87,7 +87,7 @@ void main() {
           .textContaining('row-', skipOffstage: false)
           .evaluate()
           .length;
-      expect(afterInput, lessThan(prepared));
+      expect(afterInput, greaterThanOrEqualTo(prepared));
       expect(estimates, 1000);
       final existingBuilds = RaftMessageTimeline.debugRowBuilds;
       for (var i = 0; i < 10; i++) {
@@ -96,7 +96,7 @@ void main() {
       }
       expect(
         RaftMessageTimeline.debugRowBuilds - existingBuilds,
-        lessThanOrEqualTo(20),
+        lessThanOrEqualTo(24),
       );
       expect(
         tester

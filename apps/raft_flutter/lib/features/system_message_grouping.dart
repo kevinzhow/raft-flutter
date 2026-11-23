@@ -122,7 +122,11 @@ List<SystemGroupState?> buildSystemGroupStates(
   String Function(String, Map<String, Object?>) format,
 ) {
   final categories = [for (final m in messages) _classify(m)];
-  final states = List<SystemGroupState?>.filled(messages.length, null);
+  final states = List<SystemGroupState?>.filled(
+    messages.length,
+    null,
+    growable: true,
+  );
   for (var i = 0; i < messages.length; i++) {
     if (categories[i] == null) continue;
     var end = i + 1;

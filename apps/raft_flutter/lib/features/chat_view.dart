@@ -1027,6 +1027,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     retiredAdapters.add(adapter);
     retiredViewports.add(viewport);
     adapter = chat.InMemoryChatController(messages: messages);
+    timelineKeys.discardBoundary();
     ++windowRevision;
     final target = focus == null
         ? null
@@ -1074,9 +1075,17 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   /// identity pass (no per-row search or encoding). Returns whether it changed.
   bool applyWindow(List<chat.Message> projected) {
     final current = adapter.messages;
-    final boundary = TimelineBoundaryChange.between(current, projected);
+    final boundary = TimelineBoundaryChange.between(
+      current,
+      projected,
+      allowEdits: true,
+    );
     if (boundary != null) {
-      if (boundary.before == 0 && boundary.after == 0) return false;
+      if (boundary.before == 0 &&
+          boundary.after == 0 &&
+          boundary.edits.isEmpty) {
+        return false;
+      }
       if (boundary.before > 0) {
         timelineKeys.bodies.incoming(
           projected.take(boundary.before).toList().reversed.map(source),
@@ -1084,6 +1093,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         );
       }
       adapter.setMessages(projected, animated: false);
+      timelineKeys.acceptWindow(current, adapter.messages, boundary);
       ++windowRevision;
       if (boundary.after > 0) {
         if (projected.last.authorId == w.client.user?.id) {
@@ -1117,6 +1127,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     }
     retainCenter(current, wanted);
     adapter.setMessages(next, animated: false);
+    timelineKeys.discardBoundary();
     ++windowRevision;
     // Rows that arrived after the previous latest row.
     final from = previousLast == null
@@ -1659,21 +1670,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     }
   }
 
-  SourceTimeFormatter get timeFormatter => SourceTimeFormatter(
-    locale: Localizations.localeOf(context).toLanguageTag(),
-    preferredTimezone:
-        w.client.user?.string('preferredTimezone') ??
-        w.client.user?.string('timezone'),
-    preferredTimeFormat: sourceTimeFormatPreference(
-      w.client.user?.string('preferredTimeFormat') ??
-          w.client.user?.string('timeFormat'),
-    ),
-    systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
-        ? SourceTimeFormat.twentyFourHour
-        : null,
-    todayLabel: raftText(context, 'Today'),
-    yesterdayLabel: raftText(context, 'Yesterday'),
-  );
+  SourceTimeFormatter get timeFormatter =>
+      timelineKeys.timeFormatter(context, w.client.user);
 
   String clock(DateTime stamp) => timeFormatter.messageTime(stamp);
 
@@ -2265,6 +2263,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     return compact || !local
         ? sender
         : senderProfileHoverCard(
+            context,
             controller: w,
             message: message,
             content: avatarContent,
@@ -2544,20 +2543,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }
 
   /// Web `formatShortDateTime` in the account's zone and hour cycle.
-  String Function(DateTime) quotedTimestamp() {
-    final user = w.client.user;
-    return SourceTimeFormatter(
-      locale: Localizations.localeOf(context).toLanguageTag(),
-      preferredTimezone:
-          user?.string('preferredTimezone') ?? user?.string('timezone'),
-      preferredTimeFormat: sourceTimeFormatPreference(
-        user?.string('preferredTimeFormat') ?? user?.string('timeFormat'),
-      ),
-      systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
-          ? SourceTimeFormat.twentyFourHour
-          : null,
-    ).shortDateTime;
-  }
+  String Function(DateTime) quotedTimestamp() => timeFormatter.shortDateTime;
 
   /// Web MessageItem `TranslationIndicator`.
   Widget? translationStatus(
@@ -2905,13 +2891,15 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   int? windowIndexOf(String id) =>
       timelineKeys.windowIndexOf(id, adapter.messages, windowRevision);
 
-  SystemGroupState? systemStateAt(int index) => timelineKeys.systemStateAt(
+  List<SystemGroupState?> get systemStates => timelineKeys.systemStates(
     context,
-    index,
     adapter.messages,
     windowRevision,
     source,
   );
+
+  SystemGroupState? systemStateAt(int index) =>
+      systemStates.elementAtOrNull(index);
 
   Widget datedTile(
     RaftMessage message,
@@ -3093,7 +3081,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     );
     timelineKeys.progress
       ..bind(w, thread: thread, visible: presentationActive, changed: sync)
-      ..update(w, messages.map(source), systemStateAt, thread: thread);
+      ..update(
+        w,
+        messages,
+        source,
+        () => systemStates,
+        timelineKeys.boundaryFrom,
+        thread: thread,
+      );
     final dmReadId = dmReadStatusMessageId(w, rows, thread: thread);
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
     final loading = thread ? _messages.state.threadLoading : activity.loading;
@@ -3216,10 +3211,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 highlighted: _messages.state.highlightedMessageId,
               ),
               extentRevision: (rowStyle, width),
-              canPrepareNearbyRows:
-                  kDebugMode || defaultTargetPlatform != TargetPlatform.macOS
-                  ? null
-                  : () => presentationActive && RaftFontWarmUp.isIdle,
+              extentBoundary: timelineKeys.boundaryFrom,
+              canPrepareNearbyRows: timelineKeys.preparesNearbyRows
+                  ? () => presentationActive && RaftFontWarmUp.isIdle
+                  : null,
               messages: messages,
               centerIndex: centerIndex(),
               epoch: centerEpoch,

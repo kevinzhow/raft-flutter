@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -10,6 +11,7 @@ import '../data/workspace_messages.dart';
 import 'agent_metadata_projection.dart';
 import 'sender_avatar_projection.dart';
 import 'system_message_grouping.dart';
+import 'timeline_boundary_change.dart';
 
 typedef _ReadScope = ({String id, String channelId, String? parentId});
 typedef _ReadFace = ({
@@ -32,6 +34,7 @@ class AgentReadProgressPresentation {
   _ReadScope? _watch;
   int? _authority;
   final _rows = <String, _RowProgress>{};
+  _ReadProgressWindow? _window;
   bool _active = false;
 
   void bind(
@@ -52,6 +55,7 @@ class AgentReadProgressPresentation {
     if (visible && scope != null) receipts.ensureProgressFlag();
     final next = visible && receipts.progressEnabled ? scope : null;
     if (_watch == next && _authority == authority) return;
+    _window = null;
     _release?.call();
     _watch = next;
     _authority = authority;
@@ -84,8 +88,11 @@ class AgentReadProgressPresentation {
 
   void update(
     WorkspaceController w,
-    Iterable<RaftMessage> presented,
-    SystemGroupState? Function(int) groupAt, {
+    List<chat.Message> presented,
+    RaftMessage Function(chat.Message) source,
+    List<SystemGroupState?> Function() groups,
+    TimelineBoundaryChange? Function(List<chat.Message>, List<chat.Message>)
+    boundaryFrom, {
     required bool thread,
   }) {
     final scope = _scope(w, thread);
@@ -104,13 +111,15 @@ class AgentReadProgressPresentation {
             ? w.messageDomain.threadWindow?.hasNewer == true
             : w.messageDomain.state.hasNewer)) {
       _rows.clear();
+      _window = null;
       return;
     }
-    final displayed = presented.toList(growable: false);
-    final messages = [
-      for (final row in displayed)
-        if (row.channelId == scope.id) row,
-    ]..sort((left, right) => _timelineSeq(left).compareTo(_timelineSeq(right)));
+    var window = _window;
+    if (window == null || window.channelId != scope.id) {
+      window = _window = _ReadProgressWindow(scope.id);
+    }
+    window.update(presented, source, groups(), boundaryFrom);
+    final messages = window.messages;
     final ownId = w.client.user?.id;
     final recent = messages.reversed.take(30).where(_isChat);
     final own = recent
@@ -130,14 +139,6 @@ class AgentReadProgressPresentation {
         ..._mentions(row).map((mention) => mention['id']).whereType<String>(),
       ],
     }..retainAll(agents.keys.toSet());
-    final folded = <String, String>{};
-    for (var index = 0; index < displayed.length; index++) {
-      if (groupAt(index) case final SystemGroupSummary group) {
-        for (final child in group.messageIndexes) {
-          folded[displayed[child].id] = displayed[index].id;
-        }
-      }
-    }
     final directory = w.services.entityDirectory;
     final byId = {
       for (final row in directory.authorAgents)
@@ -151,7 +152,7 @@ class AgentReadProgressPresentation {
     for (final id in relevant) {
       final row = _frontier(messages, agents[id]!.maxReadSeq);
       if (row != null) {
-        (faces[folded[row.id] ?? row.id] ??= []).add(byRead[id]!);
+        (faces[window.folded[row.id] ?? row.id] ??= []).add(byRead[id]!);
       }
     }
     final status = own == null
@@ -225,7 +226,99 @@ class AgentReadProgressPresentation {
     _changed = null;
     _release = null;
     _rows.clear();
+    _window = null;
     _active = false;
+  }
+}
+
+class _ReadProgressWindow {
+  _ReadProgressWindow(this.channelId);
+
+  final String channelId;
+  List<chat.Message>? _previous;
+  List<SystemGroupState?>? _previousGroups;
+  final messages = <RaftMessage>[];
+  final _positions = <String, int>{};
+  final folded = <String, String>{};
+
+  void update(
+    List<chat.Message> presented,
+    RaftMessage Function(chat.Message) source,
+    List<SystemGroupState?> groups,
+    TimelineBoundaryChange? Function(List<chat.Message>, List<chat.Message>)
+    boundaryFrom,
+  ) {
+    final previous = _previous;
+    if (!identical(previous, presented)) {
+      final change = previous == null
+          ? null
+          : boundaryFrom(previous, presented);
+      if (change == null || !extend(presented, source, change)) {
+        messages
+          ..clear()
+          ..addAll(
+            presented.map(source).where((row) => row.channelId == channelId),
+          )
+          ..sort(
+            (left, right) => _timelineSeq(left).compareTo(_timelineSeq(right)),
+          );
+        _positions.clear();
+        for (var index = 0; index < messages.length; index++) {
+          _positions[messages[index].id] = index;
+        }
+      }
+      _previous = presented;
+    }
+    if (!identical(_previousGroups, groups)) {
+      folded.clear();
+      for (var index = 0; index < groups.length; index++) {
+        if (groups[index] case final SystemGroupSummary group) {
+          for (final child in group.messageIndexes) {
+            folded[source(presented[child]).id] = source(presented[index]).id;
+          }
+        }
+      }
+      _previousGroups = groups;
+    }
+  }
+
+  bool extend(
+    List<chat.Message> presented,
+    RaftMessage Function(chat.Message) source,
+    TimelineBoundaryChange change,
+  ) {
+    if (change.before != 0) return false;
+    final edits = <(int, RaftMessage)>[];
+    for (final index in change.edits) {
+      final next = source(presented[index]);
+      final previous = _positions[next.id];
+      if ((previous != null) != (next.channelId == channelId)) return false;
+      if (previous == null) continue;
+      if (_timelineSeq(messages[previous]) != _timelineSeq(next)) return false;
+      edits.add((previous, next));
+    }
+    final newer = <RaftMessage>[];
+    var seq = messages.isEmpty ? 0 : _timelineSeq(messages.last);
+    for (
+      var index = presented.length - change.after;
+      index < presented.length;
+      index++
+    ) {
+      final row = source(presented[index]);
+      if (row.channelId != channelId) continue;
+      final next = _timelineSeq(row);
+      if (next <= seq) return false;
+      seq = next;
+      newer.add(row);
+    }
+    for (final (index, row) in edits) {
+      messages[index] = row;
+    }
+    for (final row in newer) {
+      _positions[row.id] = messages.length;
+      messages.add(row);
+    }
+    return true;
   }
 }
 

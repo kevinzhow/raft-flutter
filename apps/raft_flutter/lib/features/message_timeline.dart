@@ -14,6 +14,19 @@ import 'timeline_row_trace.dart';
 import 'timeline_boundary_change.dart';
 import 'timeline_extents.dart';
 
+const double _activeCache = 250;
+
+double _remainingCache(
+  double extent,
+  ({ScrollDirection direction, double pixels}) edge,
+  double pixels,
+) {
+  final covered = edge.direction == ScrollDirection.forward
+      ? edge.pixels - pixels
+      : pixels - edge.pixels;
+  return (extent - covered).clamp(_activeCache, extent);
+}
+
 /// A two-sided message timeline: older history grows away from a fixed
 /// center, so loading it never moves the rows on screen.
 ///
@@ -48,6 +61,7 @@ class RaftMessageTimeline extends StatefulWidget {
     this.trackNeighbourVersions = true,
     this.retainRow,
     this.extentRevision,
+    this.extentBoundary,
   });
 
   final RaftTimelineScrollController controller;
@@ -71,6 +85,11 @@ class RaftMessageTimeline extends StatefulWidget {
   /// Layout inputs for reusing measured extents across window updates.
   /// Null keeps the per-presentation estimate behavior.
   final Object? extentRevision;
+  final TimelineBoundaryChange? Function(
+    List<chat.Message>,
+    List<chat.Message>,
+  )?
+  extentBoundary;
   final int? Function(String id) indexOfId;
   final double Function(int index)? estimateRow;
 
@@ -112,7 +131,9 @@ class RaftMessageTimeline extends StatefulWidget {
 
 class _RaftMessageTimelineState extends State<RaftMessageTimeline>
     implements RaftTimelineThumbDriver {
-  double nearbyCache = 250;
+  double nearbyCache = _activeCache;
+  ({ScrollDirection direction, double pixels})? preparedEdge;
+  ScrollDirection lastMotion = ScrollDirection.idle;
   final recentRows = TimelineRowRetention();
   final mountedRows = TimelineMountedRows();
   final _keyboardOlderScroll = _KeyboardOlderScrollAction();
@@ -130,6 +151,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         mounted &&
         TickerMode.valuesOf(context).enabled &&
         widget.cacheExtent == null &&
+        singlePosition?.isScrollingNotifier.value == false &&
         (widget.canPrepareNearbyRows?.call() ?? false),
   );
   final rowShells =
@@ -137,8 +159,28 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
   final historyChildren = Expando<(int, Widget)>();
   final forwardChildren = Expando<(int, Widget)>();
 
+  ({ScrollDirection direction, double pixels})? get directionalCache =>
+      widget.cacheExtent == null &&
+          widget.canPrepareNearbyRows != null &&
+          nearbyCache > _activeCache
+      ? preparedEdge
+      : null;
+
+  double remainingPreparation(
+    ScrollPosition position,
+    ScrollDirection direction,
+  ) {
+    final edge = preparedEdge;
+    return edge == null || edge.direction != direction
+        ? _activeCache
+        : _remainingCache(nearbyCache, edge, position.pixels);
+  }
+
   void prepareNearbyRows() {
-    if (singlePosition?.viewportDimension == nearbyCache) {
+    final position = singlePosition;
+    if (position != null &&
+        remainingPreparation(position, preparationDirection(position)) ==
+            math.max(_activeCache, position.viewportDimension)) {
       nearbyPreparation.cancel();
       return;
     }
@@ -148,16 +190,29 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         (_) => () {
           final position = singlePosition;
           if (position == null) return;
-          final target = position.viewportDimension;
-          if (nearbyCache >= target) {
-            if (nearbyCache > target) setState(() => nearbyCache = target);
+          final direction = preparationDirection(position);
+          final target = math.max(_activeCache, position.viewportDimension);
+          final prepared = remainingPreparation(position, direction);
+          if (prepared == target) {
             nearbyPreparation.cancel();
             return;
           }
-          setState(() => nearbyCache = math.min(target, nearbyCache + 128));
+          setState(() {
+            preparedEdge = (direction: direction, pixels: position.pixels);
+            nearbyCache = math.min(target, prepared + 128);
+          });
         },
       ),
     );
+  }
+
+  ScrollDirection preparationDirection(ScrollPosition position) {
+    if (position.extentBefore == 0) return ScrollDirection.reverse;
+    if (position.extentAfter == 0) return ScrollDirection.forward;
+    if (lastMotion != ScrollDirection.idle) return lastMotion;
+    return widget.controller.bottomAnchored
+        ? ScrollDirection.forward
+        : ScrollDirection.reverse;
   }
 
   @override
@@ -168,7 +223,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       prepareNearbyRows();
     } else {
       nearbyPreparation.cancel();
-      nearbyCache = 250;
+      nearbyCache = _activeCache;
     }
   }
 
@@ -206,8 +261,10 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       spent = false;
       newerSpent = false;
       userDirection = ScrollDirection.idle;
+      lastMotion = ScrollDirection.idle;
+      preparedEdge = null;
       thumb = null;
-      nearbyCache = 250;
+      nearbyCache = _activeCache;
     }
     // Landed (or failed): the next user move toward older may request again.
     if (oldWidget.loadingOlder && !widget.loadingOlder) {
@@ -290,7 +347,6 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         widget.cacheExtent == null &&
         widget.canPrepareNearbyRows != null) {
       nearbyPreparation.cancel();
-      if (nearbyCache != 250) setState(() => nearbyCache = 250);
     } else if (notification is ScrollEndNotification &&
         widget.canPrepareNearbyRows != null) {
       prepareNearbyRows();
@@ -298,14 +354,20 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
     if (notification is UserScrollNotification) {
       userDirection = notification.direction;
     } else if (notification is ScrollUpdateNotification) {
+      final delta = notification.scrollDelta ?? 0;
+      if (delta != 0 &&
+          (userDirection != ScrollDirection.idle ||
+              singlePosition?.isScrollingNotifier.value == true)) {
+        lastMotion = delta < 0
+            ? ScrollDirection.forward
+            : ScrollDirection.reverse;
+      }
       // Forward = toward the top (older history).
-      if ((notification.scrollDelta ?? 0) < 0 &&
-          userDirection == ScrollDirection.forward) {
+      if (delta < 0 && userDirection == ScrollDirection.forward) {
         userMovedOlder();
       } else {
         rearmOutsideTop();
-        if ((notification.scrollDelta ?? 0) > 0 &&
-            userDirection == ScrollDirection.reverse) {
+        if (delta > 0 && userDirection == ScrollDirection.reverse) {
           userMovedNewer();
         }
       }
@@ -634,7 +696,12 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
         previous != null &&
         index != null;
     final change = reuse
-        ? TimelineBoundaryChange.between(previous, messages, allowEdits: true)
+        ? widget.extentBoundary?.call(previous, messages) ??
+              TimelineBoundaryChange.between(
+                previous,
+                messages,
+                allowEdits: true,
+              )
         : null;
     if (change != null) {
       index!.prepend(change.before, estimate);
@@ -1042,6 +1109,7 @@ class _TimelineScrollView extends CustomScrollView {
     AxisDirection axisDirection,
     List<Widget> slivers,
   ) {
+    final state = context.findAncestorStateOfType<_RaftMessageTimelineState>();
     final viewport = _TimelineViewport(
       axisDirection: axisDirection,
       offset: offset,
@@ -1049,10 +1117,10 @@ class _TimelineScrollView extends CustomScrollView {
       center: center,
       anchor: anchor,
       scrollCacheExtent: scrollCacheExtent,
+      directionalCache: state?.directionalCache,
       paintOrder: paintOrder,
       clipBehavior: clipBehavior,
     );
-    final state = context.findAncestorStateOfType<_RaftMessageTimelineState>();
     final focus = state?._timelineFocus;
     if (focus == null || state == null) return viewport;
     // Inside the scrollable, so a move rejects this tap before the drag
@@ -1146,7 +1214,10 @@ class _TimelineViewport extends Viewport {
     super.paintOrder,
     super.clipBehavior,
     super.slivers,
+    this.directionalCache,
   });
+
+  final ({ScrollDirection direction, double pixels})? directionalCache;
 
   @override
   RenderViewport createRenderObject(BuildContext context) =>
@@ -1158,9 +1229,19 @@ class _TimelineViewport extends Viewport {
         anchor: anchor,
         offset: offset,
         scrollCacheExtent: scrollCacheExtent,
+        directionalCache: directionalCache,
         paintOrder: paintOrder,
         clipBehavior: clipBehavior,
       );
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant RaftTimelineRenderViewport renderObject,
+  ) {
+    super.updateRenderObject(context, renderObject);
+    renderObject.directionalCache = directionalCache;
+  }
 }
 
 /// The timeline's viewport: reports its content extents to its
@@ -1174,7 +1255,64 @@ class RaftTimelineRenderViewport extends RenderViewport {
     super.scrollCacheExtent,
     super.paintOrder,
     super.clipBehavior,
-  });
+    ({ScrollDirection direction, double pixels})? directionalCache,
+  }) : _directionalCache = directionalCache;
+
+  ({ScrollDirection direction, double pixels})? _directionalCache;
+
+  set directionalCache(({ScrollDirection direction, double pixels})? cache) {
+    if (_directionalCache == cache) return;
+    _directionalCache = cache;
+    markNeedsLayout();
+  }
+
+  @override
+  double layoutChildSequence({
+    required RenderSliver? child,
+    required double scrollOffset,
+    required double overlap,
+    required double layoutOffset,
+    required double remainingPaintExtent,
+    required double mainAxisExtent,
+    required double crossAxisExtent,
+    required GrowthDirection growthDirection,
+    required RenderSliver? Function(RenderSliver child) advance,
+    required double remainingCacheExtent,
+    required double cacheOrigin,
+  }) {
+    final extent = scrollCacheExtent;
+    final directional = _directionalCache;
+    if (directional != null && extent.style == CacheExtentStyle.pixel) {
+      final reverse = growthDirection == GrowthDirection.reverse;
+      final older = directional.direction == ScrollDirection.forward;
+      final ahead = _remainingCache(extent.value, directional, offset.pixels);
+      final centerOffset =
+          mainAxisExtent * anchor -
+          (offset.pixels + center!.centerOffsetAdjustment);
+      final distanceToCenter = reverse
+          ? mainAxisExtent - centerOffset
+          : centerOffset;
+      final leading = older == reverse ? _activeCache : ahead;
+      final trailing = older == reverse ? ahead : _activeCache;
+      final start = math.max(0.0, -distanceToCenter - leading);
+      final end = math.max(0.0, mainAxisExtent - distanceToCenter + trailing);
+      cacheOrigin = start - scrollOffset;
+      remainingCacheExtent = end - start;
+    }
+    return super.layoutChildSequence(
+      child: child,
+      scrollOffset: scrollOffset,
+      overlap: overlap,
+      layoutOffset: layoutOffset,
+      remainingPaintExtent: remainingPaintExtent,
+      mainAxisExtent: mainAxisExtent,
+      crossAxisExtent: crossAxisExtent,
+      growthDirection: growthDirection,
+      advance: advance,
+      remainingCacheExtent: remainingCacheExtent,
+      cacheOrigin: cacheOrigin,
+    );
+  }
 
   @override
   void performLayout() {
