@@ -354,13 +354,13 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
 class TimelineHydrationAnchor {
   const TimelineHydrationAnchor(
     this.box,
-    this.offset,
+    this.size,
     this.changing,
     this.height,
   );
 
   final RenderBox box;
-  final double offset;
+  final Size size;
   final RenderBox changing;
   final double height;
 
@@ -369,40 +369,78 @@ class TimelineHydrationAnchor {
     RenderBox changing,
     Iterable<RenderBox> rows,
   ) {
+    // The reader follows built rows: a preview's height is an estimate that
+    // its own swap replaces, so it anchors only when no built row is visible.
     RenderBox? firstVisible;
     var leading = double.infinity;
+    var built = false;
     for (final row in rows) {
       if (row == changing || !TimelineRowHydrator._laidOut(row, view)) {
         continue;
       }
       final top = row.localToGlobal(Offset.zero, ancestor: view).dy;
-      if (top >= view.size.height ||
-          top >= leading ||
-          top + row.size.height <= 0) {
-        continue;
-      }
+      if (top >= view.size.height || top + row.size.height <= 0) continue;
+      final full = !_previewRow(row);
+      if (built && !full) continue;
+      if (top >= leading && built == full) continue;
       firstVisible = row;
       leading = top;
+      built = full;
     }
     return firstVisible == null
         ? null
         : TimelineHydrationAnchor(
             firstVisible,
-            view.getOffsetToReveal(firstVisible, 0).offset,
+            view.size,
             changing,
             changing.size.height,
           );
   }
 
+  static bool _previewRow(RenderBox row) {
+    RenderObject? node = row;
+    for (var depth = 0; depth < 4 && node != null; depth++) {
+      if (node is _RenderTimelineMeasuredRow) return node.onLayout == null;
+      node = node is RenderObjectWithChildMixin ? node.child : null;
+    }
+    return false;
+  }
+
+  /// Whether [row] is in the center sliver or after it (grows downward).
+  static bool _forward(RenderObject row, RenderViewport view) {
+    RenderObject? sliver = row;
+    while (sliver != null && sliver.parent != view) {
+      sliver = sliver.parent;
+    }
+    for (
+      var child = view.center;
+      child != null;
+      child = view.childAfter(child)
+    ) {
+      if (identical(child, sliver)) return true;
+    }
+    return false;
+  }
+
+  /// The scroll change that keeps the anchor row where it was across the
+  /// swap: only the swapped row's own height change, and only when that row
+  /// sits between the anchor and the center. Everything else in the same
+  /// layout (a resize reflow, other rows) keeps the viewport's own behavior.
   double? correction(RenderViewport view) {
-    if (!changing.attached ||
+    if (view.size != size ||
+        !changing.attached ||
         !changing.hasSize ||
-        (changing.size.height - height).abs() <= .5 ||
         !box.attached ||
-        !TimelineRowHydrator._laidOut(box, view)) {
+        !TimelineRowHydrator._laidOut(box, view) ||
+        !TimelineRowHydrator._laidOut(changing, view)) {
       return null;
     }
-    return view.getOffsetToReveal(box, 0).offset - offset;
+    final delta = changing.size.height - height;
+    if (delta.abs() <= .5) return null;
+    final top = changing.localToGlobal(Offset.zero, ancestor: view).dy;
+    final anchorTop = box.localToGlobal(Offset.zero, ancestor: view).dy;
+    if (_forward(changing, view)) return top < anchorTop ? delta : null;
+    return top > anchorTop ? -delta : null;
   }
 }
 
