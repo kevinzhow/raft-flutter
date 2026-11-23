@@ -1026,9 +1026,7 @@ class MarkdownBuilder implements md.NodeVisitor {
     return mergedSpans;
   }
 
-  Widget _buildRichText(TextSpan text, {TextAlign? textAlign, String? key}) {
-    //Adding a unique key prevents the problem of using the same link handler for text spans with the same text
-    final Key k = key == null ? UniqueKey() : Key(key);
+  Widget _buildRichText(TextSpan text, {TextAlign? textAlign}) {
     // Force a consistent line height within each text block, derived from the
     // span's own base style so headers/blockquotes keep their correct height
     // while mixed font weights within a block no longer shift line height.
@@ -1054,7 +1052,6 @@ class MarkdownBuilder implements md.NodeVisitor {
             : null,
         onTap: onTapText,
         contextMenuBuilder: contextMenuBuilder,
-        key: k,
       );
     } else {
       return Text.rich(
@@ -1062,7 +1059,6 @@ class MarkdownBuilder implements md.NodeVisitor {
         textScaler: styleSheet.textScaler,
         textAlign: textAlign ?? TextAlign.start,
         strutStyle: strutStyle,
-        key: k,
       );
     }
   }
