@@ -299,6 +299,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
         },
       );
       await controller.callDevToolsProtocolMethod(methodName: 'Runtime.enable');
+      await controller.callDevToolsProtocolMethod(methodName: 'Page.enable');
       await controller.callDevToolsProtocolMethod(
         methodName: 'Runtime.addBinding',
         parameters: {
