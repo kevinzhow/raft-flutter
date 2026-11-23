@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/message_timeline.dart';
 
 void main() {
-  testWidgets('a shrinking swap admits one full row per frame', (tester) async {
+  Future<void> checkShrink(WidgetTester tester, bool forwarded) async {
     final controller = RaftTimelineScrollController(
       bottomAnchored: false,
       initial: RaftTimelineAlignment.start,
@@ -15,7 +15,11 @@ void main() {
       id: '$index',
       authorId: 'fixture',
       text: 'row-$index',
-      metadata: {'content': tall ? 'expanded' : 'short'},
+      metadata: {
+        'content': tall ? 'expanded' : 'short',
+        if (forwarded && index == 0)
+          'actionMetadata': {'kind': 'forwarded-bundle'},
+      },
     );
     final messages = ValueNotifier([
       for (var index = 0; index < 30; index++) row(index, tall: index == 0),
@@ -87,7 +91,16 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
     expect(bursts, isEmpty, reason: 'Full-row work by frame: $frames');
-  });
+  }
+
+  testWidgets(
+    'a shrinking plain swap admits one full row per frame',
+    (tester) => checkShrink(tester, false),
+  );
+  testWidgets(
+    'a shrinking forwarded swap admits one full row per frame',
+    (tester) => checkShrink(tester, true),
+  );
 
   testWidgets('a shrinking scroll range preserves a scroll into that range', (
     tester,

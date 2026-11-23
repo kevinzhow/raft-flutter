@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -8,8 +10,8 @@ import 'timeline_row_trace.dart';
 
 typedef TimelinePreviewExtent = ({
   double height,
-  bool measured,
   bool preparing,
+  RaftMessageCollapseLayout? collapse,
 });
 
 typedef TimelineRowPreviewBuilder = Widget? Function(
@@ -35,6 +37,8 @@ typedef TimelineRowMeasurement = ({
   TextScaler scale,
 });
 
+typedef _MeasuredRow = ({double height, RaftMessageCollapseLayout? collapse});
+
 class TimelineRowHydrator {
   TimelineRowHydrator({
     required this.isVisible,
@@ -48,7 +52,7 @@ class TimelineRowHydrator {
   final void Function(RenderBox row) beforeSwap;
   final void Function(double extra) prepareEdit;
   final _versions = Expando<Object>();
-  final _heights = <TimelineRowMeasurement, double>{};
+  final _measurements = <TimelineRowMeasurement, _MeasuredRow>{};
   final _pending = <_TimelineHydratedRowState>{};
   bool _scheduled = false;
   _TimelineHydratedRowState? _preparing;
@@ -173,10 +177,12 @@ class TimelineRowHydrator {
     return false;
   }
 
-  void _record(TimelineRowMeasurement key, double height) {
-    _heights.remove(key);
-    _heights[key] = height;
-    if (_heights.length > 1024) _heights.remove(_heights.keys.first);
+  void _record(TimelineRowMeasurement key, _MeasuredRow measurement) {
+    _measurements.remove(key);
+    _measurements[key] = measurement;
+    if (_measurements.length > 1024) {
+      _measurements.remove(_measurements.keys.first);
+    }
   }
 }
 
@@ -253,8 +259,16 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
     return old?['content'] != next?['content'] &&
         old?['deletedAt'] == next?['deletedAt'] &&
         next?['messageType'] != 'system' &&
-        next?['actionMetadata'] == null;
+        _sameActionContent(old?['actionMetadata'], next?['actionMetadata']);
   }
+
+  bool _sameActionContent(Object? before, Object? after) =>
+      identical(before, after) ||
+      (before is Map &&
+          after is Map &&
+          before['kind'] == 'forwarded-bundle' &&
+          after['kind'] == 'forwarded-bundle' &&
+          jsonEncode(before) == jsonEncode(after));
 
   bool _mayRevealRows(RenderBox box) =>
       _phase == _HydrationPhase.editing &&
@@ -273,11 +287,12 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
       scale: MediaQuery.textScalerOf(context),
     );
     if (_phase == _HydrationPhase.preview) {
-      final measured = hydrator._heights[key];
+      final measured = hydrator._measurements[key];
       final extent = (
-        height: measured ?? widget.estimate() * (key.scale.scale(15) / 15),
-        measured: measured != null,
+        height:
+            measured?.height ?? widget.estimate() * (key.scale.scale(15) / 15),
         preparing: hydrator._preparing != null,
+        collapse: measured?.collapse,
       );
       final preview = timelineRowTrace(
         'light.build',
@@ -313,12 +328,19 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
       child = widget.builder(context);
     }
     _phase = _HydrationPhase.full;
+    RaftMessageCollapseLayout? collapse;
     return _layout = _TimelineMeasuredRow(
       id: message.id,
       onLayout: (size) {
-        if (size.width.round() == key.width) hydrator._record(key, size.height);
+        if (size.width.round() == key.width) {
+          hydrator._record(key, (height: size.height, collapse: collapse));
+        }
       },
-      child: child,
+      child: RaftMessageCollapseObserver(
+        tile: ValueKey('message-${message.id}'),
+        record: (layout) => collapse = layout,
+        child: child,
+      ),
     );
   }
 
@@ -487,12 +509,16 @@ class TimelineRowPreview extends StatelessWidget {
     required this.height,
     required this.linkGroups,
     required this.onLink,
+    this.collapse,
+    this.onExpandedChanged,
   });
 
   final RaftMessageTile tile;
   final double height;
   final List<List<RaftMessageSemanticsLink>> linkGroups;
   final ValueChanged<String> onLink;
+  final RaftMessageCollapseLayout? collapse;
+  final void Function(bool, BuildContext)? onExpandedChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -500,8 +526,12 @@ class TimelineRowPreview extends StatelessWidget {
       context,
       tile.semanticsContent ?? tile.content,
     );
-    final lineEnd = text.indexOf('\n');
-    final firstLine = lineEnd < 0 ? text : text.substring(0, lineEnd);
+    final excerpt = raftMessageSemanticsExcerpt(
+      text,
+      collapse?.visibleFraction,
+    );
+    final lineEnd = excerpt.indexOf('\n');
+    final firstLine = lineEnd < 0 ? excerpt : excerpt.substring(0, lineEnd);
     final visibleReactions = tile.visibleReactions;
     final heading = tile.compactHeading(visibleReactions);
     final actions = tile.compactActions(visibleReactions);
@@ -526,7 +556,8 @@ class TimelineRowPreview extends StatelessWidget {
         ),
       ),
     );
-    if (linkGroups.isNotEmpty) {
+    if (linkGroups.isNotEmpty &&
+        (links != null || collapse?.expanded != false)) {
       body = Stack(
         fit: StackFit.expand,
         children: [
@@ -541,8 +572,36 @@ class TimelineRowPreview extends StatelessWidget {
         ],
       );
     }
+    if (collapse case final layout? when onExpandedChanged != null) {
+      body = Stack(
+        fit: StackFit.expand,
+        children: [
+          body,
+          Align(
+            alignment: AlignmentDirectional.bottomStart,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(start: RaftSpace.x4),
+              child: RaftShowMoreToggle(
+                label: raftText(
+                  context,
+                  layout.expanded ? 'Collapse' : 'Show More',
+                ),
+                expanded: layout.expanded,
+                onPressed: () => onExpandedChanged!(
+                  !layout.expanded,
+                  context
+                          .findAncestorStateOfType<_TimelineHydratedRowState>()
+                          ?.context ??
+                      context,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     return RaftMessageRowSemantics(
-      label: text.isEmpty ? heading : '$heading\n$text',
+      label: excerpt.isEmpty ? heading : '$heading\n$excerpt',
       actions: [
         for (final action in actions) action.label,
         if (tile.onAuthor != null)

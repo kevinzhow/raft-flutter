@@ -2015,6 +2015,7 @@ class RaftMessageTile extends StatelessWidget {
           enabled: collapseLongMessages,
           initiallyExpanded: initiallyExpanded,
           onExpandedChanged: onMessageExpanded,
+          onLayout: RaftMessageCollapseObserver.forTile(context, key),
           child:
               body ??
               compactProse(

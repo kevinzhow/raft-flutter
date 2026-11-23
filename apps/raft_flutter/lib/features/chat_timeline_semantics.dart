@@ -106,29 +106,32 @@ extension _ChatTimelineSemantics on _RaftChatViewState {
     RaftMessage message,
     TimelinePreviewExtent extent,
   ) {
+    final action = message.json['actionMetadata'];
     if (!extent.preparing &&
         (message.string('messageType') == 'system' ||
             message.retracted ||
-            message.json['actionMetadata'] is Map ||
+            (action is Map && action['kind'] != 'forwarded-bundle') ||
             selection.active)) {
       return null;
     }
     final translations = w.services.translations.present(message);
-    if (!extent.preparing &&
-        extent.measured &&
-        extent.height >= RaftCollapsible.heightLimit &&
-        longMessagesCollapse(message.json, w.channel?.json)) {
-      return null;
-    }
     final prose = presentMessageProse(message, translations.translatedContent);
+    final semanticsContent = messageSemanticsContent(message);
     final pending = WorkspaceMessages.isPendingSend(message);
     return TimelineRowPreview(
       height: extent.height,
+      collapse: extent.collapse,
+      onExpandedChanged: extent.collapse == null
+          ? null
+          : (open, row) {
+              agentCollapseOf(this).choose(message.id, open);
+              viewport.messageExpansionChanged(open, row);
+            },
       tile: RaftMessageTile(
         author: messageSenderName(context, message),
         timestamp: timeFormatter.messageTime(message.createdAt),
         content: prose.text,
-        semanticsContent: messageSemanticsContent(message),
+        semanticsContent: semanticsContent,
         departureLabel: senderDepartureLabel(message),
         compactSemantics: true,
         coarsePointer: RaftDensityScope.of(context) == RaftDensity.touch,
@@ -144,7 +147,7 @@ extension _ChatTimelineSemantics on _RaftChatViewState {
           if (!pending) actions(message, anchor: anchor);
         },
       ),
-      linkGroups: translations.skeleton
+      linkGroups: translations.skeleton || semanticsContent == ''
           ? const []
           : [
               ...prose.proseSemanticsLinks,

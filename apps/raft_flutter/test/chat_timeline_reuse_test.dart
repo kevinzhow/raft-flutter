@@ -199,8 +199,8 @@ void main() {
       {
         ...contextRows('reuse').last,
         'content':
-            'Visible opening\n\n${'A long paragraph. ' * 120}\n\n'
-            'Hidden ending',
+            'Visible [opening](vault://opening)\n\n'
+            '${'A long paragraph. ' * 120}\n\nHidden ending',
       },
     ], expectedGeneration: domain.ledger.generation);
     workspace.notifyListeners();
@@ -220,17 +220,34 @@ void main() {
       of: row,
       matching: find.byType(RaftMessageRowSemantics),
     );
-    final initial = tester.getSemantics(node).label;
-    expect(initial, endsWith('…'));
-    expect(initial, isNot(contains('Hidden ending')));
+    final initial = tester.getSemantics(node).getSemanticsData();
+    expect(initial.label, endsWith('…'));
+    expect(initial.label, isNot(contains('Hidden ending')));
     position.jumpTo(position.pixels - 1800);
     await tester.pumpAndSettle();
     expect(row, findsNothing);
     position.jumpTo(position.maxScrollExtent);
     await tester.pump();
-    expect(find.byKey(const ValueKey('message-reuse-79')), findsOneWidget);
-    await tester.pump();
-    expect(tester.getSemantics(node).label, initial);
+    final preview = find.descendant(
+      of: row,
+      matching: find.byType(TimelineRowPreview),
+    );
+    expect(preview, findsOneWidget);
+    final returning = tester.getSemantics(node).getSemanticsData();
+    expect(returning.label, initial.label);
+    expect(
+      returning.customSemanticsActionIds,
+      initial.customSemanticsActionIds,
+    );
+    final toggle = find.descendant(
+      of: row,
+      matching: find.byType(RaftShowMoreToggle),
+    );
+    expect(toggle, findsOneWidget);
+    tester.widget<RaftShowMoreToggle>(toggle).onPressed();
+    await tester.pumpAndSettle();
+    expect(preview, findsNothing);
+    expect(tester.getSemantics(node).label, contains('Hidden ending'));
     semantics.dispose();
   });
 

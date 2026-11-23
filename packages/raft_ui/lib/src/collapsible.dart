@@ -15,6 +15,33 @@ import 'theme.dart';
 
 import 'package:flutter/rendering.dart';
 
+typedef RaftMessageCollapseLayout = ({bool expanded, double? visibleFraction});
+
+class RaftMessageCollapseObserver extends InheritedWidget {
+  const RaftMessageCollapseObserver({
+    super.key,
+    required this.tile,
+    required this.record,
+    required super.child,
+  });
+
+  final Key tile;
+  final ValueChanged<RaftMessageCollapseLayout?> record;
+
+  static ValueChanged<RaftMessageCollapseLayout?>? forTile(
+    BuildContext context,
+    Key? tile,
+  ) {
+    final observer = context
+        .dependOnInheritedWidgetOfExactType<RaftMessageCollapseObserver>();
+    return observer?.tile == tile ? observer?.record : null;
+  }
+
+  @override
+  bool updateShouldNotify(RaftMessageCollapseObserver oldWidget) =>
+      tile != oldWidget.tile || record != oldWidget.record;
+}
+
 /// Measures rendered content, including images and Markdown, against the
 /// reference Web's 320 logical pixel limit. Width changes are remeasured.
 class RaftCollapsible extends StatefulWidget {
@@ -24,6 +51,7 @@ class RaftCollapsible extends StatefulWidget {
     this.enabled = true,
     this.initiallyExpanded = false,
     this.onExpandedChanged,
+    this.onLayout,
   });
   final Widget child;
   final bool enabled;
@@ -35,6 +63,7 @@ class RaftCollapsible extends StatefulWidget {
 
   /// A manual toggle or a focus reveal. The initial value does not call this.
   final void Function(bool expanded, BuildContext context)? onExpandedChanged;
+  final ValueChanged<RaftMessageCollapseLayout?>? onLayout;
   @override
   State<RaftCollapsible> createState() => _RaftCollapsibleState();
 }
@@ -96,7 +125,14 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
 
   // Stable tear-offs: a new closure per build would relayout the message.
   void measured(Size size) => natural = size.height;
-  bool currentOverflow() => widget.enabled && overflow;
+  bool currentOverflow() {
+    final canToggle = widget.enabled && overflow;
+    widget.onLayout?.call(
+      canToggle ? (expanded: expanded, visibleFraction: visibleShare()) : null,
+    );
+    return canToggle;
+  }
+
   void hold(bool value) {
     if (expanded == value) return;
     setState(() => expanded = value);
