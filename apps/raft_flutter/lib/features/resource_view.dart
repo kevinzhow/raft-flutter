@@ -1317,11 +1317,17 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     });
   }
 
+  bool observeProjection() => _authorityCache.observeProjection(
+    widget.section == 'search' || savedPage ? w.server?.string('plan') : null,
+    savedPage ? w.savedRevision : null,
+  );
+
   void authorityChanged({
     Set<String> revoked = const {},
     bool forceAccess = false,
   }) {
     if (!mounted) return;
+    final projectionChanged = observeProjection();
     _authorityCache.synchronize(w.channels, w.dms, force: forceAccess);
     if (widget.section == 'activity' &&
         activityFacets.reload.changed(
@@ -1334,6 +1340,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     }
     if (acceptedAuthority == authority) {
       patchKnownActivityReads();
+      if (projectionChanged && !atSearchHome) {
+        unawaited(load(keep: true, quietErrors: rowsView != null));
+      }
       return;
     }
     final identity = identityAuthority, access = channelAccess;
@@ -1355,7 +1364,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       // query, filters, loaded pages and scroll position) stay on screen.
       final lost = {...revoked, ...lostChannels(previousAccess, access)};
       if (widget.section == 'search') {
-        searchAuthorityChanged(lost, replacing: replacing);
+        searchAuthorityChanged(lost, replacing: replacing || projectionChanged);
         return;
       }
       setState(() => refilterRows(lost));
@@ -1899,6 +1908,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     acceptedAuthority = authority;
     acceptedIdentity = identityAuthority;
     acceptedAccess = channelAccess;
+    observeProjection();
     query.text = widget.initialQuery ?? '';
     lastPublishedQuery = widget.initialQuery ?? '';
     lastSearchEditingValue = query.value;
@@ -2595,7 +2605,6 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       }),
       store: SavedCountStore.of(w),
       refreshUnread: w.refreshUnread,
-      reload: () => load(keep: true),
       fail: (cause) => fail(cause, scope),
     );
   }

@@ -18,11 +18,13 @@ typedef RaftGatewayRead = Future<dynamic> Function(
 class RaftApiGateway {
   RaftApiGateway(
     this.client, {
+    required this._savedAuthority,
     required this._savedChanged,
     required this._refreshUnread,
   });
 
   final RaftClient client;
+  final String Function() _savedAuthority;
   final void Function() _savedChanged;
   final Future<void> Function() _refreshUnread;
   final _sharedReads = Map<Object, Map<String, Future<dynamic>>>.identity();
@@ -81,15 +83,12 @@ class RaftApiGateway {
   };
 
   Future<dynamic> command(String method, String path, {dynamic data}) async {
-    final generation = client.generation,
-        principal = client.user?.id,
-        serverId = client.serverId;
+    final savedMutation =
+        (method == 'POST' && path == '/channels/saved') ||
+        (method == 'DELETE' && path.startsWith('/channels/saved/'));
+    final savedScope = savedMutation ? _savedAuthority() : null;
     final value = await client.request(method, path, data: data);
-    if (generation == client.generation &&
-        principal == client.user?.id &&
-        serverId == client.serverId &&
-        ((method == 'POST' && path == '/channels/saved') ||
-            (method == 'DELETE' && path.startsWith('/channels/saved/')))) {
+    if (savedScope != null && savedScope == _savedAuthority()) {
       _savedChanged();
     }
     if (_reconcilesUnread(path)) await _refreshUnread();

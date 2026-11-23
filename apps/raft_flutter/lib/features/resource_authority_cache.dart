@@ -46,6 +46,14 @@ class ResourceAuthorityCache {
   String? _directory, _value;
   ResourceAuthorityIdentity? _identity;
   int? _revision;
+  (String?, int?)? _projection;
+
+  bool observeProjection(String? plan, int? saves) {
+    final next = (plan, saves);
+    final changed = _projection != null && _projection != next;
+    _projection = next;
+    return changed;
+  }
 
   /// Mute is a current display preference, not part of the permission token.
   /// Reuse the directory index, while reading the record's current preference.

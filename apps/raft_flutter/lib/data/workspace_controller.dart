@@ -180,6 +180,7 @@ class WorkspaceController extends ChangeNotifier
         presentationSource?.apiGateway ??
         RaftApiGateway(
           client,
+          savedAuthority: _session.syncIdentity,
           savedChanged: () => _channels.savedChanged(),
           refreshUnread: refreshUnread,
         );

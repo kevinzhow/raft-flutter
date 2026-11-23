@@ -59815,7 +59815,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:scopedMenu@52327/FUNCTION:buildOwned@52559": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:scopedMenu@52713/FUNCTION:buildOwned@52945": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -59859,7 +59859,7 @@
         "owner": "Search",
         "reason": "Search page results use the same section heading for server entities, messages and Artifacts. The extension cases exercise the heading while page-level visual acceptance remains open."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:scopedDialog@51279/FUNCTION:buildOwned@51506": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:scopedDialog@51665/FUNCTION:buildOwned@51892": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -60063,7 +60063,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:activityList@114402/FUNCTION:bar@114624": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7734/METHOD:activityList@114775/FUNCTION:bar@114997": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "Activity and Saved",

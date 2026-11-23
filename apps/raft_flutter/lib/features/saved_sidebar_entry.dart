@@ -28,7 +28,7 @@ class SavedCountStore extends ChangeNotifier {
   final WorkspaceController w;
   int? count;
   int _request = 0, _acceptedRevision = -1;
-  String? _scope, _channels;
+  String? _scope, _channels, _plan;
   Object? _identity;
   final _ids = <String>{};
   final _tickets = <String, int>{};
@@ -65,6 +65,7 @@ class SavedCountStore extends ChangeNotifier {
     ++_request;
     _acceptedRevision = -1;
     _channels = null;
+    _plan = null;
     _ids.clear();
     _tickets.clear();
   }
@@ -188,6 +189,11 @@ class SavedCountStore extends ChangeNotifier {
     var reload = false;
     if (_acceptedRevision != w.savedRevision) {
       _acceptedRevision = w.savedRevision;
+      reload = true;
+    }
+    final plan = w.server?.string('plan');
+    if (_plan != plan) {
+      _plan = plan;
       reload = true;
     }
     final channels = _channelAuthority;

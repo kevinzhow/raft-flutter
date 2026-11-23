@@ -165,7 +165,7 @@ int _place(int index, int length) {
 /// Source savedStore `unsaveMessage` for the mounted page.
 ///
 /// The row, the totals and the badge move at once. A failed request restores
-/// them. The page reloads after a success.
+/// them. The workspace's save revision revalidates the mounted page.
 Future<void> unsaveSavedRow({
   required bool Function() accepts,
   required Map<String, dynamic> row,
@@ -174,7 +174,6 @@ Future<void> unsaveSavedRow({
   required void Function(SavedUnsave next) apply,
   required SavedCountStore store,
   required Future<void> Function() refreshUnread,
-  required Future<void> Function() reload,
   required void Function(Object cause) fail,
 }) async {
   if (!accepts()) return;
@@ -199,8 +198,6 @@ Future<void> unsaveSavedRow({
     await store.setSaved(id, false);
     if (!accepts()) return;
     await refreshUnread();
-    if (!accepts()) return;
-    await reload();
   } catch (error) {
     if (!accepts()) return;
     final live = readRows();
