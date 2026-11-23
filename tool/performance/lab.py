@@ -47,6 +47,13 @@ LIST_SURFACES = ('chat', 'thread', 'activity', 'tasks-list', 'tasks-board', 'tas
 DETECTION_SCENARIOS += [f'list-{surface}-{workload}' for surface in LIST_SURFACES
                        for workload in ('steady', 'fling', 'live', 'idle')]
 DETECTION_CONTROLS = ['control-idle', 'control-ticker', 'control-animation']
+PROJECTION_ACTIONS = {
+    'list-search-live': ['load', 'plan-change'],
+    'list-saved-live': ['load', 'save', 'plan-change'],
+    'list-files-live': ['load', 'refresh', 'preview'],
+    'list-apps-live': ['load', 'refresh', 'install'],
+}
+PROJECTION_VISIBLE_BUDGET_US = 1_000_000
 DETECTION_GAPS = {
     'server-switch': 'Server switching has no arrival-verified lab scene yet.',
     'send-recovery': 'Use the functional send acceptance entry; profile send/recovery is not implemented.',
@@ -112,6 +119,26 @@ def detect_record(record, *, evidence=None):
                       and (not list_scene or arrival.get('arrived') is True))
     budget = (16700 if list_scene else 1e6 / hz) if valid_hz else None
     actions = diagnostic.get('actions') or []
+
+    if scene in PROJECTION_ACTIONS:
+        steps = record.get('projectionActions')
+        accepted = (isinstance(steps, list)
+                    and [step.get('name') for step in steps if isinstance(step, dict)] == PROJECTION_ACTIONS[scene]
+                    and len(steps) == len(PROJECTION_ACTIONS[scene])
+                    and all(isinstance(step.get('requests'), dict) and step['requests']
+                            and all(type(count) is int and count > 0 for count in step['requests'].values())
+                            and all(type(step.get(key)) is int for key in ('t0', 'shownUs'))
+                            and step['shownUs'] >= step['t0'] for step in steps))
+        if not accepted or arrival.get('arrived') is not True:
+            check('projection-action', 'NOT_RUN', 'Requires every expected action, its route and its visible result.')
+        elif not timing_allowed:
+            check('projection-action', 'REVIEW', 'Route and visible result observed under diagnostic instrumentation.')
+        else:
+            times = {step['name']: step['shownUs'] - step['t0'] for step in steps}
+            over = [name for name, elapsed in times.items() if elapsed > PROJECTION_VISIBLE_BUDGET_US]
+            check('projection-action', 'ISSUE' if over else 'PASS',
+                  'Every action must show its expected result within 1000 ms with the local fixture.',
+                  elapsedUs=times, overBudget=over, budgetUs=PROJECTION_VISIBLE_BUDGET_US)
 
     def action_for(frame):
         at = frame.get('b', -1)

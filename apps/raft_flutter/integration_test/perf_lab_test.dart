@@ -123,14 +123,17 @@ class _HostState extends State<_Host> {
 class _HintLabBinding extends IntegrationTestWidgetsFlutterBinding with AndroidPerformanceHintBinding {
   bool appRequestsOnly = false;
   bool _drawingNaturally = false;
+  FrameRequestLog? frameRequests;
 
   void _scheduleAppFrame(VoidCallback schedule) {
     final previous = framePolicy;
+    final tracing = frameRequests?.recording == true && !hasScheduledFrame;
     // During draw, benchmark suppresses the live binding's unconditional
     // platformDispatcher.scheduleFrame(). Keep genuine app requests working.
     if (_drawingNaturally) framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.benchmarkLive;
     try {
       schedule();
+      if (tracing && hasScheduledFrame) frameRequests!.requested(schedulerPhase);
     } finally {
       framePolicy = previous;
     }
@@ -425,7 +428,8 @@ void main() {
     if (semanticsMode == 'off') binding.platformDispatcher.semanticsEnabledTestValue = false;
     addTearDown(binding.platformDispatcher.clearSemanticsEnabledTestValue);
     final lab = LabRecorder(binding, sampler, phases: phases, semantics: semantics, detection: detection,
-      bindingAutoFramesSuppressed: binding.appRequestsOnly);
+      bindingAutoFramesSuppressed: binding.appRequestsOnly,
+      frameRequests: binding.frameRequests = detection && phases ? FrameRequestLog() : null);
     if (Platform.isLinux) {
       lab.ticksPerSecond = int.tryParse((await Process.run('getconf', ['CLK_TCK'])).stdout.toString().trim());
     }

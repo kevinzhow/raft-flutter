@@ -74,6 +74,24 @@ class DetectionTest(unittest.TestCase):
         r = self.observed('list-sidebar-idle', ui=(2,), kind='idle', idleSeconds=10)
         self.assertEqual(lab.detect_record(r)['checks']['idle-work']['status'], 'ISSUE')
 
+    def test_projection_requires_each_route_and_visible_result_within_budget(self):
+        r = self.observed('list-search-live', projectionActions=[
+            {'name': 'load', 't0': 0, 'shownUs': 100, 'requests': {'GET /messages/search': 1}},
+            {'name': 'plan-change', 't0': 200, 'shownUs': 300, 'requests': {'GET /messages/search': 1}},
+        ])
+
+        def status():
+            return lab.detect_record(r)['checks']['projection-action']['status']
+
+        self.assertEqual(status(), 'PASS')
+        r['phasesCollected'] = True
+        self.assertEqual(status(), 'REVIEW')
+        r['phasesCollected'] = False
+        r['projectionActions'][1]['shownUs'] = 1_000_201
+        self.assertEqual(status(), 'ISSUE')
+        r['projectionActions'][1]['requests'].clear()
+        self.assertEqual(status(), 'NOT_RUN')
+
     def test_uit_does_not_replace_the_raw_ui_duration(self):
         r = self.observed(ui=(2,))
         r['frames'][0]['uit'] = 200000

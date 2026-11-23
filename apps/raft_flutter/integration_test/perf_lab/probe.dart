@@ -49,6 +49,33 @@ class FrameProbe {
   }
 }
 
+class FrameRequestLog {
+  bool recording = false;
+  final _requests = <({int atUs, String phase, List<String> stack})>[];
+
+  void begin() {
+    _requests.clear();
+    recording = true;
+  }
+
+  void requested(SchedulerPhase phase) {
+    _requests.add((
+      atUs: developer.Timeline.now,
+      phase: phase.name,
+      stack: StackTrace.current.toString().trimRight().split('\n').skip(2).take(24).toList(),
+    ));
+  }
+
+  List<Map<String, Object>> finish(int startUs, int endUs) {
+    recording = false;
+    return [
+      for (final request in _requests)
+        if (request.atUs >= startUs - 50000 && request.atUs <= endUs)
+          {'atUs': request.atUs, 'phase': request.phase, 'stack': request.stack},
+    ];
+  }
+}
+
 /// Estimates the timeline-minus-engine clock offset (microseconds). The
 /// lab's persistent frame callback runs after the engine's build span ends
 /// (scene submission) and before the next frame starts, so for the right
@@ -256,12 +283,13 @@ class Measurement {
 
 class LabRecorder {
   LabRecorder(this.binding, this.sampler, {required this.phases, required this.semantics, this.detection = false,
-    this.bindingAutoFramesSuppressed = false});
+    this.bindingAutoFramesSuppressed = false, this.frameRequests});
   final WidgetsBinding binding;
   final LabSampler sampler;
   final bool phases, semantics;
   final bool detection;
   final bool bindingAutoFramesSuppressed;
+  final FrameRequestLog? frameRequests;
   late final probe = FrameProbe(binding);
   final results = <Map<String, Object?>>[];
   int? ticksPerSecond;
@@ -279,11 +307,20 @@ class LabRecorder {
     Future<Map<String, Object?>?> Function() action, {
     String kind = 'continuous',
     bool warmup = false,
+    Future<void> Function()? prepare,
     Map<String, Object?> Function(Map<String, Object?> extras)? evidence,
   }) async {
     await settle(t);
-    probe.reset();
     await sampler.send('start', {'theme': theme, 'scenario': scenario, 'warmup': warmup});
+    final requests = kind == 'idle' ? frameRequests : null;
+    Object? failure;
+    requests?.begin();
+    try {
+      if (prepare != null) await prepare();
+    } catch (e, s) {
+      failure = '$e\n$s';
+    }
+    probe.reset();
     if (phases) {
       FlutterTimeline.debugCollectionEnabled = true;
       FlutterTimeline.debugReset();
@@ -296,13 +333,13 @@ class LabRecorder {
     final start = developer.Timeline.now;
     final clock = Stopwatch()..start();
     Map<String, Object?>? extras;
-    Object? failure;
     try {
-      extras = await action();
+      if (failure == null) extras = await action();
     } catch (e, s) {
       failure = '$e\n$s';
     }
     final end = developer.Timeline.now;
+    final wakeups = requests?.finish(start, end);
     clock.stop();
     final ticks1 = cpuTicks();
     final threadCpu1 = threadCpuSeconds();
@@ -430,6 +467,7 @@ class LabRecorder {
       'blockTotalsUs': {for (final e in inclusive.entries) e.key: e.value.round()},
       'blockCounts': counts,
       'frames': frameRows,
+      'frameRequests': ?wakeups,
       if (detection) 'detection': {
         'framePolicy': binding is LiveTestWidgetsFlutterBinding
             ? (binding as LiveTestWidgetsFlutterBinding).framePolicy.name : 'production',
@@ -471,13 +509,13 @@ List<Map<String, Object?>> detectionActions(
   int end,
   Map<String, Object?> extras,
 ) {
-  final entries = extras['opens'] ?? extras['keyboard'];
+  final entries = extras['projectionActions'] ?? extras['opens'] ?? extras['keyboard'];
   if (entries is List && entries.isNotEmpty) {
     return [
       for (final (index, raw) in entries.indexed)
         if (raw is Map && raw['t0'] is num && raw['t1'] is num)
           {
-            'name': '${raw['channel'] ?? raw['direction'] ?? scene}-$index',
+            'name': '${raw['name'] ?? raw['channel'] ?? raw['direction'] ?? '$scene-$index'}',
             'startUs': raw['t0'],
             'endUs': raw['t1'],
             if (raw['shownUs'] != null) 'targetShownUs': raw['shownUs'],

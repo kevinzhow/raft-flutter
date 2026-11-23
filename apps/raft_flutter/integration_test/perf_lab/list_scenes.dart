@@ -14,6 +14,7 @@ import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/desktop_directory_view.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/saved_sidebar_entry.dart';
 import 'package:raft_flutter/features/source_channel_files_view.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/task_surface_controller.dart';
@@ -29,6 +30,8 @@ import '../../test/support/artifact_fake_client.dart'
 import '../../test/support/tasks_page_harness.dart' show pageTask, TasksServer;
 import 'fixtures.dart';
 import 'probe.dart';
+
+part 'list_projection_replay.dart';
 
 const listSurfaces = [
   'chat',
@@ -92,8 +95,37 @@ class ListScenes {
   Future<List<String>> run() async {
     final failures = <String>[];
     for (final surface in listSurfaces) {
+      final projection = _ProjectionReplay.supports(surface);
+      if (projection && wants('list-$surface-live')) {
+        final fixture = await _ListFixture.open(surface, images);
+        try {
+          final record = await lab.measure(
+            tester,
+            theme,
+            'list-$surface-live',
+            () => fixture.projection.run(tester, dark: dark),
+            kind: 'projection',
+            evidence: (extras) => {
+              'arrival': {
+                'arrived': extras['arrived'] == true,
+                'visibleKeys': fixture.rows
+                    .take(5)
+                    .map((element) => '${element.widget.key}')
+                    .toList(),
+              },
+            },
+          );
+          if (record['failure'] case final Object error) {
+            failures.add('$theme/list-$surface-live: $error');
+          }
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          fixture.dispose();
+        }
+      }
       final workloads = listWorkloads.where(
-        (work) => wants('list-$surface-$work'),
+        (work) =>
+            (!projection || work != 'live') && wants('list-$surface-$work'),
       );
       if (workloads.isEmpty) continue;
       final fixture = await _ListFixture.open(surface, images);
@@ -133,6 +165,16 @@ class ListScenes {
               return observations;
             },
             kind: workload == 'idle' ? 'idle' : 'continuous',
+            prepare: workload == 'idle' && fixture.replaysLive
+                ? () async {
+                    final position = fixture.scroll?.position;
+                    position?.jumpTo(position.minScrollExtent);
+                    final result = await _measure(fixture, 'live');
+                    if (result['arrived'] != true) {
+                      throw StateError('Post-motion replay did not arrive.');
+                    }
+                  }
+                : null,
             evidence: (extras) => {
               'mountedRichCardsBeforeMotion': richCards.toList(),
               'arrival': {
@@ -274,7 +316,7 @@ class ListScenes {
       final wait = Duration(milliseconds: tick * 500) - clock.elapsed;
       if (wait > Duration.zero) await idle(wait);
       final started = developer.Timeline.now;
-      final result = await fixture.update(tick);
+      final result = await fixture.update(++fixture.liveTicks);
       accepted.add({'atUs': started, ...result});
     }
   }
@@ -287,6 +329,8 @@ class _ListFixture {
   static const directoryAgentCount = 240;
   final String surface;
   final WorkspaceController workspace;
+  int liveTicks = 0;
+  late final projection = _ProjectionReplay(this);
   final LabAdapter api;
   final LabClient client;
   final LabChannel feed;
@@ -309,17 +353,27 @@ class _ListFixture {
     'sidebar',
   }.contains(surface);
 
-  Future<void> mount(WidgetTester tester, {required bool dark}) =>
-      tester.pumpWidget(
-        AppServicesScope(
-          services: const AppServices.updatesDisabledForTestOrPreview(),
-          child: MaterialApp(
-            key: ValueKey(surface),
-            theme: raftTheme(dark: dark),
-            home: Scaffold(body: body),
-          ),
+  Future<void> mount(
+    WidgetTester tester, {
+    required bool dark,
+    bool touch = false,
+  }) => tester.pumpWidget(
+    AppServicesScope(
+      services: const AppServices.updatesDisabledForTestOrPreview(),
+      child: MaterialApp(
+        key: ValueKey(surface),
+        theme: raftTheme(dark: dark),
+        home: Scaffold(
+          body: touch
+              ? RaftInteractionScope(
+                  interaction: RaftInteraction.touchMode,
+                  child: body,
+                )
+              : body,
         ),
-      );
+      ),
+    ),
+  );
 
   static Future<_ListFixture> open(String surface, LabImages images) async {
     const kinds = [
@@ -456,37 +510,13 @@ class _ListFixture {
       'GET /tasks/$taskId/history': (_) => {'events': []},
       'GET /integrations/clients': (_) => [],
       'GET /integrations/overview': (_) => [],
-      'GET /integrations/marketplace': (_) => [
-        for (var index = 0; index < rowCount; index++)
-          {
-            'id': 'app-$index',
-            'clientId': 'client-$index',
-            'name': 'Lab application $index',
-            'description': 'Workspace app for incoming notifications $index',
-          },
-      ],
-      'GET /channels/${main.id}/files': (request) => _page(request, 'files', [
-        for (final (index, row) in main.rows.indexed)
-          {
-            'id': 'file-$index',
-            'channelId': main.id,
-            'messageId': row['id'],
-            'filename': 'Lab image $index.png',
-            'mimeType': 'image/png',
-            'width': LabImages.sizes[index % 4].$1,
-            'height': LabImages.sizes[index % 4].$2,
-            'sizeBytes': images.pngs[index % 4].$3.length,
-            'thumbnailUrl': images.url(index % 4, 'file-$index'),
-            'createdAt': row['createdAt'],
-            'source': {'type': 'channel', 'channelId': main.id},
-          },
-      ]),
       'GET /channels/inbox': (request) => {
         ..._page(request, 'items', activityRows),
         'totalCount': activityRows.length,
         'totalUnreadCount': activityRows.length,
       },
       'GET /channels/saved': (request) => _page(request, 'saved', [
+        ...projection.saved,
         for (final row in main.rows)
           {
             ...row,
@@ -496,6 +526,7 @@ class _ListFixture {
           },
       ]),
       'GET /messages/search': (request) => _page(request, 'results', [
+        ...projection.search,
         for (final row in main.rows)
           {
             ...row,
@@ -519,6 +550,7 @@ class _ListFixture {
         ],
       },
     ));
+    if (_ProjectionReplay.supports(surface)) projection.bind(images);
     switch (surface) {
       case 'chat':
         await workspace.selectChannel(main.record);
@@ -587,7 +619,7 @@ class _ListFixture {
       case 'directory':
         body = DesktopDirectoryView(controller: workspace, onSelected: (_) {});
       case 'apps':
-        body = IntegrationsView(controller: workspace);
+        body = IntegrationsView(controller: workspace, standalone: true);
       case 'sidebar':
         workspace.section = 'home';
         body = WorkspaceView(
