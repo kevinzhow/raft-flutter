@@ -74,22 +74,60 @@ class RaftMessageSemanticsScope extends InheritedWidget {
 /// boundary (cards, attachments, thread previews, footer controls) would
 /// disappear into the row node.
 class RaftMessageLinkActions {
-  final _published = <Object, Map<CustomSemanticsAction, VoidCallback>>{};
-  Map<CustomSemanticsAction, VoidCallback>? _all;
+  final _published =
+      <Object, (List<RaftMessageSemanticsLink>, ValueChanged<String>)>{};
   VoidCallback? _listener;
 
-  /// Every published action in publication (reading) order.
-  Map<CustomSemanticsAction, VoidCallback> get all =>
-      _all ??= {for (final actions in _published.values) ...actions};
-
-  void _publish(Object owner, Map<CustomSemanticsAction, VoidCallback>? to) {
-    if (to == null) {
+  void _publish(
+    Object owner,
+    (List<RaftMessageSemanticsLink>, ValueChanged<String>)? links,
+  ) {
+    if (links == null) {
       if (_published.remove(owner) == null) return;
     } else {
-      _published[owner] = to;
+      _published[owner] = links;
     }
-    _all = null;
     _listener?.call();
+  }
+
+  /// The row's own actions, then every published link in publication
+  /// (reading) order. A link never replaces a row action or another link:
+  /// a label that is not unique becomes "label, address", numbered if even
+  /// that repeats.
+  static Map<CustomSemanticsAction, VoidCallback> _actions(
+    Map<String, VoidCallback> row,
+    RaftMessageLinkActions? links,
+  ) {
+    final result = {
+      for (final MapEntry(:key, :value) in row.entries)
+        CustomSemanticsAction(label: key): value,
+    };
+    final published = links?._published.values ?? const [];
+    final counts = <String, int>{};
+    for (final (list, _) in published) {
+      for (final link in list) {
+        counts.update(link.label, (count) => count + 1, ifAbsent: () => 1);
+      }
+    }
+    final taken = {...row.keys};
+    for (final (list, open) in published) {
+      for (final link in list) {
+        var label = link.label;
+        if (counts[label]! > 1 || taken.contains(label)) {
+          label = '$label, ${link.href}';
+        }
+        if (taken.contains(label)) {
+          var n = 2;
+          while (taken.contains('$label ($n)')) {
+            n++;
+          }
+          label = '$label ($n)';
+        }
+        taken.add(label);
+        result[CustomSemanticsAction(label: label)] = () => open(link.href);
+      }
+    }
+    return result;
   }
 }
 
@@ -416,24 +454,15 @@ class _ProseLinkActionsState extends State<_ProseLinkActions> {
     publish();
   }
 
-  /// A stable map: SemanticsNode compares handlers by identity, so fresh
-  /// closures would re-send the row each rebuild.
-  void publish() {
-    if (widget.onLink == null) return widget.row._publish(this, null);
-    final counts = <String, int>{};
-    for (final link in widget.links) {
-      counts.update(link.label, (count) => count + 1, ifAbsent: () => 1);
-    }
-    widget.row._publish(this, {
-      for (final link in widget.links)
-        CustomSemanticsAction(
-          label: counts[link.label] == 1
-              ? link.label
-              : '${link.label}, ${link.href}',
-        ): () =>
-            widget.onLink?.call(link.href),
-    });
-  }
+  /// Published only when the links change: the row rebuilds its action map
+  /// then, and SemanticsNode compares handlers by identity.
+  void publish() => widget.row._publish(
+    this,
+    widget.onLink == null ? null : (widget.links, open),
+  );
+
+  // Reads the current onLink.
+  void open(String href) => widget.onLink?.call(href);
 
   @override
   void dispose() {
@@ -562,6 +591,8 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
   @override
   void attach(PipelineOwner owner) {
     super.attach(owner);
+    // Links may have changed while detached.
+    customActions = null;
     _listen();
   }
 
@@ -587,9 +618,8 @@ class _RenderMessageRowSemantics extends RenderProxyBox {
 
   /// A stable map: SemanticsNode compares handlers by identity, so fresh
   /// closures would re-send the row on every update.
-  Map<CustomSemanticsAction, VoidCallback> get rowActions => customActions ??= {
-    for (var i = 0; i < actions.length; i++)
-      CustomSemanticsAction(label: actions[i]): () => onAction(i),
-    ...?linkActions?.all,
-  };
+  Map<CustomSemanticsAction, VoidCallback> get rowActions =>
+      customActions ??= RaftMessageLinkActions._actions({
+        for (var i = 0; i < actions.length; i++) actions[i]: () => onAction(i),
+      }, linkActions);
 }
