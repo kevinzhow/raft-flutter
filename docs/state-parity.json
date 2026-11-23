@@ -60962,6 +60962,30 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:attachmentGallery@64514/FUNCTION:view@65668": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116443/FUNCTION:loadingBody@117702": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message timeline",
+        "reason": "Composes the existing thread loading body when it is shown."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116443/FUNCTION:sendCurrent@119729": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace conversation",
+        "reason": "Uses the canonical toast for a send attempted after the session goes offline."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:senderAvatar@75761/FUNCTION:avatar@78236": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       }
     },
     "entries": {
@@ -65270,6 +65294,15 @@
         "reason": "Uses the canonical toast for a send attempted after the session goes offline.",
         "declarationRefs": [
           "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116289/FUNCTION:sendCurrent@119575"
+        ]
+      },
+      "surface:apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116443/FUNCTION:sendCurrent@119729": {
+        "owner": "Workspace conversation",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "Uses the canonical toast for a send attempted after the session goes offline.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116443/FUNCTION:sendCurrent@119729"
         ]
       }
     },
