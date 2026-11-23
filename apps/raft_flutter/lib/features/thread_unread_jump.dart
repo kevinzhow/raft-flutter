@@ -7,6 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'agent_typing_line_host.dart' show agentTypingInsetKey;
 import 'message_selection.dart';
+import 'timeline_row_hydration.dart' show timelinePreviewKeyPrefix;
 
 import '../data/thread_unread_by_parent.dart';
 import '../data/workspace_controller.dart';
@@ -109,8 +110,8 @@ RowPlacement _placeUnbuilt(
   return RowPlacement.above;
 }
 
-/// The built message rows under [scope] against its viewport (a row is
-/// `message-wrapper-<id>`): their placement, and the ids of those in view in
+/// The message rows under [scope] against its viewport (a row is
+/// `message-wrapper-<id>`, or `message-preview-<id>` while a preview): their placement, and the ids of those in view in
 /// top-to-bottom order.
 ({Map<String, RowPlacement> placements, List<String> visible})
 measureTimelineRows(Element scope) {
@@ -118,7 +119,14 @@ measureTimelineRows(Element scope) {
   final visible = <({double top, String id})>[];
   void visit(Element element) {
     final key = element.widget.key;
-    if (key is ValueKey<String> && key.value.startsWith('message-wrapper-')) {
+    final prefix = key is! ValueKey<String>
+        ? null
+        : key.value.startsWith('message-wrapper-')
+        ? 'message-wrapper-'
+        : key.value.startsWith(timelinePreviewKeyPrefix)
+        ? timelinePreviewKeyPrefix
+        : null;
+    if (key is ValueKey<String> && prefix != null) {
       final row = element.renderObject;
       final Object? clip = row == null
           ? null
@@ -131,7 +139,7 @@ measureTimelineRows(Element scope) {
         final top =
             row.localToGlobal(Offset.zero).dy -
             clip.localToGlobal(Offset.zero).dy;
-        final id = key.value.substring('message-wrapper-'.length);
+        final id = key.value.substring(prefix.length);
         final placement = top + row.size.height <= 0
             ? RowPlacement.above
             : top >= clip.size.height

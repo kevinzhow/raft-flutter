@@ -318,14 +318,17 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         leading: leading,
       );
 
-  /// Aligns a built row found by its wrapper key (no highlight anchor).
+  /// Aligns a row found by its wrapper key, or its preview key while it is
+  /// still a preview (no highlight anchor).
   RaftTimelineAlignment alignOnRow(String key, {double? leading}) =>
       RaftTimelineAlignment.row(
         find: () {
           RenderBox? found;
           void visit(Element element) {
             if (found != null) return;
-            if (element.widget.key == ValueKey('message-wrapper-$key')) {
+            final rowKey = element.widget.key;
+            if (rowKey == ValueKey('message-wrapper-$key') ||
+                rowKey == ValueKey('$timelinePreviewKeyPrefix$key')) {
               final box = element.renderObject;
               if (box is RenderBox && box.attached) found = box;
               return;
