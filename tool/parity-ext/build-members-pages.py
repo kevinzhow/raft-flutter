@@ -66,6 +66,42 @@ ROUTES[f'GET /agents/{EXTERNAL["id"]}/credentials'] = {
                      'createdAt': '2026-06-18T09:00:00.000Z', 'lastUsedAt': None, 'revokedAt': None}]}
 ROUTES[f'GET /agents/{EXTERNAL["id"]}/external-status'] = {
     'setupState': 'credential_minted', 'credentialLastUsedAt': None}
+ROUTE_SETS['external-connected'] = {
+    **ROUTE_SETS['roster-external'],
+    f'GET /agents/{EXTERNAL["id"]}/external-status': {
+        'setupState': 'connected', 'externalSetupMethod': 'existing_agent',
+    },
+    f'GET /agents/{EXTERNAL["id"]}/credentials': {
+        'agentId': EXTERNAL['id'],
+        'credentials': [{
+            'id': 'external-profile-credential', 'name': 'Created on this page',
+            'createdAt': '2026-06-18T09:00:00.000Z', 'lastUsedAt': None,
+            'revokedAt': None,
+        }],
+    },
+    f'GET /agents/{EXTERNAL["id"]}/skills': {
+        '$status': 409,
+        '$body': {'error': 'Agent has no connected machine', 'code': 'machine_offline'},
+    },
+    f'GET /agents/{EXTERNAL["id"]}/workspace-files': {
+        '$status': 409,
+        '$body': {'error': 'No machine assigned. Please assign a machine to this agent first.',
+                  'code': 'machine_unassigned'},
+    },
+    f'GET /agents/{EXTERNAL["id"]}/activity-log': [],
+    f'GET /agents/{EXTERNAL["id"]}/activity-summaries': {'summaries': []},
+    f'GET /agents/{EXTERNAL["id"]}/operator-events': {'events': []},
+    f'GET /agents/{EXTERNAL["id"]}/channels': [],
+    f'GET /agents/{EXTERNAL["id"]}/agent-dms': [],
+    'GET /reminders': {'reminders': []},
+}
+ROUTE_SETS['external-connected-phone'] = {
+    **ROUTE_SETS['external-connected'],
+    f'GET /agents/{EXTERNAL["id"]}/external-status': {
+        **ROUTE_SETS['external-connected'][f'GET /agents/{EXTERNAL["id"]}/external-status'],
+        'credentialLastUsedAt': '2026-06-18T23:30:00.000Z',
+    },
+}
 
 # Runtime config editor needs the runtime catalog / machine runtimes the profile already loads; nothing extra.
 
@@ -122,6 +158,8 @@ def add(platform, key, title, kind, *, selector, android_key, hint, props=None, 
         android_interactions=None, route_set=None, flutter=True, note=None):
     """One case in 3 themes. `flutter=False`: the Flutter app has no such page (React case only)."""
     viewport = DESKTOP if platform == 'desktop' else PHONE
+    if platform == 'desktop' and key.startswith('external-profile.'):
+        viewport = {**viewport, 'height': 900}
     base_props = {'extCase': f'{platform}.{key}', 'extKind': kind, 'platform': 'desktop' if platform == 'desktop' else 'mobile',
                   'extFixture': FIXTURE_NAME}
     base_props.update(props or {})
@@ -294,6 +332,22 @@ for platform in ('desktop', 'phone'):
     # ---- 7.23 external agent setup
     agent_main(platform, 'agent.external', 'External agent profile: setup, token manager and Hermes steps',
                agent=EXTERNAL['id'], props={'roster': 'external'}, route_set='roster-external')
+    external_profile = {
+        'agent': EXTERNAL['id'], 'props': {'roster': 'external'},
+        'route_set': 'external-connected-phone' if phone else 'external-connected',
+        'selector': VIEW, 'android_key': None,
+    }
+    agent_main(platform, 'external-profile.offline', 'Connected external agent, offline', **external_profile)
+    agent_main(platform, 'external-profile.connection-open', 'External agent connection instructions expanded',
+               interactions=[click('[data-testid="external-agent-how-it-connects"]'), wait(200)],
+               android_interactions=[{**tap('external-agent-how-it-connects'), 'scroll': False}], **external_profile)
+    agent_main(platform, 'external-profile.credential-menu', 'External agent credential actions menu',
+               interactions=[click('[data-testid="external-agent-credential-menu"]'), wait(200)],
+               android_interactions=[{**tap('external-credential-menu-external-profile-credential'), 'scroll': False}],
+               **external_profile)
+    for tab in ('activity', 'chat', 'reminders', 'workspace'):
+        agent_main(platform, f'external-profile.{tab}', f'External agent: {tab.title()} tab',
+                   tab=tab, **external_profile)
 
     # ---- profile runtime rows read the structured runtimeConfig (Fast mode)
     agent_main(platform, 'agent.profile-fast-mode', 'Agent profile: Runtime Config rows with Fast mode (runtimeConfig.mode)',
