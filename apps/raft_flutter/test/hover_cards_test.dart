@@ -170,14 +170,20 @@ void main() {
     });
     await t.pumpWidget(
       host(
-        senderProfileHoverCard(
-          controller: w,
-          message: message,
-          content: const RaftAvatarContent(
-            name: 'Nova',
-            kind: RaftAvatarContentKind.agent,
+        Builder(
+          builder: (context) => senderProfileHoverCard(
+            context,
+            controller: w,
+            message: message,
+            content: const RaftAvatarContent(
+              name: 'Nova',
+              kind: RaftAvatarContentKind.agent,
+            ),
+            child: const SizedBox.square(
+              key: ValueKey('avatar'),
+              dimension: 36,
+            ),
           ),
-          child: const SizedBox.square(key: ValueKey('avatar'), dimension: 36),
         ),
       ),
     );
@@ -264,14 +270,17 @@ void main() {
     });
     await t.pumpWidget(
       host(
-        senderProfileHoverCard(
-          controller: w,
-          message: message,
-          content: const RaftAvatarContent(
-            name: 'Lin',
-            kind: RaftAvatarContentKind.app,
+        Builder(
+          builder: (context) => senderProfileHoverCard(
+            context,
+            controller: w,
+            message: message,
+            content: const RaftAvatarContent(
+              name: 'Lin',
+              kind: RaftAvatarContentKind.app,
+            ),
+            child: const SizedBox.square(key: ValueKey('ext'), dimension: 36),
           ),
-          child: const SizedBox.square(key: ValueKey('ext'), dimension: 36),
         ),
       ),
     );
