@@ -8,6 +8,8 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'channel_artifact_place.dart';
+import 'channel_browser_place.dart';
 import 'channel_files_media.dart';
 import 'channel_details_host.dart';
 import 'channel_side_card.dart';
@@ -119,6 +121,9 @@ RaftWorkspaceSideRow channelSideRow(
     changes: Listenable.merge([
       store,
       preview,
+      preview.browserTabs.placement,
+      ChannelArtifactPlace.of(w),
+      preview.platform.voiceOverState,
       details,
       ChannelSideFlags.of(w),
     ]),
@@ -152,7 +157,8 @@ RaftWorkspaceSideRow channelSideRow(
           card == ChannelSideCard.tasks
               ? ChannelSideSection.tasks
               : ChannelSideSection.files,
-      if (page != null) ChannelSideSection.artifact,
+      if (page != null || (here && ChannelSideCards.hasDesktopPlace(w)))
+        ChannelSideSection.artifact,
       if (profile) ChannelSideSection.profile,
       if (details.channel != null) ChannelSideSection.details,
     },
@@ -369,6 +375,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   ({_DockSeam seam, double width})? _resizePreview;
   late Listenable listenable;
   int previewOpenedAt = 0;
+  int desktopPlaceOpenedAt = 0;
 
   bool restore() {
     if (_expanded == null) return false;
@@ -394,9 +401,13 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       store,
       ChannelSideFlags.of(w),
       preview,
+      preview.browserTabs.placement,
+      ChannelArtifactPlace.of(w),
+      preview.platform.voiceOverState,
       details,
     ]);
     previewOpenedAt = preview.openedAt;
+    desktopPlaceOpenedAt = 0;
   }
 
   @override
@@ -407,10 +418,13 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
 
   /// The page that opened last is the one showing where only one fits.
   void previewChanged() {
-    if (preview.page != null && preview.openedAt != previewOpenedAt) {
+    final desktopOpened = ChannelSideCards.desktopPlaceOpenedAt(w);
+    if ((preview.page != null && preview.openedAt != previewOpenedAt) ||
+        (desktopOpened != 0 && desktopOpened != desktopPlaceOpenedAt)) {
       store.focus(ChannelSideCards.appCardKey);
     }
     previewOpenedAt = preview.openedAt;
+    desktopPlaceOpenedAt = desktopOpened;
   }
 
   @override
@@ -686,7 +700,12 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     ChannelSideSection.details: raftText(context, 'Details'),
     ChannelSideSection.profile: raftText(context, 'Profile'),
     ChannelSideSection.thread: raftText(context, 'Thread'),
-    if (page != null)
+    if (ChannelSideCards.hasDesktopPlace(w))
+      ChannelSideSection.artifact: ChannelSideCards.desktopPlaceTitle(
+        context,
+        w,
+      )
+    else if (page != null)
       ChannelSideSection.artifact: webPreviewAddressParts(page.url).host,
   };
 
@@ -884,6 +903,18 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
               (widget.headWrapper ?? _wrapHead)(context, section, header),
         );
       case ChannelSideSection.artifact:
+        if (body == null && ChannelSideCards.hasDesktopPlace(w)) {
+          return ChannelBrowserPlace(
+            key: ValueKey('channel-browser-place-$channelId'),
+            workspace: w,
+            conversation: channelId,
+            covering: mode == ChannelSideMode.overlay,
+            collapsed: fold.collapsed,
+            expanded: _expanded == section,
+            onExpand: _expandAction(mode, section),
+            headWrapper: widget.headWrapper ?? _wrapHead,
+          );
+        }
         // The page's panel has the head every card has of its own.
         return body ??
             WebPreviewPanel(

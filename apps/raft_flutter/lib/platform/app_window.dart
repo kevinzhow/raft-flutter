@@ -13,6 +13,10 @@ import 'package:raft_updater/raft_updater.dart';
 
 import 'desktop_cache_scope.dart';
 
+class CloseWindowContentIntent extends Intent {
+  const CloseWindowContentIntent();
+}
+
 /// Requests the runner's ordinary close action, preserving its close preference.
 ///
 /// macOS keeps running after closing its window; Windows decides whether to
@@ -203,6 +207,14 @@ class _AppWindowCommandsState extends State<AppWindowCommands> {
     if (_closing) return;
     _closing = true;
     try {
+      final focus = FocusManager.instance.primaryFocus?.context;
+      if (focus != null &&
+          Actions.maybeFind<CloseWindowContentIntent>(focus)
+                  ?.isEnabled(const CloseWindowContentIntent()) ==
+              true) {
+        Actions.invoke(focus, const CloseWindowContentIntent());
+        return;
+      }
       final navigator = widget.navigatorKey.currentState;
       Route<dynamic>? top;
       // Inspect the top route without removing it. Ordinary pages stay mounted

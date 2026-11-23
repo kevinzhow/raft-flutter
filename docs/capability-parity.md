@@ -7,12 +7,12 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 854 (405 endpoint/network keys, 449 client-side).
+Total capabilities: 855 (405 endpoint/network keys, 450 client-side).
 
 | Status | Count |
 | --- | ---: |
 | ✅ covered | 724 |
-| ⚠️ partial | 31 |
+| ⚠️ partial | 32 |
 | ❌ missing | 2 |
 | ➖ na | 97 |
 
@@ -20,7 +20,7 @@ Total capabilities: 854 (405 endpoint/network keys, 449 client-side).
 | --- | ---: | ---: | ---: | ---: |
 | Messages | 87 | 3 | 0 | 2 |
 | Threads | 16 | 0 | 0 | 2 |
-| Channels | 37 | 1 | 0 | 1 |
+| Channels | 37 | 2 | 0 | 1 |
 | DMs | 6 | 0 | 0 | 0 |
 | Members and roles | 20 | 0 | 0 | 3 |
 | Server settings and admin | 59 | 0 | 0 | 2 |
@@ -193,6 +193,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Emergency-stop every agent in a channel (SOS) | `POST /channels/:id/stop-all-agents` | Channel settings drawer > actions group > 'Stop agents' > SOSDialog confirm (ChatPanel SOSDialog)[gate: joined && controlAgentRuntime capability; hidden for #all (no settings drawer)] | channel_settings.dart 'Stop Agents' action (channel-overflow-stop-agents) > RaftSosDialog | Minor gate difference: Flutter also hides the action on archived channels; Web still offers it. |
 | ✅ | Unarchive a channel | `POST /channels/:id/unarchive` | Channel settings drawer 'Unarchive Channel' \| archived banner 'Unarchive' link in the channel footer \| Settings > Server > Archived channels 'Unarchive' \| create-channel name-collision banner 'Unarchive'[gate: archiveChannels capability] | channel_settings.dart unarchive action \| channel_footer_widgets.dart archived footer 'Unarchive' \| archived_channels_section.dart \| create_channel_dialog.dart collision banner |  |
 | ✅ | Mark a channel/DM/thread as unread | `POST /channels/:id/unread` | Sidebar row context menu 'Mark as Unread' (channels, DMs, agent DMs, pinned humans) \| Activity row context menu 'Mark as Unread' (and group rows)[gate: any member; thread rows only while following] | features/sidebar_read_all.dart SidebarReadToggle.run (row menu) \| resource_view.dart toggleActivityRead (Activity row menu) |  |
+| ⚠️ | Built-in desktop browser tabs in the conversation side window | `ui:channel.desktop-browser` | Web v1.24 BrowserPanel, browserTabsStore and DesktopWebPreviewTabsBridge[gate: desktop_web_preview_view_v0 on macOS, Windows and Linux] | DesktopBrowserPanel and ChannelBrowserPlace host conversation tabs and the Artifact switch. Platform adapters render pages in WKWebView, WebView2 and WebKitGTK. | Impact: Embedded WebView focus and page-driven window behavior can differ by operating system. The browser holds at most 12 tabs per conversation, with history per mounted native view and a switch to the Artifact sharing the side window. Native keyboard and popup behavior still need platform acceptance. Size M |
 | ✅ | Channel footer states replacing the composer: archived notice with Unarchive link, joint read-only (View Billing), joint grace banner, guest read-only, Join channel CTA | `ui:channels.archived-and-guest-footers` | features/channel/ChatPanel.tsx footer chain (the read-only-by-quota branch is unreachable on Web too: every plan has maxChannels -1) | channel_footer_states.dart + chat_view.dart footers |  |
 | ✅ | Settings > Server 'Archived channels' list: type + archived date, open channel, Unarchive | `ui:channels.archived-channels-section` | components/settings/ArchivedChannelsSection.tsx (Settings > Server, features/settings/server/ServerTabContent.tsx)[gate: archiveChannels] | archived_channels_section.dart (rendered by server_views.dart) | Web 1.24 labels external channels (a joint channel, or one with Guests or an open invite) 'Joint channel' first. Flutter draws the type icon from channel.type: Web 1.24's external-channel glyph (lock with an arrow out) waits for the channel-kind icon of the external-channels package. |
 | ✅ | Reorder the Chat / Tasks / Files tabs by drag (order stored as channelPanelTabOrder) | `ui:channels.chat-tabs-reorder` | features/channel/ChatPanel.tsx SortableTabsList onReorder -> reorderTabs | conversation_tab_reorder.dart: RaftConversationTabs.reorderWrapper from conversation_panel.dart; a pointer drags at once, a finger after a long press; the whole new order is saved as sidebarOrder.channelPanelTabOrder | Dropping a tab on another takes its place (arrayMove), the strip follows the saved order at once and on every device. |

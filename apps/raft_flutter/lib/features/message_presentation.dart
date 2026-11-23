@@ -862,7 +862,7 @@ class MessagePresentation extends StatelessWidget {
     String relative(DateTime at) =>
         resourceRelativeTime(at.toIso8601String(), chinese: chinese);
     final updatedAt = card.updatedAt;
-    Widget cardOf({bool besideEnabled = false}) => RaftMessageCard(
+    Widget cardOf({bool interactive = false}) => RaftMessageCard(
       key: ValueKey('message-card-${message.id}'),
       header: card.header,
       root: card.root,
@@ -900,17 +900,19 @@ class MessagePresentation extends StatelessWidget {
                 unawaited(open(context, button.url, plain: true));
               }
             },
-      besideEnabled: besideEnabled,
+      opensBeside: interactive
+          ? (button) => cardButtonOpensBeside(controller, button)
+          : null,
+      onExternalButtonFor: interactive
+          ? (button) => _externalWebLink(button.url)
+          : null,
     );
-    // The panel icon of a `beside` button follows the flag and the platform.
-    if (exportMode ||
-        !localAuthority ||
-        !raftCardButtons(card.root).any((b) => b.beside)) {
+    if (exportMode || !localAuthority || raftCardButtons(card.root).isEmpty) {
       return cardOf();
     }
     return ListenableBuilder(
       listenable: webPreviewAvailability(controller),
-      builder: (_, _) => cardOf(besideEnabled: webPreviewAvailable(controller)),
+      builder: (_, _) => cardOf(interactive: true),
     );
   }
 
@@ -970,6 +972,24 @@ class MessagePresentation extends StatelessWidget {
       references: references,
       taskHref: taskReferenceHref,
       onLink: exportMode ? null : (href) => open(context, href),
+      webLinkActions: (href) {
+        final external = _externalWebLink(href);
+        return external == null
+            ? null
+            : (
+                openExternal: external,
+                openMenu: (position) => unawaited(
+                  showDesktopWebLinkMenu(
+                    context,
+                    controller,
+                    href,
+                    message.channelId,
+                    position,
+                    external,
+                  ),
+                ),
+              );
+      },
       knownTaskNumber: knowsTaskNumber,
       referenceAppearance: appearance,
       permalinkAppearance: (href) => permalinkAppearance(context, href),
@@ -985,6 +1005,15 @@ class MessagePresentation extends StatelessWidget {
       ),
     );
   }
+
+  VoidCallback? _externalWebLink(String href) =>
+      !exportMode &&
+          localAuthority &&
+          desktopBrowserLinkAvailable(controller, href, message.channelId)
+      ? () {
+          if (navigation?.current() != false) onExternalLink(href);
+        }
+      : null;
 
   String get permalinkHostname =>
       ContentLinks.originFor(controller.client.origin).host;

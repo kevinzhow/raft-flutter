@@ -3,6 +3,20 @@
 // Web v1.24.0-source.1 en.ts / zh-cn.ts wording verbatim: WP-SIDE (the web preview beside the conversation and Settings › How web links open).
 // "Refresh", "Close", "Open in browser", "Open in new tab" and "Saved on this device." already live in other catalogs.
 const Map<String, String> zhCatalogUpstream124SideWeb = <String, String>{
+  "Address": "地址",
+  "Not secure": "不安全",
+  "Web preview tabs": "网页预览标签页",
+  "Browser": "浏览器",
+  "New tab": "新标签页",
+  "You can have up to {count} tabs open": "最多可打开 {count} 个标签页",
+  "Close {title}": "关闭 {title}",
+  "More tabs": "更多标签页",
+  "Back to {title}": "返回 {title}",
+  "Back to Artifact": "返回 Artifact",
+  "Back to browser, {count} tab": "返回浏览器，{count} 个标签页",
+  "Back to browser, {count} tabs": "返回浏览器，{count} 个标签页",
+  "Enter an address": "输入地址",
+  "Type an address above to open a page.": "在上方输入地址即可打开网页。",
   // webPreview.panelLabel
   "Web preview: {host}": "网页预览：{host}",
   // webPreview.notShowing

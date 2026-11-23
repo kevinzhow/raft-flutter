@@ -3,9 +3,18 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import 'theme.dart';
 import 'message_touch_taps.dart';
+
+bool raftLinkClickModified() {
+  final keyboard = HardwareKeyboard.instance;
+  return keyboard.isControlPressed ||
+      keyboard.isMetaPressed ||
+      keyboard.isShiftPressed ||
+      keyboard.isAltPressed;
+}
 
 /// Link identity survives Markdown's TextSpan flattening. The Markdown state
 /// owns and disposes this recognizer, including non-interactive export links.

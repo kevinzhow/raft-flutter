@@ -2083,6 +2083,7 @@ class RaftDropdownMenu extends StatefulWidget {
     this.side = RaftDropdownSide.bottom,
     this.align = RaftDropdownAlign.start,
     this.sideOffset,
+    this.flipAlignment = false,
     this.triggerBuilder,
     this.submenuTriggerBuilder,
     this.triggerFocus,
@@ -2101,6 +2102,7 @@ class RaftDropdownMenu extends StatefulWidget {
   final RaftDropdownSide side;
   final RaftDropdownAlign align;
   final double? sideOffset;
+  final bool flipAlignment;
   final RaftDropdownTriggerBuilder? triggerBuilder;
   final Widget Function(FocusNode focus, VoidCallback? onPressed, bool open)?
   submenuTriggerBuilder;
@@ -2519,6 +2521,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                       toRight: widget.side == RaftDropdownSide.right,
                       toLeft: widget.side == RaftDropdownSide.left,
                       alignRight: right,
+                      flipAlignment: widget.flipAlignment,
                       gap: gap,
                       snapToPixel: true,
                       child: RaftHoverRegion(

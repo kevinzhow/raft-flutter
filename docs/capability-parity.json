@@ -12108,6 +12108,34 @@
   },
   {
    "kind": "ui",
+   "id": "ui:channel.desktop-browser",
+   "area": "channels",
+   "capability": "Built-in desktop browser tabs in the conversation side window",
+   "background": false,
+   "status": "partial",
+   "webEntry": "Web v1.24 BrowserPanel, browserTabsStore and DesktopWebPreviewTabsBridge",
+   "gate": "desktop_web_preview_view_v0 on macOS, Windows and Linux",
+   "flutterEntry": "DesktopBrowserPanel and ChannelBrowserPlace host conversation tabs and the Artifact switch. Platform adapters render pages in WKWebView, WebView2 and WebKitGTK.",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/channel_side_web_preview.dart",
+     "needle": "bool desktopBrowserAvailable"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/desktop_browser_tabs.dart",
+     "needle": "class DesktopBrowserTabs"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/channel_browser_place.dart",
+     "needle": "class ChannelBrowserPlace"
+    }
+   ],
+   "justification": "The browser holds at most 12 tabs per conversation, with history per mounted native view and a switch to the Artifact sharing the side window. Native keyboard and popup behavior still need platform acceptance.",
+   "impact": "Embedded WebView focus and page-driven window behavior can differ by operating system.",
+   "size": "M"
+  },
+  {
+   "kind": "ui",
    "id": "ui:files.html-preview",
    "area": "files-attachments",
    "capability": "Interactive HTML attachment preview (isolated origin, external-link confirm banner)",

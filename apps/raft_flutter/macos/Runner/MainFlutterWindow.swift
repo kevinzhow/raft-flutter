@@ -461,6 +461,7 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftC
       RaftChildWindow.attach(controller)
     }
     RegisterGeneratedPlugins(registry: flutterViewController)
+    DesktopBrowserViewFactory.register(with: flutterViewController)
 
     super.awakeFromNib()
   }

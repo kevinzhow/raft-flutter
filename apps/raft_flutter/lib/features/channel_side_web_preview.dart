@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 import 'package:webview_flutter/webview_flutter.dart' show WebViewPlatform;
 
 import '../data/raft_permalink.dart';
@@ -9,6 +10,8 @@ import '../platform/content_links.dart';
 import '../platform/macos_voice_over.dart';
 import 'artifacts/artifact_frame_bridge.dart';
 import 'channel_side_flags.dart';
+import 'desktop_browser_tabs.dart';
+import 'private_route_guard.dart' show channelSearchPageAuthority;
 
 // Web preview (`web_preview_v0`): one web page open beside a conversation, in
 // the channel's side area. Web `features/webPreview/webPreviewStore.ts`: one
@@ -70,7 +73,8 @@ Set<String> raftAppHostnames(WorkspaceController w) => {
 Uri? webPreviewTarget(String? href, Iterable<String> raftHostnames) {
   final url = webPreviewUrl(href);
   if (url == null || url.userInfo.isNotEmpty) return null;
-  if (raftHostnames.contains(url.host)) return null;
+  final host = url.host.replaceFirst(RegExp(r'\.+$'), '');
+  if (raftHostnames.contains(host)) return null;
   return url;
 }
 
@@ -119,6 +123,15 @@ class WebPreviewPlatform {
       artifactFrameSupportFor(os) == ArtifactFrameSupport.webView &&
       (webViewAvailable ?? WebViewPlatform.instance != null);
 
+  bool get hasDesktopBrowser =>
+      !kIsWeb &&
+      switch (os) {
+        'macos' => !voiceOverState.value && (webViewAvailable ?? true),
+        'windows' => webViewAvailable ?? InAppWebViewPlatform.instance != null,
+        'linux' => webViewAvailable ?? true,
+        _ => false,
+      };
+
   /// A page can be shown in the app right now.
   bool get frames =>
       artifactFrameSupportFor(os, voiceOver: voiceOverState.value) ==
@@ -129,19 +142,32 @@ class WebPreviewPlatform {
 /// The one open web page of a session (Web `useWebPreviewStore`), one per
 /// [WorkspaceController].
 class WebPreviewStore extends ChangeNotifier {
-  WebPreviewStore._();
+  WebPreviewStore._(this._workspace)
+    : _browserAuthority = channelSearchPageAuthority(_workspace) {
+    _workspace.addListener(_authorityChanged);
+  }
 
   static final _owners = Expando<WebPreviewStore>();
 
   static WebPreviewStore of(WorkspaceController w) {
     final existing = _owners[w];
     if (existing != null) return existing;
-    final created = _owners[w] = WebPreviewStore._();
+    final created = _owners[w] = WebPreviewStore._(w);
     w.services.disposeWithSession(created.dispose);
     return created;
   }
 
   WebPreviewPlatform platform = const WebPreviewPlatform();
+  final browserTabs = DesktopBrowserTabs();
+  final WorkspaceController _workspace;
+  String _browserAuthority;
+
+  void _authorityChanged() {
+    final next = channelSearchPageAuthority(_workspace);
+    if (next == _browserAuthority) return;
+    _browserAuthority = next;
+    browserTabs.clear();
+  }
 
   WebPreviewPage? _page;
   int _openedAt = 0;
@@ -197,7 +223,18 @@ class WebPreviewStore extends ChangeNotifier {
     _reloads++;
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    _workspace.removeListener(_authorityChanged);
+    browserTabs.dispose();
+    super.dispose();
+  }
 }
+
+bool desktopBrowserAvailable(WorkspaceController w) =>
+    WebPreviewStore.of(w).platform.hasDesktopBrowser &&
+    ChannelSideFlags.of(w).desktopBrowser;
 
 /// Links in the visible side thread use its parent conversation's preview.
 String? webPreviewConversationHost(
@@ -231,15 +268,22 @@ bool openWebPreviewBeside(
   WorkspaceController w,
   String url, {
   required String conversationId,
+  VoidCallback? onBrowserClose,
 }) {
   final store = WebPreviewStore.of(w);
   final target = webPreviewTarget(url, raftAppHostnames(w));
-  if (target == null || !canFrameWebPreview(target.toString())) return false;
-  if (!ChannelSideFlags.of(w).webPreview || !store.platform.frames) {
-    return false;
-  }
+  if (target == null) return false;
   final host = webPreviewConversationHost(w, conversationId);
   if (host == null) return false;
+  if (desktopBrowserAvailable(w)) {
+    store.browserTabs.open(host, target, onClose: onBrowserClose);
+    return true;
+  }
+  if (!canFrameWebPreview(target.toString()) ||
+      !ChannelSideFlags.of(w).webPreview ||
+      !store.platform.frames) {
+    return false;
+  }
   store.open(WebPreviewPage(url: target.toString(), conversationId: host));
   return true;
 }

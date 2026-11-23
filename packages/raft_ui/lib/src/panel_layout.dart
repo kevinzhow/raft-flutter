@@ -212,6 +212,7 @@ class RaftPanelAction extends StatelessWidget {
     this.desktopBar = false,
     this.focusNode,
     this.responsiveRecipe = false,
+    this.focusableWhenDisabled = false,
   });
   final RaftGlyph glyph;
   final String tooltip;
@@ -219,6 +220,7 @@ class RaftPanelAction extends StatelessWidget {
   final RaftButtonSize? ghostSize;
   final bool desktopBar;
   final FocusNode? focusNode;
+  final bool focusableWhenDisabled;
 
   /// Use the responsive PanelAction recipe for headers with its edge spacing.
   final bool responsiveRecipe;
@@ -256,6 +258,7 @@ class RaftPanelAction extends StatelessWidget {
                       ? RaftDesktopMetrics.controlIconSize
                       : null,
                   focusNode: focusNode,
+                  focusableWhenDisabled: focusableWhenDisabled,
                   onPressed: onPressed,
                 )
               : _currentAction())
@@ -272,6 +275,7 @@ class RaftPanelAction extends StatelessWidget {
 
   Widget _currentAction() => RaftInteractive(
     onPressed: onPressed,
+    focusableWhenDisabled: focusableWhenDisabled,
     focusNode: focusNode,
     semanticLabel: tooltip,
     tooltip: tooltip,
@@ -307,6 +311,7 @@ class RaftPanelAction extends StatelessWidget {
 
   Widget _interactive(BuildContext context) => RaftInteractive(
     onPressed: onPressed,
+    focusableWhenDisabled: focusableWhenDisabled,
     focusNode: focusNode,
     semanticLabel: tooltip,
     tooltip: tooltip,
@@ -620,10 +625,12 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.desktopBar = false,
     this.useHostChrome = false,
     this.handlesHostMoves = false,
+    this.itemGap,
   });
 
   final bool useHostChrome;
   final bool handlesHostMoves;
+  final double? itemGap;
 
   /// Use the v1.24 fine-pointer column margin and bar-button overhang.
   final bool desktopBar;
@@ -701,7 +708,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
       t,
       MediaQuery.sizeOf(context).height,
     );
-    final gap = narrow ? 8.0 : 12.0;
+    final gap = itemGap ?? (narrow ? 8.0 : 12.0);
     final titleStyle = t.scale(t.typeSlot('headline'));
     final metaStyle = inlineMeta || profileHandle
         ? t.scale(
@@ -901,7 +908,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
           .merge(slot.textStyle(rt))
           .copyWith(fontFamily: slot.fontFamily == null ? t.bodyFont : null),
     );
-    final gap = s.header.columnGap ?? s.header.length('gap') ?? 12;
+    final gap = itemGap ?? s.header.columnGap ?? s.header.length('gap') ?? 12;
     final narrow = width < RaftLayoutMetrics.desktopBreakpoint;
     // Above the default text size the header height is a minimum and the
     // title / subtitle wrap, so the bar grows with its text.

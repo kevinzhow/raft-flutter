@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart' show addTearDown;
 import 'package:raft_flutter/data/device_preferences.dart';
+import 'package:raft_flutter/data/feature_flag_client_facts.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_side_flags.dart';
 import 'package:raft_flutter/features/channel_side_web_preview.dart';
@@ -14,6 +15,7 @@ import '../message_presentation_test.dart' show MessageAdapter, fixture;
 Future<(WorkspaceController, MessageAdapter)> webPreviewFixture({
   bool flag = true,
   String os = 'android',
+  bool desktopBrowser = false,
   ValueListenable<bool>? voiceOver,
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -26,7 +28,10 @@ Future<(WorkspaceController, MessageAdapter)> webPreviewFixture({
       w.server?.id,
       w.server?.string('role'),
     ],
-    {ChannelSideFlags.webPreviewKey: flag},
+    {
+      ChannelSideFlags.webPreviewKey: flag,
+      RaftFeatureFlags.desktopWebPreviewView: desktopBrowser,
+    },
   );
   final off = voiceOver ?? ValueNotifier(false);
   if (voiceOver == null) addTearDown((off as ValueNotifier<bool>).dispose);

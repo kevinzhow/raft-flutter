@@ -20,13 +20,26 @@ class SystemWebViewController {
   int _viewportWidth = 0, _viewportHeight = 0;
   bool get closed => _closed;
 
-  static Future<SystemWebViewController> create() async {
-    final value = await rootChannel.invokeMapMethod<String, Object?>('create');
+  static Future<SystemWebViewController> create() => _create();
+
+  static Future<SystemWebViewController> createBrowser(
+    Set<String> blockedHosts,
+  ) => _create(blockedHosts: blockedHosts);
+
+  static Future<SystemWebViewController> _create({
+    Set<String>? blockedHosts,
+  }) async {
+    final browsing = blockedHosts != null;
+    final value = await rootChannel.invokeMapMethod<String, Object?>(
+      browsing ? 'createBrowser' : 'create',
+      browsing ? {'blockedHosts': blockedHosts.toList()} : null,
+    );
     if (value?['id'] is! int ||
         (value!['id'] as int) <= 0 ||
         value['protocol'] != 1 ||
         value['ephemeral'] != true ||
-        value['sandboxed'] != true) {
+        value['sandboxed'] != true ||
+        (value['browser'] == true) != browsing) {
       if (value?['id'] case final int id when id > 0) {
         try {
           await MethodChannel('app.raft/system_webview/$id')
@@ -98,6 +111,9 @@ class SystemWebViewController {
   }
 
   Future<void> load(Uri uri) => _invoke<void>('load', {'url': uri.toString()});
+  Future<void> goBack() => _invoke<void>('back');
+  Future<void> goForward() => _invoke<void>('forward');
+  Future<void> reload() => _invoke<void>('reload');
   Future<Object?> evaluate(String source) =>
       _invoke<Object?>('evaluate', {'source': source});
   Future<Uri?> currentUri() async =>

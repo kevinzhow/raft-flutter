@@ -8,6 +8,7 @@ import 'raft/badge.dart';
 import 'separator.dart';
 import 'raft/button.dart';
 import 'raft/ui_tokens.dart';
+import 'raft_underline.dart' show raftLinkClickModified;
 import 'recipes/badge.g.dart'
     show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant;
 import 'theme.dart';
@@ -92,6 +93,8 @@ class RaftCardDuration extends RaftCardElement {
   final DateTime? end;
 }
 
+enum RaftCardOpenMode { automatic, beside, tab }
+
 /// A navigate button: drawn in the card's own row, never in the body.
 class RaftCardButton extends RaftCardElement {
   const RaftCardButton({
@@ -100,8 +103,11 @@ class RaftCardButton extends RaftCardElement {
     required this.domain,
     this.ghost = false,
     this.disabledReason,
-    this.beside = false,
-  });
+    bool beside = false,
+    RaftCardOpenMode? openMode,
+  }) : openMode =
+           openMode ??
+           (beside ? RaftCardOpenMode.beside : RaftCardOpenMode.automatic);
   final String label, url, domain;
   final bool ghost;
   final String? disabledReason;
@@ -109,7 +115,8 @@ class RaftCardButton extends RaftCardElement {
   /// The sender's `open: "beside"`: the page opens in the web preview beside
   /// the conversation where the app can show one (see
   /// [RaftMessageCard.onOpenButton]).
-  final bool beside;
+  bool get beside => openMode == RaftCardOpenMode.beside;
+  final RaftCardOpenMode openMode;
 }
 
 class RaftCardMarkdown extends RaftCardElement {
@@ -161,6 +168,8 @@ class RaftMessageCard extends StatelessWidget {
     this.onOpen,
     this.onOpenButton,
     this.besideEnabled = false,
+    this.opensBeside,
+    this.onExternalButtonFor,
     this.contentOnly = false,
   });
   final RaftCardHeader? header;
@@ -185,6 +194,8 @@ class RaftMessageCard extends StatelessWidget {
   /// beside the conversation; false (flag off, no WebView here): the same
   /// button as any other, ending in the arrow.
   final bool besideEnabled;
+  final bool Function(RaftCardButton)? opensBeside;
+  final VoidCallback? Function(RaftCardButton)? onExternalButtonFor;
   final bool contentOnly;
 
   Widget buildBody(BuildContext context) => _node(context, root, inRow: false);
@@ -256,7 +267,10 @@ class RaftMessageCard extends StatelessWidget {
                                     ),
                                 onOpen: onOpen,
                                 onOpenButton: onOpenButton,
-                                besideEnabled: besideEnabled,
+                                beside:
+                                    opensBeside?.call(button) ??
+                                    (button.beside && besideEnabled),
+                                openExternal: onExternalButtonFor?.call(button),
                               ),
                           ],
                         ),
@@ -579,13 +593,15 @@ class _ButtonLink extends StatelessWidget {
     required this.showDomain,
     required this.onOpen,
     required this.onOpenButton,
-    required this.besideEnabled,
+    required this.beside,
+    required this.openExternal,
   });
   final RaftCardButton button;
   final bool showDomain;
   final ValueChanged<String>? onOpen;
   final ValueChanged<RaftCardButton>? onOpenButton;
-  final bool besideEnabled;
+  final bool beside;
+  final VoidCallback? openExternal;
 
   @override
   Widget build(BuildContext context) {
@@ -608,14 +624,20 @@ class _ButtonLink extends StatelessWidget {
         ),
       );
     }
-    final beside = button.beside && besideEnabled;
     final name = '${button.label} · ${button.domain}';
+    final external = openExternal;
     final activate = onOpenButton != null
-        ? () => onOpenButton!(button)
+        ? () {
+            if (external != null && raftLinkClickModified()) {
+              external();
+            } else {
+              onOpenButton!(button);
+            }
+          }
         : onOpen == null
         ? null
         : () => onOpen!(button.url);
-    return Semantics(
+    final link = Semantics(
       link: true,
       // Web `webPreview.cardButtonLabel`.
       label: beside
@@ -659,5 +681,8 @@ class _ButtonLink extends StatelessWidget {
         ),
       ),
     );
+    return external == null
+        ? link
+        : GestureDetector(onTertiaryTapUp: (_) => external(), child: link);
   }
 }

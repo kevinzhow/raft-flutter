@@ -396,6 +396,11 @@ class _StyleSheetKey {
 final _styleSheetCache =
     RaftLruCache<_StyleSheetKey, (MarkdownStyleSheet, MarkdownStyleSheet)>(32);
 
+typedef RaftMessageWebLinkActions = ({
+  VoidCallback openExternal,
+  ValueChanged<Offset> openMenu,
+});
+
 /// Markdown and native Mermaid rendering. HTML is kept as text by the Markdown
 /// parser. Diagram callbacks, scripts and remote resources are never executed.
 class RaftMessageBody extends StatelessWidget {
@@ -403,6 +408,7 @@ class RaftMessageBody extends StatelessWidget {
     super.key,
     required this.content,
     this.onLink,
+    this.webLinkActions,
     this.references = const [],
     this.taskHref,
     this.fontSize,
@@ -559,6 +565,7 @@ class RaftMessageBody extends StatelessWidget {
   final List<RaftTextReference> references;
   final String Function(int)? taskHref;
   final ValueChanged<String>? onLink;
+  final RaftMessageWebLinkActions? Function(String href)? webLinkActions;
 
   @override
   Widget build(BuildContext context) {
@@ -637,6 +644,7 @@ class RaftMessageBody extends StatelessWidget {
         permalinkAppearance: permalinkAppearance,
         inlineLinkBuilder: inlineLinkBuilder,
         delegateTouch: delegateTouch,
+        webLinkActions: webLinkActions,
       ),
       'code': _MessageInlineCodeBuilder(highlight: highlight),
       raftMathDisplayTag: _DisplayMathBuilder(recipe.body),
@@ -1147,6 +1155,9 @@ class _RaftMarkdownState extends State<MarkdownWidget>
 
   void openLink(String href) => linkBuilder?.onLink?.call(href);
 
+  RaftMessageWebLinkActions? webLinkActionsFor(String href) =>
+      linkBuilder?.webLinkActions?.call(href);
+
   @override
   void didChangeDependencies() {
     rebuildChildren();
@@ -1167,6 +1178,10 @@ class _RaftMarkdownState extends State<MarkdownWidget>
             (oldWidget.builders['a'] as _MessageLinkBuilder?)?.delegateTouch ||
         (linkBuilder?.onLink == null) !=
             ((oldWidget.builders['a'] as _MessageLinkBuilder?)?.onLink ==
+                null) ||
+        (linkBuilder?.webLinkActions == null) !=
+            ((oldWidget.builders['a'] as _MessageLinkBuilder?)
+                    ?.webLinkActions ==
                 null)) {
       rebuildChildren();
     }
@@ -1195,6 +1210,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
     final ownedLinks = link?.withRecognizers(
       recognizers,
       link.onLink == null ? null : openLink,
+      link.webLinkActions == null ? null : webLinkActionsFor,
     );
     final built =
         MarkdownBuilder(
@@ -1997,6 +2013,7 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     this.permalinkAppearance,
     this.inlineLinkBuilder,
     this.delegateTouch = false,
+    this.webLinkActions,
   });
   final ValueChanged<String>? onLink;
   final RaftReferenceAppearance? Function(String href)? appearanceOf;
@@ -2004,11 +2021,13 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
   final Widget? Function(BuildContext, String)? inlineLinkBuilder;
   final List<GestureRecognizer>? recognizers;
   final bool delegateTouch;
+  final RaftMessageWebLinkActions? Function(String href)? webLinkActions;
   bool paintsDelegatedLinks = false;
 
   _MessageLinkBuilder withRecognizers(
     List<GestureRecognizer> owned,
     ValueChanged<String>? open,
+    RaftMessageWebLinkActions? Function(String href)? webLinkActions,
   ) => _MessageLinkBuilder(
     open,
     appearanceOf,
@@ -2016,7 +2035,20 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     permalinkAppearance: permalinkAppearance,
     inlineLinkBuilder: inlineLinkBuilder,
     delegateTouch: delegateTouch,
+    webLinkActions: webLinkActions,
   );
+
+  /// A primary activation of a web link: with a platform modifier it opens
+  /// the page in the system browser, otherwise through [onLink]. The actions
+  /// are read now, not when the link was built.
+  void _activateWebLink(String href, ValueChanged<String> open) {
+    final actions = webLinkActions?.call(href);
+    if (actions != null && raftLinkClickModified()) {
+      actions.openExternal();
+    } else {
+      open(href);
+    }
+  }
 
   InlineSpan _reference(
     BuildContext context,
@@ -2109,7 +2141,9 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     );
     if (delegateTouch) {
       final open = onLink;
-      final tap = open == null ? null : RaftMessageTapLink(() => open(href));
+      final tap = open == null
+          ? null
+          : RaftMessageTapLink(() => _activateWebLink(href, open));
       if (!faint) {
         return Text.rich(
           _searchMarkSpan(context, only.textContent, style, tapLink: tap),
@@ -2131,8 +2165,26 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
         ),
       );
     }
+    // A link the desktop browser can open also opens in the system browser
+    // with a middle click, and a secondary click opens its web link menu.
+    final webLink = webLinkActions?.call(href) != null;
+    final open = onLink;
     final recognizer = MessageLinkRecognizer(faintUnderline: faint)
-      ..onTap = onLink == null ? null : () => onLink!(href);
+      ..onTap = open == null
+          ? null
+          : () {
+              _activateWebLink(href, open);
+            }
+      ..onTertiaryTapUp = webLink
+          ? (_) {
+              webLinkActions?.call(href)?.openExternal();
+            }
+          : null
+      ..onSecondaryTapUp = webLink
+          ? (details) {
+              webLinkActions?.call(href)?.openMenu(details.globalPosition);
+            }
+          : null;
     recognizers?.add(recognizer);
     if (only is md.Element && only.tag == 'mark') {
       return Text.rich(

@@ -13,9 +13,7 @@ import 'channel_side_web_preview.dart';
 // `store/webLinkOpenPreference.ts`, `WebLinkChoiceDialog`,
 // `HowWebLinksOpenSetting`, `MessageCardBody` card button `open: "beside"`).
 // Web only has the choice in Raft Desktop's built-in browser; the app has it
-// wherever a page can be shown beside the conversation: `web_preview_v0` on
-// and a platform WebView (Android, iOS, macOS without VoiceOver). Linux and
-// Windows open the browser as before and have no setting.
+// wherever the single-page preview or the tabbed desktop browser is available.
 
 /// How a plain web link in a message opens. Unset (null): the first click asks.
 enum WebLinkOpenPreference {
@@ -72,6 +70,7 @@ class WebLinkOpenPreferences implements Listenable {
 /// device has a WebView. Decides the card button's panel icon, the choice
 /// dialog and the settings row.
 bool webPreviewAvailable(WorkspaceController w) =>
+    desktopBrowserAvailable(w) ||
     ChannelSideFlags.of(w).webPreview && WebPreviewStore.of(w).platform.frames;
 
 /// A plain web link in a message's text (Web `MessageWebLink`): where it opens
@@ -94,8 +93,16 @@ Future<bool> openWebLinkByPreference(
   if (webPreviewConversationHost(w, conversationId) == null) return false;
   final preference = WebLinkOpenPreferences.instance.value;
   if (preference == WebLinkOpenPreference.browser) return false;
+  final opener = FocusManager.instance.primaryFocus;
   void beside() {
-    if (!openWebPreviewBeside(w, href, conversationId: conversationId)) {
+    if (!openWebPreviewBeside(
+      w,
+      href,
+      conversationId: conversationId,
+      onBrowserClose: () {
+        if (opener?.context != null) opener?.requestFocus();
+      },
+    )) {
       openExternal(href);
     }
   }
@@ -131,14 +138,87 @@ Listenable webPreviewAvailability(WorkspaceController w) => Listenable.merge([
 /// when it opened the page beside the conversation, false when the caller
 /// opens it as any other button (a new tab in Web). An Artifact's address
 /// stays an Artifact opener whatever `open` says.
+bool cardButtonOpensBeside(WorkspaceController w, RaftCardButton button) =>
+    button.beside && webPreviewAvailable(w) ||
+    button.openMode == RaftCardOpenMode.automatic &&
+        desktopBrowserAvailable(w) &&
+        webPreviewTarget(button.url, raftAppHostnames(w)) != null;
+
+bool desktopBrowserLinkAvailable(
+  WorkspaceController w,
+  String href,
+  String conversationId,
+) =>
+    desktopBrowserAvailable(w) &&
+    webPreviewTarget(href, raftAppHostnames(w)) != null &&
+    webPreviewConversationHost(w, conversationId) != null;
+
+Future<void> showDesktopWebLinkMenu(
+  BuildContext context,
+  WorkspaceController w,
+  String href,
+  String conversationId,
+  Offset position,
+  VoidCallback openExternal,
+) async {
+  final opener = FocusManager.instance.primaryFocus;
+  final choice = await showRaftMessageContextMenu<WebLinkOpenPreference>(
+    context: context,
+    anchor: position,
+    builder: (menu) => RaftMessageContextMenu(
+      key: const ValueKey('desktop-web-link-menu'),
+      onDismiss: () => Navigator.of(menu).pop(),
+      sections: [
+        [
+          RaftMessageContextMenuItem(
+            label: raftText(menu, 'Open beside'),
+            icon: const RaftIcon(RaftGlyph.panelRight, size: 16),
+            onPressed: () =>
+                Navigator.of(menu).pop(WebLinkOpenPreference.beside),
+          ),
+          RaftMessageContextMenuItem(
+            label: raftText(menu, 'Open in browser'),
+            icon: const RaftIcon(RaftGlyph.arrowUpRight, size: 16),
+            onPressed: () =>
+                Navigator.of(menu).pop(WebLinkOpenPreference.browser),
+          ),
+        ],
+      ],
+    ),
+  );
+  if (choice == null || !context.mounted) return;
+  if (choice == WebLinkOpenPreference.beside &&
+      openWebPreviewBeside(
+        w,
+        href,
+        conversationId: conversationId,
+        onBrowserClose: () {
+          if (opener?.context != null) opener?.requestFocus();
+        },
+      )) {
+    return;
+  }
+  openExternal();
+}
+
 bool openCardButtonBeside(
   WorkspaceController w,
   RaftCardButton button, {
   required String conversationId,
-}) =>
-    button.beside &&
-    !mayLinkArtifacts(button.url) &&
-    openWebPreviewBeside(w, button.url, conversationId: conversationId);
+}) {
+  if (!cardButtonOpensBeside(w, button) || mayLinkArtifacts(button.url)) {
+    return false;
+  }
+  final opener = FocusManager.instance.primaryFocus;
+  return openWebPreviewBeside(
+    w,
+    button.url,
+    conversationId: conversationId,
+    onBrowserClose: () {
+      if (opener?.context != null) opener?.requestFocus();
+    },
+  );
+}
 
 /// Web `WebLinkChoiceDialog`: asked once, on the first click of a web link.
 /// Each button is a choice that is remembered; Esc, x and the scrim choose
@@ -212,7 +292,8 @@ class HowWebLinksOpenSetting extends StatelessWidget {
       builder: (context, _) {
         // The OS decides whether there is a row; VoiceOver only changes where
         // a click opens, not what the person may choose.
-        if (!flags.webPreview || !store.platform.hasWebView) {
+        if (!desktopBrowserAvailable(controller) &&
+            (!flags.webPreview || !store.platform.hasWebView)) {
           return const SizedBox.shrink();
         }
         final t = RaftTokens.of(context);

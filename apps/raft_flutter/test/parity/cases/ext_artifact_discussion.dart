@@ -27,7 +27,8 @@ class _DiscussionClient extends ScreenFixtureClient {
   }
 }
 
-Widget _discussionViewer(ParityContext ctx) {
+({WorkspaceController workspace, ArtifactLinkTarget target, DateTime clock})
+createArtifactDiscussionFixture(ParityContext ctx) {
   final wire = ScreenWire(ctx.fixtureData);
   final fixture = ctx.fixtures['ext:artifact-discussion'] as Map;
   final routes = fixture['routes'] as Map;
@@ -46,15 +47,24 @@ Widget _discussionViewer(ParityContext ctx) {
     workspace.dispose();
     client.dispose();
   });
+  return (
+    workspace: workspace,
+    target: ArtifactLinkTarget(id),
+    clock: DateTime.parse(fixture['clockIso'] as String),
+  );
+}
+
+Widget _discussionViewer(ParityContext ctx) {
+  final fixture = createArtifactDiscussionFixture(ctx);
   return Scaffold(
     body: ArtifactWorkspaceViewer(
-      session: ArtifactSession.of(workspace),
-      target: ArtifactLinkTarget(id),
+      session: ArtifactSession.of(fixture.workspace),
+      target: fixture.target,
       page: ctx.props['platform'] == 'mobile',
       inCollection: true,
       onClose: () {},
       operatingSystem: 'linux',
-      commentClock: () => DateTime.parse(fixture['clockIso'] as String),
+      commentClock: () => fixture.clock,
     ),
   );
 }

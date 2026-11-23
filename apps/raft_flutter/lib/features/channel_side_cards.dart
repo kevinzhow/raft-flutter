@@ -8,11 +8,38 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_controller.dart';
+import 'channel_artifact_place.dart';
 import 'channel_side_flags.dart';
 import 'channel_side_store.dart';
 import 'channel_side_web_preview.dart';
 
 abstract final class ChannelSideCards {
+  static int desktopPlaceOpenedAt(WorkspaceController w) {
+    if (!desktopBrowserAvailable(w)) return 0;
+    final conversation = w.channel?.id;
+    final browser = WebPreviewStore.of(w).browserTabs
+        .forConversation(conversation);
+    final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
+    return browser != null &&
+            (artifact == null || browser.inFrontOf(artifact.openedAt))
+        ? browser.frontAt
+        : artifact?.openedAt ?? 0;
+  }
+
+  static bool hasDesktopPlace(WorkspaceController w) =>
+      desktopPlaceOpenedAt(w) != 0;
+
+  static String desktopPlaceTitle(BuildContext context, WorkspaceController w) {
+    final conversation = w.channel?.id;
+    final browser = WebPreviewStore.of(w).browserTabs
+        .forConversation(conversation);
+    final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
+    return browser != null &&
+            (artifact == null || browser.inFrontOf(artifact.openedAt))
+        ? raftText(context, 'Browser')
+        : artifact?.title ?? raftText(context, 'Artifact');
+  }
+
   /// Task v2 on and a conversation that can have cards (not a thread).
   static bool enabled(WorkspaceController w) {
     final channel = w.channel;
@@ -58,8 +85,9 @@ abstract final class ChannelSideCards {
     final cards = open(w);
     final preview = WebPreviewStore.of(w);
     final page = preview.pageFor(w.channel?.id);
+    final desktop = hasDesktopPlace(w);
     final onTop =
-        page != null &&
+        (page != null || desktop) &&
         (cards.isEmpty ||
             ChannelSideStore.of(w).activeCard([
                   for (final card in cards) card.name,
@@ -67,7 +95,20 @@ abstract final class ChannelSideCards {
                 ]) ==
                 appCardKey);
     if (onTop) {
-      preview.close();
+      if (desktop) {
+        final conversation = w.channel!.id;
+        final browser = preview.browserTabs.forConversation(conversation);
+        final artifact = ChannelArtifactPlace.of(w)
+            .forConversation(conversation);
+        if (browser != null &&
+            (artifact == null || browser.inFrontOf(artifact.openedAt))) {
+          preview.browserTabs.close(conversation);
+        } else {
+          ChannelArtifactPlace.of(w).close(conversation);
+        }
+      } else {
+        preview.close();
+      }
       return true;
     }
     if (cards.isEmpty) return false;

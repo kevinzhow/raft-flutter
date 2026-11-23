@@ -242,7 +242,11 @@ ReadMessageCard? readMessageCard(
             disabledReason: p['disabledReason'] == null
                 ? null
                 : _text(p['disabledReason'], 1, 200),
-            beside: open == 'beside',
+            openMode: switch (open) {
+              'beside' => RaftCardOpenMode.beside,
+              'tab' => RaftCardOpenMode.tab,
+              _ => RaftCardOpenMode.automatic,
+            },
           );
         case 'Markdown':
           return RaftCardMarkdown(

@@ -1046,6 +1046,8 @@ class RaftInputGroup extends StatefulWidget {
     this.useEmbeddedControlRecipe = false,
     this.snapLikeBlink = false,
     this.fitHint = false,
+    this.readout,
+    this.keyboardType,
   });
 
   /// Key of the inline-end clear button (a test's or a focus lookup's handle).
@@ -1057,6 +1059,8 @@ class RaftInputGroup extends StatefulWidget {
   final bool useEmbeddedControlRecipe;
   final bool snapLikeBlink;
   final bool fitHint;
+  final Widget? readout;
+  final TextInputType? keyboardType;
   final RaftInputGroupAddon? leading, trailing;
 
   /// `variant="container"` addons are a muted block with a hairline seam (`SlugInput`); the default ones sit on
@@ -1246,6 +1250,9 @@ class _RaftInputGroupState extends State<RaftInputGroup>
     Widget field(String? hint) => TextField(
       contextMenuBuilder: RaftTextSelectionToolbar.editableText,
       autofillHints: null,
+      keyboardType: widget.keyboardType,
+      autocorrect: widget.keyboardType != TextInputType.url,
+      enableSuggestions: widget.keyboardType != TextInputType.url,
       key: widget.fieldKey,
       autofocus: widget.autofocus,
       controller: controller,
@@ -1348,7 +1355,9 @@ class _RaftInputGroupState extends State<RaftInputGroup>
           boxShadow: widget.flat ? const [] : d.boxShadow,
         );
       },
-      child: widget.fitHint && hint != null ? row : IntrinsicHeight(child: row),
+      child:
+          widget.readout ??
+          (widget.fitHint && hint != null ? row : IntrinsicHeight(child: row)),
     );
     return Semantics(label: widget.semanticLabel, child: hoverRegion(box0));
   }

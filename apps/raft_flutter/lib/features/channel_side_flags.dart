@@ -46,7 +46,16 @@ class ChannelSideFlags extends ChangeNotifier {
 
   static const taskV2Key = RaftFeatureFlags.taskV2Conversations;
   static const webPreviewKey = RaftFeatureFlags.webPreview;
+  static const desktopBrowserKey = RaftFeatureFlags.desktopWebPreviewView;
   static const keys = [taskV2Key, webPreviewKey];
+
+  List<String> get _keys =>
+      !kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.macOS ||
+              defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.linux)
+      ? const [...keys, desktopBrowserKey]
+      : keys;
 
   final WorkspaceController w;
   final TaskV2ConversationsFlag _menus;
@@ -62,6 +71,7 @@ class ChannelSideFlags extends ChangeNotifier {
 
   /// A web page may open in the side area. Off until evaluated.
   bool get webPreview => _enabled[webPreviewKey] ?? false;
+  bool get desktopBrowser => _enabled[desktopBrowserKey] ?? false;
 
   String get _authority => jsonEncode([
     w.client.origin,
@@ -80,7 +90,7 @@ class ChannelSideFlags extends ChangeNotifier {
   ];
 
   Map<String, bool> _remembered() => {
-    for (final key in keys)
+    for (final key in _keys)
       if (w.server != null && w.client.user != null)
         key: ?FeatureFlagMemory.read(_memoryScope, key),
   };
@@ -117,7 +127,7 @@ class ChannelSideFlags extends ChangeNotifier {
     try {
       final value = await w.client.post(
         '/feature-flags/evaluate',
-        data: featureFlagEvaluateBody(keys: keys, serverId: server),
+        data: featureFlagEvaluateBody(keys: _keys, serverId: server),
       );
       if (_ended || authority != _authority || ticket != _request) return;
       final rows = value is Map ? value['evaluations'] : null;
@@ -125,7 +135,7 @@ class ChannelSideFlags extends ChangeNotifier {
       final accepted = <String, bool>{};
       // One evaluation per requested key. Missing, invalid or duplicate rows
       // are unknown; they must not replace an accepted value.
-      for (final key in keys) {
+      for (final key in _keys) {
         final matches = rows
             .whereType<Map>()
             .where((row) => row['key'] == key)
@@ -142,7 +152,7 @@ class ChannelSideFlags extends ChangeNotifier {
           ticket == _request &&
           error is RaftApiException &&
           [401, 403].contains(error.status)) {
-        _accept({for (final key in keys) key: false});
+        _accept({for (final key in _keys) key: false});
       }
     }
   }

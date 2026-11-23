@@ -64,6 +64,7 @@ class RaftTabButton extends StatelessWidget {
     this.padding,
     this.iconSize = 16,
     this.growsWithText,
+    this.fitLabel = false,
   });
 
   final String label;
@@ -82,6 +83,7 @@ class RaftTabButton extends StatelessWidget {
   /// Horizontal padding override (default 12 sticker / 0 underline).
   final EdgeInsetsGeometry? padding;
   final double iconSize;
+  final bool fitLabel;
 
   /// [height] is a minimum and the tab grows with its label (enlarged text); null follows the text scale.
   final bool? growsWithText;
@@ -91,7 +93,7 @@ class RaftTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = raftText(context, label);
+    final text = fitLabel ? label : raftText(context, label);
     return RaftInteractive(
       onPressed: onPressed,
       focusNode: focusNode,
@@ -130,7 +132,14 @@ class RaftTabButton extends StatelessWidget {
     );
     final ink = textStyle.color ?? t.ink;
     final svg = tab.target("& svg:not([class*='size-'])");
-    final text = raftText(context, label);
+    final text = fitLabel ? label : raftText(context, label);
+    final title = Text(
+      text,
+      maxLines: 1,
+      softWrap: false,
+      overflow: fitLabel ? TextOverflow.ellipsis : null,
+      style: textStyle,
+    );
     final leading = icon != null
         ? icon!(iconSize, ink, 2)
         : glyph == null
@@ -145,7 +154,7 @@ class RaftTabButton extends StatelessWidget {
               ? RaftLayoutMetrics.desktopControl
               : null),
       padding: padding?.resolve(Directionality.of(context)),
-      alignment: Alignment.center,
+      alignment: fitLabel ? AlignmentDirectional.centerStart : Alignment.center,
       growWithText: growsWithText ?? RaftScaled.grows(context),
       overflowCenter: true,
       applyText: false,
@@ -159,8 +168,7 @@ class RaftTabButton extends StatelessWidget {
               data: IconThemeData(size: svg?.width, color: ink),
               child: leading,
             ),
-          if (text.isNotEmpty)
-            Text(text, maxLines: 1, softWrap: false, style: textStyle),
+          if (text.isNotEmpty) fitLabel ? Flexible(child: title) : title,
         ],
       ),
     );

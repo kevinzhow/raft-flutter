@@ -32,6 +32,7 @@ class RaftAnchoredPopup extends StatefulWidget {
     this.snapToPixel = false,
     this.snapToDevicePixels = false,
     this.flipVertically = true,
+    this.flipAlignment = false,
     this.scrollChild = true,
   }) : assert(!toRight || !toLeft);
   final GlobalKey anchorKey;
@@ -47,6 +48,7 @@ class RaftAnchoredPopup extends StatefulWidget {
 
   /// Some anchored controls constrain the content to their requested side.
   final bool flipVertically;
+  final bool flipAlignment;
 
   /// A popup with its own scroll area receives the available height directly.
   final bool scrollChild;
@@ -146,6 +148,7 @@ class _RaftAnchoredPopupState extends State<RaftAnchoredPopup>
         gap: widget.gap,
         gutter: widget.collisionPadding,
         flipVertically: widget.flipVertically,
+        flipAlignment: widget.flipAlignment,
         pixelScale: widget.snapToDevicePixels
             ? metrics.devicePixelRatio
             : widget.snapToPixel
@@ -173,10 +176,11 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     required this.gap,
     required this.gutter,
     required this.flipVertically,
+    required this.flipAlignment,
     this.pixelScale,
     required this.insets,
   });
-  final bool flipVertically;
+  final bool flipVertically, flipAlignment;
   final double? pixelScale;
   final Rect anchor;
   final bool above, alignRight, centerVertically, toRight, toLeft;
@@ -233,11 +237,17 @@ class _PopupLayout extends SingleChildLayoutDelegate {
         alignRight ? anchor.bottom - childSize.height : anchor.top,
       );
     }
-    final double left =
-        (alignRight ? anchor.right - childSize.width : anchor.left).clamp(
-          minX,
-          maxX,
-        );
+    final start = anchor.left;
+    final end = anchor.right - childSize.width;
+    final preferred = alignRight ? end : start;
+    final alternate = alignRight ? start : end;
+    final left =
+        flipAlignment &&
+            (preferred < minX || preferred > maxX) &&
+            alternate >= minX &&
+            alternate <= maxX
+        ? alternate
+        : preferred.clamp(minX, maxX);
     if (centerVertically) {
       return position(left, anchor.center.dy - childSize.height / 2);
     }
@@ -264,6 +274,7 @@ class _PopupLayout extends SingleChildLayoutDelegate {
       gap != old.gap ||
       gutter != old.gutter ||
       flipVertically != old.flipVertically ||
+      flipAlignment != old.flipAlignment ||
       insets != old.insets ||
       pixelScale != old.pixelScale;
 }

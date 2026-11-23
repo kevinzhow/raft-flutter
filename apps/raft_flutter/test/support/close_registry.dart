@@ -7,6 +7,7 @@ import 'close_registry_community.dart';
 import 'close_registry_channel_announcement.dart';
 import 'close_registry_channel_details.dart';
 import 'close_registry_dialogs.dart';
+import 'close_registry_desktop_browser.dart';
 import 'close_registry_drafts.dart';
 import 'close_registry_external_invites.dart';
 import 'close_registry_human_avatar.dart';
@@ -62,6 +63,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...artifactHomeSurfaces,
   ...webLinkChoiceSurfaces,
   ...webPreviewSurfaces,
+  ...desktopBrowserSurfaces,
   ...accountDeletionSurfaces,
   ...appLinkSurfaces,
 ];

@@ -6,6 +6,7 @@
 #include <functional>
 #include <string>
 #include <deque>
+#include <set>
 #include "native_host.h"
 #include "trusted_navigation.h"
 #include "native_snapshot.h"
@@ -13,7 +14,9 @@
 
 class NativeView : public std::enable_shared_from_this<NativeView> {
  public:
-  NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenger);
+  NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenger,
+             WebKitWebContext* browser_context = nullptr,
+             std::set<std::string> blocked_hosts = {});
   ~NativeView();
   bool ready() const { return web_ != nullptr && clip_ != nullptr; }
   void Bind();
@@ -23,6 +26,9 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   static void Method(FlMethodChannel*, FlMethodCall*, gpointer);
   void Handle(FlMethodCall* call);
   void Event(const char* type, FlValue* fields = nullptr);
+  bool BrowserAddress(const char* url) const;
+  void BrowserState();
+  static gboolean BrowserKeys(GtkWidget*, GdkEventKey*, gpointer);
   void Fail();
   void SetPaintOccluded(bool occluded);
   static gboolean Policy(WebKitWebView*, WebKitPolicyDecision*, WebKitPolicyDecisionType, gpointer);
@@ -38,6 +44,8 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   static void Terminated(WebKitWebView*, WebKitWebProcessTerminationReason, gpointer);
   int64_t id_, sequence_ = 0;
   NativeHost* host_;
+  const bool browsing_;
+  const std::set<std::string> blocked_hosts_;
   WebKitWebContext* context_ = nullptr;
   WebKitWebView* web_ = nullptr;
   GtkWidget* clip_ = nullptr;

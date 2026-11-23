@@ -4385,6 +4385,63 @@
       ]
     },
     {
+      "id": "channel.desktop-browser",
+      "title": "Desktop browser beside the conversation",
+      "webEntry": "packages/web/src/features/webPreview/BrowserPanel.tsx (Web 1.24)",
+      "flutterEntry": "apps/raft_flutter/lib/features/desktop_browser_panel.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "missing",
+          "status": "na",
+          "parityCase": [],
+          "justification": "The desktop page renderer paints loading content. The surrounding chrome keeps its layout while the address and title update."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "fixing",
+          "parityCase": ["components.browser.desktop.empty.*"],
+          "justification": "The focused empty tab and its prompt are captured in both themes. The bridge is a deterministic fixture."
+        },
+        {
+          "state": "error",
+          "variant": "invalid typed address",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "fixing",
+          "parityCase": ["components.browser.desktop.invalid.*"],
+          "justification": "Both cases submit an invalid address and capture the input after validation."
+        },
+        {
+          "state": "error",
+          "variant": "native renderer unavailable",
+          "web": "no",
+          "flutter": "yes",
+          "status": "intentional",
+          "parityCase": [],
+          "justification": "Flutter offers Open in browser when the platform renderer cannot start."
+        },
+        {
+          "state": "partial",
+          "variant": "address editing, overflow and narrow tab strip, Artifact switch",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "fixing",
+          "parityCase": [
+            "components.browser.desktop.editing.*",
+            "components.browser.desktop.overflow.*",
+            "components.browser.desktop.narrow.*",
+            "components.browser.desktop.artifact-behind.*",
+            "components.browser.desktop.artifact-front.*"
+          ],
+          "justification": "The extension compares actual Web and Flutter chrome. Native page content and a live conversation still need platform acceptance."
+        }
+      ]
+    },
+    {
       "id": "tasks.page",
       "title": "Tasks page with task v2 (list and board)",
       "webEntry": "packages/web/src/components/task/tasksPage/TasksPage.tsx",
@@ -64293,6 +64350,16 @@
         ],
         "mountStatus": "unresolved",
         "reason": "The side area mounts the panel for the channel with an open page (channel_side_area.dart, another package). Widget evidence only (channel_side_web_preview_test.dart); no visual PASS is asserted."
+      },
+      "screen:channel.desktop-browser": {
+        "owner": "WP-BROWSER",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "channel.desktop-browser",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/desktop_browser_panel.dart#class:DesktopBrowserPanel"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "ChannelSideArea mounts the browser and Artifact switch. Extension cases exercise the chrome with a deterministic bridge."
       },
       "surface:SourceChannelFilesProjectionView._refresh": {
         "owner": "design-system alignment",

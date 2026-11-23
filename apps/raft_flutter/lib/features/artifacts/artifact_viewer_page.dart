@@ -23,6 +23,9 @@ import '../../data/raft_location.dart';
 import '../../data/workspace_controller.dart';
 import '../../platform/macos_voice_over.dart';
 import '../../platform/system_bars.dart';
+import '../channel_artifact_place.dart';
+import '../channel_side_area.dart' show insideChannelSideArea;
+import '../channel_side_web_preview.dart';
 import '../private_route_guard.dart'
     show channelSearchPageAuthority, workspaceAuthority;
 import 'artifact_api.dart';
@@ -56,6 +59,24 @@ Future<void> openWorkspaceArtifact(
   ArtifactLinkTarget target, {
   ArtifactCard? seed,
 }) {
+  final channel = w.channel;
+  if (channel != null &&
+      channel.type != 'thread' &&
+      w.section == 'chat' &&
+      insideChannelSideArea(context) &&
+      desktopBrowserAvailable(w)) {
+    final opener = FocusManager.instance.primaryFocus;
+    WebPreviewStore.of(w).browserTabs.park(channel.id);
+    ChannelArtifactPlace.of(w).show(
+      channel.id,
+      target,
+      seed: seed,
+      returnFocus: () {
+        if (opener?.context != null) opener?.requestFocus();
+      },
+    );
+    return Future<void>.value();
+  }
   final page = RaftAdaptiveWorkspace.compactOf(context);
   Widget viewer(BuildContext context) => ArtifactWorkspaceViewer(
     session: ArtifactSession.of(w),
@@ -103,6 +124,12 @@ class ArtifactWorkspaceViewer extends StatefulWidget {
     required this.onClose,
     this.seed,
     this.inCollection = false,
+    this.inline = false,
+    this.collapsed = false,
+    this.headerLeading,
+    this.wrapHeader,
+    this.headerActions = const [],
+    this.onShownTitle,
     this.columnMargin,
     this.onDeleted,
     this.webViewBuilder,
@@ -121,6 +148,11 @@ class ArtifactWorkspaceViewer extends StatefulWidget {
   /// the viewer route answers.
   final ArtifactCard? seed;
   final bool page, inCollection;
+  final bool inline, collapsed;
+  final Widget? headerLeading;
+  final Widget Function(BuildContext, Widget)? wrapHeader;
+  final List<Widget> headerActions;
+  final ValueChanged<String>? onShownTitle;
 
   /// The host column's header inset, inherited by the Viewer on Web.
   final double? columnMargin;
@@ -486,6 +518,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           newer = null;
         }
       });
+      if (result != null) widget.onShownTitle?.call(result.card.title);
     } catch (_) {
       if (!current || mine != ticket) return;
       setState(() {
@@ -711,7 +744,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           onConfirm: () =>
               pending ??= confirm().whenComplete(() => pending = null),
         ),
-        overModal: !widget.inCollection && !widget.page,
+        overModal: !widget.inCollection && !widget.page && !widget.inline,
       );
       if (accepted == true &&
           deleted &&
@@ -918,6 +951,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     BuildContext context,
     ArtifactViewerData data, {
     RaftMenuEntry? menuComments,
+    bool openActionInHeader = false,
   }) {
     String tr(String s) => raftText(context, s);
     final card = data.card;
@@ -959,7 +993,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         ),
     ];
     return [
-      if (!widget.inCollection || widget.page)
+      if ((!widget.inCollection || widget.page) && !openActionInHeader)
         RaftMenuEntry(
           label: tr('Open in browser'),
           glyph: RaftGlyph.arrowUpRight,
@@ -1181,6 +1215,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         changed: result,
       );
     });
+    widget.onShownTitle?.call(result.card.title);
     widget.session.summaries.invalidate(result.card.id);
   }
 
@@ -1250,7 +1285,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
             key: const ValueKey('artifact-viewer-scope'),
             card: card,
             serverName: w.server?.name,
-            viewerHeader: widget.page,
+            viewerHeader: widget.page || widget.inline,
             choices: data == null
                 ? const []
                 : _visibilityChoices(context, data),
@@ -1312,14 +1347,25 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       'Comments ($countLabel)',
       '评论（$countLabel）',
     );
+    final compactHeader = widget.inCollection || widget.inline;
+    final openActionInHeader =
+        !widget.page &&
+        (widget.inCollection || (widget.inline && !foldComments));
     final version = data == null
         ? null
-        : widget.inCollection
+        : compactHeader
         ? RaftBadge(
+            key: widget.inline
+                ? const ValueKey('artifact-version-badge')
+                : null,
             label: artifactVersionLabel(context, data.card.version),
             appearance: RaftBadgeRecipeAppearance.outline,
             variant: RaftBadgeRecipeVariant.muted,
-            onPressed: () => setState(() => panel = _Panel.versions),
+            onPressed:
+                !widget.inline ||
+                    (data.versions.length > 1 && !data.card.fromAnotherServer)
+                ? () => setState(() => panel = _Panel.versions)
+                : null,
           )
         : ArtifactVersionTag(
             data: data,
@@ -1327,13 +1373,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           );
     final actions = <Widget>[
       if (data != null) ...[
-        if (!widget.inCollection) version!,
-        if (widget.inCollection && !widget.page)
+        if (!compactHeader) version!,
+        if (openActionInHeader)
           RaftPanelAction(
             key: const ValueKey('artifact-viewer-open-external'),
             responsiveRecipe: true,
             glyph: RaftGlyph.arrowUpRight,
-            tooltip: tr('Open in browser'),
+            tooltip: tr(widget.inline ? 'Open in new page' : 'Open in browser'),
             onPressed: () => unawaited(this.actions.openInBrowser(data.card)),
           ),
         if (_framed(data) && _webView && frame.ready)
@@ -1437,6 +1483,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           entries: _menu(
             context,
             data,
+            openActionInHeader: openActionInHeader,
             menuComments:
                 showComments &&
                     (foldComments || RaftAdaptiveWorkspace.compactOf(context))
@@ -1448,7 +1495,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
                   )
                 : null,
           ),
-          triggerBuilder: (context, focus, onPressed) => widget.inCollection
+          triggerBuilder: (context, focus, onPressed) => compactHeader
               ? RaftPanelAction(
                   key: const ValueKey('artifact-viewer-menu-trigger'),
                   responsiveRecipe: true,
@@ -1470,7 +1517,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         ),
       ],
     ];
-    if (widget.inCollection) {
+    if (compactHeader) {
       final t = RaftTokens.of(context);
       final details = card == null
           ? null
@@ -1494,6 +1541,10 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
               )
             : null,
         background: t.ui.layerCanvas,
+        desktopBar: widget.inline && !widget.page,
+        leading: widget.headerLeading,
+        bottomRule: widget.inline,
+        bottomBorder: widget.inline ? RaftSidePanelFrame.headerRule(t) : null,
         onBack: widget.page ? close : null,
         backKey: closeKey,
         titleSlot: widget.page
@@ -1518,6 +1569,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
               ),
         actions: [
           ...actions,
+          ...widget.headerActions,
           if (!widget.page)
             RaftPanelAction(
               key: closeKey,
@@ -1737,24 +1789,27 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           children: [
             ListenableBuilder(
               listenable: Listenable.merge([discussion]),
-              builder: (context, _) => widget.inCollection
-                  ? LayoutBuilder(
-                      builder: (context, constraints) {
-                        final width = constraints.maxWidth;
-                        return _header(
-                          context,
-                          foldComments:
-                              width.isFinite &&
-                              width > 0 &&
-                              width.round() < _headerActionsMinWidth,
-                        );
-                      },
-                    )
-                  : _header(context),
+              builder: (context, _) {
+                final head = widget.inCollection || widget.inline
+                    ? LayoutBuilder(
+                        builder: (context, constraints) {
+                          final width = constraints.maxWidth;
+                          return _header(
+                            context,
+                            foldComments:
+                                width.isFinite &&
+                                width > 0 &&
+                                width.round() < _headerActionsMinWidth,
+                          );
+                        },
+                      )
+                    : _header(context);
+                return widget.wrapHeader?.call(context, head) ?? head;
+              },
             ),
-            if (busy && data != null)
+            if (!widget.collapsed && busy && data != null)
               const RaftProgressBar(size: RaftProgressRecipeSize.sm),
-            Expanded(child: _body(context)),
+            if (!widget.collapsed) Expanded(child: _body(context)),
           ],
         ),
       ),
@@ -1776,6 +1831,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       },
       child: Focus(focusNode: viewerFocus, autofocus: true, child: view),
     );
+    if (widget.inline) return scoped;
     final safe = PopScope(
       canPop: panel != _Panel.comments,
       onPopInvokedWithResult: (didPop, _) {
