@@ -263,6 +263,7 @@ chips). The rest are OK or SAME.
 | Container | File | Builds | Taps asserted in |
 |---|---|---|---|
 | message-timeline | `lib/features/chat_view.dart` | RaftMessageTile, RaftInlineThreadSurface, RaftThreadRepliesBadge | tap_target_matrix_test.dart (every host) |
+| message-timeline-preview | `lib/features/chat_timeline_semantics.dart` | RaftMessageTile | chat_timeline_reuse_test.dart (touch row link opens its confirmation) |
 | workspace-hosts | `lib/features/workspace_view.dart` | RaftChatView | tap_target_matrix_test.dart (thread panel, Activity / Search detail) |
 | channel-panel | `lib/features/conversation_panel.dart` | RaftChatView | tap_target_matrix_test.dart (chat, Activity, Search hosts) |
 | task-discussion | `lib/features/task_surface.dart` | RaftChatView | task_discussion_navigation_test.dart (mounted profiles and links) |

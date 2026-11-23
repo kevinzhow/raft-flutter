@@ -246,6 +246,12 @@ abstract final class TapTargetRegistry {
       'RaftInlineThreadSurface',
       'RaftThreadRepliesBadge',
     ], 'tap_target_matrix_test.dart (every host)'),
+    TapContainer(
+      'message-timeline-preview',
+      'features/chat_timeline_semantics.dart',
+      ['RaftMessageTile'],
+      'chat_timeline_reuse_test.dart (touch row link opens its confirmation)',
+    ),
     TapContainer('workspace-hosts', 'features/workspace_view.dart', [
       'RaftChatView',
     ], 'tap_target_matrix_test.dart (thread panel, Activity / Search detail)'),
