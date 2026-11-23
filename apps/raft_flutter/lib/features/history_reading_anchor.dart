@@ -2,6 +2,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import '../data/workspace_message_windows.dart' show ReadingAnchor;
+import 'timeline_row_hydration.dart' show timelinePreviewKeyPrefix;
 
 /// A prepend preserves the center's distances; an interior insertion does not.
 bool insertsBetweenRetainedRows(
@@ -55,8 +56,12 @@ ReadingAnchor? captureTimelineReadingAnchor(
   var bestTop = double.infinity;
   void visit(Element element) {
     final key = element.widget.key;
+    final preview =
+        key is ValueKey<String> &&
+        key.value.startsWith(timelinePreviewKeyPrefix);
     if (key is ValueKey<String> &&
         (key.value.startsWith('message-wrapper-') ||
+            preview ||
             threadParentKey != null && key.value == 'thread-outline-parent')) {
       final row = element.renderObject;
       final Object? clip = row == null
@@ -78,7 +83,11 @@ ReadingAnchor? captureTimelineReadingAnchor(
           best = ReadingAnchor(
             key.value == 'thread-outline-parent'
                 ? threadParentKey!
-                : key.value.substring('message-wrapper-'.length),
+                : key.value.substring(
+                    preview
+                        ? timelinePreviewKeyPrefix.length
+                        : 'message-wrapper-'.length,
+                  ),
             top,
           );
         }

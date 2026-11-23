@@ -8,6 +8,10 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'timeline_row_trace.dart';
 
+/// Key prefix of a row shown as a preview, followed by the row's message key
+/// (the built row's counterpart is `message-wrapper-<key>`).
+const timelinePreviewKeyPrefix = 'message-preview-';
+
 typedef TimelinePreviewExtent = ({
   double height,
   bool preparing,
@@ -304,15 +308,19 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
         hydrator._add(this);
         return _layout = _TimelineMeasuredRow(
           id: message.id,
-          child:
-              preview ??
-              SizedBox(
-                height: extent.height,
-                child: Text(
-                  (message.metadata?['content'] ?? '').toString(),
-                  maxLines: 2,
+          child: KeyedSubtree(
+            // A reader can rest on a preview: reading anchors find it here.
+            key: ValueKey('$timelinePreviewKeyPrefix${message.id}'),
+            child:
+                preview ??
+                SizedBox(
+                  height: extent.height,
+                  child: Text(
+                    (message.metadata?['content'] ?? '').toString(),
+                    maxLines: 2,
+                  ),
                 ),
-              ),
+          ),
         );
       }
     }
