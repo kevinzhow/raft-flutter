@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/attachment_image_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/artifacts/artifact_frame_view.dart';
 import 'package:raft_flutter/features/artifacts/artifact_models.dart';
@@ -22,12 +26,14 @@ void main() {
   late WorkspaceController w;
   late List<(String, String, int)> saved;
   late List<Uri> opened;
+  late _MemoryStore store;
 
   setUp(() {
     FakeArtifactWebView.reset();
     WebViewPlatform.instance = FakeArtifactWebView();
     client = ArtifactFakeClient();
-    w = WorkspaceController(client)
+    store = _MemoryStore();
+    w = WorkspaceController(client, attachmentImageStore: store)
       ..server = RaftRecord({'id': 's1', 'role': 'owner', 'name': 'Dev'});
     saved = [];
     opened = [];
@@ -381,4 +387,131 @@ void main() {
     expect(FakeArtifactWebView.html, isNull);
     expect(find.text('line one\nline two'), findsOneWidget);
   });
+
+  group('a drawn file version is kept on the device', () {
+    const text = 'line one\nline two';
+    void answerText({int version = 1}) {
+      answerViewer(
+        artifactViewerJson(
+          card: artifactCardJson(
+            kind: 'text',
+            title: 'notes.txt',
+            version: version,
+            latest: version,
+          ),
+          files: [
+            {
+              'path': 'notes.txt',
+              'kind': 'text',
+              'sizeBytes': 18,
+              'entry': true,
+            },
+          ],
+          frame: false,
+        ),
+        version: version == 1 ? null : version,
+      );
+      client.answers['GET /artifacts/$artifactId/files/notes.txt?version=$version'] =
+          (_) => '$text\n';
+    }
+
+    int fileGets(int version) => client.requests
+        .where(
+          (r) =>
+              r ==
+              'GET /artifacts/$artifactId/files/notes.txt?version=$version',
+        )
+        .length;
+
+    Future<void> reopen(
+      WidgetTester tester, {
+      ArtifactLinkTarget target = const ArtifactLinkTarget(artifactId),
+    }) async {
+      await tester.pumpWidget(const SizedBox());
+      await open(tester, target: target);
+    }
+
+    testWidgets('opening the same version again does not download its file '
+        'again; the viewer route is still asked', (tester) async {
+      answerText();
+      await open(tester);
+      expect(find.text(text), findsOneWidget);
+      await reopen(tester);
+      expect(find.text(text), findsOneWidget);
+      expect(fileGets(1), 1);
+      expect(
+        client.requests.where((r) => r == 'GET /artifacts/$artifactId').length,
+        2,
+        reason: 'the server still checks access on every open',
+      );
+    });
+
+    testWidgets('another version or another account downloads its own copy', (
+      tester,
+    ) async {
+      answerText();
+      answerText(version: 2);
+      await open(tester);
+      await reopen(tester, target: const ArtifactLinkTarget(artifactId, 2));
+      expect(find.text(text), findsOneWidget);
+      expect((fileGets(1), fileGets(2)), (1, 1));
+
+      await tester.pumpWidget(const SizedBox());
+      w.dispose();
+      client = ArtifactFakeClient()
+        ..user = RaftRecord({'id': 'u2', 'name': 'other'});
+      w = WorkspaceController(client, attachmentImageStore: store)
+        ..server = RaftRecord({'id': 's1', 'role': 'owner', 'name': 'Dev'});
+      answerText();
+      await open(tester);
+      expect(find.text(text), findsOneWidget);
+      expect(fileGets(1), 1, reason: 'u2 has no copy of u1\'s');
+    });
+
+    testWidgets('a failing device cache reads from the server instead', (
+      tester,
+    ) async {
+      store.fails = true;
+      answerText();
+      await open(tester);
+      await reopen(tester);
+      expect(find.text(text), findsOneWidget);
+      expect(fileGets(1), 2);
+    });
+  });
+}
+
+/// The attachment byte store in memory; [fails] makes every call throw.
+class _MemoryStore implements AttachmentImageByteStore {
+  final entries = <String, Uint8List>{};
+  bool fails = false;
+
+  String _name(AttachmentImageStoreKey key) =>
+      jsonEncode([key.identity, key.channelId, key.entry]);
+
+  void _check() {
+    if (fails) throw const FileSystemException('disk gone');
+  }
+
+  @override
+  Future<Uint8List?> read(AttachmentImageStoreKey key) async {
+    _check();
+    return entries[_name(key)];
+  }
+
+  @override
+  Future<void> write(AttachmentImageStoreKey key, Uint8List bytes) async {
+    _check();
+    entries[_name(key)] = bytes;
+  }
+
+  @override
+  Future<void> remove(AttachmentImageStoreKey key) async =>
+      entries.remove(_name(key));
+
+  @override
+  Future<void> purgeChannel(String identity, String channelId) async {}
+
+  @override
+  Future<void> purgeIdentity(String identity) async {}
 }

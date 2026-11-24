@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart' show ArtifactAttachmentSavedEvent;
 
+import '../../data/attachment_image_repository.dart';
 import '../../data/device_preferences.dart';
 import '../../data/feature_flag_client_facts.dart';
 import '../../data/workspace_controller.dart';
@@ -166,6 +167,40 @@ class ArtifactSession extends ChangeNotifier {
         _changed(reevaluate: true);
       }
     }
+  }
+
+  /// The bytes of one file of [version] for a drawn view (text, csv,
+  /// image). A version never changes, so the bytes are kept in the
+  /// attachment disk cache under this account and server and a second open
+  /// reads them from there; the caller has already had the viewer route
+  /// answer, so the server still checks access on every open. A cache
+  /// failure is a miss.
+  Future<Uint8List> drawnFileBytes(String id, String path, int version) async {
+    final store = w.attachmentMedia.imageStore;
+    final identity = _cacheIdentity;
+    if (store == null || identity == null) {
+      return api.fileBytes(id, path, version);
+    }
+    final key = artifactFileCacheKey(identity, id, version, path);
+    try {
+      final cached = await store.read(key);
+      if (cached != null) return cached;
+    } catch (_) {
+      // A miss: read from the server.
+    }
+    final bytes = await api.fileBytes(id, path, version);
+    // Not after a switch to another account or server in the meantime.
+    if (_cacheIdentity == identity) {
+      unawaited(store.write(key, bytes).catchError((Object _) {}));
+    }
+    return bytes;
+  }
+
+  String? get _cacheIdentity {
+    final principal = w.client.user?.id, server = w.client.serverId;
+    return _ended || principal == null || server == null
+        ? null
+        : AttachmentImageKey.identityOf(w.client.origin, principal, server);
   }
 
   /// What the attachments on screen were saved as (and saves under way).
@@ -391,3 +426,19 @@ class ObjectSummaryLoader {
     clear();
   }
 }
+
+/// The attachment disk cache entry of one Artifact file version for the
+/// account and server [identity] (`AttachmentImageKey.identityOf`), so
+/// sign-out and a removed server purge it with the account's attachments.
+/// The channel segment is no channel id (those are UUIDs), so it never meets
+/// an attachment entry or a channel purge.
+AttachmentImageStoreKey artifactFileCacheKey(
+  String identity,
+  String id,
+  int version,
+  String path,
+) => AttachmentImageStoreKey(
+  identity: identity,
+  channelId: 'artifact',
+  entry: jsonEncode([id, version, path]),
+);

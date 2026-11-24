@@ -914,7 +914,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         key: ValueKey('artifact-drawn-${card.id}@${card.version}:${file.path}'),
         kind: kind,
         path: file.path,
-        read: () => api.fileBytes(card.id, file.path, card.version),
+        read: artifactDrawnKind(kind)
+            ? () => widget.session.drawnFileBytes(
+                card.id,
+                file.path,
+                card.version,
+              )
+            : () => api.fileBytes(card.id, file.path, card.version),
         onDownload: download,
       );
     }
