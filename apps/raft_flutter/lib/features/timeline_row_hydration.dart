@@ -29,6 +29,7 @@ typedef TimelineRowHydrationSpec = ({
   double Function() estimate,
   Widget? Function(BuildContext, TimelinePreviewExtent) preview,
   bool Function() entering,
+  bool leading,
 });
 
 typedef TimelineRowRevision = ({Object layout, Object invalidation});
@@ -201,6 +202,7 @@ class TimelineHydratedRow extends StatefulWidget {
     required this.preview,
     required this.builder,
     required this.entering,
+    required this.leading,
   });
 
   final TimelineRowHydrator hydrator;
@@ -211,6 +213,12 @@ class TimelineHydratedRow extends StatefulWidget {
   final Widget? Function(BuildContext, TimelinePreviewExtent) preview;
   final WidgetBuilder builder;
   final bool entering;
+
+  /// Mounted before its sliver's first laid-out row (scrolling toward the
+  /// center). The sliver places such a row by its own height and keeps that
+  /// offset when the row grows, so an estimated preview would leave the rows
+  /// after it misplaced once the full row replaces it.
+  final bool leading;
 
   @override
   State<TimelineHydratedRow> createState() => _TimelineHydratedRowState();
@@ -223,6 +231,9 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
   late var _phase = widget.entering
       ? _HydrationPhase.preview
       : _HydrationPhase.full;
+
+  /// Previews only at its measured height for the current layout.
+  late final _measuredOnly = widget.leading;
 
   void hydrate() => setState(() {
     _layout = null;
@@ -290,8 +301,11 @@ class _TimelineHydratedRowState extends State<TimelineHydratedRow> {
       width: widget.width.round(),
       scale: MediaQuery.textScalerOf(context),
     );
-    if (_phase == _HydrationPhase.preview) {
-      final measured = hydrator._measurements[key];
+    final measured = _phase == _HydrationPhase.preview
+        ? hydrator._measurements[key]
+        : null;
+    if (_phase == _HydrationPhase.preview &&
+        (measured != null || !_measuredOnly)) {
       final extent = (
         height:
             measured?.height ?? widget.estimate() * (key.scale.scale(15) / 15),
@@ -470,9 +484,16 @@ class _TimelineMeasuredRow extends SingleChildRenderObjectWidget {
   void updateRenderObject(
     BuildContext context,
     covariant _RenderTimelineMeasuredRow renderObject,
-  ) => renderObject
-    ..id = id
-    ..onLayout = onLayout;
+  ) {
+    final record = onLayout;
+    renderObject.id = id;
+    if (identical(renderObject.onLayout, record)) return;
+    renderObject.onLayout = record;
+    // A rebuilt row can keep its size and skip layout. Its new measurement
+    // key (e.g. the grouping changed when the next message arrived) is
+    // recorded only by laying it out again.
+    if (record != null) renderObject.markNeedsLayout();
+  }
 }
 
 class _RenderTimelineMeasuredRow extends RenderProxyBox {

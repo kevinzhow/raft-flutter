@@ -612,6 +612,10 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
                             hydration.preview(context, index, extent),
                         entering: () =>
                             entering && widget.controller.pending == null,
+                        leading: _leadingChild(
+                          context,
+                          index < center ? center - 1 - index : index - center,
+                        ),
                       ),
               );
         final cached = revision == null ? null : rowShells[child];
@@ -1597,6 +1601,15 @@ class _EstimatingChildDelegate extends SliverChildBuilderDelegate {
     if (remaining == null) return null;
     return trailingScrollOffset + remaining(lastIndex + 1);
   }
+}
+
+/// Whether [sliver] is building child [index] before its first laid-out
+/// child, i.e. inserting it on the side toward the center.
+bool _leadingChild(BuildContext sliver, int index) {
+  final list = sliver.findRenderObject();
+  if (list is! RenderSliverMultiBoxAdaptor) return false;
+  final first = list.firstChild;
+  return first != null && index < list.indexOf(first);
 }
 
 class _TimelineChildBuilder {

@@ -229,6 +229,7 @@ class _TimelineReusableRowState extends State<TimelineReusableRow>
               preview: spec.preview,
               builder: (context) => widget._builder.build(context),
               entering: spec.entering(),
+              leading: spec.leading,
             );
     }
 
