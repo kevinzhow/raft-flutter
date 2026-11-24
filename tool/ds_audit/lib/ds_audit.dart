@@ -16,6 +16,8 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/source/line_info.dart';
 
+import 'contract_audit.dart';
+
 /// One design-system violation (or allowlisted exception).
 class Finding {
   Finding({
@@ -472,6 +474,9 @@ class DsAuditVisitor extends AuditVisitorBase {
       return;
     }
     if (_isFramework(cls)) {
+      if (isSharpBorderedBoxDecoration(node, cls)) {
+        add(node, 'style.sharp_bordered_box', display);
+      }
       for (final arg in args.whereType<NamedExpression>()) {
         final label = arg.name.label.name;
         if (dimensionArguments.contains(label) &&
@@ -573,9 +578,26 @@ class DsAuditVisitor extends AuditVisitorBase {
             const {'ColorScheme', 'TextTheme'}.contains(ownerName)) {
           add(node, 'style.material_theme', '$ownerName.of()');
         }
+      } else if (isLegacyRaftTypographySizeCall(node)) {
+        add(
+          node,
+          'style.legacy_typography_size',
+          'RaftTypography.$name(size:)',
+        );
       }
     }
     super.visitMethodInvocation(node);
+  }
+
+  @override
+  void visitIndexExpression(IndexExpression node) {
+    if (!isBrutalDefinitionFile(relativePath)) {
+      final key = brutalTokenMapKey(node);
+      if (key != null) {
+        add(node, 'style.brutal_token', "['$key']");
+      }
+    }
+    super.visitIndexExpression(node);
   }
 
   @override
@@ -600,8 +622,14 @@ class DsAuditVisitor extends AuditVisitorBase {
             _isFlutterLib(owner, 'material') &&
             !const {'extensions', 'platform'}.contains(node.name)) {
           add(node, 'style.material_theme', 'ThemeData.${node.name}');
+        } else if (!isBrutalDefinitionFile(relativePath) &&
+            isBrutalTokenIdentifier(node)) {
+          add(node, 'style.brutal_token', element.displayName);
         }
       }
+    } else if (!isBrutalDefinitionFile(relativePath) &&
+        isBrutalTokenIdentifier(node)) {
+      add(node, 'style.brutal_token', element!.displayName);
     } else if (element is MethodElement &&
         element.enclosingElement?.name == 'ThemeData' &&
         _isFlutterLib(element, 'material') &&

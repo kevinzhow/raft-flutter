@@ -13,57 +13,96 @@
   "bypass.dialog": 7,
   "bypass.divider": 1,
   "bypass.list_tile": 4,
-  "bypass.menu": 17,
+  "bypass.menu": 9,
   "bypass.overlay": 24,
   "bypass.picker": 3,
   "bypass.select": 2,
   "bypass.text_field": 6,
   "bypass.tooltip": 1,
-  "contract.color_literal": 223,
-  "contract.font_size_literal": 156,
-  "contract.radius_literal": 172,
-  "contract.stroke_width_literal": 240,
+  "contract.brutal_token": 47,
+  "contract.color_literal": 210,
+  "contract.font_size_literal": 145,
+  "contract.legacy_typography_size": 421,
+  "contract.radius_literal": 160,
+  "contract.sharp_bordered_box": 76,
+  "contract.stroke_width_literal": 201,
   "contract.theme_name_branch": 1,
   "duplicate.banner": 7,
-  "duplicate.button": 237,
-  "duplicate.list_row": 5,
+  "duplicate.button": 225,
+  "duplicate.card": 1,
+  "duplicate.lightbox": 1,
+  "duplicate.list_row": 4,
+  "duplicate.message-action-card": 14,
+  "duplicate.message-embed": 3,
   "style.border_radius": 10,
-  "style.dimension": 29,
-  "style.duration": 2,
-  "style.edge_insets": 44,
+  "style.brutal_token": 4,
+  "style.dimension": 27,
+  "style.duration": 1,
+  "style.edge_insets": 41,
   "style.font_weight": 3,
-  "style.material_colors": 14,
+  "style.legacy_typography_size": 115,
+  "style.material_colors": 13,
   "style.material_icons": 7,
-  "style.material_theme": 18,
-  "style.sized_box": 41,
-  "style.text_style": 2,
+  "style.material_theme": 17,
+  "style.sharp_bordered_box": 6,
+  "style.sized_box": 37,
+  "style.text_style": 1,
   "widget.dialog": 1,
-  "widget.menu": 13,
+  "widget.menu": 5,
   "widget.other": 10,
   "widget.scaffold": 4,
   "widget.surface": 3
  },
  "files": {
+  "apps/raft_flutter/lib/features/account_app_logins.dart": {
+   "style.legacy_typography_size": 1
+  },
   "apps/raft_flutter/lib/features/account_auth_previews.dart": {
    "style.edge_insets": 1
   },
   "apps/raft_flutter/lib/features/account_connections_view.dart": {
    "duplicate.button": 3
   },
+  "apps/raft_flutter/lib/features/account_deletion_agent_row.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/account_deletion_checklist.dart": {
+   "style.legacy_typography_size": 4
+  },
+  "apps/raft_flutter/lib/features/account_deletion_frame.dart": {
+   "style.legacy_typography_size": 2
+  },
+  "apps/raft_flutter/lib/features/account_deletion_pending_page.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/account_deletion_requested_page.dart": {
+   "style.legacy_typography_size": 4
+  },
+  "apps/raft_flutter/lib/features/account_deletion_rows.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/account_password_editor.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/account_security_dialogs.dart": {
+   "style.legacy_typography_size": 2
+  },
+  "apps/raft_flutter/lib/features/account_security_passkeys.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/account_security_two_step.dart": {
+   "style.legacy_typography_size": 1
+  },
   "apps/raft_flutter/lib/features/account_settings.dart": {
    "style.dimension": 1,
+   "style.legacy_typography_size": 2,
    "widget.other": 2
   },
   "apps/raft_flutter/lib/features/account_sign_in_recipe.dart": {
    "style.dimension": 1,
-   "style.edge_insets": 1
-  },
-  "apps/raft_flutter/lib/features/activity_card_row.dart": {
-   "duplicate.button": 1
-  },
-  "apps/raft_flutter/lib/features/activity_list_row.dart": {
-   "duplicate.button": 1,
-   "duplicate.list_row": 1
+   "style.edge_insets": 1,
+   "style.legacy_typography_size": 4,
+   "style.sharp_bordered_box": 1
   },
   "apps/raft_flutter/lib/features/agent_apps_view.dart": {
    "widget.other": 1
@@ -72,10 +111,14 @@
    "duplicate.button": 2
   },
   "apps/raft_flutter/lib/features/agent_detail_view.dart": {
-   "duplicate.button": 5
+   "duplicate.button": 5,
+   "style.legacy_typography_size": 1
   },
   "apps/raft_flutter/lib/features/agent_hosted_cindy_banner.dart": {
    "duplicate.button": 1
+  },
+  "apps/raft_flutter/lib/features/agent_hosted_spend.dart": {
+   "style.legacy_typography_size": 1
   },
   "apps/raft_flutter/lib/features/agent_hosted_status.dart": {
    "duplicate.button": 1
@@ -83,8 +126,21 @@
   "apps/raft_flutter/lib/features/agent_identity_adoption.dart": {
    "duplicate.button": 1
   },
+  "apps/raft_flutter/lib/features/agent_migration_hosted_review.dart": {
+   "style.legacy_typography_size": 2
+  },
   "apps/raft_flutter/lib/features/agent_migration_panel.dart": {
-   "duplicate.button": 1
+   "duplicate.button": 1,
+   "style.legacy_typography_size": 9
+  },
+  "apps/raft_flutter/lib/features/agent_migration_section.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/agent_migration_start_dialog.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/agent_raw_log.dart": {
+   "style.brutal_token": 4
   },
   "apps/raft_flutter/lib/features/agent_scopes_view.dart": {
    "style.dimension": 1,
@@ -93,12 +149,38 @@
    "style.sized_box": 1,
    "widget.scaffold": 1
   },
+  "apps/raft_flutter/lib/features/app_when_to_use.dart": {
+   "style.legacy_typography_size": 1
+  },
   "apps/raft_flutter/lib/features/appearance_section.dart": {
    "style.edge_insets": 1,
+   "style.legacy_typography_size": 4,
    "style.sized_box": 7
   },
   "apps/raft_flutter/lib/features/artifact_viewer.dart": {
-   "duplicate.button": 1
+   "duplicate.button": 1,
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/artifacts/artifact_content.dart": {
+   "style.legacy_typography_size": 3
+  },
+  "apps/raft_flutter/lib/features/artifacts/artifact_find_bar.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/artifacts/artifact_frame_confirm.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart": {
+   "style.legacy_typography_size": 9
+  },
+  "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart": {
+   "style.legacy_typography_size": 2
+  },
+  "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart": {
+   "style.legacy_typography_size": 1
   },
   "apps/raft_flutter/lib/features/attachment_html_preview.dart": {
    "style.dimension": 2
@@ -121,12 +203,46 @@
    "style.dimension": 1,
    "style.material_theme": 1
   },
+  "apps/raft_flutter/lib/features/channel_side_files_rows.dart": {
+   "style.legacy_typography_size": 4,
+   "style.sharp_bordered_box": 1
+  },
   "apps/raft_flutter/lib/features/chat_view.dart": {
    "bypass.overlay": 1,
-   "style.edge_insets": 1
+   "style.edge_insets": 1,
+   "style.legacy_typography_size": 1
   },
   "apps/raft_flutter/lib/features/chinese_community.dart": {
    "duplicate.button": 1
+  },
+  "apps/raft_flutter/lib/features/computer_owner.dart": {
+   "style.legacy_typography_size": 2
+  },
+  "apps/raft_flutter/lib/features/computer_runtime_claude_limit_resets.dart": {
+   "style.legacy_typography_size": 4
+  },
+  "apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart": {
+   "style.legacy_typography_size": 4
+  },
+  "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart": {
+   "style.legacy_typography_size": 6,
+   "style.sharp_bordered_box": 1
+  },
+  "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/conversation_tab_reorder.dart": {
+   "style.legacy_typography_size": 1,
+   "style.sharp_bordered_box": 1
   },
   "apps/raft_flutter/lib/features/create_agent_dialog.dart": {
    "duplicate.button": 2
@@ -136,6 +252,12 @@
   },
   "apps/raft_flutter/lib/features/create_joint_channel_dialog.dart": {
    "duplicate.banner": 1
+  },
+  "apps/raft_flutter/lib/features/custom_protocol_link.dart": {
+   "style.legacy_typography_size": 1
+  },
+  "apps/raft_flutter/lib/features/delete_server_confirm.dart": {
+   "style.legacy_typography_size": 2
   },
   "apps/raft_flutter/lib/features/desktop_directory_view.dart": {
    "duplicate.button": 1
@@ -158,7 +280,11 @@
    "duplicate.button": 1
   },
   "apps/raft_flutter/lib/features/human_login_servers.dart": {
-   "duplicate.list_row": 1
+   "duplicate.list_row": 1,
+   "style.legacy_typography_size": 3
+  },
+  "apps/raft_flutter/lib/features/human_login_sheet.dart": {
+   "style.legacy_typography_size": 5
   },
   "apps/raft_flutter/lib/features/management_support.dart": {
    "style.dimension": 2,
@@ -181,10 +307,12 @@
   },
   "apps/raft_flutter/lib/features/member_profile_view.dart": {
    "duplicate.button": 2,
-   "duplicate.list_row": 1
+   "duplicate.list_row": 1,
+   "style.legacy_typography_size": 2
   },
   "apps/raft_flutter/lib/features/message_action_card.dart": {
-   "duplicate.button": 1
+   "duplicate.button": 1,
+   "duplicate.message-action-card": 2
   },
   "apps/raft_flutter/lib/features/message_history_gaps.dart": {
    "duplicate.button": 1
@@ -192,6 +320,7 @@
   "apps/raft_flutter/lib/features/message_image_export.dart": {
    "bypass.dialog": 1,
    "bypass.overlay": 1,
+   "duplicate.lightbox": 1,
    "style.edge_insets": 1,
    "style.material_theme": 1,
    "style.sized_box": 1,
@@ -200,11 +329,15 @@
   "apps/raft_flutter/lib/features/message_presentation.dart": {
    "style.sized_box": 1
   },
+  "apps/raft_flutter/lib/features/mobile_server_tab.dart": {
+   "style.legacy_typography_size": 1
+  },
   "apps/raft_flutter/lib/features/page_alignment_previews.dart": {
    "style.edge_insets": 2
   },
   "apps/raft_flutter/lib/features/page_layout.dart": {
    "style.dimension": 1,
+   "style.legacy_typography_size": 2,
    "style.sized_box": 2
   },
   "apps/raft_flutter/lib/features/pending_mention_actions.dart": {
@@ -219,29 +352,33 @@
   "apps/raft_flutter/lib/features/public_attachments.dart": {
    "duplicate.button": 5
   },
+  "apps/raft_flutter/lib/features/quoted_message_preview.dart": {
+   "duplicate.card": 1
+  },
   "apps/raft_flutter/lib/features/resource_search.dart": {
    "style.border_radius": 1,
    "style.dimension": 2,
    "style.edge_insets": 2,
    "style.font_weight": 2,
-   "style.sized_box": 3,
-   "style.text_style": 1
+   "style.legacy_typography_size": 1,
+   "style.sized_box": 3
   },
   "apps/raft_flutter/lib/features/resource_view.dart": {
-   "bypass.menu": 9,
+   "bypass.menu": 2,
    "style.dimension": 6,
-   "style.edge_insets": 11,
+   "style.edge_insets": 8,
    "style.material_colors": 2,
-   "style.material_theme": 2,
-   "style.sized_box": 8,
-   "widget.menu": 9,
+   "style.material_theme": 1,
+   "style.sharp_bordered_box": 1,
+   "style.sized_box": 4,
+   "widget.menu": 2,
    "widget.surface": 2
   },
   "apps/raft_flutter/lib/features/search_continue_footer.dart": {
    "duplicate.button": 2
   },
   "apps/raft_flutter/lib/features/search_filter_bar.dart": {
-   "duplicate.button": 2
+   "duplicate.button": 1
   },
   "apps/raft_flutter/lib/features/search_home.dart": {
    "duplicate.button": 1,
@@ -281,10 +418,11 @@
   "apps/raft_flutter/lib/features/source_channel_files_view.dart": {
    "duplicate.button": 3,
    "style.border_radius": 1,
-   "style.dimension": 7,
-   "style.duration": 1,
+   "style.dimension": 6,
    "style.edge_insets": 4,
+   "style.legacy_typography_size": 7,
    "style.material_colors": 7,
+   "style.sharp_bordered_box": 1,
    "style.sized_box": 1
   },
   "apps/raft_flutter/lib/features/source_feedback_view.dart": {
@@ -298,22 +436,19 @@
    "style.font_weight": 1,
    "style.text_style": 1
   },
-  "apps/raft_flutter/lib/features/task_selection_filter.dart": {
-   "bypass.menu": 1,
-   "style.dimension": 1,
-   "style.material_colors": 1,
-   "widget.menu": 1
-  },
   "apps/raft_flutter/lib/features/thread_actions.dart": {
    "bypass.overlay": 1,
    "style.edge_insets": 1,
    "style.material_theme": 1
   },
+  "apps/raft_flutter/lib/features/thread_outline_list.dart": {
+   "style.legacy_typography_size": 1
+  },
   "apps/raft_flutter/lib/features/workspace_history_controls.dart": {
    "duplicate.button": 3
   },
   "apps/raft_flutter/lib/features/workspace_view.dart": {
-   "duplicate.button": 7,
+   "duplicate.button": 6,
    "style.dimension": 3,
    "style.edge_insets": 1,
    "style.material_icons": 1,
@@ -329,14 +464,14 @@
    "contract.color_literal": 1,
    "contract.radius_literal": 1
   },
-  "packages/raft_ui/lib/activity_scope_previews.dart": {
-   "duplicate.button": 1
-  },
   "packages/raft_ui/lib/activity_selected_previews.dart": {
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 2,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/basic_component_previews.dart": {
+   "contract.legacy_typography_size": 1,
+   "contract.sharp_bordered_box": 1,
    "duplicate.button": 7
   },
   "packages/raft_ui/lib/channel_header_previews.dart": {
@@ -362,45 +497,65 @@
   "packages/raft_ui/lib/mobile_detail_previews.dart": {
    "duplicate.button": 1
   },
+  "packages/raft_ui/lib/mobile_nav_server_previews.dart": {
+   "contract.legacy_typography_size": 1
+  },
   "packages/raft_ui/lib/notification_previews.dart": {
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/previews.dart": {
    "bypass.dialog": 2,
    "bypass.list_tile": 2,
-   "contract.font_size_literal": 1
+   "contract.font_size_literal": 1,
+   "duplicate.message-action-card": 3
   },
   "packages/raft_ui/lib/pull_to_refresh_previews.dart": {
    "bypass.list_tile": 1
   },
   "packages/raft_ui/lib/rich_surface_visual_previews.dart": {
    "contract.color_literal": 5,
-   "duplicate.button": 1
+   "duplicate.button": 1,
+   "duplicate.message-action-card": 2
   },
   "packages/raft_ui/lib/section_pager_previews.dart": {
    "bypass.list_tile": 1
   },
+  "packages/raft_ui/lib/share_progress_previews.dart": {
+   "contract.legacy_typography_size": 1
+  },
+  "packages/raft_ui/lib/sheet_previews.dart": {
+   "contract.legacy_typography_size": 3
+  },
   "packages/raft_ui/lib/src/action_card.dart": {
+   "contract.brutal_token": 1,
    "contract.color_literal": 1,
-   "duplicate.button": 1
+   "contract.legacy_typography_size": 1,
+   "contract.sharp_bordered_box": 2,
+   "duplicate.button": 1,
+   "duplicate.message-action-card": 5
   },
   "packages/raft_ui/lib/src/activity_scope.dart": {
-   "contract.font_size_literal": 1,
    "contract.radius_literal": 1,
-   "contract.stroke_width_literal": 2
+   "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/adaptive_workspace.dart": {
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/add_computer_dialog.dart": {
+   "contract.legacy_typography_size": 6,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 3
   },
   "packages/raft_ui/lib/src/add_members_dialog_view.dart": {
    "bypass.tooltip": 1,
    "contract.radius_literal": 1,
+   "contract.sharp_bordered_box": 2,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 2
+  },
+  "packages/raft_ui/lib/src/agent_archive_dialog.dart": {
+   "contract.legacy_typography_size": 2
   },
   "packages/raft_ui/lib/src/agent_avatar_picker.dart": {
    "contract.radius_literal": 1,
@@ -409,21 +564,31 @@
   "packages/raft_ui/lib/src/agent_chat_view.dart": {
    "contract.color_literal": 1,
    "contract.radius_literal": 1,
+   "contract.sharp_bordered_box": 2,
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/agent_combobox.dart": {
    "bypass.overlay": 1,
    "contract.stroke_width_literal": 1
   },
+  "packages/raft_ui/lib/src/agent_computer_offline_card.dart": {
+   "contract.legacy_typography_size": 1
+  },
   "packages/raft_ui/lib/src/agent_create_form.dart": {
    "contract.font_size_literal": 5,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 2
   },
+  "packages/raft_ui/lib/src/agent_dialogs.dart": {
+   "contract.legacy_typography_size": 2
+  },
   "packages/raft_ui/lib/src/agent_profile.dart": {
    "bypass.overlay": 1,
+   "contract.brutal_token": 3,
    "contract.color_literal": 5,
+   "contract.legacy_typography_size": 37,
    "contract.radius_literal": 5,
+   "contract.sharp_bordered_box": 3,
    "contract.stroke_width_literal": 5,
    "duplicate.button": 3
   },
@@ -434,18 +599,27 @@
    "contract.font_size_literal": 2
   },
   "packages/raft_ui/lib/src/announcement_modal.dart": {
-   "contract.radius_literal": 1,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/app_icon_choices.dart": {
+   "contract.brutal_token": 4,
+   "contract.legacy_typography_size": 5,
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/appearance_picker.dart": {
    "contract.color_literal": 1,
+   "contract.legacy_typography_size": 2,
    "contract.radius_literal": 6
+  },
+  "packages/raft_ui/lib/src/archived_channels_section.dart": {
+   "contract.sharp_bordered_box": 1
+  },
+  "packages/raft_ui/lib/src/artifact_collection_layout.dart": {
+   "contract.legacy_typography_size": 5
   },
   "packages/raft_ui/lib/src/attachment_card.dart": {
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 2
   },
@@ -454,8 +628,10 @@
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/attachment_comments.dart": {
+   "contract.brutal_token": 1,
    "contract.font_size_literal": 8,
    "contract.radius_literal": 1,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 2,
    "duplicate.button": 1
   },
@@ -470,22 +646,29 @@
    "bypass.dialog": 1,
    "contract.color_literal": 2,
    "contract.font_size_literal": 1,
+   "contract.sharp_bordered_box": 1,
    "duplicate.button": 4
   },
   "packages/raft_ui/lib/src/attachment_tokens.dart": {
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/attachment_transfer.dart": {
    "contract.color_literal": 5,
    "contract.font_size_literal": 2,
+   "contract.legacy_typography_size": 5,
    "contract.radius_literal": 2,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 2
   },
   "packages/raft_ui/lib/src/auth_page.dart": {
    "contract.font_size_literal": 3,
+   "contract.legacy_typography_size": 19,
    "contract.radius_literal": 2,
    "duplicate.button": 1
+  },
+  "packages/raft_ui/lib/src/auth_second_factor_recovery_page.dart": {
+   "contract.legacy_typography_size": 3
   },
   "packages/raft_ui/lib/src/avatar_pixel_data.dart": {
    "contract.color_literal": 1
@@ -493,42 +676,55 @@
   "packages/raft_ui/lib/src/brand.dart": {
    "contract.color_literal": 1
   },
+  "packages/raft_ui/lib/src/bulk_model_stepper.dart": {
+   "contract.legacy_typography_size": 1
+  },
   "packages/raft_ui/lib/src/channel_footer.dart": {
+   "contract.legacy_typography_size": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/channel_header.dart": {
+   "contract.legacy_typography_size": 4,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/channel_members_view.dart": {
+   "contract.brutal_token": 1,
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1,
-   "contract.stroke_width_literal": 7,
+   "contract.stroke_width_literal": 2,
    "duplicate.button": 10
   },
   "packages/raft_ui/lib/src/channel_overflow_sheet.dart": {
    "bypass.dialog": 1,
+   "contract.brutal_token": 1,
    "contract.font_size_literal": 1,
    "contract.radius_literal": 2,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/channel_resolution_body.dart": {
+   "contract.legacy_typography_size": 1,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/channel_settings_sheet.dart": {
+   "contract.legacy_typography_size": 1,
    "duplicate.button": 6
   },
   "packages/raft_ui/lib/src/chat_composition.dart": {
+   "contract.legacy_typography_size": 3,
    "contract.radius_literal": 1,
    "duplicate.button": 3
   },
   "packages/raft_ui/lib/src/chinese_community_page.dart": {
+   "contract.legacy_typography_size": 2,
    "contract.radius_literal": 3
   },
   "packages/raft_ui/lib/src/cindy_setup_screen.dart": {
    "contract.font_size_literal": 1,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 5
   },
   "packages/raft_ui/lib/src/collapsible.dart": {
@@ -536,17 +732,21 @@
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/combobox_panel.dart": {
-   "contract.font_size_literal": 1
+   "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 2
   },
   "packages/raft_ui/lib/src/community_agreement_dialog.dart": {
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 3
   },
   "packages/raft_ui/lib/src/components.dart": {
    "bypass.overlay": 1,
    "bypass.text_field": 1,
-   "contract.font_size_literal": 5,
-   "contract.radius_literal": 4,
+   "contract.font_size_literal": 4,
+   "contract.legacy_typography_size": 12,
+   "contract.radius_literal": 3,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 4,
    "duplicate.button": 2
   },
@@ -562,18 +762,20 @@
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/composer_expand.dart": {
+   "contract.legacy_typography_size": 2,
    "duplicate.button": 4
   },
   "packages/raft_ui/lib/src/composer_expansion_state.dart": {
    "bypass.overlay": 1
   },
   "packages/raft_ui/lib/src/composer_pending_mentions.dart": {
-   "contract.font_size_literal": 5,
-   "contract.radius_literal": 4,
+   "contract.font_size_literal": 3,
+   "contract.radius_literal": 3,
    "contract.stroke_width_literal": 3,
    "duplicate.button": 2
   },
   "packages/raft_ui/lib/src/composer_recipe.dart": {
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 1
@@ -582,25 +784,56 @@
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/computer_detail.dart": {
+   "contract.brutal_token": 3,
+   "contract.legacy_typography_size": 2,
+   "contract.sharp_bordered_box": 2,
    "contract.stroke_width_literal": 2,
    "duplicate.button": 3,
    "duplicate.list_row": 1
   },
+  "packages/raft_ui/lib/src/computer_manual_install.dart": {
+   "contract.legacy_typography_size": 2
+  },
+  "packages/raft_ui/lib/src/computer_owner_row.dart": {
+   "contract.legacy_typography_size": 3
+  },
+  "packages/raft_ui/lib/src/computer_release_notes.dart": {
+   "contract.legacy_typography_size": 1
+  },
+  "packages/raft_ui/lib/src/computer_runtime_chips.dart": {
+   "contract.legacy_typography_size": 2
+  },
   "packages/raft_ui/lib/src/computer_runtime_detection.dart": {
+   "contract.brutal_token": 1,
+   "contract.legacy_typography_size": 1,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/computer_surfaces.dart": {
+   "contract.brutal_token": 4,
+   "contract.legacy_typography_size": 7,
    "contract.radius_literal": 2,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 5,
    "duplicate.button": 1
   },
+  "packages/raft_ui/lib/src/computer_version_notice.dart": {
+   "contract.legacy_typography_size": 3
+  },
+  "packages/raft_ui/lib/src/computers_rack.dart": {
+   "contract.legacy_typography_size": 2
+  },
   "packages/raft_ui/lib/src/conversation_finder.dart": {
    "contract.color_literal": 1,
+   "contract.legacy_typography_size": 4,
    "contract.radius_literal": 3,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/conversation_list_row.dart": {
+   "contract.legacy_typography_size": 3,
    "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/copyable_code.dart": {
+   "contract.legacy_typography_size": 1
   },
   "packages/raft_ui/lib/src/create_task_view.dart": {
    "duplicate.button": 2
@@ -609,15 +842,19 @@
    "bypass.overlay": 1,
    "contract.color_literal": 15,
    "contract.font_size_literal": 3,
+   "contract.legacy_typography_size": 13,
    "contract.radius_literal": 9,
    "contract.stroke_width_literal": 8
   },
   "packages/raft_ui/lib/src/document_preview.dart": {
-   "contract.font_size_literal": 3
+   "contract.font_size_literal": 3,
+   "contract.sharp_bordered_box": 1
   },
   "packages/raft_ui/lib/src/editor_groups.dart": {
+   "contract.brutal_token": 1,
    "contract.color_literal": 2,
    "contract.font_size_literal": 1,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/emoji_nav_icon.dart": {
@@ -630,13 +867,16 @@
   },
   "packages/raft_ui/lib/src/error_presentation.dart": {
    "bypass.overlay": 1,
+   "contract.legacy_typography_size": 1,
    "duplicate.button": 3
   },
   "packages/raft_ui/lib/src/external_identity_panel.dart": {
-   "contract.font_size_literal": 4
+   "contract.font_size_literal": 2
   },
   "packages/raft_ui/lib/src/feedback_inbox.dart": {
+   "contract.brutal_token": 2,
    "contract.font_size_literal": 1,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/feedback_workspace.dart": {
@@ -647,12 +887,18 @@
    "contract.stroke_width_literal": 2,
    "duplicate.button": 5
   },
+  "packages/raft_ui/lib/src/font_warm_up.dart": {
+   "contract.legacy_typography_size": 23
+  },
   "packages/raft_ui/lib/src/form_controls.dart": {
+   "contract.brutal_token": 1,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/form_dialog.dart": {
    "bypass.select": 2,
-   "bypass.text_field": 1
+   "bypass.text_field": 1,
+   "contract.legacy_typography_size": 1
   },
   "packages/raft_ui/lib/src/form_presentation.dart": {
    "duplicate.button": 1
@@ -660,13 +906,19 @@
   "packages/raft_ui/lib/src/forward_composer.dart": {
    "bypass.text_field": 1,
    "contract.font_size_literal": 7,
+   "contract.legacy_typography_size": 2,
    "contract.radius_literal": 1,
-   "duplicate.button": 5
+   "duplicate.button": 5,
+   "duplicate.message-embed": 1
   },
   "packages/raft_ui/lib/src/forward_desktop_dialog.dart": {
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 2,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 4
+  },
+  "packages/raft_ui/lib/src/forwarded_bundle.dart": {
+   "duplicate.message-embed": 1
   },
   "packages/raft_ui/lib/src/hover_card.dart": {
    "bypass.overlay": 1
@@ -676,7 +928,7 @@
   },
   "packages/raft_ui/lib/src/icons.dart": {
    "contract.color_literal": 3,
-   "contract.stroke_width_literal": 3
+   "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/indicators.dart": {
    "contract.color_literal": 5,
@@ -694,6 +946,7 @@
    "contract.color_literal": 9,
    "contract.font_size_literal": 9,
    "contract.radius_literal": 1,
+   "contract.sharp_bordered_box": 11,
    "contract.stroke_width_literal": 4
   },
   "packages/raft_ui/lib/src/inline_thread_surface.dart": {
@@ -701,6 +954,7 @@
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/invite_accept_page.dart": {
+   "contract.legacy_typography_size": 4,
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/invite_human_dialog.dart": {
@@ -710,10 +964,14 @@
   "packages/raft_ui/lib/src/joint_channel_dialog_view.dart": {
    "duplicate.button": 4
   },
+  "packages/raft_ui/lib/src/joint_same_admin_notice.dart": {
+   "contract.legacy_typography_size": 1
+  },
   "packages/raft_ui/lib/src/large_content_viewer.dart": {
    "bypass.overlay": 1,
    "contract.color_literal": 1,
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/lazy_markdown_document.dart": {
@@ -728,9 +986,14 @@
   },
   "packages/raft_ui/lib/src/list_page_parts.dart": {
    "contract.font_size_literal": 2,
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 3
+  },
+  "packages/raft_ui/lib/src/markdown_document.dart": {
+   "contract.legacy_typography_size": 1
   },
   "packages/raft_ui/lib/src/markdown_outline.dart": {
    "contract.font_size_literal": 1
@@ -749,28 +1012,36 @@
    "contract.font_size_literal": 2,
    "duplicate.button": 2
   },
+  "packages/raft_ui/lib/src/message_content_family.dart": {
+   "contract.sharp_bordered_box": 1
+  },
   "packages/raft_ui/lib/src/message_content_tokens.dart": {
    "contract.color_literal": 2,
+   "contract.legacy_typography_size": 7,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/message_context_menu.dart": {
    "duplicate.button": 1
   },
+  "packages/raft_ui/lib/src/message_export.dart": {
+   "contract.legacy_typography_size": 1
+  },
   "packages/raft_ui/lib/src/message_list_marker.dart": {
    "contract.color_literal": 1
   },
   "packages/raft_ui/lib/src/message_reference_chip.dart": {
-   "contract.color_literal": 1,
    "contract.font_size_literal": 3,
-   "contract.radius_literal": 1,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/message_row_recipe.dart": {
    "bypass.overlay": 1,
    "contract.color_literal": 1,
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 2,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 3,
    "duplicate.button": 2
   },
@@ -782,17 +1053,21 @@
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/mobile_computer_list.dart": {
+   "contract.legacy_typography_size": 2,
    "contract.radius_literal": 3,
    "contract.stroke_width_literal": 2,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/mobile_navigation.dart": {
+   "contract.brutal_token": 1,
    "contract.color_literal": 10,
+   "contract.legacy_typography_size": 3,
    "contract.radius_literal": 3,
-   "contract.stroke_width_literal": 2,
+   "contract.stroke_width_literal": 1,
    "duplicate.button": 3
   },
   "packages/raft_ui/lib/src/mobile_navigation_docked.dart": {
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 2,
    "contract.stroke_width_literal": 2
   },
@@ -800,19 +1075,20 @@
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/mobile_workspace_header.dart": {
-   "contract.radius_literal": 2,
-   "duplicate.button": 1
+   "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/mounted_avatar_recipe.dart": {
    "contract.color_literal": 2
   },
   "packages/raft_ui/lib/src/mounted_reaction_recipe.dart": {
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2,
    "duplicate.button": 2
   },
   "packages/raft_ui/lib/src/mounted_task_chip.dart": {
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 2,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 1
@@ -821,26 +1097,36 @@
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/notification_center.dart": {
-   "contract.color_literal": 5,
    "contract.radius_literal": 1,
-   "contract.stroke_width_literal": 1,
-   "duplicate.button": 1
+   "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/notification_settings_card.dart": {
    "contract.font_size_literal": 3,
+   "contract.sharp_bordered_box": 2,
    "contract.stroke_width_literal": 3
   },
   "packages/raft_ui/lib/src/onboarding_previews.dart": {
+   "contract.brutal_token": 11,
    "contract.color_literal": 4,
+   "contract.legacy_typography_size": 2,
    "contract.radius_literal": 2,
+   "contract.sharp_bordered_box": 4,
    "contract.stroke_width_literal": 12
   },
+  "packages/raft_ui/lib/src/others_agents_list.dart": {
+   "contract.legacy_typography_size": 1
+  },
+  "packages/raft_ui/lib/src/overlays/dialog.dart": {
+   "contract.legacy_typography_size": 1
+  },
   "packages/raft_ui/lib/src/page_recipes.dart": {
+   "contract.legacy_typography_size": 16,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/page_tokens.dart": {
-   "contract.font_size_literal": 1
+   "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 3
   },
   "packages/raft_ui/lib/src/panel_edge.dart": {
    "contract.stroke_width_literal": 2
@@ -848,15 +1134,27 @@
   "packages/raft_ui/lib/src/panel_layout.dart": {
    "contract.color_literal": 1,
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 5,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 3
   },
   "packages/raft_ui/lib/src/presentation.dart": {
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/preview_unavailable.dart": {
+   "contract.legacy_typography_size": 4,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 5
+  },
+  "packages/raft_ui/lib/src/private_app_invite_page.dart": {
+   "contract.legacy_typography_size": 2
+  },
+  "packages/raft_ui/lib/src/product_empty_state.dart": {
+   "contract.legacy_typography_size": 2
+  },
+  "packages/raft_ui/lib/src/profile_preview_card.dart": {
+   "contract.legacy_typography_size": 1
   },
   "packages/raft_ui/lib/src/provider_edit_view.dart": {
    "contract.color_literal": 1,
@@ -868,7 +1166,8 @@
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/public_server.dart": {
-   "contract.font_size_literal": 2,
+   "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 3,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 5
   },
@@ -882,12 +1181,18 @@
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/quick_switcher_results.dart": {
+   "contract.legacy_typography_size": 5,
+   "contract.sharp_bordered_box": 2,
    "contract.stroke_width_literal": 2,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/quoted_message_card.dart": {
    "contract.color_literal": 7,
+   "contract.sharp_bordered_box": 2,
    "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/rack_runtime_usage.dart": {
+   "contract.legacy_typography_size": 2
   },
   "packages/raft_ui/lib/src/raft/avatar.dart": {
    "contract.radius_literal": 1,
@@ -920,7 +1225,7 @@
    "contract.radius_literal": 2
   },
   "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart": {
-   "contract.radius_literal": 3
+   "contract.radius_literal": 2
   },
   "packages/raft_ui/lib/src/raftbench/raftbench_legacy_rules.dart": {
    "contract.radius_literal": 3
@@ -932,6 +1237,7 @@
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/raftbench/raftbench_parts.dart": {
+   "contract.legacy_typography_size": 2,
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/rail_attention.dart": {
@@ -946,28 +1252,45 @@
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/report_issue_dialog.dart": {
+   "contract.brutal_token": 1,
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 1,
+   "contract.sharp_bordered_box": 2,
    "contract.stroke_width_literal": 2,
    "duplicate.button": 6
   },
   "packages/raft_ui/lib/src/resource_cards.dart": {
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 3,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/resource_rows.dart": {
    "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 3,
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/rich_card_tokens.dart": {
-   "contract.radius_literal": 1
+   "contract.legacy_typography_size": 2,
+   "contract.radius_literal": 1,
+   "duplicate.message-action-card": 1,
+   "duplicate.message-embed": 1
+  },
+  "packages/raft_ui/lib/src/role_permission_help_dialog.dart": {
+   "contract.legacy_typography_size": 3
   },
   "packages/raft_ui/lib/src/root_error_fallback.dart": {
+   "contract.legacy_typography_size": 6,
    "contract.radius_literal": 4
+  },
+  "packages/raft_ui/lib/src/runtime_error_banner.dart": {
+   "contract.legacy_typography_size": 1
   },
   "packages/raft_ui/lib/src/runtime_usage_card.dart": {
    "bypass.dialog": 1,
    "contract.color_literal": 1,
+   "contract.legacy_typography_size": 1,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 4,
    "duplicate.button": 1
   },
@@ -980,76 +1303,89 @@
   "packages/raft_ui/lib/src/select_field.dart": {
    "bypass.overlay": 1
   },
-  "packages/raft_ui/lib/src/selection_toolbar_recipe.dart": {
-   "contract.font_size_literal": 1
-  },
-  "packages/raft_ui/lib/src/server_access_denied.dart": {
-   "contract.radius_literal": 1
-  },
   "packages/raft_ui/lib/src/server_switcher.dart": {
-   "bypass.overlay": 1
+   "bypass.overlay": 1,
+   "contract.legacy_typography_size": 4
   },
   "packages/raft_ui/lib/src/server_switcher_top_bar.dart": {
    "bypass.overlay": 1,
-   "contract.radius_literal": 3
+   "contract.legacy_typography_size": 2,
+   "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/settings_about_mobile.dart": {
+   "contract.legacy_typography_size": 2
   },
   "packages/raft_ui/lib/src/settings_administration.dart": {
    "bypass.overlay": 1,
    "bypass.picker": 2,
    "contract.color_literal": 1,
    "contract.font_size_literal": 2,
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 2,
-   "contract.stroke_width_literal": 10,
+   "contract.sharp_bordered_box": 1,
+   "contract.stroke_width_literal": 3,
    "duplicate.list_row": 1
   },
   "packages/raft_ui/lib/src/settings_app_editor.dart": {
-   "contract.stroke_width_literal": 12,
-   "duplicate.button": 1
-  },
-  "packages/raft_ui/lib/src/settings_applications.dart": {
-   "contract.color_literal": 1,
-   "contract.radius_literal": 1,
-   "contract.stroke_width_literal": 8,
-   "duplicate.button": 1
-  },
-  "packages/raft_ui/lib/src/settings_billing.dart": {
-   "contract.font_size_literal": 2,
+   "contract.brutal_token": 5,
+   "contract.legacy_typography_size": 15,
+   "contract.sharp_bordered_box": 7,
    "contract.stroke_width_literal": 7
   },
+  "packages/raft_ui/lib/src/settings_app_setup.dart": {
+   "contract.legacy_typography_size": 5
+  },
+  "packages/raft_ui/lib/src/settings_applications.dart": {
+   "contract.legacy_typography_size": 6,
+   "contract.sharp_bordered_box": 3,
+   "contract.stroke_width_literal": 2
+  },
   "packages/raft_ui/lib/src/settings_controls.dart": {
+   "contract.brutal_token": 1,
    "contract.color_literal": 2,
+   "contract.legacy_typography_size": 6,
    "contract.radius_literal": 1,
+   "contract.sharp_bordered_box": 2,
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/settings_layout.dart": {
+   "contract.brutal_token": 1,
+   "contract.legacy_typography_size": 7,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/settings_resources.dart": {
-   "contract.color_literal": 3,
-   "contract.stroke_width_literal": 1
+   "contract.legacy_typography_size": 2
   },
   "packages/raft_ui/lib/src/settings_workspace.dart": {
-   "contract.color_literal": 4,
+   "contract.color_literal": 3,
+   "contract.legacy_typography_size": 15,
    "contract.radius_literal": 1,
+   "contract.sharp_bordered_box": 3,
    "contract.stroke_width_literal": 4
   },
   "packages/raft_ui/lib/src/setup_resume_bar.dart": {
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/setup_steps.dart": {
+   "contract.brutal_token": 3,
    "contract.color_literal": 2,
    "contract.font_size_literal": 4,
+   "contract.legacy_typography_size": 14,
    "contract.radius_literal": 8,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 10
   },
   "packages/raft_ui/lib/src/sidebar_frame.dart": {
    "contract.color_literal": 1,
+   "contract.legacy_typography_size": 3,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/sidebar_indicators.dart": {
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 1
   },
@@ -1057,6 +1393,7 @@
    "bypass.overlay": 1
   },
   "packages/raft_ui/lib/src/sidebar_section.dart": {
+   "contract.legacy_typography_size": 2,
    "duplicate.button": 2
   },
   "packages/raft_ui/lib/src/sidebar_section_dialog.dart": {
@@ -1064,13 +1401,17 @@
    "contract.font_size_literal": 1,
    "duplicate.button": 4
   },
+  "packages/raft_ui/lib/src/sidebar_thread_unread.dart": {
+   "contract.legacy_typography_size": 1
+  },
   "packages/raft_ui/lib/src/slack_bridge_wizard.dart": {
-   "contract.color_literal": 1,
    "contract.font_size_literal": 1,
-   "contract.radius_literal": 8,
-   "contract.stroke_width_literal": 4
+   "contract.legacy_typography_size": 1,
+   "contract.radius_literal": 5,
+   "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/small_icon_recipe.dart": {
+   "contract.brutal_token": 1,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 1
   },
@@ -1083,14 +1424,27 @@
    "contract.stroke_width_literal": 1,
    "duplicate.button": 1
   },
+  "packages/raft_ui/lib/src/task_chip_page.dart": {
+   "contract.sharp_bordered_box": 1
+  },
+  "packages/raft_ui/lib/src/task_handoff_card.dart": {
+   "contract.legacy_typography_size": 1,
+   "contract.sharp_bordered_box": 1,
+   "duplicate.message-action-card": 1
+  },
   "packages/raft_ui/lib/src/task_surface.dart": {
    "contract.color_literal": 1,
+   "contract.legacy_typography_size": 19,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2,
-   "duplicate.button": 4
+   "duplicate.button": 3
   },
   "packages/raft_ui/lib/src/task_timeline.dart": {
+   "contract.legacy_typography_size": 2,
    "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/text_selection_toolbar.dart": {
+   "contract.legacy_typography_size": 1
   },
   "packages/raft_ui/lib/src/theme.dart": {
    "contract.color_literal": 6,
@@ -1100,10 +1454,11 @@
   },
   "packages/raft_ui/lib/src/thread_composition.dart": {
    "bypass.text_field": 1,
-   "contract.font_size_literal": 1,
+   "contract.legacy_typography_size": 1,
    "contract.radius_literal": 1,
-   "contract.stroke_width_literal": 3,
-   "duplicate.button": 6
+   "contract.sharp_bordered_box": 1,
+   "contract.stroke_width_literal": 2,
+   "duplicate.button": 4
   },
   "packages/raft_ui/lib/src/thread_followers.dart": {
    "bypass.overlay": 1,
@@ -1115,10 +1470,14 @@
    "contract.font_size_literal": 4
   },
   "packages/raft_ui/lib/src/thread_resolution_body.dart": {
+   "contract.legacy_typography_size": 4,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/timeline_bottom_button.dart": {
    "duplicate.button": 1
+  },
+  "packages/raft_ui/lib/src/toast.dart": {
+   "contract.sharp_bordered_box": 1
   },
   "packages/raft_ui/lib/src/tokens/token_set.dart": {
    "contract.color_literal": 1
@@ -1130,21 +1489,31 @@
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/video_viewer.dart": {
-   "contract.color_literal": 3
+   "contract.color_literal": 3,
+   "contract.sharp_bordered_box": 1
   },
   "packages/raft_ui/lib/src/working_agents.dart": {
    "bypass.overlay": 1,
+   "contract.legacy_typography_size": 5,
    "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/workspace_button.dart": {
+   "contract.legacy_typography_size": 1
   },
   "packages/raft_ui/lib/src/workspace_mode_card.dart": {
    "contract.font_size_literal": 2,
+   "contract.sharp_bordered_box": 1,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/workspace_shell.dart": {
+   "contract.legacy_typography_size": 1,
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/task_surface_previews.dart": {
    "duplicate.button": 1
+  },
+  "packages/raft_ui/lib/typography_locale_previews.dart": {
+   "contract.legacy_typography_size": 2
   }
  },
  "generatedTotal": 1749,
@@ -1476,5 +1845,9 @@
   "packages/raft_ui/lib/src/recipes/web_sidebar_sort_menu.g.dart": 0,
   "packages/raft_ui/lib/src/recipes/web_top_bar.g.dart": 0,
   "packages/raft_ui/lib/src/recipes/web_xlsx_tabs_layout.g.dart": 0
+ },
+ "coverageRatchet": {
+  "unresolvedDeclarations": 7877,
+  "unresolvedEntries": 350
  }
 }

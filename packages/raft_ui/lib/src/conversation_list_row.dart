@@ -403,50 +403,6 @@ class RaftConversationAvatarTile extends StatelessWidget {
   }
 }
 
-/// ThreadsInbox `SectionEyebrow` over the list ("Pinned" with a pin,
-/// "All conversations"): `flex items-center gap-1.5 px-4 pb-1`, `pt-2` for the
-/// first heading and `pt-4` after a section.
-class RaftActivityListSection extends StatelessWidget {
-  const RaftActivityListSection({
-    super.key,
-    required this.label,
-    this.pinned = false,
-    this.first = false,
-  });
-  final String label;
-  final bool pinned, first;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final color = t.colors['foreground-muted']!;
-    return Padding(
-      key: const ValueKey('activity-list-section'),
-      padding: EdgeInsets.fromLTRB(16, first ? 8 : 16, 16, 4),
-      child: Row(
-        children: [
-          if (pinned) ...[
-            RaftIcon(RaftGlyph.pin, size: 12, color: color),
-            const SizedBox(width: 6),
-          ],
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: RaftTypography.body(t, size: 12, line: 16, color: color)
-                  .copyWith(
-                    fontFamily: t.headingFont,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// The task chip of a list row's title line: the status mark and `#N`.
 class RaftListRowTaskBadge extends StatelessWidget {
   const RaftListRowTaskBadge({

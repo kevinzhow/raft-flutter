@@ -547,5 +547,72 @@ class ResolvedIntrinsicOwnerTest(unittest.TestCase):
         self.assertFalse(coverage.owns_reference(ref, self.file + '#class:CanonicalPaintWidget', declarations))
 
 
+class UnresolvedRatchetTest(unittest.TestCase):
+    def _write_fixture(self, root, decl_unresolved, entry_unresolved, max_decl, max_entry):
+        (root / 'docs').mkdir(parents=True, exist_ok=True)
+        (root / 'tool').mkdir(parents=True, exist_ok=True)
+        decls = {
+            f'packages/raft_ui/lib/src/f{i}.dart#class:W{i}': {
+                'role': 'unresolved', 'familyRefs': [], 'owner': 'fixture', 'reason': 'Legacy debt.'
+            }
+            for i in range(decl_unresolved)
+        }
+        entries = {
+            f'entry-{i}': {
+                'owner': 'fixture', 'mountStatus': 'unresolved', 'declarationRefs': [], 'reason': 'Legacy entry.'
+            }
+            for i in range(entry_unresolved)
+        }
+        ledger = {'designSystemCoverage': {
+            'schemaVersion': 1, 'canonicalRegistry': 'tool/ds-audit-families.json',
+            'declarations': decls, 'entries': entries, 'requirements': {},
+            'knownStateAtoms': {}, 'stateUses': {}, 'evidence': {}, 'currentClaims': {},
+        }}
+        (root / 'docs/state-parity.json').write_text(json.dumps(ledger))
+        (root / 'tool/ds-audit-baseline.json').write_text(json.dumps({
+            'version': 2,
+            'coverageRatchet': {
+                'unresolvedDeclarations': max_decl,
+                'unresolvedEntries': max_entry,
+            },
+        }))
+
+    def test_adding_new_unresolved_declaration_fails_cli_check(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            self._write_fixture(root, decl_unresolved=3, entry_unresolved=2, max_decl=3, max_entry=2)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                self.assertEqual(coverage.main(['--check', '--root', str(root)]), 0)
+            # Lowering unresolved count always passes.
+            self._write_fixture(root, decl_unresolved=2, entry_unresolved=2, max_decl=3, max_entry=2)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                self.assertEqual(coverage.main(['--check', '--root', str(root)]), 0)
+            # Adding a new role: 'unresolved' declaration must fail --check.
+            self._write_fixture(root, decl_unresolved=4, entry_unresolved=2, max_decl=3, max_entry=2)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                code = coverage.main(['--check', '--root', str(root)])
+            self.assertEqual(code, 1)
+            self.assertIn('unresolved declarations grew (3 -> 4)', err.getvalue())
+
+    def test_adding_new_unresolved_entry_fails_cli_check(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            self._write_fixture(root, decl_unresolved=3, entry_unresolved=3, max_decl=3, max_entry=2)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                code = coverage.main(['--check', '--root', str(root)])
+            self.assertEqual(code, 1)
+            self.assertIn('unresolved entries grew (2 -> 3)', err.getvalue())
+
+    def test_repo_ledger_passes_ds_coverage_check(self):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = coverage.main(['--check', '--root', str(ROOT)])
+        self.assertEqual(code, 0, err.getvalue())
+
+
 if __name__ == '__main__':
     unittest.main()

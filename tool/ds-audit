@@ -239,7 +239,7 @@ def compare(baseline_files, current_files):
 
 
 def baseline_document(report):
-    return {
+    doc = {
         'version': 2,
         'scopes': SCOPES,
         'about': 'Ratchet for tool/ds-audit. Counts may only go down. Feature branches never edit this file; '
@@ -250,6 +250,9 @@ def baseline_document(report):
         'generatedTotal': report['generatedTotal'],
         'generated': report['generated'],
     }
+    if 'coverage' in report and 'unresolvedRatchet' in report['coverage']:
+        doc['coverageRatchet'] = report['coverage']['unresolvedRatchet']
+    return doc
 
 
 def load_baseline():
@@ -303,6 +306,8 @@ def format_comparison(regressions, improvements):
                 entry = registry.get(c.removeprefix('duplicate.'), {})
                 lines.append(f"  {c}: use {' / '.join(entry.get('canonical', ['?']))} "
                              f"instead of {', '.join(sorted(entry.get('deprecated', {})))}")
+                for symbol, hint in sorted(entry.get('deprecatedHints', {}).items()):
+                    lines.append(f'    {symbol}: {hint}')
         lines.append('Use raft_ui components/tokens and the theme pack instead (docs/ds-migration.md). Genuinely '
                      'platform-only code may carry `// ds-allow: <reason>` for review.')
     if improvements:

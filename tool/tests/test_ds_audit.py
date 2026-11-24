@@ -148,7 +148,8 @@ class ContractRatchetTest(unittest.TestCase):
         a = 'packages/raft_ui/lib/src/a.dart'
         for category in ('contract.color_literal', 'contract.font_size_literal', 'contract.radius_literal',
                          'contract.stroke_width_literal', 'contract.theme_name_branch',
-                         'contract.legacy_recipe_theme'):
+                         'contract.legacy_recipe_theme', 'contract.sharp_bordered_box',
+                         'contract.brutal_token', 'contract.legacy_typography_size'):
             files = {a: {'contract.color_literal': 3, 'contract.radius_literal': 2},
                      'packages/raft_ui/lib/src/b.dart': {'contract.legacy_recipe_theme': 1}}
             files[a][category] = files[a].get(category, 0) + 1
@@ -551,7 +552,8 @@ class FamilyRegistryTest(unittest.TestCase):
                                                'mobile_nav_server', 'workspace_button', 'side-panel-frame',
                                                'app-link-card', 'comment-card',
                                                'workspace-shell', 'sidebar', 'panel-header', 'search',
-                                               'pull-to-refresh', 'notification-center'})
+                                               'pull-to-refresh', 'notification-center',
+                                               'message-embed', 'message-action-card', 'lightbox'})
         self.assert_registry_ownership(json.loads(ds_audit.FAMILIES.read_text()))
         self.assertEqual(self.families['side-panel-frame']['canonical'], ['RaftSidePanelFrame'])
         self.assertEqual(self.families['comment-card']['canonical'], ['RaftCommentCard'])
@@ -567,6 +569,15 @@ class FamilyRegistryTest(unittest.TestCase):
         )
         self.assertIn('RaftArchivedNameBanner', self.families['banner']['deprecated'])
         self.assertNotIn('RaftAgentBanner', self.families['banner']['deprecated'])  # thin adapter over RaftBanner
+        for family, names in (
+            ('message-embed', ('ForwardedSnapshotRecipe', 'RaftMessageEmbedRecipe')),
+            ('message-action-card', ('ActionSnapshotRecipe', 'RaftActionCardRecipe', 'RaftActionCard')),
+            ('lightbox', ('RaftLightboxRecipe',)),
+            ('card', ('RaftQuotedMessageSkeleton',)),
+        ):
+            for sym in names:
+                self.assertIn(sym, self.families[family]['deprecated'])
+                self.assertTrue(self.families[family].get('deprecatedHints', {}).get(sym), f'{family}.{sym} needs hint')
 
     def test_missing_ambiguous_or_unbound_ownership_is_rejected(self):
         registry = json.loads(ds_audit.FAMILIES.read_text())

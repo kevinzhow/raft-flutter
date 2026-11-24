@@ -3,6 +3,7 @@
 The analyzer supplies identities. This module never resolves Dart by name or
 converts static references, case names or historical frames into visual passes.
 """
+import argparse
 import hashlib
 import importlib.util
 import base64
@@ -11,6 +12,7 @@ import json
 import pathlib
 import re
 import subprocess
+import sys
 
 HEX = re.compile(r'[0-9a-f]{64}\Z')
 ROLES = {'canonical_component', 'internal_wrapper', 'internal_part', 'entry_composition',
@@ -298,7 +300,56 @@ def current_receipt_errors(root, receipt, requirement, manifest, expected_files=
     return errors
 
 
-def validate(root, registry, ledger, inventory, expected_files, manifest=None):
+def unresolved_counts(ledger):
+    """Return current unresolved declaration and entry counts from a state-parity ledger."""
+    coverage = ledger.get('designSystemCoverage', {}) if isinstance(ledger, dict) else {}
+    declarations = coverage.get('declarations', {}) if isinstance(coverage, dict) else {}
+    entries = coverage.get('entries', {}) if isinstance(coverage, dict) else {}
+    decl_count = sum(
+        isinstance(row, dict) and row.get('role') == 'unresolved'
+        for row in declarations.values()
+    ) if isinstance(declarations, dict) else 0
+    entry_count = sum(
+        isinstance(row, dict) and row.get('mountStatus') == 'unresolved'
+        for row in entries.values()
+    ) if isinstance(entries, dict) else 0
+    return {'unresolvedDeclarations': decl_count, 'unresolvedEntries': entry_count}
+
+
+def load_unresolved_ratchet(root):
+    """Load the unresolved ratchet ceiling from tool/ds-audit-baseline.json, or None if absent."""
+    baseline_path = pathlib.Path(root) / 'tool/ds-audit-baseline.json'
+    if not baseline_path.is_file():
+        return None
+    baseline = json.loads(baseline_path.read_text())
+    ratchet = baseline.get('coverageRatchet')
+    if not isinstance(ratchet, dict):
+        return None
+    return ratchet
+
+
+def unresolved_ratchet_errors(ledger, ratchet):
+    """Fail if unresolved declaration or mount entry counts exceed the ratcheted ceiling."""
+    if not isinstance(ratchet, dict):
+        return []
+    errors = []
+    current = unresolved_counts(ledger)
+    max_decl = ratchet.get('unresolvedDeclarations')
+    if isinstance(max_decl, int) and current['unresolvedDeclarations'] > max_decl:
+        errors.append(
+            f"unresolved declarations grew ({max_decl} -> {current['unresolvedDeclarations']}); "
+            "classify new declarations instead of adding role: 'unresolved'"
+        )
+    max_entries = ratchet.get('unresolvedEntries')
+    if isinstance(max_entries, int) and current['unresolvedEntries'] > max_entries:
+        errors.append(
+            f"unresolved entries grew ({max_entries} -> {current['unresolvedEntries']}); "
+            "classify new entries instead of adding mountStatus: 'unresolved'"
+        )
+    return errors
+
+
+def validate(root, registry, ledger, inventory, expected_files, manifest=None, unresolved_ratchet=None):
     """Return independent structural errors and derived pending/history counts."""
     errors = []
     if not isinstance(inventory, dict) or inventory.get('version') != 1:
@@ -475,12 +526,14 @@ def validate(root, registry, ledger, inventory, expected_files, manifest=None):
         errors += [f'current claim {requirement_id}: {e}' for e in problems]
         if not problems:
             accepted += 1
+    errors += unresolved_ratchet_errors(ledger, unresolved_ratchet)
     pending = sum(isinstance(declarations.get(i), dict) and declarations[i].get('role') == 'unresolved' for i in seen)
     unreviewed_seeds = sum(isinstance(r, dict) and r.get('role') == 'unresolved' and i not in seen
                           for i, r in declarations.items())
     return {'version': 1, 'errors': errors, 'registeredRecipes': len(recipes),
             'resolvedDeclarations': len(seen), 'unresolvedMappings': pending,
             'unresolvedCensusCandidatesOutsideResolvedInventory': unreviewed_seeds,
+            'unresolvedRatchet': unresolved_counts(ledger),
             'registeredEntries': len(entries), 'staleHistory': stale,
             'visualPasses': accepted, 'unknownIsNotVisualPass': True}
 
@@ -506,7 +559,8 @@ def check(root, inventory):
     path = root / '.local/design-system-execution.json'
     if claims and path.is_file():
         manifest = json.loads(path.read_text())
-    result = validate(root, registry, ledger, inventory, files, manifest)
+    ratchet = load_unresolved_ratchet(root)
+    result = validate(root, registry, ledger, inventory, files, manifest, unresolved_ratchet=ratchet)
     for requirement, receipt_id in claims.items():
         if not isinstance(receipt_id, str):
             continue
@@ -527,3 +581,63 @@ def check(root, inventory):
     result['runtimeInputSHA256'] = digest(json.dumps(
         [file_binding(root, n) for n in files], sort_keys=True).encode())
     return result
+
+
+def check_ledger_only(root):
+    """Fast standalone check of docs/state-parity.json unresolved ratchet and schema."""
+    root = pathlib.Path(root)
+    ledger_path = root / 'docs/state-parity.json'
+    ledger = json.loads(ledger_path.read_text())
+    errors = []
+    coverage = _map(ledger.get('designSystemCoverage'), 'designSystemCoverage', errors)
+    declarations = _map(coverage.get('declarations'), 'declarations', errors)
+    entries = _map(coverage.get('entries'), 'entries', errors)
+    for identity, raw in declarations.items():
+        row = _map(raw, identity, errors)
+        if row.get('role') not in ROLES or not row.get('owner'):
+            errors.append(f'{identity}: missing role/owner')
+        if row.get('role') == 'unresolved' and not _reason(row):
+            errors.append(f'{identity}: unresolved mapping needs a reason')
+    for identity, row in entries.items():
+        if not isinstance(row, dict) or not row.get('owner') or row.get('mountStatus') not in {
+            'unresolved', 'source_reviewed', 'observed_in_bound_fixture'
+        }:
+            errors.append(f'entry {identity}: missing owner/mount status')
+        elif row.get('mountStatus') == 'unresolved' and not _reason(row):
+            errors.append(f'entry {identity}: unresolved mount needs a reason')
+    ratchet = load_unresolved_ratchet(root)
+    if ratchet is None:
+        errors.append('missing coverageRatchet in tool/ds-audit-baseline.json')
+    else:
+        errors += unresolved_ratchet_errors(ledger, ratchet)
+    counts = unresolved_counts(ledger)
+    return {'errors': errors, 'counts': counts, 'ratchet': ratchet}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Check docs/state-parity.json designSystemCoverage unresolved ratchet.'
+    )
+    parser.add_argument('--check', action='store_true',
+                        help='exit 1 if unresolved declaration/entry counts exceed tool/ds-audit-baseline.json')
+    parser.add_argument('--root', default=str(pathlib.Path(__file__).resolve().parent.parent),
+                        help='repository root containing docs/state-parity.json and tool/ds-audit-baseline.json')
+    args = parser.parse_args(argv)
+    report = check_ledger_only(args.root)
+    counts = report['counts']
+    ratchet = report['ratchet'] or {}
+    print(
+        f"ds-coverage: unresolved declarations {counts['unresolvedDeclarations']}"
+        f" (ratchet <= {ratchet.get('unresolvedDeclarations', '?')}); "
+        f"unresolved entries {counts['unresolvedEntries']}"
+        f" (ratchet <= {ratchet.get('unresolvedEntries', '?')})"
+    )
+    for err in report['errors']:
+        print(f'ds-coverage: ERROR: {err}', file=sys.stderr)
+    if args.check and report['errors']:
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

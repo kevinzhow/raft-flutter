@@ -45,6 +45,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 DEFAULT_DOC = ROOT / 'build/parity-ext/page-inventory.md'
 CASE_MAP = ROOT / 'build/parity-ext/visual-testing-results/android-case-map.json'
+COVERAGE_MAP = HERE / 'coverage-map.json'
+SCORE_PASS_THRESHOLD = 0.96
 W = 'packages/web/src/'
 
 OFFICIAL_UI = ('components.tokens.palette', 'components.ui.*')
@@ -572,10 +574,154 @@ EXCLUDED = [
 REASONS = ('obsolete', 'flag-off', 'host-only', 'browser-only', 'dev-only', 'duplicate', 'superseded')
 PRIO_LABEL = {1: 'P1 daily path', 2: 'P2 common', 3: 'P3 rare / admin / edge'}
 
+# Inline & sub-surfaces (non-route cards, skeletons, media players, and sub-tabs)
+# that are invisible to top-level route enumeration in App.tsx / MainLayout.tsx.
+INLINE_SURFACES = [
+    R('I.01', 'Task assignment / handoff card (task-handoff)',
+      'components/task/TaskHandoffCard.tsx', 'DP',
+      d=['components.conversation.task-handoff.desktop.*'],
+      p=['components.conversation.task-handoff.mobile.*'], prio=1,
+      note='Inline system-event card inside task conversations (packages/raft_ui/lib/src/task_handoff_card.dart).'),
+    R('I.02', 'Non-spec action card (non-spec action-card)',
+      'components/actions/ActionCard.tsx', 'DP',
+      d=['components.conversation.action-legacy.desktop.*'],
+      p=['components.conversation.action-legacy.mobile.*'], prio=1,
+      note='Legacy RaftActionCard path for non-spec actions (packages/raft_ui/lib/src/action_card.dart), distinct from RaftSpecActionCard (3.31).'),
+    R('I.03', 'Quoted message loading skeleton (quoted-skeleton)',
+      'components/message/QuotedMessagePermalinkPreview.tsx', 'DP',
+      d=['components.conversation.quote.desktop.loading*'],
+      p=['components.conversation.quote.mobile.loading*'], prio=2,
+      note='Loading skeleton while resolving a quoted message permalink (packages/raft_ui/lib/src/quoted_message_card.dart).'),
+    R('I.04', 'Inline audio player (inline-audio)',
+      'components/message/MessageItem.tsx', 'DP',
+      d=['components.conversation.attach.desktop.audio*'],
+      p=['components.conversation.attach.mobile.audio*'], prio=2,
+      note='Inline audio attachment player & failed/loading cards (packages/raft_ui/lib/src/inline_media.dart).'),
+    R('I.05', 'Desktop forward dialog (forward-desktop)',
+      'components/message/ForwardComposerDesktop.tsx', 'D',
+      d=['components.conversation.forward.desktop.*'], prio=2,
+      note='Desktop forward modal chrome & file-share preview (packages/raft_ui/lib/src/forward_desktop_dialog.dart, forward_composer.dart).'),
+    R('I.06', 'Agent detail: Chat tab (agent-chat)',
+      'features/agent/AgentChatTab.tsx', 'DP',
+      d=['components.members-pages.desktop.agent.chat*'],
+      p=['components.members-pages.phone.agent.chat*'], prio=2,
+      note='Agent channels/DMs tab and inline empty state (packages/raft_ui/lib/src/agent_chat_view.dart; route row 7.10).'),
+]
+
 
 # ---------------------------------------------------------------- derived data
 def all_rows():
     return [r for _, _, rows in SECTIONS for r in rows]
+
+
+def inline_surface_rows():
+    return list(INLINE_SURFACES)
+
+
+def load_coverage_map(path=None):
+    """Load surface score records from tool/parity-ext/coverage-map.json (empty list if absent)."""
+    target = pathlib.Path(path) if path else COVERAGE_MAP
+    if not target.is_file():
+        return []
+    data = json.loads(target.read_text())
+    surfaces = data.get('surfaces', [])
+    return surfaces if isinstance(surfaces, list) else []
+
+
+def _row_web_tokens(web_field):
+    """Extract normalized .tsx/.ts component path fragments from a Row.web string."""
+    tokens = []
+    for part in re.split(r'[,\s()]+', web_field or ''):
+        cleaned = part.strip('`')
+        if cleaned.endswith(('.tsx', '.ts')) and '/' in cleaned:
+            tokens.append(cleaned)
+        elif cleaned.endswith(('.tsx', '.ts')):
+            tokens.append('/' + cleaned)
+    return tokens
+
+
+def _surface_matches_row(surface, row, matched_ext_ids, matched_off_ids):
+    """True when a coverage-map.json surface corresponds to `row`."""
+    web_files = surface.get('webFiles') or []
+    for token in _row_web_tokens(row.web):
+        if any(wf == token or wf.endswith(token) for wf in web_files):
+            return True
+    s_globs = surface.get('extGlobs') or []
+    if matched_ext_ids and s_globs:
+        if any(fnmatch.fnmatchcase(cid, g) for cid in matched_ext_ids for g in s_globs):
+            return True
+    s_off = set(surface.get('officialCases') or [])
+    if matched_off_ids and (s_off & matched_off_ids):
+        return True
+    return False
+
+
+def surface_score_summary(surfaces, threshold=SCORE_PASS_THRESHOLD):
+    """Score-enforced summary directly over coverage-map.json surfaces."""
+    total = len(surfaces)
+    passed = failed = unscored = 0
+    for s in surfaces:
+        light = s.get('scoreLightMean')
+        dark = s.get('scoreDarkMean')
+        if light is None and dark is None:
+            unscored += 1
+        elif light is not None and dark is not None and light >= threshold and dark >= threshold:
+            passed += 1
+        else:
+            failed += 1
+    return {
+        'threshold': threshold,
+        'total': total,
+        'verified_pass': passed,
+        'below_threshold': failed,
+        'unscored': unscored,
+    }
+
+
+def row_score(row, ctx, threshold=SCORE_PASS_THRESHOLD):
+    """Compute score-enforced status for a row against coverage-map.json.
+
+    Distinguishes 'case exists' from 'verified >=96% pass vs Web v1.24' (Light & Dark).
+    """
+    if row.excl:
+        return {'status': 'excluded', 'label': 'excluded', 'light': None, 'dark': None}
+    states = [row.state(p, ctx) for p in 'DP' if p in row.ap]
+    if all(s == 'MISSING' for s in states):
+        return {'status': 'no-case', 'label': 'no-case', 'light': None, 'dark': None}
+    if all(s == 'web-only' for s in states):
+        return {'status': 'web-only', 'label': 'web-only', 'light': None, 'dark': None}
+    ext_ids, off_ids = set(), set()
+    for p in 'DP':
+        if p not in row.ap:
+            continue
+        for kind, glob, negations in row.groups(p):
+            hits = ctx.hits(kind, glob, negations)
+            if kind == 'ext':
+                ext_ids.update(hits)
+            else:
+                off_ids.update(h for h in hits if h != '?')
+    matched = [s for s in ctx.coverage_surfaces if _surface_matches_row(s, row, ext_ids, off_ids)]
+    lights = [s['scoreLightMean'] for s in matched if isinstance(s.get('scoreLightMean'), (int, float))]
+    darks = [s['scoreDarkMean'] for s in matched if isinstance(s.get('scoreDarkMean'), (int, float))]
+    light = min(lights) if lights else None
+    dark = min(darks) if darks else None
+    if light is None and dark is None:
+        return {'status': 'unscored', 'label': 'unscored (case-only)', 'light': None, 'dark': None}
+    if light is not None and dark is not None and light >= threshold and dark >= threshold:
+        return {
+            'status': 'pass',
+            'label': f'PASS ({min(light, dark) * 100:.1f}%)',
+            'light': light,
+            'dark': dark,
+        }
+    scores = [v for v in (light, dark) if v is not None]
+    worst = min(scores)
+    return {
+        'status': 'fail',
+        'label': f'FAIL ({worst * 100:.1f}% < {int(threshold * 100)}%)',
+        'light': light,
+        'dark': dark,
+    }
 
 
 def suffix_free(case_id):
@@ -597,12 +743,14 @@ def matching(patterns, cases):
 
 class Context:
     """The case ids that exist: default-theme extension cases [(suffix-free id, viewport width)], the official ids
-    (None = unknown, official globs then count as existing) and the suffix-free ids flagged noFlutterSurface."""
+    (None = unknown, official globs then count as existing), the suffix-free ids flagged noFlutterSurface,
+    and optional coverage-map.json surface score records."""
 
-    def __init__(self, cases, official=None, web_only=()):
+    def __init__(self, cases, official=None, web_only=(), coverage_surfaces=None):
         self.cases = list(cases)
         self.official = official
         self.web_only = frozenset(web_only)
+        self.coverage_surfaces = list(coverage_surfaces) if coverage_surfaces is not None else []
 
     def hits(self, kind, glob, negations):
         """Existing case ids matched by one expected glob."""
@@ -633,10 +781,10 @@ _DEFAULT = None
 
 
 def default_context():
-    """Context of the current tree: builds the extension manifest once, reads the official ids and the Flutter case map."""
+    """Context of the current tree: builds the extension manifest once, reads the official ids, case map, and scores."""
     global _DEFAULT
     if _DEFAULT is None:
-        _DEFAULT = Context(build_cases(), official_ids(), flutter_web_only())
+        _DEFAULT = Context(build_cases(), official_ids(), flutter_web_only(), load_coverage_map())
     return _DEFAULT
 
 
@@ -663,6 +811,11 @@ def counts(ctx=None):
     for plat in 'DP':
         out[plat] = {'applicable': 0, 'ok': 0, 'partial': 0, 'web-only': 0, 'MISSING': 0}
     out['rows_missing'] = out['rows_partial'] = out['rows_full'] = 0
+    out['scores'] = {
+        'threshold': SCORE_PASS_THRESHOLD,
+        'rows': {'pass': 0, 'fail': 0, 'unscored': 0, 'no-case': 0, 'web-only': 0},
+        'surfaces': surface_score_summary(ctx.coverage_surfaces),
+    }
     for r in all_rows():
         out['all_rows'] += 1
         if r.excl:
@@ -682,7 +835,29 @@ def counts(ctx=None):
             out['rows_partial'] += 1
         else:
             out['rows_full'] += 1
+        score_status = row_score(r, ctx)['status']
+        if score_status in out['scores']['rows']:
+            out['scores']['rows'][score_status] += 1
     return out
+
+
+def inline_surface_counts(ctx=None):
+    ctx = ctx or default_context()
+    summary = {'total': len(INLINE_SURFACES), 'case_exists': 0, 'missing': 0, 'verified_pass': 0, 'below_threshold': 0, 'unscored': 0}
+    for r in INLINE_SURFACES:
+        states = [r.state(p, ctx) for p in 'DP' if p in r.ap]
+        if all(s == 'MISSING' for s in states):
+            summary['missing'] += 1
+        else:
+            summary['case_exists'] += 1
+        st = row_score(r, ctx)['status']
+        if st == 'pass':
+            summary['verified_pass'] += 1
+        elif st == 'fail':
+            summary['below_threshold'] += 1
+        elif st == 'unscored':
+            summary['unscored'] += 1
+    return summary
 
 
 def excluded_rows():
@@ -756,10 +931,22 @@ def render(ctx=None):
     a(f"- Fully covered on every platform they exist on: **{c['rows_full']}**; partly covered (partial / web-only): **{c['rows_partial']}**;"
       f" with at least one MISSING platform: **{c['rows_missing']}**.")
     a('')
-    a('| platform | pages that exist there | ok | partial | web-only | MISSING |')
+    a('| platform | pages that exist there | ok (case exists) | partial | web-only | MISSING |')
     a('| --- | --- | --- | --- | --- | --- |')
     a(f"| Desktop (D) | {c['D']['applicable']} | {c['D']['ok']} | {c['D']['partial']} | {c['D']['web-only']} | {c['D']['MISSING']} |")
     a(f"| Phone (P) | {c['P']['applicable']} | {c['P']['ok']} | {c['P']['partial']} | {c['P']['web-only']} | {c['P']['MISSING']} |")
+    a('')
+    sc = c['scores']
+    sc_rows = sc['rows']
+    sc_surf = sc['surfaces']
+    inl = inline_surface_counts(ctx)
+    a(f"Score-enforced parity vs Web v1.24 (`coverage-map.json`, verified pass requires Light & Dark >= {int(sc['threshold'] * 100)}%):")
+    a('')
+    a('| scope | total | case exists | verified >=96% pass | failing (<96%) | unscored (case-only) | MISSING / no-case |')
+    a('| --- | --- | --- | --- | --- | --- | --- |')
+    a(f"| Inventory pages | {c['rows']} | {c['rows_full'] + c['rows_partial']} | {sc_rows['pass']} | {sc_rows['fail']} | {sc_rows['unscored']} | {sc_rows['no-case']} |")
+    a(f"| coverage-map.json surfaces | {sc_surf['total']} | {sc_surf['verified_pass'] + sc_surf['below_threshold']} | {sc_surf['verified_pass']} | {sc_surf['below_threshold']} | {sc_surf['unscored']} | 0 |")
+    a(f"| Inline / sub-surfaces | {inl['total']} | {inl['case_exists']} | {inl['verified_pass']} | {inl['below_threshold']} | {inl['unscored']} | {inl['missing']} |")
     a('')
     a('Excluded pages by reason (rows / extra routes):')
     a('')
@@ -798,8 +985,8 @@ def render(ctx=None):
         a('')
         a(f'Web: {intro}.')
         a('')
-        a('| # | page / state | Web component | D | P | official (phone) ids | extension ids (brutal-light) | note |')
-        a('| --- | --- | --- | --- | --- | --- | --- | --- |')
+        a('| # | page / state | Web component | D | P | v1.24 score | official (phone) ids | extension ids (brutal-light) | note |')
+        a('| --- | --- | --- | --- | --- | --- | --- | --- | --- |')
         for r in rows:
             ext = []
             if r.d:
@@ -813,8 +1000,24 @@ def render(ctx=None):
                 note = (note + ' ' if note else '') + '[verify]'
             if 'MISSING' in (r.state('D', ctx), r.state('P', ctx)):
                 note = (note + ' ' if note else '') + f'[{PRIO_LABEL[r.prio].split()[0]}]'
-            a(f"| {r.num} | {r.name} | `{r.web}` | {r.state('D', ctx)} | {r.state('P', ctx)} | {code(r.off) or ''} | {'<br>'.join(ext)} | {note} |")
+            score_label = row_score(r, ctx)['label']
+            a(f"| {r.num} | {r.name} | `{r.web}` | {r.state('D', ctx)} | {r.state('P', ctx)} | {score_label} | {code(r.off) or ''} | {'<br>'.join(ext)} | {note} |")
         a('')
+    a('## Inline & sub-surfaces (non-route widgets)')
+    a('')
+    a('Inline timeline cards, loading skeletons, embedded media players, and non-route sub-tabs tracked alongside top-level pages so inline legacy widgets cannot stay invisible to `inventory.py`.')
+    a('')
+    a('| # | inline / sub-surface | Web component | D | P | v1.24 score | extension ids (brutal-light) | note |')
+    a('| --- | --- | --- | --- | --- | --- | --- | --- |')
+    for r in INLINE_SURFACES:
+        ext = []
+        if r.d:
+            ext.append('D: ' + code(r.d))
+        if r.p:
+            ext.append('P: ' + code(r.p))
+        score_label = row_score(r, ctx)['label']
+        a(f"| {r.num} | {r.name} | `{r.web}` | {r.state('D', ctx)} | {r.state('P', ctx)} | {score_label} | {'<br>'.join(ext)} | {r.note} |")
+    a('')
     a('## Excluded pages')
     a('')
     a('Reachability evidence comes from the pinned Web source only (the checkout is a single release commit, so there is no')
@@ -919,7 +1122,7 @@ def problems(ctx=None):
     the other platform (a 390 wide case for D, anything else for P)."""
     ctx = ctx or default_context()
     out, seen = [], set()
-    for r in all_rows():
+    for r in (*all_rows(), *INLINE_SURFACES):
         if r.num in seen:
             out.append(f'{r.num}: duplicate row number')
         seen.add(r.num)
@@ -960,8 +1163,9 @@ def main(argv=None):
     ap.add_argument('--stdout', action='store_true', help='print the generated document')
     ap.add_argument('--check', action='store_true', help='validate the rows and id globs; writes nothing')
     ap.add_argument('--case-map', metavar='FILE', help='Flutter android-case-map.json (noFlutterSurface flags)')
+    ap.add_argument('--coverage-map', metavar='FILE', help='parity-ext coverage-map.json (Web v1.24 scores)')
     args = ap.parse_args(argv)
-    ctx = Context(build_cases(), official_ids(), flutter_web_only(args.case_map))
+    ctx = Context(build_cases(), official_ids(), flutter_web_only(args.case_map), load_coverage_map(args.coverage_map))
     bad = problems(ctx)
     if bad:
         sys.exit('\n'.join(bad))

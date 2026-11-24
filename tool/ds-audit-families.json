@@ -325,7 +325,12 @@
         "RaftCardFooter"
       ],
       "note": "RaftRecipeCard, RaftSurfaceListItem and RaftChoiceCard were merged into RaftCard (P6) and no longer exist. RaftCardSectionHeader/Title/Description/Leading/Trailing/Content/Footer (card_parts.dart, WP-DS5) are the raft-ui 0.95.3 Card parts read from the card recipe slots; they compose inside RaftCard.",
-      "deprecated": {},
+      "deprecated": {
+        "RaftQuotedMessageSkeleton": "packages/raft_ui/lib/src/quoted_message_card.dart"
+      },
+      "deprecatedHints": {
+        "RaftQuotedMessageSkeleton": "Use RaftCard (rounded-container, 1px line-hairline) with RaftSkeleton matching Web v1.24 QuotedMessagePermalinkPreview.tsx."
+      },
       "canonicalBindings": {
         "RaftCard": {
           "declarationId": "packages/raft_ui/lib/src/card.dart#class:RaftCard",
@@ -789,6 +794,66 @@
       "canonicalBindings": {
         "RaftNotificationCenter": {
           "declarationId": "packages/raft_ui/lib/src/notification_center.dart#class:RaftNotificationCenter",
+          "role": "public_api"
+        }
+      }
+    },
+    "message-embed": {
+      "canonical": [
+        "RaftMessageEmbedFrame"
+      ],
+      "note": "Canonical v1.24 message embed container (raft-ui 0.95.3 messageEmbed recipe, 1px line-hairline, rounded-container). Legacy 0.5.52 ForwardedSnapshotRecipe and RaftMessageEmbedRecipe (design_primitives.dart) retire onto RaftMessageEmbedFrame and generated package:raft_theme/recipes/message_embed.g.dart.",
+      "deprecated": {
+        "ForwardedSnapshotRecipe": "packages/raft_ui/lib/src/rich_card_tokens.dart",
+        "RaftMessageEmbedRecipe": "packages/raft_ui/lib/src/design_primitives.dart"
+      },
+      "deprecatedHints": {
+        "ForwardedSnapshotRecipe": "Use RaftMessageEmbedFrame and generated RaftMessageEmbedRecipe (package:raft_theme/recipes/message_embed.g.dart).",
+        "RaftMessageEmbedRecipe": "Use RaftMessageEmbedFrame and generated RaftMessageEmbedRecipe (package:raft_theme/recipes/message_embed.g.dart)."
+      },
+      "canonicalBindings": {
+        "RaftMessageEmbedFrame": {
+          "declarationId": "packages/raft_ui/lib/src/message_embed_frame.dart#class:RaftMessageEmbedFrame",
+          "role": "public_api"
+        }
+      }
+    },
+    "message-action-card": {
+      "canonical": [
+        "RaftSpecActionCard"
+      ],
+      "note": "Canonical v1.24 message action card (raft-ui 0.95.3 messageActionCard + messageEmbed recipes). Legacy 0.5.52 ActionSnapshotRecipe, RaftActionCardRecipe, and RaftActionCard retire onto RaftSpecActionCard / RaftMessageEmbedFrame with generated RaftMessageActionCardRecipe.",
+      "deprecated": {
+        "ActionSnapshotRecipe": "packages/raft_ui/lib/src/rich_card_tokens.dart",
+        "RaftActionCardRecipe": "packages/raft_ui/lib/src/design_primitives.dart",
+        "RaftActionCard": "packages/raft_ui/lib/src/action_card.dart"
+      },
+      "deprecatedHints": {
+        "ActionSnapshotRecipe": "Use RaftSpecActionCard / RaftMessageEmbedFrame with generated RaftMessageActionCardRecipe (package:raft_theme/recipes/message_action_card.g.dart).",
+        "RaftActionCardRecipe": "Use RaftSpecActionCard / RaftMessageEmbedFrame with generated RaftMessageActionCardRecipe (package:raft_theme/recipes/message_action_card.g.dart).",
+        "RaftActionCard": "Use RaftSpecActionCard with generated RaftMessageActionCardRecipe (package:raft_theme/recipes/message_action_card.g.dart)."
+      },
+      "canonicalBindings": {
+        "RaftSpecActionCard": {
+          "declarationId": "packages/raft_ui/lib/src/action_card.dart#class:RaftSpecActionCard",
+          "role": "public_api"
+        }
+      }
+    },
+    "lightbox": {
+      "canonical": [
+        "RaftAttachmentLightbox"
+      ],
+      "note": "Canonical v1.24 media lightbox backed by generated RaftLightboxRecipe (package:raft_theme/recipes/lightbox.g.dart). Legacy 0.5.52 RaftLightboxRecipe (design_primitives.dart) retires onto it.",
+      "deprecated": {
+        "RaftLightboxRecipe": "packages/raft_ui/lib/src/design_primitives.dart"
+      },
+      "deprecatedHints": {
+        "RaftLightboxRecipe": "Use RaftAttachmentLightbox and generated RaftLightboxRecipe (package:raft_theme/recipes/lightbox.g.dart)."
+      },
+      "canonicalBindings": {
+        "RaftAttachmentLightbox": {
+          "declarationId": "packages/raft_ui/lib/src/attachment_lightbox.dart#class:RaftAttachmentLightbox",
           "role": "public_api"
         }
       }

@@ -1009,3 +1009,39 @@ class PageInventoryTest(unittest.TestCase):
         self.assertTrue(all(reason in inventory.REASONS for _, reason, _ in inventory.EXCLUDED))
         counts = inventory.counts()
         self.assertEqual(counts['rows'] + sum(counts['excluded'].values()), counts['all_rows'])
+
+    def test_score_aware_accounting_distinguishes_case_exists_from_verified_pass(self):
+        row_pass = inventory.Row('9.91', 'passing', 'components/demo/Pass.tsx', 'D', d=['components.demo.pass'])
+        row_fail = inventory.Row('9.92', 'failing', 'components/demo/Fail.tsx', 'D', d=['components.demo.fail'])
+        row_unscored = inventory.Row('9.93', 'unscored', 'components/demo/Unscored.tsx', 'D', d=['components.demo.unscored'])
+        row_missing = inventory.Row('9.94', 'missing', 'components/demo/Missing.tsx', 'D', d=['components.demo.missing'])
+        cases = [
+            ('components.demo.pass', 1280),
+            ('components.demo.fail', 1280),
+            ('components.demo.unscored', 1280),
+        ]
+        surfaces = [
+            {'surface': 'Pass', 'webFiles': ['components/demo/Pass.tsx'], 'extGlobs': ['components.demo.pass'],
+             'scoreLightMean': 0.985, 'scoreDarkMean': 0.972},
+            {'surface': 'Fail', 'webFiles': ['components/demo/Fail.tsx'], 'extGlobs': ['components.demo.fail'],
+             'scoreLightMean': 0.71, 'scoreDarkMean': 0.80},
+        ]
+        ctx = inventory.Context(cases, official=[], coverage_surfaces=surfaces)
+        self.assertEqual(inventory.row_score(row_pass, ctx)['status'], 'pass')
+        self.assertIn('PASS', inventory.row_score(row_pass, ctx)['label'])
+        self.assertEqual(inventory.row_score(row_fail, ctx)['status'], 'fail')
+        self.assertIn('FAIL', inventory.row_score(row_fail, ctx)['label'])
+        self.assertEqual(inventory.row_score(row_unscored, ctx)['status'], 'unscored')
+        self.assertEqual(inventory.row_score(row_missing, ctx)['status'], 'no-case')
+
+    def test_inline_surfaces_section_and_score_summary_render(self):
+        text = inventory.render(self.ctx)
+        self.assertIn('Score-enforced parity vs Web v1.24', text)
+        self.assertIn('verified >=96% pass', text)
+        self.assertIn('## Inline & sub-surfaces (non-route widgets)', text)
+        for token in ('task-handoff', 'non-spec action-card', 'quoted-skeleton',
+                      'inline-audio', 'forward-desktop', 'agent-chat'):
+            self.assertIn(token, text)
+        # TaskHandoffCard must be visible as MISSING until a parity-ext case lands.
+        handoff = next(r for r in inventory.inline_surface_rows() if 'task-handoff' in r.name)
+        self.assertEqual(handoff.state('D', self.ctx), 'MISSING')
