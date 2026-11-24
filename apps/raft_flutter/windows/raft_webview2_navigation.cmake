@@ -34,6 +34,34 @@ function(raft_fix_webview2_navigation)
             }
           }
           auto urlRequest = std::make_shared<URLRequest>(url, method, headers, std::nullopt);]=])
+  set(old_download_request [=[                auto callback = std::make_unique<WebViewChannelDelegate::ShouldOverrideUrlLoadingCallback>();
+                callback->nonNullSuccess = [this, allowRequest, cancelRequest](const NavigationActionPolicy actionPolicy)
+                  {
+                    if (actionPolicy == NavigationActionPolicy::allow) {
+                      allowRequest();]=])
+  set(new_download_request [=[                auto callback = std::make_unique<WebViewChannelDelegate::ShouldOverrideUrlLoadingCallback>();
+                callback->nonNullSuccess = [this, allowRequest, cancelRequest, isForMainFrame, url, requestId, redirectedRequestId, navigationType](const NavigationActionPolicy actionPolicy)
+                  {
+                    if (actionPolicy == NavigationActionPolicy::allow) {
+                      if (settings->useOnDownloadStart && isForMainFrame && channelDelegate && url) {
+                        nlohmann::json event = {
+                          {"id", requestId},
+                          {"url", *url},
+                          {"userInitiated", navigationType == NavigationActionType::linkActivated},
+                          {"clickBindingRegistered", map_contains(devToolsProtocolEventListener_,
+                            std::string("Runtime.bindingCalled"))},
+                          {"redirectedFrom", redirectedRequestId
+                            ? nlohmann::json(*redirectedRequestId) : nlohmann::json(nullptr)}
+                        };
+                        channelDelegate->onDevToolsProtocolEventReceived("Raft.downloadRequestStarted", event.dump());
+                      }
+                      allowRequest();]=])
+  set(old_download_listener [=[  void InAppWebView::addDevToolsProtocolEventListener(const std::string& eventName)
+  {
+    if (map_contains(devToolsProtocolEventListener_, eventName)) {]=])
+  set(new_download_listener [=[  void InAppWebView::addDevToolsProtocolEventListener(const std::string& eventName)
+  {
+    if (eventName == "Raft.downloadRequestStarted" || map_contains(devToolsProtocolEventListener_, eventName)) {]=])
   set(old_request "std::make_unique<WebResourceRequest>(url, navigationAction->request->method, navigationAction->request->headers, navigationAction->isForMainFrame)")
   set(new_request "std::make_unique<WebResourceRequest>(navigationAction->request->url, navigationAction->request->method, navigationAction->request->headers, navigationAction->isForMainFrame)")
   set(old_accelerator "auto handled = settings->handleAcceleratorKeyPressed;")
@@ -59,7 +87,7 @@ function(raft_fix_webview2_navigation)
 ]=])
   string(CONCAT old_mute "${mute_signature}" "${old_mute}")
   string(CONCAT new_mute "${mute_signature}" "${new_mute}")
-  foreach(fragment IN ITEMS old_navigation old_navigation_action old_request old_accelerator old_mute)
+  foreach(fragment IN ITEMS old_navigation old_navigation_action old_download_request old_download_listener old_request old_accelerator old_mute)
     string(FIND "${patched}" "${${fragment}}" found)
     if(found EQUAL -1)
       message(FATAL_ERROR "The reviewed WebView2 navigation patch no longer matches")
@@ -67,6 +95,8 @@ function(raft_fix_webview2_navigation)
   endforeach()
   string(REPLACE "${old_navigation}" "${new_navigation}" patched "${patched}")
   string(REPLACE "${old_navigation_action}" "${new_navigation_action}" patched "${patched}")
+  string(REPLACE "${old_download_request}" "${new_download_request}" patched "${patched}")
+  string(REPLACE "${old_download_listener}" "${new_download_listener}" patched "${patched}")
   string(REPLACE "${old_request}" "${new_request}" patched "${patched}")
   string(REPLACE "${old_accelerator}" "${new_accelerator}" patched "${patched}")
   string(REPLACE "${old_mute}" "${new_mute}" patched "${patched}")

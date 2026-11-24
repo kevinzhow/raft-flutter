@@ -41,67 +41,116 @@ void main() {
     );
   });
 
-  test('Windows download adapter follows activated redirects once', () {
-    final downloads = WindowsBrowserDownloads();
+  group('Windows download handoff', () {
     const hosts = {'raft.test'};
     const start = 'https://public.test/export';
     const intermediate = 'https://cdn.test/redirect';
     const finish = 'https://cdn.test/report.csv';
-    void navigate(
+    late Duration elapsed;
+    late WindowsBrowserDownloads downloads;
+
+    setUp(() {
+      elapsed = Duration.zero;
+      downloads = WindowsBrowserDownloads(elapsed: () => elapsed);
+    });
+
+    void request(
+      String id,
       String address, {
-      bool redirect = false,
-      bool trusted = true,
-    }) {
-      downloads.navigate(
-        NavigationAction(
-          request: URLRequest(url: WebUri(address)),
-          isForMainFrame: true,
-          isRedirect: redirect,
-          navigationType: trusted
-              ? NavigationType.LINK_ACTIVATED
-              : NavigationType.OTHER,
-        ),
-        hosts,
-      );
-    }
+      bool userInitiated = false,
+      String? redirectedFrom,
+      bool clickListenerAvailable = true,
+    }) => downloads.requestStarted(
+      id,
+      address,
+      hosts,
+      userInitiated: userInitiated,
+      redirectedFrom: redirectedFrom,
+      clickListenerAvailable: clickListenerAvailable,
+    );
 
     Uri? download(String address) => downloads.consume(
       DownloadStartRequest(url: WebUri(address), contentLength: 0),
       hosts,
     );
 
-    downloads.clicked('', hosts);
-    navigate(start);
-    navigate(intermediate, redirect: true);
-    navigate(finish, redirect: true);
-    expect(download(start), isNull);
-    expect(download(finish), Uri.parse(finish));
-    expect(download(finish), isNull);
+    test('a user-initiated navigation follows its delayed redirects once', () {
+      downloads.clicked('', hosts);
+      request('first', start, userInitiated: true);
+      elapsed = const Duration(seconds: 2);
+      request('second', intermediate, redirectedFrom: 'first');
+      request('third', finish, redirectedFrom: 'second');
+      expect(download(start), isNull);
+      expect(download(finish), Uri.parse(finish));
+      expect(download(finish), isNull);
+    });
 
-    navigate(start);
-    navigate(finish, redirect: true);
-    expect(download(finish), isNull);
+    test('an untrusted navigation and an unrelated redirect cannot open', () {
+      request('untrusted', start, userInitiated: true);
+      request('redirect', finish, redirectedFrom: 'untrusted');
+      expect(download(finish), isNull);
 
-    downloads.clicked('', hosts);
-    navigate(start);
-    navigate(finish, redirect: true, trusted: false);
-    expect(download(finish), isNull);
-  });
+      downloads.clicked('', hosts);
+      request('trusted', start, userInitiated: true);
+      request('other', finish, redirectedFrom: 'unrelated');
+      expect(download(finish), isNull);
+    });
 
-  test('Windows download attribute matches directly without navigation', () {
-    final downloads = WindowsBrowserDownloads();
-    const hosts = {'raft.test'};
-    const address = 'https://public.test/report.csv';
-    Uri? download(String target) => downloads.consume(
-      DownloadStartRequest(url: WebUri(target), contentLength: 0),
-      hosts,
-    );
+    test('a direct download can respond slowly without a navigation', () {
+      downloads.clicked('$start#details', hosts);
+      expect(download(start), isNull);
+      request('direct', start);
+      elapsed = const Duration(seconds: 2);
+      expect(download(finish), isNull);
+      expect(download(start), Uri.parse(start));
+      expect(download(start), isNull);
+    });
 
-    expect(download(address), isNull);
-    downloads.clicked('$address#details', hosts);
-    expect(download('https://public.test/unrelated.csv'), isNull);
-    expect(download(address), Uri.parse(address));
-    expect(download(address), isNull);
+    test('a direct download follows its request through a slow redirect', () {
+      downloads.clicked(start, hosts);
+      request('direct', start);
+      elapsed = const Duration(seconds: 2);
+      request('redirect', finish, redirectedFrom: 'direct');
+      expect(download(finish), Uri.parse(finish));
+      expect(download(finish), isNull);
+    });
+
+    test('a click elsewhere leaves an authorized request in flight', () {
+      downloads.clicked('', hosts);
+      request('navigation', start, userInitiated: true);
+      elapsed = const Duration(milliseconds: 200);
+      downloads.clicked('', hosts);
+      elapsed = const Duration(seconds: 2);
+      expect(download(start), Uri.parse(start));
+    });
+
+    test('the click expires before a late request of either kind starts', () {
+      downloads.clicked(start, hosts);
+      elapsed = const Duration(milliseconds: 1001);
+      request('late-direct', start);
+      expect(download(start), isNull);
+
+      downloads.clicked('', hosts);
+      elapsed += const Duration(milliseconds: 1001);
+      request('late-navigation', start, userInitiated: true);
+      expect(download(start), isNull);
+    });
+
+    test('failed listener setup falls back to user-initiated navigation', () {
+      downloads.clicked(start, hosts);
+      request('script', start, clickListenerAvailable: false);
+      expect(download(start), isNull);
+      request(
+        'navigation',
+        start,
+        userInitiated: true,
+        clickListenerAvailable: false,
+      );
+      elapsed = const Duration(seconds: 2);
+      request('redirect', finish, redirectedFrom: 'navigation');
+      expect(download(finish), Uri.parse(finish));
+      expect(download(finish), isNull);
+    });
   });
 
   test(

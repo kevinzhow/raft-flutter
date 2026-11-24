@@ -25,60 +25,75 @@ bool allowsWindowsBrowserNavigation(
 }
 
 class WindowsBrowserDownloads {
-  final _clock = Stopwatch()..start();
+  WindowsBrowserDownloads({Duration Function()? elapsed})
+    : _elapsed = elapsed ?? _monotonicClock();
+
+  final Duration Function() _elapsed;
   ({Duration at, Uri? direct})? _click;
-  Uri? _navigation;
+  ({String id, Uri target})? _request;
 
   void clicked(String address, Set<String> raftHosts) {
-    _navigation = null;
-    _click = (at: _clock.elapsed, direct: _target(address, raftHosts));
+    _click = (at: _elapsed(), direct: _target(address, raftHosts));
   }
 
-  void navigate(NavigationAction action, Set<String> raftHosts) {
-    if (!action.isForMainFrame) return;
-    final target = _target(action.request.url?.toString(), raftHosts);
-    final click = _recentClick;
-    _click = null;
-    if (action.navigationType != NavigationType.LINK_ACTIVATED) {
-      _navigation = null;
-    } else if (action.isRedirect == true) {
-      if (_navigation != null) _navigation = target;
-    } else {
-      _navigation =
-          click != null && (click.direct == null || click.direct == target)
-          ? target
-          : null;
+  void requestStarted(
+    String id,
+    String address,
+    Set<String> raftHosts, {
+    required bool userInitiated,
+    required bool clickListenerAvailable,
+    String? redirectedFrom,
+  }) {
+    final target = _target(address, raftHosts);
+    if (redirectedFrom != null) {
+      if (_request?.id == redirectedFrom) {
+        _request = target == null ? null : (id: id, target: target);
+      }
+      return;
     }
+
+    final click = clickListenerAvailable ? _recentClick : null;
+    _click = null;
+    final direct = click != null && click.direct == target;
+    final navigation =
+        userInitiated &&
+        (!clickListenerAvailable || (click != null && click.direct == null));
+    _request = target != null && (direct || navigation)
+        ? (id: id, target: target)
+        : null;
   }
 
   Uri? consume(DownloadStartRequest request, Set<String> raftHosts) {
     final target = _target(request.url.toString(), raftHosts);
-    if (target == null || target != (_navigation ?? _recentClick?.direct)) {
-      return null;
-    }
-    clear();
+    if (target == null || target != _request?.target) return null;
+    _request = null;
     return target;
   }
 
   void clear() {
     _click = null;
-    _navigation = null;
+    _request = null;
   }
 
   ({Duration at, Uri? direct})? get _recentClick {
     final click = _click;
-    return click != null &&
-            _clock.elapsed - click.at <= const Duration(seconds: 1)
+    return click != null && _elapsed() - click.at <= const Duration(seconds: 1)
         ? click
         : null;
   }
 
-  static Uri? _target(String? address, Set<String> raftHosts) =>
+  static Duration Function() _monotonicClock() {
+    final clock = Stopwatch()..start();
+    return () => clock.elapsed;
+  }
+
+  static Uri? _target(String address, Set<String> raftHosts) =>
       webPreviewTarget(address, raftHosts)?.removeFragment();
 }
 
 const _downloadBinding = 'raftBrowserDownloadClick';
 const _downloadWorld = 'raftBrowserDownloads';
+const _downloadRequestEvent = 'Raft.downloadRequestStarted';
 const _downloadScript =
     '''
   if (window === window.top) {
@@ -180,7 +195,6 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
                 !(!_requestedDocument && url == 'about:blank')) {
               return NavigationActionPolicy.CANCEL;
             }
-            if (widget.visible) _downloads.navigate(action, widget.raftHosts);
             return NavigationActionPolicy.ALLOW;
           },
           onLaunchingExternalUriScheme: (_, _) =>
@@ -286,7 +300,34 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
         }
       },
     ));
+    var clickScriptInstalled = false;
     try {
+      await controller.addDevToolsProtocolEventListener(
+        eventName: _downloadRequestEvent,
+        callback: (data) {
+          if (data
+              case {
+                'id': final String id,
+                'url': final String url,
+                'userInitiated': final bool userInitiated,
+                'redirectedFrom': final String? redirectedFrom,
+                'clickBindingRegistered': final bool clickBindingRegistered,
+              }
+              when mounted &&
+                  widget.visible &&
+                  identical(_controller, controller)) {
+            _downloads.requestStarted(
+              id,
+              url,
+              widget.raftHosts,
+              userInitiated: userInitiated,
+              redirectedFrom: redirectedFrom,
+              clickListenerAvailable:
+                  clickScriptInstalled && clickBindingRegistered,
+            );
+          }
+        },
+      );
       await controller.addDevToolsProtocolEventListener(
         eventName: 'Runtime.bindingCalled',
         callback: (data) {
@@ -307,10 +348,11 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
           'executionContextName': _downloadWorld,
         },
       );
-      await controller.callDevToolsProtocolMethod(
+      final script = await controller.callDevToolsProtocolMethod(
         methodName: 'Page.addScriptToEvaluateOnNewDocument',
         parameters: {'source': _downloadScript, 'worldName': _downloadWorld},
       );
+      clickScriptInstalled = script is Map && script['identifier'] is String;
     } catch (_) {}
     if (mounted && identical(_controller, controller)) {
       _load(_retryUrl ?? widget.tab.url!);

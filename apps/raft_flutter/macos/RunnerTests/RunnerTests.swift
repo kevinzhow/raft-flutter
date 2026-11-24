@@ -43,4 +43,59 @@ class RunnerTests: XCTestCase {
     XCTAssertEqual(calls, [true, false, true, false])
     XCTAssertFalse(media.muted)
   }
+
+  func testFragmentClickCannotAuthorizeALaterDownloadRedirect() throws {
+    let page = try XCTUnwrap(URL(string: "https://public.test/page"))
+    let fragment = try XCTUnwrap(URL(string: "\(page.absoluteString)#"))
+    let timerTarget = try XCTUnwrap(URL(string: "https://public.test/go"))
+    let download = try XCTUnwrap(URL(string: "https://public.test/file"))
+    let navigation = NSObject()
+    var now: TimeInterval = 0
+    var authorization = DesktopBrowserDownloadAuthorization()
+    authorization.now = { now }
+
+    authorization.clicked(fragment)
+    authorization.authorize(fragment, currentPage: page, requiresLink: true)
+    XCTAssertFalse(authorization.consume(fragment))
+
+    now = 5
+    authorization.authorize(timerTarget, currentPage: fragment, requiresLink: false)
+    authorization.started(timerTarget, navigation: navigation)
+    authorization.redirected(download, navigation: navigation)
+    XCTAssertFalse(authorization.consume(download))
+  }
+
+  func testBrowserDownloadClickCanBeConsumedOnlyOnce() throws {
+    let target = try XCTUnwrap(URL(string: "https://public.test/export"))
+    let download = try XCTUnwrap(URL(string: "https://cdn.test/file"))
+    let navigation = NSObject()
+    var now: TimeInterval = 0
+    var authorization = DesktopBrowserDownloadAuthorization()
+    authorization.now = { now }
+
+    authorization.clicked(download)
+    authorization.authorize(download, currentPage: nil, requiresLink: true)
+    XCTAssertTrue(authorization.consume(download))
+    XCTAssertFalse(authorization.consume(download))
+
+    authorization.clicked(target)
+    authorization.authorize(target, currentPage: nil, requiresLink: true)
+    authorization.started(target, navigation: navigation)
+    now = 0.5
+    authorization.redirected(download, navigation: navigation)
+    XCTAssertTrue(authorization.consume(download))
+    XCTAssertFalse(authorization.consume(download))
+
+    authorization.clicked(target)
+    authorization.authorize(target, currentPage: nil, requiresLink: true)
+    authorization.started(target, navigation: navigation)
+    now = 5
+    authorization.redirected(download, navigation: navigation)
+    XCTAssertFalse(authorization.consume(download))
+
+    authorization.clicked(target)
+    authorization.authorize(target, currentPage: nil, requiresLink: true)
+    now = 7
+    XCTAssertFalse(authorization.consume(target))
+  }
 }

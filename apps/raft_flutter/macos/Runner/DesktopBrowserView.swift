@@ -34,6 +34,68 @@ struct DesktopBrowserMediaSuspension {
   }
 }
 
+struct DesktopBrowserDownloadAuthorization {
+  var now: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+  private var input: (time: TimeInterval, link: URL?)?
+  private var pending: (url: URL, navigation: AnyObject?)?
+
+  mutating func clicked(_ link: URL?) {
+    clear()
+    input = (now(), link)
+  }
+
+  mutating func authorize(_ url: URL, currentPage: URL?, requiresLink: Bool) {
+    if let currentPage, var target = URLComponents(url: url, resolvingAgainstBaseURL: false),
+       target.fragment != nil {
+      target.fragment = nil
+      var current = URLComponents(url: currentPage, resolvingAgainstBaseURL: false)
+      current?.fragment = nil
+      if target == current {
+        clear()
+        return
+      }
+    }
+    guard let input, fresh, pending == nil, !requiresLink || input.link == url else { return }
+    pending = (url, nil)
+  }
+
+  mutating func started(_ url: URL?, navigation: AnyObject?) {
+    guard fresh, let pending, pending.navigation == nil, pending.url == url,
+          let navigation else {
+      clear()
+      return
+    }
+    self.pending = (pending.url, navigation)
+  }
+
+  mutating func redirected(_ url: URL?, navigation: AnyObject?) {
+    guard let active = pending?.navigation, active === navigation else { return }
+    guard fresh, let url else { clear(); return }
+    pending = (url, active)
+  }
+
+  mutating func failed(_ navigation: AnyObject?) {
+    if let active = pending?.navigation, active === navigation { clear() }
+  }
+
+  mutating func consume(_ url: URL) -> Bool {
+    guard fresh else { clear(); return false }
+    guard pending?.url == url else { return false }
+    clear()
+    return true
+  }
+
+  mutating func clear() {
+    input = nil
+    pending = nil
+  }
+
+  private var fresh: Bool {
+    guard let input else { return false }
+    return now() - input.time <= 1
+  }
+}
+
 private final class BrowserDownloadClickHandler: NSObject, WKScriptMessageHandler {
   static let name = "raftBrowserDownloadClick"
   static let world = WKContentWorld.world(name: "raftBrowserDownloads")
@@ -129,9 +191,7 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
   private let blockedHosts: Set<String>
   private var observations: [NSKeyValueObservation] = []
   private var retryURL: URL?
-  private var downloadInput: (time: TimeInterval, link: URL?)?
-  private var downloadTarget: URL?
-  private var downloadNavigation: WKNavigation?
+  private var downloads = DesktopBrowserDownloadAuthorization()
   private var media = DesktopBrowserMediaSuspension()
 
   init(configuration: WKWebViewConfiguration, blockedHosts: Set<String>, channel: FlutterMethodChannel) {
@@ -165,16 +225,16 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
           result(FlutterError(code: "invalid_url", message: nil, details: nil))
           return
         }
-        self.clearDownloadInput()
+        self.downloads.clear()
         self.load(URLRequest(url: url))
       case "back":
-        self.clearDownloadInput()
+        self.downloads.clear()
         self.goBack()
       case "forward":
-        self.clearDownloadInput()
+        self.downloads.clear()
         self.goForward()
       case "reload":
-        self.clearDownloadInput()
+        self.downloads.clear()
         if let retryURL = self.retryURL {
           self.load(URLRequest(url: retryURL))
         } else {
@@ -202,7 +262,7 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
     uiDelegate = nil
     channel.setMethodCallHandler(nil)
     stopLoading()
-    clearDownloadInput()
+    downloads.clear()
     pauseAllMediaPlayback(completionHandler: nil)
     setMuted(false)
     configuration.userContentController.removeScriptMessageHandler(
@@ -221,7 +281,7 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
 
   private func setMuted(_ muted: Bool) {
     media.setMuted(muted) { suspended in
-      if suspended { clearDownloadInput() }
+      if suspended { downloads.clear() }
       setAllMediaPlaybackSuspended(suspended, completionHandler: nil)
     }
   }
@@ -244,16 +304,17 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
     let url = action.request.url
     let allowed = desktopBrowserAllowsNavigation(url, blockedHosts: blockedHosts,
                                                  mainFrame: mainFrame)
-    if mainFrame && allowed && downloadTarget == nil,
-       let input = downloadInput, ProcessInfo.processInfo.systemUptime - input.time < 1 {
+    if mainFrame && allowed, let url {
+      let currentPage = action.shouldPerformDownload ? nil : webView.url
       switch action.navigationType {
-      case .linkActivated where input.link == url: downloadTarget = url
-      case .formSubmitted, .other: downloadTarget = url
+      case .linkActivated: downloads.authorize(url, currentPage: currentPage, requiresLink: true)
+      case .formSubmitted, .other:
+        downloads.authorize(url, currentPage: currentPage, requiresLink: false)
       default: break
       }
     }
     if action.shouldPerformDownload {
-      if mainFrame && url == downloadTarget { openDownload(url) }
+      if mainFrame { openDownload(url) }
       decisionHandler(.cancel)
       return
     }
@@ -273,11 +334,11 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
       .value(forHTTPHeaderField: "Content-Disposition")?.split(separator: ";").first?
       .trimmingCharacters(in: .whitespacesAndNewlines)
     guard response.canShowMIMEType, disposition?.lowercased() != "attachment" else {
-      if url == downloadTarget { openDownload(url) }
+      openDownload(url)
       decisionHandler(.cancel)
       return
     }
-    clearDownloadInput()
+    downloads.clear()
     decisionHandler(.allow)
   }
 
@@ -295,15 +356,8 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
     }
   }
 
-  private func clearDownloadInput() {
-    downloadInput = nil
-    downloadTarget = nil
-    downloadNavigation = nil
-  }
-
   private func openDownload(_ url: URL?) {
-    guard !media.muted, downloadInput != nil, allows(url) else { return }
-    clearDownloadInput()
+    guard !media.muted, let url, allows(url), downloads.consume(url) else { return }
     openExternal(url)
   }
 
@@ -314,34 +368,27 @@ private final class DesktopBrowserWebView: WKWebView, WKNavigationDelegate, WKUI
 
   fileprivate func observeDownloadClick(_ link: String) {
     guard !media.muted, !isHiddenOrHasHiddenAncestor else { return }
-    clearDownloadInput()
-    downloadInput = (ProcessInfo.processInfo.systemUptime,
-                     link.isEmpty ? nil : URL(string: link))
+    downloads.clicked(link.isEmpty ? nil : URL(string: link))
   }
 
   func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-    if downloadNavigation != nil {
-      clearDownloadInput()
-    } else if downloadTarget != nil {
-      downloadNavigation = navigation
-    }
+    downloads.started(webView.url, navigation: navigation)
     retryURL = nil
     channel.invokeMethod("event", arguments: ["type": "navigationStarted"])
   }
 
   func webView(_ webView: WKWebView,
                didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
-    if let downloadNavigation, downloadNavigation === navigation {
-      downloadTarget = webView.url
-    }
+    downloads.redirected(webView.url, navigation: navigation)
   }
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+    downloads.clear()
     channel.invokeMethod("event", arguments: ["type": "failed"])
   }
 
   func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-    if let downloadNavigation, downloadNavigation === navigation { clearDownloadInput() }
+    downloads.failed(navigation)
     reportFailure(error)
   }
 
