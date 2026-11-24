@@ -1543,6 +1543,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         background: t.ui.layerCanvas,
         desktopBar: widget.inline && !widget.page,
         leading: widget.headerLeading,
+        itemGap: widget.headerLeading == null ? null : RaftSpace.x2,
         bottomRule: widget.inline,
         bottomBorder: widget.inline ? RaftSidePanelFrame.headerRule(t) : null,
         onBack: widget.page ? close : null,
@@ -1564,7 +1565,11 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
                     ),
                   ),
                   ?version,
-                  if (details != null) Flexible(child: details),
+                  if (details != null)
+                    Flexible(
+                      flex: widget.headerLeading == null ? 1 : 2,
+                      child: details,
+                    ),
                 ],
               ),
         actions: [

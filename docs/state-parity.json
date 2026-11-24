@@ -68904,6 +68904,11 @@
         "applicability": "required",
         "reason": "The panel header selects its meta-slot variant when it has a subtitle or meta slot."
       },
+      "apps/raft_flutter/lib/features/desktop_browser_panel.dart#method:BrowserSwitchChip.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "WP-BROWSER",
+        "applicability": "required",
+        "reason": "The browser and Artifact switch chips use the responsive PanelAction padding."
+      },
       "packages/raft_ui/lib/src/server_switcher_top_bar.dart#method:_TopBarServerTriggerState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "owner": "Workspace strip",
         "applicability": "required",

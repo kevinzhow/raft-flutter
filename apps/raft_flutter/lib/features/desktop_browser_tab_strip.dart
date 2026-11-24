@@ -425,6 +425,9 @@ class _BrowserTabState extends State<_BrowserTab> {
                     glyph: RaftGlyph.x,
                     uiVariant: RaftButtonVariant.ghost,
                     uiSize: RaftButtonSize.iconXs,
+                    foreground: active
+                        ? RaftTokens.of(context).ui.stickerInk
+                        : RaftTokens.of(context).ui.foregroundMuted,
                     visualWidth: compact ? RaftSpace.x4 : RaftSpace.x5,
                     padding: compact ? EdgeInsets.zero : null,
                     physicalHeight: 20,

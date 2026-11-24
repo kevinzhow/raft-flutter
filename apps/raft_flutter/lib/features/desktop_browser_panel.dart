@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../platform/app_window.dart';
@@ -365,12 +366,21 @@ class BrowserSwitchChip extends StatelessWidget {
             tooltip: label,
             uiVariant: RaftButtonVariant.ghost,
             uiSize: RaftButtonSize.sm,
+            physicalHeight: RaftDesktopMetrics.barButtonSize,
+            padding: RaftPanelActionRecipe.resolve(
+              states: tokens.recipeStates(responsive: true),
+              tokens: tokens.recipeTokens,
+            ).base.padding,
             onPressed: onPressed,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               spacing: RaftSpace.x1_5,
               children: [
-                RaftIcon(glyph, size: 16, color: tokens.ui.foregroundMuted),
+                RaftIcon(
+                  glyph,
+                  size: RaftDesktopMetrics.controlIconSize,
+                  color: tokens.ui.foregroundMuted,
+                ),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxTextWidth),
                   child: Text(

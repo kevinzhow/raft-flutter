@@ -260,6 +260,10 @@ class _DesktopBrowserAddressState extends State<DesktopBrowserAddress> {
                       label: raftText(context, 'Not secure'),
                       appearance: RaftBadgeRecipeAppearance.soft,
                       variant: RaftBadgeRecipeVariant.warning,
+                      fill: raftChromeBlend(
+                        tokens.ui['warning-soft'],
+                        tokens.ui.layerCard,
+                      ),
                     ),
                   if (!showWarning && !showAddress && box.maxWidth >= 24)
                     RaftIcon(

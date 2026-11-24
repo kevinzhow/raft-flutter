@@ -336,6 +336,7 @@ class HowWebLinksOpenSetting extends StatelessWidget {
             key: const ValueKey('how-web-links-open-select'),
             label: 'How web links open',
             placeholder: 'Ask on the first click',
+            inlineWidth: 256,
             value: WebLinkOpenPreferences.instance.value,
             items: [
               RaftSelectItem(

@@ -9,7 +9,13 @@ PREFIX = "components.browser.desktop."
 STATES = (
     "page", "empty", "editing", "invalid", "overflow", "narrow",
     "artifact-behind", "artifact-front", "short-front", "long-front",
+    "web-link-choice", "web-link-menu", "web-link-setting",
 )
+WEB_LINK_SURFACES = {
+    "web-link-choice": ("web-link-choice-dialog", "features/webPreview/WebLinkChoiceDialog.tsx"),
+    "web-link-menu": ("desktop-web-link-menu", "components/message/MessageWebLink.tsx"),
+    "web-link-setting": ("how-web-links-open-setting", "features/webPreview/HowWebLinksOpenSetting.tsx"),
+}
 
 
 def test_id(name):
@@ -27,6 +33,9 @@ def tap(name):
 def browser_case(state, suffix):
     react, flutter = [], []
     selector = test_id("")
+    android_key = "desktop-browser"
+    react_path = "features/webPreview/BrowserPanel.tsx"
+    props = {"extCase": state, "platform": "desktop"}
     if state == "empty":
         react.append(click("new-tab"))
         flutter.append(tap("new-tab"))
@@ -52,6 +61,23 @@ def browser_case(state, suffix):
         react.append({"type": "click", "target": '[data-testid="side-window-switch-chip"]'})
         flutter.append({"type": "tap", "key": "switch-to-artifact"})
         selector = '[data-browser-fixture]:has([data-testid="artifact-viewer-text"])'
+        android_key = "browser-artifact-fixture"
+        props["extFixture"] = "artifact-discussion"
+    if state == "artifact-behind":
+        props["artifactTitle"] = "Release readiness and deployment notes"
+        selector += ':has([data-testid="side-window-switch-title"]):has([data-testid="side-window-switch-separator"])'
+    if state in WEB_LINK_SURFACES:
+        android_key, react_path = WEB_LINK_SURFACES[state]
+        selector = f'[data-testid="{android_key}"]'
+    if state in ("web-link-choice", "web-link-menu"):
+        react.append({
+            "type": "click" if state == "web-link-choice" else "rightclick",
+            "target": '[data-testid="browser-link-trigger"] a',
+        })
+        flutter.append({
+            "type": "tap" if state == "web-link-choice" else "secondaryTap",
+            "key": "browser-link-trigger",
+        })
     theme = f"raft-{suffix}"
     return {
         "id": f"{PREFIX}{state}.{suffix}",
@@ -64,20 +90,17 @@ def browser_case(state, suffix):
         "theme": theme,
         "locale": "en",
         "variants": [{"id": "default", "name": "Default", "props": {
-            "extCase": state, "parityTheme": theme, "platform": "desktop",
-            **({"extFixture": "artifact-discussion"} if state == "artifact-front" else {}),
+            **props, "parityTheme": theme,
         }}],
         "capture": {
             "selector": selector,
             "crop": "viewport" if state == "overflow" else "element",
             "contract": "viewport-with-portal" if state == "overflow" else "component-bounds",
-            **({} if state == "overflow" else {
-                "androidKey": "browser-artifact-fixture" if state == "artifact-front" else "desktop-browser"
-            }),
+            **({} if state == "overflow" else {"androidKey": android_key}),
             "interactions": react,
             "androidInteractions": flutter,
         },
-        "reactPathHint": "features/webPreview/BrowserPanel.tsx",
+        "reactPathHint": react_path,
         "androidCaseHint": "test/parity/cases/ext_browser.dart",
         "tolerance": {"pixelRatio": 0.04, "layoutDp": 1, "ignoreAntialiasing": False},
     }

@@ -178,11 +178,13 @@ class RaftSettingsSelect<T> extends StatelessWidget {
     required this.onChanged,
     this.label,
     this.placeholder,
+    this.inlineWidth,
   });
   final T? value;
   final List<RaftSelectItem<T>> items;
   final ValueChanged<T?>? onChanged;
   final String? label, placeholder;
+  final double? inlineWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +198,9 @@ class RaftSettingsSelect<T> extends StatelessWidget {
           : raftText(context, placeholder!),
     );
     if (_ControlWidth.belowOf(context)) return select;
+    if (inlineWidth case final width?) {
+      return SizedBox(width: width, child: select);
+    }
     // The trigger's label is the body step (`text-body` in the select recipe).
     final style = RaftTokens.of(context)
         .scale(RaftTypeScale.body, weight: FontWeight.w500);

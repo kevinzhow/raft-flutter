@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_artifact_place.dart';
 import 'package:raft_flutter/features/channel_browser_place.dart';
 import 'package:raft_flutter/features/channel_side_web_preview.dart';
 import 'package:raft_flutter/features/desktop_browser_panel.dart';
 import 'package:raft_flutter/features/desktop_browser_tabs.dart';
+import 'package:raft_flutter/features/web_link_open.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../parity_harness.dart';
 import 'ext_artifact_discussion.dart' show createArtifactDiscussionFixture;
+import 'screens/screen_fixture.dart';
 
 const _states = [
   'page',
@@ -22,6 +26,12 @@ const _states = [
   'long-front',
 ];
 
+const _webLinkSurfaces = {
+  'web-link-choice': 'WebLinkChoiceDialog',
+  'web-link-menu': 'showDesktopWebLinkMenu',
+  'web-link-setting': 'HowWebLinksOpenSetting',
+};
+
 final Map<String, ParityCase> extBrowserCases = {
   for (final state in _states)
     for (final theme in ['light', 'dark'])
@@ -29,6 +39,15 @@ final Map<String, ParityCase> extBrowserCases = {
         widgets: ['raft_flutter:DesktopBrowserPanel'],
         notes: 'Chrome against BrowserPanel with a blank native placeholder.',
         build: _build,
+      ),
+  for (final surface in _webLinkSurfaces.entries)
+    for (final theme in ['light', 'dark'])
+      'components.browser.desktop.${surface.key}.$theme': ParityCase(
+        widgets: ['raft_flutter:${surface.value}'],
+        notes: surface.key == 'web-link-menu'
+            ? 'Web uses a Raft UI context menu to visualize the native bridge offer.'
+            : 'Desktop web link controls.',
+        build: _buildWebLink,
       ),
 };
 
@@ -38,8 +57,73 @@ Widget _build(ParityContext ctx) => ctx.frame(
   padding: EdgeInsets.zero,
   child: ctx.props['extCase'] == 'artifact-front'
       ? _artifactSwitch(ctx)
-      : _BrowserFixture(state: ctx.props['extCase'] as String),
+      : _BrowserFixture(
+          state: ctx.props['extCase'] as String,
+          artifactTitle: ctx.props['artifactTitle'] as String?,
+        ),
 );
+
+Widget _buildWebLink(ParityContext ctx) {
+  final wire = ScreenWire(ctx.fixtureData);
+  final server = RaftRecord(wire.server());
+  final client = ScreenFixtureClient(
+    (method, path, query) => path == '/feature-flags/evaluate'
+        ? {
+            'evaluations': [
+              {'key': 'desktop_web_preview_view_v0', 'enabled': true},
+            ],
+          }
+        : wire.common(method, path, query),
+    user: wire.me(),
+    server: server.id,
+  );
+  final workspace = WorkspaceController(client)..server = server;
+  ctx.onDispose(() {
+    workspace.dispose();
+    client.dispose();
+  });
+  WebPreviewStore.of(workspace).platform = const WebPreviewPlatform(
+    operatingSystem: 'linux',
+  );
+  final state = ctx.props['extCase'];
+  return Scaffold(
+    body: Builder(
+      builder: (context) => ColoredBox(
+        color: RaftTokens.of(context).ui.layerCanvas,
+        child: state == 'web-link-setting'
+            ? Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  width: 674,
+                  child: HowWebLinksOpenSetting(controller: workspace),
+                ),
+              )
+            : Center(
+                child: GestureDetector(
+                  key: const ValueKey('browser-link-trigger'),
+                  onTap: state == 'web-link-choice'
+                      ? () => showWebLinkChoiceDialog(
+                          context,
+                          desktopBrowser: true,
+                        )
+                      : null,
+                  onSecondaryTapUp: state == 'web-link-menu'
+                      ? (details) => showDesktopWebLinkMenu(
+                          context,
+                          workspace,
+                          'https://example.test/guide',
+                          'parity-browser',
+                          details.globalPosition,
+                          () {},
+                        )
+                      : null,
+                  child: const Text('Open guide'),
+                ),
+              ),
+      ),
+    ),
+  );
+}
 
 Widget _artifactSwitch(ParityContext ctx) {
   const conversation = 'parity-browser';
@@ -72,9 +156,10 @@ Widget _artifactSwitch(ParityContext ctx) {
 }
 
 class _BrowserFixture extends StatefulWidget {
-  const _BrowserFixture({required this.state});
+  const _BrowserFixture({required this.state, this.artifactTitle});
 
   final String state;
+  final String? artifactTitle;
 
   @override
   State<_BrowserFixture> createState() => _BrowserFixtureState();
@@ -145,6 +230,7 @@ class _BrowserFixtureState extends State<_BrowserFixture> {
                 widget.state == 'artifact-behind' || widget.state == 'narrow'
                 ? () => _tabs.park(_conversation)
                 : null,
+            artifactTitle: widget.artifactTitle,
             pageBuilder: (_, _, _, _) => const SizedBox.expand(),
           ),
         ),
