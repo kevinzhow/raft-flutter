@@ -43,7 +43,7 @@ void main() {
   ) async {
     await _mount(t, _card());
     expect(find.text('@Otter'), findsOneWidget);
-    expect(find.text('→'), findsOneWidget);
+    expect(find.textContaining('→', findRichText: true), findsOneWidget);
     expect(find.text('@xxchan'), findsOneWidget);
     expect(find.text('10:42'), findsOneWidget);
     expect(find.text('Please review the copy'), findsOneWidget);

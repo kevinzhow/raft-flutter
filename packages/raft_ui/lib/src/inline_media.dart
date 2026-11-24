@@ -7,13 +7,21 @@ import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
 
+import 'card.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'media_browser.dart' show RaftMediaHero, raftMediaDuration;
+import 'message_embed_frame.dart';
+import 'panel_layout.dart' show RaftCssText;
+import 'raft/button.dart';
+import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/message_video_preview.g.dart';
+import 'space.dart';
 import 'text_scaling.dart';
+import 'token_geometry.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'video_controls.dart';
 import 'theme.dart';
 import 'tooltip.dart';
@@ -684,60 +692,40 @@ class RaftInlineAudio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final line = t.colors['line-muted']!;
-    final strong = t.strong;
+    final ui = t.ui;
     final downloadLabel = raftFormat(context, 'Download {filename}', {
       'filename': filename,
     });
-    // Download button: `border border-line-muted bg-layer-panel` (no Brutal
-    // override).
-    Widget square(double size, Widget child) => Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.colors['line-muted']!),
-      ),
-      child: child,
-    );
     final headerIcon = Container(
-      width: 32,
-      height: 32,
+      width: 36,
+      height: 36,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: t.colors['primary-soft'],
-        border: Border.all(color: line, width: 1),
+        color: ui.fillMuted,
+        borderRadius: t.corner('radius.chip', fallback: 6),
       ),
-      child: RaftIcon(RaftGlyph.music, size: 16, color: strong),
+      child: RaftIcon(RaftGlyph.music, size: 18, color: ui.foregroundMuted),
     );
     final download = state == RaftInlineMediaState.failed || onDownload == null
         ? null
-        : RaftTooltip(
-            message: downloadLabel,
-            excludeFromSemantics: true,
-            child: Semantics(
-              button: true,
-              label: downloadLabel,
-              child: GestureDetector(
-                key: const Key('audio-download'),
-                behavior: HitTestBehavior.opaque,
-                onTap: onDownload,
-                child: square(
-                  28,
-                  RaftIcon(RaftGlyph.download, size: 14, color: t.muted),
-                ),
-              ),
-            ),
+        : RaftButton(
+            key: const Key('audio-download'),
+            label: '',
+            glyph: RaftGlyph.download,
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.iconMd,
+            tooltip: downloadLabel,
+            semanticLabel: downloadLabel,
+            onPressed: onDownload,
           );
     final header = Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: RaftSpace.x2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: Row(
-              spacing: 8,
+              spacing: RaftSpace.x2,
               children: [
                 headerIcon,
                 Expanded(
@@ -746,27 +734,29 @@ class RaftInlineAudio extends StatelessWidget {
                     children: [
                       RaftTooltip(
                         message: filename,
-                        child: Text(
+                        child: RaftCssText(
                           filename,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: t.headingFont,
-                            fontSize: 14,
-                            height: 20 / 14,
-                            fontWeight: FontWeight.w700,
-                            color: strong,
-                          ),
+                          style: t
+                              .scale(
+                                RaftTypeScale.callout,
+                                weight: FontWeight.w600,
+                                color: ui.foreground,
+                              )
+                              .copyWith(
+                                fontVariations: const [
+                                  FontVariation.weight(600),
+                                ],
+                              ),
                         ),
                       ),
-                      Text(
+                      RaftCssText(
                         raftText(context, 'Audio file'),
-                        style: TextStyle(
-                          fontFamily: t.headingFont,
-                          fontSize: 12,
-                          height: 16 / 12,
-                          fontWeight: FontWeight.w700,
-                          color: t.colors['foreground-hint'],
+                        style: t.scale(
+                          RaftTypeScale.monoMeta,
+                          mono: true,
+                          color: ui.foregroundHint,
                         ),
                       ),
                     ],
@@ -775,14 +765,24 @@ class RaftInlineAudio extends StatelessWidget {
               ],
             ),
           ),
-          if (download != null) ...[const SizedBox(width: 8), download],
+          if (download != null) ...[
+            const SizedBox(width: RaftSpace.x2),
+            download,
+          ],
         ],
       ),
     );
     final loadingLabel = raftFormat(context, 'Loading {filename}', {
       'filename': filename,
     });
-    final inset = t.colors['layer-inset'];
+    final controlRadius = t.corner('radius.control', fallback: 8);
+    final wellTextStyle = t
+        .scale(
+          RaftTypeScale.control,
+          weight: FontWeight.w600,
+          color: ui.foregroundMuted,
+        )
+        .copyWith(fontVariations: const [FontVariation.weight(600)]);
     Widget failedAction(
       Key key,
       RaftGlyph glyph,
@@ -794,8 +794,11 @@ class RaftInlineAudio extends StatelessWidget {
       onTap: onTap,
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        spacing: 6,
-        children: [RaftIcon(glyph, size: 13), Text(raftText(context, label))],
+        spacing: RaftSpace.x1_5,
+        children: [
+          RaftIcon(glyph, size: 14, color: ui.foregroundMuted),
+          RaftCssText(raftText(context, label), style: wellTextStyle),
+        ],
       ),
     );
     final Widget body = state == RaftInlineMediaState.ready
@@ -812,29 +815,26 @@ class RaftInlineAudio extends StatelessWidget {
         : state == RaftInlineMediaState.failed && failureMessage != null
         ? Container(
             key: const Key('audio-failed'),
-            constraints: const BoxConstraints(minHeight: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            constraints: const BoxConstraints(minHeight: 36),
+            padding: const EdgeInsets.symmetric(
+              horizontal: RaftSpace.x3,
+              vertical: RaftSpace.x2,
+            ),
             decoration: BoxDecoration(
-              color: inset,
-              border: Border.all(color: line),
+              color: ui.fillMuted,
+              borderRadius: controlRadius,
             ),
             child: DefaultTextStyle.merge(
-              style: TextStyle(
-                fontFamily: t.headingFont,
-                fontSize: 12,
-                height: 16 / 12,
-                fontWeight: FontWeight.w700,
-                color: t.muted,
-              ),
+              style: wellTextStyle,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                spacing: 6,
+                spacing: RaftSpace.x1_5,
                 children: [
                   Text(failureMessage!, textAlign: TextAlign.center),
                   Wrap(
                     alignment: WrapAlignment.center,
-                    spacing: 12,
-                    runSpacing: 4,
+                    spacing: RaftSpace.x3,
+                    runSpacing: RaftSpace.x1,
                     children: [
                       if (onRetry != null)
                         failedAction(
@@ -873,39 +873,54 @@ class RaftInlineAudio extends StatelessWidget {
                 ? onTogglePlay
                 : null,
             child: Container(
-              height: 40,
+              constraints: BoxConstraints(minHeight: t.desktop ? 34 : 32),
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x3),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: inset,
-                border: Border.all(color: line),
+                color: ui.fillMuted,
+                borderRadius: controlRadius,
               ),
               child: DefaultTextStyle.merge(
-                style: TextStyle(
-                  fontFamily: t.headingFont,
-                  fontSize: 12,
-                  height: 16 / 12,
-                  fontWeight: FontWeight.w700,
-                  color: t.muted,
-                ),
+                style: wellTextStyle,
                 child: state == RaftInlineMediaState.loading
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
-                        spacing: 8,
+                        spacing: RaftSpace.x2,
                         children: [
-                          const RaftSpinner(size: 12),
-                          Text(loadingLabel),
+                          const RaftSpinner(size: 14),
+                          Flexible(
+                            child: Text(
+                              loadingLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       )
                     : state == RaftInlineMediaState.failed
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
-                        spacing: 6,
+                        spacing: RaftSpace.x2,
                         children: [
-                          const RaftIcon(RaftGlyph.download, size: 13),
-                          Text(raftText(context, 'Download to View')),
+                          RaftIcon(
+                            RaftGlyph.download,
+                            size: 16,
+                            color: ui.foregroundMuted,
+                          ),
+                          Flexible(
+                            child: Text(
+                              raftText(context, 'Download to View'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       )
-                    : Text(loadingLabel),
+                    : Text(
+                        loadingLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
               ),
             ),
           );
@@ -916,18 +931,15 @@ class RaftInlineAudio extends StatelessWidget {
         constraints: BoxConstraints(
           maxWidth: (width - 112).clamp(0, 448).toDouble(),
         ),
-        child: Container(
+        child: RaftMessageEmbedFrame(
           key: const Key('inline-audio'),
-          width: double.infinity,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: t.panel,
-            border: Border.all(color: line, width: 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [header, body],
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [header, body],
+            ),
           ),
         ),
       ),
@@ -935,9 +947,8 @@ class RaftInlineAudio extends StatelessWidget {
   }
 }
 
-/// Web `AudioPreviewBody` (modal variant): the `max-w-xl` bordered panel card
-/// with the 40 px music badge, name and "Audio file" over the audio rails, in
-/// the viewer's canvas.
+/// Web `AudioPreviewBody` (modal variant): `<Card className="w-full max-w-xl p-4">`
+/// with the 36px rounded-chip music badge, name and "Audio file" over the audio rails.
 class RaftAudioPreview extends StatelessWidget {
   const RaftAudioPreview({
     super.key,
@@ -963,13 +974,12 @@ class RaftAudioPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final line = t.colors['line-muted']!;
-    final strong = t.strong;
+    final ui = t.ui;
     // Centred when the card fits; scrolls when it does not (landscape, large
     // text, a short window).
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(RaftSpace.x4),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             minHeight: constraints.hasBoundedHeight
@@ -979,62 +989,61 @@ class RaftAudioPreview extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 576),
-              child: Container(
+              child: RaftCard(
                 key: const Key('audio-preview'),
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: t.panel,
-                  border: Border.all(color: line, width: 1),
-                  boxShadow: t.themeShadows.sm.outer,
-                ),
+                padding: const EdgeInsets.all(RaftSpace.x4),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(bottom: RaftSpace.x3),
                       child: Row(
-                        spacing: 12,
+                        spacing: RaftSpace.x3,
                         children: [
                           Container(
                             width: 40,
                             height: 40,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: t.colors['primary-soft'],
-                              border: Border.all(color: line, width: 1),
+                              color: ui.fillMuted,
+                              borderRadius: t.corner(
+                                'radius.chip',
+                                fallback: 6,
+                              ),
                             ),
                             child: RaftIcon(
                               RaftGlyph.music,
                               size: 20,
-                              color: strong,
+                              color: ui.foregroundMuted,
                             ),
                           ),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                RaftCssText(
                                   filename,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontFamily: t.headingFont,
-                                    fontSize: 14,
-                                    height: 20 / 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: strong,
-                                  ),
+                                  style: t
+                                      .scale(
+                                        RaftTypeScale.callout,
+                                        weight: FontWeight.w600,
+                                        color: ui.foreground,
+                                      )
+                                      .copyWith(
+                                        fontVariations: const [
+                                          FontVariation.weight(600),
+                                        ],
+                                      ),
                                 ),
-                                Text(
+                                RaftCssText(
                                   raftText(context, 'Audio file'),
-                                  style: TextStyle(
-                                    fontFamily: t.headingFont,
-                                    fontSize: 12,
-                                    height: 16 / 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: t.muted,
+                                  style: t.scale(
+                                    RaftTypeScale.monoMeta,
+                                    mono: true,
+                                    color: ui.foregroundHint,
                                   ),
                                 ),
                               ],
@@ -1086,7 +1095,7 @@ class _AudioPlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final line = t.colors['line-muted']!;
+    final ui = t.ui;
     final known = duration > Duration.zero;
     final bounded = known && position > duration ? duration : position;
     final progress = known
@@ -1101,39 +1110,28 @@ class _AudioPlayer extends StatelessWidget {
     );
     return Container(
       key: const Key('inline-audio-player'),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(RaftSpace.x2),
       decoration: BoxDecoration(
-        color: t.colors['layer-inset'],
-        border: Border.all(color: line),
+        color: ui.fillMuted,
+        borderRadius: t.corner('radius.control', fallback: 8),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            spacing: 8,
+            spacing: RaftSpace.x2,
             children: [
-              Semantics(
-                button: true,
-                label: playLabel,
-                child: GestureDetector(
-                  key: const Key('audio-play-toggle'),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onTogglePlay,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: t.panel,
-                      border: Border.all(color: t.colors['line-muted']!),
-                    ),
-                    child: RaftIcon(
-                      playing ? RaftGlyph.pause : RaftGlyph.play,
-                      size: 14,
-                      color: t.strong,
-                      filled: true,
-                    ),
-                  ),
+              RaftButton(
+                key: const Key('audio-play-toggle'),
+                uiVariant: RaftButtonVariant.standard,
+                uiSize: RaftButtonSize.iconMd,
+                semanticLabel: playLabel,
+                onPressed: onTogglePlay,
+                iconBuilder: (size, color) => RaftIcon(
+                  playing ? RaftGlyph.pause : RaftGlyph.play,
+                  size: size,
+                  color: color,
+                  filled: true,
                 ),
               ),
               Expanded(
@@ -1145,10 +1143,11 @@ class _AudioPlayer extends StatelessWidget {
                   semanticValue: timeLabel,
                   value: progress,
                   enabled: known,
-                  height: 28,
+                  height: 32,
                   rail: 8,
-                  thumb: 12,
-                  fill: t.colors['primary-strong']!,
+                  railRadius: 4,
+                  thumb: 14,
+                  fill: ui.info,
                   onChanged: (v) => onSeek?.call(
                     Duration(
                       milliseconds: (v * duration.inMilliseconds).round(),
@@ -1156,34 +1155,37 @@ class _AudioPlayer extends StatelessWidget {
                   ),
                 ),
               ),
-              ConstrainedBox(
-                // 76px is a minimum: a larger text size widens the label
-                // instead of cutting it.
-                constraints: const BoxConstraints(minWidth: 76),
-                child: Text(
+              SizedBox(
+                // `w-[4.75rem]` (76px), scaling cleanly with Dynamic Type.
+                width: RaftScaled.extent(context, 76, fontSize: 12),
+                child: RaftCssText(
                   timeLabel,
                   key: const Key('audio-time'),
                   textAlign: TextAlign.right,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontFamily: t.monoFont,
-                    fontSize: 11,
-                    height: 16 / 11,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                    color: t.muted,
-                  ),
+                  style: t
+                      .scale(
+                        RaftTypeScale.monoMeta,
+                        mono: true,
+                        color: ui.foregroundHint,
+                      )
+                      .copyWith(
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: RaftSpace.x1_5),
           Padding(
-            padding: const EdgeInsets.only(left: 36),
+            padding: const EdgeInsets.only(left: 40),
             child: Row(
-              spacing: 8,
+              spacing: RaftSpace.x2,
               children: [
-                RaftIcon(RaftGlyph.volume2, size: 13, color: t.muted),
+                RaftIcon(
+                  RaftGlyph.volume2,
+                  size: 16,
+                  color: ui.foregroundMuted,
+                ),
                 Expanded(
                   child: _RailSlider(
                     key: const Key('audio-volume'),
@@ -1197,8 +1199,9 @@ class _AudioPlayer extends StatelessWidget {
                     enabled: true,
                     height: 24,
                     rail: 6,
-                    thumb: 10,
-                    fill: t.colors['primary-strong']!,
+                    railRadius: 3,
+                    thumb: 12,
+                    fill: ui.foregroundMuted,
                     onChanged: (v) => onVolume?.call(v),
                   ),
                 ),
@@ -1211,7 +1214,9 @@ class _AudioPlayer extends StatelessWidget {
   }
 }
 
-/// The audio rails: a bordered track with a flat fill and a square thumb.
+/// Web v1.24 audio rails: rounded hairline-bordered `layer-card` track with
+/// clipped progress fill and `rounded-[2px] border-[1.5px] border-line-strong`
+/// `layer-card` thumb.
 class _RailSlider extends StatelessWidget {
   const _RailSlider({
     super.key,
@@ -1219,13 +1224,14 @@ class _RailSlider extends StatelessWidget {
     required this.enabled,
     required this.height,
     required this.rail,
+    required this.railRadius,
     required this.thumb,
     required this.fill,
     required this.onChanged,
     required this.semanticLabel,
     required this.semanticValue,
   });
-  final double value, height, rail, thumb;
+  final double value, height, rail, railRadius, thumb;
   final bool enabled;
   final Color fill;
   final ValueChanged<double> onChanged;
@@ -1234,7 +1240,7 @@ class _RailSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final line = t.colors['line-muted']!;
+    final ui = t.ui;
     return Semantics(
       slider: true,
       label: semanticLabel,
@@ -1269,9 +1275,13 @@ class _RailSlider extends StatelessWidget {
                 children: [
                   Container(
                     height: rail,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      color: t.panel,
-                      border: Border.all(color: line),
+                      color: ui.layerCard,
+                      borderRadius: BorderRadius.circular(railRadius),
+                      border: Border.all(
+                        color: raftChromeBlend(ui.lineHairline, ui.layerCard),
+                      ),
                     ),
                     alignment: Alignment.centerLeft,
                     child: FractionallySizedBox(
@@ -1286,8 +1296,12 @@ class _RailSlider extends StatelessWidget {
                       width: thumb,
                       height: thumb,
                       decoration: BoxDecoration(
-                        color: t.panel,
-                        border: Border.all(color: line),
+                        color: ui.layerCard,
+                        borderRadius: t.corner(
+                          'radius.audioThumb',
+                          fallback: 2,
+                        ),
+                        border: Border.all(color: ui.lineStrong, width: 1.5),
                       ),
                     ),
                   ),

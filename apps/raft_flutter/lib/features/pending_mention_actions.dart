@@ -301,32 +301,48 @@ Widget? raftComposerAccessory(
   }
   final banners = <Widget>[
     if (shared != null)
-      RaftComposerNotice(
+      RaftBanner(
         key: const Key('shared-destination-notice'),
-        message: raftText(context, shared),
+        status: RaftBannerRecipeStatus.warning,
+        size: RaftBannerRecipeSize.sm,
+        description: raftText(context, shared),
       ),
-    if (error != null) RaftComposerNotice(message: error),
-    if (quota != null) RaftComposerNotice(message: quota),
+    if (error != null)
+      RaftBanner(
+        status: RaftBannerRecipeStatus.warning,
+        size: RaftBannerRecipeSize.sm,
+        description: error,
+      ),
+    if (quota != null)
+      RaftBanner(
+        status: RaftBannerRecipeStatus.warning,
+        size: RaftBannerRecipeSize.sm,
+        description: quota,
+      ),
     if (delivery)
-      RaftComposerNotice(
-        message: raftText(
+      RaftBanner(
+        status: RaftBannerRecipeStatus.warning,
+        size: RaftBannerRecipeSize.sm,
+        description: raftText(
           context,
           warnings.agentStopped
               ? 'Message sent, but this agent is stopped and was not notified.'
               : 'Message sent, but this agent is stuck on a command with no output. It will see the message once the command ends or the agent is restarted.',
         ),
-        dismissLabel: raftText(context, 'Dismiss Delivery Warning'),
-        onDismiss: () => w.dismissSendWarnings(thread: thread),
+        closeLabel: raftText(context, 'Dismiss Delivery Warning'),
+        onClose: () => w.dismissSendWarnings(thread: thread),
       ),
     if (unresolved)
-      RaftComposerNotice(
-        message: raftFormat(
+      RaftBanner(
+        status: RaftBannerRecipeStatus.warning,
+        size: RaftBannerRecipeSize.sm,
+        description: raftFormat(
           context,
           'Not notified: {handles}. Select a person or agent from the mention picker and try again if needed.',
           {'handles': warnings.unresolved.join(', ')},
         ),
-        dismissLabel: raftText(context, 'Dismiss Unnotified Mention Warning'),
-        onDismiss: () => w.dismissSendWarnings(thread: thread),
+        closeLabel: raftText(context, 'Dismiss Unnotified Mention Warning'),
+        onClose: () => w.dismissSendWarnings(thread: thread),
       ),
   ];
   return Column(

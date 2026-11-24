@@ -21,10 +21,11 @@ import 'form_controls.dart' show RaftTextInput;
 import 'icons.dart';
 import 'list_items.dart' show RaftSectionEyebrow;
 
+import 'forwarded_bundle_style.dart';
 import 'localization.dart';
 import 'message_body.dart';
+import 'message_embed_frame.dart';
 import 'mounted_avatar_recipe.dart';
-import 'rich_card_tokens.dart';
 import 'system_inset.dart';
 import 'status_bar.dart';
 import 'theme.dart';
@@ -928,118 +929,103 @@ class RaftForwardSharePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final recipe = ForwardedSnapshotRecipe(
-      t,
-      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-    );
-    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final style = RaftForwardedBundleStyle.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 4),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: recipe.maxWidth),
-        child: Container(
-          decoration: recipe.decoration,
-          padding: recipe.inset,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                decoration: recipe.headerDecoration,
-                padding: recipe.headerInset(viewportWidth),
-                child: Row(
-                  children: [
-                    RaftIcon(
-                      RaftGlyph.share2,
-                      size: 12,
-                      color: recipe.header.color,
+      child: RaftMessageEmbedFrame(
+        size: RaftMessageEmbedSize.content,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: style.headerPadding,
+              child: Row(
+                children: [
+                  RaftIcon(
+                    RaftGlyph.share2,
+                    size: 14,
+                    color: style.label.color,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(header, style: style.label),
+                  if (count != null) ...[
+                    SizedBox(width: style.headerGap),
+                    Flexible(
+                      child: Text(
+                        count!,
+                        style: style.count,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const SizedBox(width: 4),
-                    Text(header, style: recipe.header),
-                    if (count != null) ...[
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          count!,
-                          // Same 16.5px header line as the note page's bundle.
-                          style: recipe.count.copyWith(height: 16.5 / 11),
-                          overflow: TextOverflow.ellipsis,
+                  ],
+                ],
+              ),
+            ),
+            Padding(
+              padding: style.itemPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (text != null && text!.isNotEmpty)
+                    // Long text is cut like the bundle's collapsed body.
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: style.collapsedHeight,
+                      ),
+                      child: SingleChildScrollView(
+                        primary: false,
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: RaftMessageBody(
+                          content: text!,
+                          foregroundColor: style.foreground,
+                          exportMode: true,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              DecoratedBox(
-                decoration: recipe.contentDecoration,
-                child: Padding(
-                  padding: recipe.itemInset,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (text != null && text!.isNotEmpty)
-                        // Long text is cut like the bundle's collapsed body.
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: recipe.collapsedHeight,
-                          ),
-                          child: SingleChildScrollView(
-                            primary: false,
-                            physics: const NeverScrollableScrollPhysics(),
-                            child: RaftMessageBody(
-                              content: text!,
-                              foregroundColor: recipe.semantic.prose,
-                              exportMode: true,
-                            ),
-                          ),
-                        ),
-                      if (files.isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            top: text != null && text!.isNotEmpty ? 6 : 0,
-                          ),
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              for (final file in files)
-                                SizedBox(
-                                  width: RaftAttachmentRecipe(t).size.width,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      RaftAttachmentCard(
-                                        onOpen: null,
-                                        filename: file.filename,
-                                        // A shared image is not readable here
-                                        // until it is staged, so it is listed
-                                        // as a file chip rather than as an
-                                        // empty image box.
-                                        mimeType:
-                                            file.mimeType.startsWith('image/')
-                                            ? 'application/octet-stream'
-                                            : file.mimeType,
-                                        sizeBytes: file.sizeBytes,
-                                        exportMode: true,
-                                      ),
-                                      if (file.state !=
-                                          RaftForwardShareFileState.ready) ...[
-                                        const SizedBox(height: 4),
-                                        RaftForwardShareFileStatus(file: file),
-                                      ],
-                                    ],
+                    ),
+                  if (files.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: text != null && text!.isNotEmpty ? 6 : 0,
+                      ),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final file in files)
+                            SizedBox(
+                              width: RaftAttachmentRecipe(t).size.width,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  RaftAttachmentCard(
+                                    onOpen: null,
+                                    filename: file.filename,
+                                    // A shared image is not readable here
+                                    // until it is staged, so it is listed
+                                    // as a file chip rather than as an
+                                    // empty image box.
+                                    mimeType: file.mimeType.startsWith('image/')
+                                        ? 'application/octet-stream'
+                                        : file.mimeType,
+                                    sizeBytes: file.sizeBytes,
+                                    exportMode: true,
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                                  if (file.state !=
+                                      RaftForwardShareFileState.ready) ...[
+                                    const SizedBox(height: 4),
+                                    RaftForwardShareFileStatus(file: file),
+                                  ],
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

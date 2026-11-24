@@ -649,40 +649,6 @@ class _RecipeMemberRow extends StatelessWidget {
   }
 }
 
-/// CreateChannelDialog `archivedCollision` Banner (warning, `space-y-2`): the
-/// name is held by an archived channel; Unarchive it or pick another name.
-class RaftArchivedNameBanner extends StatelessWidget {
-  const RaftArchivedNameBanner({
-    super.key,
-    required this.name,
-    required this.canUnarchive,
-    this.onChangeName,
-    this.onUnarchive,
-    this.onOpen,
-    this.busy = false,
-    this.showHint = true,
-  });
-  final String name;
-  final bool canUnarchive, busy;
-
-  /// CreateChannelDialog's second line; the joint dialog's banner has none.
-  final bool showHint;
-  final VoidCallback? onChangeName;
-  final VoidCallback? onUnarchive, onOpen;
-
-  @override
-  Widget build(BuildContext context) => raftArchivedNameBanner(
-    context,
-    name: name,
-    canUnarchive: canUnarchive,
-    onChangeName: onChangeName,
-    onUnarchive: onUnarchive,
-    onOpen: onOpen,
-    busy: busy,
-    showHint: showHint,
-  );
-}
-
 RaftBanner raftArchivedNameBanner(
   BuildContext context, {
   Key? key,
@@ -696,7 +662,7 @@ RaftBanner raftArchivedNameBanner(
 }) {
   final t = RaftTokens.of(context);
   return RaftBanner(
-    key: key,
+    key: key ?? const ValueKey('archived-name-collision'),
     titleBuilder: (style) => Text.rich(
       TextSpan(
         children: raftRichText(

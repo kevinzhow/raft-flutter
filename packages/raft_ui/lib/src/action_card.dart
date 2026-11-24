@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:raft_theme/recipes/recipe_runtime.dart';
 
-import 'design_primitives.dart' show RaftInteractive, RaftTypography;
+import 'design_primitives.dart' show RaftInteractive;
 import 'error_presentation.dart' show RaftErrorBanner;
-import 'dialog_card.dart' show RaftRecipeButton;
-import 'recipes/button_variants.g.dart';
 import 'recipes/message_action_card.g.dart';
 import 'recipes/message_action_card_content.g.dart';
 import 'recipes/message_card.g.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'agent_subagents.dart' show RaftDescriptionEntry;
+import 'raft/button.dart';
 import 'raft/status.dart';
 import 'raft/ui_tokens.dart';
 import 'localization.dart';
@@ -20,9 +19,7 @@ import 'message_embed_frame.dart';
 import 'message_reference_chip.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
 import 'recipe_surface.dart' show RaftRecipeBinding, RaftRecipeBox;
-import 'rich_card_tokens.dart';
 import 'text_measure.dart';
-import 'text_scaling.dart' show RaftScaled;
 import 'tokens/tokens.dart' show RaftTypeScale;
 
 class RaftSpecActionCard extends StatelessWidget {
@@ -255,7 +252,7 @@ class RaftSpecActionCardContent {
   final TextScaler scaler;
 
   late final slots = RaftMessageActionCardContentRecipe.resolve(
-    states: tokens.recipeStates(),
+    states: tokens.recipeStates(responsive: true),
     tokens: tokens.recipeTokens,
   );
 
@@ -421,6 +418,8 @@ class RaftSpecActionCardContent {
 
   Widget notice(String copy) {
     final style = text(slots.notice);
+    final lineHeight = scaler.scale(style.fontSize ?? 12) * (style.height ?? 1);
+    final iconTop = ((lineHeight - 14) / 2).clamp(0.0, 14.0);
     return Container(
       decoration: slots.notice.decoration(tokens.recipeTokens),
       padding: slots.notice.padding,
@@ -428,7 +427,10 @@ class RaftSpecActionCardContent {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: slots.notice.columnGap ?? RaftSpace.x2,
         children: [
-          RaftIcon(RaftGlyph.info, size: 14, color: style.color),
+          Padding(
+            padding: EdgeInsets.only(top: iconTop),
+            child: RaftIcon(RaftGlyph.info, size: 14, color: style.color),
+          ),
           Expanded(child: RaftCssText(copy, style: style)),
         ],
       ),
@@ -511,9 +513,10 @@ class RaftSpecActionCardContent {
   );
 }
 
-/// A safe presentation of server-owned action metadata. Execution and current
-/// permissions belong to the application adapter, never this component.
-class RaftActionCard extends StatelessWidget {
+/// A safe presentation of server-owned action metadata, rendered on the
+/// canonical v1.24 [RaftSpecActionCard] / [RaftMessageEmbedFrame] frame.
+/// Execution and current permissions belong to the application adapter.
+class RaftActionCard extends StatefulWidget {
   const RaftActionCard({
     super.key,
     required this.title,
@@ -531,13 +534,20 @@ class RaftActionCard extends StatelessWidget {
     this.body = const [],
     this.completedResult,
     this.completedAction,
+    this.icon,
+    this.headerDescription,
+    this.statusLabel,
+    this.statusVariant,
+    this.warning,
+    this.collapsible = false,
+    this.defaultExpanded = true,
+    this.hideConfirmAction = false,
   });
 
-  /// ActionTitleLine: the title as `flex flex-wrap items-center gap-2` items
-  /// (text pieces and bold chunks), instead of the single [title] string.
+  /// ActionTitleLine pieces joined into the card's heading when [title] is empty.
   final List<String>? titleParts;
 
-  /// ActionDetail rows (`mt-1 text-xs text-foreground-muted`, `space-y-0.5`).
+  /// Body rows rendered inside [MessageActionCardContent].
   final List<Widget> body;
 
   /// ResultLink after "Committed by": the `→ ...` produced resource.
@@ -552,246 +562,147 @@ class RaftActionCard extends StatelessWidget {
   final bool busy;
   final VoidCallback? onConfirm;
 
-  /// ActionTitleLine: `flex flex-wrap items-center gap-2` of the title items
-  /// and, when done, the `ml-auto` Done badge (alone on its line when the
-  /// items leave no room for it).
-  Widget _titleLine(
-    BuildContext context,
-    List<String> parts,
-    Widget? badge,
-    ActionSnapshotRecipe recipe,
-  ) {
-    final style = recipe.title.copyWith(height: 19.25 / 14);
-    Widget item(String part) =>
-        // `leading-snug` (19.25px) is fractional; a Text would round the line
-        // up to 20.
-        RaftScaled.lineBox(
-          context,
-          height: 19.25,
-          child: Text(part, style: style),
-        );
-    Wrap items() => Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [for (final part in parts) item(part)],
-    );
-    if (badge == null) return items();
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        double width(String text, [TextStyle? textStyle]) =>
-            raftTextWidth(TextSpan(text: text, style: textStyle ?? style));
-        final used =
-            parts.fold<double>(0, (a, p) => a + width(p)) +
-            8 * (parts.length - 1);
-        final badgeWidth =
-            recipe.badgeInset.horizontal +
-            2 +
-            10 +
-            recipe.badgeGap +
-            width('DONE', recipe.badge);
-        if (used + 8 + badgeWidth <= constraints.maxWidth) {
-          return Row(
-            spacing: 8,
-            children: [
-              for (final part in parts) item(part),
-              const Spacer(),
-              badge,
-            ],
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 8,
-          children: [
-            items(),
-            Align(alignment: Alignment.centerRight, child: badge),
-          ],
-        );
-      },
-    );
+  /// Optional v1.24 header icon (`CircleHelp` for view-only/unknown cards).
+  final RaftGlyph? icon;
+
+  /// Optional header description line (replaces committedBy when provided).
+  final String? headerDescription;
+
+  /// Optional explicit status label & tone (defaults from [state]).
+  final String? statusLabel;
+  final RaftStatusVariant? statusVariant;
+
+  /// Optional standing notice rendered at top of content (`MessageActionCardNotice`).
+  final String? warning;
+
+  /// Whether the card exposes a header disclosure toggle (`UnknownActionCard`).
+  final bool collapsible;
+  final bool defaultExpanded;
+
+  /// View-only cards (`UnknownActionCard`) omit the confirm action row.
+  final bool hideConfirmAction;
+
+  @override
+  State<RaftActionCard> createState() => _RaftActionCardState();
+}
+
+class _RaftActionCardState extends State<RaftActionCard> {
+  late bool _expanded = widget.defaultExpanded;
+
+  @override
+  void didUpdateWidget(covariant RaftActionCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.defaultExpanded != oldWidget.defaultExpanded ||
+        widget.collapsible != oldWidget.collapsible) {
+      _expanded = widget.defaultExpanded;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final done = state == 'executed', frozen = state == 'frozen';
-    final recipe = ActionSnapshotRecipe(t);
-    final badge = Semantics(
-      label: raftText(context, 'Done'),
-      child: Container(
-        key: const ValueKey('action-success-badge'),
-        height: recipe.badgeHeight,
-        padding: recipe.badgeInset,
-        decoration: recipe.badgeDecoration,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RaftIcon(RaftGlyph.check, size: 10, color: recipe.badge.color),
-            SizedBox(width: recipe.badgeGap),
-            Text(raftText(context, 'Done'), style: recipe.badge),
-          ],
+    final content = RaftSpecActionCardContent(context);
+    final done = widget.state == 'executed';
+    final frozen = widget.state == 'frozen';
+    final heading = widget.titleParts != null && widget.titleParts!.isNotEmpty
+        ? widget.titleParts!.join(' ')
+        : widget.title;
+
+    InlineSpan? descriptionSpan;
+    if (widget.headerDescription != null &&
+        widget.headerDescription!.isNotEmpty) {
+      descriptionSpan = TextSpan(text: widget.headerDescription);
+    } else if (done && widget.completedBy != null) {
+      final template = raftFormat(context, 'Committed by {name}', {
+        'name': '\uFFFC',
+      });
+      final parts = template.split('\uFFFC');
+      descriptionSpan = TextSpan(
+        children: [
+          TextSpan(text: parts.first),
+          content.completionName(widget.completedBy!),
+          if (parts.length > 1) TextSpan(text: parts.sublist(1).join('\uFFFC')),
+          if (widget.completedResult != null)
+            content.completionName(' ${widget.completedResult}'),
+        ],
+      );
+    }
+
+    final statusText =
+        widget.statusLabel ??
+        (done
+            ? raftText(context, 'Done')
+            : frozen
+            ? raftText(context, 'Frozen')
+            : null);
+    final statusTone =
+        widget.statusVariant ??
+        (done ? RaftStatusVariant.success : RaftStatusVariant.muted);
+
+    final children = <Widget>[
+      if (widget.warning != null && widget.warning!.isNotEmpty)
+        content.notice(widget.warning!),
+      ...widget.body,
+      if (widget.details.isNotEmpty)
+        content.properties([
+          for (final d in widget.details)
+            RaftDescriptionEntry(raftText(context, d.label), d.value),
+        ]),
+      if (widget.targetServer != null)
+        RaftCssText(
+          raftFormat(context, 'Runs on {server}', {
+            'server': widget.targetServer!,
+          }),
+          style: content.text(content.slots.propertyValue),
         ),
-      ),
-    );
+      if (widget.hint != null && widget.hint!.isNotEmpty)
+        content.hint(body: widget.hint!),
+      if (done && widget.completedAction != null)
+        Align(alignment: Alignment.centerLeft, child: widget.completedAction),
+      if (widget.error != null) RaftErrorBanner(widget.error!, small: true),
+      if (!done && !widget.hideConfirmAction)
+        content.actions([
+          if (widget.blockedReason != null)
+            RaftCssText(
+              raftText(context, widget.blockedReason!),
+              style: content.text(content.slots.actionsNote),
+            ),
+          RaftButton(
+            uiVariant: RaftButtonVariant.accent,
+            uiSize: RaftButtonSize.sm,
+            label: widget.busy
+                ? '…'
+                : frozen
+                ? 'Frozen'
+                : widget.state == 'reconfirm_required'
+                ? 'Reconfirm'
+                : widget.confirmLabel,
+            disabled: frozen || widget.blockedReason != null,
+            onPressed: widget.busy ? null : widget.onConfirm,
+          ),
+        ]),
+    ];
+
+    final hasBody = children.isNotEmpty;
     return SizedBox(
       width: double.infinity,
-      child: Padding(
-        padding: EdgeInsets.only(
-          top: RaftMessageBodyMargin.collapse(context, recipe.topGap),
-        ),
-        child: _ActionFrame(
-          child: Padding(
-            padding: recipe.inset,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (titleParts == null)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: Text(title, style: recipe.title)),
-                      if (done) ...[const SizedBox(width: 8), badge],
-                    ],
-                  )
-                else
-                  _titleLine(context, titleParts!, done ? badge : null, recipe),
-                if (body.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: DefaultTextStyle(
-                      style: recipe.summary,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: 2,
-                        children: body,
-                      ),
-                    ),
-                  ),
-                for (final d in details)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text.rich(
-                      TextSpan(
-                        style: recipe.summary,
-                        children: [
-                          TextSpan(text: '${raftText(context, d.label)}: '),
-                          TextSpan(text: d.value, style: recipe.detailValue),
-                        ],
-                      ),
-                    ),
-                  ),
-                if (targetServer != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      raftFormat(context, 'Runs on {server}', {
-                        'server': targetServer!,
-                      }),
-                    ),
-                  ),
-                if (hint != null && hint!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border(left: recipe.hintBorder),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.only(left: recipe.hintInset),
-                        child: Text(hint!, style: recipe.hint),
-                      ),
-                    ),
-                  ),
-                if (done && completedBy != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Builder(
-                      builder: (context) {
-                        final template = raftFormat(
-                          context,
-                          'Committed by {name}',
-                          {'name': '\uFFFC'},
-                        );
-                        final parts = template.split('\uFFFC');
-                        return Text.rich(
-                          TextSpan(
-                            style: recipe.committed,
-                            children: [
-                              TextSpan(text: parts.first),
-                              TextSpan(
-                                text: completedBy!,
-                                style: recipe.committedName,
-                              ),
-                              if (parts.length > 1)
-                                TextSpan(text: parts.sublist(1).join('\uFFFC')),
-                              if (completedResult != null)
-                                TextSpan(
-                                  text: ' $completedResult',
-                                  style: recipe.committedName,
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                if (done && completedAction != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: completedAction,
-                    ),
-                  ),
-                if (error != null)
-                  // Web `<Banner intent="warning" density="sm" className="mt-1">`.
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: RaftErrorBanner(error!, small: true),
-                  ),
-                if (!done)
-                  Padding(
-                    // `mt-2 flex flex-wrap items-center gap-x-3 gap-y-1`
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Wrap(
-                      spacing: 12,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        RaftRecipeButton(
-                          variant: RaftButtonRecipeVariant.accent,
-                          size: RaftButtonRecipeSize.sm,
-                          label: busy
-                              ? '…'
-                              : frozen
-                              ? 'Frozen'
-                              : state == 'reconfirm_required'
-                              ? 'Reconfirm'
-                              : confirmLabel,
-                          disabled: frozen || blockedReason != null,
-                          onPressed: busy ? null : onConfirm,
-                        ),
-                        if (blockedReason != null)
-                          Text(
-                            raftText(context, blockedReason!),
-                            style: recipe.summary,
-                          ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
+      child: RaftSpecActionCard(
+        icon: widget.icon,
+        title: heading,
+        descriptionSpan: descriptionSpan,
+        status: statusText,
+        statusVariant: statusTone,
+        expanded: widget.collapsible ? _expanded : hasBody,
+        onToggle: widget.collapsible
+            ? () => setState(() => _expanded = !_expanded)
+            : null,
+        body: hasBody ? content.column(children) : const SizedBox.shrink(),
       ),
     );
   }
 }
 
-/// One ActionDetail row: `<span text-foreground-hint>label</span> <span
-/// text-foreground-strong>value</span>`.
+/// One ActionDetail row using canonical [RaftMessageActionCardContentRecipe]
+/// `propertyLabel` / `propertyValue` typography.
 class RaftActionField extends StatelessWidget {
   const RaftActionField({
     super.key,
@@ -807,33 +718,34 @@ class RaftActionField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final recipe = ActionSnapshotRecipe(t);
-    final labelStyle = recipe.summary.copyWith(
-      color: t.colors['foreground-hint'],
+    final content = RaftSpecActionCardContent(context);
+    final labelStyle = content.text(content.slots.propertyLabel);
+    final valueStyle = content.text(content.slots.propertyValue);
+    final labelWidget = RaftCssText(
+      raftText(context, label),
+      style: labelStyle,
     );
-    final label = Text(raftText(context, this.label), style: labelStyle);
     if (child != null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
-        children: [label, child!],
+        spacing: RaftSpace.x1,
+        children: [labelWidget, child!],
       );
     }
     return Text.rich(
       TextSpan(
         children: [
-          TextSpan(text: raftText(context, this.label), style: labelStyle),
+          TextSpan(text: raftText(context, label), style: labelStyle),
           const TextSpan(text: ' '),
-          TextSpan(text: value, style: recipe.detailValue),
+          TextSpan(text: value, style: valueStyle),
         ],
       ),
     );
   }
 }
 
-/// A bold notice line inside the summary (`font-bold text-brutal-orange`,
-/// `text-amber-700`, `text-foreground-strong`).
+/// A note line inside an action card using semantic v1.24 tokens.
 class RaftActionNote extends StatelessWidget {
   const RaftActionNote(
     this.text, {
@@ -846,51 +758,39 @@ class RaftActionNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final recipe = ActionSnapshotRecipe(t);
+    final ui = t.ui;
     final color = switch (tone) {
-      RaftActionTone.orange => t.colors['color-brutal-orange'],
-      RaftActionTone.amber => const Color(0xFFB45309),
-      RaftActionTone.strong => t.strong,
-      RaftActionTone.hint => t.colors['foreground-hint'],
+      RaftActionTone.orange || RaftActionTone.amber => ui['warning-strong'],
+      RaftActionTone.strong => ui.foreground,
+      RaftActionTone.hint => ui.foregroundHint,
     };
-    return Text(
+    return RaftCssText(
       raftText(context, text),
-      style: recipe.summary.copyWith(
-        fontWeight: tone == RaftActionTone.hint ? null : FontWeight.w700,
+      style: t.scale(
+        RaftTypeScale.footnote,
+        weight: tone == RaftActionTone.hint ? FontWeight.w400 : FontWeight.w600,
         color: color,
       ),
     );
   }
 }
 
-/// The inbound-scope caveat box in the scope list footer: `border
-/// border-line-hairline bg-warning-soft p-[7px]` around a [RaftActionNote].
+/// Standing caveat notice inside an action card, matching Web v1.24
+/// `MessageActionCardNotice` (`rounded-control bg-fill-muted px-2.5 py-2`).
 class RaftActionWarningBox extends StatelessWidget {
   const RaftActionWarningBox(this.text, {super.key});
   final String text;
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: t.colors['warning-soft'],
-        border: Border.all(color: t.colors['line-hairline']!),
-      ),
-      child: Padding(
-        // `p-1.5` plus the 1px `border` (a DecoratedBox border takes no layout space).
-        padding: const EdgeInsets.all(RaftSpace.x1_5 + RaftSpace.hairline),
-        child: RaftActionNote(text),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      RaftSpecActionCardContent(context).notice(raftText(context, text));
 }
 
 /// `hint` is the regular-weight `text-foreground-hint` line.
 enum RaftActionTone { orange, amber, strong, hint }
 
-/// ActionScopeList: one `border border-line-hairline bg-layer-inset p-1.5`
-/// block per visible OAuth scope (mono name + copy), `mt-1 space-y-1.5`.
+/// Canonical `MessageActionCardScopeList`: `rounded-control border
+/// border-line-hairline bg-layer-card px-2.5 py-2` per visible OAuth scope.
 class RaftActionScopeList extends StatelessWidget {
   const RaftActionScopeList({
     super.key,
@@ -904,63 +804,37 @@ class RaftActionScopeList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final recipe = ActionSnapshotRecipe(t);
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        spacing: 6,
-        children: [
-          for (final s in scopes)
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: t.colors['layer-inset'],
-                border: Border.all(color: t.colors['line-hairline']!),
-              ),
-              child: Padding(
-                // `p-1.5` plus the 1px `border` (a DecoratedBox border takes no layout space).
-                padding: const EdgeInsets.all(
-                  RaftSpace.x1_5 + RaftSpace.hairline,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RaftScaled.lineBox(
-                      context,
-                      height: 11 * 4 / 3,
-                      child: Text(
-                        s.scope,
-                        style: RaftTypography.mono(
-                          t,
-                          size: 11,
-                          line: 11 * 4 / 3,
-                          color: t.muted,
-                        ).copyWith(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    Text(raftText(context, s.copy), style: recipe.summary),
-                  ],
-                ),
-              ),
+    final content = RaftSpecActionCardContent(context);
+    final slots = content.slots;
+    final nameStyle = content.text(slots.scopeName);
+    final descriptionStyle = content.text(slots.scopeDescription);
+    final gap = slots.scopeListViewportContent.rowGap ?? RaftSpace.x1_5;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      spacing: gap,
+      children: [
+        for (final s in scopes)
+          RaftRecipeBox(
+            style: slots.scope,
+            tokens: content.tokens.recipeTokens,
+            applyText: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              spacing: slots.scopeDescription.margin.top,
+              children: [
+                RaftCssText(s.scope, style: nameStyle),
+                if (s.copy.isNotEmpty)
+                  RaftCssText(
+                    raftText(context, s.copy),
+                    style: descriptionStyle,
+                  ),
+              ],
             ),
-          ...footer,
-        ],
-      ),
+          ),
+        ...footer,
+      ],
     );
-  }
-}
-
-/// The card's frame. The Raft look is the raft-ui `MessageEmbed` (size `item`:
-/// radius 10, one hairline, `layer-card`, 400 wide).
-class _ActionFrame extends StatelessWidget {
-  const _ActionFrame({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return RaftMessageEmbedFrame(size: RaftMessageEmbedSize.item, child: child);
   }
 }

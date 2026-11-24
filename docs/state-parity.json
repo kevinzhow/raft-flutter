@@ -20579,10 +20579,13 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/action_card.dart#class:RaftActionCard": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/action_card.dart#class:RaftActionField": {
         "role": "unresolved",
@@ -28356,10 +28359,12 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/forward_composer.dart#class:RaftForwardSharePreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/forward_composer.dart#class:RaftForwardTargetBadge": {
         "role": "unresolved",
@@ -28494,10 +28499,12 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/forward_composer.dart#method:RaftForwardSharePreview.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/forward_composer.dart#method:RaftForwardTargetBadge.build": {
         "role": "unresolved",
@@ -28530,10 +28537,13 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/forward_desktop_dialog.dart#class:RaftForwardDesktopDialog": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/forward_desktop_dialog.dart#class:RaftForwardDesktopSearch": {
         "role": "unresolved",
@@ -28548,10 +28558,13 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/forward_desktop_dialog.dart#method:RaftForwardDesktopDialog.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/forward_desktop_dialog.dart#method:RaftForwardDesktopSearch.build": {
         "role": "unresolved",
@@ -29178,10 +29191,13 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/inline_media.dart#class:RaftInlineAudio": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/inline_media.dart#class:RaftInlineVideo": {
         "role": "unresolved",
@@ -29262,10 +29278,13 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/inline_media.dart#method:RaftInlineAudio.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/inline_media.dart#method:RaftInlineVideo.createState": {
         "role": "unresolved",
@@ -33467,10 +33486,12 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/quoted_message_card.dart#class:RaftQuotedMessageSkeleton": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/quoted_message_card.dart#class:RaftQuotedMessageSlot": {
         "role": "unresolved",
@@ -33479,10 +33500,12 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/quoted_message_card.dart#class:_RaftQuotedMessageSkeletonState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/quoted_message_card.dart#local-function:CLASS:_RaftQuotedMessageSkeletonState@12382/METHOD:build@13325/FUNCTION:bar@13366": {
         "role": "unresolved",
@@ -33491,10 +33514,12 @@
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/quoted_message_card.dart#method:RaftQuotedMessageSkeleton.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/quoted_message_card.dart#method:RaftQuotedMessageSlot.build": {
         "role": "unresolved",
@@ -33503,10 +33528,12 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/quoted_message_card.dart#method:_RaftQuotedMessageSkeletonState.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/raft/avatar.dart#class:RaftAvatarBadge": {
         "role": "unresolved",
@@ -45591,22 +45618,28 @@
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/task_handoff_card.dart#class:RaftTaskHandoffCard": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/task_handoff_card.dart#method:RaftTaskHandoffCard._party": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/task_handoff_card.dart#method:RaftTaskHandoffCard.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Migrated onto canonical Raft v1.24 primitives and covered by permanent tool/parity-ext Wave 1 cases."
       },
       "packages/raft_ui/lib/src/task_head_editor.dart#class:RaftTaskHeadEditButton": {
         "role": "unresolved",
@@ -61552,6 +61585,164 @@
         "familyRefs": [],
         "owner": "WP-BROWSER",
         "reason": "Composes a Mermaid diagram toolbar control inside the shared message body."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#class:_RaftActionCardState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Stateful host for RaftActionCard composing canonical RaftSpecActionCard, RaftSpecActionCardContent, and RaftButton."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftActionCard.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Creates _RaftActionCardState for RaftActionCard composing canonical RaftSpecActionCard."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:_RaftActionCardState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Builds RaftActionCard over canonical RaftSpecActionCard, RaftSpecActionCardContent, and RaftButton."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:_RaftActionCardState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Syncs expanded/details state when RaftActionCard props update."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8736/METHOD:properties@10849/FUNCTION:label@11171": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "WP-ACTION",
+        "reason": "Property label helper inside RaftSpecActionCardContent (shifted offset after Wave 1 responsive fix)."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8736/METHOD:properties@10849/FUNCTION:value@11271": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "WP-ACTION",
+        "reason": "Property value helper inside RaftSpecActionCardContent (shifted offset after Wave 1 responsive fix)."
+      },
+      "packages/raft_ui/lib/src/composer_pending_mentions.dart#local-function:CLASS:RaftPendingMentionActionStrip@1811/METHOD:_row@4470/FUNCTION:done@5566": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Row helper inside RaftPendingMentionActionStrip (shifted offset after removing deprecated RaftComposerNotice)."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69393/METHOD:build@78650/FUNCTION:toggle@78880": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "DropdownMenu",
+        "reason": "Dropdown menu toggle helper (shifted offset after deleting 0.5.52 RaftActionCardRecipe and RaftMessageEmbedRecipe)."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27786/METHOD:build@27964/FUNCTION:bar@28899": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "File status bar helper in RaftForwardShareFileStatus (shifted offset after Wave 1 RaftForwardSharePreview migration)."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@27786/METHOD:build@27964/FUNCTION:line@28162": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "File status line helper in RaftForwardShareFileStatus (shifted offset after Wave 1 RaftForwardSharePreview migration)."
+      },
+      "packages/raft_ui/lib/src/forwarded_bundle.dart#local-function:CLASS:_RaftForwardedBundleState@8006/METHOD:_source@8897/FUNCTION:text@9635": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Source attribution text helper in _RaftForwardedBundleState (shifted offset after removing dead ForwardedSnapshotRecipe)."
+      },
+      "packages/raft_ui/lib/src/inline_media.dart#local-function:CLASS:RaftVideoPosterCard@12361/METHOD:_failed@18345/FUNCTION:action@18560": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Failed video poster action helper (shifted offset after Wave 1 inline_media migration)."
+      },
+      "packages/raft_ui/lib/src/inline_media.dart#local-function:CLASS:_RaftInlineVideoState@3343/METHOD:_failedBody@3755/FUNCTION:link@4044": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Failed inline video link helper (shifted offset after Wave 1 inline_media migration)."
+      },
+      "packages/raft_ui/lib/src/mounted_avatar_recipe.dart#local-function:CLASS:RaftMountedAvatarFrame@7884/METHOD:build@8710/FUNCTION:badge@9084": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Badge helper in RaftMountedAvatarFrame (shifted offset after adding creatorLink context)."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@36552/METHOD:build@36926/FUNCTION:bar@38035": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Footer action bar helper in RaftForwardContinueAction (shifted offset after Wave 1 RaftForwardSharePreview migration)."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@36552/METHOD:build@36926/FUNCTION:text@38205": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Footer action label helper in RaftForwardContinueAction (shifted offset after Wave 1 RaftForwardSharePreview migration)."
+      },
+      "packages/raft_ui/lib/src/inline_media.dart#local-function:CLASS:RaftInlineAudio@21802/METHOD:build@22720/FUNCTION:failedAction@25951": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Failed audio action button helper in RaftInlineAudio composing canonical RaftButton."
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@3234/METHOD:_body@28104/FUNCTION:field@28145": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Action card body field helper in _MessageActionCardState (1-byte offset shift after formatting)."
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@3234/METHOD:_body@28104/FUNCTION:maybe@28248": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 1",
+        "reason": "Optional action card body field helper in _MessageActionCardState (1-byte offset shift after formatting)."
       }
     },
     "entries": {
@@ -65898,6 +66089,15 @@
         "declarationRefs": [
           "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5023/METHOD:buildView@116443/FUNCTION:sendCurrent@119729"
         ]
+      },
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69393/METHOD:build@78650/FUNCTION:toggle@78880": {
+        "owner": "DropdownMenu",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69393/METHOD:build@78650/FUNCTION:toggle@78880"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Toggles the anchored dropdown or submenu from its mounted trigger (shifted offset after deleting 0.5.52 recipes)."
       }
     },
     "requirements": {
@@ -71780,6 +71980,16 @@
         "applicability": "required",
         "owner": "WP-SEARCH",
         "reason": "The generated InputGroup paints its focus shadow when the enabled editor holds focus. Search exercises the recipe in both themes."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#class:RaftSpecActionCardContent|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "Legacy UI Wave 1",
+        "applicability": "required",
+        "reason": "RaftSpecActionCardContent resolves responsive desktop/phone messageActionCardContent slots."
+      },
+      "packages/raft_ui/lib/src/task_handoff_card.dart#method:RaftTaskHandoffCard.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "Legacy UI Wave 1",
+        "applicability": "required",
+        "reason": "RaftTaskHandoffCard resolves responsive desktop/phone messageActionCard and messageCard slots."
       }
     },
     "evidence": {},

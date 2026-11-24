@@ -456,7 +456,8 @@ class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
           : null,
       notice: archivedCollision == null
           ? null
-          : RaftArchivedNameBanner(
+          : raftArchivedNameBanner(
+              context,
               name: '${archivedCollision!['archivedChannelName']}',
               canUnarchive:
                   archivedCollision!['canUnarchiveArchivedChannel'] == true,

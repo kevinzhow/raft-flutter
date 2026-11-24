@@ -239,7 +239,11 @@ void main() {
               child: RaftComposer(
                 onSend: (_) async => true,
                 hasAttachments: true,
-                accessoryRow: const RaftComposerNotice(message: 'notice'),
+                accessoryRow: const RaftBanner(
+                  status: RaftBannerRecipeStatus.warning,
+                  size: RaftBannerRecipeSize.sm,
+                  description: 'notice',
+                ),
                 attachments: RaftComposerAttachments(
                   items: [_image('a')],
                   onRemove: (_) {},

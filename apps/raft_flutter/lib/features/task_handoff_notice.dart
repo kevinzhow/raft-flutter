@@ -158,7 +158,7 @@ Widget? _handoffCard(
     return RaftAvatar(
       name: i.name,
       kind: kind,
-      mountedContext: RaftMountedAvatarContext.compactList,
+      mountedContext: RaftMountedAvatarContext.creatorLink,
       content: RaftAvatarContent(
         name: i.name,
         kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,

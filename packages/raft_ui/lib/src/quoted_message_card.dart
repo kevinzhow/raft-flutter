@@ -4,11 +4,15 @@
 import 'package:flutter/material.dart';
 import 'package:markdown/markdown.dart' as md;
 
+import 'indicators.dart';
 import 'markdown_autolink.dart';
 import 'markdown_cjk_emphasis.dart';
+import 'message_embed_frame.dart';
+import 'raft/ui_tokens.dart';
 import 'raft_underline.dart';
 import 'message_row_recipe.dart' show RaftBodyTrailingBleed;
 import 'quoted_message_card_raft.dart';
+import 'theme.dart';
 
 /// `InlineMarkdownPreview`: every markdown construct flattened inline (links
 /// coloured and underlined, code monospaced, line breaks and list items
@@ -128,8 +132,9 @@ class RaftQuotedMessageCard extends StatelessWidget {
   Widget build(BuildContext context) => RaftQuotedMessageCardRaft(card: this);
 }
 
-/// `animate-pulse border-2 border-black bg-white` loading skeleton (both
-/// themes): header bar, avatar square and three text bars, 2s opacity pulse.
+/// Web v1.24 QuotedMessagePermalinkPreview loading skeleton:
+/// `<Card className="w-full">` with a `34px` `border-line-hairline` header bar,
+/// a `size-7` block `<Skeleton>`, and three `<Skeleton variant="line">` bars.
 class RaftQuotedMessageSkeleton extends StatefulWidget {
   const RaftQuotedMessageSkeleton({super.key});
   @override
@@ -164,85 +169,94 @@ class _RaftQuotedMessageSkeletonState extends State<RaftQuotedMessageSkeleton>
     super.dispose();
   }
 
+  static const _curve = Cubic(.4, 0, .6, 1);
+
   @override
   Widget build(BuildContext context) {
-    Widget bar(double? width) => Container(
-      width: width,
-      height: 12,
-      color: Colors.black.withValues(alpha: .1),
+    final t = RaftTokens.of(context);
+    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final body = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 12,
+      children: [
+        const RaftSkeleton(
+          variant: RaftSkeletonVariant.block,
+          width: 28,
+          height: 28,
+          fromRecipe: true,
+        ),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 8,
+            children: [
+              RaftSkeleton(
+                variant: RaftSkeletonVariant.line,
+                width: 128,
+                fromRecipe: true,
+              ),
+              RaftSkeleton(
+                variant: RaftSkeletonVariant.line,
+                width: double.infinity,
+                fromRecipe: true,
+              ),
+              FractionallySizedBox(
+                widthFactor: .75,
+                child: RaftSkeleton(
+                  variant: RaftSkeletonVariant.line,
+                  width: double.infinity,
+                  fromRecipe: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
-    final card = Container(
+    final animatedBody = reduce
+        ? body
+        : RepaintBoundary(
+            child: FadeTransition(
+              opacity: TweenSequence<double>([
+                TweenSequenceItem(
+                  tween: Tween(
+                    begin: 1.0,
+                    end: .5,
+                  ).chain(CurveTween(curve: _curve)),
+                  weight: 50,
+                ),
+                TweenSequenceItem(
+                  tween: Tween(
+                    begin: .5,
+                    end: 1.0,
+                  ).chain(CurveTween(curve: _curve)),
+                  weight: 50,
+                ),
+              ]).animate(pulse),
+              child: body,
+            ),
+          );
+    return RaftMessageEmbedFrame(
       key: const Key('quoted-message-skeleton'),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.black, width: 2),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             height: 34,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .6),
-              border: const Border(
-                bottom: BorderSide(color: Colors.black, width: 2),
+              border: Border(
+                bottom: BorderSide(
+                  color: raftChromeBlend(t.ui.lineHairline, t.ui.layerCard),
+                ),
               ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 12,
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: .05),
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 8,
-                    children: [
-                      bar(128),
-                      bar(null),
-                      FractionallySizedBox(widthFactor: .75, child: bar(null)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            child: animatedBody,
           ),
         ],
-      ),
-    );
-    // Tailwind `animate-pulse`: opacity 1 -> .5 -> 1, cubic-bezier(.4,0,.6,1).
-    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (reduce) return card;
-    return RepaintBoundary(
-      child: FadeTransition(
-        opacity: TweenSequence<double>([
-          TweenSequenceItem(
-            tween: Tween(
-              begin: 1.0,
-              end: .5,
-            ).chain(CurveTween(curve: const Cubic(.4, 0, .6, 1))),
-            weight: 50,
-          ),
-          TweenSequenceItem(
-            tween: Tween(
-              begin: .5,
-              end: 1.0,
-            ).chain(CurveTween(curve: const Cubic(.4, 0, .6, 1))),
-            weight: 50,
-          ),
-        ]).animate(pulse),
-        child: card,
       ),
     );
   }

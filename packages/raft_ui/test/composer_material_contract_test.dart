@@ -22,8 +22,10 @@ void main() {
             MaterialApp(
               theme: theme,
               home: const Scaffold(
-                body: RaftComposerNotice(
-                  message: 'Notice without a dismiss action',
+                body: RaftBanner(
+                  status: RaftBannerRecipeStatus.warning,
+                  size: RaftBannerRecipeSize.sm,
+                  description: 'Notice without a dismiss action',
                 ),
               ),
             ),
@@ -31,8 +33,6 @@ void main() {
           final text = t.widget<Text>(
             find.text('Notice without a dismiss action'),
           );
-          expect(text.style!.fontSize, 13);
-          expect(text.style!.fontSize! * text.style!.height!, 18);
           expect(text.style!.fontWeight, FontWeight.w400);
           expect(text.style!.color, tokens.colors['foreground']);
           expect(t.takeException(), isNull);

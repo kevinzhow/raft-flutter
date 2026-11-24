@@ -163,7 +163,7 @@ final ParityCase _case = ParityCase(
     'raft_flutter:WorkspaceView',
     'raft_ui:RaftComposer',
     'raft_ui:RaftPendingMentionActionStrip',
-    'raft_ui:RaftComposerNotice',
+    'raft_ui:RaftBanner',
   ],
   notes:
       'Extension suite (not official). Real WorkspaceView, composer states '

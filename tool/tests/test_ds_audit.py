@@ -567,11 +567,11 @@ class FamilyRegistryTest(unittest.TestCase):
                 'RaftAppLinkSkeleton',
             ],
         )
-        self.assertIn('RaftArchivedNameBanner', self.families['banner']['deprecated'])
+        self.assertEqual(self.families['banner']['deprecated'], {})
         self.assertNotIn('RaftAgentBanner', self.families['banner']['deprecated'])  # thin adapter over RaftBanner
+        self.assertEqual(self.families['message-embed']['deprecated'], {})
         for family, names in (
-            ('message-embed', ('ForwardedSnapshotRecipe', 'RaftMessageEmbedRecipe')),
-            ('message-action-card', ('ActionSnapshotRecipe', 'RaftActionCardRecipe', 'RaftActionCard')),
+            ('message-action-card', ('RaftActionCard',)),
             ('lightbox', ('RaftLightboxRecipe',)),
             ('card', ('RaftQuotedMessageSkeleton',)),
         ):
@@ -666,8 +666,7 @@ class FamilyRatchetTest(unittest.TestCase):
     def test_growth_fails_in_either_scope_and_names_the_canonical_component(self):
         for name, category, canonical, old in ((self.APP, 'duplicate.button', 'RaftButton', 'RaftRecipeButton'),
                                                (self.UI, 'duplicate.dialog', 'RaftDialog', 'RaftDialogCard'),
-                                               (self.UI, 'duplicate.list_row', 'RaftListRow', 'RaftAvatarListRow'),
-                                               (self.APP, 'duplicate.banner', 'RaftBanner', 'RaftComposerNotice')):
+                                               (self.UI, 'duplicate.list_row', 'RaftListRow', 'RaftAvatarListRow')):
             files = {self.APP: {'duplicate.button': 3}, self.UI: {'duplicate.dialog': 2}}
             files.setdefault(name, {})
             files[name][category] = files[name].get(category, 0) + 1

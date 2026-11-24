@@ -112,6 +112,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
 
   dynamic openingVersion;
   Route<dynamic>? ownedDialog;
+
   Map<String, dynamic> get metadata {
     final latest = [
       ...w.messageDomain.messages,
@@ -1845,17 +1846,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
         metadata: metadata,
         entityName: _entityName,
         hasEntity: _hasCardEntity,
-        formatTimestamp: SourceTimeFormatter(
-          locale: Localizations.localeOf(context).toLanguageTag(),
-          preferredTimezone: w.client.user?.string('preferredTimezone'),
-          preferredTimeFormat: sourceTimeFormatPreference(
-            w.client.user?.string('preferredTimeFormat'),
-          ),
-          systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
-              ? SourceTimeFormat.twentyFourHour
-              : null,
-          yesterdayLabel: raftText(context, 'Yesterday'),
-        ).messageTime,
+        formatTimestamp: _timeFormatter(context).messageTime,
         resolvePress: (element) => _resolvePress(card, element),
         onPress: widget.exportMode
             ? null
@@ -1960,19 +1951,55 @@ class _MessageActionCardState extends State<MessageActionCard> {
       'agent:create' => raftFormat(context, 'Create agent {name}', {
         'name': action['name'] ?? '',
       }),
-      _ => raftText(context, labels[type] ?? 'Action'),
+      _ => raftText(context, labels[type] ?? 'Action card'),
     };
+    final state = '${metadata['state']}';
+    final isExecuted = state == 'executed';
+    final isExpired = actionCardExpired(metadata);
+    final isFrozen = state == 'frozen';
+    final isViewOnly = rawSpec != null || isExpired || !_known.contains(type);
+    final expiresAt = DateTime.tryParse(
+      '${metadata['expiresAt'] ?? action['expiresAt']}',
+    );
+    final expiredLine = expiresAt == null
+        ? null
+        : raftFormat(
+            context,
+            'Expired on {date}. Ask the agent to send a new request.',
+            {'date': _timeFormatter(context).messageTime(expiresAt)},
+          );
+    final unknownDescription = isExecuted
+        ? null
+        : isExpired
+        ? expiredLine
+        : isViewOnly
+        ? raftText(
+            context,
+            _known.contains(type)
+                ? 'This kind of request is no longer available. Ask the agent to send a new request.'
+                : 'Reload the page to see this request.',
+          )
+        : null;
+    final unknownStatus = isExecuted
+        ? raftText(context, 'Done')
+        : isExpired
+        ? raftText(context, 'Expired')
+        : isFrozen
+        ? raftText(context, 'Frozen')
+        : isViewOnly
+        ? raftText(context, 'View only')
+        : null;
     return RaftActionCard(
       title: presentation['title'] is String
           ? presentation['title']
           : fallbackTitle,
-      state: '${metadata['state']}',
+      state: state,
       details: details,
       hint: action['draftHint'],
       targetServer: metadata['targetServerName'],
       completedBy: metadata['executedByUserName'],
       confirmLabel: labels[type] ?? 'Confirm Action',
-      blockedReason: rawSpec != null || actionCardExpired(metadata)
+      blockedReason: rawSpec != null || isExpired
           ? raftText(context, 'View only')
           : blocked,
       error: error,
@@ -1985,6 +2012,50 @@ class _MessageActionCardState extends State<MessageActionCard> {
           : widget.exportMode
           ? () {}
           : confirm,
+      icon: isViewOnly ? RaftGlyph.circleHelp : null,
+      headerDescription: unknownDescription,
+      statusLabel: unknownStatus,
+      statusVariant: isExecuted
+          ? RaftStatusVariant.success
+          : RaftStatusVariant.muted,
+      warning: cardString(presentation['warning']),
+      collapsible: isViewOnly,
+      defaultExpanded: !isViewOnly,
+      hideConfirmAction: isViewOnly,
+    );
+  }
+
+  (String, String?, SourceTimeFormat?, SourceTimeFormat?, String)?
+  _timeFormatterKey;
+  SourceTimeFormatter? _cachedTimeFormatter;
+
+  SourceTimeFormatter _timeFormatter(BuildContext context) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final preferredTimezone = w.client.user?.string('preferredTimezone');
+    final preferredTimeFormat = sourceTimeFormatPreference(
+      w.client.user?.string('preferredTimeFormat'),
+    );
+    final systemTimeFormat = MediaQuery.alwaysUse24HourFormatOf(context)
+        ? SourceTimeFormat.twentyFourHour
+        : null;
+    final yesterdayLabel = raftText(context, 'Yesterday');
+    final key = (
+      locale,
+      preferredTimezone,
+      preferredTimeFormat,
+      systemTimeFormat,
+      yesterdayLabel,
+    );
+    if (_cachedTimeFormatter != null && _timeFormatterKey == key) {
+      return _cachedTimeFormatter!;
+    }
+    _timeFormatterKey = key;
+    return _cachedTimeFormatter = SourceTimeFormatter(
+      locale: locale,
+      preferredTimezone: preferredTimezone,
+      preferredTimeFormat: preferredTimeFormat,
+      systemTimeFormat: systemTimeFormat,
+      yesterdayLabel: yesterdayLabel,
     );
   }
 }

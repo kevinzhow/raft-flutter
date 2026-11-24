@@ -2,21 +2,14 @@ import 'reduced_motion.dart';
 
 import 'package:flutter/material.dart';
 
-import 'banner.dart';
 import 'card.dart';
 import 'components.dart';
-import 'dialog_card.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
 import 'panel_layout.dart' show RaftCssText;
-import 'recipes/banner.g.dart';
-import 'recipes/button_variants.g.dart';
-import 'recipes/recipe_runtime.dart';
-import 'recipes/token_binding.dart';
-import 'theme.dart';
 import 'raft/ui_tokens.dart';
-import 'raft/css_box.dart';
+import 'theme.dart';
 
 /// Local outcome of a pending mention action (Web
 /// `PendingMentionActionLocalState`).
@@ -126,7 +119,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
                 ),
                 alignment: Alignment.centerRight,
                 child: _StripButton(
-                  variant: RaftButtonRecipeVariant.outline,
+                  variant: RaftButtonVariant.outline,
                   glyph: RaftGlyph.userPlus,
                   label: raftText(context, 'Add All'),
                   onPressed: addable.any(executing.containsKey)
@@ -256,7 +249,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
           done('Added')
         else if (action.canAdd && local == null)
           _StripButton(
-            variant: RaftButtonRecipeVariant.outline,
+            variant: RaftButtonVariant.outline,
             glyph: RaftGlyph.userPlus,
             label: raftText(context, 'Add'),
             onPressed: busy
@@ -272,7 +265,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
         ] else if (action.canNotify && local == null) ...[
           const SizedBox(width: 6),
           _StripButton(
-            variant: RaftButtonRecipeVariant.outline,
+            variant: RaftButtonVariant.outline,
             glyph: RaftGlyph.bellRing,
             label: raftText(context, 'Notify'),
             onPressed: busy
@@ -285,7 +278,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
         ],
         const SizedBox(width: 6),
         _StripButton(
-          variant: RaftButtonRecipeVariant.ghost,
+          variant: RaftButtonVariant.ghost,
           label: raftText(context, 'Ignore'),
           onPressed: () => onDismiss(action.resolutionId),
         ),
@@ -319,17 +312,17 @@ class _StripButton extends StatelessWidget {
     this.glyph,
     this.onPressed,
   });
-  final RaftButtonRecipeVariant variant;
+  final RaftButtonVariant variant;
   final String label;
   final RaftGlyph? glyph;
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) => RaftRecipeButton(
+  Widget build(BuildContext context) => RaftButton(
     label: label,
     glyph: glyph,
-    variant: variant,
-    size: RaftButtonRecipeSize.md,
+    uiVariant: variant,
+    uiSize: RaftButtonSize.md,
     disabled: onPressed == null,
     onPressed: onPressed,
   );
@@ -381,154 +374,6 @@ class RaftPendingMentionSlot extends StatelessWidget {
           ),
         Padding(padding: const EdgeInsets.only(bottom: 8), child: strip),
       ],
-    );
-  }
-}
-
-/// Web MessageInput `<Banner intent="warning" density="sm">` above the
-/// composer (attachment-limit and send errors). raft-ui banner recipe; the
-/// `group-data-[size=sm]` description is `text-xs leading-4`.
-class RaftComposerNotice extends StatelessWidget {
-  const RaftComposerNotice({
-    super.key,
-    required this.message,
-    this.onDismiss,
-    this.dismissLabel,
-  });
-  final String message;
-
-  /// Web `Banner actions`: the trailing `Button ghost icon-xs` with an X
-  /// (delivery-warning and unresolved-mention banners).
-  final VoidCallback? onDismiss;
-  final String? dismissLabel;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (t.option('sticker.ring', or: 'none') == 'dieCut') {
-      final font = t.size('type.composerNotice.size', fallback: 13);
-      final text = Text(
-        message,
-        style: TextStyle(
-          fontFamily: t.bodyFont,
-          fontFamilyFallback: t.fontFallback,
-          fontSize: font,
-          height: t.size('type.composerNotice.line', fallback: 18) / font,
-          fontWeight: raftFontWeight(
-            t.size('type.composerNotice.weight', fallback: 400),
-          ),
-          color: t.colors['foreground-composer-notice'],
-          leadingDistribution: TextLeadingDistribution.even,
-        ),
-      );
-      return Semantics(
-        liveRegion: true,
-        child: RaftCssBox(
-          width: double.infinity,
-          radius: t.size('radius.composerNotice', fallback: 10),
-          fill: t.colors['layer-composer-notice'],
-          insetRingWidth: t.size('stroke.composerNotice', fallback: 1),
-          insetRingColor: t.colors['line-composer-notice'],
-          padding: EdgeInsets.fromLTRB(
-            t.size('space.composerNoticeStart', fallback: 12),
-            t.size('space.composerNoticeTop', fallback: 8),
-            t.size('space.composerNoticeEnd', fallback: 12),
-            t.size('space.composerNoticeBottom', fallback: 8),
-          ),
-          child: onDismiss == null
-              ? text
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: text),
-                    const SizedBox(width: 8),
-                    RaftButton(
-                      label: '',
-                      glyph: RaftGlyph.x,
-                      uiVariant: RaftButtonVariant.ghost,
-                      uiSize: RaftButtonSize.iconXs,
-                      tooltip: dismissLabel,
-                      onPressed: onDismiss,
-                    ),
-                  ],
-                ),
-        ),
-      );
-    }
-    if (onDismiss != null) {
-      // Banner with `actions`: the public composition (grid action cell, the
-      // `@max-[24rem]` drop below the copy, status colours).
-      return DefaultTextStyle.merge(
-        style: TextStyle(fontFamily: t.headingFont),
-        child: RaftBanner(
-          description: message,
-          descriptionWeight: FontWeight.w700,
-          size: RaftBannerRecipeSize.sm,
-          // Measured on Web: the `icon-xs` button is 16px (the recipe resolves
-          // 24); its 12px glyph stays.
-          action: SizedBox.square(
-            dimension: 16,
-            child: RaftRecipeButton(
-              variant: RaftButtonRecipeVariant.ghost,
-              size: RaftButtonRecipeSize.iconXs,
-              glyph: RaftGlyph.x,
-              glyphSize: 12,
-              foreground: t.colors['warning-strong'],
-              tooltip: dismissLabel,
-              onPressed: onDismiss,
-            ),
-          ),
-        ),
-      );
-    }
-    final resolver = RaftRecipeTokens(t);
-    final s = RaftBannerRecipe.resolve(
-      status: RaftBannerRecipeStatus.warning,
-      size: RaftBannerRecipeSize.sm,
-      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
-      tokens: resolver,
-    );
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.fromLTRB(
-          t.size('space.composerNoticeStart', fallback: 12),
-          t.size('space.composerNoticeTop', fallback: 8),
-          t.size('space.composerNoticeEnd', fallback: 12),
-          t.size('space.composerNoticeBottom', fallback: 8),
-        ),
-        decoration: s.root
-            .decoration(resolver)
-            .copyWith(
-              color: t.colors['layer-composer-notice'],
-              border: t.size('stroke.composerNotice', fallback: 1) > 0
-                  ? Border.all(
-                      color: t.colors['line-composer-notice']!,
-                      width: t.size('stroke.composerNotice', fallback: 1),
-                    )
-                  : const Border(),
-              borderRadius: BorderRadius.circular(
-                t.size('radius.composerNotice', fallback: 10),
-              ),
-            ),
-        child: Text(
-          message,
-          style: s.description
-              .textStyle(resolver)
-              .copyWith(
-                fontFamily: t.headingFont,
-                fontSize: t.size('type.composerNotice.size', fallback: 13),
-                height:
-                    t.size('type.composerNotice.line', fallback: 18) /
-                    t.size('type.composerNotice.size', fallback: 13),
-                fontWeight: raftFontWeight(
-                  t.size('type.composerNotice.weight', fallback: 400),
-                ),
-                color: t.colors['foreground-composer-notice'],
-                leadingDistribution: TextLeadingDistribution.even,
-              ),
-        ),
-      ),
     );
   }
 }

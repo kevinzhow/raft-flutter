@@ -89,7 +89,10 @@ void main() {
         Future<void> open() async {
           await tester.tap(find.text('Open'));
           await tester.pumpAndSettle();
-          expect(find.byType(RaftArchivedNameBanner), findsNothing);
+          expect(
+            find.byKey(const ValueKey('archived-name-collision')),
+            findsNothing,
+          );
         }
 
         await open();
@@ -115,19 +118,14 @@ void main() {
         await tester.ensureVisible(submit);
         await tester.tap(submit);
         await tester.pumpAndSettle();
-        expect(find.byType(RaftArchivedNameBanner), findsOneWidget);
-        expect(
-          find.descendant(
-            of: find.byType(RaftArchivedNameBanner),
-            matching: find.byType(RaftBanner),
-          ),
-          findsOneWidget,
-        );
+        final banner = find.byKey(const ValueKey('archived-name-collision'));
+        expect(banner, findsOneWidget);
+        expect(tester.widget(banner), isA<RaftBanner>());
         final action = find.text(restore ? 'Unarchive' : 'Change name');
         await tester.ensureVisible(action);
         await tester.tap(action);
         await tester.pumpAndSettle();
-        expect(find.byType(RaftArchivedNameBanner), findsNothing);
+        expect(banner, findsNothing);
         final restoreCalls = api.calls.where(
           (call) =>
               call.method == 'POST' &&
@@ -157,7 +155,10 @@ void main() {
           await tester.pumpAndSettle();
         }
         await open();
-        expect(find.byType(RaftArchivedNameBanner), findsNothing);
+        expect(
+          find.byKey(const ValueKey('archived-name-collision')),
+          findsNothing,
+        );
         expect(tester.takeException(), isNull);
         await tester.tap(find.text('Cancel').last);
         await tester.pumpAndSettle();

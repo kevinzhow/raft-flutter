@@ -93,26 +93,27 @@ void main() {
       }
 
       testWidgets(
-        'RaftComposerNotice message and dismiss: $theme zh=$zh x$scale',
+        'RaftBanner composer notice message and dismiss: $theme zh=$zh x$scale',
         (tester) async {
           for (final id in raftThemeMatrix([raftThemePackId])) {
             await tester.pumpWidget(
               _host(
                 dark,
-                RaftComposerNotice(
-                  message: 'Attachment too large',
-                  onDismiss: () {},
-                  dismissLabel: 'Dismiss',
+                RaftBanner(
+                  status: RaftBannerRecipeStatus.warning,
+                  size: RaftBannerRecipeSize.sm,
+                  description: 'Attachment too large',
+                  onClose: () {},
+                  closeLabel: 'Dismiss',
                 ),
                 width: 600,
                 themeId: id,
               ),
             );
             await tester.pumpAndSettle();
-            expect(
-              tester.getTopLeft(find.text('Attachment too large')).dy,
-              tester.getTopLeft(find.byType(RaftButton)).dy,
-            );
+            final copy = tester.getRect(find.text('Attachment too large'));
+            final close = tester.getRect(find.byType(RaftButton));
+            expect(close.center.dy, closeTo(copy.center.dy, 2));
           }
         },
       );

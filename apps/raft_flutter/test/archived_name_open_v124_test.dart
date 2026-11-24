@@ -94,7 +94,10 @@ void main() {
       await t.enterText(find.byType(TextField).first, 'held');
       await t.tap(find.text('Create Channel').last);
       await t.pumpAndSettle();
-      expect(find.byType(RaftArchivedNameBanner), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('archived-name-collision')),
+        findsOneWidget,
+      );
       await t.tap(find.text('Open channel'));
       await t.pumpAndSettle();
       expect(w.selected, 'archive-1');
@@ -106,7 +109,10 @@ void main() {
         hasLength(1),
       );
       await open();
-      expect(find.byType(RaftArchivedNameBanner), findsNothing);
+      expect(
+        find.byKey(const ValueKey('archived-name-collision')),
+        findsNothing,
+      );
       await t.tap(find.text('Cancel'));
       await t.pumpAndSettle();
     },

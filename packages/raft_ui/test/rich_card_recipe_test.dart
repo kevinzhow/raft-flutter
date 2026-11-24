@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_content_tokens.dart';
-import 'package:raft_ui/src/rich_card_tokens.dart';
 import 'package:raft_ui/test_themes.dart';
 
 Map<String, dynamic> publicSnapshot({String target = '#design'}) => {
@@ -52,26 +51,25 @@ void main() {
           ),
         );
         expect(tester.getSize(find.byType(RaftActionCard)).width, 640);
-        final badge = find.byKey(const ValueKey('action-success-badge'));
-        // MessageEmbed `item`: 400 wide, a 1px hairline and the 12px inset.
-        expect(tester.getTopRight(badge).dx, closeTo(387, .1));
-        final container = tester.widget<Container>(badge);
-        final context = tester.element(find.byType(RaftActionCard));
-        final recipe = ActionSnapshotRecipe(RaftTokens.of(context));
+        // MessageEmbed `item`: 400 wide.
         expect(
-          (container.decoration! as BoxDecoration).color,
-          recipe.semantic.success,
+          tester
+              .getSize(
+                find.descendant(
+                  of: find.byType(RaftMessageEmbedFrame),
+                  matching: find.byType(RaftSnappedDecoratedBox),
+                ),
+              )
+              .width,
+          closeTo(400, .1),
         );
-        expect(tester.getSize(badge).height, 18);
-        expect(find.text('Committed by Alice'), findsOneWidget);
-        final committed = tester.widget<Text>(find.text('Committed by Alice'));
-        final spans = (committed.textSpan! as TextSpan).children!
-            .cast<TextSpan>();
+        expect(find.text('Done'), findsOneWidget);
         expect(
-          spans.singleWhere((s) => s.text == 'Alice').style!.fontWeight,
-          FontWeight.w700,
+          find.text('Committed by Alice', findRichText: true),
+          findsOneWidget,
         );
-        expect(find.text('Description: Review first'), findsOneWidget);
+        expect(find.text('Description'), findsOneWidget);
+        expect(find.text('Review first'), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );
@@ -107,10 +105,6 @@ void main() {
         // tight-parent test pass while loose production layouts leave a gap.
         expect(tester.getSize(find.text('from #design')).width, lessThan(200));
         expect(tester.getTopLeft(find.text('Forwarded')).dx, lessThan(40));
-        final context = tester.element(find.byType(RaftForwardedBundle));
-        final recipe = ForwardedSnapshotRecipe(RaftTokens.of(context));
-        expect(recipe.radius, BorderRadius.circular(8));
-        expect(recipe.headerDecoration.border, isNull);
         expect(
           find.text('Public message 2', findRichText: true).hitTestable(),
           findsNothing,

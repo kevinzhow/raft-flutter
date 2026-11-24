@@ -19,13 +19,16 @@ Widget _app({
     body: Center(
       child: SizedBox(
         width: 480,
-        child: RaftArchivedNameBanner(
-          name: 'archive-me',
-          showHint: hint,
-          canUnarchive: canUnarchive,
-          busy: busy,
-          onUnarchive: unarchive ?? () {},
-          onChangeName: changeName ?? () {},
+        child: Builder(
+          builder: (context) => raftArchivedNameBanner(
+            context,
+            name: 'archive-me',
+            showHint: hint,
+            canUnarchive: canUnarchive,
+            busy: busy,
+            onUnarchive: unarchive ?? () {},
+            onChangeName: changeName ?? () {},
+          ),
         ),
       ),
     ),
@@ -96,7 +99,7 @@ void main() {
         final name = runs.whereType<TextSpan>().firstWhere(
           (span) => span.text == '#archive-me',
         );
-        final context = tester.element(find.byType(RaftArchivedNameBanner));
+        final context = tester.element(find.byType(RaftBanner));
         expect(name.style?.fontFamily, RaftTokens.of(context).monoFont);
         await tester.tap(restoreButton);
         await tester.pump();

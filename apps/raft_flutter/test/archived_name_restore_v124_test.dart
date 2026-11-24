@@ -61,7 +61,10 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.text('Unarchive'));
       await t.pumpAndSettle();
-      expect(find.byType(RaftArchivedNameBanner), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('archived-name-collision')),
+        findsOneWidget,
+      );
       expect(find.text('Restore failed'), findsOneWidget);
       api.statuses.remove('POST /channels/archived-1/unarchive');
       api.routes['POST /channels/archived-1/unarchive'] = (_) => {
@@ -84,7 +87,10 @@ void main() {
       );
       await t.tap(find.text('Open'));
       await t.pumpAndSettle();
-      expect(find.byType(RaftArchivedNameBanner), findsNothing);
+      expect(
+        find.byKey(const ValueKey('archived-name-collision')),
+        findsNothing,
+      );
       await t.tap(find.text('Cancel'));
       await t.pumpAndSettle();
     },

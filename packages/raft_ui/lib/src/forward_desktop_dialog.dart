@@ -6,28 +6,19 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'raft_underline.dart';
-import 'design_primitives.dart';
+import 'dialog_surface.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'form_controls.dart' show RaftPrefixedInput;
 import 'icons.dart';
+import 'panel_layout.dart' show RaftCssText;
+import 'raft/ui_tokens.dart';
+import 'raft_underline.dart';
 import 'recipes/input_group.g.dart' show RaftInputGroupRecipeVariant;
+import 'space.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 
-Color _rule(RaftTokens t) => t.colors['line-muted']!;
-
-/// Web draws the dialog on raft-ui's `DialogSurface`: `bg-layer-popover`.
-Color _panel(RaftTokens t) => t.colors['layer-dialog']!;
-
-/// `text-xs font-bold` strong label (selected count, Clear, error).
-TextStyle _label(RaftTokens t) => TextStyle(
-  fontFamily: t.headingFont,
-  fontSize: 12,
-  height: 16 / 12,
-  fontWeight: FontWeight.w700,
-  color: t.strong,
-  leadingDistribution: TextLeadingDistribution.even,
-);
+Color _seam(RaftTokens t) => t.ui.lineSeam;
 
 /// `Card h-[min(clamp(30rem,72dvh,46rem),100dvh-2rem)]
 /// w-[min(clamp(48rem,60vw,60rem),100vw-2rem)]` with the header, the
@@ -67,7 +58,7 @@ class RaftForwardDesktopDialog extends StatelessWidget {
   final bool showClear;
   final VoidCallback? onClear;
 
-  /// Destination rows (6px apart).
+  /// Destination rows.
   final List<Widget> rows;
 
   /// The forwarded-bundle preview.
@@ -90,150 +81,205 @@ class RaftForwardDesktopDialog extends StatelessWidget {
       (size.height * .72).clamp(480.0, 736.0),
     );
     final side = (size.width * .24).clamp(304.0, 352.0);
-    final rule = _rule(t);
-    final panel = _panel(t);
-    final label = _label(t);
+    final seam = _seam(t);
+    final desktopFine = t.desktop && size.width >= 768;
+    final eyebrowStyle = t.scale(
+      RaftTypeScale.caption,
+      weight: FontWeight.w600,
+      color: t.ui.foregroundHint,
+    );
+    final clearStyle = t.scale(
+      RaftTypeScale.caption,
+      weight: FontWeight.w500,
+      color: t.ui.foregroundMuted,
+    );
     return Center(
       child: Material(
         type: MaterialType.transparency,
-        child: Container(
+        child: SizedBox(
           key: const ValueKey('forward-dialog'),
           width: width,
           height: height,
-          decoration: BoxDecoration(
-            color: panel,
-            border: Border.all(color: rule, width: 1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: rule, width: 2)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: RaftTypography.heading(
-                              t,
-                              size: 16,
-                              line: 24,
-                            ),
-                          ),
-                          Text(
-                            subtitle,
-                            style: RaftTypography.mono(
-                              t,
-                              size: 12,
-                              line: 16,
-                              color: t.muted,
-                            ),
-                          ),
-                        ],
+          child: RaftDialogSurface(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  constraints: BoxConstraints(minHeight: desktopFine ? 44 : 56),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: RaftSpace.x4,
+                    vertical: desktopFine ? 0 : RaftSpace.x2,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: seam,
+                        width: RaftSpace.hairline,
                       ),
                     ),
-                    close,
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      width: side,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          right: BorderSide(color: rule, width: 2),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          search,
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 24,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  selectedLabel,
-                                  key: const ValueKey('forward-selected-count'),
-                                  style: label,
-                                ),
-                                if (showClear)
-                                  GestureDetector(
-                                    onTap: onClear,
-                                    child: RaftUnderlinedText(
-                                      clearLabel ?? '',
-                                      style: label,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: desktopFine
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                spacing: RaftSpace.x2,
+                                children: [
+                                  RaftCssText(
+                                    title,
+                                    style: t.scale(
+                                      RaftTypeScale.headline,
+                                      weight: FontWeight.w700,
+                                      color: t.ui.foreground,
                                     ),
                                   ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Expanded(
-                            child: ListView(
-                              padding: EdgeInsets.zero,
-                              children: [
-                                for (final (i, row) in rows.indexed) ...[
-                                  if (i > 0) const SizedBox(height: 6),
-                                  row,
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  for (final warning in warnings)
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 12,
+                                  if (subtitle.isNotEmpty)
+                                    Expanded(
+                                      child: RaftCssText(
+                                        subtitle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: t.scale(
+                                          RaftTypeScale.caption,
+                                          color: t.ui.foregroundHint,
+                                        ),
                                       ),
-                                      child: warning,
                                     ),
-                                  preview,
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  RaftCssText(
+                                    title,
+                                    style: t.scale(
+                                      RaftTypeScale.headline,
+                                      weight: FontWeight.w700,
+                                      color: t.ui.foreground,
+                                    ),
+                                  ),
+                                  if (subtitle.isNotEmpty)
+                                    RaftCssText(
+                                      subtitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: t.scale(
+                                        RaftTypeScale.caption,
+                                        color: t.ui.foregroundHint,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                      ),
+                      const SizedBox(width: RaftSpace.x3),
+                      close,
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        width: side,
+                        padding: const EdgeInsets.all(RaftSpace.x3),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            right: BorderSide(
+                              color: seam,
+                              width: RaftSpace.hairline,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            search,
+                            const SizedBox(height: RaftSpace.x2),
+                            SizedBox(
+                              height: 24,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: RaftSpace.x1,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    RaftCssText(
+                                      selectedLabel,
+                                      key: const ValueKey(
+                                        'forward-selected-count',
+                                      ),
+                                      style: eyebrowStyle,
+                                    ),
+                                    if (showClear)
+                                      GestureDetector(
+                                        onTap: onClear,
+                                        child: RaftUnderlinedText(
+                                          clearLabel ?? '',
+                                          style: clearStyle,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: RaftSpace.x1),
+                            Expanded(
+                              child: ListView(
+                                padding: EdgeInsets.zero,
+                                children: [
+                                  for (final (i, row) in rows.indexed) ...[
+                                    if (i > 0)
+                                      const SizedBox(height: RaftSpace.half),
+                                    row,
+                                  ],
                                 ],
                               ),
                             ),
-                          ),
-                          _NoteBar(
-                            noteLabel: noteLabel,
-                            note: note,
-                            error: error,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(RaftSpace.x3),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    for (final warning in warnings)
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: RaftSpace.x3,
+                                        ),
+                                        child: warning,
+                                      ),
+                                    preview,
+                                  ],
+                                ),
+                              ),
+                            ),
+                            _NoteBar(
+                              noteLabel: noteLabel,
+                              note: note,
+                              error: error,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -241,8 +287,8 @@ class RaftForwardDesktopDialog extends StatelessWidget {
   }
 }
 
-/// `border-t-2 bg-layer-panel p-3` with a `Field`: the "Optional note" label
-/// above the compact composer.
+/// Web `COMPOSER_DOCK_CLASS`: `shrink-0 border-t border-line-seam p-3` with a
+/// `Field` (`FieldLabel size="sm"` above the compact composer).
 class _NoteBar extends StatelessWidget {
   const _NoteBar({required this.noteLabel, required this.note, this.error});
   final String noteLabel;
@@ -253,19 +299,25 @@ class _NoteBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(RaftSpace.x3),
       decoration: BoxDecoration(
-        color: _panel(t),
-        border: Border(top: BorderSide(color: _rule(t), width: 2)),
+        border: Border(
+          top: BorderSide(color: _seam(t), width: RaftSpace.hairline),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 6,
+        spacing: RaftSpace.x1_5,
         children: [
-          Text(noteLabel, style: _label(t)),
-          // Web MessageInput's own error row: `Banner intent="warning"
-          // density="sm" font-bold` above the editor.
+          RaftCssText(
+            noteLabel,
+            style: t.scale(
+              RaftTypeScale.footnote,
+              weight: FontWeight.w500,
+              color: t.ui.foregroundMuted,
+            ),
+          ),
           if (error != null) RaftErrorBanner(error!, small: true, bold: true),
           note,
         ],
@@ -274,9 +326,9 @@ class _NoteBar extends StatelessWidget {
   }
 }
 
-/// raft-ui `InputGroup` (v1.21.12) around a 14px Search icon addon and a
-/// bold `text-sm` `InputGroupInput` with `autoFocus`, so the group shows its
-/// focus state as soon as the dialog opens.
+/// raft-ui `InputGroup` around a 14px Search icon addon and an
+/// `InputGroupInput` with `autoFocus`, so the group shows its focus state as
+/// soon as the dialog opens.
 class RaftForwardDesktopSearch extends StatelessWidget {
   const RaftForwardDesktopSearch({
     super.key,

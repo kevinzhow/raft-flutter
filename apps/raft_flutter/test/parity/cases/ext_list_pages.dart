@@ -718,7 +718,10 @@ Future<void> _interact(WidgetTester t, ParityContext ctx) async {
           find.byType(CreateChannelDialog),
         );
         expect((dialog.controller as _ListWorkspace).archivedCreateReplies, 1);
-        expect(find.byType(RaftArchivedNameBanner), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('archived-name-collision')),
+          findsOneWidget,
+        );
       }
   }
   await t.pump(const Duration(milliseconds: 600));

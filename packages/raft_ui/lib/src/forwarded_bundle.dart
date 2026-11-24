@@ -4,10 +4,8 @@ import 'attachment_card.dart';
 import 'collapsible.dart';
 import 'design_primitives.dart' show RaftInteractive;
 import 'icons.dart';
-import 'theme.dart';
 import 'forwarded_bundle_style.dart';
 import 'message_embed_frame.dart';
-import 'rich_card_tokens.dart';
 import 'localization.dart';
 import 'message_body.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
@@ -302,11 +300,6 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = RaftTokens.of(context);
-    final recipe = ForwardedSnapshotRecipe(
-      tokens,
-      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-    );
     final raft = RaftForwardedBundleStyle.of(context);
     final collapsedHeight = raft.collapsedHeight;
     final itemPadding = raft.itemPadding;
@@ -474,8 +467,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              decoration: recipe.headerDecoration,
+            Padding(
               padding: raft.headerPadding,
               child:
                   // raft-ui `flex-wrap justify-between gap-2`: the label
@@ -511,8 +503,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
             ),
             body,
             if (!widget.exportMode && foldable)
-              Container(
-                decoration: recipe.footerDecoration,
+              Padding(
                 padding: raft.footerPadding,
                 // The footer is a block whose 24px line box holds the
                 // inline-flex 11px button.

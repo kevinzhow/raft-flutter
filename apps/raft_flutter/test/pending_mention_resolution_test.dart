@@ -138,16 +138,16 @@ void main() {
     await mount(t);
     try {
       for (final (label, variant) in [
-        ('Add', RaftButtonRecipeVariant.outline),
-        ('Notify', RaftButtonRecipeVariant.outline),
-        ('Ignore', RaftButtonRecipeVariant.ghost),
-        ('Add All', RaftButtonRecipeVariant.outline),
+        ('Add', RaftButtonVariant.outline),
+        ('Notify', RaftButtonVariant.outline),
+        ('Ignore', RaftButtonVariant.ghost),
+        ('Add All', RaftButtonVariant.outline),
       ]) {
-        final button = t.widget<RaftRecipeButton>(
-          find.widgetWithText(RaftRecipeButton, label).first,
+        final button = t.widget<RaftButton>(
+          find.widgetWithText(RaftButton, label).first,
         );
-        expect(button.variant, variant, reason: label);
-        expect(button.size, RaftButtonRecipeSize.md, reason: label);
+        expect(button.uiVariant, variant, reason: label);
+        expect(button.uiSize, RaftButtonSize.md, reason: label);
       }
       await t.tap(find.text('Ignore').first);
       await t.pump();

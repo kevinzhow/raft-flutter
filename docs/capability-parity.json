@@ -3057,7 +3057,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/create_channel_dialog.dart",
-     "needle": "RaftArchivedNameBanner("
+     "needle": "raftArchivedNameBanner("
     }
    ],
    "justification": "",

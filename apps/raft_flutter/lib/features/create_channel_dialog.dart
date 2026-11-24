@@ -722,7 +722,8 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       error: error ?? nameInvalid.message,
       notice: archivedCollision == null
           ? null
-          : RaftArchivedNameBanner(
+          : raftArchivedNameBanner(
+              context,
               name: archivedCollision!.name,
               canUnarchive: archivedCollision!.canUnarchive,
               busy: unarchiving,

@@ -1,0 +1,136 @@
+{
+ "user": {
+  "id": "user-ava-wave1",
+  "name": "ava",
+  "displayName": "Ava",
+  "preferredTimezone": "UTC",
+  "preferredTimeFormat": "24h"
+ },
+ "server": {
+  "id": "server-wave1",
+  "slug": "acme",
+  "name": "Acme",
+  "role": "owner",
+  "plan": "pro"
+ },
+ "channels": [
+  {
+   "id": "chan-wave1-general",
+   "serverId": "server-wave1",
+   "name": "general",
+   "type": "channel",
+   "joined": true,
+   "archivedAt": null
+  },
+  {
+   "id": "chan-wave1-design",
+   "serverId": "server-wave1",
+   "name": "design",
+   "type": "channel",
+   "joined": true,
+   "archivedAt": null
+  }
+ ],
+ "agents": [
+  {
+   "id": "agent-cindy-wave1",
+   "name": "Cindy",
+   "displayName": "Cindy",
+   "avatarUrl": "pixel:fox",
+   "status": "online"
+  },
+  {
+   "id": "agent-martin-wave1",
+   "name": "Martin",
+   "displayName": "Martin",
+   "avatarUrl": "pixel:owl",
+   "status": "online"
+  }
+ ],
+ "members": [
+  {
+   "userId": "user-ava-wave1",
+   "name": "ava",
+   "displayName": "Ava",
+   "role": "owner"
+  }
+ ],
+ "handoff": {
+  "messageId": "msg-handoff-wave1",
+  "time": "05:56",
+  "notice": {
+   "taskNumber": 19,
+   "actor": {
+    "type": "agent",
+    "id": "agent-cindy-wave1",
+    "name": "Cindy",
+    "displayName": "Cindy"
+   },
+   "assignee": {
+    "type": "agent",
+    "id": "agent-martin-wave1",
+    "name": "Martin",
+    "displayName": "Martin"
+   },
+   "reason": "PR #719 ready: please rerun the merge gate"
+  },
+  "returned": {
+   "by": {
+    "type": "agent",
+    "id": "agent-cindy-wave1",
+    "name": "Cindy",
+    "displayName": "Cindy"
+   },
+   "at": "2026-06-22T06:12:00.000Z"
+  }
+ },
+ "unknownActionCard": {
+  "kind": "action-card",
+  "state": "prepared",
+  "sourceServerId": "server-wave1",
+  "confirmationVersion": 1,
+  "action": {
+   "type": "legacy:sandbox_credentials"
+  },
+  "presentation": {
+   "title": "Provision sandbox credentials",
+   "warning": "Only a workspace owner can review these credentials.",
+   "displayItems": [
+    {
+     "key": "Service",
+     "value": "GitHub Actions"
+    },
+    {
+     "key": "Environment",
+     "value": "staging-us-east"
+    }
+   ]
+  }
+ },
+ "quotedPermalink": {
+  "serverId": "server-wave1",
+  "channelId": "chan-wave1-design",
+  "messageId": "msg-quote-loading-wave1",
+  "routeKind": "channel"
+ },
+ "audio": {
+  "filename": "standup-recording.mp3",
+  "mimeType": "audio/mpeg",
+  "sizeBytes": 2411520,
+  "readyAttachmentId": "att-audio-ready-wave1",
+  "failedAttachmentId": "att-audio-failed-wave1",
+  "silentWavDataUrl": "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+ },
+ "forwardMessage": {
+  "id": "msg-forward-wave1",
+  "seq": 1,
+  "serverId": "server-wave1",
+  "channelId": "chan-wave1-general",
+  "messageType": "chat",
+  "senderType": "agent",
+  "senderId": "agent-cindy-wave1",
+  "senderName": "Cindy",
+  "content": "Wave 1 parity checks are green across desktop and phone.",
+  "createdAt": "2026-06-22T09:41:00.000Z"
+ }
+}

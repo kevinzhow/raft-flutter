@@ -1985,20 +1985,6 @@
       "status": "inventoried; geometry acceptance pending"
     },
     {
-      "name": "RaftActionCardRecipe",
-      "nativePath": "packages/raft_ui/lib/src/design_primitives.dart",
-      "line": 1497,
-      "contractIds": [],
-      "status": "inventoried; geometry acceptance pending"
-    },
-    {
-      "name": "RaftMessageEmbedRecipe",
-      "nativePath": "packages/raft_ui/lib/src/design_primitives.dart",
-      "line": 1521,
-      "contractIds": [],
-      "status": "inventoried; geometry acceptance pending"
-    },
-    {
       "name": "RaftLightboxRecipe",
       "nativePath": "packages/raft_ui/lib/src/design_primitives.dart",
       "line": 1573,
@@ -2366,34 +2352,6 @@
       "name": "DocumentAttachmentRecipe",
       "nativePath": "packages/raft_ui/lib/src/message_content_tokens.dart",
       "line": 122,
-      "contractIds": [],
-      "status": "inventoried; geometry acceptance pending"
-    },
-    {
-      "name": "RichCardPrimitive",
-      "nativePath": "packages/raft_ui/lib/src/rich_card_tokens.dart",
-      "line": 10,
-      "contractIds": [],
-      "status": "inventoried; geometry acceptance pending"
-    },
-    {
-      "name": "RichCardSemantic",
-      "nativePath": "packages/raft_ui/lib/src/rich_card_tokens.dart",
-      "line": 20,
-      "contractIds": [],
-      "status": "inventoried; geometry acceptance pending"
-    },
-    {
-      "name": "ForwardedSnapshotRecipe",
-      "nativePath": "packages/raft_ui/lib/src/rich_card_tokens.dart",
-      "line": 33,
-      "contractIds": [],
-      "status": "inventoried; geometry acceptance pending"
-    },
-    {
-      "name": "ActionSnapshotRecipe",
-      "nativePath": "packages/raft_ui/lib/src/rich_card_tokens.dart",
-      "line": 61,
       "contractIds": [],
       "status": "inventoried; geometry acceptance pending"
     },

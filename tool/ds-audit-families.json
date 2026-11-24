@@ -370,11 +370,8 @@
       "canonical": [
         "RaftBanner"
       ],
-      "note": "RaftWarningBanner was removed (P6). RaftAgentBanner is a thin adapter over RaftBanner (maps status and passes colour overrides, styles nothing itself), so it is not a duplicate. RaftArchivedNameBanner was deferred by P6 on purpose: it builds its own box from the banner recipe. RaftBillingNotice and RaftPreviewNotice are not banners and are not listed.",
-      "deprecated": {
-        "RaftComposerNotice": "packages/raft_ui/lib/src/composer_pending_mentions.dart",
-        "RaftArchivedNameBanner": "packages/raft_ui/lib/src/create_channel_view.dart"
-      },
+      "note": "RaftWarningBanner was removed (P6); RaftComposerNotice and RaftArchivedNameBanner were removed in Legacy UI Wave 1 (callers migrated to RaftBanner / raftArchivedNameBanner). RaftAgentBanner is a thin adapter over RaftBanner (maps status and passes colour overrides, styles nothing itself), so it is not a duplicate. RaftBillingNotice and RaftPreviewNotice are not banners and are not listed.",
+      "deprecated": {},
       "canonicalBindings": {
         "RaftBanner": {
           "declarationId": "packages/raft_ui/lib/src/banner.dart#class:RaftBanner",
@@ -803,14 +800,8 @@
         "RaftMessageEmbedFrame"
       ],
       "note": "Canonical v1.24 message embed container (raft-ui 0.95.3 messageEmbed recipe, 1px line-hairline, rounded-container). Legacy 0.5.52 ForwardedSnapshotRecipe and RaftMessageEmbedRecipe (design_primitives.dart) retire onto RaftMessageEmbedFrame and generated package:raft_theme/recipes/message_embed.g.dart.",
-      "deprecated": {
-        "ForwardedSnapshotRecipe": "packages/raft_ui/lib/src/rich_card_tokens.dart",
-        "RaftMessageEmbedRecipe": "packages/raft_ui/lib/src/design_primitives.dart"
-      },
-      "deprecatedHints": {
-        "ForwardedSnapshotRecipe": "Use RaftMessageEmbedFrame and generated RaftMessageEmbedRecipe (package:raft_theme/recipes/message_embed.g.dart).",
-        "RaftMessageEmbedRecipe": "Use RaftMessageEmbedFrame and generated RaftMessageEmbedRecipe (package:raft_theme/recipes/message_embed.g.dart)."
-      },
+      "deprecated": {},
+      "deprecatedHints": {},
       "canonicalBindings": {
         "RaftMessageEmbedFrame": {
           "declarationId": "packages/raft_ui/lib/src/message_embed_frame.dart#class:RaftMessageEmbedFrame",
@@ -824,13 +815,9 @@
       ],
       "note": "Canonical v1.24 message action card (raft-ui 0.95.3 messageActionCard + messageEmbed recipes). Legacy 0.5.52 ActionSnapshotRecipe, RaftActionCardRecipe, and RaftActionCard retire onto RaftSpecActionCard / RaftMessageEmbedFrame with generated RaftMessageActionCardRecipe.",
       "deprecated": {
-        "ActionSnapshotRecipe": "packages/raft_ui/lib/src/rich_card_tokens.dart",
-        "RaftActionCardRecipe": "packages/raft_ui/lib/src/design_primitives.dart",
         "RaftActionCard": "packages/raft_ui/lib/src/action_card.dart"
       },
       "deprecatedHints": {
-        "ActionSnapshotRecipe": "Use RaftSpecActionCard / RaftMessageEmbedFrame with generated RaftMessageActionCardRecipe (package:raft_theme/recipes/message_action_card.g.dart).",
-        "RaftActionCardRecipe": "Use RaftSpecActionCard / RaftMessageEmbedFrame with generated RaftMessageActionCardRecipe (package:raft_theme/recipes/message_action_card.g.dart).",
         "RaftActionCard": "Use RaftSpecActionCard with generated RaftMessageActionCardRecipe (package:raft_theme/recipes/message_action_card.g.dart)."
       },
       "canonicalBindings": {

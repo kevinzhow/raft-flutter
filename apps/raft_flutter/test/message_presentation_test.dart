@@ -336,7 +336,7 @@ void main() {
       );
       expect(find.text("Guests can't run channel actions."), findsOneWidget);
       expect(
-        tester.widget<RaftRecipeButton>(find.byType(RaftRecipeButton)).disabled,
+        tester.widget<RaftButton>(find.byType(RaftButton)).disabled,
         isTrue,
       );
       await tester.pumpWidget(

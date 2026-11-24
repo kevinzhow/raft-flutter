@@ -12,12 +12,15 @@ void main() {
           MaterialApp(
             theme: raftTheme(dark: dark),
             home: Scaffold(
-              body: RaftArchivedNameBanner(
-                name: 'held',
-                canUnarchive: true,
-                showHint: false,
-                onUnarchive: () {},
-                onOpen: () => opens++,
+              body: Builder(
+                builder: (context) => raftArchivedNameBanner(
+                  context,
+                  name: 'held',
+                  canUnarchive: true,
+                  showHint: false,
+                  onUnarchive: () {},
+                  onOpen: () => opens++,
+                ),
               ),
             ),
           ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_list_marker.dart';
-import 'package:raft_ui/src/rich_card_tokens.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
@@ -40,8 +39,6 @@ void main() {
           ),
         );
         expect(outer.decoration.color, tokens.card);
-        final recipe = ForwardedSnapshotRecipe(tokens);
-        expect(recipe.semantic.content, tokens.panel);
         final surfaces = tester.widgetList<DecoratedBox>(
           find.descendant(of: bundle, matching: find.byType(DecoratedBox)),
         );
@@ -50,11 +47,11 @@ void main() {
               .where((box) => box.decoration is BoxDecoration)
               .map((box) => (box.decoration as BoxDecoration).color),
           // The Raft look has one frame: no second panel box inside it.
-          dark ? isNot(contains(recipe.semantic.content)) : anything,
+          dark ? isNot(contains(tokens.panel)) : anything,
         );
         if (dark) {
-          expect(recipe.semantic.embedCanvas, isNot(tokens.sidebar));
-          expect(recipe.semantic.content, isNot(recipe.semantic.embedCanvas));
+          expect(tokens.card, isNot(tokens.sidebar));
+          expect(tokens.panel, isNot(tokens.card));
         }
         expect(
           find.text('Recipient snapshot', findRichText: true),
