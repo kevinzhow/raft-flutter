@@ -6,6 +6,7 @@ import 'message_window_snapshot.dart';
 import 'message_history_pages.dart';
 import 'message_history_positions.dart';
 import 'task_conversation_thread.dart';
+import 'thread_replies_page.dart';
 import 'thread_rooms.dart';
 import 'thread_search.dart';
 import 'thread_visit.dart';
@@ -236,26 +237,15 @@ class WorkspaceThreadCommands {
                 thread: true,
               )
             : null;
-        var focused = focusedMessageId != null || readingPage != null;
-        Map<String, dynamic>? page = readingPage;
-        if (page == null && focusedMessageId != null) {
-          final reply = await focusedThreadReplyPage(
-            m,
-            request,
-            focusedMessageId,
-          );
-          if (!request.current) return;
-          page = reply;
-          focused = reply != null;
-        }
-        page ??= await MessageHistoryPages.read(
+        final replies = await threadRepliesPage(
           m,
           request,
-          m.state.threadChannelId!,
-          thread: true,
+          readingPage: readingPage,
+          focusedMessageId: focusedMessageId,
           revalidate: cached != null || heldTaskPage,
         );
-        if (!request.current) return;
+        if (replies == null || !request.current) return;
+        final (:page, :focused) = replies;
         final boundary = m.messageWindows.acceptThreadPage(
           request,
           m.state.threadChannelId!,

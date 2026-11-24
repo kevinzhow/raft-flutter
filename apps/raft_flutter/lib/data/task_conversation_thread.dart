@@ -1,11 +1,7 @@
 // Task v2 conversations in the thread machinery (Web threadStore
-// `openTaskConversation` / `ensureTaskModalThreadChannel`), and the focused
-// reply read the thread open shares with them.
+// `openTaskConversation` / `ensureTaskModalThreadChannel`).
 import 'package:raft_client/raft_client.dart';
 
-import 'message_history.dart';
-import 'message_history_pages.dart';
-import 'message_window_snapshot.dart';
 import 'workspace_message_windows.dart' show MessageWindowRequest;
 import 'thread_rooms.dart';
 import 'workspace_messages.dart';
@@ -130,49 +126,4 @@ Future<String?> createTaskConversation(
   ThreadRooms.join(m);
   m.context.changed();
   return id;
-}
-
-/// The page around a focused reply. A hidden target starts the visible
-/// window immediately after the cutoff. A plain 404 falls back to latest.
-Future<Map<String, dynamic>?> focusedThreadReplyPage(
-  WorkspaceMessages m,
-  MessageWindowRequest request,
-  String focusedMessageId,
-) async {
-  try {
-    return await MessageHistoryPages.context(
-      m,
-      request,
-      m.state.threadChannelId!,
-      focusedMessageId,
-      thread: true,
-    );
-  } on RaftApiException catch (e) {
-    if (e.status != 404) rethrow;
-    if (!request.current) return null;
-    m.state.highlightedMessageId = null;
-    if (HiddenTarget.fromError(e)
-        case HiddenTarget(target: final target, sequence: final sequence?)
-        when target.id == focusedMessageId) {
-      const limit = 50;
-      final channelId = m.state.threadChannelId!;
-      final page = await MessageHistoryPages.read(
-        m,
-        request,
-        channelId,
-        thread: true,
-        after: sequence,
-        limit: limit,
-        localFirst: false,
-      );
-      if (!request.current) return null;
-      final wire = page is MessageHistoryPage ? page.remotePage ?? page : page;
-      final rows = acceptedWindowRows(wire['messages'], channelId);
-      return page
-        ..['historyLimited'] = true
-        ..['hasOlder'] = false
-        ..['hasNewer'] = rows.length >= limit;
-    }
-    return null;
-  }
 }
