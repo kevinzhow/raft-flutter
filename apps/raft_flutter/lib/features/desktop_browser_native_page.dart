@@ -219,11 +219,14 @@ class _SystemBrowserPageState extends State<_SystemBrowserPage> {
         children: [
           Offstage(
             offstage: _failed,
-            child: AppKitView(
-              viewType: 'app.raft/desktop_browser',
-              onPlatformViewCreated: _startMac,
-              creationParams: widget.session.macArguments(widget.raftHosts),
-              creationParamsCodec: const StandardMessageCodec(),
+            child: TickerMode(
+              enabled: !_failed,
+              child: AppKitView(
+                viewType: 'app.raft/desktop_browser',
+                onPlatformViewCreated: _startMac,
+                creationParams: widget.session.macArguments(widget.raftHosts),
+                creationParamsCodec: const StandardMessageCodec(),
+              ),
             ),
           ),
           if (_failed)

@@ -132,105 +132,108 @@ class ChannelBrowserPlace extends StatelessWidget {
     final tabs = WebPreviewStore.of(workspace).browserTabs;
     final artifacts = ChannelArtifactPlace.of(workspace);
     return ListenableBuilder(
-      listenable: Listenable.merge([tabs.placement, artifacts]),
-      builder: (context, _) {
-        final browser = tabs.forConversation(conversation);
-        final artifact = artifacts.forConversation(conversation);
-        final browserInFront =
-            browser != null &&
-            (artifact == null || browser.inFrontOf(artifact.openedAt));
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            if (artifact != null)
-              Offstage(
-                offstage: browserInFront,
-                child: ExcludeFocus(
-                  excluding: browserInFront,
-                  child: TickerMode(
-                    enabled: !browserInFront,
-                    child: ArtifactWorkspaceViewer(
-                      key: ValueKey(artifact.target),
-                      session: ArtifactSession.of(workspace),
-                      target: artifact.target,
-                      seed: artifact.seed,
-                      page: covering,
-                      inline: true,
-                      collapsed: collapsed,
-                      onClose: () => artifacts.close(conversation),
-                      onShownTitle: (title) => artifacts.rename(
-                        conversation,
-                        artifact.target,
-                        title,
-                      ),
-                      headerLeading: browser == null
-                          ? null
-                          : BrowserSwitchChip(
-                              key: const ValueKey('switch-to-browser'),
-                              glyph: RaftGlyph.globe,
-                              label: raftFormat(
-                                context,
-                                browser.tabs.length == 1
-                                    ? 'Back to browser, {count} tab'
-                                    : 'Back to browser, {count} tabs',
-                                {'count': '${browser.tabs.length}'},
+      listenable: tabs.placement,
+      builder: (context, _) => ListenableBuilder(
+        listenable: artifacts,
+        builder: (context, _) {
+          final browser = tabs.forConversation(conversation);
+          final artifact = artifacts.forConversation(conversation);
+          final browserInFront =
+              browser != null &&
+              (artifact == null || browser.inFrontOf(artifact.openedAt));
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              if (artifact != null)
+                Offstage(
+                  offstage: browserInFront,
+                  child: ExcludeFocus(
+                    excluding: browserInFront,
+                    child: TickerMode(
+                      enabled: !browserInFront,
+                      child: ArtifactWorkspaceViewer(
+                        key: ValueKey(artifact.target),
+                        session: ArtifactSession.of(workspace),
+                        target: artifact.target,
+                        seed: artifact.seed,
+                        page: covering,
+                        inline: true,
+                        collapsed: collapsed,
+                        onClose: () => artifacts.close(conversation),
+                        onShownTitle: (title) => artifacts.rename(
+                          conversation,
+                          artifact.target,
+                          title,
+                        ),
+                        headerLeading: browser == null
+                            ? null
+                            : BrowserSwitchChip(
+                                key: const ValueKey('switch-to-browser'),
+                                glyph: RaftGlyph.globe,
+                                label: raftFormat(
+                                  context,
+                                  browser.tabs.length == 1
+                                      ? 'Back to browser, {count} tab'
+                                      : 'Back to browser, {count} tabs',
+                                  {'count': '${browser.tabs.length}'},
+                                ),
+                                count: browser.tabs.length,
+                                onPressed: () => tabs.raise(conversation),
                               ),
-                              count: browser.tabs.length,
-                              onPressed: () => tabs.raise(conversation),
+                        wrapHeader: (context, head) => headWrapper(
+                          context,
+                          ChannelSideSection.artifact,
+                          head,
+                        ),
+                        headerActions: [
+                          if (onExpand != null)
+                            raftConversationHeaderToggle(
+                              key: const ValueKey('inline-artifact-expand'),
+                              glyph: expanded
+                                  ? RaftGlyph.minimize2
+                                  : RaftGlyph.maximize2,
+                              label: raftText(
+                                context,
+                                expanded ? 'Restore' : 'Expand',
+                              ),
+                              pressed: expanded,
+                              onPressed: onExpand,
+                              desktopBar: true,
                             ),
-                      wrapHeader: (context, head) => headWrapper(
-                        context,
-                        ChannelSideSection.artifact,
-                        head,
+                        ],
                       ),
-                      headerActions: [
-                        if (onExpand != null)
-                          raftConversationHeaderToggle(
-                            key: const ValueKey('inline-artifact-expand'),
-                            glyph: expanded
-                                ? RaftGlyph.minimize2
-                                : RaftGlyph.maximize2,
-                            label: raftText(
-                              context,
-                              expanded ? 'Restore' : 'Expand',
-                            ),
-                            pressed: expanded,
-                            onPressed: onExpand,
-                            desktopBar: true,
-                          ),
-                      ],
                     ),
                   ),
                 ),
-              ),
-            if (browser != null)
-              Offstage(
-                offstage: !browserInFront,
-                child: TickerMode(
-                  enabled: browserInFront,
-                  child: KeyedSubtree(
-                    key: const ValueKey('channel-desktop-browser'),
-                    child: channelBrowserPanel(
-                      key: browserKey,
-                      workspace: workspace,
-                      conversation: conversation,
-                      showing: showing && browserInFront,
-                      covering: covering,
-                      expanded: expanded,
-                      collapsed: collapsed,
-                      artifactTitle: artifact?.title,
-                      onShowArtifact: artifact == null
-                          ? null
-                          : () => tabs.park(conversation),
-                      onExpand: onExpand,
-                      headWrapper: headWrapper,
+              if (browser != null)
+                Offstage(
+                  offstage: !browserInFront,
+                  child: TickerMode(
+                    enabled: browserInFront,
+                    child: KeyedSubtree(
+                      key: const ValueKey('channel-desktop-browser'),
+                      child: channelBrowserPanel(
+                        key: browserKey,
+                        workspace: workspace,
+                        conversation: conversation,
+                        showing: showing && browserInFront,
+                        covering: covering,
+                        expanded: expanded,
+                        collapsed: collapsed,
+                        artifactTitle: artifact?.title,
+                        onShowArtifact: artifact == null
+                            ? null
+                            : () => tabs.park(conversation),
+                        onExpand: onExpand,
+                        headWrapper: headWrapper,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }

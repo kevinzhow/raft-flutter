@@ -12,9 +12,11 @@ final _localHost = RegExp(
   caseSensitive: false,
 );
 
+final _whitespace = RegExp(r'\s');
+
 Uri? typedBrowserAddress(String text, Set<String> raftHosts) {
   final typed = text.trim();
-  if (typed.isEmpty || typed.contains(RegExp(r'\s'))) return null;
+  if (typed.isEmpty || typed.contains(_whitespace)) return null;
   if (_scheme.hasMatch(typed)) return webPreviewTarget(typed, raftHosts);
   final local = _localHost.hasMatch(typed);
   final uri = webPreviewTarget(

@@ -68,13 +68,15 @@ Set<String> raftAppHostnames(WorkspaceController w) => {
   ...defaultRaftPermalinkHostnames,
 };
 
+final _trailingDots = RegExp(r'\.+$');
+
 /// The page a card button or message link can open beside the conversation, or
 /// null: http(s) only, not one of Raft's own hosts, no credentials in the
 /// address (`https://user:pass@...`) (Web `webPreviewTarget`).
 Uri? webPreviewTarget(String? href, Iterable<String> raftHostnames) {
   final url = webPreviewUrl(href);
   if (url == null || url.userInfo.isNotEmpty) return null;
-  final host = url.host.replaceFirst(RegExp(r'\.+$'), '');
+  final host = url.host.replaceFirst(_trailingDots, '');
   if (raftHostnames.contains(host)) return null;
   return url;
 }

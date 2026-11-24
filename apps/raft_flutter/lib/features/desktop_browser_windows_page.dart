@@ -480,7 +480,7 @@ class _DesktopBrowserWindowsPageState extends State<DesktopBrowserWindowsPage> {
         Offstage(
           key: ObjectKey(renderer),
           offstage: _failed,
-          child: renderer.build(context),
+          child: TickerMode(enabled: !_failed, child: renderer.build(context)),
         ),
       if (_failed)
         BrowserRendererFailure(
