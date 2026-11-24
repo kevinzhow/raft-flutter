@@ -391,8 +391,10 @@ class WorkspaceSession
     // Presence patches are owned by the entity directory; presentation
     // adapters observe that accepted state; no workspace state changes, so nothing is notified.
     if (presenceEvents.contains(event.name)) return;
+    var mutated = false;
     if (event.name == 'connected') {
       connected = true;
+      mutated = true;
       // Source socketBridge reconnectSnapshot: server-level reads only. The
       // channel list, unread counts and the resume/gap sync wait for
       // `rooms:joined`, once the server has joined this socket's rooms.
@@ -411,23 +413,32 @@ class WorkspaceSession
       }
       // The shared entity directory owns reconnect revalidation for every surface.
     }
-    if (event.name == 'rooms:joined') roomsJoined();
-    if (event.name == 'rooms:join_failed') _heartbeats.failed();
+    if (event.name == 'rooms:joined') {
+      roomsJoined();
+      mutated = true;
+    }
+    if (event.name == 'rooms:join_failed') {
+      _heartbeats.failed();
+      mutated = true;
+    }
     if (event.name == 'heartbeat') {
       final joining = _heartbeats.joining;
       heartbeat(event.payload);
       // A heartbeat only records liveness; a missed-push gap sync notifies
       // when its rows arrive.
       if (!joining) return;
+      mutated = true;
     }
     if (event.name == 'disconnected' || event.name == 'connection:error') {
       connected = false;
+      mutated = true;
     }
     if (event.name == 'server:membership-removed' &&
         event.payload is Map &&
         event.payload['serverId'] is String) {
       entries.revokeServer(event.payload['serverId']);
       entries.recoverMembership(quietErrors: true);
+      mutated = true;
     }
     if (event.name == 'connection:error' &&
         event.payload is Map &&
@@ -436,15 +447,18 @@ class WorkspaceSession
       if (id != null) entries.revokeServer(id);
       entries.recoverMembership(quietErrors: true);
     }
-    consumeWorkspaceMemberEvent(
+    if (consumeWorkspaceMemberEvent(
       event,
       client: client,
       entries: entries,
       directory: directory,
-    );
+    )) {
+      mutated = true;
+    }
     if (event.name == 'channel:members-updated' ||
         event.name == 'channel:authority-updated' ||
         event.name == 'channel:removed') {
+      mutated = true;
       final payload = event.payload;
       final id = payload is Map ? payload['channelId'] ?? payload['id'] : null;
       if (id is! String || id.isEmpty) {
@@ -462,22 +476,38 @@ class WorkspaceSession
         event.name == 'dm:new' ||
         event.name == 'channel:authority-updated') {
       directory.channelRealtime(event.name, event.payload);
+      mutated = true;
     }
-    if (event.name == 'pinned:updated') directory.loadSidebar();
+    if (event.name == 'pinned:updated') {
+      directory.loadSidebar();
+      mutated = true;
+    }
     if (event.name == 'thread:updated' && event.payload is Map) {
       messages.consumeThreadUpdate(Map<String, dynamic>.from(event.payload));
+      mutated = true;
     }
     if (event.name == 'notification_prefs:updated') {
       directory.consumeNotificationPrefs(event.payload);
+      mutated = true;
     }
     if (event.name == 'message_display_prefs:updated') {
       directory.consumeMessageDisplayPrefs(event.payload);
+      mutated = true;
     }
     if (event.name == 'server:plan-updated') {
       consumeServerPlanUpdated(event.payload);
+      mutated = true;
     }
-    if (!messages.consumeMessageEvent(event)) return;
+    if (event.name == 'message:new' ||
+        event.name == 'message:updated' ||
+        event.name == ThreadReplyUpdatedEvent.name) {
+      if (!messages.consumeMessageEvent(event)) return;
+      mutated = true;
+    } else if (event.name == 'thread:updated') {
+      if (messages.consumeMessageEvent(event)) mutated = true;
+    }
     if (event.name == 'sync:resume:response' && event.payload is Map) {
+      mutated = true;
       unawaited(
         messages.resumeResponse(
           event.payload as Map,
@@ -490,6 +520,7 @@ class WorkspaceSession
       );
     }
     if (event.name == 'channel:removed') {
+      mutated = true;
       final p = event.payload;
       if (p is Map && p['channelId'] is String) {
         final id = p['channelId'] as String;
@@ -501,10 +532,11 @@ class WorkspaceSession
         }
       }
     }
-    consumeReadStateEvent(this, event);
+    if (consumeReadStateEvent(this, event)) mutated = true;
     if (event.name == 'reaction_viewer:updated' && client.serverId != null) {
       messages.acceptReactionViewer(event.payload, serverId: client.serverId!);
+      mutated = true;
     }
-    context.changed();
+    if (mutated) context.changed();
   }
 }

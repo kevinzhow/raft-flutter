@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import 'feature_flag_client_facts.dart';
 import 'message_feature_flags.dart';
+import 'resource_row_reconcile.dart' show rowDeepEquals;
 
 /// Current-server transport and identity needed by read receipts.
 abstract interface class ReadReceiptsAuthority {
@@ -205,6 +205,7 @@ class ReadReceipts extends ChangeNotifier {
   final _pendingProgress = <String, Map<String, int>>{};
   final _refreshing = <String, Future<void>>{};
   Object? _identity;
+  Object? _permissions;
   int _epoch = 0;
   bool _disposed = false;
   bool _progressEnabled = false, _flagRequested = false;
@@ -217,10 +218,13 @@ class ReadReceipts extends ChangeNotifier {
       w.client.generation,
       w.client.serverId,
       w.server?.string('role'),
-      jsonEncode(w.server?.json['permissions']),
     );
-    if (identity != _identity) {
+    final permissions = w.server?.json['permissions'];
+    if (identity != _identity ||
+        !(identical(permissions, _permissions) ||
+            rowDeepEquals(permissions, _permissions))) {
       _identity = identity;
+      _permissions = permissions;
       _epoch++;
       _scopes.clear();
       _inFlight.clear();

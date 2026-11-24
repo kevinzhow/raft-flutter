@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
@@ -67,6 +66,15 @@ class WorkspaceMessages implements WorkspaceMessageHost {
         layout: windowLayout,
         sends: drafts.composer.sends,
         notRevoked: (id) => !context.isChannelRevoked(id),
+        authorityStamp: () => (
+          presentation.navigationAuthority,
+          context.server,
+          channels.channels,
+          channels.dms,
+          session.revocations.revokedChannels.length,
+          session.revocations.revokedServers.length,
+          state.replyAuthority.allEpoch,
+        ),
       );
   static const gapPageLimit = 200;
 
@@ -90,21 +98,13 @@ class WorkspaceMessages implements WorkspaceMessageHost {
         !context.can('viewChannel', resource: resource)) {
       return null;
     }
-    final accepted = messageWindows.accepted[scope.channelId];
-    final authority = messageWindowAuthority(
-      context.server!.string('role'),
-      resource.json,
-    );
-    if (accepted != null &&
-        !accepted.matches(authority, replyToken(scope.channelId))) {
-      return null;
-    }
-    return (
+    return resolveMessageWindowAuthority(
       presentation.navigationAuthority,
       ledger.generation,
       replyToken(scope.channelId),
-      authority,
-      jsonEncode(context.server!.json['permissions']),
+      context.server!,
+      resource,
+      messageWindows.accepted[scope.channelId],
     );
   }
 
@@ -328,11 +328,11 @@ class WorkspaceMessages implements WorkspaceMessageHost {
       threadIdentity?.parentChannelId ??
       (state.threadIdentity == null ? state.threadParent?.channelId : null);
 
-  RaftChannel? threadChannelResource(String? id) => [
-    ?presentation.channel,
-    ...channels.channels,
-    ...channels.dms,
-  ].where((value) => value.id == id).firstOrNull;
+  RaftChannel? threadChannelResource(String? id) => id == null
+      ? null
+      : presentation.channel?.id == id
+      ? presentation.channel
+      : channels.channelById(id);
 
   String? threadResourceAuthority(String? id) {
     final resource = threadChannelResource(id);

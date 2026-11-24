@@ -4,6 +4,10 @@ import 'package:raft_client/raft_client.dart';
 /// A thread keeps its parent identity while its channel is being resolved.
 typedef ConversationWindowScope = ({String channelId, String? parentMessageId});
 
+/// Existing session/navigation, canonical generation, reply token, resource
+/// permission and server permission facts. No Controller is retained here.
+typedef MessageWindowAuthority = (String, int, String, String, String);
+
 /// Why a jump target's message context could not be shown.
 enum MessageContextLoadError { notFound, beyondHistory }
 

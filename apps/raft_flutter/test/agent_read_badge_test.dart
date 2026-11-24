@@ -137,7 +137,7 @@ void main() {
     expect(agentReadEligible(general, _message(), null), isFalse);
   });
 
-  test('a live frame repaints the rows', () async {
+  test('a live frame repaints the rows via ReadReceipts without notifying workspace', () async {
     client.details['c1'] = {
       'peerReadStates': [_peer('agent', 'ada', 3)],
     };
@@ -147,8 +147,10 @@ void main() {
       projectAgentReadReceipt(w.readReceipts.scope('c1'), 'ada', 10),
       isFalse,
     );
-    var notified = 0;
-    w.addListener(() => notified++);
+    var receiptNotified = 0;
+    var workspaceNotified = 0;
+    w.readReceipts.addListener(() => receiptNotified++);
+    w.addListener(() => workspaceNotified++);
     client.stream.add(
       RaftEvent('scope_read:updated', {
         'scopeId': 'c1',
@@ -160,6 +162,7 @@ void main() {
       projectAgentReadReceipt(w.readReceipts.scope('c1'), 'ada', 10),
       isTrue,
     );
-    expect(notified, greaterThan(0));
+    expect(receiptNotified, 1);
+    expect(workspaceNotified, 0);
   });
 }

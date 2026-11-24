@@ -145,6 +145,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   static int _serials = 0;
 
   static const _firstPageLimit = 30;
+  static final _readPathPattern = RegExp(r'^/channels/([^/]+)/read(?:-all)?$');
 
   /// Request shape of [windowSince], in the same form as the Activity page's
   /// list view key (path and filters, without the window).
@@ -197,6 +198,9 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     return RaftApiGateway.copyDecoded(window) as Map<String, dynamic>;
   }
 
+  Object? _scopeKey, _scopeCapabilities, _scopeMembership;
+  String? _scopeCache;
+
   String? _currentScope() {
     final client = workspace.client;
     final server = workspace.server;
@@ -206,14 +210,34 @@ class SourceActivityUnreadStore extends ChangeNotifier {
         client.serverId != server.id) {
       return null;
     }
-    return jsonEncode([
+    final key = (
       client.origin,
       client.generation,
       client.user!.id,
       server.id,
       server.string('role'),
-      server.json['capabilities'],
-      server.json['membership'],
+    );
+    final caps = server.json['capabilities'];
+    final membership = server.json['membership'];
+    if (_scopeCache != null &&
+        key == _scopeKey &&
+        (identical(caps, _scopeCapabilities) ||
+            rowDeepEquals(caps, _scopeCapabilities)) &&
+        (identical(membership, _scopeMembership) ||
+            rowDeepEquals(membership, _scopeMembership))) {
+      return _scopeCache;
+    }
+    _scopeKey = key;
+    _scopeCapabilities = caps;
+    _scopeMembership = membership;
+    return _scopeCache = jsonEncode([
+      client.origin,
+      client.generation,
+      client.user!.id,
+      server.id,
+      server.string('role'),
+      caps,
+      membership,
     ]);
   }
 
@@ -292,7 +316,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
 
   bool _isReadWrite(RequestOptions request) =>
       request.method == 'POST' &&
-      (RegExp(r'^/channels/[^/]+/read(?:-all)?$').hasMatch(request.path) ||
+      (_readPathPattern.hasMatch(request.path) ||
           request.path == '/channels/inbox/read-all');
 
   void _event(RaftEvent event) {
@@ -472,9 +496,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   /// stale snapshot closes with a re-read, unless the row of a settled list
   /// already shows the read and `inbox_read_inplace_v1` is on.
   void _persistedRead(RequestOptions request) {
-    final scope = RegExp(r'^/channels/([^/]+)/read(?:-all)?$')
-        .firstMatch(request.path)
-        ?.group(1);
+    final scope = _readPathPattern.firstMatch(request.path)?.group(1);
     if (scope == null || scope == 'inbox' || !hasListeners) {
       _background.request();
       return;

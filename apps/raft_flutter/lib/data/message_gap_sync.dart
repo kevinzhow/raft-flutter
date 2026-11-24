@@ -77,22 +77,30 @@ abstract final class MessageGapSync {
           for (final row in rows)
             if (!m.ledger.contains(id, row['id'] as String)) row,
         ];
+        final visible = m.messageWindows.visibleIds[id];
+        final hasNewRows =
+            arrived.isNotEmpty ||
+            rows.any((row) => visible == null || !visible.contains(row['id']));
         synced.addAll(rows.map((row) => row['id'] as String));
-        m.messageWindows.acceptRows(request, id, rows);
-        if (!await MessageHistoryPages.record(m, request, page)) return false;
-        if (!request.current) return false;
         var next = cursor;
         for (final row in rows) {
           final seq = RaftMessage(row).seq;
           if (seq > next) next = seq;
         }
-        if (m.channels.mayMarkRead(id) && !m.channels.scrolledAway.away(id)) {
-          unawaited(m.entries.markRead(id));
-        } else {
-          arrived.forEach(m.channels.receiveUnread);
+        if (hasNewRows) {
+          m.messageWindows.acceptRows(request, id, rows);
+          if (!await MessageHistoryPages.record(m, request, page)) {
+            return false;
+          }
+          if (!request.current) return false;
+          if (m.channels.mayMarkRead(id) && !m.channels.scrolledAway.away(id)) {
+            unawaited(m.entries.markRead(id));
+          } else {
+            arrived.forEach(m.channels.receiveUnread);
+          }
+          unawaited(m.saveWindow(id, thread: thread));
+          m.context.changed();
         }
-        unawaited(m.saveWindow(id, thread: thread));
-        m.context.changed();
         if (listed.length < WorkspaceMessages.gapPageLimit || next <= cursor) {
           break;
         }

@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
 import 'conversation_window.dart';
+export 'conversation_window.dart' show MessageWindowAuthority;
 import 'thread_window_snapshot.dart';
 import 'message_window_snapshot.dart';
 import 'workspace_sends.dart';
@@ -23,7 +24,10 @@ class WorkspaceMessageWindows {
     required this.layout,
     required this.sends,
     required this.notRevoked,
-  });
+    Object Function()? authorityStamp,
+  }) {
+    initWindowTracking(_windows, authorityStamp);
+  }
   final MessageWindowAuthority? Function(ConversationWindowScope) authority;
   final ConversationWindowSnapshot Function(bool thread) presentation;
   final (bool, bool) Function(ConversationWindowScope) layout;
@@ -69,12 +73,15 @@ class WorkspaceMessageWindows {
   }) {
     if (!_writable(request)) return;
     final accepted = rows.toList();
-    ledger.ingest(accepted, expectedGeneration: ledger.generation,
-      complete: authoritative);
+    ledger.ingest(
+      accepted,
+      expectedGeneration: ledger.generation,
+      complete: authoritative,
+    );
     reveal(
       request,
       id,
-      visible ?? accepted.map((row) => row['id'] as String),
+      visible ?? accepted.map((r) => r['id'] as String),
       replace: replace,
     );
   }
@@ -87,18 +94,21 @@ class WorkspaceMessageWindows {
     required bool focused,
     required bool retainOlder,
     required bool retainedHasMore,
-  }) {
-    final next = reconcileThreadPage(
-      page,
-      id,
-      retained: retainOlder ? rows(id).map((m) => m.json) : const [],
-      retainedHasMore: _accepted[id]?.hasMore ?? retainedHasMore,
-      focused: focused,
-    );
-    acceptRows(request, id, next.rows, visible: next.visible, replace: true);
-    setDiskOnly(request, id, false);
-    return (more: next.more, limited: next.limited);
-  }
+  }) => applyThreadPageUpdate(
+    id,
+    page,
+    _accepted,
+    rows,
+    focused: focused,
+    retainOlder: retainOlder,
+    retainedHasMore: retainedHasMore,
+    accept: (rows, visible) {
+      acceptRows(request, id, rows, visible: visible, replace: true);
+      setDiskOnly(request, id, false);
+    },
+  );
+
+  void _dirty(String id) => markWindowChannelDirty(_windows, id);
 
   void switchServer(String? id) {
     ledger.switchServer(id);
@@ -107,12 +117,15 @@ class WorkspaceMessageWindows {
     _diskOnly.clear();
     _threads.clear();
     _anchors.clear();
+    markAllWindowsDirty(_windows);
   }
 
   void revokeChannel(String id) {
     ledger.revokeChannel(id);
     clearReadingAnchor(id);
+    _dirty(id);
   }
+
   void reveal(
     MessageWindowRequest request,
     String id,
@@ -125,37 +138,28 @@ class WorkspaceMessageWindows {
     } else {
       visibleIds.putIfAbsent(id, () => {}).addAll(ids);
     }
+    _dirty(id);
   }
 
   BigInt newestVisibleSequence(String id) =>
-      (visibleIds[id] ?? const <String>{})
-          .map((key) => ledger.message(id, key))
-          .nonNulls
-          .map((row) => presented(row).seq)
-          .fold(BigInt.zero, (latest, seq) => seq > latest ? seq : latest);
+      cachedNewestVisibleSequence(ledger, visibleIds, id, presented);
 
   /// Retained canonical rows beyond the visible frontier fill a missed live
   /// event gap. The session decides when to revalidate it over the transport.
-  bool fillWindowGap(String id, String liveId) {
-    final visible = visibleIds[id];
-    if (visible == null || visible.isEmpty) return false;
-    final newest = newestVisibleSequence(id);
-    if (newest == BigInt.zero) return false;
-    var gap = false;
-    for (final row in ledger.messages(id)) {
-      final seq = BigInt.tryParse('${row['seq']}');
-      if (seq != null &&
-          seq > newest &&
-          row['id'] != liveId &&
-          !visible.contains(row['id'])) {
-        visible.add(row['id'] as String);
-        gap = true;
-      }
-    }
-    return gap;
-  }
+  bool fillWindowGap(String id, String liveId, {BigInt? newest}) =>
+      fillWindowGapFromLedger(
+        ledger,
+        visibleIds,
+        id,
+        liveId,
+        presented,
+        newest: newest,
+      );
 
-  void hideWindow(String id) => visibleIds.remove(id);
+  void hideWindow(String id) {
+    visibleIds.remove(id);
+    _dirty(id);
+  }
 
   /// The session reducer feeds canonical events through MessageLedger's epoch
   /// checks. Window responses additionally admit membership here with a ticket.
@@ -192,13 +196,15 @@ class WorkspaceMessageWindows {
   }) {
     if (!_writable(request)) return;
     if (rows != null) acceptRows(request, id, rows, replace: replace);
-    _accepted[id] = AcceptedMessageWindow(
+    rememberAcceptedWindow(
+      _accepted,
+      id,
       authority,
       more,
       token,
       historyLimited,
-      _accepted[id]?.contextNewer,
     );
+    _dirty(id);
   }
 
   void discardWindow(String id) {
@@ -213,7 +219,10 @@ class WorkspaceMessageWindows {
   bool setContextMode(MessageWindowRequest request, String id, bool? newer) {
     if (!_writable(request)) return false;
     final held = _accepted[id], prior = _accepted[id]?.contextNewer;
-    if (held != null) _accepted[id] = held.withContext(newer);
+    if (held != null) {
+      _accepted[id] = held.withContext(newer);
+      _dirty(id);
+    }
     return prior != null;
   }
 
@@ -236,19 +245,20 @@ class WorkspaceMessageWindows {
 
   /// Only an accepted in-memory tail under current session facts follows live
   /// rows. Disk-only and context windows are revalidated when opened.
-  bool retainsLiveTail(String id) {
-    final held = _accepted[id];
-    final facts = authority((channelId: id, parentMessageId: null));
-    return held != null &&
-        !isContext(id) &&
-        !isDiskOnly(id) &&
-        (visibleIds[id]?.isNotEmpty ?? false) &&
-        held.matches(facts?.$4, facts?.$3);
-  }
+  bool retainsLiveTail(String id) => retainsLiveTailWindow(
+    id,
+    _accepted[id],
+    authority((channelId: id, parentMessageId: null)),
+    visibleIds[id],
+    isDiskOnly(id),
+  );
 
   bool isDiskOnly(String? id) => _diskOnly.contains(id);
   void setDiskOnly(MessageWindowRequest request, String id, bool value) {
-    if (_writable(request)) value ? _diskOnly.add(id) : _diskOnly.remove(id);
+    if (_writable(request)) {
+      value ? _diskOnly.add(id) : _diskOnly.remove(id);
+      _dirty(id);
+    }
   }
 
   CachedMessageThread? matchingThread(
@@ -256,14 +266,14 @@ class WorkspaceMessageWindows {
     String? parentId,
     String? token,
     String? authority,
-  ) {
-    final held = _threads[parentId];
-    return held != null &&
-            held.matches(channelId, token, authority, ledger.generation) &&
-            notRevoked(held.threadChannelId)
-        ? held
-        : null;
-  }
+  ) => matchCachedThread(
+    _threads[parentId],
+    channelId,
+    token,
+    authority,
+    ledger.generation,
+    notRevoked,
+  );
 
   void cacheThread(
     MessageWindowRequest request,
@@ -272,9 +282,8 @@ class WorkspaceMessageWindows {
   ) {
     if (_writable(request)) {
       _threads[parentId] = value;
-      _accepted.putIfAbsent(value.threadChannelId, () => AcceptedMessageWindow(
-        value.authority ?? '', value.hasMore, value.token,
-        value.historyLimited, value.contextWindow ? true : null));
+      _accepted.putIfAbsent(value.threadChannelId, value.toAcceptedWindow);
+      _dirty(value.parentChannelId);
     }
   }
 
@@ -286,18 +295,34 @@ class WorkspaceMessageWindows {
     final held = _threads[parentId];
     if (_writable(request) && held != null) {
       _threads[parentId] = held.withParent(parent);
+      _dirty(held.parentChannelId);
     }
   }
 
-  void forgetThread(String id) => _threads.remove(id);
-  void clearThreads() => _threads.clear();
-  void invalidateParentThreads(String id) =>
-      _threads.removeWhere((_, thread) => thread.parentChannelId == id);
-  void revokeThreads(String id) => _threads.removeWhere(
-    (_, thread) => thread.parentChannelId == id || thread.threadChannelId == id,
-  );
+  void forgetThread(String id) {
+    final held = _threads.remove(id);
+    if (held != null) _dirty(held.parentChannelId);
+  }
 
-  void saveReadingAnchor(String id, ReadingAnchor anchor) => _anchors.save(id, anchor);
+  void clearThreads() {
+    _threads.clear();
+    markAllWindowsDirty(_windows);
+  }
+
+  void invalidateParentThreads(String id) {
+    _threads.removeWhere((_, thread) => thread.parentChannelId == id);
+    _dirty(id);
+  }
+
+  void revokeThreads(String id) {
+    _threads.removeWhere(
+      (_, t) => t.parentChannelId == id || t.threadChannelId == id,
+    );
+    markAllWindowsDirty(_windows);
+  }
+
+  void saveReadingAnchor(String id, ReadingAnchor anchor) =>
+      _anchors.save(id, anchor);
   ReadingAnchor? takeReadingAnchor(String id) => _anchors.take(id);
 
   bool beginTailRevalidation(String id) {
@@ -308,17 +333,8 @@ class WorkspaceMessageWindows {
   }
 
   void endTailRevalidation(String id) => _requests.remove(('tail', id));
-  Future<String?> createThread(Future<String?> Function() create) async {
-    final key = ('thread', threadGeneration);
-    final held = _requests[key];
-    if (held != null) return held;
-    final request = _requests[key] = create();
-    try {
-      return await request;
-    } finally {
-      if (identical(_requests[key], request)) _requests.remove(key);
-    }
-  }
+  Future<String?> createThread(Future<String?> Function() create) =>
+      runDedupedWindowRequest(_requests, ('thread', threadGeneration), create);
 
   ConversationWindow? channel(String? id) =>
       id == null ? null : _open((channelId: id, parentMessageId: null));
@@ -334,15 +350,26 @@ class WorkspaceMessageWindows {
     final token = authority(scope);
     if (token == null) return null;
     _retireIncompatible(scope, token);
-    return holdWindow<_ProjectedConversationWindow>(_windows, scope, layout,
-        (held) => held.retire(), () => _ProjectedConversationWindow(
-          scope, token, _read(scope), this));
+    return holdWindow<_ProjectedConversationWindow>(
+      _windows,
+      scope,
+      layout,
+      (held) => held.retire(),
+      () => _ProjectedConversationWindow(scope, token, _read(scope), this),
+    );
   }
 
   /// Called after existing state mutations; only changed windows publish.
   void synchronize() {
     if (_disposed) return;
-    for (final window in dueWindows(ledger, _windows, _threads)) {
+    final due = windowsDueForSync(
+      ledger,
+      _windows,
+      _threads,
+      layout: layout,
+      pendingScopes: sends.pending.keys,
+    );
+    for (final window in due) {
       _retireIncompatible(window.scope, authority(window.scope));
       if (!window.snapshot.retired) window.refresh(_read(window.scope));
     }
@@ -358,11 +385,7 @@ class WorkspaceMessageWindows {
       pendingContextChannelId != id || contextRetainsRows;
   List<RaftMessage> rows(String? id) => id == null || !retainsContextRows(id)
       ? []
-      : ledger
-            .messages(id)
-            .where((row) => visibleIds[id]?.contains(row['id']) ?? false)
-            .map(presented)
-            .toList();
+      : readWindowRows(ledger, visibleIds, id, presented);
   bool containsVisible(String? id, String? messageId) =>
       id != null &&
       messageId != null &&
@@ -378,10 +401,7 @@ class WorkspaceMessageWindows {
       : sends.project(rows, scope).map((row) => presented(row.json)).toList();
 
   ConversationWindowSnapshot _read(ConversationWindowScope scope) {
-    final main = scope.parentMessageId == null;
-    // The active presentation already reads rows and pending sends from this
-    // owner. Reuse that complete snapshot instead of copying its fields again.
-    if (layout(scope).$1) return presentation(!main);
+    if (layout(scope).$1) return presentation(scope.parentMessageId != null);
     final facts = authority(scope);
     final held = matchingThread(
       scope.channelId,
@@ -389,31 +409,21 @@ class WorkspaceMessageWindows {
       facts?.$3,
       facts?.$4,
     );
-    final id = main ? scope.channelId : held?.threadChannelId;
-    final acceptedRows = rows(id);
-    final newer = contextHasNewer(id);
-    return ConversationWindowSnapshot(
-      channelId: id,
-      rows: acceptedRows,
-      timeline: project(
-        acceptedRows,
-        main ? scope.channelId : 'thread:${scope.parentMessageId}',
-        context: newer,
-      ),
-      parent: main ? null : held?.parent,
-      hasMore: main ? _accepted[id]?.hasMore == true : held?.hasMore == true,
-      hasNewer: newer,
-      historyLimited: main ? historyLimit(id) : held?.historyLimited == true,
+    return buildCachedWindowSnapshot(
+      scope,
+      held,
+      _accepted,
+      rows,
+      project,
+      contextHasNewer,
+      historyLimit,
     );
   }
 
   void dispose() {
     if (_disposed) return;
     _disposed = true;
-    for (final window in _windows.values) {
-      window.retire(notify: false);
-    }
-    _windows.clear();
+    retireAllWindows(_windows);
   }
 }
 
@@ -470,7 +480,3 @@ class MessageWindowRequest {
   final bool Function()? _allowed;
   bool get current => _owner?._admits(this) ?? identical(this, liveWindowWrite);
 }
-
-/// Existing session/navigation, canonical generation, reply token, resource
-/// permission and server permission facts. No Controller is retained here.
-typedef MessageWindowAuthority = (String, int, String, String, String);

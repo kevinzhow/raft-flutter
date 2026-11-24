@@ -98,28 +98,32 @@ class WorkspaceSends {
     final sends = pending[scope];
     if (sends == null || sends.isEmpty) return rows;
     final confirmed = {for (final row in rows) row.json['randomId']};
-    return [
-      ...rows,
-      for (final send in sends)
-        if (!confirmed.contains(send.randomId)) send.row,
-    ]..sort((a, b) {
-      BigInt? sequence(RaftMessage row) => BigInt.tryParse(
-        '${row.json['seq'] ?? row.json['optimisticDisplaySeq']}',
-      );
-      final aSeq = sequence(a), bSeq = sequence(b);
-      if (aSeq != null && bSeq != null && aSeq != bSeq) {
-        return aSeq.compareTo(bSeq);
-      }
-      final aTime = DateTime.tryParse(a.string('createdAt'));
-      final bTime = DateTime.tryParse(b.string('createdAt'));
-      if (aTime != null && bTime != null && aTime != bTime) {
-        return aTime.compareTo(bTime);
-      }
-      if (aSeq != null && bSeq == null) return 1;
-      if (bSeq != null && aSeq == null) return -1;
-      return a.id.compareTo(b.id);
-    });
+    final keyed =
+        [
+          for (final row in rows) _sortKey(row),
+          for (final send in sends)
+            if (!confirmed.contains(send.randomId)) _sortKey(send.row),
+        ]..sort((a, b) {
+          final aSeq = a.$2, bSeq = b.$2;
+          if (aSeq != null && bSeq != null && aSeq != bSeq) {
+            return aSeq.compareTo(bSeq);
+          }
+          final aTime = a.$3, bTime = b.$3;
+          if (aTime != null && bTime != null && aTime != bTime) {
+            return aTime.compareTo(bTime);
+          }
+          if (aSeq != null && bSeq == null) return 1;
+          if (bSeq != null && aSeq == null) return -1;
+          return a.$1.id.compareTo(b.$1.id);
+        });
+    return [for (final item in keyed) item.$1];
   }
+
+  static (RaftMessage, BigInt?, DateTime?) _sortKey(RaftMessage row) => (
+    row,
+    BigInt.tryParse('${row.json['seq'] ?? row.json['optimisticDisplaySeq']}'),
+    DateTime.tryParse(row.string('createdAt')),
+  );
 
   void _publish(String scope, [RaftMessage? accepted]) {
     changed(scope);

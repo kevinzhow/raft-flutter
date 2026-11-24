@@ -94,8 +94,8 @@ abstract interface class WorkspaceMessageIngressPort {
   });
 }
 
-/// The original message:new/message:updated block. False means the surrounding
-/// event router must return before publishing its final notification.
+/// Consumes message/thread-reply socket events. Returns true only when message
+/// or thread-reply state was mutated.
 bool consumeWorkspaceMessageEvent(
   RaftEvent event, {
   required WorkspaceSessionContext context,
@@ -124,8 +124,9 @@ bool consumeWorkspaceMessageEvent(
       ledger.ingest([row], expectedGeneration: ledger.generation);
       windows.reveal(liveWindowWrite, id, [row['id']]);
       presentation.saveMessageWindow(id, thread: true);
+      return true;
     }
-    return true;
+    return false;
   }
   if (event.name == ThreadReplyUpdatedEvent.name) {
     final update = ThreadReplyUpdatedEvent.read(event.payload);
@@ -161,12 +162,18 @@ bool consumeWorkspaceMessageEvent(
     if (id == presentation.channel?.id && !presentation.hasNewer ||
         id == presentation.threadChannelId && !windows.contextHasNewer(id)) {
       if (event.name == 'message:new' && id == presentation.channel?.id) {
-        if (windows.fillWindowGap(id, row['id'])) {
+        final tailBefore = windows.newestVisibleSequence(id);
+        final gapFilled = windows.fillWindowGap(
+          id,
+          row['id'],
+          newest: tailBefore,
+        );
+        if (gapFilled) {
           unawaited(presentation.revalidateMessageTail(id));
         }
         // Web liveGapFill: shown at once across a seq jump; the hole behind
         // it is read in the background from the window tail.
-        final tail = windows.newestVisibleSequence(id);
+        final tail = gapFilled ? windows.newestVisibleSequence(id) : tailBefore;
         final seq = BigInt.tryParse('${row['seq']}');
         if (tail > BigInt.zero && seq != null && seq > tail + BigInt.one) {
           LiveGapFill.of(ledger).remember(id, row['id'], tail);
@@ -189,6 +196,7 @@ bool consumeWorkspaceMessageEvent(
     if (event.name == 'message:new' && !duplicate) {
       presentation.receiveMessageUnread(row);
     }
+    return true;
   }
-  return true;
+  return false;
 }

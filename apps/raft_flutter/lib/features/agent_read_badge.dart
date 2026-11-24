@@ -71,19 +71,11 @@ class _ReadFrontierRequests {
 }
 
 final _asked = Expando<_ReadFrontierRequests>('read receipt scopes asked');
-final _watched = Expando<bool>('read receipts watched');
 
-/// Reads the channel's read frontiers once per session, and repaints the rows
-/// when they arrive or move.
+/// Reads the channel's read frontiers once per session; mounted views subscribe
+/// to [ReadReceipts] directly so live updates do not broadcast workspace-wide.
 void watchReadFrontiers(WorkspaceController w, String channelId) {
   final receipts = w.readReceipts;
-  if (_watched[w] != true) {
-    _watched[w] = true;
-    receipts.addListener(w.notifyListeners);
-    w.services.disposeWithSession(
-      () => receipts.removeListener(w.notifyListeners),
-    );
-  }
   final asked = _asked[w] ??= _ReadFrontierRequests();
   final identity = (
     w.client.origin,

@@ -6,6 +6,8 @@ final class ReplyAuthorityEpochs {
   /// Fail-closed fallback for an authority event without a channel id.
   int _all = 0;
 
+  int get allEpoch => _all;
+
   /// Only the affected channel's token changes on its membership event.
   final Map<String, int> _channels = {};
 

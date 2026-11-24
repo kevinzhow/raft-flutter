@@ -12,13 +12,12 @@
   "totals": {
     "perf.animated_builder_opacity": 5,
     "perf.broad_media_query_of": 25,
-    "perf.cross_notifier_forward": 1,
     "perf.eager_scroll_loop": 62,
     "perf.external_workspace_notify": 51,
     "perf.inline_listenable_merge_in_build": 25,
-    "perf.json_encode_in_hot_path": 38,
+    "perf.json_encode_in_hot_path": 33,
     "perf.offstage_without_ticker_mode": 6,
-    "perf.regexp_in_hot_method": 282,
+    "perf.regexp_in_hot_method": 280,
     "perf.should_repaint_collection_identity": 2,
     "perf.sort_in_hot_path": 10,
     "perf.text_painter_in_render": 20,
@@ -33,9 +32,6 @@
     },
     "apps/raft_flutter/lib/data/attachment_limit_decision.dart": {
       "perf.regexp_in_hot_method": 1
-    },
-    "apps/raft_flutter/lib/data/channel_repository.dart": {
-      "perf.json_encode_in_hot_path": 1
     },
     "apps/raft_flutter/lib/data/external_agent_setup_text.dart": {
       "perf.regexp_in_hot_method": 2
@@ -61,15 +57,8 @@
     "apps/raft_flutter/lib/data/raftbench_hosted_controller.dart": {
       "perf.regexp_in_hot_method": 1
     },
-    "apps/raft_flutter/lib/data/read_receipts.dart": {
-      "perf.json_encode_in_hot_path": 1
-    },
     "apps/raft_flutter/lib/data/search_memory.dart": {
       "perf.regexp_in_hot_method": 1
-    },
-    "apps/raft_flutter/lib/data/source_activity_unread_store.dart": {
-      "perf.json_encode_in_hot_path": 1,
-      "perf.regexp_in_hot_method": 2
     },
     "apps/raft_flutter/lib/data/source_time_formatter.dart": {
       "perf.regexp_in_hot_method": 3
@@ -90,12 +79,6 @@
       "perf.json_encode_in_hot_path": 1
     },
     "apps/raft_flutter/lib/data/workspace_editor.dart": {
-      "perf.json_encode_in_hot_path": 1
-    },
-    "apps/raft_flutter/lib/data/workspace_presentation.dart": {
-      "perf.json_encode_in_hot_path": 1
-    },
-    "apps/raft_flutter/lib/data/workspace_server_directory.dart": {
       "perf.json_encode_in_hot_path": 1
     },
     "apps/raft_flutter/lib/data/workspace_uploads.dart": {
@@ -151,9 +134,6 @@
     },
     "apps/raft_flutter/lib/features/agent_migration_presentation.dart": {
       "perf.regexp_in_hot_method": 6
-    },
-    "apps/raft_flutter/lib/features/agent_read_badge.dart": {
-      "perf.cross_notifier_forward": 1
     },
     "apps/raft_flutter/lib/features/agent_read_progress.dart": {
       "perf.sort_in_hot_path": 1

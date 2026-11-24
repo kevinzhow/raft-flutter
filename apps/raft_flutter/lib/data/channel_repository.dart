@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:raft_client/raft_client.dart';
 
+import 'resource_row_reconcile.dart' show rowDeepEquals;
 import 'user_error.dart';
 
 /// Channel row I/O and request ordering for one workspace receiver.
@@ -151,11 +151,7 @@ class ChannelRepository {
   /// rows and the open channel do not rebuild for an unchanged read.
   static RaftChannel _reuseChannelRow(RaftChannel? held, RaftChannel fresh) {
     if (held == null) return fresh;
-    try {
-      return jsonEncode(held.json) == jsonEncode(fresh.json) ? held : fresh;
-    } catch (_) {
-      return fresh;
-    }
+    return rowDeepEquals(held.json, fresh.json) ? held : fresh;
   }
 
   /// Whether the server's channel lists carry [row] for this viewer: private

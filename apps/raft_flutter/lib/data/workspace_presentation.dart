@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
@@ -124,14 +122,20 @@ class WorkspacePresentation {
   final navigation = WorkspaceNavigation();
   String _unboundSection = 'chat';
   String? _navigationAuthority;
-  String get navigationAuthority => jsonEncode([
-    client.origin,
-    client.generation,
-    client.user?.id,
-    server?.id,
-    client.serverId,
-    server?.string('role'),
-  ]);
+  String get navigationAuthority {
+    final parts = [
+      client.origin,
+      '${client.generation}',
+      client.user?.id,
+      server?.id,
+      client.serverId,
+      server?.string('role'),
+    ];
+    return [
+      for (final part in parts) part == null ? '-' : '${part.length}:$part',
+    ].join('|');
+  }
+
   void bindNavigation() {
     if (server == null) return;
     final authority = navigationAuthority;

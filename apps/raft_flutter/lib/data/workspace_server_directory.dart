@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import 'burst_reads.dart';
+import 'resource_row_reconcile.dart' show rowDeepEquals;
 import 'user_error.dart';
 import 'workspace_domain_ports.dart';
 import 'workspace_session_bindings.dart';
@@ -203,7 +203,7 @@ class WorkspaceServerDirectory {
         }
         return;
       }
-      if (jsonEncode(fresh.json) != jsonEncode(held.json)) server = fresh;
+      if (!rowDeepEquals(fresh.json, held.json)) server = fresh;
     }
     context.changed();
   });

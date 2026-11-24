@@ -5,7 +5,8 @@ import 'workspace_session_bindings.dart';
 /// Server membership events share one authority-recovery path. A peer's
 /// departure changes the entity directory only; self events must also refresh
 /// server membership, channels and DMs, as Web refreshMembersForServer does.
-void consumeWorkspaceMemberEvent(
+/// Returns true only when workspace-level membership/channel state was kicked.
+bool consumeWorkspaceMemberEvent(
   RaftEvent event, {
   required RaftClient client,
   required WorkspaceSessionEntries entries,
@@ -17,17 +18,19 @@ void consumeWorkspaceMemberEvent(
     'server:member-removed',
     'server:member-updated',
   }.contains(event.name)) {
-    return;
+    return false;
   }
   final payload = event.payload;
   if (payload is! Map ||
       (payload['serverId'] != null && payload['serverId'] != client.serverId)) {
-    return;
+    return false;
   }
   final updated = event.name == 'server:member-updated';
   if (updated) entries.applyMembershipRole(payload);
   if (updated || payload['userId'] == client.user?.id) {
     entries.recoverMembership(quietErrors: true);
     directory.refreshChannels(quietErrors: true);
+    return true;
   }
+  return false;
 }

@@ -502,17 +502,18 @@ class FollowedThreadsStore extends ChangeNotifier {
         'firstUnreadMessageId': reply['id'],
     };
     final rows = [..._rows]..[index] = next;
-    final order = {for (var i = 0; i < rows.length; i++) rows[i]: i};
-    // Source updateFollowedThread: newest reply first, undated rows last.
-    rows.sort((a, b) {
-      final x = DateTime.tryParse('${a['lastReplyAt']}');
-      final y = DateTime.tryParse('${b['lastReplyAt']}');
-      final c = x == null || y == null
-          ? (x == null ? 1 : 0) - (y == null ? 1 : 0)
-          : y.compareTo(x);
-      return c != 0 ? c : order[a]!.compareTo(order[b]!);
-    });
-    _setRows(rows);
+    final keyed =
+        [
+          for (var i = 0; i < rows.length; i++)
+            (rows[i], DateTime.tryParse('${rows[i]['lastReplyAt']}'), i),
+        ]..sort((a, b) {
+          final x = a.$2, y = b.$2;
+          final c = x == null || y == null
+              ? (x == null ? 1 : 0) - (y == null ? 1 : 0)
+              : y.compareTo(x);
+          return c != 0 ? c : a.$3.compareTo(b.$3);
+        });
+    _setRows([for (final item in keyed) item.$1]);
     notifyListeners();
   }
 

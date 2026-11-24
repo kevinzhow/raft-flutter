@@ -153,7 +153,7 @@ class MessageLedger {
         : (a['id'] as String).compareTo(b['id'] as String);
   }
 
-  List<Map<String, dynamic>> messages(String channelId) {
+  List<Map<String, dynamic>> _ensureSorted(String channelId) {
     var sorted = _sorted[channelId];
     final dirty = _sortDirty.remove(channelId);
     if (sorted == null) {
@@ -180,8 +180,26 @@ class MessageLedger {
       next.addAll(changed.skip(at));
       _sorted[channelId] = sorted = next;
     }
-    // Callers own the returned list; the cached order stays private.
-    return List.of(sorted);
+    return sorted;
+  }
+
+  List<Map<String, dynamic>> messages(String channelId) =>
+      // Callers own the returned list; the cached order stays private.
+      List.of(_ensureSorted(channelId));
+
+  /// Rows in [channelId] whose order sequence exceeds [afterSeq], without
+  /// copying the full channel history.
+  List<Map<String, dynamic>> messagesAfterSequence(
+    String channelId,
+    BigInt afterSeq,
+  ) {
+    final sorted = _ensureSorted(channelId);
+    var start = sorted.length;
+    while (start > 0 && _orderSequence(sorted[start - 1]) > afterSeq) {
+      start--;
+    }
+    if (start == sorted.length) return const [];
+    return sorted.sublist(start);
   }
 
   /// Latest valid creation timestamp among the held channel messages.
