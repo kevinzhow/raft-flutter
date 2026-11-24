@@ -47,6 +47,22 @@
 - 一个家族只有一个实现：新代码只用该家族的规范组件；直接用 Material/Cupertino 控件（`ds-audit` 的 `bypass.*`）或已列为待淘汰的重复组件，计数只许下降，增长即检查失败。
 - 设计系统随 Web 升级：`tool/upstream_sync.py status` 报出 raft-ui 版本漂移时，先用 `tool/recipes/run` 重新生成配方，再做功能对齐。
 
+## 性能门禁与规则表（详见 docs/perf-tuning-guide.md）
+
+| Performance Rule | Enforced By |
+| --- | --- |
+| No `Priority.idle`, `scheduleTask`, zero-delay timers, or unreviewed periodic/tickers | `tool/raft-lints` (`avoid_unreviewed_idle_work`) + `idle_frames_test.dart` |
+| No raw full-bitmap `Image` / `NetworkImage` decode | `tool/raft-lints` (`avoid_raw_image_decode`) + `image_cache_ban_guard_test.dart` |
+| Every owned controller/timer/subscription/observer released | `tool/raft-lints` (`avoid_unreleased_resource`) |
+| No `UniqueKey()` in render code; no `invalidateRows()` inside `@override setState` | `tool/perf-audit --check` (`perf.unique_key_in_render`, `perf.global_row_invalidation_in_setstate`) — **0 baseline** |
+| No `store.addListener(w.notifyListeners)` forwarding; no inline `Listenable.merge` in `build()` | `tool/perf-audit --check` (`perf.cross_notifier_forward`, `perf.inline_listenable_merge_in_build`) |
+| No `List`/`Map`/`Set` `!=` identity check in `CustomPainter.shouldRepaint` | `tool/perf-audit --check` (`perf.should_repaint_collection_identity`) |
+| Every `Offstage` pairs with `TickerMode(enabled: !offstage)` | `tool/perf-audit --check` (`perf.offstage_without_ticker_mode`) |
+| No `MediaQuery.of(context)`; no `AnimatedBuilder -> Opacity` | `tool/perf-audit --check` (`perf.broad_media_query_of`, `perf.animated_builder_opacity`) |
+| No uncached `jsonEncode`, `SourceTimeFormatter`, `md.Document`, `utf8.decode`, `TextPainter.layout`, `.sort()`, or literal `RegExp` in hot render/listener paths | `tool/perf-audit --check` (ratchet baseline `tool/perf-audit-baseline.json`) |
+| No unbounded `ListView(children: [for ...])` / `SingleChildScrollView(Column([for ...]))` / `SliverToBoxAdapter(Column([for ...]))` | `tool/perf-audit --check` (`perf.eager_scroll_loop`) |
+| Scrolling/mount/resize 8.33 ms target & 16.7 ms gate | `tool/performance/lab.py` + `tool/performance/run.py` (P01) |
+
 ## 并行开发与模型分工（2026-10-10，Kevin 确认；18:26Z 更新）
 
 - 启动 subagent 时显式指定模型，不默认继承。
@@ -56,6 +72,6 @@
 - 每个 clone 首次使用时运行一次 `tool/install-git-hooks`：提交前自动 lint 暂存的 lib 文件，pull / rebase / 切分支后自动按 pubspec.lock 重跑 `pub get`。
 - 用户也会出错：发现明显错误或前后决策冲突时，直接、毫不留情地指出并给出证据，再提建议；你是同事，不是奴仆（Kevin，2026-10-18）。
 - 多个有依赖关系的 PR 用 `gh stack`（官方扩展 `github/gh-stack`）管理：`gh stack init <分支…>`、`add`、`submit`、`sync`；合入仍是 rebase 后 fast-forward，不产生合并提交。
-- 申请全量检查前先跑 `tool/preflight`（约 1 分钟：结构/设计系统审计、守卫测试、改动文件的 analyze/lint/format、受影响测试、测试预算（改动的测试文件及其分片文件的 case 数，规则同全量检查的 tool/test_budget.py）、跨平台路径扫描），把它输出的 `preflight:` 汇总行贴进 PR；`tool/prepare-handoff` 会先跑它，失败即停。preflight 没全部通过（结构审计超上限也算）的 PR 不送全量检查：先改到通过，要放宽上限须先由负责人同意；改了 capability 或宿主侧行为时，先本地重新生成 capability-parity 文档。
+- 申请全量检查前先跑 `tool/preflight`（约 1 分钟：结构/设计系统/性能审计、守卫测试、改动文件的 analyze/lint/format、受影响测试、测试预算（改动的测试文件及其分片文件的 case 数，规则同全量检查的 tool/test_budget.py）、跨平台路径扫描），把它输出的 `preflight:` 汇总行贴进 PR；`tool/prepare-handoff` 会先跑它，失败即停。preflight 没全部通过（结构审计超上限也算）的 PR 不送全量检查：先改到通过，要放宽上限须先由负责人同意；改了 capability 或宿主侧行为时，先本地重新生成 capability-parity 文档。
 - 全量检查每个分支一次：负责人审核后用 `tool/prepare-handoff`（rebase + `tool/check-project`），通过后 fast-forward 推送到 cindy/integration。例外：小的机械性 PR（如同一迁移的多个批次）可以叠成一串只跑一次全量检查，通过后按顺序逐个 fast-forward；失败时按失败位置只打回对应的那个。
 - `tool/check-project` 只在失败项全是 Dart 测试文件（不超过 6 个）时，单独重跑这些文件最多 3 次（`RAFT_CHECK_RETRIES=0` 关闭）；重跑通过的算 flaky，列在最终 JSON 的 `flaky` 里，运行可通过。同一棵树（`git rev-parse HEAD^{tree}`）在干净工作区通过后会被记录，`tool/check-project --reuse` 对相同的干净树直接复用，不重跑。

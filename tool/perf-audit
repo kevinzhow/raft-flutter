@@ -1,0 +1,885 @@
+#!/usr/bin/env python3
+"""Measure and ratchet recurring Flutter performance anti-patterns across the workspace.
+
+Mirrors the conventions of tool/ds-audit and tool/structure-audit:
+  tool/perf-audit                     summary + baseline comparison (exit 0)
+  tool/perf-audit --check             exit 1 if any file/rule count grew or an allow is malformed
+  tool/perf-audit --update-baseline   lower tool/perf-audit-baseline.json (integration branch only)
+  tool/perf-audit --json              print the aggregated report as JSON
+  tool/perf-audit --git-ref REF       scan files at a git ref without touching the working tree
+
+Workflow: a feature branch only has to keep every file/rule count at or below
+tool/perf-audit-baseline.json and never edits the baseline file (parallel branches
+that lower the same file would conflict on it). After merges, the integration owner
+runs `tool/perf-audit --update-baseline` and commits the lowered baseline separately.
+
+Rules and before/after fixes: docs/perf-tuning-guide.md.
+Escape hatch for reviewed exceptions (requires a non-empty reason):
+  // perf-allow: <reason>    on the offending line or the line directly above.
+"""
+from __future__ import annotations
+
+import argparse
+import collections
+import dataclasses
+import json
+import pathlib
+import re
+import subprocess
+import sys
+from typing import Iterable, Optional
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+BASELINE = ROOT / 'tool/perf-audit-baseline.json'
+REPORT = ROOT / '.local/perf-audit.json'
+UPDATE_HINT = 'tool/perf-audit --update-baseline'
+
+DEFAULT_SCOPES = (
+    'apps/raft_flutter/lib',
+    'packages/raft_ui/lib',
+    'packages/raft_theme/lib',
+    'packages/raft_sync/lib',
+    'packages/raft_client/lib',
+    'third_party/flutter_markdown_plus/lib',
+)
+
+ALLOW_MARKER = 'perf-allow:'
+ALLOW_REASON_RE = re.compile(r'//\s*perf-allow:\s*(\S.*)?$')
+
+
+@dataclasses.dataclass(frozen=True)
+class RuleMeta:
+    rule_id: str
+    severity: str  # P0 / P1 / P2
+    summary: str
+    fix: str
+
+
+RULES: dict[str, RuleMeta] = {
+    'perf.unique_key_in_render': RuleMeta(
+        'perf.unique_key_in_render',
+        'P0',
+        'UniqueKey() inside widget-building code destroys Element/RenderObject state on every rebuild',
+        'Use a stable ValueKey(id) or omit the key so Flutter reuses mounted elements/RenderParagraphs (PR #719 c7153ab55).',
+    ),
+    'perf.global_row_invalidation_in_setstate': RuleMeta(
+        'perf.global_row_invalidation_in_setstate',
+        'P0',
+        'Overriding setState to call invalidateRows() forces every mounted timeline row to rebuild on chrome updates',
+        'Keep setState() for chrome only; add a dedicated setRowState() or per-row revision key (PR #719 2c4e79f69).',
+    ),
+    'perf.cross_notifier_forward': RuleMeta(
+        'perf.cross_notifier_forward',
+        'P0',
+        'Forwarding a scoped ChangeNotifier directly into another ChangeNotifier.notifyListeners amplifies ticks workspace-wide',
+        'Listen directly to the owning store (e.g. ReadReceipts, WorkspaceEntitySelection) in a leaf ListenableBuilder.',
+    ),
+    'perf.inline_listenable_merge_in_build': RuleMeta(
+        'perf.inline_listenable_merge_in_build',
+        'P0',
+        'Listenable.merge([...]) allocated inline inside build() unsubscribes and resubscribes every listener on parent rebuilds',
+        'Cache `late final _changes = Listenable.merge([...])` on State and recreate only in didUpdateWidget when listenables change.',
+    ),
+    'perf.should_repaint_collection_identity': RuleMeta(
+        'perf.should_repaint_collection_identity',
+        'P0',
+        'CustomPainter.shouldRepaint compares a List/Map/Set field with != / == (identity), repainting on every rebuild when lists are freshly built',
+        'Use !listEquals(old.field, field) / !mapEquals / !setEquals from package:flutter/foundation.dart.',
+    ),
+    'perf.json_encode_in_hot_path': RuleMeta(
+        'perf.json_encode_in_hot_path',
+        'P1',
+        'Synchronous jsonEncode() in render/revision/authority/listener hot path (or jsonEncode(a) == jsonEncode(b)) causes per-row/per-tick CPU & GC churn',
+        'Use rowDeepEquals, a value-equality revision wrapper (like _ReactionRevision), or a memoized authority token invalidated on reference change.',
+    ),
+    'perf.uncached_formatter_or_parser_in_render': RuleMeta(
+        'perf.uncached_formatter_or_parser_in_render',
+        'P1',
+        'Uncached formatter/parser (SourceTimeFormatter, DateFormat, md.Document, utf8.decode) constructed inside build()/getter runs on every rebuild',
+        'Cache SourceTimeFormatter/DateFormat on State keyed by locale (PR #719 fc7dd9e79), use raftMarkdownAstCache, or decode once on data arrival.',
+    ),
+    'perf.offstage_without_ticker_mode': RuleMeta(
+        'perf.offstage_without_ticker_mode',
+        'P1',
+        'Offstage without TickerMode(enabled: !offstage) leaves spinners/animations ticking and keeps TickerMode-gated tabs active while hidden',
+        'Wrap the Offstage child in TickerMode(enabled: visible, ...) (see docs/idle-cpu.md and workspace_view.dart).',
+    ),
+    'perf.broad_media_query_of': RuleMeta(
+        'perf.broad_media_query_of',
+        'P1',
+        'MediaQuery.of(context) subscribes to every MediaQueryData aspect (including 60/120fps viewInsets keyboard animations)',
+        'Use aspect accessors (MediaQuery.sizeOf, viewInsetsOf, paddingOf, textScalerOf) or raftBreakpointWidth(context).',
+    ),
+    'perf.animated_builder_opacity': RuleMeta(
+        'perf.animated_builder_opacity',
+        'P1',
+        'Returning Opacity() directly inside AnimatedBuilder triggers widget rebuilds and saveLayer overhead every vsync',
+        'Use RepaintBoundary(child: FadeTransition(opacity: ..., child: ...)) with a cached Tween/Animation (see quoted_message_card.dart).',
+    ),
+    'perf.text_painter_in_render': RuleMeta(
+        'perf.text_painter_in_render',
+        'P1',
+        'TextPainter(...).layout(...) executed directly in build()/LayoutBuilder re-runs text shaping on every rebuild',
+        'Memoize via raftTextMetricsCache, cap/cache measurements on text change, or measure inside a custom RenderObject.performLayout.',
+    ),
+    'perf.sort_in_hot_path': RuleMeta(
+        'perf.sort_in_hot_path',
+        'P1',
+        'Uncached .sort() / ..sort() executed inside build(), presentation update(), or render getters runs O(N log N) work on every tick',
+        'Pre-sort on data mutation/ingestion or cache sorted output keyed by source collection identity/revision (PR #719 fc7dd9e79).',
+    ),
+    'perf.eager_scroll_loop': RuleMeta(
+        'perf.eager_scroll_loop',
+        'P1',
+        'Non-lazy ListView(children: [for ...]) / SingleChildScrollView(Column([for ...])) / SliverToBoxAdapter(Column([for ...])) builds and lays out all items eagerly',
+        'Use ListView.builder / ListView.separated or CustomScrollView + SliverList.builder with stable ValueKey(id).',
+    ),
+    'perf.regexp_in_hot_method': RuleMeta(
+        'perf.regexp_in_hot_method',
+        'P1',
+        'Constant RegExp(...) compiled inside a method/function/getter body recompiles on every call',
+        'Hoist constant RegExp patterns to `static final` or top-level `final` declarations.',
+    ),
+    'perf.external_workspace_notify': RuleMeta(
+        'perf.external_workspace_notify',
+        'P2',
+        'Feature code calls WorkspaceController.notifyListeners() directly, broadcasting a workspace-wide rebuild (shell, sidebar, chat, 64 windows)',
+        'Own a scoped ChangeNotifier/ValueNotifier in the feature store instead of calling w.notifyListeners().',
+    ),
+}
+
+
+@dataclasses.dataclass(frozen=True)
+class Finding:
+    rule: str
+    file: str
+    line: int
+    snippet: str
+    allowed: bool = False
+    allow_error: Optional[str] = None
+
+
+# ------------------------------------------------------------------ Dart lexer / masking
+
+def mask_dart_comments_and_strings(source: str) -> str:
+    """Replace comments and string contents with spaces while preserving line numbers and lengths."""
+    out = list(source)
+    n = len(source)
+    i = 0
+    while i < n:
+        c = source[i]
+        nxt = source[i + 1] if i + 1 < n else ''
+        if c == '/' and nxt == '/':
+            while i < n and source[i] != '\n':
+                out[i] = ' '
+                i += 1
+            continue
+        if c == '/' and nxt == '*':
+            depth = 1
+            out[i] = ' '
+            out[i + 1] = ' '
+            i += 2
+            while i < n and depth > 0:
+                if source[i] == '/' and i + 1 < n and source[i + 1] == '*':
+                    depth += 1
+                    out[i] = ' '
+                    out[i + 1] = ' '
+                    i += 2
+                elif source[i] == '*' and i + 1 < n and source[i + 1] == '/':
+                    depth -= 1
+                    out[i] = ' '
+                    out[i + 1] = ' '
+                    i += 2
+                else:
+                    if source[i] != '\n':
+                        out[i] = ' '
+                    i += 1
+            continue
+        if c == 'r' and nxt in ("'", '"'):
+            quote = nxt
+            triple = source[i + 1:i + 4] == quote * 3
+            delim = quote * 3 if triple else quote
+            i = i + 1 + len(delim)
+            while i < n:
+                if source[i:i + len(delim)] == delim:
+                    i += len(delim)
+                    break
+                if source[i] != '\n':
+                    out[i] = ' '
+                i += 1
+            continue
+        if c in ("'", '"'):
+            quote = c
+            triple = source[i:i + 3] == quote * 3
+            delim = quote * 3 if triple else quote
+            i += len(delim)
+            while i < n:
+                if source[i] == '\\' and i + 1 < n:
+                    if source[i] != '\n':
+                        out[i] = ' '
+                    if source[i + 1] != '\n':
+                        out[i + 1] = ' '
+                    i += 2
+                    continue
+                if source[i:i + len(delim)] == delim:
+                    i += len(delim)
+                    break
+                if source[i] != '\n':
+                    out[i] = ' '
+                i += 1
+            continue
+        i += 1
+    return ''.join(out)
+
+
+def find_matching(text: str, open_idx: int, open_ch: str, close_ch: str) -> int:
+    depth = 0
+    for i in range(open_idx, len(text)):
+        ch = text[i]
+        if ch == open_ch:
+            depth += 1
+        elif ch == close_ch:
+            depth -= 1
+            if depth == 0:
+                return i
+    return len(text) - 1
+
+
+def line_number(text: str, offset: int) -> int:
+    return text.count('\n', 0, offset) + 1
+
+
+def check_allow(raw_lines: list[str], line_no: int, rule_id: str) -> tuple[bool, Optional[str]]:
+    """Return (allowed, allow_error). A `// perf-allow:` marker requires a non-empty reason."""
+    for idx in (line_no - 1, line_no - 2):
+        if 0 <= idx < len(raw_lines):
+            txt = raw_lines[idx]
+            if ALLOW_MARKER in txt:
+                m = ALLOW_REASON_RE.search(txt)
+                if m and m.group(1) and m.group(1).strip():
+                    return True, None
+                return False, 'perf-allow: requires a non-empty reason (e.g. `// perf-allow: <why>`)'
+            if f'ignore: raft_lints/{rule_id}' in txt:
+                return True, None
+    return False, None
+
+
+def compute_brace_depths(masked: str) -> list[int]:
+    depths = [0] * (len(masked) + 1)
+    d = 0
+    for i, ch in enumerate(masked):
+        depths[i] = d
+        if ch == '{':
+            d += 1
+        elif ch == '}':
+            d = max(0, d - 1)
+    depths[len(masked)] = d
+    return depths
+
+
+# ------------------------------------------------------------------ Scope helpers
+
+BUILD_METHOD_HEAD_RE = re.compile(
+    r'\bWidget\??\s+(?:get\s+)?([A-Za-z_]\w*)\s*(?=[({=])'
+)
+LAYOUT_BUILDER_RE = re.compile(r'\bLayoutBuilder\s*\(')
+CLASS_HEADER_RE = re.compile(r'\bclass\s+([A-Za-z_]\w*)[^{]*\{')
+
+
+def find_method_spans(masked: str, head_pattern: re.Pattern) -> list[tuple[int, int, str]]:
+    """Find (start, end, name) spans handling nested parentheses in parameter lists."""
+    spans: list[tuple[int, int, str]] = []
+    n = len(masked)
+    for m in head_pattern.finditer(masked):
+        name = m.group(1) if m.lastindex else 'build'
+        i = m.end()
+        while i < n and masked[i].isspace():
+            i += 1
+        if i < n and masked[i] == '(':
+            i = find_matching(masked, i, '(', ')') + 1
+            while i < n and masked[i].isspace():
+                i += 1
+            if masked[i:i + 5] == 'async':
+                i += 5
+                if i < n and masked[i] == '*':
+                    i += 1
+                while i < n and masked[i].isspace():
+                    i += 1
+        if i < n and masked[i] == '{':
+            body_end = find_matching(masked, i, '{', '}')
+            spans.append((m.start(), body_end + 1, name))
+        elif masked[i:i + 2] == '=>':
+            p = b = s = 0
+            i += 2
+            while i < n:
+                ch = masked[i]
+                if ch == '(':
+                    p += 1
+                elif ch == ')':
+                    p = max(0, p - 1)
+                elif ch == '{':
+                    b += 1
+                elif ch == '}':
+                    b = max(0, b - 1)
+                elif ch == '[':
+                    s += 1
+                elif ch == ']':
+                    s = max(0, s - 1)
+                elif ch == ';' and p == 0 and b == 0 and s == 0:
+                    spans.append((m.start(), i + 1, name))
+                    break
+                i += 1
+    return spans
+
+
+def enclosing_span(offset: int, spans: list[tuple[int, int, str]]) -> Optional[tuple[int, int, str]]:
+    for span in spans:
+        if span[0] <= offset < span[1]:
+            return span
+    return None
+
+
+def in_any_span(offset: int, spans: list[tuple[int, int, str]]) -> bool:
+    return enclosing_span(offset, spans) is not None
+
+
+# ------------------------------------------------------------------ Rules
+
+UNIQUE_KEY_RE = re.compile(r'\bUniqueKey\s*\(')
+OVERRIDE_SETSTATE_RE = re.compile(r'@override\s+void\s+setState\s*\([^)]*\)\s*\{')
+CROSS_FORWARD_RE = re.compile(r'\.addListener\s*\(\s*[\w.]+\.notifyListeners\s*\)')
+FEATURE_W_NOTIFY_RE = re.compile(r'\b(?:w|widget\.controller|controller)\.notifyListeners\s*\(\s*\)')
+LISTENABLE_MERGE_RE = re.compile(r'\bListenable\.merge\s*\(')
+SHOULD_REPAINT_RE = re.compile(r'\bbool\s+shouldRepaint\s*\([^)]*\)\s*(?:=>|\{)')
+LIST_FIELD_RE = re.compile(r'\bfinal\s+(?:List|Map|Set)\s*<[^>]*>\??\s+([A-Za-z_]\w*)\s*;')
+JSON_ENCODE_EQ_RE = re.compile(r'\bjsonEncode\s*\([^;\n]+\)\s*[!=]=\s*jsonEncode\s*\(')
+JSON_ENCODE_CALL_RE = re.compile(r'\bjsonEncode\s*\(')
+HOT_JSON_METHOD_RE = re.compile(
+    r'\b(?:Object\??|String\??|int|bool|Widget\??|void)\s+(?:get\s+)?'
+    r'([A-Za-z_]\w*(?:[Rr]evision|[Ss]tate|[Aa]uthority|[Ss]cope|changed|Changed|sync|Sync|build|Build)[A-Za-z_0-9]*)'
+    r'\s*(?=[({=])'
+)
+FORMATTER_PARSER_RE = re.compile(
+    r'\b(?:SourceTimeFormatter|DateFormat|md\.Document)\s*\(|\butf8\.decode\s*\('
+)
+OFFSTAGE_RE = re.compile(r'\bOffstage\s*\(')
+MEDIA_QUERY_OF_RE = re.compile(r'\bMediaQuery\.of\s*\(')
+ANIMATED_BUILDER_RE = re.compile(r'\b(?:AnimatedBuilder|ListenableBuilder)\s*\(')
+TEXT_PAINTER_RE = re.compile(r'\bTextPainter\s*\(')
+REGEXP_CTOR_RE = re.compile(r'\bRegExp\s*\(\s*(?:r?[\'"])')
+EAGER_LISTVIEW_RE = re.compile(r'\bListView\s*\(')
+SCSV_RE = re.compile(r'\bSingleChildScrollView\s*\(')
+SLIVER_TO_BOX_RE = re.compile(r'\bSliverToBoxAdapter\s*\(')
+SORT_CALL_RE = re.compile(r'(?:\.\.|\.)sort\s*\(')
+HOT_UPDATE_METHOD_RE = re.compile(
+    r'\b(?:void|List<[^>]+>)\s+(?:get\s+)?(update|visibleRows|archived|frequentEntities|currentSearchEntities)\s*(?=[({=])'
+)
+
+# Bounded constant numeric loop like `for (var i = 0; i < 6; i++)` (skeleton placeholders)
+SMALL_CONST_FOR_RE = re.compile(r'\bfor\s*\(\s*(?:var|int)\s+\w+\s*=\s*\d+\s*;\s*\w+\s*<=?\s*(\d+)\s*;')
+
+
+def has_dynamic_children_loop(block: str) -> bool:
+    """Linear O(N) check for `children: [ ... for (...) ... ]` excluding small constant skeleton loops (<=12)."""
+    for cm in re.finditer(r'\bchildren\s*:\s*\[', block):
+        bracket_start = cm.end() - 1
+        bracket_end = find_matching(block, bracket_start, '[', ']')
+        inner = block[bracket_start:bracket_end + 1]
+        for fm in re.finditer(r'\bfor\s*\(\s*(?:final|var|int)\b[^)]*\)', inner):
+            loop_hdr = fm.group(0)
+            const_m = SMALL_CONST_FOR_RE.match(loop_hdr)
+            if const_m and int(const_m.group(1)) <= 12:
+                continue
+            return True
+    return False
+
+
+def scan_file(rel_path: str, source: str) -> list[Finding]:
+    findings: list[Finding] = []
+    if rel_path.endswith('.g.dart'):
+        return findings
+
+    is_preview_file = rel_path.endswith('_previews.dart') or rel_path.endswith('/previews.dart')
+    raw_lines = source.splitlines()
+    masked = mask_dart_comments_and_strings(source)
+    widget_spans = find_method_spans(masked, BUILD_METHOD_HEAD_RE)
+    for m in LAYOUT_BUILDER_RE.finditer(masked):
+        end = find_matching(masked, m.end() - 1, '(', ')')
+        widget_spans.append((m.start(), end + 1, 'LayoutBuilder'))
+
+    def emit(rule_id: str, offset: int) -> None:
+        ln = line_number(source, offset)
+        snippet = raw_lines[ln - 1].strip() if 1 <= ln <= len(raw_lines) else ''
+        allowed, allow_error = check_allow(raw_lines, ln, rule_id)
+        findings.append(
+            Finding(
+                rule=rule_id,
+                file=rel_path,
+                line=ln,
+                snippet=snippet[:120],
+                allowed=allowed,
+                allow_error=allow_error,
+            )
+        )
+
+    # 1. perf.unique_key_in_render
+    for m in UNIQUE_KEY_RE.finditer(masked):
+        if in_any_span(m.start(), widget_spans):
+            emit('perf.unique_key_in_render', m.start())
+
+    # 2. perf.global_row_invalidation_in_setstate
+    for m in OVERRIDE_SETSTATE_RE.finditer(masked):
+        end = find_matching(masked, m.end() - 1, '{', '}')
+        body = masked[m.end() - 1:end + 1]
+        if 'invalidateRows' in body:
+            emit('perf.global_row_invalidation_in_setstate', m.start())
+
+    # 3. perf.cross_notifier_forward & perf.external_workspace_notify
+    for m in CROSS_FORWARD_RE.finditer(masked):
+        emit('perf.cross_notifier_forward', m.start())
+    if rel_path.startswith('apps/raft_flutter/lib/features/'):
+        for m in FEATURE_W_NOTIFY_RE.finditer(masked):
+            emit('perf.external_workspace_notify', m.start())
+
+    # 4. perf.inline_listenable_merge_in_build
+    for m in LISTENABLE_MERGE_RE.finditer(masked):
+        if in_any_span(m.start(), widget_spans):
+            emit('perf.inline_listenable_merge_in_build', m.start())
+
+    # 5. perf.should_repaint_collection_identity
+    for cm in CLASS_HEADER_RE.finditer(masked):
+        c_start = cm.end() - 1
+        c_end = find_matching(masked, c_start, '{', '}')
+        class_body = masked[c_start:c_end + 1]
+        if 'shouldRepaint' not in class_body:
+            continue
+        coll_fields = {fm.group(1) for fm in LIST_FIELD_RE.finditer(class_body)}
+        if not coll_fields:
+            continue
+        for sm in SHOULD_REPAINT_RE.finditer(class_body):
+            s_abs = c_start + sm.start()
+            tail_start = sm.end() - 1
+            if class_body[tail_start] == '{':
+                s_end = find_matching(class_body, tail_start, '{', '}')
+            else:
+                semi = class_body.find(';', tail_start)
+                s_end = semi if semi != -1 else len(class_body) - 1
+            s_body = class_body[sm.start():s_end + 1]
+            for field in coll_fields:
+                cmp_re = re.compile(
+                    rf'(?:\b\w+\.{field}\s*[!=]=\s*{field}\b|\b{field}\s*[!=]=\s*\w+\.{field}\b)'
+                )
+                cm_hit = cmp_re.search(s_body)
+                if cm_hit:
+                    emit('perf.should_repaint_collection_identity', s_abs + cm_hit.start())
+
+    # 6. perf.json_encode_in_hot_path
+    is_serializer_file = any(
+        tok in rel_path
+        for tok in (
+            'codec', 'cache', 'storage', 'persistence', 'export', 'debug_log',
+            'preferences', 'telemetry', 'draft', 'backup', 'platform/', 'raft_client/',
+        )
+    )
+    if not is_serializer_file:
+        seen_json_lines: set[int] = set()
+        for m in JSON_ENCODE_EQ_RE.finditer(masked):
+            ln = line_number(source, m.start())
+            seen_json_lines.add(ln)
+            emit('perf.json_encode_in_hot_path', m.start())
+        hot_json_spans = find_method_spans(masked, HOT_JSON_METHOD_RE)
+        for m in JSON_ENCODE_CALL_RE.finditer(masked):
+            ln = line_number(source, m.start())
+            if ln in seen_json_lines:
+                continue
+            if in_any_span(m.start(), widget_spans) or in_any_span(m.start(), hot_json_spans):
+                ctx_before = masked[max(0, m.start() - 320):m.start()]
+                if '_cache' in ctx_before or 'putIfAbsent' in ctx_before or 'identical(' in ctx_before:
+                    continue
+                emit('perf.json_encode_in_hot_path', m.start())
+
+    # 7. perf.uncached_formatter_or_parser_in_render
+    if not rel_path.endswith('source_time_formatter.dart'):
+        formatter_getter_spans = find_method_spans(
+            masked,
+            re.compile(
+                r'\b(?:SourceTimeFormatter|DateFormat|TextSpan|InlineSpan|List<InlineSpan>)\s+(?:get\s+)?([A-Za-z_]\w*)\s*(?=[({=])'
+            ),
+        )
+        render_or_fmt_spans = widget_spans + formatter_getter_spans
+        for m in FORMATTER_PARSER_RE.finditer(masked):
+            span = enclosing_span(m.start(), render_or_fmt_spans)
+            if span is not None:
+                ctx_before = masked[max(span[0], m.start() - 220):m.start()]
+                if (
+                    'putIfAbsent' in ctx_before
+                    or '??=' in ctx_before
+                    or re.search(r'if\s*\(\s*_\w+\s*==\s*\w+\s*\)\s*return\s+_\w+', ctx_before)
+                ):
+                    continue
+                emit('perf.uncached_formatter_or_parser_in_render', m.start())
+
+    # 8. perf.offstage_without_ticker_mode
+    for m in OFFSTAGE_RE.finditer(masked):
+        end = find_matching(masked, m.end() - 1, '(', ')')
+        call_body = masked[m.start():end + 1]
+        prefix = masked[max(0, m.start() - 220):m.start()]
+        if 'TickerMode' in call_body or 'TickerMode' in prefix:
+            continue
+        if 'SizedBox.shrink()' in call_body or 'visible: false' in call_body:
+            continue
+        emit('perf.offstage_without_ticker_mode', m.start())
+
+    # 9. perf.broad_media_query_of
+    if not is_preview_file and not rel_path.endswith('text_scaling.dart'):
+        for m in MEDIA_QUERY_OF_RE.finditer(masked):
+            emit('perf.broad_media_query_of', m.start())
+
+    # 10. perf.animated_builder_opacity
+    for m in ANIMATED_BUILDER_RE.finditer(masked):
+        end = find_matching(masked, m.end() - 1, '(', ')')
+        call_body = masked[m.start():end + 1]
+        op = re.search(r'\breturn\s+Opacity\s*\(|=>\s*Opacity\s*\(', call_body)
+        if op:
+            emit('perf.animated_builder_opacity', m.start() + op.start())
+
+    # 11. perf.text_painter_in_render
+    for m in TEXT_PAINTER_RE.finditer(masked):
+        if in_any_span(m.start(), widget_spans):
+            ctx_before = masked[max(0, m.start() - 220):m.start()]
+            ctx_after = masked[m.start():min(len(masked), m.start() + 320)]
+            if 'putIfAbsent' in ctx_before or 'MetricsCache' in ctx_before:
+                continue
+            if '.layout(' in ctx_after:
+                emit('perf.text_painter_in_render', m.start())
+
+    # 12. perf.sort_in_hot_path
+    hot_sort_spans = widget_spans + find_method_spans(masked, HOT_UPDATE_METHOD_RE)
+    for m in SORT_CALL_RE.finditer(masked):
+        span = enclosing_span(m.start(), hot_sort_spans)
+        if span is not None:
+            ctx_before = masked[span[0]:m.start()]
+            if 'putIfAbsent' in ctx_before:
+                continue
+            emit('perf.sort_in_hot_path', m.start())
+
+    # 13. perf.eager_scroll_loop
+    seen_scroll_lines: set[int] = set()
+    for m in EAGER_LISTVIEW_RE.finditer(masked):
+        end = find_matching(masked, m.end() - 1, '(', ')')
+        body = masked[m.start():end + 1]
+        if has_dynamic_children_loop(body):
+            ln = line_number(source, m.start())
+            if ln not in seen_scroll_lines:
+                seen_scroll_lines.add(ln)
+                emit('perf.eager_scroll_loop', m.start())
+    for regex in (SCSV_RE, SLIVER_TO_BOX_RE):
+        for m in regex.finditer(masked):
+            end = find_matching(masked, m.end() - 1, '(', ')')
+            body = masked[m.start():end + 1]
+            col_m = re.search(r'\bColumn\s*\(', body)
+            if col_m:
+                col_end = find_matching(body, col_m.end() - 1, '(', ')')
+                col_body = body[col_m.start():col_end + 1]
+                if has_dynamic_children_loop(col_body):
+                    ln = line_number(source, m.start())
+                    if ln not in seen_scroll_lines:
+                        seen_scroll_lines.add(ln)
+                        emit('perf.eager_scroll_loop', m.start())
+
+    # 14. perf.regexp_in_hot_method
+    depths = compute_brace_depths(masked)
+    for m in REGEXP_CTOR_RE.finditer(source):
+        if masked[m.start():m.start() + 6] != 'RegExp':
+            continue
+        ln = line_number(source, m.start())
+        line_txt = raw_lines[ln - 1]
+        prev_txt = raw_lines[ln - 2] if ln >= 2 else ''
+        decl_window = prev_txt + '\n' + line_txt
+        if re.search(r'\bstatic\s+(?:final|const)\b', decl_window):
+            continue
+        if depths[m.start()] == 0:
+            continue
+        if depths[m.start()] == 1:
+            open_b = masked.rfind('{', 0, m.start())
+            header = masked[max(0, open_b - 120):open_b]
+            if re.search(r'\b(?:class|mixin|extension|enum)\b', header):
+                continue
+        emit('perf.regexp_in_hot_method', m.start())
+
+    return findings
+
+
+# ------------------------------------------------------------------ Source loading
+
+def iter_disk_files(root: pathlib.Path, scopes: Iterable[str]) -> Iterable[tuple[str, str]]:
+    for scope in scopes:
+        base = root / scope
+        if base.is_file() and base.suffix == '.dart':
+            yield base.relative_to(root).as_posix(), base.read_text(encoding='utf-8', errors='replace')
+        elif base.is_dir():
+            for path in sorted(base.rglob('*.dart')):
+                if path.name.endswith('.g.dart'):
+                    continue
+                yield path.relative_to(root).as_posix(), path.read_text(encoding='utf-8', errors='replace')
+
+
+def iter_git_files(repo: pathlib.Path, ref: str, scopes: Iterable[str]) -> Iterable[tuple[str, str]]:
+    out = subprocess.run(
+        ['git', '-C', str(repo), 'ls-tree', '-r', '--name-only', ref, '--', *scopes],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    paths = [p for p in out.stdout.splitlines() if p.endswith('.dart') and not p.endswith('.g.dart')]
+    if not paths:
+        return
+    proc = subprocess.Popen(
+        ['git', '-C', str(repo), 'cat-file', '--batch'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
+    query = ''.join(f'{ref}:{p}\n' for p in paths).encode('utf-8')
+    raw_out, _ = proc.communicate(query)
+    pos = 0
+    total = len(raw_out)
+    for p in paths:
+        if pos >= total:
+            break
+        nl = raw_out.find(b'\n', pos)
+        if nl == -1:
+            break
+        header = raw_out[pos:nl].decode('utf-8', errors='replace').strip()
+        pos = nl + 1
+        if not header or header.endswith('missing'):
+            continue
+        size = int(header.split()[2])
+        data = raw_out[pos:pos + size]
+        pos += size + 1
+        yield p, data.decode('utf-8', errors='replace')
+
+
+# ------------------------------------------------------------------ Aggregation & Ratchet
+
+def aggregate(
+    scanned_files: int,
+    findings: list[Finding],
+    scopes: tuple[str, ...],
+    ref_label: str,
+) -> dict:
+    enforced = [f for f in findings if not f.allowed]
+    allowed = [f for f in findings if f.allowed]
+    by_rule = collections.Counter(f.rule for f in enforced)
+    allowed_by_rule = collections.Counter(f.rule for f in allowed)
+    by_file_rule: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
+    allowed_by_file_rule: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
+    malformed: list[str] = []
+    for f in findings:
+        (allowed_by_file_rule if f.allowed else by_file_rule)[f.file][f.rule] += 1
+        if f.allow_error:
+            msg = f'{f.file}:{f.line}: {f.allow_error}'
+            if msg not in malformed:
+                malformed.append(msg)
+    as_dict = lambda tbl: {k: dict(sorted(v.items())) for k, v in sorted(tbl.items()) if v}
+    return {
+        'version': 1,
+        'ref': ref_label,
+        'scopes': list(scopes),
+        'scannedFiles': scanned_files,
+        'enforcedTotal': len(enforced),
+        'allowedTotal': len(allowed),
+        'totals': dict(sorted(by_rule.items())),
+        'allowedTotals': dict(sorted(allowed_by_rule.items())),
+        'files': as_dict(by_file_rule),
+        'allowed': as_dict(allowed_by_file_rule),
+        'malformedAllows': malformed,
+        'findings': [dataclasses.asdict(f) for f in enforced],
+    }
+
+
+def compare(
+    baseline_files: dict[str, dict[str, int]],
+    current_files: dict[str, dict[str, int]],
+) -> tuple[list[tuple[str, str, int, int]], list[tuple[str, str, int, int]]]:
+    """Return (regressions, improvements) as sorted (file, rule, before, now) tuples."""
+    regressions: list[tuple[str, str, int, int]] = []
+    improvements: list[tuple[str, str, int, int]] = []
+    for name in sorted(set(baseline_files) | set(current_files)):
+        before = baseline_files.get(name, {})
+        now = current_files.get(name, {})
+        for rule_id in sorted(set(before) | set(now)):
+            b = before.get(rule_id, 0)
+            n = now.get(rule_id, 0)
+            if n > b:
+                regressions.append((name, rule_id, b, n))
+            elif n < b:
+                improvements.append((name, rule_id, b, n))
+    return regressions, improvements
+
+
+def baseline_document(report: dict) -> dict:
+    return {
+        'version': 1,
+        'scopes': report['scopes'],
+        'about': (
+            'Ratchet for tool/perf-audit. Counts may only go down. Feature branches never edit this file; '
+            f'the integration owner runs `{UPDATE_HINT}` after merges (separate small commit).'
+        ),
+        'totals': report['totals'],
+        'files': report['files'],
+    }
+
+
+def load_baseline(path: pathlib.Path) -> dict:
+    if not path.is_file():
+        return {'files': {}, 'totals': {}}
+    return json.loads(path.read_text(encoding='utf-8'))
+
+
+def format_comparison(
+    regressions: list[tuple[str, str, int, int]],
+    improvements: list[tuple[str, str, int, int]],
+    enforced_findings: list[dict],
+) -> str:
+    lines: list[str] = []
+    if regressions:
+        by_pair: dict[tuple[str, str], list[dict]] = collections.defaultdict(list)
+        for item in enforced_findings:
+            by_pair[(item['file'], item['rule'])].append(item)
+        lines.append(f'PERF DRIFT GREW in {len(regressions)} file/rule pair(s):')
+        for path, rule_id, before, now in regressions:
+            meta = RULES[rule_id]
+            lines.append(f'  {path}: [{meta.severity}] {rule_id} {before} -> {now}')
+            for hit in by_pair.get((path, rule_id), [])[:8]:
+                lines.append(f"    {hit['file']}:{hit['line']}: {hit['snippet']}")
+            lines.append(f'    fix: {meta.fix}')
+        lines.append(
+            'See docs/perf-tuning-guide.md for before/after patterns. '
+            'Reviewed exceptions may carry `// perf-allow: <reason>` on the line or line above.'
+        )
+    if improvements:
+        lines.append(
+            f'baseline can lower: {len(improvements)} file/rule count(s) went down. This does not fail '
+            f'--check; do NOT edit tool/perf-audit-baseline.json on a feature branch. The integration owner runs '
+            f'`{UPDATE_HINT}` after merges and commits it separately:'
+        )
+        for path, rule_id, before, now in improvements:
+            lines.append(f'  {path}: {rule_id} {before} -> {now}')
+    if not regressions and not improvements:
+        lines.append('baseline: no change')
+    return '\n'.join(lines)
+
+
+# ------------------------------------------------------------------ CLI
+
+def main(argv: Optional[list[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--repo', default=str(ROOT), help=f'Repo root path (default {ROOT})')
+    parser.add_argument('--git-ref', default=None, help='Scan files at this git ref (no checkout needed)')
+    parser.add_argument('--scope', action='append', default=[], help='Limit scan to repo-relative path(s)')
+    parser.add_argument('--rule', action='append', default=[], help='Filter to specific rule ID(s)')
+    parser.add_argument('--json', action='store_true', help='Print the aggregated report as JSON')
+    parser.add_argument('--summary', action='store_true', help='Print rule counts and sample hits only')
+    parser.add_argument('--samples', type=int, default=8, help='Max sample hits per rule in --summary mode')
+    parser.add_argument('--baseline', default=None, help='Path to ratchet baseline JSON (default tool/perf-audit-baseline.json)')
+    parser.add_argument('--check', action='store_true', help='Fail (exit 1) if any count exceeds baseline or an allow is malformed')
+    parser.add_argument('--update-baseline', action='store_true', help='Write current counts to the baseline (lower-only unless --accept-increase)')
+    parser.add_argument('--accept-increase', action='store_true', help='With --update-baseline: also accept counts that grew (needs review)')
+    args = parser.parse_args(argv)
+
+    repo = pathlib.Path(args.repo).resolve()
+    baseline_path = pathlib.Path(args.baseline) if args.baseline else (repo / 'tool/perf-audit-baseline.json')
+    if not baseline_path.is_absolute():
+        baseline_path = (repo / baseline_path).resolve()
+    scopes = tuple(args.scope) if args.scope else DEFAULT_SCOPES
+    rule_filter = set(args.rule)
+    custom_scope = bool(args.scope) or bool(args.rule)
+
+    if args.update_baseline and (custom_scope or args.git_ref):
+        parser.error('--update-baseline always scans the full working-tree scope; do not pass --scope, --rule, or --git-ref')
+
+    files_iter = iter_git_files(repo, args.git_ref, scopes) if args.git_ref else iter_disk_files(repo, scopes)
+    scanned = 0
+    all_findings: list[Finding] = []
+    for rel_path, content in files_iter:
+        scanned += 1
+        for f in scan_file(rel_path, content):
+            if rule_filter and f.rule not in rule_filter:
+                continue
+            all_findings.append(f)
+
+    ref_label = args.git_ref or 'working-tree'
+    report = aggregate(scanned, all_findings, scopes, ref_label)
+
+    baseline_exists = baseline_path.is_file()
+    baseline_files = load_baseline(baseline_path).get('files', {})
+    if custom_scope:
+        # Compare only the files/rules within the requested custom scope/filter
+        scoped_baseline = {
+            path: {r: c for r, c in counts.items() if not rule_filter or r in rule_filter}
+            for path, counts in baseline_files.items()
+            if any(path == s or path.startswith(s.rstrip('/') + '/') for s in scopes)
+        }
+        regressions, improvements = compare(scoped_baseline, report['files'])
+    else:
+        regressions, improvements = compare(baseline_files, report['files'])
+
+    if args.json:
+        print(json.dumps(report, indent=2))
+        if args.check:
+            return int(bool(regressions or report['malformedAllows']))
+        return 0
+
+    if not custom_scope and not args.git_ref and repo == ROOT:
+        REPORT.parent.mkdir(parents=True, exist_ok=True)
+        REPORT.write_text(json.dumps(report, indent=1) + '\n', encoding='utf-8')
+
+    if args.summary:
+        print(
+            f"perf-audit ({ref_label}): {scanned} Dart files scanned, "
+            f"{report['enforcedTotal']} enforced findings ({report['allowedTotal']} allowlisted)"
+        )
+        for rule_id, meta in RULES.items():
+            if rule_filter and rule_id not in rule_filter:
+                continue
+            hits = [f for f in report['findings'] if f['rule'] == rule_id]
+            print(f'\n[{meta.severity}] {rule_id}: {len(hits)} hit(s)')
+            print(f'  why: {meta.summary}')
+            print(f'  fix: {meta.fix}')
+            for h in hits[: args.samples]:
+                print(f"    {h['file']}:{h['line']}  {h['snippet']}")
+            if len(hits) > args.samples:
+                print(f'    ... (+{len(hits) - args.samples} more)')
+    else:
+        print(
+            f"perf-audit: {scanned} files in {', '.join(scopes)}; "
+            f"enforced {report['enforcedTotal']}, allowlisted {report['allowedTotal']}"
+        )
+        for rule_id, count in sorted(report['totals'].items(), key=lambda kv: (-kv[1], kv[0])):
+            extra = report['allowedTotals'].get(rule_id, 0)
+            sev = RULES[rule_id].severity
+            print(f'  [{sev}] {rule_id:44} {count:5}' + (f'  (+{extra} allowlisted)' if extra else ''))
+
+    print(format_comparison(regressions, improvements, report['findings']))
+    for problem in report['malformedAllows']:
+        print(f'malformed allow: {problem}')
+
+    if args.update_baseline:
+        if report['malformedAllows']:
+            print('refusing to update the perf baseline while malformed perf-allow comments exist', file=sys.stderr)
+            return 1
+        if baseline_exists and regressions and not args.accept_increase:
+            print('refusing to raise the perf baseline; fix the regressions or pass --accept-increase', file=sys.stderr)
+            return 1
+        baseline_path.write_text(json.dumps(baseline_document(report), indent=2) + '\n', encoding='utf-8')
+        rel_out = baseline_path.relative_to(repo) if baseline_path.is_relative_to(repo) else baseline_path
+        print(f'wrote {rel_out}')
+        return 0
+
+    if args.check and (regressions or report['malformedAllows']):
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -7,6 +7,7 @@ on a typical branch, and reports every result (it never stops at the first failu
   structure-audit       tool/structure-audit --check (a hotspot module grew in lines or tokens)
   ds-audit              tool/ds-audit --check (apps/raft_flutter/lib style literals and packages/raft_ui/lib theme-contract
                         literals; counts above the baseline)
+  perf-audit            tool/perf-audit --check (recurring performance anti-patterns above tool/perf-audit-baseline.json)
   docs-index            tool/tests/test_docs_index.py (every docs/ file is listed in docs/README.md)
   tool-tests            every tool/tests suite, only when a file under tool/ changed (a hook or script
                         change that breaks another tool's tests otherwise only fails in the full check)
@@ -441,6 +442,11 @@ def run_steps(runner, changes, max_tests):
         return runner.command('ds-audit', [*tool_command('ds-audit'), '--check'], ok_detail='at or below the baseline',
                               fail_detail='style or theme-contract literals above the baseline; see the log')
 
+    def perf_audit():
+        return runner.command('perf-audit', [*tool_command('perf-audit'), '--check'], ok_detail='at or below the baseline',
+                              fail_detail='performance anti-patterns above the baseline; see the log',
+                              requires_workspace=False)
+
     def docs_index():
         return runner.command('docs-index', [sys.executable, '-m', 'unittest', '-q', DOCS_INDEX_TEST], ok_detail='docs/README.md lists every doc',
                               requires_workspace=False)
@@ -519,8 +525,8 @@ def run_steps(runner, changes, max_tests):
             dart_exe = dart_executable()
         except PreflightError as error:
             dart_error = str(error)
-    order = ['structure-audit', 'ds-audit', 'docs-index', 'tool-tests', 'theme-values', 'guard-tests', 'analyze', 'raft-lints', 'format', 'affected-tests', 'test-budget', 'portability']
-    steps = [structure, design_system, docs_index, tool_tests, theme_values, tests, analyze, lints, formatting, portability]
+    order = ['structure-audit', 'ds-audit', 'perf-audit', 'docs-index', 'tool-tests', 'theme-values', 'guard-tests', 'analyze', 'raft-lints', 'format', 'affected-tests', 'test-budget', 'portability']
+    steps = [structure, design_system, perf_audit, docs_index, tool_tests, theme_values, tests, analyze, lints, formatting, portability]
     table = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(steps)) as pool:
         for future in [pool.submit(step) for step in steps]:

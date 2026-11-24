@@ -240,13 +240,13 @@ class RunTests(unittest.TestCase):
         self.assertEqual(result['tree'], 'treehash0123456789abcdef')
         self.assertEqual(result['head'], 'headsha')
         self.assertEqual([c['name'] for c in result['checks']],
-                         ['structure-audit', 'ds-audit', 'docs-index', 'tool-tests', 'theme-values', 'guard-tests', 'analyze', 'raft-lints', 'format', 'affected-tests', 'test-budget', 'portability'])
+                         ['structure-audit', 'ds-audit', 'perf-audit', 'docs-index', 'tool-tests', 'theme-values', 'guard-tests', 'analyze', 'raft-lints', 'format', 'affected-tests', 'test-budget', 'portability'])
         self.assertEqual(result['affectedTests'], {'maxTests': 40, 'selected': 1, 'total': 3, 'skipped': 2})
         self.assertEqual(result['changedDart'], 2)
         last = out.strip().splitlines()[-1]
-        self.assertTrue(last.startswith('preflight: PASSED 11/11 checks'), last)
+        self.assertTrue(last.startswith('preflight: PASSED 12/12 checks'), last)
         self.assertIn('tree treehash0123', last)
-        for check in ('structure-audit', 'ds-audit', 'portability'):
+        for check in ('structure-audit', 'ds-audit', 'perf-audit', 'portability'):
             self.assertIn(check, out)
 
     def test_every_check_runs_even_after_failures_and_the_exit_code_says_failed(self):
@@ -255,13 +255,22 @@ class RunTests(unittest.TestCase):
         self.assertEqual(code, 1)
         result = json.loads((world.root / 'result.json').read_text())
         statuses = {c['name']: c['status'] for c in result['checks']}
-        self.assertEqual(len(statuses), 12)
+        self.assertEqual(len(statuses), 13)
         self.assertEqual(statuses['structure-audit'], 'fail')
         self.assertEqual(statuses['ds-audit'], 'pass')
+        self.assertEqual(statuses['perf-audit'], 'pass')
         self.assertEqual(statuses['format'], 'fail')
         self.assertFalse(result['passed'])
         self.assertIn('structure-audit blew up', out)  # the failing step's output tail is shown
         self.assertIn('preflight: FAILED (structure-audit, format)', out.strip().splitlines()[-1])
+
+    def test_perf_audit_failure_fails_preflight(self):
+        world = FakeWorld(self, failing=('perf-audit',))
+        code, out = self.run_main(world)
+        self.assertEqual(code, 1)
+        statuses = {c['name']: c['status'] for c in json.loads((world.root / 'result.json').read_text())['checks']}
+        self.assertEqual(statuses['perf-audit'], 'fail')
+        self.assertIn('preflight: FAILED (perf-audit)', out.strip().splitlines()[-1])
 
     def test_portability_findings_fail_the_run_with_file_and_line(self):
         world = FakeWorld(self, files={TEST: "void main() {\n  run('/usr/bin/sqlite3');\n}\n"})
@@ -277,9 +286,9 @@ class RunTests(unittest.TestCase):
         self.assertEqual(code, 0)
         result = json.loads((world.root / 'result.json').read_text())
         statuses = {c['name']: c['status'] for c in result['checks']}
-        self.assertEqual({n for n, s in statuses.items() if s == 'pass'}, {'structure-audit', 'ds-audit', 'docs-index', 'theme-values', 'guard-tests'})
+        self.assertEqual({n for n, s in statuses.items() if s == 'pass'}, {'structure-audit', 'ds-audit', 'perf-audit', 'docs-index', 'theme-values', 'guard-tests'})
         self.assertEqual({n for n, s in statuses.items() if s == 'skip'}, {'tool-tests', 'analyze', 'raft-lints', 'format', 'affected-tests', 'test-budget', 'portability'})
-        self.assertIn('PASSED 5/5 checks', out)
+        self.assertIn('PASSED 6/6 checks', out)
 
     def test_a_tool_change_runs_every_tool_suite_and_its_failure_fails_preflight(self):
         world = FakeWorld(self, files={'tool/git-hooks/pre-commit': '#!/bin/sh\n'}, failing=('tool/tests',))
@@ -338,7 +347,7 @@ class RunTests(unittest.TestCase):
         statuses = {c['name']: c['status'] for c in json.loads((world.root / 'result.json').read_text())['checks']}
         self.assertEqual(statuses['pub-get'], 'fail')
         self.assertEqual((statuses['structure-audit'], statuses['affected-tests']), ('fail', 'fail'))
-        self.assertEqual((statuses['docs-index'], statuses['format'], statuses['portability']), ('pass', 'pass', 'pass'))
+        self.assertEqual((statuses['perf-audit'], statuses['docs-index'], statuses['format'], statuses['portability']), ('pass', 'pass', 'pass', 'pass'))
 
 
 class NiceTests(unittest.TestCase):

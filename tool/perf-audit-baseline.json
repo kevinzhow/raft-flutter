@@ -1,0 +1,1019 @@
+{
+  "version": 1,
+  "scopes": [
+    "apps/raft_flutter/lib",
+    "packages/raft_ui/lib",
+    "packages/raft_theme/lib",
+    "packages/raft_sync/lib",
+    "packages/raft_client/lib",
+    "third_party/flutter_markdown_plus/lib"
+  ],
+  "about": "Ratchet for tool/perf-audit. Counts may only go down. Feature branches never edit this file; the integration owner runs `tool/perf-audit --update-baseline` after merges (separate small commit).",
+  "totals": {
+    "perf.animated_builder_opacity": 5,
+    "perf.broad_media_query_of": 25,
+    "perf.cross_notifier_forward": 1,
+    "perf.eager_scroll_loop": 62,
+    "perf.external_workspace_notify": 51,
+    "perf.inline_listenable_merge_in_build": 25,
+    "perf.json_encode_in_hot_path": 38,
+    "perf.offstage_without_ticker_mode": 6,
+    "perf.regexp_in_hot_method": 282,
+    "perf.should_repaint_collection_identity": 2,
+    "perf.sort_in_hot_path": 10,
+    "perf.text_painter_in_render": 20,
+    "perf.uncached_formatter_or_parser_in_render": 13
+  },
+  "files": {
+    "apps/raft_flutter/lib/data/agent_connections.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/attachment_disk_cache.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/data/attachment_limit_decision.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/channel_repository.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/data/external_agent_setup_text.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/data/local_error_diagnostics.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/data/message_history.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/message_window_snapshot.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/data/notification_levels.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/raft_location.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/data/raft_navigation_history.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/raftbench_hosted_controller.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/read_receipts.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/data/search_memory.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/source_activity_unread_store.dart": {
+      "perf.json_encode_in_hot_path": 1,
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/data/source_time_formatter.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/data/system_notification_store.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/thread_outline.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/data/user_error.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/data/workspace_channels.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/data/workspace_composer.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/data/workspace_editor.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/data/workspace_presentation.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/data/workspace_server_directory.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/data/workspace_uploads.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/account_deletion_checklist.dart": {
+      "perf.sort_in_hot_path": 2
+    },
+    "apps/raft_flutter/lib/features/account_onboarding.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/account_security_answer.dart": {
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/account_security_passkeys.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/action_card_spec.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/activity_first_unread.dart": {
+      "perf.external_workspace_notify": 4
+    },
+    "apps/raft_flutter/lib/features/activity_object_row.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/activity_rollout_flags.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/activity_row_label.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/activity_row_time.dart": {
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/agent_activity_summaries.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/agent_activity_turn_extras.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/agent_detail_view.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/agent_lounge.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/agent_migration_panel.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/agent_migration_presentation.dart": {
+      "perf.regexp_in_hot_method": 6
+    },
+    "apps/raft_flutter/lib/features/agent_read_badge.dart": {
+      "perf.cross_notifier_forward": 1
+    },
+    "apps/raft_flutter/lib/features/agent_read_progress.dart": {
+      "perf.sort_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/agent_runtime_models.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/agent_scopes_view.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "apps/raft_flutter/lib/features/agent_subagent_groups.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/agent_subagents_view.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "apps/raft_flutter/lib/features/agent_task_open.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/agent_trajectory_log.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/announcement_cta.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/apps_route.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/archived_channels_section.dart": {
+      "perf.sort_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_content.dart": {
+      "perf.regexp_in_hot_method": 1,
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_frame_bridge.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_message_links.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_models.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_review_batch_bar.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_session.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_text.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_viewer_actions.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart": {
+      "perf.inline_listenable_merge_in_build": 1,
+      "perf.offstage_without_ticker_mode": 1
+    },
+    "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart": {
+      "perf.eager_scroll_loop": 2
+    },
+    "apps/raft_flutter/lib/features/attachment_comments_view.dart": {
+      "perf.sort_in_hot_path": 1,
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/attachment_preview_dialog.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/attachment_view.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/billing_overview.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/bulk_model_step_body.dart": {
+      "perf.animated_builder_opacity": 1
+    },
+    "apps/raft_flutter/lib/features/channel_activity_session.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/channel_announcement_session.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/channel_conversion_section.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/channel_files_media.dart": {
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/channel_joint_section.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/channel_members.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/channel_settings.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.offstage_without_ticker_mode": 1
+    },
+    "apps/raft_flutter/lib/features/channel_side_card.dart": {
+      "perf.offstage_without_ticker_mode": 1
+    },
+    "apps/raft_flutter/lib/features/channel_side_cards.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/channel_side_column.dart": {
+      "perf.offstage_without_ticker_mode": 1
+    },
+    "apps/raft_flutter/lib/features/channel_side_drag.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/channel_side_flags.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/channel_side_tasks_panel.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.sort_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/channel_side_web_preview_panel.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/chat_agent_presentation.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/chat_timeline_presentation.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/composer_directory.dart": {
+      "perf.inline_listenable_merge_in_build": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/computer_setup_commands.dart": {
+      "perf.regexp_in_hot_method": 4
+    },
+    "apps/raft_flutter/lib/features/computers_rack/computers_rack_model.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/computers_rack/computers_rack_runtime_usage.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/connected_app_editor.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/conversation_panel.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/create_agent_dialog.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/create_channel_dialog.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/create_task_dialog.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/desktop_drafts_page.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/external_invite_page.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/external_invite_route.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/external_mentions.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/fleet_views.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/global_server_selector.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/history_paywall_view.dart": {
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/human_login.dart": {
+      "perf.regexp_in_hot_method": 6
+    },
+    "apps/raft_flutter/lib/features/icu_message.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/incoming_share_review.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/integrations_views.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/joint_same_admin.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/link_preview_consents.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/mcp_views.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/message_action_card.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.json_encode_in_hot_path": 2,
+      "perf.regexp_in_hot_method": 1,
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/message_card_read.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/message_image_export.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "apps/raft_flutter/lib/features/message_select_text_sheet.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "apps/raft_flutter/lib/features/message_task_projection.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/mobile_server_tab.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/mobile_settings_owner.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.inline_listenable_merge_in_build": 1,
+      "perf.json_encode_in_hot_path": 2
+    },
+    "apps/raft_flutter/lib/features/network_settings.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/notification_activation_banner.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/notification_settings_view.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/private_app_invite.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/private_route_guard.dart": {
+      "perf.json_encode_in_hot_path": 3
+    },
+    "apps/raft_flutter/lib/features/profile_preview.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/provider_views.dart": {
+      "perf.eager_scroll_loop": 3
+    },
+    "apps/raft_flutter/lib/features/public_attachments.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/public_server_view.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/quick_switcher.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/quick_switcher_model.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/features/raftbench_page.dart": {
+      "perf.sort_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/rail_location_memory.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/recoverable_uploads_banner.dart": {
+      "perf.external_workspace_notify": 2
+    },
+    "apps/raft_flutter/lib/features/report_issue.dart": {
+      "perf.regexp_in_hot_method": 4
+    },
+    "apps/raft_flutter/lib/features/resource_filters.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/resource_search.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/resource_view.dart": {
+      "perf.external_workspace_notify": 2,
+      "perf.json_encode_in_hot_path": 3,
+      "perf.regexp_in_hot_method": 1,
+      "perf.sort_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/runtime_form_dialog.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/saved_sidebar_entry.dart": {
+      "perf.external_workspace_notify": 4,
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/search_highlight.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/search_home.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "apps/raft_flutter/lib/features/search_ranking.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/sender_avatar_projection.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/server_setup_gate.dart": {
+      "perf.sort_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/server_views.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/settings_link.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/sidebar_preferences_view.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "apps/raft_flutter/lib/features/sidebar_thread_unread.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/slack_bridge_contract.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/source_channel_files_actions.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/source_channel_files_view.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.inline_listenable_merge_in_build": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/system_notification_center.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "apps/raft_flutter/lib/features/task_content_slot.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/task_surface.dart": {
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/task_v2_mode.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart": {
+      "perf.inline_listenable_merge_in_build": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/tasks_page/tasks_page_model.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/tasks_page/tasks_page_rows.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/features/thread_outline_list.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "apps/raft_flutter/lib/features/timeline_row_hydration.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/web_link_open.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/working_agents.dart": {
+      "perf.inline_listenable_merge_in_build": 2
+    },
+    "apps/raft_flutter/lib/features/workspace_history_controls.dart": {
+      "perf.external_workspace_notify": 1
+    },
+    "apps/raft_flutter/lib/features/workspace_menu_invite.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/features/workspace_panel_dismissal.dart": {
+      "perf.external_workspace_notify": 2
+    },
+    "apps/raft_flutter/lib/features/workspace_settings.dart": {
+      "perf.external_workspace_notify": 1,
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "apps/raft_flutter/lib/features/workspace_task_host.dart": {
+      "perf.external_workspace_notify": 2,
+      "perf.json_encode_in_hot_path": 1
+    },
+    "apps/raft_flutter/lib/features/workspace_view.dart": {
+      "perf.external_workspace_notify": 12,
+      "perf.inline_listenable_merge_in_build": 2,
+      "perf.json_encode_in_hot_path": 3
+    },
+    "apps/raft_flutter/lib/platform/account_activity_unread.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/app_update.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/platform/attachment_files.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/attachment_html.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/platform/attachment_player_log.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "apps/raft_flutter/lib/platform/attachment_preview_files.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/background_inbox.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/cache_hygiene.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/client_release_notes.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/desktop_cache_scope.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/device_memory.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/device_storage.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/display_folds.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "apps/raft_flutter/lib/platform/incoming_share_inbox.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/keyboard_inset_guard.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "apps/raft_flutter/lib/platform/linux_dependencies.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/linux_uri_scheme.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/platform/local_network_access.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/media_failure.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/mp4_hdr_probe.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/native_sharing.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/notification_localization.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "apps/raft_flutter/lib/platform/raft_app_links.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "apps/raft_flutter/lib/platform/video_cache_proxy.dart": {
+      "perf.regexp_in_hot_method": 4
+    },
+    "packages/raft_client/lib/src/proxy/linux_proxy.dart": {
+      "perf.regexp_in_hot_method": 4
+    },
+    "packages/raft_client/lib/src/proxy/proxy_types.dart": {
+      "perf.regexp_in_hot_method": 4
+    },
+    "packages/raft_client/lib/src/rate_limit_governor.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_client/lib/src/runtime_form.dart": {
+      "perf.regexp_in_hot_method": 5
+    },
+    "packages/raft_client/lib/src/runtime_form_v3_rules.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_client/lib/src/server_rate_limits.dart": {
+      "perf.regexp_in_hot_method": 4
+    },
+    "packages/raft_client/lib/src/session_policy.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "packages/raft_sync/lib/src/reaction_viewer.dart": {
+      "perf.json_encode_in_hot_path": 1
+    },
+    "packages/raft_sync/lib/src/read_state.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_sync/lib/src/sync_changes.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_theme/lib/recipes/pack_tokens.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "packages/raft_theme/lib/src/color_value.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "packages/raft_theme/lib/src/outer_shadow_painter.dart": {
+      "perf.should_repaint_collection_identity": 1
+    },
+    "packages/raft_theme/lib/src/shadow_value.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "packages/raft_theme/lib/src/theme_pack.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "packages/raft_ui/lib/activity_selected_previews.dart": {
+      "perf.eager_scroll_loop": 2
+    },
+    "packages/raft_ui/lib/basic_component_previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/button_previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/chat_composition_previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/collapsible_section_previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/mounted_avatar_previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/quick_switcher_previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/section_pager_previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/action_card.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/adaptive_workspace.dart": {
+      "perf.broad_media_query_of": 1,
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/add_members_dialog_view.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/agent_create_form.dart": {
+      "perf.should_repaint_collection_identity": 1
+    },
+    "packages/raft_ui/lib/src/agent_profile.dart": {
+      "perf.eager_scroll_loop": 3
+    },
+    "packages/raft_ui/lib/src/anchored_popup.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/announcement_markdown.dart": {
+      "perf.regexp_in_hot_method": 2,
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "packages/raft_ui/lib/src/announcement_modal.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/app_link_card.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/artifact_collection_layout.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/attachment_comments.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/attachment_lightbox.dart": {
+      "perf.offstage_without_ticker_mode": 1
+    },
+    "packages/raft_ui/lib/src/attachment_preview_shell.dart": {
+      "perf.offstage_without_ticker_mode": 1
+    },
+    "packages/raft_ui/lib/src/auth_page.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "packages/raft_ui/lib/src/avatar_content.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/channel_description_links.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/channel_header.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/channel_members_view.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/channel_overflow_sheet.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/combobox_panel.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/components.dart": {
+      "perf.regexp_in_hot_method": 3,
+      "perf.text_painter_in_render": 5
+    },
+    "packages/raft_ui/lib/src/composer_attachments.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/composer_expansion_state.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "packages/raft_ui/lib/src/composer_suggestions.dart": {
+      "perf.regexp_in_hot_method": 5
+    },
+    "packages/raft_ui/lib/src/computer_detail.dart": {
+      "perf.sort_in_hot_path": 1
+    },
+    "packages/raft_ui/lib/src/computer_surfaces.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/context_menu_content.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/create_channel_view.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/design_primitives.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "packages/raft_ui/lib/src/desktop_title_bar.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/document_preview.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.regexp_in_hot_method": 2
+    },
+    "packages/raft_ui/lib/src/feedback_inbox.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/feedback_workspace.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/form_presentation.dart": {
+      "perf.text_painter_in_render": 2
+    },
+    "packages/raft_ui/lib/src/forward_composer.dart": {
+      "perf.broad_media_query_of": 1,
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/forward_desktop_dialog.dart": {
+      "perf.eager_scroll_loop": 2
+    },
+    "packages/raft_ui/lib/src/hover_card.dart": {
+      "perf.animated_builder_opacity": 1,
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/icons.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "packages/raft_ui/lib/src/indicators.dart": {
+      "perf.animated_builder_opacity": 1,
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/invite_accept_page.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/large_content_viewer.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/list_items.dart": {
+      "perf.eager_scroll_loop": 2
+    },
+    "packages/raft_ui/lib/src/localization.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "packages/raft_ui/lib/src/markdown_blocks.dart": {
+      "perf.regexp_in_hot_method": 5
+    },
+    "packages/raft_ui/lib/src/markdown_editing.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "packages/raft_ui/lib/src/markdown_math.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/markdown_outline.dart": {
+      "perf.regexp_in_hot_method": 8
+    },
+    "packages/raft_ui/lib/src/markdown_scrollbar.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/media_browser.dart": {
+      "perf.broad_media_query_of": 1,
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "packages/raft_ui/lib/src/menu_popup_backend.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/message_body.dart": {
+      "perf.regexp_in_hot_method": 6,
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/message_content_tokens.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "packages/raft_ui/lib/src/message_context_menu.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/message_semantics.dart": {
+      "perf.regexp_in_hot_method": 3
+    },
+    "packages/raft_ui/lib/src/message_tokens.dart": {
+      "perf.regexp_in_hot_method": 5
+    },
+    "packages/raft_ui/lib/src/message_translation.dart": {
+      "perf.animated_builder_opacity": 1
+    },
+    "packages/raft_ui/lib/src/mobile_computer_list.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/mobile_nav_server.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/mobile_navigation.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/mounted_reaction_recipe.dart": {
+      "perf.animated_builder_opacity": 1
+    },
+    "packages/raft_ui/lib/src/notification_center.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/notification_settings_rows.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/overlays/dialog.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/presentation.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/public_server.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/quoted_message_card.dart": {
+      "perf.uncached_formatter_or_parser_in_render": 1
+    },
+    "packages/raft_ui/lib/src/raft/avatar.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/raft/blink_snap.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/raft/fit_toolbar.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/raft/swipe_row.dart": {
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "packages/raft_ui/lib/src/raftbench/raftbench_date_field.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "packages/raft_ui/lib/src/raftbench/raftbench_legacy_rules.dart": {
+      "perf.eager_scroll_loop": 2
+    },
+    "packages/raft_ui/lib/src/raftbench/raftbench_rules.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/recipe_surface.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/recipes/token_binding.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "packages/raft_ui/lib/src/report_issue_dialog.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/selected_text_quote.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/server_switcher_top_bar.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/settings_administration.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/settings_administration_rows.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/settings_app_editor.dart": {
+      "perf.eager_scroll_loop": 2
+    },
+    "packages/raft_ui/lib/src/setup_steps.dart": {
+      "perf.regexp_in_hot_method": 1,
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/sidebar_menus.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/sidebar_section_dialog.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/src/sidebar_text.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/task_surface.dart": {
+      "perf.eager_scroll_loop": 1,
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/task_timeline.dart": {
+      "perf.text_painter_in_render": 1
+    },
+    "packages/raft_ui/lib/src/text_selection_toolbar.dart": {
+      "perf.broad_media_query_of": 1
+    },
+    "packages/raft_ui/lib/src/thread_composition.dart": {
+      "perf.broad_media_query_of": 1,
+      "perf.inline_listenable_merge_in_build": 1
+    },
+    "packages/raft_ui/lib/src/toast.dart": {
+      "perf.broad_media_query_of": 2
+    },
+    "packages/raft_ui/lib/src/upgrade_failure_hint_text.dart": {
+      "perf.regexp_in_hot_method": 1
+    },
+    "packages/raft_ui/lib/src/working_agents.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "packages/raft_ui/lib/working_agents_previews.dart": {
+      "perf.eager_scroll_loop": 1
+    },
+    "third_party/flutter_markdown_plus/lib/src/builder.dart": {
+      "perf.regexp_in_hot_method": 2
+    },
+    "third_party/flutter_markdown_plus/lib/src/widget.dart": {
+      "perf.regexp_in_hot_method": 1
+    }
+  }
+}

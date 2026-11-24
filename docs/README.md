@@ -51,6 +51,7 @@ Every file or directory under `docs/` is listed here (path — what it is — wh
 ## Performance
 
 - `performance.md` — entry point, switches and rules from earlier investigations — before any performance work.
+- `perf-tuning-guide.md` — performance tuning playbook, recurring anti-patterns with before/after fixes, and `tool/perf-audit` rule reference — before optimizing hot paths or fixing a `perf-audit` failure.
 - `performance-lab.md` — lab scenarios, metrics, baselines — when measuring or comparing frames.
 - `message-performance.md` — P01 message-scroll benchmark used by CI — when the performance workflow fails.
 - `android-transitions.md`, `android-performance-hint.md`, `route-performance-probe.md`, `activity-preview-performance.md` — Android transition measurement, ADPF hint, route probe, Activity preview comparison — when measuring those paths.
