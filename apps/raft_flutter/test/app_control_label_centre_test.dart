@@ -184,6 +184,11 @@ final _cases = <_Case>[
     () => find.byType(RaftRecipeBox),
     maxBoxHeight: 40,
     page: true,
+    // At android-zh 1.3x under the 1.35 control profile, "筛选" sits 1.00px
+    // below its centred icons (+0.02px); the scaled page header above the bar
+    // lands on a fractional y (77.6), adding 0.02px of ratio-4 raster
+    // quantization (1.02px total; 1.0x is 0.00px, 2.0x is 0.63px).
+    androidCjkTolerance: 1.25,
   ),
   _Case(
     'RaftSearchHistoryTag',
