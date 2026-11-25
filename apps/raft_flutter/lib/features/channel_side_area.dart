@@ -276,6 +276,17 @@ class _ChannelSideAreaScope extends InheritedWidget {
   bool updateShouldNotify(_ChannelSideAreaScope oldWidget) => false;
 }
 
+/// The side sections open beside one conversation, the ones of them on
+/// screen (a pane waiting behind another is not among them), when each opened
+/// ([ChannelSideStack.openedAt]) and whether the panes cover the conversation
+/// instead of standing beside it.
+typedef OpenChannelSideStack = ({
+  Set<ChannelSideSection> open,
+  List<ChannelSideSection> shown,
+  Map<ChannelSideSection, int> openedAt,
+  bool covering,
+});
+
 class ChannelSideArea extends StatefulWidget {
   const ChannelSideArea({
     super.key,
@@ -312,6 +323,13 @@ class ChannelSideArea extends StatefulWidget {
 
   static bool restoreForWorkspace(Object owner) =>
       workspaceKey(owner).currentState?.restore() ?? false;
+
+  /// The panes open beside the conversation of the workspace [owner] and which
+  /// of them is on top, as of the last frame. Null where none is open or this
+  /// area is not mounted. What the shell's own keys act on: a pane hidden
+  /// behind another is not theirs to close.
+  static OpenChannelSideStack? stackForWorkspace(Object owner) =>
+      workspaceKey(owner).currentState?.openStack;
 
   @override
   State<ChannelSideArea> createState() => ChannelSideAreaState();
@@ -378,6 +396,10 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   final _chatKey = GlobalKey();
   late ChannelBrowserPanes _browserPanes;
   ChannelSideSection? _expanded;
+
+  /// See [ChannelSideArea.stackForWorkspace]. Written once per build, because
+  /// which pane is on top is worked out there and nowhere else.
+  OpenChannelSideStack? openStack;
   ({_DockSeam seam, double width})? _resizePreview;
   late Listenable listenable;
   late Listenable _previewChanges;
@@ -643,6 +665,16 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
         !compact && (covering || section == backSection)
         ? () => closeChannelSideSection(w, section)
         : null;
+    // The one answer to "which pane is on top", for the keys the shell owns
+    // (Escape, see workspace_panel_dismissal.dart).
+    openStack = topColumn == null
+        ? null
+        : (
+            open: open,
+            shown: [for (final column in placement.columns) ...column.sections],
+            openedAt: stack.openedAt,
+            covering: covering,
+          );
     // Web suspends section moves while a unit is expanded.
     drag.sync(
       store: store,
