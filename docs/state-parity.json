@@ -5782,6 +5782,12 @@
         "owner": "Workspace side panels",
         "reason": "Mounts the chat or folded thread inside the clipped conversation region."
       },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@13062/METHOD:_build@16775/FUNCTION:chatContent@21698": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Mounts the chat or folded thread inside the clipped conversation region."
+      },
       "apps/raft_flutter/lib/features/desktop_browser_address.dart#class:DesktopBrowserAddress": {
         "role": "entry_composition",
         "familyRefs": [
