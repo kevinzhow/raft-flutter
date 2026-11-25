@@ -80,13 +80,12 @@ void main() {
     expect(placement.stackedBelow, 1);
   });
 
-  test('a folded thread does not reserve a second chat', () {
+  test('nothing reserves a second chat for a folded thread', () {
     final placement = placeChannelSide(
       [details],
       width: 700,
       compact: false,
       layout: RaftLayoutClass.wide,
-      threadFolded: true,
     );
     expect(placement.columns.single.width, 340);
     expect(

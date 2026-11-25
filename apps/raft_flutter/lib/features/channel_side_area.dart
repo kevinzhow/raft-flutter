@@ -76,7 +76,6 @@ ChannelSidePlacement placeChannelSide(
   required bool compact,
   required RaftLayoutClass layout,
   ChannelSideStack stack = ChannelSideStack.unordered,
-  bool threadFolded = false,
   double? conversationWidth,
   Map<int, double> dockWidths = const {},
 }) {
@@ -92,9 +91,10 @@ ChannelSidePlacement placeChannelSide(
       ),
     ]);
   }
-  // The chat keeps 360 even with a folded thread: the folded thread replaces
-  // the chat inside the conversation slot instead of standing beside it, so
-  // reserving two chats' worth asks for room nothing renders in.
+  // The chat keeps 360 whether or not a thread is folded into its slot: the
+  // folded thread replaces the chat there instead of standing beside it, so
+  // reserving two chats' worth asked for room nothing rendered in. That is
+  // why this function no longer needs to know about the thread at all.
   const chatFloor = channelSideChatMinWidth;
   final shown = layout == RaftLayoutClass.medium
       ? const <VisibleChannelSideColumn>[]
@@ -542,7 +542,6 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       compact: compact,
       layout: raftLayoutClassOf(context),
       stack: stack,
-      threadFolded: foldedThread != null,
       conversationWidth: live?.conversation ?? conversationWidth,
       dockWidths: live?.columns ?? const {},
     );

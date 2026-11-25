@@ -308,27 +308,22 @@ void main() {
       final complete = ChannelSideLayout.defaults.complete();
       for (final area in [window.width, window.width - _workspaceChrome]) {
         for (final (name, ticks) in _states(ChannelSideSection.values)) {
-          for (final folded in [false, true]) {
-            final open = ticks.keys.toSet();
-            final visible = complete.visible(open);
-            final placement = placeChannelSide(
-              visible,
-              width: area,
-              compact: false,
-              layout: layout,
-              stack: ChannelSideStack(ticks),
-              threadFolded: folded,
-            );
-            _checkPlacement(
-              placement,
-              visible: visible,
-              width: area,
-              layout: layout,
-              where:
-                  '${size.key} ($layout) in $area: $name'
-                  '${folded ? ', thread folded' : ''}',
-            );
-          }
+          final open = ticks.keys.toSet();
+          final visible = complete.visible(open);
+          final placement = placeChannelSide(
+            visible,
+            width: area,
+            compact: false,
+            layout: layout,
+            stack: ChannelSideStack(ticks),
+          );
+          _checkPlacement(
+            placement,
+            visible: visible,
+            width: area,
+            layout: layout,
+            where: '${size.key} ($layout) in $area: $name',
+          );
         }
       }
     });
@@ -403,6 +398,31 @@ void main() {
       }
     });
   }
+
+  testWidgets('a dragged column width survives a medium round trip', (t) async {
+    final rig = await _pumpArea(t, const Size(1440, 900), TargetPlatform.linux);
+    _openers[ChannelSideSection.details]!.toggle!(rig, true);
+    await frames(t, 3);
+    final column = find.byKey(const Key('channel-side-column-3'));
+    expect(t.getSize(column).width, 400);
+    final handle = find.byKey(const Key('channel-side-column-resize-3'));
+    final drag = await t.startGesture(t.getCenter(handle));
+    await drag.moveBy(const Offset(-80, 0));
+    await drag.up();
+    await frames(t, 3);
+    final dragged = t.getSize(column).width;
+    expect(dragged, 480);
+    // A medium window covers with it: no column stands beside the chat.
+    t.view.physicalSize = const Size(884, 1104);
+    await frames(t, 3);
+    expect(find.byKey(const Key('channel-side-overlay')), findsOneWidget);
+    expect(t.getSize(column).width, 884 - _workspaceChrome);
+    // Back at a desktop width the dragged width is what it was.
+    t.view.physicalSize = const Size(1440, 900);
+    await frames(t, 3);
+    expect(find.byKey(const Key('channel-side-overlay')), findsNothing);
+    expect(t.getSize(column).width, dragged);
+  });
 
   testWidgets('a covering pane pops to the one underneath, then to the chat', (
     t,
