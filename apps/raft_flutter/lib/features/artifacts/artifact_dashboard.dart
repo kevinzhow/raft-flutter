@@ -471,6 +471,12 @@ class _ArtifactDashboardState extends State<ArtifactDashboard> {
             },
           ),
         ];
+        final sizedSearch = SizedBox(
+          width: hideLabels
+              ? RaftArtifactCollectionLayout.narrowSearchWidth
+              : RaftArtifactCollectionLayout.searchWidth,
+          child: searchField,
+        );
         return DecoratedBox(
           decoration: recipe.decoration(tokens.recipeTokens),
           child: Padding(
@@ -494,34 +500,34 @@ class _ArtifactDashboardState extends State<ArtifactDashboard> {
                   padding: compact
                       ? recipe.padding.copyWith(top: 0, bottom: 0)
                       : EdgeInsets.zero,
-                  child: Row(
-                    spacing: gap,
-                    children: [
-                      if (compact)
-                        Expanded(child: searchField)
-                      else
-                        Expanded(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              spacing: gap,
-                              children: [
-                                SizedBox(
-                                  width: hideLabels
-                                      ? RaftArtifactCollectionLayout
-                                            .narrowSearchWidth
-                                      : RaftArtifactCollectionLayout
-                                            .searchWidth,
-                                  child: searchField,
-                                ),
-                                ...filters,
-                              ],
-                            ),
+                  child: !compact && RaftScaled.grows(context)
+                      ? SizedBox(
+                          width: double.infinity,
+                          child: Wrap(
+                            spacing: gap,
+                            runSpacing: gap,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [sizedSearch, ...filters, ...tools],
                           ),
+                        )
+                      : Row(
+                          spacing: gap,
+                          children: [
+                            if (compact)
+                              Expanded(child: searchField)
+                            else
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    spacing: gap,
+                                    children: [sizedSearch, ...filters],
+                                  ),
+                                ),
+                              ),
+                            ...tools,
+                          ],
                         ),
-                      ...tools,
-                    ],
-                  ),
                 ),
                 if (compact)
                   Padding(

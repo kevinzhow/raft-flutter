@@ -139,6 +139,35 @@ void main() {
         expect(action.bottom, lessThanOrEqualTo(dialog.bottom));
       });
     }
+
+    testWidgets(
+      'alert with long title and action scrolls header with body at 3.1x',
+      (t) async {
+        await _pump(
+          t,
+          3.1,
+          Scaffold(
+            body: Builder(
+              builder: (context) => RaftButton(
+                label: 'Open',
+                onPressed: () => showRaftAlertDialog(
+                  context: context,
+                  title: 'Turn on link sharing?',
+                  description: 'Anyone with the link can view it, and it will not show up in search engines.',
+                  confirmLabel: 'Turn on link sharing',
+                ),
+              ),
+            ),
+          ),
+          view: const Size(390, 844),
+        );
+        await t.tap(find.text('Open'));
+        await t.pumpAndSettle();
+        expect(t.takeException(), isNull);
+        expect(find.text('Turn on link sharing').hitTestable(), findsOneWidget);
+        expect(find.text('Cancel').hitTestable(), findsOneWidget);
+      },
+    );
   });
 
   group('RaftFormDialog', () {

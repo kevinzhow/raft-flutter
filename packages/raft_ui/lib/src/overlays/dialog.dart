@@ -374,27 +374,75 @@ class RaftDialog extends StatelessWidget {
           final base = raftCssText
               .merge(Theme.of(context).textTheme.bodyMedium)
               .copyWith(decoration: TextDecoration.none);
+          // CSS `display:flex|grid; gap` between header/body/footer.
+          final gap = s.content.rowGap ?? 0;
+          final scrollHeader =
+              child == null &&
+              !bar &&
+              RaftScaled.grows(context) &&
+              title != null &&
+              actions != null &&
+              actions!.isNotEmpty;
+          final headerWidget = title == null
+              ? null
+              : RaftDialogHeader(
+                  title: title,
+                  showClose: showClose && kind == RaftDialogKind.dialog,
+                  onClose: onClose,
+                  closeEnabled: closeEnabled,
+                  outlineClose: outlineClose,
+                );
           Widget body =
               child ??
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (title != null)
-                    RaftDialogHeader(
-                      title: title,
-                      showClose: showClose && kind == RaftDialogKind.dialog,
-                      onClose: onClose,
-                      closeEnabled: closeEnabled,
-                      outlineClose: outlineClose,
-                    ),
-                  if (content != null)
-                    Flexible(child: RaftDialogBody(child: content!)),
-                  if (actions != null && actions!.isNotEmpty)
-                    RaftDialogFooter(children: actions!),
-                ],
-              );
-          if (body is Column) {
+              (scrollHeader
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Flexible(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: gap,
+                              children: [
+                                _DialogPartScope(
+                                  first: true,
+                                  afterHeader: false,
+                                  child: headerWidget!,
+                                ),
+                                if (content != null)
+                                  _DialogPartScope(
+                                    first: false,
+                                    afterHeader: true,
+                                    child: RaftDialogBody(
+                                      scrollable: false,
+                                      child: content!,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        _DialogPartScope(
+                          first: false,
+                          afterHeader: content == null,
+                          child: RaftDialogFooter(children: actions!),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ?headerWidget,
+                        if (content != null)
+                          Flexible(child: RaftDialogBody(child: content!)),
+                        if (actions != null && actions!.isNotEmpty)
+                          RaftDialogFooter(children: actions!),
+                      ],
+                    ));
+          if (body is Column && !scrollHeader) {
             final column = body;
             body = _copyDialogColumn(
               column,
@@ -412,8 +460,6 @@ class RaftDialog extends StatelessWidget {
               ],
             );
           }
-          // CSS `display:flex|grid; gap` between header/body/footer.
-          final gap = s.content.rowGap ?? 0;
           return Center(
             child: Semantics(
               scopesRoute: true,
@@ -617,9 +663,15 @@ class RaftDialogDescription extends StatelessWidget {
 
 /// `DialogBody`: `min-w-0 flex-1 overflow-y-auto` with the recipe padding.
 class RaftDialogBody extends StatelessWidget {
-  const RaftDialogBody({super.key, required this.child, this.verticalPadding});
+  const RaftDialogBody({
+    super.key,
+    required this.child,
+    this.verticalPadding,
+    this.scrollable = true,
+  });
   final Widget child;
   final double? verticalPadding;
+  final bool scrollable;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -638,7 +690,9 @@ class RaftDialogBody extends StatelessWidget {
         : padding.copyWith(top: verticalPadding, bottom: verticalPadding);
     return DefaultTextStyle.merge(
       style: s.text(t.recipeTokens),
-      child: SingleChildScrollView(padding: scrollPadding, child: child),
+      child: scrollable
+          ? SingleChildScrollView(padding: scrollPadding, child: child)
+          : Padding(padding: scrollPadding, child: child),
     );
   }
 }
