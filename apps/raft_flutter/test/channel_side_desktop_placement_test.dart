@@ -28,26 +28,29 @@ void main() {
   final tasks = sideColumn(1, ChannelSideSection.tasks, 360);
   final details = sideColumn(3, ChannelSideSection.details, 400);
 
-  test('columns that fit at their own minimum share the room in proportion', () {
-    // 360 chat + 280 Tasks + 320 Details = 960, inside 1000.
-    final placement = placeChannelSide(
-      [tasks, details],
-      width: 1000,
-      compact: false,
-      layout: RaftLayoutClass.wide,
-    );
-    expect(placement.mode, ChannelSideMode.beside);
-    expect(placement.stackedBelow, 0);
-    expect(placement.columns.map((c) => c.sections), [
-      const [ChannelSideSection.tasks],
-      const [ChannelSideSection.details],
-    ]);
-    expect(placement.columns.map((c) => c.width), [300.0, 340.0]);
-    expect(
-      1000 - placement.columns.fold(0.0, (sum, c) => sum + c.width),
-      channelSideChatMinWidth,
-    );
-  });
+  test(
+    'columns that fit at their own minimum share the room in proportion',
+    () {
+      // 360 chat + 280 Tasks + 320 Details = 960, inside 1000.
+      final placement = placeChannelSide(
+        [tasks, details],
+        width: 1000,
+        compact: false,
+        layout: RaftLayoutClass.wide,
+      );
+      expect(placement.mode, ChannelSideMode.beside);
+      expect(placement.stackedBelow, 0);
+      expect(placement.columns.map((c) => c.sections), [
+        const [ChannelSideSection.tasks],
+        const [ChannelSideSection.details],
+      ]);
+      expect(placement.columns.map((c) => c.width), [300.0, 340.0]);
+      expect(
+        1000 - placement.columns.fold(0.0, (sum, c) => sum + c.width),
+        channelSideChatMinWidth,
+      );
+    },
+  );
 
   test('one column that fits is placed exactly as it was before', () {
     // The chat's saved share is what is left, so nothing is given back.
@@ -72,9 +75,7 @@ void main() {
       layout: RaftLayoutClass.wide,
     );
     expect(placement.mode, ChannelSideMode.overlay);
-    expect(placement.columns.single.sections, const [
-      ChannelSideSection.tasks,
-    ]);
+    expect(placement.columns.single.sections, const [ChannelSideSection.tasks]);
     expect(placement.columns.single.width, 600);
     expect(placement.stackedBelow, 1);
   });
@@ -90,9 +91,10 @@ void main() {
     expect(placement.columns.single.width, 340);
     expect(
       placement.columns.single.width,
-      greaterThanOrEqualTo(channelSideColumnMinWidth(const [
-        ChannelSideSection.details,
-      ]).toDouble()),
+      greaterThanOrEqualTo(
+        channelSideColumnMinWidth(const [ChannelSideSection.details])
+            .toDouble(),
+      ),
     );
     expect(700 - placement.columns.single.width, channelSideChatMinWidth);
   });
@@ -143,9 +145,7 @@ void main() {
       }),
     );
     expect(placement.mode, ChannelSideMode.overlay);
-    expect(placement.columns.single.sections, const [
-      ChannelSideSection.tasks,
-    ]);
+    expect(placement.columns.single.sections, const [ChannelSideSection.tasks]);
     expect(placement.columns.single.width, 640);
     expect(placement.stackedBelow, 1);
   });
@@ -193,97 +193,87 @@ void main() {
     expect(placement.mode, ChannelSideMode.overlay);
   });
 
-  testWidgets(
-    'a desktop row docks Details and Tasks below the workspace bar',
-    (t) async {
-      final (w, api) = await settingsFixture(t);
-      api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};
-      api.routes['GET /channels/c1/announcement'] = (_) => {
-        'announcement': null,
-      };
-      api.routes['GET /announcements/active'] = (_) => {'announcements': []};
-      TaskV2ConversationsFlag.of(w).markEnabled();
-      t.view.devicePixelRatio = 1;
-      t.view.physicalSize = const Size(1440, 800);
-      addTearDown(t.view.reset);
-      try {
-        await t.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(),
-            home: withAppServices(
-              WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(),
-                onAppearance: (_) async {},
-                onLogout: () async {},
-              ),
+  testWidgets('a desktop row docks Details and Tasks below the workspace bar', (
+    t,
+  ) async {
+    final (w, api) = await settingsFixture(t);
+    api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};
+    api.routes['GET /channels/c1/announcement'] = (_) => {'announcement': null};
+    api.routes['GET /announcements/active'] = (_) => {'announcements': []};
+    TaskV2ConversationsFlag.of(w).markEnabled();
+    t.view.devicePixelRatio = 1;
+    t.view.physicalSize = const Size(1440, 800);
+    addTearDown(t.view.reset);
+    try {
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
             ),
           ),
-        );
-        await frames(t, () {});
-        await t.pumpAndSettle();
+        ),
+      );
+      await frames(t, () {});
+      await t.pumpAndSettle();
 
-        final area = find.byType(ChannelSideArea);
-        final room = t.getRect(area);
-        final tasksTrigger = find.byKey(const Key('channel-tasks-toggle'));
-        expect(tasksTrigger.hitTestable(), findsOneWidget);
-        await t.tap(tasksTrigger);
-        await frames(t, () {});
-        await t.pumpAndSettle();
-        final detailsTrigger = find.byKey(
-          const Key('channel-overflow-trigger'),
-        );
-        expect(detailsTrigger.hitTestable(), findsOneWidget);
-        await t.tap(detailsTrigger);
-        await frames(t, () {});
-        await t.pumpAndSettle();
-        expect(find.byKey(const Key('channel-details')), findsOneWidget);
-        expect(find.byKey(const Key('channel-side-float')), findsNothing);
-        expect(find.byKey(const Key('channel-side-overlay')), findsNothing);
+      final area = find.byType(ChannelSideArea);
+      final room = t.getRect(area);
+      final tasksTrigger = find.byKey(const Key('channel-tasks-toggle'));
+      expect(tasksTrigger.hitTestable(), findsOneWidget);
+      await t.tap(tasksTrigger);
+      await frames(t, () {});
+      await t.pumpAndSettle();
+      final detailsTrigger = find.byKey(const Key('channel-overflow-trigger'));
+      expect(detailsTrigger.hitTestable(), findsOneWidget);
+      await t.tap(detailsTrigger);
+      await frames(t, () {});
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('channel-details')), findsOneWidget);
+      expect(find.byKey(const Key('channel-side-float')), findsNothing);
+      expect(find.byKey(const Key('channel-side-overlay')), findsNothing);
 
-        final details = t.getRect(
-          find.byKey(const Key('channel-side-column-3')),
-        );
-        final tasks = t.getRect(find.byKey(const Key('channel-side-column-1')));
-        final topBar = t.getRect(find.byKey(const Key('workspace-top-bar')));
-        expect(tasks.top, topBar.bottom);
-        expect(details.top, topBar.bottom);
-        expect(tasks.right, details.left);
-        expect(details.right, room.right);
-        expect(details.bottom, room.bottom);
-        // Each column at its own minimum or wider, and the chat keeps 360.
-        expect(
-          tasks.width,
-          greaterThanOrEqualTo(
-            channelSideColumnMinWidth(const [
-              ChannelSideSection.tasks,
-            ]).toDouble(),
-          ),
-        );
-        expect(
-          details.width,
-          greaterThanOrEqualTo(
-            channelSideColumnMinWidth(const [
-              ChannelSideSection.details,
-            ]).toDouble(),
-          ),
-        );
-        expect(
-          tasks.left - room.left,
-          greaterThanOrEqualTo(channelSideChatMinWidth),
-        );
-        final close = find.byKey(const Key('channel-details-close'));
-        expect(close.hitTestable(), findsOneWidget);
-        await t.tap(close);
-        await t.pumpAndSettle();
-        expect(find.byKey(const Key('channel-details')), findsNothing);
-        expect(find.byKey(const Key('channel-side-column-1')), findsOneWidget);
-        expect(t.takeException(), isNull);
-      } finally {
-        await t.pumpWidget(const SizedBox.shrink());
-        await t.pumpAndSettle();
-      }
-    },
-    variant: TargetPlatformVariant.only(TargetPlatform.macOS),
-  );
+      final details = t.getRect(find.byKey(const Key('channel-side-column-3')));
+      final tasks = t.getRect(find.byKey(const Key('channel-side-column-1')));
+      final topBar = t.getRect(find.byKey(const Key('workspace-top-bar')));
+      expect(tasks.top, topBar.bottom);
+      expect(details.top, topBar.bottom);
+      expect(tasks.right, details.left);
+      expect(details.right, room.right);
+      expect(details.bottom, room.bottom);
+      // Each column at its own minimum or wider, and the chat keeps 360.
+      expect(
+        tasks.width,
+        greaterThanOrEqualTo(
+          channelSideColumnMinWidth(const [ChannelSideSection.tasks])
+              .toDouble(),
+        ),
+      );
+      expect(
+        details.width,
+        greaterThanOrEqualTo(
+          channelSideColumnMinWidth(const [ChannelSideSection.details])
+              .toDouble(),
+        ),
+      );
+      expect(
+        tasks.left - room.left,
+        greaterThanOrEqualTo(channelSideChatMinWidth),
+      );
+      final close = find.byKey(const Key('channel-details-close'));
+      expect(close.hitTestable(), findsOneWidget);
+      await t.tap(close);
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('channel-details')), findsNothing);
+      expect(find.byKey(const Key('channel-side-column-1')), findsOneWidget);
+      expect(t.takeException(), isNull);
+    } finally {
+      await t.pumpWidget(const SizedBox.shrink());
+      await t.pumpAndSettle();
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 }

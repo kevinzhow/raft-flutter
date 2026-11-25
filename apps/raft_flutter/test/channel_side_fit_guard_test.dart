@@ -74,16 +74,12 @@ class _Opener {
 
 final _openers = <ChannelSideSection, _Opener>{
   ChannelSideSection.tasks: _Opener(
-    (rig, open) => ChannelSideStore.of(rig.w).setCardOpen(
-      ChannelSideCard.tasks,
-      open,
-    ),
+    (rig, open) =>
+        ChannelSideStore.of(rig.w).setCardOpen(ChannelSideCard.tasks, open),
   ),
   ChannelSideSection.files: _Opener(
-    (rig, open) => ChannelSideStore.of(rig.w).setCardOpen(
-      ChannelSideCard.files,
-      open,
-    ),
+    (rig, open) =>
+        ChannelSideStore.of(rig.w).setCardOpen(ChannelSideCard.files, open),
   ),
   ChannelSideSection.details: _Opener((rig, open) {
     final details = ChannelDetailsStore.of(rig.w);
@@ -106,9 +102,7 @@ final _openers = <ChannelSideSection, _Opener>{
       preview.close();
     }
   }),
-  ChannelSideSection.profile: _Opener(
-    (rig, open) => rig.profile.value = open,
-  ),
+  ChannelSideSection.profile: _Opener((rig, open) => rig.profile.value = open),
   ChannelSideSection.thread: const _Opener(
     null,
     why:
@@ -240,10 +234,8 @@ List<(String, Map<ChannelSideSection, int>)> _states(
   for (final one in sections) (one.name, {one: 1}),
   for (final first in sections)
     for (final then in sections)
-      if (first != then) ('${first.name} then ${then.name}', {
-        first: 1,
-        then: 2,
-      }),
+      if (first != then)
+        ('${first.name} then ${then.name}', {first: 1, then: 2}),
 ];
 
 void _checkPlacement(
@@ -283,8 +275,7 @@ void _checkPlacement(
       reason: '$where: ${column.sections} below its own minimum',
     );
   }
-  final chat =
-      width - placement.columns.fold(0.0, (sum, c) => sum + c.width);
+  final chat = width - placement.columns.fold(0.0, (sum, c) => sum + c.width);
   expect(
     chat,
     greaterThanOrEqualTo(channelSideChatMinWidth - .01),
@@ -351,8 +342,7 @@ void main() {
           if (entry.value.toggle != null) entry.key,
       ];
       for (final (name, ticks) in _states(openable)) {
-        final order = ticks.entries.toList()
-          ..sort((a, b) => a.value - b.value);
+        final order = ticks.entries.toList()..sort((a, b) => a.value - b.value);
         for (final entry in order) {
           _openers[entry.key]!.toggle!(rig, true);
           await t.pump();
@@ -414,49 +404,46 @@ void main() {
     });
   }
 
-  testWidgets(
-    'a covering pane pops to the one underneath, then to the chat',
-    (t) async {
-      final (w, api) = await mountWorkspace(
-        t,
-        const Size(884, 1104),
-        platform: TargetPlatform.android,
-      );
-      api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};
-      api.routes['GET /channels/c1/announcement'] = (_) => {
-        'announcement': null,
-      };
-      api.routes['GET /announcements/active'] = (_) => {'announcements': []};
-      api.routes['GET /channels/c1/members'] = (_) => {
-        'humans': [],
-        'agents': [],
-      };
-      TaskV2ConversationsFlag.of(w).markEnabled();
-      ChannelDetailsStore.of(w).open(w.channel!);
-      await frames(t, 12);
-      ChannelSideCards.toggle(w, ChannelSideCard.tasks);
-      await frames(t, 12);
-      // Tasks was opened last, so it covers; Details waits behind it.
-      expect(find.byKey(const Key('channel-side-overlay')), findsOneWidget);
-      expect(find.byKey(const Key('channel-side-card-tasks')), findsOneWidget);
-      expect(find.byKey(const Key('channel-details')), findsNothing);
-      final tasksBack = find.byKey(const Key('channel-side-card-tasks-back'));
-      expect(tasksBack.hitTestable(), findsOneWidget);
-      await t.tap(tasksBack);
-      await frames(t, 12);
-      // Back popped Tasks only: Details, open all along, shows.
-      expect(find.byKey(const Key('channel-details')), findsOneWidget);
-      expect(find.byKey(const Key('channel-side-card-tasks')), findsNothing);
-      final detailsBack = find.byKey(const Key('channel-overflow-back'));
-      expect(detailsBack.hitTestable(), findsOneWidget);
-      expect(find.byKey(const Key('channel-details-close')), findsNothing);
-      await t.tap(detailsBack);
-      await frames(t, 12);
-      expect(find.byKey(const Key('channel-side-overlay')), findsNothing);
-      expect(find.byKey(const Key('channel-details')), findsNothing);
-      expect(t.takeException(), isNull);
-    },
-  );
+  testWidgets('a covering pane pops to the one underneath, then to the chat', (
+    t,
+  ) async {
+    final (w, api) = await mountWorkspace(
+      t,
+      const Size(884, 1104),
+      platform: TargetPlatform.android,
+    );
+    api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};
+    api.routes['GET /channels/c1/announcement'] = (_) => {'announcement': null};
+    api.routes['GET /announcements/active'] = (_) => {'announcements': []};
+    api.routes['GET /channels/c1/members'] = (_) => {
+      'humans': [],
+      'agents': [],
+    };
+    TaskV2ConversationsFlag.of(w).markEnabled();
+    ChannelDetailsStore.of(w).open(w.channel!);
+    await frames(t, 12);
+    ChannelSideCards.toggle(w, ChannelSideCard.tasks);
+    await frames(t, 12);
+    // Tasks was opened last, so it covers; Details waits behind it.
+    expect(find.byKey(const Key('channel-side-overlay')), findsOneWidget);
+    expect(find.byKey(const Key('channel-side-card-tasks')), findsOneWidget);
+    expect(find.byKey(const Key('channel-details')), findsNothing);
+    final tasksBack = find.byKey(const Key('channel-side-card-tasks-back'));
+    expect(tasksBack.hitTestable(), findsOneWidget);
+    await t.tap(tasksBack);
+    await frames(t, 12);
+    // Back popped Tasks only: Details, open all along, shows.
+    expect(find.byKey(const Key('channel-details')), findsOneWidget);
+    expect(find.byKey(const Key('channel-side-card-tasks')), findsNothing);
+    final detailsBack = find.byKey(const Key('channel-overflow-back'));
+    expect(detailsBack.hitTestable(), findsOneWidget);
+    expect(find.byKey(const Key('channel-details-close')), findsNothing);
+    await t.tap(detailsBack);
+    await frames(t, 12);
+    expect(find.byKey(const Key('channel-side-overlay')), findsNothing);
+    expect(find.byKey(const Key('channel-details')), findsNothing);
+    expect(t.takeException(), isNull);
+  });
 
   testWidgets('a covering profile draws a back arrow, not a close', (t) async {
     final (w, api) = await mountWorkspace(
@@ -465,9 +452,7 @@ void main() {
       platform: TargetPlatform.android,
     );
     api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};
-    api.routes['GET /channels/c1/announcement'] = (_) => {
-      'announcement': null,
-    };
+    api.routes['GET /channels/c1/announcement'] = (_) => {'announcement': null};
     api.routes['GET /announcements/active'] = (_) => {'announcements': []};
     api.routes['GET /servers/s1/members/bob/profile'] = (_) => {
       'userId': 'bob',
@@ -509,9 +494,7 @@ void main() {
       const Size(1104, 884),
       platform: TargetPlatform.android,
     );
-    api.routes['GET /channels/c1/announcement'] = (_) => {
-      'announcement': null,
-    };
+    api.routes['GET /channels/c1/announcement'] = (_) => {'announcement': null};
     api.routes['GET /announcements/active'] = (_) => {'announcements': []};
     api.routes['GET /channels/c1/members'] = (_) => {
       'humans': [],
@@ -535,9 +518,7 @@ void main() {
     final thread = t.getRect(find.byType(RaftThreadPlacement));
     expect(slot.width, greaterThanOrEqualTo(channelSideChatMinWidth));
     expect(thread.width, closeTo(slot.width, .01));
-    final details = t.getSize(
-      find.byKey(const Key('channel-side-column-3')),
-    );
+    final details = t.getSize(find.byKey(const Key('channel-side-column-3')));
     // Details keeps its own saved width instead of giving way to room the
     // folded thread never used (320 before, its bare minimum).
     expect(details.width, 400);

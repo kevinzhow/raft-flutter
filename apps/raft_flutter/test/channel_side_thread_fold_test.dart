@@ -127,8 +127,7 @@ void main() {
           expect(t.state(threadChat), same(threadState));
           expect(w.location, location);
           expect(t.takeException(), isNull);
-          final covers =
-              width < RaftLayoutMetrics.threadOverlayBreakpoint;
+          final covers = width < RaftLayoutMetrics.threadOverlayBreakpoint;
           final overlay = find.byKey(const Key('channel-side-overlay'));
           final detailsBack = find.byKey(const Key('channel-overflow-back'));
           if (covers) {

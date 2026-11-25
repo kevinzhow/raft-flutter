@@ -112,18 +112,14 @@ ChannelSidePlacement placeChannelSide(
       math.min(saved[i + 1], shown[i].minWidth.toDouble()),
   ];
   final widths = _solveChannelSideWidths(saved, floors, width);
-  return ChannelSidePlacement(
-    ChannelSideMode.beside,
-    [
-      for (var i = 0; i < shown.length; i++)
-        (
-          column: shown[i].column,
-          sections: shown[i].sections,
-          width: widths[i + 1],
-        ),
-    ],
-    stackedBelow: visible.length - shown.length,
-  );
+  return ChannelSidePlacement(ChannelSideMode.beside, [
+    for (var i = 0; i < shown.length; i++)
+      (
+        column: shown[i].column,
+        sections: shown[i].sections,
+        width: widths[i + 1],
+      ),
+  ], stackedBelow: visible.length - shown.length);
 }
 
 /// The top pane over the whole conversation area, the rest waiting behind it.
@@ -133,11 +129,9 @@ ChannelSidePlacement _coverChannelSide(
   double width,
 ) {
   final top = visible[stack.topOf(visible)];
-  return ChannelSidePlacement(
-    ChannelSideMode.overlay,
-    [(column: top.column, sections: top.sections, width: width)],
-    stackedBelow: visible.length - 1,
-  );
+  return ChannelSidePlacement(ChannelSideMode.overlay, [
+    (column: top.column, sections: top.sections, width: width),
+  ], stackedBelow: visible.length - 1);
 }
 
 double _contentFloor(VisibleChannelSideColumn column) =>
@@ -647,7 +641,8 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     // conversation, whichever pane shows draws it (a phone keeps the channel
     // header's Back instead, see ChannelSideCardView.phone).
     final topColumn = visible.isEmpty ? null : visible[stack.topOf(visible)];
-    final backSection = placement.stackedBelow > 0 && beside && topColumn != null
+    final backSection =
+        placement.stackedBelow > 0 && beside && topColumn != null
         ? stack.topSectionOf(topColumn)
         : null;
     VoidCallback? backOf(ChannelSideSection section) =>

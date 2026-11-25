@@ -294,9 +294,7 @@ void main() {
   // finger lives (the cover at the foldable sizes is in
   // channel_side_fit_guard_test and channel_side_area_test).
   for (final size in [const Size(1104, 884), const Size(1180, 820)]) {
-    testWidgets('touch $size expands by touch without a drag grip', (
-      t,
-    ) async {
+    testWidgets('touch $size expands by touch without a drag grip', (t) async {
       final rig = await pump(t, size: size, platform: TargetPlatform.android);
       final expand = find.byKey(const Key('channel-side-card-tasks-expand'));
       final original = rect(t, 'channel-side-card-tasks-header');
