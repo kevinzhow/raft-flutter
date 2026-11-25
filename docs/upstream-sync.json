@@ -1,15 +1,8 @@
 {
   "schema": 1,
   "repository": "https://github.com/botiverse/raft-source",
-  "pinned": "v1.21.23-source.1",
-  "commit": "db5e399f017d584e49597e3a28757645d6807893",
-  "pending": {
-    "tag": "v1.24.0-source.1",
-    "commit": "1d689caf34442247cab70580d7feac1b8c302d60",
-    "from": "v1.21.23-source.1",
-    "since": "2026-11-13",
-    "note": "Kevin: full alignment with Web v1.24.0. The w24 work packages are in progress on cindy/integration; the pin moves with record-decision after they land."
-  },
+  "pinned": "v1.24.0-source.1",
+  "commit": "1d689caf34442247cab70580d7feac1b8c302d60",
   "history": [
     {
       "tag": "v1.21.2-source.1",
@@ -43,6 +36,31 @@
       "note": "Kevin (Raft #raft-flutter:4c35558a): full alignment with Web v1.21.23, except the intentional differences recorded in docs/parity.md and docs/capability-parity.json. Follow work is split into the w23 work packages on cindy/integration.",
       "report": "docs/upstream-reports/v1.21.12-to-v1.21.23.md",
       "deferred": []
+    },
+    {
+      "tag": "v1.24.0-source.1",
+      "commit": "1d689caf34442247cab70580d7feac1b8c302d60",
+      "from": "v1.21.23-source.1",
+      "decision": "follow",
+      "decidedBy": "kevinzhow",
+      "date": "2026-11-25",
+      "note": "Kevin (dm:@kevinzhow 5af842e0): advance pin to v1.24.0-source.1 and ship initial v1.24.0+1 release after Waves 0-5 + Wave 6 shell/search/apps/sidebar + desktop browser + legacy UI Wave 1 landed on cindy/integration. Remaining tail packages continue on cindy/integration.",
+      "report": "",
+      "deferred": [
+        "WP-MCP",
+        "WP-THEME",
+        "WP-MEMBERS",
+        "WP-ONB",
+        "WP-CTX",
+        "WP-MIGR",
+        "WP-KEYS",
+        "WP-ASSIST",
+        "WP-PASSKEY",
+        "WP-L10N",
+        "WP-GAPS",
+        "WP-DOCS",
+        "WP-CTRL"
+      ]
     }
   ]
 }

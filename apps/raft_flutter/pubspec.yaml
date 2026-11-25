@@ -1,7 +1,7 @@
 name: raft_flutter
 publish_to: none
 description: Raft collaboration client for Linux, Android, macOS and Windows.
-version: 1.21.23+1
+version: 1.24.0+1
 environment:
   sdk: ^3.13.5
 resolution: workspace

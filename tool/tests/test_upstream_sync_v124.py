@@ -151,10 +151,10 @@ class PendingTests(unittest.TestCase):
         self.assertEqual(after['pinned'], 'v1.1.0-source.1')
         self.assertNotIn('pending', after)
 
-    def test_the_repository_state_is_pending_v124_and_still_pinned_to_v12123(self):
+    def test_the_repository_state_is_pinned_to_v124(self):
         state = us.load_state(us.ROOT)
-        self.assertEqual(state['pinned'], 'v1.21.23-source.1')
-        self.assertEqual(state['pending']['tag'], 'v1.24.0-source.1')
+        self.assertEqual(state['pinned'], 'v1.24.0-source.1')
+        self.assertNotIn('pending', state)
 
 
 if __name__ == '__main__':
