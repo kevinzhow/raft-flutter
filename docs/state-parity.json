@@ -22244,6 +22244,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/agent_profile.dart#method:RaftWorkspaceTreeView._pane": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-FOLD",
+        "reason": "The view body moved out of build() so the md: split is measured on this view's own box instead of the window. Resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "packages/raft_ui/lib/src/agent_profile.dart#method:_ProfileAvatarAction.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -61369,6 +61375,12 @@
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78507/METHOD:_pane@80561/FUNCTION:message@84099": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-FOLD",
+        "reason": "The existing builder has a new lexical identity after the workspace tree's md: split moved into a LayoutBuilder. Its separate family and state mapping remain unreviewed."
       },
       "packages/raft_ui/lib/src/root_error_fallback.dart#local-function:EXTENSION:<anonymous>@8014/METHOD:_web@8060/FUNCTION:code@8215": {
         "role": "unresolved",
