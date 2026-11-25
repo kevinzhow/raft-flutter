@@ -47,10 +47,14 @@ const panelSurfaces = <CloseSurface>[
     kind: SurfaceKind.panel,
     web: 'ExternalIdentityDetailPanel.tsx: Back md:hidden, X hidden md:flex',
     phone: {_back, _sys},
-    fold: {_x, _esc, _sys, _scrim},
+    fold: {_back, _esc, _sys, _scrim},
     desktop: {_x, _esc, _sys, _scrim},
     files: ['lib/features/external_identity.dart'],
     status: 'approved',
+    fix:
+        'fold: the pane covers and draws Back, as profile-human and '
+        'profile-agent do (it ignored RaftPanelHeaderChrome.onBack and kept '
+        'drawing the desktop X)',
   ),
   CloseSurface(
     'computers-rack-side-panel',
