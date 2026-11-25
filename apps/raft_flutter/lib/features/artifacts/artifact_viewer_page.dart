@@ -1544,6 +1544,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           : _collectionMeta(context, card, data);
       final close = panel == _Panel.comments ? _closeComments : widget.onClose;
       const closeKey = ValueKey('artifact-viewer-close');
+      // Stacked over another pane by its host (the channel side area): Back
+      // replaces the close X and reveals the pane underneath. The comments
+      // panel keeps its own Back, which closes the comments.
+      final back = panel == _Panel.comments
+          ? (widget.page ? close : null)
+          : RaftPanelHeaderChrome.maybeOf(context)?.onBack ??
+                (widget.page ? close : null);
       return RaftPanelHeaderBar(
         title: title,
         titleSuffix: version,
@@ -1566,7 +1573,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         itemGap: widget.headerLeading == null ? null : RaftSpace.x2,
         bottomRule: widget.inline,
         bottomBorder: widget.inline ? RaftSidePanelFrame.headerRule(t) : null,
-        onBack: widget.page ? close : null,
+        onBack: back,
         backKey: closeKey,
         titleSlot: widget.page
             ? null
@@ -1595,7 +1602,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         actions: [
           ...actions,
           ...widget.headerActions,
-          if (!widget.page)
+          if (back == null)
             RaftPanelAction(
               key: closeKey,
               responsiveRecipe: true,

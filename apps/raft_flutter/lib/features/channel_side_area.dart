@@ -1028,30 +1028,37 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
           ),
         );
       case ChannelSideSection.artifact:
-        if (body == null &&
-            !MobileRouteGate.coveredReader(context)() &&
-            ChannelSideCards.hasDesktopPlace(w)) {
-          return ChannelBrowserPlace(
-            key: ValueKey('channel-browser-place-$channelId'),
-            workspace: w,
-            conversation: channelId,
-            browserKey: _browserPanes.keyFor(channelId),
-            showing: fold.showing,
-            covering: mode == ChannelSideMode.overlay,
-            collapsed: fold.collapsed,
-            expanded: _expanded == section,
-            onExpand: _expandAction(mode, section),
-            headWrapper: widget.headWrapper ?? _wrapHead,
-          );
-        }
-        // The page's panel has the head every card has of its own.
-        return body ??
-            WebPreviewPanel(
-              store: preview,
-              page: page!,
-              covering: mode == ChannelSideMode.overlay,
-              headWrapper: widget.headWrapper ?? _wrapHead,
-            );
+        // Three heads can stand in this column (the Artifact, the desktop
+        // browser, a web page's panel) and each builds its own; the chrome is
+        // how this area hands whichever shows a Back, as it does for Details.
+        return RaftPanelHeaderChrome(
+          actions: const [],
+          onBack: back,
+          child:
+              body == null &&
+                  !MobileRouteGate.coveredReader(context)() &&
+                  ChannelSideCards.hasDesktopPlace(w)
+              ? ChannelBrowserPlace(
+                  key: ValueKey('channel-browser-place-$channelId'),
+                  workspace: w,
+                  conversation: channelId,
+                  browserKey: _browserPanes.keyFor(channelId),
+                  showing: fold.showing,
+                  covering: mode == ChannelSideMode.overlay,
+                  collapsed: fold.collapsed,
+                  expanded: _expanded == section,
+                  onExpand: _expandAction(mode, section),
+                  headWrapper: widget.headWrapper ?? _wrapHead,
+                )
+              // The page's panel has the head every card has of its own.
+              : body ??
+                    WebPreviewPanel(
+                      store: preview,
+                      page: page!,
+                      covering: mode == ChannelSideMode.overlay,
+                      headWrapper: widget.headWrapper ?? _wrapHead,
+                    ),
+        );
       default:
         return const SizedBox.shrink();
     }

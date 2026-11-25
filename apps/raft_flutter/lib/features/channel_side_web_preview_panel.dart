@@ -100,6 +100,11 @@ class WebPreviewPanel extends StatelessWidget {
       final openLabel = raftText(context, 'Open in browser');
       final refreshLabel = raftText(context, 'Refresh');
       final closeLabel = raftText(context, 'Close');
+      // Stacked over another pane by its host (the channel side area): Back
+      // replaces the close X and reveals the pane underneath.
+      final back =
+          RaftPanelHeaderChrome.maybeOf(context)?.onBack ??
+          (covering ? store.close : null);
       Widget panel = Semantics(
         container: true,
         // Web `aria-label` of the panel: its head and page stay their own
@@ -118,7 +123,7 @@ class WebPreviewPanel extends StatelessWidget {
                   key: const ValueKey('web-preview-header'),
                   title: parts.host,
                   subtitle: parts.rest.isEmpty ? null : parts.rest,
-                  onBack: covering ? store.close : null,
+                  onBack: back,
                   backKey: const ValueKey('web-preview-back'),
                   backTooltip: closeLabel,
                   actions: [
@@ -147,7 +152,7 @@ class WebPreviewPanel extends StatelessWidget {
                         onPressed: store.reload,
                         minHitExtent: RaftMetrics.touchTarget,
                       ),
-                    if (!covering)
+                    if (back == null)
                       RaftPanelAction(
                         key: const ValueKey('web-preview-close'),
                         glyph: RaftGlyph.x,
