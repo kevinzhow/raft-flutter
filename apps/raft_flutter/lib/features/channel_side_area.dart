@@ -1089,17 +1089,24 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
 
 /// The chat under a cover can't be reached: no focus, no pointer, nothing read
 /// out (Web `inert`). The widgets stay in the tree (the chat is not rebuilt).
+///
+/// Its rows' hover toolbars float in the route's overlay, above the covering
+/// pane, so they are told to put themselves away ([RaftCoveredPane]) as they
+/// are under the folded profile and the folded thread.
 class _Inert extends StatelessWidget {
   const _Inert({super.key, required this.inert, required this.child});
   final bool inert;
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => ExcludeFocus(
-    excluding: inert,
-    child: ExcludeSemantics(
+  Widget build(BuildContext context) => RaftCoveredPane(
+    covered: inert || RaftCoveredPane.of(context),
+    child: ExcludeFocus(
       excluding: inert,
-      child: IgnorePointer(ignoring: inert, child: child),
+      child: ExcludeSemantics(
+        excluding: inert,
+        child: IgnorePointer(ignoring: inert, child: child),
+      ),
     ),
   );
 }
