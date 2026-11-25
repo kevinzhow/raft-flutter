@@ -154,7 +154,7 @@ void main() {
     c.stream.add(const RaftEvent('machine:created', {'machineId': 'actual'}));
     await t.pump(const Duration(milliseconds: 200));
     await _settle(t);
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await t.tap(find.widgetWithText(RaftButton, 'Done'));
     await _settle(t);
     expect(opened, ['actual']);
   });

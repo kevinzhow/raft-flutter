@@ -691,7 +691,8 @@ void registerCloseDialogTests(TestPart part) {
         isOpen: probe.isOpen,
         x: probe.x,
         scrim: _corner,
-        dragHandle: _handle,
+        // The narrow Web-style form header is the sheet's drag target.
+        dragHandle: find.byKey(const ValueKey('raft-form-sheet-head')),
       );
     },
     'avatar-discard-confirm': (t, size) async {

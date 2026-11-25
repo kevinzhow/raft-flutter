@@ -259,12 +259,14 @@ void main() {
               // Current Raft header: a 44px ghost action. Web pl-4
               // minus its 13px leading overhang places the target at x=3.
               expect(find.byType(RaftMobilePageHeader), findsNothing);
-              expect(t.getSize(find.byType(RaftPanelHeaderBar)).height, 56);
-              expect(
-                t.getSize(find.byType(RaftPanelAction)),
-                const Size(44, 44),
+              final headerBar = find.byType(RaftPanelHeaderBar);
+              final headerAction = find.descendant(
+                of: headerBar,
+                matching: find.byType(RaftPanelAction),
               );
-              expect(t.getTopLeft(find.byType(RaftPanelAction)).dx, 3);
+              expect(t.getSize(headerBar).height, 56);
+              expect(t.getSize(headerAction), const Size(44, 44));
+              expect(t.getTopLeft(headerAction).dx, 3);
             } else {
               expect(routes.latest, isA<DialogRoute<void>>());
               expect(find.byType(RaftMobilePageHeader), findsNothing);
