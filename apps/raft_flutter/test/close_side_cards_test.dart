@@ -88,7 +88,11 @@ void main() {
             .evaluate()
             .isNotEmpty,
         x: find.byKey(const Key('channel-side-card-tasks-close')),
-        back: find.byKey(const Key('side-back')),
+        // On a phone the channel header's Back closes the covering card; off
+        // it, the card draws its own.
+        back: find.byKey(
+          Key(phone ? 'side-back' : 'channel-side-card-tasks-back'),
+        ),
       );
     },
     'channel-profile-column-move': (t, size) async {

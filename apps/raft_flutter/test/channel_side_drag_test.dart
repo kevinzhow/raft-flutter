@@ -72,6 +72,10 @@ Future<Rig> pump(
   bool files = true,
   bool dark = false,
   bool bodies = true,
+  // Room the rail and the channel sidebar take out of the window before the
+  // area sees it, as the full workspace does: the layout class comes from the
+  // window, the fit from what is left.
+  double chrome = 0,
   Map<String, Object> savedPreferences = const {},
 }) async {
   t.view.physicalSize = size;
@@ -118,15 +122,22 @@ Future<Rig> pump(
     MaterialApp(
       theme: raftTheme(dark: dark).copyWith(platform: platform),
       home: Scaffold(
-        body: ChannelSideArea(
-          controller: w,
-          headerExtent: 56,
-          bodyOf: bodies ? (context, section) => _Body(section) : null,
-          child: const ColoredBox(
-            key: Key('chat'),
-            color: Color(0xFFFFFFFF),
-            child: SizedBox.expand(),
-          ),
+        body: Row(
+          children: [
+            if (chrome > 0) SizedBox(width: chrome),
+            Expanded(
+              child: ChannelSideArea(
+                controller: w,
+                headerExtent: 56,
+                bodyOf: bodies ? (context, section) => _Body(section) : null,
+                child: const ColoredBox(
+                  key: Key('chat'),
+                  color: Color(0xFFFFFFFF),
+                  child: SizedBox.expand(),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     ),
@@ -135,6 +146,29 @@ Future<Rig> pump(
   if (files) store.setCardOpen(ChannelSideCard.files, true);
   await t.pump();
   return Rig(w, transport, store, announced);
+}
+
+/// A window wide enough for the dock (a desktop class) whose area, once the
+/// rail and the sidebar have taken theirs, has no room for a third column:
+/// 360 for the chat and three columns at the 160 floor need 840 of 780. The
+/// Artifact is opened first, so Tasks and Files keep their place beside the
+/// chat and it is the pane waiting behind them.
+Future<Rig> _tooNarrowForAnotherColumn(WidgetTester t) async {
+  final rig = await pump(
+    t,
+    size: const Size(1100, 800),
+    chrome: 320,
+    tasks: false,
+    files: false,
+  );
+  WebPreviewStore.of(rig.w).open(
+    const WebPreviewPage(url: 'https://example.com/a', conversationId: 'c1'),
+  );
+  await t.pump();
+  rig.store.setCardOpen(ChannelSideCard.tasks, true);
+  rig.store.setCardOpen(ChannelSideCard.files, true);
+  await t.pump();
+  return rig;
 }
 
 Future<void> settle(WidgetTester t) async {
@@ -255,8 +289,12 @@ void main() {
     await t.pumpWidget(const SizedBox.shrink());
   });
 
-  for (final size in [const Size(856, 944), const Size(944, 856)]) {
-    testWidgets('foldable $size expands by touch without a drag grip', (
+  // A medium window (a foldable inner screen) covers the conversation, so
+  // there is no dock to expand there; a touched tablet is where Expand by
+  // finger lives (the cover at the foldable sizes is in
+  // channel_side_fit_guard_test and channel_side_area_test).
+  for (final size in [const Size(1104, 884), const Size(1180, 820)]) {
+    testWidgets('touch $size expands by touch without a drag grip', (
       t,
     ) async {
       final rig = await pump(t, size: size, platform: TargetPlatform.android);
@@ -416,7 +454,7 @@ void main() {
   testWidgets('expanded resize fits a changing viewport with Files beside it', (
     t,
   ) async {
-    final rig = await pump(t, size: const Size(990, 800));
+    final rig = await pump(t, size: const Size(1190, 800));
     await t.tap(
       find.byKey(const Key('channel-side-card-files-overflow')).hitTestable(),
     );
@@ -434,7 +472,7 @@ void main() {
       taskDock().width,
       rect(t, 'channel-side-column-2').width,
     );
-    expect(widths(), (160, 670, 160));
+    expect(widths(), (160, 870, 160));
     expect(
       rect(t, 'channel-side-card-files-header').left,
       taskDock().right + 1,
@@ -446,7 +484,7 @@ void main() {
     await gesture.moveBy(const Offset(80, 0));
     await t.pump();
     final held = widths();
-    t.view.physicalSize = const Size(870, 800);
+    t.view.physicalSize = const Size(1070, 800);
     await t.pump();
     final shrunk = widths();
     await gesture.moveBy(const Offset(20, 0));
@@ -456,13 +494,13 @@ void main() {
     await gesture.up();
     await settle(t);
     final released = widths();
-    t.view.physicalSize = const Size(990, 800);
+    t.view.physicalSize = const Size(1190, 800);
     await t.pump();
-    expect(held, (240, 590, 160));
-    expect(shrunk, (240, 470, 160));
-    expect(continued, (260, 450, 160));
+    expect(held, (240, 790, 160));
+    expect(shrunk, (240, 670, 160));
+    expect(continued, (260, 650, 160));
     expect(released, continued);
-    expect(widths(), (260, 570, 160));
+    expect(widths(), (260, 770, 160));
     expect(
       rect(t, 'channel-side-card-files-header').left,
       taskDock().right + 1,
@@ -472,7 +510,7 @@ void main() {
     await t.pump();
     await t.tap(expand.hitTestable());
     await t.pump();
-    expect(widths(), (260, 570, 160));
+    expect(widths(), (260, 770, 160));
     await t.pumpWidget(const SizedBox.shrink());
   });
 
@@ -662,14 +700,7 @@ void main() {
     testWidgets('a new column that does not fit is refused, with the reason', (
       t,
     ) async {
-      final rig = await pump(t, size: const Size(800, 800));
-      WebPreviewStore.of(rig.w).open(
-        const WebPreviewPage(
-          url: 'https://example.com/a',
-          conversationId: 'c1',
-        ),
-      );
-      await t.pump();
+      final rig = await _tooNarrowForAnotherColumn(t);
       final column = rect(t, 'channel-side-column-1');
       final expand = find.byKey(const Key('channel-side-card-tasks-expand'));
       final overflow = find.byKey(
@@ -786,14 +817,7 @@ void main() {
     testWidgets('a place with no room is not offered, and said once', (
       t,
     ) async {
-      final rig = await pump(t, size: const Size(800, 800));
-      WebPreviewStore.of(rig.w).open(
-        const WebPreviewPage(
-          url: 'https://example.com/a',
-          conversationId: 'c1',
-        ),
-      );
-      await t.pump();
+      final rig = await _tooNarrowForAnotherColumn(t);
       focusGrip(t, files);
       await t.pump();
       await key(t, LogicalKeyboardKey.space);

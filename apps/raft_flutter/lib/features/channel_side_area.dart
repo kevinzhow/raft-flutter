@@ -1126,7 +1126,18 @@ class _CoverFocusState extends State<_CoverFocus> {
 
     opener = FocusManager.instance.primaryFocus;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) scope.requestFocus();
+      if (!mounted) return;
+      // The cover takes focus from the conversation it covers (the same focus
+      // scope it lives in), never from a window above it: a cover can appear
+      // because the window reached a width where the pane covers, and an open
+      // editor in a dialog keeps what it had.
+      final focused = FocusManager.instance.primaryFocus;
+      if (focused != null &&
+          focused.enclosingScope != scope.enclosingScope &&
+          !scope.hasFocus) {
+        return;
+      }
+      scope.requestFocus();
     });
   }
 
