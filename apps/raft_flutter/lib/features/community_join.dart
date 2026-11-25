@@ -87,9 +87,13 @@ Future<bool> showCommunityAgreementDialog(
   required CommunityAgreementRequired agreement,
   required Future<void> Function(String agreementId) onAgree,
 }) async {
-  final joined = await showRaftDialog<bool>(
-    context: context,
-    barrierDismissible: false,
+  final joined = await showRaftForm<bool>(
+    context,
+    dismissible: false,
+    dragDismissible: false,
+    guardUnsaved: false,
+    dialogMaxWidth: 512,
+    label: agreement.title,
     routeSettings: const RouteSettings(name: PrivateRouteGuard.rootOwnedRoute),
     builder: (dialogContext) => RaftCommunityAgreementDialog(
       title: agreement.title,

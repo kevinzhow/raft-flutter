@@ -128,7 +128,7 @@ void main() {
         write: (png) async => copied = Uint8List.fromList(png),
       ),
     );
-    expect(find.text('Copy image'), findsOneWidget);
+    expect(find.text('Copy this page'), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('image-review-copy')));
     await t.pump();
     await t.pump();
@@ -154,7 +154,7 @@ void main() {
         find.text("Couldn't copy the image. Use Download instead."),
         findsOneWidget,
       );
-      expect(find.text('Copy image'), findsOneWidget);
+      expect(find.text('Copy this page'), findsOneWidget);
       await t.pumpWidget(const SizedBox());
       await t.pump(const Duration(seconds: 1));
 
@@ -176,8 +176,8 @@ void main() {
         findsNothing,
       );
       // Save and Copy stay.
-      expect(find.text('Save image'), findsOneWidget);
-      expect(find.text('Copy image'), findsOneWidget);
+      expect(find.text('Download all'), findsOneWidget);
+      expect(find.text('Copy this page'), findsOneWidget);
       await t.pumpAndSettle();
       expect(
         box.calls.where((c) => c.path.startsWith('/share-artifacts')),
@@ -192,7 +192,7 @@ void main() {
       clipboard: const ImageClipboard(supportedOverride: true),
       locale: const Locale('zh', 'CN'),
     );
-    expect(find.text('复制图片'), findsOneWidget);
+    expect(find.text('复制此页'), findsOneWidget);
     expect(find.text('分享到 X'), findsNothing);
   });
 }

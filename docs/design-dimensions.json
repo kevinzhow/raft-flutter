@@ -1293,12 +1293,11 @@
         "safeInsets": "source safe-top/left/right; remain caller-owned"
       },
       "native": {
-        "path": "packages/raft_ui/lib/src/design_primitives.dart",
-        "anchor": "class RaftLightboxRecipe",
+        "path": "packages/raft_ui/lib/src/attachment_lightbox.dart",
+        "anchor": "class RaftAttachmentLightbox",
         "lines": [
-          1573
-        ],
-        "fileSha256": "55a7781b50b3a8385c615a136bc189e4b716f2a5c0f2479d7142fbdce65cdf29"
+          350
+        ]
       },
       "status": "partial",
       "condition": "all themes unless specified",
@@ -1982,15 +1981,6 @@
       "nativePath": "packages/raft_ui/lib/src/design_primitives.dart",
       "line": 1376,
       "contractIds": [],
-      "status": "inventoried; geometry acceptance pending"
-    },
-    {
-      "name": "RaftLightboxRecipe",
-      "nativePath": "packages/raft_ui/lib/src/design_primitives.dart",
-      "line": 1573,
-      "contractIds": [
-        "image-lightbox-shell"
-      ],
       "status": "inventoried; geometry acceptance pending"
     },
     {

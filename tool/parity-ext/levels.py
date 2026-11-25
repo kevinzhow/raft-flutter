@@ -95,6 +95,7 @@ EXT_AREA_LEVEL = {
     'conversation': COMPONENT, 'thread-ext': COMPONENT, 'composer-states': COMPONENT, 'errors': COMPONENT,
     'search-overlay': COMPONENT, 'composerattachments': COMPONENT,
     'action-card-v124': COMPONENT, 'app-links': COMPONENT,
+    'legacy-wave2': COMPONENT,
     # the coverage families added by this audit name their level in the id: components.<area>.<level>.<...>
     'frame': FRAME, 'framework': FRAME, 'pages': PAGE, 'states': FRAME,
 }

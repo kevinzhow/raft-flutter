@@ -1,7 +1,7 @@
 import 'overlays/dialog.dart' show RaftDialog;
 // Presentation of the Web AddMembersDialog
 // (packages/web/src/components/channel/AddMembersDialog.tsx), opened from a
-// `channel:add_member` action card: DialogCard with the target-channel strip,
+// `channel:add_member` action card: DialogCard with the target-channel row,
 // the agent's quoted reason, a warning banner, the framed ChannelMemberList
 // (Agents / Humans sections with one row per candidate and a remove-from-list
 // button) and Cancel / "Add N members". The adapter owns candidates, selection
@@ -13,11 +13,16 @@ import 'package:flutter/material.dart';
 
 import 'design_primitives.dart' show RaftDensity, RaftDensityScope;
 import 'dialog_card.dart';
+import 'error_presentation.dart' show RaftErrorBanner;
+import 'form_presentation.dart' show RaftFormFrame;
 import 'icons.dart';
 import 'localization.dart';
-import 'recipes/button_variants.g.dart';
-import 'error_presentation.dart' show RaftErrorBanner;
+import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
+import 'raft/icon_tile.dart' show RaftIconTile, RaftIconTileSize;
+import 'raft/ui_tokens.dart';
+import 'stacked_actions.dart' show RaftActionRow;
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 /// One candidate row: [avatar] (adapter-built, `members-row`), [name],
 /// optional [secondary] line and the remove button's [removeLabel].
@@ -72,79 +77,82 @@ class RaftAddMembersDialogView extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final canSubmit = !submitting && !nothingToAdd && selectedCount > 0;
+    final inSheet = RaftFormFrame.sheetOf(context);
+    final submitButton = RaftButton(
+      key: const ValueKey('add-members-submit'),
+      label: submitting
+          ? 'Adding…'
+          : selectedCount == 1
+          ? 'Add 1 member'
+          : raftFormat(context, 'Add {count} members', {
+              'count': selectedCount,
+            }),
+      uiVariant: RaftButtonVariant.primary,
+      uiSize: inSheet ? RaftButtonSize.md : RaftButtonSize.lg,
+      disabled: !canSubmit,
+      onPressed: canSubmit ? onSubmit : null,
+    );
     return RaftModalBackdrop(
       child: RaftDialog.card(
-        title: 'Add Members',
+        key: const ValueKey('add-members-dialog'),
+        title: 'Add members',
         onClose: onClose,
+        footerGap: 0,
+        sheetCommit: submitButton,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // `mb-3 flex items-center gap-2 border bg-layer-inset p-2 text-sm`.
-            Container(
+            // `mb-3 flex min-w-0 items-center gap-2 text-callout text-foreground`.
+            Padding(
               key: const ValueKey('add-members-target'),
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: EdgeInsets.all(8.0 + (1)),
-              decoration: BoxDecoration(
-                color: t.colors['layer-inset'],
-                border: Border.all(
-                  color: t.colors['line-muted']!,
-                  width: t.border,
-                ),
-              ),
+              padding: const EdgeInsets.only(bottom: 12),
               child: Row(
-                spacing: 8,
                 children: [
-                  RaftIcon(
-                    privateChannel ? RaftGlyph.lock : RaftGlyph.hash,
-                    size: 14,
-                    color: t.strong,
+                  RaftIconTile(
+                    size: RaftIconTileSize.sm,
+                    glyph: privateChannel ? RaftGlyph.lock : RaftGlyph.hash,
                   ),
+                  const SizedBox(width: 8),
                   Flexible(
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text:
-                                channelName ??
-                                raftText(context, '(unknown channel)'),
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          TextSpan(
-                            text: ' ${raftText(context, '— target channel')}',
-                            style: TextStyle(
-                              color: t.colors['foreground-muted'],
-                            ),
-                          ),
-                        ],
+                    child: Text(
+                      channelName ?? raftText(context, '(unknown channel)'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: t.scale(
+                        RaftTypeScale.callout,
+                        weight: FontWeight.w700,
+                        color: t.ui.foreground,
                       ),
-                      style: raftCssTextStyle(
-                        family: t.headingFont,
-                        step: RaftTextSteps.sm,
-                        color: t.strong,
-                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    raftText(context, '— target channel'),
+                    style: t.scale(
+                      RaftTypeScale.callout,
+                      color: t.ui.foregroundMuted,
                     ),
                   ),
                 ],
               ),
             ),
             if (draftHint != null)
-              // `mb-3 border-l-2 pl-2 text-xs italic text-foreground-muted`.
+              // `mb-3 border-l-2 border-line-seam pl-2.5 text-callout text-foreground-muted`.
               Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
                   border: Border(
-                    left: BorderSide(color: t.colors['line-muted']!, width: 2),
+                    left: BorderSide(color: t.colors['line-seam']!, width: 2),
                   ),
                 ),
                 child: Text(
                   draftHint!,
-                  style: raftCssTextStyle(
-                    family: t.headingFont,
-                    step: RaftTextSteps.xs,
-                    color: t.colors['foreground-muted'],
-                  ).copyWith(fontStyle: FontStyle.italic),
+                  style: t.scale(
+                    RaftTypeScale.callout,
+                    color: t.ui.foregroundMuted,
+                  ),
                 ),
               ),
             if (error != null)
@@ -153,25 +161,20 @@ class RaftAddMembersDialogView extends StatelessWidget {
                 child: RaftErrorBanner(error!, small: true),
               ),
             if (nothingToAdd)
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: EdgeInsets.all(12.0 + (1)),
-                decoration: BoxDecoration(
-                  color: t.panel,
-                  border: Border.all(
-                    color: t.colors['line-muted']!,
-                    width: t.border,
-                  ),
-                ),
-                child: Text(
-                  raftText(
-                    context,
-                    'Everyone the agent suggested is already a member of this channel. Nothing to add.',
-                  ),
-                  style: raftCssTextStyle(
-                    family: t.headingFont,
-                    step: RaftTextSteps.sm,
-                    color: t.colors['foreground-muted'],
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: RaftCard(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    raftText(
+                      context,
+                      'Everyone the agent suggested is already a member of this channel. Nothing to add.',
+                    ),
+                    style: t.scale(
+                      RaftTypeScale.subhead,
+                      weight: FontWeight.w400,
+                      color: t.ui.foregroundHint,
+                    ),
                   ),
                 ),
               )
@@ -186,45 +189,23 @@ class RaftAddMembersDialogView extends StatelessWidget {
                   humanSection: humanSection ?? humans.isNotEmpty,
                 ),
               ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                RaftRecipeButton(
-                  label: 'Cancel',
-                  variant: RaftButtonRecipeVariant.outline,
-                  size: RaftButtonRecipeSize.sm,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  textStep: RaftTextSteps.sm,
-                  disabled: submitting,
-                  onPressed: onClose,
-                ),
-                const SizedBox(width: 8), // gap-2
-                RaftRecipeButton(
-                  key: const ValueKey('add-members-submit'),
-                  label: submitting
-                      ? 'Adding…'
-                      : selectedCount == 1
-                      ? 'Add 1 Member'
-                      : raftFormat(context, 'Add {count} Members', {
-                          'count': selectedCount,
-                        }),
-                  variant: RaftButtonRecipeVariant.accent,
-                  size: RaftButtonRecipeSize.sm,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  textStep: RaftTextSteps.sm,
-                  disabled: !canSubmit,
-                  onPressed: canSubmit ? onSubmit : null,
-                ),
-              ],
-            ),
           ],
         ),
+        footer: inSheet
+            ? null
+            : RaftActionRow(
+                gap: 8,
+                children: [
+                  RaftButton(
+                    label: 'Cancel',
+                    uiVariant: RaftButtonVariant.ghost,
+                    uiSize: RaftButtonSize.lg,
+                    disabled: submitting,
+                    onPressed: onClose,
+                  ),
+                  submitButton,
+                ],
+              ),
       ),
     );
   }
@@ -245,25 +226,14 @@ class _MemberListShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    Widget header(String text) => Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      color: t.colors['fill-muted'],
-      child: Text(
-        raftText(context, text),
-        style: raftCssTextStyle(
-          family: t.headingFont,
-          step: RaftTextSteps.xs,
-          weight: FontWeight.w700,
-          color: t.colors['foreground-muted'],
-          trackingEm: .1,
-        ),
-      ),
+    Widget header(String text) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: RaftDialogSectionEyebrow(raftText(context, text)),
     );
     return RaftCard(
+      clip: true,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 288 - 4),
+        constraints: const BoxConstraints(maxHeight: 288),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -271,11 +241,13 @@ class _MemberListShell extends StatelessWidget {
             children: [
               if (agentSection) ...[
                 header('Agents'),
-                for (final row in agents) _Row(row: row),
+                for (var i = 0; i < agents.length; i++)
+                  _Row(row: agents[i], topRule: i > 0),
               ],
               if (humanSection) ...[
                 header('Humans'),
-                for (final row in humans) _Row(row: row),
+                for (var i = 0; i < humans.length; i++)
+                  _Row(row: humans[i], topRule: i > 0),
               ],
             ],
           ),
@@ -285,13 +257,12 @@ class _MemberListShell extends StatelessWidget {
   }
 }
 
-/// ChannelMemberRow: `group flex items-start gap-2 px-3 py-2 hover:bg-fill-muted`,
-/// avatar `mt-1`, name `truncate text-sm` (humans bold, agents medium), muted
-/// `text-xs` secondary line and the `size-6 mt-1` remove button (hover-revealed
-/// on desktop, always shown on touch).
+/// ChannelMemberRow: `group relative flex min-h-16 items-center gap-3 px-4
+/// py-2.5 hover:bg-fill-subtle` with 1px hairline at left 63px between rows.
 class _Row extends StatefulWidget {
-  const _Row({required this.row});
+  const _Row({required this.row, this.topRule = false});
   final RaftAddMemberRow row;
+  final bool topRule;
   @override
   State<_Row> createState() => _RowState();
 }
@@ -306,118 +277,75 @@ class _RowState extends State<_Row> {
     return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
-      child: Container(
-        color: hovered ? t.colors['fill-muted'] : null,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(padding: const EdgeInsets.only(top: 4), child: row.avatar),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    row.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: raftCssTextStyle(
-                      family: t.headingFont,
-                      step: RaftTextSteps.sm,
-                      weight: row.human ? FontWeight.w700 : FontWeight.w500,
-                      color: t.strong,
-                    ),
-                  ),
-                  if (row.secondary != null && row.secondary!.isNotEmpty)
-                    Text(
-                      row.secondary!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: raftCssTextStyle(
-                        family: t.headingFont,
-                        step: RaftTextSteps.xs,
-                        color: t.colors['foreground-muted'],
+      child: Stack(
+        children: [
+          Container(
+            constraints: const BoxConstraints(minHeight: 64),
+            color: hovered ? t.colors['fill-subtle'] : null,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                row.avatar,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        row.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: t.scale(
+                          RaftTypeScale.subhead,
+                          weight: FontWeight.w600,
+                          color: t.ui.foreground,
+                        ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            // `invisible` keeps the button's box so the row never shifts.
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Opacity(
-                opacity: reveal ? 1 : 0,
-                child: IgnorePointer(
-                  ignoring: !reveal,
-                  child: _RemoveButton(
-                    key: ValueKey('add-members-remove-${row.key}'),
-                    label: row.removeLabel,
-                    onPressed: row.onRemove,
+                      if (row.secondary != null && row.secondary!.isNotEmpty)
+                        Text(
+                          row.secondary!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: t.scale(
+                            RaftTypeScale.caption,
+                            color: t.ui.foregroundHint,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// `size-6 rounded-sm border border-line-muted bg-danger-soft text-danger-strong
-/// hover:bg-danger/30` with an `X size=12`.
-class _RemoveButton extends StatefulWidget {
-  const _RemoveButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
-  });
-  final String label;
-  final VoidCallback onPressed;
-  @override
-  State<_RemoveButton> createState() => _RemoveButtonState();
-}
-
-class _RemoveButtonState extends State<_RemoveButton> {
-  bool hovered = false;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final fill = hovered
-        ? t.colors['danger']!.withValues(alpha: .3)
-        : t.colors['danger-soft'];
-    return Semantics(
-      button: true,
-      label: widget.label,
-      excludeSemantics: true,
-      child: Tooltip(
-        message: widget.label,
-        child: RaftHoverRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => hovered = true),
-          onExit: (_) => setState(() => hovered = false),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onPressed,
-            child: Container(
-              width: 24,
-              height: 24,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: fill,
-                border: Border.all(color: t.colors['line-muted']!),
-                borderRadius: BorderRadius.circular(2),
-              ),
-              child: RaftIcon(
-                RaftGlyph.x,
-                size: 12,
-                color: t.colors['danger-strong'],
-              ),
+                const SizedBox(width: 12),
+                Opacity(
+                  opacity: reveal ? 1 : 0,
+                  child: IgnorePointer(
+                    ignoring: !reveal,
+                    child: RaftButton(
+                      key: ValueKey('add-members-remove-${row.key}'),
+                      glyph: RaftGlyph.x,
+                      uiVariant: RaftButtonVariant.ghost,
+                      uiSize: RaftButtonSize.iconMd,
+                      tooltip: row.removeLabel,
+                      semanticLabel: row.removeLabel,
+                      onPressed: row.onRemove,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
+          if (widget.topRule)
+            Positioned(
+              top: 0,
+              left: 63,
+              right: 0,
+              height: 1,
+              child: IgnorePointer(
+                child: ColoredBox(color: t.colors['line-hairline']!),
+              ),
+            ),
+        ],
       ),
     );
   }

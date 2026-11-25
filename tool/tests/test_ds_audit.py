@@ -570,9 +570,9 @@ class FamilyRegistryTest(unittest.TestCase):
         self.assertEqual(self.families['banner']['deprecated'], {})
         self.assertNotIn('RaftAgentBanner', self.families['banner']['deprecated'])  # thin adapter over RaftBanner
         self.assertEqual(self.families['message-embed']['deprecated'], {})
+        self.assertEqual(self.families['lightbox']['deprecated'], {})
         for family, names in (
             ('message-action-card', ('RaftActionCard',)),
-            ('lightbox', ('RaftLightboxRecipe',)),
             ('card', ('RaftQuotedMessageSkeleton',)),
         ):
             for sym in names:

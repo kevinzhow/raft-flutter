@@ -1,19 +1,23 @@
 import 'raft/button.dart';
+import 'raft/ui_tokens.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import 'card.dart';
 import 'components.dart';
 import 'design_primitives.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'icons.dart';
 import 'localization.dart';
+import 'panel_layout.dart' show RaftCssText;
+import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
+import 'recipes/dialog.g.dart';
 import 'selection_toolbar_recipe.dart';
 import 'system_inset.dart';
-import 'separator.dart';
 import 'theme.dart';
-import 'tooltip.dart' show RaftTooltip;
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 /// Routes the row tap to the selection toggle while row controls are inert.
 Widget raftSelectableMessage({
@@ -365,7 +369,57 @@ class RaftMessageExportSurface extends StatelessWidget {
   );
 }
 
-/// Actions become available only after the complete image exists for review.
+/// Backdrop + max-size frame for [RaftImageReview] (Web `SelectShareLightbox`).
+class RaftImageReviewLightbox extends StatelessWidget {
+  const RaftImageReviewLightbox({
+    super.key,
+    required this.onBackdrop,
+    required this.child,
+    this.backdropKey,
+    this.backdropColor,
+  });
+
+  final VoidCallback onBackdrop;
+  final Widget child;
+  final Key? backdropKey;
+  final Color? backdropColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return ColoredBox(
+      color: backdropColor ?? t.colors['layer-backdrop']!,
+      child: Material(
+        type: MaterialType.transparency,
+        child: GestureDetector(
+          key: backdropKey,
+          behavior: HitTestBehavior.opaque,
+          onTap: onBackdrop,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 768,
+                      maxHeight: MediaQuery.sizeOf(context).height * .9,
+                    ),
+                    child: child,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Web `SelectShareLightbox`: reviewed screenshot card inside the lightbox.
 class RaftImageReview extends StatelessWidget {
   const RaftImageReview({
     super.key,
@@ -396,150 +450,310 @@ class RaftImageReview extends StatelessWidget {
   final bool copying, copied;
   final bool busy;
   final String? error;
+
   @override
-  Widget build(BuildContext context) => Material(
-    color: RaftTokens.of(context).panel,
-    child: Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-          child: Row(
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    final headerStyle = RaftDialogRecipe.resolve(
+      states: t.recipeStates(responsive: true),
+      tokens: rt,
+    ).header;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 640;
+        final wellColor = raftChromeBlend(
+          t.colors['fill-muted']!,
+          t.colors['layer-card']!,
+        );
+        final floatShadows = [
+          for (final layer in t.shadowLayers('elevation-float'))
+            if (!layer.inset) layer.toBoxShadow(),
+        ];
+        final horizontalPad = narrow ? 64.0 : 80.0;
+        final verticalPad = narrow ? 16.0 : 24.0;
+        final chipRadius = t.size('radius.chip', fallback: 6);
+        final containerRadius = t.size('radius.container', fallback: 8);
+        final copyButton = onCopy == null
+            ? null
+            : RaftButton(
+                key: const ValueKey('image-review-copy'),
+                label: raftText(
+                  context,
+                  copying
+                      ? 'Copying…'
+                      : copied
+                      ? 'Copied'
+                      : 'Copy this page',
+                ),
+                glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
+                glyphSize: 16,
+                uiVariant: RaftButtonVariant.outline,
+                uiSize: RaftButtonSize.md,
+                busy: copying,
+                expand: narrow,
+                onPressed: busy ? null : onCopy,
+              );
+        final saveButton = onSave == null
+            ? null
+            : RaftButton(
+                label: raftText(
+                  context,
+                  onShare == null && onSaveAll == null
+                      ? 'Download all'
+                      : 'Save this page',
+                ),
+                glyph: RaftGlyph.download,
+                glyphSize: 16,
+                uiVariant: onShare != null || onSaveAll != null
+                    ? RaftButtonVariant.outline
+                    : RaftButtonVariant.accent,
+                uiSize: RaftButtonSize.md,
+                busy: busy && !copying,
+                expand: narrow,
+                onPressed: busy ? null : onSave,
+              );
+        final shareButton = onShare == null
+            ? null
+            : RaftButton(
+                label: raftText(
+                  context,
+                  pageCount == 1 ? 'Share Image' : 'Share all',
+                ),
+                glyph: RaftGlyph.share2,
+                glyphSize: 16,
+                uiVariant: RaftButtonVariant.accent,
+                uiSize: RaftButtonSize.md,
+                busy: busy && !copying,
+                expand: narrow,
+                onPressed: busy ? null : onShare,
+              );
+        final saveAllButton = onSaveAll == null
+            ? null
+            : RaftButton(
+                label: raftText(context, 'Download all'),
+                glyph: RaftGlyph.download,
+                glyphSize: 16,
+                uiVariant: RaftButtonVariant.accent,
+                uiSize: RaftButtonSize.md,
+                busy: busy && !copying,
+                expand: narrow,
+                onPressed: busy ? null : onSaveAll,
+              );
+        final actions = <Widget>[
+          ?copyButton,
+          ?saveButton,
+          ?shareButton,
+          ?saveAllButton,
+        ];
+
+        return RaftCard(
+          key: const ValueKey('image-review-card'),
+          clip: true,
+          maxWidth: 768,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+              Container(
+                height: narrow ? 56 : null,
+                padding: narrow
+                    ? const EdgeInsets.symmetric(horizontal: 20)
+                    : headerStyle.padding.resolve(Directionality.of(context)),
+                decoration: BoxDecoration(
+                  color: t.colors['layer-card'],
+                  border: Border(bottom: BorderSide(color: t.ui.lineHairline)),
+                ),
+                child: Row(
                   children: [
-                    Text(
-                      raftText(context, 'Share selected messages'),
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Semantics(
+                            header: true,
+                            child: RaftCssText(
+                              raftText(context, 'Share preview'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: t.scale(
+                                RaftTypeScale.headline,
+                                weight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          if (pageCount > 1)
+                            RaftCssText(
+                              raftFormat(
+                                context,
+                                '{count} images · original order',
+                                {'count': pageCount},
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: t.scale(
+                                RaftTypeScale.caption,
+                                color: t.ui.foregroundMuted,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                    if (pageCount > 1)
+                    if (pageCount > 1) ...[
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: t.colors['info-soft'],
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(chipRadius),
+                          ),
+                        ),
+                        child: Text(
+                          '$pageNumber/$pageCount',
+                          style: t.scale(
+                            RaftTypeScale.monoMeta,
+                            mono: true,
+                            color: t.strong,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(width: 8),
+                    RaftButton(
+                      label: '',
+                      glyph: RaftGlyph.x,
+                      glyphSize: 18,
+                      tooltip: raftText(context, 'Close Preview'),
+                      semanticLabel: raftText(context, 'Close Preview'),
+                      uiVariant: RaftButtonVariant.ghost,
+                      uiSize: narrow
+                          ? RaftButtonSize.iconMd
+                          : RaftButtonSize.iconSm,
+                      onPressed: busy ? null : onClose,
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: ColoredBox(
+                  color: wellColor,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SingleChildScrollView(
+                        key: ValueKey(pageNumber),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPad,
+                          vertical: verticalPad,
+                        ),
+                        child: Center(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: wellColor,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(containerRadius),
+                              ),
+                              border: Border.all(
+                                color: raftChromeBlend(
+                                  t.ui.lineHairline,
+                                  wellColor,
+                                ),
+                              ),
+                              boxShadow: floatShadows,
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: preview,
+                          ),
+                        ),
+                      ),
+                      if (pageCount > 1) ...[
+                        Positioned(
+                          left: narrow ? 12 : 24,
+                          child: RaftButton(
+                            label: '',
+                            glyph: RaftGlyph.chevronLeft,
+                            tooltip: raftText(context, 'Previous page'),
+                            semanticLabel: raftText(context, 'Previous page'),
+                            uiVariant: RaftButtonVariant.outline,
+                            uiSize: RaftButtonSize.iconMd,
+                            onPressed: busy ? null : onPreviousPage,
+                          ),
+                        ),
+                        Positioned(
+                          right: narrow ? 12 : 24,
+                          child: RaftButton(
+                            label: '',
+                            glyph: RaftGlyph.chevronRight,
+                            tooltip: raftText(context, 'Next page'),
+                            semanticLabel: raftText(context, 'Next page'),
+                            uiVariant: RaftButtonVariant.outline,
+                            uiSize: RaftButtonSize.iconMd,
+                            onPressed: busy ? null : onNextPage,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: narrow ? 12 : 20,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: t.colors['layer-card'],
+                  border: Border(top: BorderSide(color: t.ui.lineHairline)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (error != null) ...[
                       Text(
-                        raftFormat(context, '{count} images · original order', {
-                          'count': pageCount,
-                        }),
+                        error!,
+                        style: t.scale(
+                          RaftTypeScale.callout,
+                          weight: FontWeight.w500,
+                          color: t.colors['danger-strong'],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    if (narrow && actions.length == 2)
+                      Row(
+                        children: [
+                          Expanded(child: actions[0]),
+                          const SizedBox(width: 8),
+                          Expanded(child: actions[1]),
+                        ],
+                      )
+                    else
+                      Align(
+                        alignment: narrow
+                            ? Alignment.centerLeft
+                            : Alignment.centerRight,
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: narrow
+                              ? WrapAlignment.start
+                              : WrapAlignment.end,
+                          children: actions,
+                        ),
                       ),
                   ],
                 ),
               ),
-              if (pageCount > 1) Text('$pageNumber/$pageCount'),
-              RaftTooltip(
-                message: raftText(context, 'Close Preview'),
-                child: RaftButton.iconAction(
-                  onPressed: busy ? null : onClose,
-                  icon: const Icon(Icons.close),
-                ),
-              ),
             ],
           ),
-        ),
-        const RaftSeparator(),
-        Expanded(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(
-                child: SingleChildScrollView(
-                  key: ValueKey(pageNumber),
-                  padding: const EdgeInsets.all(16),
-                  child: preview,
-                ),
-              ),
-              if (pageCount > 1) ...[
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: _ScreenshotPageButton(
-                    label: 'Previous page',
-                    glyph: RaftGlyph.chevronLeft,
-                    onPressed: busy ? null : onPreviousPage,
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _ScreenshotPageButton(
-                    label: 'Next page',
-                    glyph: RaftGlyph.chevronRight,
-                    onPressed: busy ? null : onNextPage,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        if (error != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: RaftErrorBanner(error!, small: true, bold: true),
-          ),
-        const RaftSeparator(),
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              RaftButton(
-                label: 'Cancel',
-                secondary: true,
-                onPressed: busy ? null : onClose,
-              ),
-              if (onCopy != null)
-                RaftButton(
-                  key: const ValueKey('image-review-copy'),
-                  label: copying
-                      ? 'Copying…'
-                      : copied
-                      ? 'Copied'
-                      : pageCount == 1
-                      ? 'Copy image'
-                      : 'Copy this page',
-                  icon: copied ? Icons.check : Icons.copy_outlined,
-                  secondary: true,
-                  busy: copying,
-                  onPressed: busy ? null : onCopy,
-                ),
-              if (onSave != null)
-                RaftButton(
-                  label: pageCount == 1 ? 'Save image' : 'Save this page',
-                  icon: Icons.download_outlined,
-                  busy: busy && !copying,
-                  onPressed: busy ? null : onSave,
-                ),
-              if (onShare != null)
-                RaftButton(
-                  label: pageCount == 1 ? 'Share Image' : 'Share all',
-                  icon: Icons.share_outlined,
-                  secondary: true,
-                  onPressed: busy ? null : onShare,
-                ),
-              if (onSaveAll != null)
-                RaftButton(
-                  label: 'Download all',
-                  icon: Icons.download_outlined,
-                  onPressed: busy ? null : onSaveAll,
-                ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _ScreenshotPageButton extends StatelessWidget {
-  const _ScreenshotPageButton({
-    required this.label,
-    required this.glyph,
-    this.onPressed,
-  });
-  final String label;
-  final RaftGlyph glyph;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) => RaftTooltip(
-    message: raftText(context, label),
-    child: RaftButton.iconAction(onPressed: onPressed, icon: RaftIcon(glyph)),
-  );
+        );
+      },
+    );
+  }
 }

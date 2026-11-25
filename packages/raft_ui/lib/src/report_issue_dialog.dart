@@ -2,11 +2,11 @@ import 'overlays/dialog.dart' show RaftDialog;
 
 // Presentation of the Web agent Report Issue dialog
 // (packages/web/src/components/agent/ReportIssueDialog.tsx): a `DialogCard`
-// (`max-w-sm`) with the agent card, the description field, the `Include`
-// checkboxes, the sensitive-data banner with the consent checkbox, and the
-// "Report submitted" confirmation. The app adapter owns the upload (scope
-// attestation, feedback-export worker, ticket) and passes it in as callbacks.
-// Tailwind classes written in the Web JSX are resolved in comments.
+// (`max-w-sm`, `narrow="sheet"`) with the agent Card, the description field,
+// the `Include` checkboxes, the sensitive-data banner with the consent
+// checkbox, and the "Report submitted" confirmation. The app adapter owns the
+// upload (scope attestation, feedback-export worker, ticket) and passes it in
+// as callbacks.
 import 'raft/checkbox.dart' show RaftCheckbox;
 
 import 'dart:async';
@@ -18,15 +18,20 @@ import 'form_presentation.dart';
 import 'package:flutter/foundation.dart';
 
 import 'banner.dart';
-import 'design_primitives.dart';
+import 'card.dart' show RaftCard;
+import 'design_primitives.dart' show RaftLayoutMetrics;
 import 'dialog_card.dart';
 import 'error_presentation.dart';
 import 'form_controls.dart' show RaftTextarea;
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
-import 'recipes/button_variants.g.dart';
+import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
+import 'raft/css_box.dart' show raftControlBorderPx;
+import 'raft/ui_tokens.dart';
+import 'stacked_actions.dart' show RaftActionRow;
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale, RaftTypeStyle;
 
 /// What the user ticked.
 @immutable
@@ -238,31 +243,15 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
 
   // ------------------------------------------------------------ helpers
 
-  TextStyle _text(
-    RaftTokens t, {
-    double size = 14,
-    double line = 20,
-    FontWeight weight = FontWeight.w400,
+  TextStyle _type(
+    RaftTokens t,
+    RaftTypeStyle role, {
+    FontWeight? weight,
     Color? color,
-  }) => RaftTypography.inherited(
-    t,
-    size: size,
-    line: line,
-    weight: weight,
-    color: color,
-  ).copyWith(leadingDistribution: TextLeadingDistribution.even);
-
-  /// `text-foreground-muted theme-brutal:text-black/60`.
-  Color _muted(RaftTokens t) => t.colors['foreground-muted']!;
-
-  Color _strong(RaftTokens t) => t.strong;
-
-  /// `border-2 border-line-muted theme-brutal:border-black bg-layer-panel
-  /// theme-brutal:bg-white`.
-  BoxDecoration _panelBox(RaftTokens t) => BoxDecoration(
-    color: t.colors['layer-panel'],
-    border: Border.all(color: t.colors['line-muted']!, width: 2),
-  );
+    bool mono = false,
+  }) => t
+      .scale(role, weight: weight, color: color, mono: mono)
+      .copyWith(leadingDistribution: TextLeadingDistribution.even);
 
   Widget _checkRow(
     RaftTokens t, {
@@ -271,23 +260,44 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
     required ValueChanged<bool>? onChanged,
     required String label,
     CrossAxisAlignment align = CrossAxisAlignment.center,
+    EdgeInsetsGeometry padding = EdgeInsets.zero,
     Widget? labelWidget,
     TextStyle? style,
-  }) => GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: onChanged == null ? null : () => onChanged(!value),
-    child: Row(
-      key: key,
-      crossAxisAlignment: align,
-      children: [
-        RaftCheckbox(value: value, onChanged: onChanged, semanticLabel: label),
-        const SizedBox(width: 8),
-        Expanded(
-          child:
-              labelWidget ??
-              RaftCssText(label, style: style ?? _text(t, color: t.ink)),
+  }) => ConstrainedBox(
+    constraints: const BoxConstraints(minHeight: 32),
+    child: Padding(
+      padding: padding,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onChanged == null ? null : () => onChanged(!value),
+        child: Row(
+          key: key,
+          crossAxisAlignment: align,
+          children: [
+            RaftCheckbox(
+              value: value,
+              onChanged: onChanged,
+              semanticLabel: label,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child:
+                  labelWidget ??
+                  RaftCssText(
+                    label,
+                    style:
+                        style ??
+                        _type(
+                          t,
+                          RaftTypeScale.callout,
+                          weight: FontWeight.w600,
+                          color: t.ui.foreground,
+                        ),
+                  ),
+            ),
+          ],
         ),
-      ],
+      ),
     ),
   );
 
@@ -315,50 +325,50 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
   Widget _form(BuildContext context) {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
-    final muted12 = _text(t, size: 12, line: 16, color: _muted(t));
+    final hint12 = _type(t, RaftTypeScale.caption, color: t.ui.foregroundHint);
+    final inHead = RaftFormFrame.sheetOf(context);
+    final submitButton = RaftButton(
+      key: const ValueKey('report-issue-submit'),
+      label: tr(loading ? 'Submitting…' : 'Report'),
+      uiVariant: RaftButtonVariant.primary,
+      uiSize: inHead ? RaftButtonSize.md : RaftButtonSize.lg,
+      disabled: loading || !consented,
+      onPressed: submit,
+    );
     return RaftDialog.card(
       key: const ValueKey('report-issue-dialog'),
       title: 'Report issue',
       footerGap: 0,
       maxWidth: 384,
       onClose: widget.onClose,
+      sheetCommit: submitButton,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // `mb-4 border-2 ... px-3 py-2`
-          Container(
-            key: const ValueKey('report-issue-agent'),
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: _panelBox(t),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // `<SectionEyebrow>` is an inline span: its 12px text sits in
-                // the card's 24px line box.
-                SizedBox(
-                  height: 24,
-                  child: Padding(
-                    // Baseline of the 16px strut: 5px below the box top.
-                    // ds-allow: Web ReportIssueDialog.tsx SectionEyebrow inline span in the 24px line box (browser baseline offset, no class)
-                    padding: const EdgeInsets.only(top: 5),
-                    child: RaftDialogSectionEyebrow(tr('Agent')),
+          // `Card className="mb-4 block px-3 py-2"`
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: RaftCard(
+              key: const ValueKey('report-issue-agent'),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  RaftDialogSectionEyebrow(tr('Agent')),
+                  // `mt-0.5 text-subhead font-semibold text-foreground`
+                  const SizedBox(height: 4),
+                  RaftCssText(
+                    widget.agentName,
+                    style: _type(
+                      t,
+                      RaftTypeScale.subhead,
+                      weight: FontWeight.w600,
+                      color: t.ui.foreground,
+                    ),
                   ),
-                ),
-                // `mt-0.5 font-bold`
-                const SizedBox(height: 2),
-                RaftCssText(
-                  widget.agentName,
-                  style: _text(
-                    t,
-                    size: 16,
-                    line: 24,
-                    weight: FontWeight.w700,
-                    color: _strong(t),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Padding(
@@ -366,14 +376,18 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
             child: RaftProductFormField(
               label: 'Describe the issue',
               optional: true,
-              // `<Textarea rows={3} className="w-full resize-none p-2 text-sm">`
+              // `<Textarea rows={3} className="w-full resize-none">`
               child: RaftTextarea(
                 key: const ValueKey('report-issue-description'),
                 controller: description,
                 rows: 3,
+                minHeight:
+                    MediaQuery.sizeOf(context).width >=
+                        RaftLayoutMetrics.desktopBreakpoint
+                    ? 90
+                    : 96,
                 enabled: !loading,
                 hintText: tr('What went wrong? What did you expect?'),
-                textStyle: const TextStyle(fontSize: 14, height: 20 / 14),
               ),
             ),
           ),
@@ -382,15 +396,15 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // `SectionEyebrow as="div" mb-1`
+                // `SectionEyebrow as="div" className="mb-1"`
                 RaftDialogSectionEyebrow(
                   tr('Include'),
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: const EdgeInsets.only(bottom: 6),
                 ),
-                // `flex flex-col gap-1.5`
+                // `flex flex-col gap-1`
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 6,
+                  spacing: 4,
                   children: [
                     _checkRow(
                       t,
@@ -432,13 +446,13 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                       ),
                     if (includeSessionTranscript && widget.hasMachine)
                       Padding(
-                        // `ml-6 text-xs`
-                        padding: const EdgeInsets.only(left: 24),
+                        // `ml-7 text-caption text-foreground-hint`
+                        padding: const EdgeInsets.only(left: 28),
                         child: RaftCssText(
                           tr(
                             "Taken from the agent's computer; it may not have one.",
                           ),
-                          style: muted12,
+                          style: hint12,
                         ),
                       ),
                     if (widget.canIncludeMachineLog)
@@ -446,6 +460,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                         t,
                         key: const ValueKey('report-issue-machine-log'),
                         align: CrossAxisAlignment.start,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
                         value: includeMachineLogTail,
                         onChanged: loading || !includeSessionTranscript
                             ? null
@@ -460,13 +475,18 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                               tr(
                                 'Machine runner log tail (your own machine only)',
                               ),
-                              style: _text(t, color: t.ink),
+                              style: _type(
+                                t,
+                                RaftTypeScale.callout,
+                                weight: FontWeight.w600,
+                                color: t.ui.foreground,
+                              ),
                             ),
                             RaftCssText(
                               tr(
                                 "The last lines of this computer's log. They may include lines from other agents on it.",
                               ),
-                              style: muted12,
+                              style: hint12,
                             ),
                           ],
                         ),
@@ -476,44 +496,46 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
               ],
             ),
           ),
-          // `Banner intent="warning" withIcon density="sm" mb-5`
+          // `Banner intent="warning" withIcon density="sm" className="mb-4"`
           Padding(
-            padding: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.only(bottom: 16),
             child: RaftBanner(
               key: const ValueKey('report-issue-warning'),
               size: RaftBannerRecipeSize.sm,
-              glyph: RaftGlyph.circleAlert,
-              descriptionBuilder: (style) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _strongText(
-                      tr(
-                        'This report may contain <strong>prompt history, file paths, and command output</strong>. Sensitive data redaction is best-effort and not guaranteed.',
+              glyph: RaftGlyph.triangleAlert,
+              descriptionBuilder: (style) {
+                final lineStyle = _type(
+                  t,
+                  RaftTypeScale.callout,
+                  color: style.color,
+                );
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _strongText(
+                        tr(
+                          'This report may contain <strong>prompt history, file paths, and command output</strong>. Sensitive data redaction is best-effort and not guaranteed.',
+                        ),
+                        lineStyle,
                       ),
-                      style.copyWith(color: t.colors['foreground-muted']),
                     ),
-                  ),
-                  _checkRow(
-                    t,
-                    key: const ValueKey('report-issue-consent'),
-                    value: consented,
-                    onChanged: loading
-                        ? null
-                        : (v) => setState(() => consented = v),
-                    label: tr('I agree to send this report to the Raft team.'),
-                    // No colour class: the label inherits the banner's text.
-                    style: _text(
+                    _checkRow(
                       t,
-                      size: 12,
-                      line: 16,
-                      weight: FontWeight.w700,
-                      color: style.color,
+                      key: const ValueKey('report-issue-consent'),
+                      value: consented,
+                      onChanged: loading
+                          ? null
+                          : (v) => setState(() => consented = v),
+                      label: tr(
+                        'I agree to send this report to the Raft team.',
+                      ),
+                      style: lineStyle.copyWith(fontWeight: FontWeight.w600),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
           ),
           if (error != null)
@@ -527,33 +549,18 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
             ),
         ],
       ),
-      footer: Wrap(
-        alignment: WrapAlignment.end,
-        spacing: 12,
-        runSpacing: 8,
+      footer: RaftActionRow(
+        gap: 8,
         children: [
-          RaftRecipeButton(
+          RaftButton(
             key: const ValueKey('report-issue-cancel'),
             label: tr('Cancel'),
-            variant: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.sm,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            textStep: RaftTextSteps.sm,
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.lg,
             disabled: loading,
-            disabledOpacity: .5,
             onPressed: raftExplicitClose(context, widget.onClose),
           ),
-          RaftRecipeButton(
-            key: const ValueKey('report-issue-submit'),
-            label: tr(loading ? 'Submitting…' : 'Report'),
-            variant: RaftButtonRecipeVariant.accent,
-            size: RaftButtonRecipeSize.sm,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            textStep: RaftTextSteps.sm,
-            disabled: loading || !consented,
-            disabledOpacity: .5,
-            onPressed: submit,
-          ),
+          submitButton,
         ],
       ),
     );
@@ -564,11 +571,14 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
   Widget _submitted(BuildContext context, RaftReportIssueReceipt r) {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
-    final muted12 = _text(t, size: 12, line: 16, color: _muted(t));
+    final hint12 = _type(t, RaftTypeScale.caption, color: t.ui.foregroundHint);
     final ticket = r.ticketId;
+    final stickerInk = t.colors['sticker-ink']!;
+    final stickerRadius = t.size('radius.sticker', fallback: 4);
     return RaftDialog.card(
       key: const ValueKey('report-issue-submitted'),
       title: 'Report submitted',
+      footerGap: 0,
       maxWidth: 384,
       onClose: widget.onClose,
       child: Column(
@@ -581,23 +591,26 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
             child: Column(
               spacing: 16,
               children: [
-                // `size-12 border-2 border-line-muted theme-brutal:border-black
-                // bg-brutal-lime`
+                // `size-12 rounded-sticker border-[1.5px] border-sticker-ink
+                // bg-success text-sticker-ink`
                 Container(
                   width: 48,
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: t.product.brutalLime,
+                    color: t.colors['success'],
                     border: Border.all(
-                      color: t.colors['line-muted']!,
-                      width: 2,
+                      color: stickerInk,
+                      width: raftControlBorderPx(context, 1.5),
+                    ),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(stickerRadius),
                     ),
                   ),
                   child: RaftIcon(
-                    RaftGlyph.checkCircle,
+                    RaftGlyph.circleCheck,
                     size: 24,
-                    color: t.ink,
+                    color: stickerInk,
                   ),
                 ),
                 Column(
@@ -605,15 +618,14 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                     RaftCssText(
                       tr('Feedback export uploaded.'),
                       textAlign: TextAlign.center,
-                      style: _text(
+                      style: _type(
                         t,
-                        size: 16,
-                        line: 24,
+                        RaftTypeScale.subhead,
                         weight: FontWeight.w700,
-                        color: _strong(t),
+                        color: t.ui.foreground,
                       ),
                     ),
-                    // `mt-1 text-sm`
+                    // `mt-1 text-callout text-foreground-muted`
                     const SizedBox(height: 4),
                     RaftCssText(
                       tr(
@@ -622,7 +634,11 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                             : 'The bundle includes the issue description plus the client-side context you selected.',
                       ),
                       textAlign: TextAlign.center,
-                      style: _text(t, color: _muted(t)),
+                      style: _type(
+                        t,
+                        RaftTypeScale.callout,
+                        color: t.ui.foregroundMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -649,46 +665,34 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                                   'Session record attached.',
                                 RaftTranscriptRequestState.notAttached => "Sent without a session record: the agent's computer didn't provide one.",
                               }),
-                              style: muted12,
+                              style: hint12,
                             ),
                           ),
                   ),
               ],
             ),
           ),
-          Wrap(
-            alignment: WrapAlignment.end,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (ticket != null &&
-                  r.serverSlug != null &&
-                  widget.onViewTicket != null)
-                RaftRecipeButton(
-                  key: const ValueKey('report-issue-view-ticket'),
-                  label: tr('View ticket'),
-                  variant: RaftButtonRecipeVariant.outline,
-                  size: RaftButtonRecipeSize.sm,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  textStep: RaftTextSteps.sm,
-                  onPressed: () => widget.onViewTicket!(ticket),
-                ),
-              RaftRecipeButton(
-                key: const ValueKey('report-issue-done'),
-                label: tr('Done'),
-                variant: RaftButtonRecipeVariant.success,
-                size: RaftButtonRecipeSize.sm,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                textStep: RaftTextSteps.sm,
-                onPressed: widget.onClose,
-              ),
-            ],
+        ],
+      ),
+      footer: RaftActionRow(
+        gap: 8,
+        children: [
+          if (ticket != null &&
+              r.serverSlug != null &&
+              widget.onViewTicket != null)
+            RaftButton(
+              key: const ValueKey('report-issue-view-ticket'),
+              label: tr('View ticket'),
+              uiVariant: RaftButtonVariant.outline,
+              uiSize: RaftButtonSize.lg,
+              onPressed: () => widget.onViewTicket!(ticket),
+            ),
+          RaftButton(
+            key: const ValueKey('report-issue-done'),
+            label: tr('Done'),
+            uiVariant: RaftButtonVariant.primary,
+            uiSize: RaftButtonSize.lg,
+            onPressed: widget.onClose,
           ),
         ],
       ),
@@ -707,28 +711,27 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
       children: [
         RaftCssText(
           tr(label),
-          style: _text(
+          style: _type(
             t,
-            size: 12,
-            line: 16,
-            weight: FontWeight.w700,
-            color: _muted(t),
+            RaftTypeScale.caption,
+            weight: FontWeight.w600,
+            color: t.ui.foregroundMuted,
           ),
         ),
         RaftCssText(
           value,
-          style: _text(t, size: 12, line: 16, color: _strong(t)).copyWith(
-            fontFamily: t.monoFont,
-            fontFamilyFallback: t.fontFallback,
+          style: _type(
+            t,
+            RaftTypeScale.monoMeta,
+            mono: true,
+            color: t.ui.foreground,
           ),
         ),
       ],
     );
-    return Container(
+    return RaftCard(
       key: const ValueKey('report-issue-reference'),
-      width: double.infinity,
       padding: const EdgeInsets.all(12),
-      decoration: _panelBox(t),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -758,28 +761,18 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
             spacing: 8,
             runSpacing: 12,
             children: [
-              RaftRecipeButton(
+              RaftButton(
                 key: const ValueKey('report-issue-copy-reference'),
                 label: tr(referenceCopied ? 'Copied' : 'Copy report reference'),
-                variant: RaftButtonRecipeVariant.outline,
-                size: RaftButtonRecipeSize.sm,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                textStep: RaftTextSteps.xs,
+                uiVariant: RaftButtonVariant.outline,
+                uiSize: RaftButtonSize.md,
                 onPressed: copyReference,
               ),
-              RaftRecipeButton(
+              RaftButton(
                 key: const ValueKey('report-issue-retry-ticket'),
                 label: tr(ticketRetrying ? 'Retrying…' : 'Retry ticket'),
-                variant: RaftButtonRecipeVariant.outline,
-                size: RaftButtonRecipeSize.sm,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                textStep: RaftTextSteps.xs,
+                uiVariant: RaftButtonVariant.outline,
+                uiSize: RaftButtonSize.md,
                 disabled: ticketRetrying,
                 onPressed: retryTicket,
               ),

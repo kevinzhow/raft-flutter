@@ -1,0 +1,159 @@
+{
+ "user": {
+  "id": "user-ava-wave2",
+  "name": "ava",
+  "displayName": "Ava",
+  "preferredTimezone": "UTC",
+  "preferredTimeFormat": "24h"
+ },
+ "server": {
+  "id": "server-wave2",
+  "slug": "acme",
+  "name": "Acme",
+  "role": "owner",
+  "plan": "pro"
+ },
+ "channels": [
+  {
+   "id": "chan-wave2-design",
+   "serverId": "server-wave2",
+   "name": "design",
+   "type": "channel",
+   "joined": true,
+   "archivedAt": null,
+   "channelCapabilities": {
+    "addChannelMembers": true,
+    "removeChannelMembers": true
+   }
+  }
+ ],
+ "agents": [
+  {
+   "id": "agent-cindy-wave2",
+   "name": "cindy",
+   "displayName": "Cindy",
+   "description": "Coordinates release gates and reviews diffs.",
+   "avatarUrl": "pixel:fox",
+   "status": "online",
+   "activity": "idle",
+   "machineId": "mach-wave2-1",
+   "runtime": "claude",
+   "model": "sonnet",
+   "role": "member"
+  },
+  {
+   "id": "agent-lux-wave2",
+   "name": "lux",
+   "displayName": "Lux",
+   "description": "Visual parity auditor.",
+   "avatarUrl": "pixel:owl",
+   "status": "online",
+   "activity": "idle",
+   "machineId": null,
+   "runtime": "codex",
+   "model": "gpt-5",
+   "role": "member"
+  }
+ ],
+ "members": [
+  {
+   "userId": "user-ava-wave2",
+   "name": "ava",
+   "displayName": "Ava",
+   "description": "Workspace owner",
+   "role": "owner",
+   "avatarUrl": null
+  },
+  {
+   "userId": "user-ben-wave2",
+   "name": "ben",
+   "displayName": "Ben",
+   "description": "Product designer",
+   "role": "member",
+   "avatarUrl": null
+  }
+ ],
+ "machine": {
+  "id": "mach-wave2-1",
+  "name": "studio-mac",
+  "hostname": "studio-mac.local",
+  "os": "darwin",
+  "status": "online",
+  "isComputer": true,
+  "computerAttachedByCurrentUser": false,
+  "runtimes": [],
+  "runtimeVersions": {}
+ },
+ "agreement": {
+  "title": "Community Guidelines",
+  "version": 3,
+  "bodyMarkdown": "Keep feedback constructive and respect privacy across channels.\n\nShared workspaces require mutual consent before running tasks."
+ },
+ "runtimeProviders": [
+  {
+   "id": "openrouter",
+   "label": "OpenRouter",
+   "description": "Route requests across frontier models with one key.",
+   "configured": true,
+   "needsModelIds": true,
+   "endpoint": {
+    "kind": "preset"
+   },
+   "group": {
+    "id": "third-party",
+    "label": "Third-party"
+   }
+  },
+  {
+   "id": "deepseek",
+   "label": "DeepSeek",
+   "description": "Direct DeepSeek API key for reasoning and code.",
+   "configured": false,
+   "needsModelIds": false,
+   "endpoint": {
+    "kind": "preset"
+   },
+   "group": {
+    "id": "third-party",
+    "label": "Third-party"
+   }
+  }
+ ],
+ "attachment": {
+  "id": "att-wave2-notes",
+  "filename": "release-notes.md",
+  "parentMessage": {
+   "id": "msg-wave2-parent",
+   "channelId": "chan-wave2-design"
+  },
+  "comments": [
+   {
+    "id": "cmt-wave2-1",
+    "channelId": "chan-wave2-thread",
+    "senderType": "agent",
+    "senderId": "agent-cindy-wave2",
+    "senderName": "Cindy",
+    "content": "Tighten border contrast on light panels before merge.",
+    "createdAt": "2026-06-25T10:32:00.000Z",
+    "reactions": [],
+    "anchor": {
+     "type": "lines",
+     "data": {
+      "start": 12,
+      "end": 14,
+      "quote": "All modal footers use 1px line-hairline rules."
+     }
+    },
+    "senderAvatarUrl": "pixel:fox"
+   }
+  ],
+  "pendingAnchor": {
+   "type": "lines",
+   "data": {
+    "start": 24,
+    "end": 24
+   }
+  }
+ },
+ "exportPngBase64": "iVBORw0KGgoAAAANSUhEUgAAAWgAAAC0CAYAAAC5brY1AAACrklEQVR42u3dsQ2AIBBAUcYgcUosHcw5KBjFRhpdQuWIr3g1yQV+eaTW6gVAPMkQAIIHuvcTgAAEGkCgARBoAIEGQKABBNpQAAQaAIEGEGgABBpAoAEQaAAEGkCgARBoAIEGQKABBFqgAQQaAIEGEGgAZgx0zgt8xuNGoAUagQaBBoFGoAUagQaBBoEGgUagQaAFGoEGgQaBRqAFGoEGgQaBBoFGoEGgBRqBBoEGgUagBRqBBoEGgUagBRqBBoEGgQaBRqBBoAUagQaBBoFGoAEQaAAEGkCgARBoAIEGQKABBFqgAQQaAIEGEGgABBpAoAEQaAAEGkCgARBoAIEGQKABEGgAgQZAoAEEGgCBBhDodw4qZQN4hEALNCDQAg0g0AINCLRACzQg0AINCLRACzQg0AININACDQi0QAMItEADAi3QAg0ItEADCLRAAwIt0AACLdCAQAu0QAMCLdCAQAs0AAINgEADCDQAAg0g0AAINIBACzSAQAMg0AACDYBAAwg0AAINgEADCDQA0QNtyThYYI9Ag0Aj0AINAo1AAwIt0AINAo1AAwKNQINAI9ACDQKNQAMCLdACDQKNQAMCjUCDQCPQAg0CjUCDQCPQAg0CjUADAi3QAg0CjUADAo0vrwAEGgCBBhBoAAQaAIEGEGgABBpAoAEQaACBFmgAgQZAoAEEGgCBBhBoAP4S6GPdGchlB4EWaIEGBBqBBoEWaIEGBBqBBgRaoAGBFmiBBgQagQaBFmiBBgQagQaBFmiBBgQagQYEGoEGgRZogQYEGoEGgRZogQYEGoEGBFqgAYEWaIEGBBqBBoEGQKABBFqgAQQaAIEGEGgABBpAoAEQaAAEGkCgARBoAIEGQKABEGgAgQZAoAEEGgCBBhBoQwEQaAAEGmD+QAMQi0ADBHUDem20Kdy0Zn4AAAAASUVORK5CYII="
+}

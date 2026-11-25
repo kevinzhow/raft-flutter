@@ -304,7 +304,12 @@ void registerFormWindowTests(TestPart part) {
         expect(find.byType(RaftSheet), findsOneWidget);
         expect(dialog, findsNothing);
         final handle = find.byKey(const ValueKey('raft-sheet-handle'));
-        if (form.id == 'create channel') {
+        const headerCommitLabels = {
+          'create channel': 'Create',
+          'report issue': 'Report',
+        };
+        final headerCommitLabel = headerCommitLabels[form.id];
+        if (headerCommitLabel != null) {
           final head = find.descendant(
             of: sheet,
             matching: _key('raft-form-sheet-head'),
@@ -312,7 +317,7 @@ void registerFormWindowTests(TestPart part) {
           expect(head, findsOneWidget);
           expect(
             find
-                .descendant(of: head, matching: find.text('Create'))
+                .descendant(of: head, matching: find.text(headerCommitLabel))
                 .hitTestable(),
             findsOneWidget,
           );

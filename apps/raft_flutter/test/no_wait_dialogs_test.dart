@@ -93,7 +93,7 @@ void main() {
     );
     expect(inDialog('Dana'), findsOneWidget);
     expect(inDialog('Bob'), findsNothing);
-    expect(find.text('Add 2 Members'), findsOneWidget);
+    expect(find.text('Add 2 members'), findsOneWidget);
     expect(find.textContaining('Nothing to add'), findsNothing);
   });
 

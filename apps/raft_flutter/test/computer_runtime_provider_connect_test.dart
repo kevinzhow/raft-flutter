@@ -108,10 +108,9 @@ void main() {
     expect(find.text('Other providers'), findsOneWidget);
     expect(find.text('Cloud'), findsOneWidget);
     expect(find.text('Custom'), findsOneWidget);
-    expect(
-      find.text('First provider · Already configured on this Computer'),
-      findsOneWidget,
-    );
+    expect(find.text('First provider'), findsOneWidget);
+    expect(find.text('Already configured on this Computer'), findsOneWidget);
+    expect(find.byType(RaftInputGroup), findsNothing);
     expect(enabled(t, 'runtime-provider-continue'), isFalse);
     await t.tap(find.byKey(const ValueKey('runtime-provider-choice-alpha')));
     await settle(t, 3);
@@ -119,6 +118,15 @@ void main() {
   });
 
   testWidgets('search narrows the list; no match says so', (t) async {
+    api.answers['GET /qwen/providers'] = (_) => {
+      'kind': 'listed',
+      'providers': [
+        ...providers,
+        provider('delta'),
+        provider('epsilon'),
+        provider('zeta'),
+      ],
+    };
     await open(t);
     await t.enterText(find.byType(EditableText).first, 'cloud');
     await settle(t, 3);

@@ -91,9 +91,8 @@ class RaftOverflowSheet extends StatelessWidget {
     final t = RaftTokens.of(context);
     final size = MediaQuery.sizeOf(context);
     final mobile = size.width < RaftLayoutMetrics.desktopBreakpoint;
-    // `h-panel-header` reads `--shell-header-height`, which the AppShell root
-    // sets; the drawer portals out of it, so Web paints the 62px fallback.
-    const headerHeight = RaftMetrics.brutalPanelHeader;
+    // `h-panel-header`: 44 on desktop, 56 on phone (or 48 when short).
+    final headerHeight = RaftLayoutMetrics.shellHeaderHeight(t, size.height);
     final headerColor = t.colors['layer-drawer-header']!;
     final edge = t.colors['line-muted']!;
     final titleStyle = raftCssTextStyle(
@@ -155,9 +154,7 @@ class RaftOverflowSheet extends StatelessWidget {
       color: headerColor,
       child: Container(
         height: grows ? null : headerHeight,
-        constraints: grows
-            ? const BoxConstraints(minHeight: headerHeight)
-            : null,
+        constraints: grows ? BoxConstraints(minHeight: headerHeight) : null,
         padding: grows
             ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
             : const EdgeInsets.symmetric(horizontal: 16),

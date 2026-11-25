@@ -57,7 +57,7 @@ void main() {
         await tester.tap(find.text('Generate Image'));
         await tester.pumpAndSettle();
         expect(find.text('Actual content'), findsOneWidget);
-        await tester.tap(find.text('Save image'));
+        await tester.tap(find.text('Download all'));
         expect(saved, 1);
         await tester.tap(find.byTooltip('Close Preview'));
         await tester.pumpAndSettle();

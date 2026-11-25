@@ -322,16 +322,16 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
     );
     return RaftAvatar(
       name: '${c['senderName']}',
-      size: 20,
+      size: 35,
       kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
-      mountedContext: RaftMountedAvatarContext.compactList,
+      mountedContext: RaftMountedAvatarContext.messageRow,
       content: RaftAvatarContent(
         name: '${c['senderName']}',
         kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
         uploadedUrl: source.uploadedUrl,
         pixelKey: source.pixelKey,
         fallback: RaftMountedAvatarFallback(
-          avatarContext: RaftMountedAvatarContext.compactList,
+          avatarContext: RaftMountedAvatarContext.messageRow,
           identity: agent
               ? RaftMountedAvatarIdentity.agent
               : RaftMountedAvatarIdentity.human,

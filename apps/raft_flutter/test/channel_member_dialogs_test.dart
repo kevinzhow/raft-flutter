@@ -126,9 +126,14 @@ void main() {
       t,
     ) async {
       await open(t, (_) => dialog());
-      expect(find.text('Add Members'), findsOneWidget);
+      expect(find.text('Add members'), findsOneWidget);
+      final target = find.byKey(const ValueKey('add-members-target'));
       expect(
-        find.textContaining('design — target channel', findRichText: true),
+        find.descendant(of: target, matching: find.text('design')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: target, matching: find.text('— target channel')),
         findsOneWidget,
       );
       expect(find.text('Cindy suggested them'), findsOneWidget);
@@ -140,7 +145,7 @@ void main() {
       // Existing members are dropped from the suggestion.
       expect(find.text('Old agent'), findsNothing);
       expect(find.text('Member'), findsNothing);
-      expect(find.text('Add 2 Members'), findsOneWidget);
+      expect(find.text('Add 2 members'), findsOneWidget);
     });
 
     testWidgets('removing a row adds only the effective selection', (t) async {
@@ -158,8 +163,8 @@ void main() {
       expect(find.text('Product UX Designer'), findsNothing);
       // The Agents header stays while the agent candidate exists.
       expect(find.text('Agents'), findsOneWidget);
-      expect(find.text('Add 1 Member'), findsOneWidget);
-      await t.tap(find.text('Add 1 Member'));
+      expect(find.text('Add 1 member'), findsOneWidget);
+      await t.tap(find.text('Add 1 member'));
       await t.pumpAndSettle();
       expect(events, ['start']);
       expect(w.commands.single.$1, 'POST');
@@ -174,7 +179,7 @@ void main() {
       expect(result?.addedAgentIds, isEmpty);
       expect(result?.channelName, 'design');
       // The dialog closed.
-      expect(find.text('Add Members'), findsNothing);
+      expect(find.text('Add members'), findsNothing);
     });
 
     testWidgets('a failed add keeps the dialog with the error', (t) async {
@@ -185,12 +190,12 @@ void main() {
         body: {'error': 'Boom'},
       );
       await open(t, (_) => dialog(failed: (e) => failed = e));
-      await t.tap(find.text('Add 2 Members'));
+      await t.tap(find.text('Add 2 members'));
       await t.pumpAndSettle();
       expect(failed, isA<RaftApiException>());
       expect(find.text('Boom'), findsOneWidget);
-      expect(find.text('Add Members'), findsOneWidget);
-      expect(find.text('Add 2 Members'), findsOneWidget);
+      expect(find.text('Add members'), findsOneWidget);
+      expect(find.text('Add 2 members'), findsOneWidget);
     });
 
     testWidgets('everyone already a member: nothing to add, submit disabled', (

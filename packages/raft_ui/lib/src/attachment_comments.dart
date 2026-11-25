@@ -5,14 +5,25 @@
 import 'package:flutter/material.dart';
 
 import 'attachment_preview_shell.dart' show RaftCommentsSheetControls;
-import 'dialog_card.dart' show RaftRecipeButton;
+import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
+import 'empty_state.dart';
 import 'icons.dart';
-import 'system_inset.dart';
-import 'recipes/button_variants.g.dart';
-import 'design_primitives.dart';
+import 'interaction.dart' show RaftInteraction;
 import 'localization.dart';
 import 'message_body.dart';
+import 'panel_layout.dart';
+import 'raft/button.dart' show RaftButtonSize;
+import 'raft/ui_tokens.dart';
+import 'recipe_surface.dart';
+import 'recipes/markdown.g.dart';
+import 'recipes/message_item.g.dart';
+import 'recipes/message_reference.g.dart';
+import 'recipes/panel_header.g.dart';
+import 'system_inset.dart';
+import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
+import 'tooltip.dart';
 
 @immutable
 class RaftAttachmentCommentView {
@@ -29,14 +40,13 @@ class RaftAttachmentCommentView {
   final String id, senderName, content, timestamp;
   final Widget? avatar;
 
-  /// `anchorLabel(anchor)`; null for unanchored comments (FileText + name).
+  /// `anchorLabel(anchor)`; null for unanchored comments.
   final String? anchorLabel;
   final String? quote;
   final VoidCallback? onJump;
 }
 
-/// `inline-flex items-center gap-1 border border-line-muted
-/// bg-layer-canvas-muted px-1.5 py-0.5 text-[10px] font-display font-bold`.
+/// Web `ReferenceChip variant="muted"` used for attachment comment anchors.
 class RaftCommentAnchorChip extends StatelessWidget {
   const RaftCommentAnchorChip({
     super.key,
@@ -52,51 +62,60 @@ class RaftCommentAnchorChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final ink = t.strong;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: t.colors['layer-canvas-muted'],
-        border: Border.all(color: t.colors['line-muted']!),
+    final rt = t.recipeTokens;
+    final s = RaftMessageReferenceRecipe.resolve(
+      variant: RaftMessageReferenceRecipeVariant.muted,
+      states: t.recipeStates(),
+      tokens: rt,
+    ).root;
+    final ink = s.foreground(rt) ?? t.strong;
+    final rawStyle = s.text(
+      rt,
+      base: TextStyle(
+        fontFamily: t.headingFont,
+        fontFamilyFallback: t.fontFallback,
+        locale: t.textLocale,
       ),
+    );
+    final labelSize = onRemove == null ? 12.25 : 14.0;
+    final labelStyle = rawStyle.copyWith(
+      color: ink,
+      fontSize: labelSize,
+      height: 20.0 / labelSize,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
+    final grows = RaftScaled.grows(context);
+    return Container(
+      constraints: grows ? null : const BoxConstraints(maxHeight: 20),
+      padding: EdgeInsets.symmetric(horizontal: s.padding.horizontal / 2),
+      decoration: s.decoration(rt),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          RaftIcon(glyph, size: 9, color: ink),
+          RaftIcon(glyph, size: 12, color: ink),
           const SizedBox(width: 4),
           Flexible(
-            child: Text(
+            child: RaftCssText(
               label,
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: t.headingFont,
-                fontSize: 10,
-                height: 1.5,
-                fontWeight: FontWeight.w700,
-                color: ink,
-                leadingDistribution: TextLeadingDistribution.even,
-              ),
+              style: labelStyle,
             ),
           ),
           if (onRemove != null) ...[
             const SizedBox(width: 4),
-            RaftDensityScope(
-              // Source pending-anchor remove is the bare 9px X button.
-              density: RaftDensity.desktop,
-              child: RaftInteractive(
-                onPressed: onRemove,
-                semanticLabel:
-                    removeLabel ?? raftText(context, 'Remove Anchor'),
-                tooltip: removeLabel ?? raftText(context, 'Remove Anchor'),
-                builder: (_, state) => RaftIcon(
-                  RaftGlyph.x,
-                  size: 9,
-                  color: state.hovered || state.focusVisible
-                      ? ink
-                      : t.colors['foreground-muted'],
-                ),
+            RaftInteractive(
+              onPressed: onRemove,
+              expandTouchTarget: false,
+              semanticLabel: removeLabel ?? raftText(context, 'Remove Anchor'),
+              tooltip: removeLabel ?? raftText(context, 'Remove Anchor'),
+              builder: (_, state) => RaftIcon(
+                RaftGlyph.x,
+                size: 12,
+                color: state.hovered || state.focusVisible
+                    ? t.strong
+                    : t.ui.foregroundMuted,
               ),
             ),
           ],
@@ -138,116 +157,182 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final rule = BorderSide(color: t.colors['line-muted']!, width: 2);
-    final strong = t.strong;
-    final muted = t.colors['foreground-muted']!;
+    final rt = t.recipeTokens;
+    final rule = BorderSide(color: t.ui.lineSeam);
+    final hideBottomRule = collapsedBody && raftBottomInset(context) > 0;
     final list = comments;
+    final headerRecipe = RaftPanelHeaderRecipe.resolve(
+      tokens: rt,
+      states: t.recipeStates(
+        responsive: true,
+        pointerCoarse: RaftInteraction.of(context).touch,
+      ),
+    );
+    final grows = RaftScaled.grows(context);
+    final headerHeight = RaftLayoutMetrics.shellHeaderHeight(
+      t,
+      MediaQuery.sizeOf(context).height,
+    );
+    final sheetAction = sheet == null
+        ? null
+        : RaftPanelAction(
+            key: const ValueKey('attachment-comments-sheet-toggle'),
+            glyph: sheet!.expanded
+                ? RaftGlyph.chevronDown
+                : RaftGlyph.chevronUp,
+            ghostSize: RaftButtonSize.iconMd,
+            tooltip: raftText(
+              context,
+              sheet!.expanded ? 'Collapse Comments' : 'Expand Comments',
+            ),
+            onPressed: sheet!.onToggle,
+          );
+    final Widget header = sheet != null
+        ? Container(
+            constraints: const BoxConstraints(minHeight: 40),
+            padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+            decoration: BoxDecoration(
+              color: t.canvas,
+              border: hideBottomRule ? null : Border(bottom: rule),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: raftText(context, 'Comments'),
+                          style: t.scale(
+                            RaftTypeScale.subhead,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                        TextSpan(
+                          text: '  $filename',
+                          style: t.scale(
+                            RaftTypeScale.caption,
+                            color: t.ui.foregroundHint,
+                          ),
+                        ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                sheetAction!,
+              ],
+            ),
+          )
+        : Container(
+            height: grows ? null : headerHeight,
+            constraints: BoxConstraints(
+              minHeight: headerRecipe.header.minHeight ?? headerHeight,
+            ),
+            alignment: Alignment.centerLeft,
+            padding: headerRecipe.header.padding.copyWith(top: 0, bottom: 0),
+            decoration: BoxDecoration(
+              color: t.canvas,
+              border: hideBottomRule ? null : Border(bottom: rule),
+            ),
+            child: RaftTooltip(
+              message: raftFormat(context, 'Comments · {filename}', {
+                'filename': filename,
+              }),
+              child: RaftPanelHeaderContent(
+                style: headerRecipe.headerContent,
+                inline: !grows && t.desktop,
+                heading: Semantics(
+                  header: true,
+                  child: RaftCssText(
+                    raftText(context, 'Comments'),
+                    maxLines: grows ? null : 1,
+                    overflow: grows
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
+                    softWrap: grows,
+                    style: t.scale(
+                      RaftTypeScale.headline,
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                meta: RaftCssText(
+                  filename,
+                  maxLines: grows ? null : 1,
+                  overflow: grows
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis,
+                  softWrap: grows,
+                  style: t.scale(
+                    RaftTypeScale.caption,
+                    color: t.ui.foregroundHint,
+                  ),
+                ),
+              ),
+            ),
+          );
     return DefaultTextHeightBehavior(
       textHeightBehavior: raftCssTextHeightBehavior,
       child: ColoredBox(
-        // `bg-layer-panel theme-brutal:bg-white`.
-        color: t.colors['layer-panel']!,
+        color: t.canvas,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // `border-b-2 px-3 py-2 gap-2`, title `text-xs font-bold truncate`.
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-              // Collapsed, the header is the whole sheet: its rule would sit
-              // exactly on the system bar line once the sheet extends under it.
-              decoration: BoxDecoration(
-                border: collapsedBody && raftBottomInset(context) > 0
-                    ? null
-                    : Border(bottom: rule),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      raftFormat(context, 'Comments · {filename}', {
-                        'filename': filename,
-                      }),
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: t.headingFont,
-                        fontSize: 12,
-                        height: 16 / 12,
-                        fontWeight: FontWeight.w700,
-                        color: strong,
-                      ),
-                    ),
-                  ),
-                  if (sheet != null) ...[
-                    const SizedBox(width: 8),
-                    RaftRecipeButton(
-                      key: const ValueKey('attachment-comments-sheet-toggle'),
-                      variant: RaftButtonRecipeVariant.outline,
-                      size: RaftButtonRecipeSize.sm,
-                      padding: const EdgeInsets.all(2),
-                      glyph: sheet!.expanded
-                          ? RaftGlyph.chevronDown
-                          : RaftGlyph.chevronUp,
-                      glyphSize: 10,
-                      tooltip: sheet!.expanded
-                          ? 'Collapse Comments'
-                          : 'Expand Comments',
-                      onPressed: sheet!.onToggle,
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            header,
             if (!collapsedBody)
               Expanded(
                 child: list == null || loading
                     ? Center(
                         child: error != null
-                            ? Text(error!)
+                            ? Text(
+                                error!,
+                                style: t.scale(
+                                  RaftTypeScale.callout,
+                                  color: t.colors['danger-strong'],
+                                ),
+                              )
                             : Semantics(
                                 label: raftText(context, 'Loading'),
                                 child: const RaftSpinner(),
                               ),
                       )
                     : list.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                        child: Text(
-                          raftFormat(
-                            context,
-                            'Comments here are pinned to {filename}. For general discussion, reply in the thread.',
-                            {'filename': filename},
+                    ? Center(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
-                          style: TextStyle(
-                            fontFamily: t.headingFont,
-                            fontSize: 11,
-                            height: 1.625,
-                            color: muted,
+                          child: RaftEmptyState(
+                            glyph: RaftGlyph.messageSquare,
+                            title: raftText(context, 'No comments yet'),
+                            detail: raftFormat(
+                              context,
+                              'Comments here are pinned to {filename}. For general discussion, reply in the thread.',
+                              {'filename': filename},
+                            ),
                           ),
                         ),
                       )
-                    : ListView(
-                        // `px-3 py-2`, cards `gap-3`.
+                    : ListView.builder(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 8,
                         ),
-                        children: [
-                          for (var i = 0; i < list.length; i++) ...[
-                            if (i > 0) const SizedBox(height: 12),
-                            _CommentCard(comment: list[i], filename: filename),
-                          ],
-                        ],
+                        itemCount: list.length,
+                        itemBuilder: (_, index) =>
+                            _CommentRow(comment: list[index]),
                       ),
               ),
-            // `border-t-2 p-2`.
             if (!collapsedBody)
               Container(
-                // The panel background reaches the screen bottom; the composer
-                // clears the system bar (0 while the keyboard is up).
-                padding: const EdgeInsets.all(8)
-                    .copyWith(bottom: 8 + raftBottomInset(context)),
+                // `COMPOSER_DOCK_CLASS`: `shrink-0 border-t border-line-seam p-3`.
+                padding: const EdgeInsets.all(12)
+                    .copyWith(bottom: 12 + raftBottomInset(context)),
                 decoration: BoxDecoration(border: Border(top: rule)),
                 child: blockedMessage != null
                     ? Padding(
@@ -257,11 +342,9 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
                         ),
                         child: Text(
                           blockedMessage!,
-                          style: TextStyle(
-                            fontFamily: t.headingFont,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: muted,
+                          style: t.scale(
+                            RaftTypeScale.footnote,
+                            color: t.ui.foregroundHint,
                           ),
                         ),
                       )
@@ -274,110 +357,131 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
   }
 }
 
-/// `rounded border border-line-muted bg-layer-panel px-2.5 py-2`. Header
-/// `flex items-center gap-1.5 pr-6`.
-class _CommentCard extends StatelessWidget {
-  const _CommentCard({required this.comment, required this.filename});
+/// Web `MessageItem` row inside `AttachmentCommentsPanel`.
+class _CommentRow extends StatelessWidget {
+  const _CommentRow({required this.comment});
   final RaftAttachmentCommentView comment;
-  final String filename;
-  @override
-  Widget build(BuildContext context) {
+
+  Widget _buildRow(BuildContext context, {bool hovered = false}) {
     final t = RaftTokens.of(context);
-    final strong = t.strong;
+    final rt = t.recipeTokens;
     final c = comment;
-    Widget card({bool hovered = false}) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: hovered
-            ? t.product.brutalStone.withValues(alpha: .1)
-            : t.colors['layer-panel'],
-        border: Border.all(color: t.colors['line-muted']!),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Column(
+    final s = RaftMessageItemRecipe.resolve(
+      states: t.recipeStates(responsive: true, hovered: hovered),
+      tokens: rt,
+    );
+    final base = TextStyle(
+      locale: t.textLocale,
+      fontFamily: t.bodyFont,
+      fontFamilyFallback: t.fontFallback,
+    );
+    final quoteStyle = RaftMarkdownRecipe.resolve(tokens: rt).blockquote;
+    final bodyStyle = t.scale(RaftTypeScale.body);
+    return RaftRecipeBox(
+      style: s.root,
+      tokens: rt,
+      applyText: false,
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: s.root.columnGap ?? 12,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 24),
-            child: Row(
+          SizedBox(
+            width: s.gutter.width ?? 35,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: c.avatar ?? const SizedBox.shrink(),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox.square(dimension: 20, child: c.avatar),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    c.senderName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: t.headingFont,
-                      fontSize: 11,
-                      height: 1.5,
-                      fontWeight: FontWeight.w700,
-                      color: strong,
-                    ),
+                Padding(
+                  padding: s.header.padding,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    spacing: s.header.columnGap ?? 6,
+                    children: [
+                      Flexible(
+                        child: RaftCssText(
+                          c.senderName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: s.sender.text(rt, base: base),
+                        ),
+                      ),
+                      RaftCssText(
+                        c.timestamp,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.clip,
+                        style: s.time
+                            .text(
+                              rt,
+                              base: TextStyle(
+                                locale: t.textLocale,
+                                fontFamily: t.monoFont,
+                                fontFamilyFallback: t.fontFallback,
+                              ),
+                            )
+                            .copyWith(
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  c.timestamp,
-                  style: TextStyle(
-                    fontFamily: t.headingFont,
-                    fontSize: 10,
-                    height: 1.5,
-                    color: t.colors['foreground-muted'],
+                if (c.anchorLabel != null) ...[
+                  const SizedBox(height: 2),
+                  RaftCommentAnchorChip(
+                    label: c.anchorLabel!,
+                    glyph: RaftGlyph.mapPin,
                   ),
+                ],
+                if (c.quote != null && c.quote!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  RaftRecipeBox(
+                    style: quoteStyle,
+                    tokens: rt,
+                    applyText: false,
+                    child: Text(
+                      c.quote!,
+                      style: quoteStyle.text(rt, base: base),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 4),
+                RaftMessageBody(
+                  content: c.content,
+                  enableProseSelection: c.onJump == null,
+                  fontSize: bodyStyle.fontSize,
+                  lineHeight:
+                      bodyStyle.fontSize != null && bodyStyle.height != null
+                      ? bodyStyle.fontSize! * bodyStyle.height!
+                      : null,
+                  foregroundColor: t.strong,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 4),
-          RaftCommentAnchorChip(
-            label: c.anchorLabel ?? filename,
-            glyph: c.anchorLabel == null
-                ? RaftGlyph.fileText
-                : RaftGlyph.mapPin,
-          ),
-          if (c.quote != null && c.quote!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.only(left: 8),
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(width: 2, color: t.colors['line-muted']!),
-                ),
-              ),
-              child: Text(
-                c.quote!,
-                style: TextStyle(
-                  fontFamily: t.headingFont,
-                  fontSize: 11,
-                  fontStyle: FontStyle.italic,
-                  color: t.colors['foreground-muted'],
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 4),
-          // `text-xs leading-relaxed text-foreground-muted`, MarkdownContent
-          // density compact.
-          RaftMessageBody(
-            content: c.content,
-            // Source index.css disables selection inside its whole-card button.
-            enableProseSelection: c.onJump == null,
-            fontSize: 12,
-            lineHeight: 19.5,
-            foregroundColor: t.colors['foreground-muted'],
-          ),
         ],
       ),
     );
-    if (c.onJump == null) return card();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = comment;
+    if (c.onJump == null) return _buildRow(context);
     return RaftInteractive(
       onPressed: c.onJump,
       tooltip: c.quote?.isNotEmpty == true
           ? c.quote
           : raftText(context, 'Jump to Location'),
-      builder: (_, state) => card(hovered: state.hovered),
+      builder: (_, state) => _buildRow(context, hovered: state.hovered),
     );
   }
 }
@@ -392,7 +496,7 @@ class RaftAttachmentCommentsPage extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) {
-    final color = RaftTokens.of(context).colors['layer-panel']!;
+    final color = RaftTokens.of(context).canvas;
     return RaftNavigationBarStyle(
       background: color,
       child: Material(

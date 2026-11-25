@@ -148,11 +148,7 @@ void main() {
       'Computer name',
     );
     expect(
-      t
-          .widget<RaftRecipeButton>(
-            find.widgetWithText(RaftRecipeButton, 'Done'),
-          )
-          .disabled,
+      t.widget<RaftButton>(find.widgetWithText(RaftButton, 'Done')).disabled,
       isTrue,
     );
     f.c.stream.add(
@@ -172,7 +168,7 @@ void main() {
       t.widget<TextField>(find.byType(TextField)).controller!.text,
       'actual-host',
     );
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await t.tap(find.widgetWithText(RaftButton, 'Done'));
     await _settle(t);
     expect(find.byType(RaftAddComputerDialog), findsNothing);
     expect(f.w.commands.where((c) => c.$1 == 'DELETE'), isEmpty);
@@ -196,7 +192,7 @@ void main() {
       t.widget<TextField>(find.byType(TextField)).controller!.text,
       'My chosen name',
     );
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await t.tap(find.widgetWithText(RaftButton, 'Done'));
     await _settle(t);
     expect(find.byType(RaftAddComputerDialog), findsNothing);
     expect(f.w.commands.singleWhere((c) => c.$1 == 'PATCH').$3, {
@@ -228,7 +224,7 @@ void main() {
             'actual-host',
           );
           await t.enterText(find.byType(TextField), 'My connected computer');
-          await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+          await t.tap(find.widgetWithText(RaftButton, 'Done'));
           await _settle(t);
           expect(find.byType(RaftAddComputerDialog), findsNothing);
           final rename = f.w.commands.singleWhere((c) => c.$1 == 'PATCH');
@@ -316,8 +312,8 @@ void main() {
       expect(find.text('Computer connected'), findsOneWidget);
       final confirm = find.byKey(const ValueKey('add-computer-confirm-match'));
       expect(confirm, findsOneWidget);
-      final done = find.widgetWithText(RaftRecipeButton, 'Done');
-      expect(t.widget<RaftRecipeButton>(done).disabled, isTrue);
+      final done = find.widgetWithText(RaftButton, 'Done');
+      expect(t.widget<RaftButton>(done).disabled, isTrue);
       final semantics = t.ensureSemantics();
       expect(
         t.getSemantics(confirm),
@@ -332,7 +328,7 @@ void main() {
       await t.sendKeyEvent(LogicalKeyboardKey.space);
       await t.pump();
       semantics.dispose();
-      expect(t.widget<RaftRecipeButton>(done).disabled, isFalse);
+      expect(t.widget<RaftButton>(done).disabled, isFalse);
       await t.tap(done);
       await _settle(t);
       expect(
@@ -352,7 +348,7 @@ void main() {
     (t) async {
       final f = _Fixture();
       await f.open(t);
-      await t.tap(find.widgetWithText(RaftRecipeButton, 'Cancel'));
+      await t.tap(find.widgetWithText(RaftButton, 'Cancel'));
       await _settle(t);
       final reads = f.computerReads;
       f.w.machines = [_computer('late')];
@@ -398,7 +394,7 @@ void main() {
     expect(find.text('Cloud Computer'), findsNothing);
     expect(find.text('Experimental'), findsNothing);
     expect(f.w.commands, isEmpty);
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Cancel'));
+    await t.tap(find.widgetWithText(RaftButton, 'Cancel'));
     await _settle(t);
     expect(find.byType(RaftAddComputerDialog), findsNothing);
     expect(f.w.commands, isEmpty, reason: 'Cancel leaves nothing behind');
@@ -413,12 +409,12 @@ void main() {
     await f.event(t);
     await t.enterText(find.byType(TextField), 'Renamed');
     f.w.failRename = true;
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await t.tap(find.widgetWithText(RaftButton, 'Done'));
     await _settle(t);
     expect(find.byType(RaftAddComputerDialog), findsOneWidget);
     expect(find.text('Could not save computer name.'), findsOneWidget);
     f.w.failRename = false;
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await t.tap(find.widgetWithText(RaftButton, 'Done'));
     await _settle(t);
     expect(find.byType(RaftAddComputerDialog), findsNothing);
     expect(f.w.commands.where((c) => c.$1 == 'PATCH').map((c) => c.$2), [
@@ -433,7 +429,7 @@ void main() {
     await f.open(t, onOpen: opened.add);
     f.w.machines = [_computer('actual')];
     await f.event(t);
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await t.tap(find.widgetWithText(RaftButton, 'Done'));
     await _settle(t);
     expect(opened, ['actual']);
   });

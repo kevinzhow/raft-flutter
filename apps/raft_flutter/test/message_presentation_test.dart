@@ -495,14 +495,14 @@ void main() {
       await tester.tap(find.text('Add Members').last);
       await tester.pumpAndSettle();
       // The Web dialog: title, target channel, one row per candidate.
-      expect(find.text('Add Members'), findsNWidgets(2));
+      expect(find.text('Add members'), findsOneWidget);
       expect(find.text('Agent'), findsOneWidget);
       expect(find.text('Human'), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey('add-members-remove-agent:a1')),
       );
       await tester.pump();
-      await tester.tap(find.text('Add 1 Member'));
+      await tester.tap(find.text('Add 1 member'));
       await tester.pumpAndSettle();
       final batch = a.calls.singleWhere(
         (r) => r.method == 'POST' && r.path == '/channels/c1/members/batch',

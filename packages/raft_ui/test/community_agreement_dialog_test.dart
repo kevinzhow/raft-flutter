@@ -41,7 +41,8 @@ void main() {
     expect(tester.takeException(), isNull);
     final agree = find.byKey(const ValueKey('community-agreement-agree'));
     final cancel = find.byKey(const ValueKey('community-agreement-cancel'));
-    expect(tester.getRect(agree).top, greaterThan(tester.getRect(cancel).top));
+    // Stacked actions place the primary commit above ghost Cancel (`flex-col-reverse`).
+    expect(tester.getRect(agree).top, lessThan(tester.getRect(cancel).top));
     await tester.ensureVisible(agree);
     await tester.pumpAndSettle();
     expect(agree.hitTestable(), findsOneWidget);

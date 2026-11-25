@@ -93,9 +93,7 @@ abstract final class RaftMetrics {
       railItemCompact = 36,
       railSlot = 44,
       railGlyph = 18;
-  static const double panelHeader = 56,
-      brutalPanelHeader = 62,
-      compactPanelHeader = 48;
+  static const double panelHeader = 56, compactPanelHeader = 48;
   static const double composerGap = 8, composerInputMax = 128;
   static const double attachmentWidth = 176, attachmentHeight = 80;
 }
@@ -1756,24 +1754,6 @@ class _SpinnerPainter extends CustomPainter {
       old.phase != phase ||
       old.color != color ||
       old.reduced != reduced;
-}
-
-@immutable
-class RaftLightboxRecipe {
-  const RaftLightboxRecipe(this.tokens);
-  final RaftTokens tokens;
-  Color get backdrop => tokens.colors['layer-backdrop']!;
-  Color get surface => tokens.panel;
-  EdgeInsets get headerInset =>
-      const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
-  double get toolbarHeight => 56;
-  double get closeInset => 16;
-  double get actionsGap => 6;
-  Size mediaBounds(Size viewport) =>
-      Size(viewport.width * .86, viewport.height * .8);
-  TextStyle get title => RaftTypography.body(tokens, size: 14, line: 24);
-  BorderSide get navigationBorder =>
-      BorderSide(color: tokens.colors['line-strong']!, width: 2);
 }
 
 enum RaftMenuKind {

@@ -831,12 +831,10 @@
       "canonical": [
         "RaftAttachmentLightbox"
       ],
-      "note": "Canonical v1.24 media lightbox backed by generated RaftLightboxRecipe (package:raft_theme/recipes/lightbox.g.dart). Legacy 0.5.52 RaftLightboxRecipe (design_primitives.dart) retires onto it.",
+      "note": "Canonical v1.24 media lightbox backed by generated RaftLightboxRecipe (package:raft_theme/recipes/lightbox.g.dart).",
       "deprecated": {
-        "RaftLightboxRecipe": "packages/raft_ui/lib/src/design_primitives.dart"
       },
       "deprecatedHints": {
-        "RaftLightboxRecipe": "Use RaftAttachmentLightbox and generated RaftLightboxRecipe (package:raft_theme/recipes/lightbox.g.dart)."
       },
       "canonicalBindings": {
         "RaftAttachmentLightbox": {

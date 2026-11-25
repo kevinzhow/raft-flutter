@@ -11,6 +11,7 @@ import 'design_primitives.dart' show RaftSpinner;
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftPanelHeaderBar;
+import 'raft/ui_tokens.dart';
 import 'shortcut_platform.dart';
 import 'system_inset.dart';
 import 'theme.dart';
@@ -256,7 +257,7 @@ class _RaftAttachmentPreviewShellState
         right: 0,
         bottom: 0,
         child: RaftNavigationBarStyle(
-          background: t.panel,
+          background: t.canvas,
           child: AnimatedContainer(
             key: const ValueKey('attachment-comments-sheet'),
             duration: raftMotionDuration(
@@ -266,9 +267,9 @@ class _RaftAttachmentPreviewShellState
             curve: Curves.easeInOut,
             height: height,
             decoration: BoxDecoration(
-              color: t.panel,
+              color: t.canvas,
               border: Border(
-                top: BorderSide(color: t.colors['line-muted']!, width: rule),
+                top: BorderSide(color: t.ui.lineSeam, width: rule),
               ),
             ),
             child: ClipRect(

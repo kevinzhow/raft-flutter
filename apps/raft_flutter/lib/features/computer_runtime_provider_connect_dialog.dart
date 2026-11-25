@@ -167,6 +167,7 @@ Future<void> showComputerRuntimeProviderConnectDialog(
   required String runtime,
 }) => showRaftForm<void>(
   context,
+  dialogMaxWidth: 448,
   dismissible: false,
   dragDismissible: false,
   // Web has no discard question here; the key is dropped with the dialog.
@@ -423,34 +424,45 @@ class _RuntimeProviderConnectFormState
     });
     final body = _body(context);
     final actions = _actions(context);
+    final sheet = RaftFormFrame.sheetOf(context);
+    final sheetCommit = _sheetCommit(context);
+    final sheetClose = sheet && step == _Step.details && listKind == 'listed'
+        ? RaftPanelAction(
+            key: const ValueKey('runtime-provider-back'),
+            glyph: RaftGlyph.arrowLeft,
+            tooltip: raftText(context, 'Back'),
+            onPressed: connecting ? null : back,
+          )
+        : null;
     return PopScope(
       canPop: !connecting,
       child: RaftDismissScope(
-        child: RaftFormFrame.sheetOf(context)
+        child: sheet
             ? RaftFormSheet(
+                key: ValueKey('runtime-provider-dialog-${widget.runtime}'),
                 title: title,
+                showHandle: false,
                 onClose: connecting ? null : close,
+                closeButton: sheetClose,
+                commit: sheetCommit,
                 body: body,
-                footer: OverflowBar(
-                  alignment: MainAxisAlignment.end,
-                  spacing: RaftSpace.x2,
-                  overflowSpacing: RaftSpace.x2,
-                  children: actions,
-                ),
+                footer: sheetCommit != null
+                    ? null
+                    : OverflowBar(
+                        alignment: MainAxisAlignment.end,
+                        spacing: RaftSpace.x2,
+                        overflowSpacing: RaftSpace.x2,
+                        children: actions,
+                      ),
               )
-            : RaftDialog.card(
+            : RaftDialog(
                 key: ValueKey('runtime-provider-dialog-${widget.runtime}'),
                 title: title,
                 onClose: close,
                 closeEnabled: !connecting,
                 maxWidth: 448,
-                footer: Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: RaftSpace.x2,
-                  runSpacing: RaftSpace.x2,
-                  children: actions,
-                ),
-                child: body,
+                content: body,
+                actions: actions,
               ),
       ),
     );
@@ -461,15 +473,47 @@ class _RuntimeProviderConnectFormState
     VoidCallback? onPressed, {
     bool primary = true,
     bool busy = false,
+    RaftButtonSize size = RaftButtonSize.lg,
     Key? key,
   }) => RaftButton(
     key: key,
     label: label,
     uiVariant: primary ? RaftButtonVariant.primary : RaftButtonVariant.ghost,
-    uiSize: RaftButtonSize.lg,
+    uiSize: size,
     onPressed: onPressed,
     busy: busy,
   );
+
+  Widget? _sheetCommit(BuildContext context) {
+    String tr(String s) => raftText(context, s);
+    if (step == _Step.done) {
+      return _button(
+        tr('Done'),
+        close,
+        size: RaftButtonSize.md,
+        key: const ValueKey('runtime-provider-done'),
+      );
+    }
+    if (listKind == 'failed') return null;
+    if (step == _Step.details && chosen != null) {
+      return _button(
+        connecting ? tr('Connecting') : tr('Connect'),
+        ready && !connecting ? connect : null,
+        busy: connecting,
+        size: RaftButtonSize.md,
+        key: const ValueKey('runtime-provider-connect'),
+      );
+    }
+    if (listKind == 'listed') {
+      return _button(
+        tr('Continue'),
+        chosen == null ? null : next,
+        size: RaftButtonSize.md,
+        key: const ValueKey('runtime-provider-continue'),
+      );
+    }
+    return null;
+  }
 
   List<Widget> _actions(BuildContext context) {
     String tr(String s) => raftText(context, s);
@@ -520,12 +564,11 @@ class _RuntimeProviderConnectFormState
     ];
   }
 
-  TextStyle _muted(RaftTokens t, {double size = 14}) => RaftTypography.body(
-    t,
-    size: size,
-    line: size * 1.5,
-    color: t.colors['foreground-muted'] ?? t.strong,
-  );
+  TextStyle _muted(
+    RaftTokens t, {
+    RaftTypeStyle role = RaftTypeScale.subhead,
+    Color? color,
+  }) => t.scale(role, color: color ?? t.ui.foregroundMuted);
 
   Widget _body(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -625,7 +668,7 @@ class _RuntimeProviderConnectFormState
         Text(
           '${groupLabel(c)} · ${c['label']}',
           key: const ValueKey('runtime-provider-chosen'),
-          style: _muted(t).copyWith(color: t.strong),
+          style: _muted(t, color: t.ui.foreground),
         ),
         const SizedBox(height: RaftSpace.x4),
         if (needsEndpoint) ...[
@@ -736,7 +779,11 @@ class _RuntimeProviderConnectFormState
             values,
           ),
           key: const ValueKey('runtime-provider-scope'),
-          style: _muted(t, size: 12),
+          style: _muted(
+            t,
+            role: RaftTypeScale.caption,
+            color: t.ui.foregroundHint,
+          ),
         ),
         if (failure != null) ...[
           const SizedBox(height: RaftSpace.x4),
@@ -784,15 +831,33 @@ class _ProviderChoicesState extends State<_ProviderChoices> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final states = t.recipeStates(
+      responsive: true,
+      pointerCoarse: RaftInteraction.of(context).touch,
+    );
+    final recipe = RaftChoiceListRecipe.resolve(
+      scroll: true,
+      fill: false,
+      states: states,
+      tokens: tokens,
+    );
     if (widget.providers.isEmpty) {
-      return Text(
-        widget.empty,
-        key: const ValueKey('runtime-provider-empty'),
-        style: RaftTypography.body(
-          t,
-          size: 14,
-          line: 20,
-          color: t.colors['foreground-muted'] ?? t.strong,
+      return RaftCard(
+        padding: EdgeInsets.zero,
+        clip: true,
+        child: RaftRecipeBox(
+          style: recipe.note,
+          tokens: tokens,
+          applyText: false,
+          child: Text(
+            widget.empty,
+            key: const ValueKey('runtime-provider-empty'),
+            style: recipe.note.text(
+              tokens,
+              base: t.scale(RaftTypeScale.callout),
+            ),
+          ),
         ),
       );
     }
@@ -811,57 +876,73 @@ class _ProviderChoicesState extends State<_ProviderChoices> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        RaftSearchInput(
-          controller: widget.search,
-          focusNode: widget.searchFocus,
-          hint: widget.searchHint,
-          clearLabel: widget.clearLabel,
-          onChanged: (_) => setState(() {}),
-          onClear: () => setState(widget.search.clear),
-        ),
-        const SizedBox(height: RaftSpace.x2),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: _listMaxHeight),
-          child: groups.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(vertical: RaftSpace.x4),
-                  child: Text(
-                    widget.noMatch,
-                    textAlign: TextAlign.center,
-                    style: RaftTypography.body(
-                      t,
-                      size: 14,
-                      line: 20,
-                      color: t.colors['foreground-muted'] ?? t.strong,
+        if (widget.providers.length > 5) ...[
+          RaftInputGroup(
+            controller: widget.search,
+            focusNode: widget.searchFocus,
+            semanticLabel: widget.searchHint,
+            hintText: widget.searchHint,
+            leading: const RaftInputGroupAddon.icon(RaftGlyph.search),
+            clearLabel: widget.clearLabel,
+            onChanged: (_) => setState(() {}),
+            onClear: () => setState(widget.search.clear),
+          ),
+          SizedBox(height: recipe.root.rowGap ?? RaftSpace.x2),
+        ],
+        RaftCard(
+          padding: EdgeInsets.zero,
+          clip: true,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: recipe.scroller.maxHeight ?? _listMaxHeight,
+            ),
+            child: groups.isEmpty
+                ? RaftRecipeBox(
+                    style: recipe.note,
+                    tokens: tokens,
+                    applyText: false,
+                    child: Text(
+                      widget.noMatch,
+                      textAlign: TextAlign.center,
+                      style: recipe.note.text(
+                        tokens,
+                        base: t.scale(RaftTypeScale.callout),
+                      ),
                     ),
-                  ),
-                )
-              : ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final entry in groups.entries) ...[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          RaftSpace.x2,
-                          RaftSpace.x2,
-                          RaftSpace.x2,
-                          RaftSpace.x1,
-                        ),
-                        child: Text(
-                          entry.key,
-                          style: RaftTypography.body(
-                            t,
-                            size: 11,
-                            line: 16,
-                            weight: FontWeight.w700,
-                            color: t.colors['foreground-hint'] ?? t.strong,
+                  )
+                : ListView(
+                    shrinkWrap: true,
+                    padding: recipe.rows.padding == EdgeInsets.zero
+                        ? const EdgeInsets.all(RaftSpace.x1)
+                        : recipe.rows.padding,
+                    children: [
+                      for (var i = 0; i < groups.length; i++) ...[
+                        if (i > 0)
+                          SizedBox(
+                            height: recipe.rows.rowGap ?? RaftSpace.half,
+                          ),
+                        RaftRecipeBox(
+                          style: recipe.heading,
+                          tokens: tokens,
+                          applyText: false,
+                          child: Text(
+                            groups.keys.elementAt(i),
+                            style: recipe.heading.text(
+                              tokens,
+                              base: t.scale(RaftTypeScale.caption),
+                            ),
                           ),
                         ),
-                      ),
-                      for (final p in entry.value) _row(context, t, p),
+                        for (final p in groups.values.elementAt(i)) ...[
+                          SizedBox(
+                            height: recipe.rows.rowGap ?? RaftSpace.half,
+                          ),
+                          _row(context, t, p),
+                        ],
+                      ],
                     ],
-                  ],
-                ),
+                  ),
+          ),
         ),
       ],
     );
@@ -870,57 +951,86 @@ class _ProviderChoicesState extends State<_ProviderChoices> {
   Widget _row(BuildContext context, RaftTokens t, Map<String, dynamic> p) {
     final id = '${p['id']}';
     final selected = id == widget.chosenId;
-    final description = [
-      if (p['description'] is String && (p['description'] as String).isNotEmpty)
-        p['description'] as String,
-      if (p['configured'] == true) widget.alreadyConfigured,
-    ].join(' · ');
+    final tokens = t.recipeTokens;
+    final rawDesc = p['description'];
+    final descLine = rawDesc is String && rawDesc.isNotEmpty ? rawDesc : null;
+    final configured = p['configured'] == true;
     return RaftInteractive(
       key: ValueKey('runtime-provider-choice-$id'),
       semanticLabel: '${p['label']}',
       selected: selected,
       onPressed: () => widget.onChoose(id),
-      builder: (context, state) => Container(
-        padding: const EdgeInsets.all(RaftSpace.x2),
-        decoration: BoxDecoration(
-          color: selected
-              ? t.colors['info-soft']
-              : state.hovered
-              ? t.colors['layer-inset']
-              : null,
-          border: state.focusVisible
-              ? Border.all(color: t.strong, width: t.border)
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${p['label']}',
-              style: RaftTypography.body(
-                t,
-                size: 14,
-                line: 20,
-                weight: FontWeight.w600,
-                color: t.strong,
-              ),
-            ),
-            if (description.isNotEmpty)
-              Text(
-                description,
-                key: p['configured'] == true
-                    ? ValueKey('runtime-provider-configured-$id')
-                    : null,
-                style: RaftTypography.body(
-                  t,
-                  size: 12,
-                  line: 16,
-                  color: t.colors['foreground-muted'] ?? t.strong,
+      builder: (context, state) {
+        final itemRecipe = RaftChoiceListRecipe.resolve(
+          scroll: true,
+          fill: false,
+          states: t.recipeStates(
+            hovered: state.hovered,
+            pressed: state.pressed,
+            focusVisible: state.focusVisible,
+            checked: selected,
+            responsive: true,
+            pointerCoarse: RaftInteraction.of(context).touch,
+          ),
+          tokens: tokens,
+        );
+        final descStyle = itemRecipe.description.text(
+          tokens,
+          base: t.scale(RaftTypeScale.caption),
+        );
+        final bodyGap = itemRecipe.body.rowGap;
+        return RaftRecipeBox(
+          style: itemRecipe.item,
+          tokens: tokens,
+          applyText: false,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: RaftSpace.half),
+                child: RaftRadioMark(
+                  checked: selected,
+                  focusVisible: state.focusVisible,
                 ),
               ),
-          ],
-        ),
-      ),
+              SizedBox(width: itemRecipe.item.columnGap ?? RaftSpace.x2),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${p['label']}',
+                      style: itemRecipe.label.text(
+                        tokens,
+                        base: t.scale(RaftTypeScale.subhead),
+                      ),
+                    ),
+                    if (descLine != null) ...[
+                      if (bodyGap != null) SizedBox(height: bodyGap),
+                      Text(
+                        descLine,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: descStyle,
+                      ),
+                    ],
+                    if (configured) ...[
+                      if (bodyGap != null) SizedBox(height: bodyGap),
+                      Text(
+                        widget.alreadyConfigured,
+                        key: ValueKey('runtime-provider-configured-$id'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: descStyle,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

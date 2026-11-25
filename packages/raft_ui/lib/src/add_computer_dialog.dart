@@ -54,12 +54,16 @@ class RaftAddComputerDialog extends StatefulWidget {
   /// The registered Computer once it is online (switches to the last step).
   final RaftAddComputerConnection? connected;
 
-  /// Web `Modal`: `bg-layer-backdrop`, not dismissed by the backdrop.
+  /// Web `Modal`: `bg-layer-backdrop`, not dismissed by the backdrop;
+  /// `narrow="sheet"` on phone.
   static Future<void> show(BuildContext context, WidgetBuilder builder) {
-    return showRaftDialog<void>(
-      context: context,
-      barrierDismissible: false,
+    return showRaftForm<void>(
+      context,
       builder: builder,
+      dismissible: false,
+      dragDismissible: false,
+      guardUnsaved: false,
+      dialogMaxWidth: 512,
     );
   }
 
@@ -165,9 +169,22 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
     }
   }
 
+  String _computerOsLabel(String? os) {
+    final raw = (os ?? '').trim();
+    return switch (raw.toLowerCase()) {
+      'darwin' || 'macos' => 'macOS',
+      'linux' => 'Linux',
+      'windows' || 'win32' => 'Windows',
+      '' => raftText(context, 'Unknown OS'),
+      _ => raw,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final sheet = RaftFormFrame.sheetOf(context);
+    final framed = RaftFormFrame.framedOf(context);
     final title = connectedStep ? 'Computer connected' : 'Connect computer';
     // Escape and the system back gesture leave through the same path as the
     // X: `cancel` releases an unconnected registration, `done` names the
@@ -176,6 +193,33 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
       if (!saving) unawaited(canFinish ? done() : cancel());
     }
 
+    final commitButton = connectedStep
+        ? RaftButton(
+            label: saving ? 'Saving...' : 'Done',
+            uiVariant: RaftButtonVariant.primary,
+            uiSize: sheet ? RaftButtonSize.md : RaftButtonSize.lg,
+            disabled: saving || !canFinish,
+            onPressed: done,
+          )
+        : RaftButton(
+            label: 'Done',
+            uiVariant: RaftButtonVariant.primary,
+            uiSize: sheet ? RaftButtonSize.md : RaftButtonSize.lg,
+            disabled: true,
+          );
+
+    final dialog = RaftDialog.card(
+      key: const ValueKey('computer-dialog'),
+      title: title,
+      // Card `max-w-lg p-6`.
+      maxWidth: 512,
+      onClose: leave,
+      sheetCommit: commitButton,
+      child: connectedStep
+          ? _connectedStep(t, sheet: sheet, commitButton: commitButton)
+          : _waitingStep(t, sheet: sheet, commitButton: commitButton),
+    );
+
     return RaftDismissScope(
       onDismiss: leave,
       child: PopScope(
@@ -183,22 +227,17 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
         onPopInvokedWithResult: (didPop, _) {
           if (!didPop) leave();
         },
-        child: Center(
-          child: Material(
-            type: MaterialType.transparency,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: RaftDialog.card(
-                key: const ValueKey('computer-dialog'),
-                title: title,
-                // Card `max-w-lg p-6`.
-                maxWidth: 512,
-                onClose: leave,
-                child: connectedStep ? _connectedStep(t) : _waitingStep(t),
+        child: framed
+            ? dialog
+            : Center(
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: dialog,
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -214,7 +253,11 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
     ],
   ];
 
-  Widget _waitingStep(RaftTokens t) {
+  Widget _waitingStep(
+    RaftTokens t, {
+    required bool sheet,
+    required Widget commitButton,
+  }) {
     return Column(
       key: const ValueKey('add-computer-waiting'),
       mainAxisSize: MainAxisSize.min,
@@ -272,38 +315,40 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
             ),
           ),
         ],
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            RaftRecipeButton(
-              label: saving ? 'Canceling...' : 'Cancel',
-              variant: RaftButtonRecipeVariant.outline,
-              size: RaftButtonRecipeSize.md,
-              disabled: saving,
-              onPressed: cancel,
-            ),
-            const SizedBox(width: 12),
-            const RaftRecipeButton(
-              label: 'Done',
-              variant: RaftButtonRecipeVariant.success,
-              size: RaftButtonRecipeSize.md,
-              disabled: true,
-            ),
-          ],
-        ),
+        if (!sheet) ...[
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              RaftButton(
+                label: saving ? 'Canceling...' : 'Cancel',
+                uiVariant: RaftButtonVariant.ghost,
+                uiSize: RaftButtonSize.lg,
+                disabled: saving,
+                onPressed: cancel,
+              ),
+              const SizedBox(width: 12),
+              commitButton,
+            ],
+          ),
+        ],
       ],
     );
   }
 
-  Widget _connectedStep(RaftTokens t) {
+  Widget _connectedStep(
+    RaftTokens t, {
+    required bool sheet,
+    required Widget commitButton,
+  }) {
     final m = widget.connected;
+    final osLabel = _computerOsLabel(m!.os);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ..._errorBanner(),
-        if (m!.loadingDetails)
+        if (m.loadingDetails)
           const RaftBanner(
             key: ValueKey('add-computer-details-loading'),
             status: RaftBannerRecipeStatus.info,
@@ -312,16 +357,41 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
         else
           RaftBanner(
             status: RaftBannerRecipeStatus.success,
+            live: false,
+            glyph: RaftGlyph.circleCheck,
             title: 'Computer connected successfully!',
-            description: '${m.hostname} — ${m.os}',
+            description: '${m.hostname} — $osLabel',
+            descriptionBuilder: (style) => ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: (style.fontSize ?? 14) * (style.height ?? 1.5),
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  '${m.hostname} — $osLabel',
+                  style: style.merge(
+                    t.scale(
+                      RaftTypeScale.monoMeta,
+                      mono: true,
+                      color: style.color,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         const SizedBox(height: 16),
-        RaftRecipeInput(
-          controller: name,
-          placeholder: m.hostname.trim().isEmpty ? 'Computer name' : m.hostname,
-          autofocus: true,
-          enabled: !saving,
-          onChanged: (_) => nameEdited = true,
+        RaftProductFormField(
+          label: 'Computer name',
+          child: RaftRecipeInput(
+            controller: name,
+            placeholder: m.hostname.trim().isEmpty
+                ? 'Computer name'
+                : m.hostname,
+            autofocus: true,
+            enabled: !saving,
+            onChanged: (_) => nameEdited = true,
+          ),
         ),
         const SizedBox(height: 16),
         if (widget.detectedRuntimes case final runtimes?) ...[
@@ -332,16 +402,8 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
           _confirmComputer(t, m),
           const SizedBox(height: 16),
         ],
-        Align(
-          alignment: Alignment.centerRight,
-          child: RaftRecipeButton(
-            label: saving ? 'Saving...' : 'Done',
-            variant: RaftButtonRecipeVariant.success,
-            size: RaftButtonRecipeSize.md,
-            disabled: saving || !canFinish,
-            onPressed: done,
-          ),
-        ),
+        if (!sheet)
+          Align(alignment: Alignment.centerRight, child: commitButton),
       ],
     );
   }
@@ -352,6 +414,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
       'This is the computer I just set up{hostname}.',
       {'hostname': computer.hostname.isEmpty ? '' : ' (${computer.hostname})'},
     );
+    final controlRadius = t.size('radius.control', fallback: 6);
     void change(bool value) => setState(() => confirmedComputerMatch = value);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -359,8 +422,12 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: t.colors['layer-panel'],
-          border: Border.all(color: t.colors['line-muted']!, width: 2),
+          color: t.colors['layer-card'],
+          borderRadius: BorderRadius.all(Radius.circular(controlRadius)),
+          border: Border.all(
+            color: t.colors['line-strong']!,
+            width: raftControlBorderPx(context, 1.5),
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,15 +438,14 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
               onChanged: change,
               semanticLabel: label,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
-                style: RaftTypography.body(
-                  t,
-                  size: 14,
-                  line: 20,
-                  weight: FontWeight.w700,
+                style: t.scale(
+                  RaftTypeScale.callout,
+                  weight: FontWeight.w600,
+                  color: t.ui.foreground,
                 ),
               ),
             ),

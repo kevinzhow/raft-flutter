@@ -10,4 +10,6 @@ const Map<String, String> zhCatalogListsFollowup = <String, String>{
   'Remove {name} from Add List': '将 {name} 从待添加列表中移除',
   'Add {count} Members': '添加 {count} 位成员',
   'Add 1 Member': '添加 1 位成员',
+  'Add {count} members': '添加 {count} 位成员',
+  'Add 1 member': '添加 1 位成员',
 };

@@ -227,7 +227,7 @@ void main() {
       await t.tap(find.text('Agree & continue'));
       await t.pump();
       expect(find.text('Joining…'), findsOneWidget);
-      final cancel = t.widget<RaftRecipeButton>(
+      final cancel = t.widget<RaftButton>(
         find.byKey(const ValueKey('community-agreement-cancel')),
       );
       expect(cancel.disabled, isTrue);

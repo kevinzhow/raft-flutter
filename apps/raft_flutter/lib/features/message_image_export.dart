@@ -538,55 +538,34 @@ class _MessageImageReviewState extends State<MessageImageReview> {
       },
       child: Focus(
         autofocus: true,
-        child: Dialog.fullscreen(
-          backgroundColor: RaftLightboxRecipe(RaftTokens.of(context)).backdrop,
-          child: GestureDetector(
-            key: const ValueKey('image-export-backdrop'),
-            behavior: HitTestBehavior.opaque,
-            onTap: close,
-            child: SafeArea(
-              child: Center(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {},
-                  child: SizedBox(
-                    width: 768,
-                    height: MediaQuery.sizeOf(context).height * .85,
-                    child: RaftImageReview(
-                      preview: RaftSizedImage.memory(
-                        pages[page],
-                        fit: BoxFit.contain,
-                        evictOnDispose: true,
-                        semanticLabel: raftText(
-                          context,
-                          'Preview of selected messages',
-                        ),
-                        gaplessPlayback: false,
-                      ),
-                      onClose: () => Navigator.pop(context, false),
-                      onSave: () => act(false),
-                      onShare: sharing.supported ? () => act(true) : null,
-                      onCopy: clipboard.supported ? copyImage : null,
-                      onSaveAll: pages.length > 1 && !sharing.supported
-                          ? () => act(false, all: true)
-                          : null,
-                      pageNumber: page + 1,
-                      pageCount: pages.length,
-                      onPreviousPage: page > 0
-                          ? () => selectPage(page - 1)
-                          : null,
-                      onNextPage: page + 1 < pages.length
-                          ? () => selectPage(page + 1)
-                          : null,
-                      copying: copying,
-                      copied: copied,
-                      busy: busy,
-                      error: error,
-                    ),
-                  ),
-                ),
-              ),
+        child: RaftImageReviewLightbox(
+          backdropKey: const ValueKey('image-export-backdrop'),
+          onBackdrop: close,
+          child: RaftImageReview(
+            preview: RaftSizedImage.memory(
+              pages[page],
+              fit: BoxFit.contain,
+              evictOnDispose: true,
+              semanticLabel: raftText(context, 'Preview of selected messages'),
+              gaplessPlayback: false,
             ),
+            onClose: () => Navigator.pop(context, false),
+            onSave: () => act(false),
+            onShare: sharing.supported ? () => act(true) : null,
+            onCopy: clipboard.supported ? copyImage : null,
+            onSaveAll: pages.length > 1 && !sharing.supported
+                ? () => act(false, all: true)
+                : null,
+            pageNumber: page + 1,
+            pageCount: pages.length,
+            onPreviousPage: page > 0 ? () => selectPage(page - 1) : null,
+            onNextPage: page + 1 < pages.length
+                ? () => selectPage(page + 1)
+                : null,
+            copying: copying,
+            copied: copied,
+            busy: busy,
+            error: error,
           ),
         ),
       ),

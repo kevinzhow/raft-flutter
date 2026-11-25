@@ -11,7 +11,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
 import '../data/channel_roster_invalidations.dart';
-import 'channel_members.dart' show isLocalChannelMember;
+import 'channel_members.dart' show channelMemberPresence, isLocalChannelMember;
 
 import '../data/workspace_controller.dart';
 import 'channel_form_fields.dart';
@@ -311,8 +311,15 @@ class _AddMembersDialogState extends State<AddMembersDialog> {
               : null),
       avatar: ChannelCandidateAvatar(
         candidate: candidate,
-        avatarContext: RaftMountedAvatarContext.compactList,
+        avatarContext: RaftMountedAvatarContext.membersRow,
+        extent: 35,
         origin: w.client.origin,
+        presence: human
+            ? null
+            : channelMemberPresence(
+                data,
+                directory: w.services.entityDirectory.agent(id),
+              ),
       ),
       removeLabel: raftFormat(context, 'Remove {name} from Add List', {
         'name': candidate.label,

@@ -70,8 +70,8 @@ Future<void> _pump(
 Finder _key(String k) => find.byKey(ValueKey(k));
 
 bool _enabled(WidgetTester tester, String key) {
-  final button = tester.widget<RaftRecipeButton>(_key(key));
-  return !button.disabled;
+  final button = tester.widget<RaftButton>(_key(key));
+  return !button.disabled && button.onPressed != null;
 }
 
 void main() {
