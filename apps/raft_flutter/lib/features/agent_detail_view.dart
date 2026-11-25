@@ -2424,13 +2424,14 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
   @override
   Widget build(BuildContext context) {
     final path = '~/.slock/agents/${widget.agentId}/';
-    final wide = MediaQuery.sizeOf(context).width >= 768;
     return RaftWorkspaceTreeView(
       preview: openFile == null
           ? null
-          : RaftWorkspaceFilePreview(
-              // The phone shows the pane alone and closes it with the arrow.
-              onBack: wide ? null : () => setState(() => openFile = null),
+          : (context, alone) => RaftWorkspaceFilePreview(
+              // Shown alone (a phone, or a profile column too narrow for the
+              // split) the pane closes with the arrow; beside the tree the
+              // tree is the way back.
+              onBack: alone ? () => setState(() => openFile = null) : null,
               embedded: true,
               path: openFile!,
               content: openContent ?? '',

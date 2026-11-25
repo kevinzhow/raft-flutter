@@ -2365,9 +2365,14 @@ class RaftWorkspaceTreeView extends StatelessWidget {
   final String treeResizeLabel;
   static const treeMinWidth = 160.0, treeMaxWidth = 600.0;
 
-  /// Right pane of the `md:` split layout (an open file); when the panel is
-  /// wide and this is null the pane shows "Select a file to view".
-  final Widget? preview;
+  /// Right pane of the `md:` split layout (an open file); when the pane is
+  /// wide and this is null it shows "Select a file to view".
+  ///
+  /// `alone` is true where this view has no room for the split and the open
+  /// file replaces the tree, so the preview is the only thing on screen and
+  /// needs its own way back. The host cannot answer that from the window: the
+  /// same view is the whole Agent page and a 300-600 px profile column.
+  final Widget Function(BuildContext context, bool alone)? preview;
   final String path;
   final List<RaftWorkspaceNode> nodes;
 
@@ -2377,7 +2382,13 @@ class RaftWorkspaceTreeView extends StatelessWidget {
   final String? error;
   final VoidCallback? onCopyPath, onToggleHidden, onRefresh;
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    // The `md:` cut on this view's own box, not the window's.
+    builder: (context, size) =>
+        _pane(context, size.maxWidth >= RaftLayoutMetrics.desktopBreakpoint),
+  );
+
+  Widget _pane(BuildContext context, bool wide) {
     final t = RaftTokens.of(context);
     // Web v1.21.23 AgentWorkspace: every surface is `bg-layer-canvas`, every
     // rule `border-line-seam`, file names mono 13/20; the pre-theme looks keep
@@ -2389,7 +2400,6 @@ class RaftWorkspaceTreeView extends StatelessWidget {
     final placeholder = web
         ? t.colors['foreground-hint']!
         : raftPanelInk(t, .4, t.colors['foreground-placeholder']!);
-    final wide = MediaQuery.sizeOf(context).width >= 768;
     final pathBar = errorFinal || !showPath
         ? const SizedBox.shrink()
         : Container(
@@ -2551,7 +2561,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ColoredBox(color: panel, child: pathBar),
-            Expanded(child: preview!),
+            Expanded(child: preview!(context, true)),
           ],
         ),
       );
@@ -2607,7 +2617,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
                 ),
               ),
               end:
-                  preview ??
+                  preview?.call(context, false) ??
                   (web
                       ? RaftProductEmptyState(
                           title: raftText(context, 'Select a file to view'),
