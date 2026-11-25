@@ -132,12 +132,14 @@ void main() {
           final detailsBack = find.byKey(const Key('channel-overflow-back'));
           if (covers) {
             // A medium window covers the conversation with Details instead of
-            // squeezing both below what they can be read at. The cover starts
-            // under the channel header, so the folded thread's own Back up
-            // there stays reachable; Details draws a Back in place of its X.
+            // squeezing both below what they can be read at. The cover takes
+            // the whole conversation column, the folded thread with it, so
+            // the one Back on screen is Details' (in place of its X); the
+            // thread's own Back is reachable again once Details is popped.
             expect(overlay, findsOneWidget);
             expect(detailsClose.hitTestable(), findsNothing);
-            expect(threadBack.hitTestable(), findsOneWidget);
+            expect(threadBack.hitTestable(), findsNothing);
+            expect(detailsBack.hitTestable(), findsOneWidget);
             expect(
               t.getRect(details).left,
               closeTo(t.getRect(conversation).left, .01),

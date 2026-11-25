@@ -209,7 +209,6 @@ Future<_Rig> _pumpArea(
                 valueListenable: profile,
                 builder: (context, open, _) => ChannelSideArea(
                   controller: w,
-                  headerExtent: 56,
                   profile: open
                       ? const SizedBox.expand(key: Key('profile-pane'))
                       : null,

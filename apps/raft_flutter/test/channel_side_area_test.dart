@@ -115,7 +115,6 @@ Future<AreaRig> pumpArea(
       home: Scaffold(
         body: ChannelSideArea(
           controller: w,
-          headerExtent: 56,
           bodyOf: (context, section) => SizedBox.expand(
             key: Key('body-${section.name}'),
             child: const ColoredBox(color: Color(0xFFEEEEEE)),
@@ -496,13 +495,16 @@ void main() {
 
   group('compact: covering', () {
     testWidgets(
-      'a phone: one card covers the chat under the header, no X, no Back of its own',
+      'a phone: one card covers the whole conversation column, no X, no Back of its own',
       (t) async {
         final rig = await pumpArea(t, size: const Size(390, 844));
         rig.store.setCardOpen(ChannelSideCard.tasks, true);
         await t.pump();
+        // A phone's channel header stands above this area (workspace_view
+        // mounts `mobilePageHeader` outside RaftAdaptiveWorkspace), and its
+        // Back is what closes the card, so the cover takes the whole area.
         final cover = rect(t, 'channel-side-overlay');
-        expect(cover, const Rect.fromLTRB(0, 56, 390, 844));
+        expect(cover, const Rect.fromLTRB(0, 0, 390, 844));
         expect(
           find.byKey(const Key('channel-side-card-tasks-close')),
           findsNothing,
@@ -595,7 +597,7 @@ void main() {
       await t.pump();
       expect(
         rect(t, 'channel-side-overlay'),
-        const Rect.fromLTRB(0, 56, 600, 800),
+        const Rect.fromLTRB(0, 0, 600, 800),
       );
       await t.tapAt(const Offset(100, 300));
       expect(probeTaps, 0);

@@ -298,10 +298,13 @@ per screen class, instead of Web's single desktop rule at every width
 the conversation, each clipped to 160 and below its own minimum).
 
 - Medium (768 up to 1024, `RaftLayoutClass.medium`, where a foldable inner
-  screen and a narrow desktop window land): the top pane covers the
-  conversation full width. The rail and the channel sidebar stay. Opening
-  another pane stacks on top of it, and its head's back arrow pops it and
-  reveals the pane underneath; closing the last returns to the chat.
+  screen and a narrow desktop window land): the top pane covers the whole
+  conversation column, its channel header included, because the pane carries
+  its own head with the back arrow. The rail and the channel sidebar stay.
+  Opening another pane stacks on top of it, and its head's back arrow pops it
+  and reveals the pane underneath; closing the last returns to the chat. A
+  folded thread is a layer of the conversation, so it is covered with it: one
+  back arrow on screen, nothing underneath to click or tab to.
 - Wide (1024 and up), pointer and touch alike: a pane stands beside the chat
   only if it fits there at its own minimum (`channelSideColumnMinWidth`) beside
   a `channelSideChatMinWidth` (360) chat. Panes that do not fit wait behind the

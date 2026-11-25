@@ -1874,9 +1874,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
                               key: ChannelSideArea.workspaceKey(this),
                               controller: w,
                               profile: plannedProfile ? profile : null,
-                              headerExtent: wide
-                                  ? raftPageHeaderHeight(context)
-                                  : 0,
                               onOpenTask: openTaskSurface,
                               child: Column(
                                 children: [

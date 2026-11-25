@@ -128,7 +128,6 @@ Future<Rig> pump(
             Expanded(
               child: ChannelSideArea(
                 controller: w,
-                headerExtent: 56,
                 bodyOf: bodies ? (context, section) => _Body(section) : null,
                 child: const ColoredBox(
                   key: Key('chat'),

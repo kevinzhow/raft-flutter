@@ -281,7 +281,6 @@ class ChannelSideArea extends StatefulWidget {
     super.key,
     required this.controller,
     required this.child,
-    this.headerExtent = 0,
     this.onOpenTask,
     this.headWrapper,
     this.profile,
@@ -292,10 +291,6 @@ class ChannelSideArea extends StatefulWidget {
 
   /// The channel column: header and chat. It stays where it is.
   final Widget child;
-
-  /// How much of [child]'s top is the channel header: a floating or covering
-  /// column starts under it. 0 where the header stands above this widget.
-  final double headerExtent;
 
   /// Opens a task (the workspace's task surface).
   final void Function(
@@ -686,7 +681,12 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
                                 RaftCoveredPane(covered: true, child: chat),
                               ),
                             ),
-                            chatContent(foldedThread),
+                            // Folded, the thread stands in the chat's place,
+                            // so a covering pane puts it away exactly as it
+                            // puts the chat away.
+                            chatContent(
+                              _Inert(inert: covering, child: foldedThread),
+                            ),
                           ],
                         ),
                 ),
@@ -718,12 +718,12 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
           ),
         ),
         if (!beside && placement.columns.isNotEmpty)
-          Positioned(
+          // The whole conversation column, the channel header included: the
+          // covering pane carries its own head with the Back that pops it, so
+          // the header underneath would only be a strip of dead buttons (it is
+          // inside `chat`, which is inert while a pane covers).
+          Positioned.fill(
             key: const Key('channel-side-overlay'),
-            top: widget.headerExtent,
-            right: 0,
-            left: 0,
-            bottom: 0,
             child: _CoverFocus(
               // A phone's Back closes what covers the conversation (Web
               // `headerMobileBack`); wider, it pops the pane on top and the
