@@ -106,7 +106,10 @@ class ChannelSideStack {
   /// Which of [visible] stand beside the chat in [width], each at its own
   /// minimum width and never narrower, with [chatFloor] left for the chat.
   ///
-  /// Columns join in layout order while they fit. The top pane always shows:
+  /// Each column in layout order takes its place if it still fits beside the
+  /// ones already there; one that does not fit is passed over, so a wide
+  /// column does not keep a narrow one behind it out of a place it fits in.
+  /// The top pane always shows:
   /// where it does not fit beside the ones already taken, they give their
   /// place back, least recently opened first. Empty when not even the top pane
   /// fits beside the chat, which is where the whole area covers instead.
@@ -121,7 +124,7 @@ class ChannelSideStack {
     final taken = <int>[];
     var used = chatFloor;
     for (var i = 0; i < visible.length; i++) {
-      if (used + visible[i].minWidth > width) break;
+      if (used + visible[i].minWidth > width) continue;
       taken.add(i);
       used += visible[i].minWidth;
     }
