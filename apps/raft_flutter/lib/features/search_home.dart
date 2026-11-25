@@ -187,8 +187,11 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
         else
           LayoutBuilder(
             builder: (context, constraints) {
+              // The grid's own width: Search is the master column of the
+              // desktop split (400-720 px), so the window is far wider than
+              // the space these tiles share.
               final columns =
-                  MediaQuery.sizeOf(context).width >=
+                  constraints.maxWidth >=
                       RaftSearchHomeRecipe.desktopColumnsBreakpoint
                   ? 2
                   : 1;
