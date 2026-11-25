@@ -1,3 +1,6 @@
+import 'dart:ui' show Color;
+
+import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'recipe_surface.dart';
 import 'recipes/banner.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -9,6 +12,7 @@ RaftBannerRecipeStyle raftBannerSlots(
   RaftBannerRecipeSize size,
   RaftBannerRecipeStatus status, {
   bool hasButton = false,
+  Color? surface,
 }) {
   final foreground = t.colors['foreground-banner-body'] ?? t.muted;
   final desc = {
@@ -107,15 +111,22 @@ RaftBannerRecipeStyle raftBannerSlots(
     t.size('type.bannerBody.tracking', fallback: 0),
     'px',
   );
-  if (ring > 0)
+  if (ring > 0) {
+    final blendedFill = fill.a < 1 && surface != null && surface.a == 1
+        ? raftChromeBlend(fill, surface)
+        : fill;
+    final ringColor = color.a > 0 && color.a < 1 && blendedFill.a == 1
+        ? raftChromeBlend(color, blendedFill)
+        : color;
     root['box-shadow'] = CssSeq([
       const CssKeyword('inset'),
       const CssNum(0),
       const CssNum(0),
       const CssNum(0),
       CssNum(ring, 'px'),
-      CssColor(color.toARGB32(), null, color),
+      CssColor(ringColor.toARGB32(), null, ringColor),
     ]);
+  }
   return RaftBannerRecipeStyle(
     root: RaftSlotStyle(
       root,

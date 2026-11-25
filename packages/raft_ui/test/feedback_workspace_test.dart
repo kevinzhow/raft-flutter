@@ -157,9 +157,7 @@ void main() {
     });
   }
 
-  testWidgets('the portal theme keeps dark apps light for portals only', (
-    t,
-  ) async {
+  testWidgets('the portal wrapper inherits dark theme natively', (t) async {
     Brightness? inside, outside;
     await t.pumpWidget(
       MaterialApp(
@@ -184,6 +182,6 @@ void main() {
       ),
     );
     expect(outside, Brightness.dark);
-    expect(inside, Brightness.light);
+    expect(inside, Brightness.dark);
   });
 }

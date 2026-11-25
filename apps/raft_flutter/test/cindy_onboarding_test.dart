@@ -289,21 +289,18 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        RaftCssFocusOutline outline() =>
-            t
-                    .widget<CustomPaint>(
-                      find.byWidgetPredicate(
-                        (w) =>
-                            w is CustomPaint &&
-                            w.foregroundPainter is RaftCssFocusOutline,
-                      ),
-                    )
-                    .foregroundPainter!
-                as RaftCssFocusOutline;
-        expect(outline().enabled, false);
+        bool focused() => Focus.of(
+          t.element(
+            find.descendant(
+              of: find.byType(RaftCindySessionLink),
+              matching: find.byType(GestureDetector),
+            ),
+          ),
+        ).hasFocus;
+        expect(focused(), false);
         await t.sendKeyEvent(LogicalKeyboardKey.tab);
         await t.pump();
-        expect(outline().enabled, true);
+        expect(focused(), true);
         await t.sendKeyEvent(LogicalKeyboardKey.enter);
         await t.pump();
         expect(switches, 1);
@@ -314,7 +311,7 @@ void main() {
           ),
         );
         await t.pump();
-        expect(outline().enabled, false);
+        expect(focused(), false);
       },
     );
   }
@@ -465,7 +462,7 @@ void main() {
         ),
       );
       expect(t.getSize(find.byType(RaftCindySetupScreen)).width, 960);
-      expect(t.getSize(find.byType(RaftAvatarSlot)), const Size(132, 132));
+      expect(t.getSize(find.byType(RaftAvatarSlot)), const Size(99, 99));
       expect(
         t.getTopLeft(find.text('Fields')).dx,
         greaterThan(t.getTopLeft(find.text('Cindy')).dx),
@@ -474,7 +471,7 @@ void main() {
       await t.binding.setSurfaceSize(const Size(390, 844));
       await t.pump();
       expect(t.getSize(find.byType(RaftCindySetupScreen)).width, 374);
-      expect(t.getSize(find.byType(RaftAvatarSlot)), const Size(88, 88));
+      expect(t.getSize(find.byType(RaftAvatarSlot)), const Size(99, 99));
       expect(
         t.getTopLeft(find.text('Fields')).dy,
         greaterThan(t.getTopLeft(find.text('Cindy')).dy),

@@ -40,15 +40,12 @@ HumanLoginCommit humanLoginCommit(HumanLoginRow? row) {
 
 TextStyle _body(
   RaftTokens t, {
-  double size = 14,
-  double line = 20,
+  bool small = false,
   Color? color,
-  FontWeight weight = FontWeight.w400,
-}) => RaftTypography.inherited(
-  t,
-  size: size,
-  line: line,
-  color: color ?? t.muted,
+  FontWeight? weight,
+}) => t.scale(
+  small ? RaftTypeScale.caption : RaftTypeScale.callout,
+  color: color ?? t.ui.foregroundMuted,
   weight: weight,
 );
 
@@ -122,6 +119,7 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
     final marketplace = widget.lookup.isMarketplace;
     return Column(
       key: const ValueKey('human-login-servers'),
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x1_5,
       children: [
@@ -243,9 +241,10 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
       key: const ValueKey('human-login-marketplace-servers'),
       clip: true,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (rows.length > 5)
+          if (rows.length > 5) ...[
             Padding(
               padding: const EdgeInsets.all(RaftSpace.x2),
               child: IgnorePointer(
@@ -261,6 +260,8 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
                 ),
               ),
             ),
+            const RaftSeparator(),
+          ],
           // Web `max-h-72`: a long list scrolls inside the card. A short one
           // is plain rows, so a drag over it scrolls the sheet.
           if (shown.length > 4)
@@ -300,63 +301,65 @@ class _ServerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     String tr(String s) => raftText(context, s);
     final state = humanLoginCommit(row);
     final badge = switch (state) {
-      HumanLoginCommit.ready => 'Installed',
+      HumanLoginCommit.ready => '',
       HumanLoginCommit.install => 'Not installed',
       HumanLoginCommit.adminNeeded => 'Admin needed',
       HumanLoginCommit.suspended => 'Suspended',
       HumanLoginCommit.unavailable => 'Unavailable',
     };
-    return RaftAvatarListRow(
+    return RaftListRow(
       key: ValueKey('human-login-server-${row.server.id}'),
-      avatar: RaftAvatarSlot(
-        name: row.server.name,
-        slot: RaftAvatarSlotContext.surfaceList,
-        agent: false,
-        server: true,
-        content: RaftAvatarContent(
+      selected: selected,
+      disabled: !enabled,
+      onPressed: enabled ? onTap : null,
+      children: [
+        RaftAvatarSlot(
           name: row.server.name,
-          kind: RaftAvatarContentKind.server,
-          uploadedUrl: row.server.avatarUrl,
-          // Web AvatarSlot `type="server"`: the initial in the server ink.
-          fallback: Center(
-            child: Text(
-              row.server.name.trim().isEmpty
-                  ? 'S'
-                  : row.server.name.trim().characters.first.toUpperCase(),
-              style: RaftTypography.body(
-                t,
-                size: 14,
-                line: 16,
-                weight: FontWeight.w700,
-                color: t.colors['foreground-avatar-server'] ?? t.strong,
+          slot: RaftAvatarSlotContext.surfaceList,
+          sizeOverride: RaftAvatarSize.md.extent,
+          agent: false,
+          server: true,
+          content: RaftAvatarContent(
+            name: row.server.name,
+            kind: RaftAvatarContentKind.server,
+            uploadedUrl: row.server.avatarUrl,
+            fallback: Center(
+              child: Text(
+                row.server.name.trim().isEmpty
+                    ? 'S'
+                    : row.server.name.trim().characters.first.toUpperCase(),
+                style: t.scale(
+                  RaftTypeScale.callout,
+                  weight: FontWeight.w700,
+                  color: t.colors['foreground-avatar-server'] ?? ui.foreground,
+                ),
               ),
             ),
           ),
         ),
-      ),
-      name: row.server.name,
-      subtitle: row.server.slug,
-      rightContent: [
+        RaftListRowBody(
+          children: [
+            RaftListRowTitle(row.server.name),
+            RaftListRowMeta(row.server.slug),
+          ],
+        ),
         if (installing)
           const RaftSpinner(
             key: ValueKey('human-login-install-row-spinner'),
             size: 16,
           )
-        else
+        else if (state != HumanLoginCommit.ready)
           RaftBadge(
             key: ValueKey('human-login-server-state-${row.server.id}'),
             label: tr(badge),
-            variant: state == HumanLoginCommit.ready
-                ? RaftBadgeRecipeVariant.success
-                : RaftBadgeRecipeVariant.muted,
+            variant: RaftBadgeRecipeVariant.muted,
             appearance: RaftBadgeRecipeAppearance.soft,
           ),
       ],
-      selected: selected,
-      onTap: enabled ? onTap : null,
     );
   }
 }
@@ -533,7 +536,11 @@ class _HumanLoginFaqState extends State<HumanLoginFaq> {
               Expanded(
                 child: Text(
                   tr('FAQ'),
-                  style: RaftTypography.heading(t, size: 14, line: 20),
+                  style: t.scale(
+                    RaftTypeScale.callout,
+                    weight: FontWeight.w700,
+                    color: t.ui.foreground,
+                  ),
                 ),
               ),
               RaftIcon(

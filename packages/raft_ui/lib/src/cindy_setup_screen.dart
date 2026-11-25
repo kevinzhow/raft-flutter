@@ -1,4 +1,4 @@
-// Mounted CreateAgentDialog.tsx onboarding branch (1383–1683), not DialogCard.
+// OnboardingCreateAgent ("Create Cindy" Step C) framing aligned to Web v1.24.
 // Product layout slots are controlled; admission and protocol-v2 fields remain app-owned.
 import 'dart:math' as math;
 
@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 
 import '../raft_ui.dart';
 
-/// CreateAgentDialog onboarding form uses `space-y-3` (12px). The capacity
-/// banner uses `mb-4` (16px), so it adds 4px to that regular field spacing.
 const double raftCindyFieldGap = 12;
 const EdgeInsets raftCindyCapacityFieldInset = EdgeInsets.only(bottom: 4);
 
@@ -20,35 +18,38 @@ class RaftCindySetupScreen extends StatelessWidget {
     this.onClose,
     this.sessionActions,
   });
+
   final Widget fields;
   final VoidCallback? onCreate, onClose;
   final Widget? sessionActions;
   final bool busy;
+
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), size = MediaQuery.sizeOf(context);
-    final desktop = size.width >= 768, wide = size.width >= 640;
-    final border = t.colors['line-muted']!;
-    TextStyle style(
-      double font,
-      double line,
-      FontWeight weight, {
-      Color? color,
-      String? family,
-    }) => TextStyle(
-      fontFamily: family ?? t.bodyFont,
-      fontSize: font,
-      height: line / font,
-      // CSS font-black keeps computed 900 but the served face stops at 700.
-      fontWeight: weight == FontWeight.w900 ? RaftTypography.black(t) : weight,
-      color: color ?? t.strong,
+    final t = RaftTokens.of(context);
+    final ui = t.ui;
+    final screen = MediaQuery.sizeOf(context);
+    final wide = screen.width >= 768;
+    final sm = screen.width >= 640;
+    final seamWidth = raftControlBorderPx(
+      context,
+      t.size('border.seam', fallback: 1),
     );
-    final muted = t.colors['foreground-muted'];
+    final stickerWidth = raftControlBorderPx(
+      context,
+      t.size('border.sticker', fallback: 1.5),
+    );
+    final containerRadius = t.size(
+      'radius.container',
+      fallback: RaftRadius.container,
+    );
+    final seam = BorderSide(color: ui.lineSeam, width: seamWidth);
+    final stickerShadow =
+        (t.dark ? RaftDark.elevationSticker : RaftLight.elevationSticker).outer;
+
     final header = Container(
+      decoration: BoxDecoration(border: Border(bottom: seam)),
       padding: EdgeInsets.fromLTRB(wide ? 36 : 24, 24, wide ? 36 : 24, 16),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: border, width: 2)),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -56,20 +57,15 @@ class RaftCindySetupScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RaftCssText(
-                  raftText(context, 'Set up your server'),
-                  style: style(
-                    10,
-                    15,
-                    FontWeight.w700,
-                    color: muted,
-                    family: t.monoFont,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                RaftCssText(
+                RaftSectionEyebrow(raftText(context, 'Set up your server')),
+                const SizedBox(height: 4),
+                Text(
                   raftText(context, 'Meet Cindy'),
-                  style: style(20, 28, FontWeight.w700),
+                  style: t.scale(
+                    RaftTypeScale.title,
+                    weight: FontWeight.w700,
+                    color: ui.foreground,
+                  ),
                 ),
               ],
             ),
@@ -81,89 +77,108 @@ class RaftCindySetupScreen extends StatelessWidget {
         ],
       ),
     );
-    final hero = Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 32,
-        vertical: desktop ? 32 : 20,
-      ),
-      decoration: BoxDecoration(
-        color: t.colors['soft-pink'] ?? t.colors['layer-panel'],
-        border: desktop
-            ? Border(right: BorderSide(color: border, width: 2))
-            : Border(bottom: BorderSide(color: border, width: 2)),
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DecoratedBox(
-                decoration: RaftCssBoxDecoration(boxShadow: null),
-                child: RaftAvatarSlot(
-                  name: 'Cindy',
-                  avatarUrl: 'pixel:mug',
-                  slot: RaftAvatarSlotContext.profileTile,
-                  sizeOverride: desktop ? 132 : 88,
+
+    final heroSticker = Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: Transform.rotate(
+          angle: -1.5 * math.pi / 180,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            decoration: BoxDecoration(
+              color: ui.layerCanvas,
+              borderRadius: BorderRadius.all(Radius.circular(containerRadius)),
+              border: Border.all(color: ui.lineStrong, width: stickerWidth),
+              boxShadow: stickerShadow,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(bottom: wide ? 20 : 12),
+                  child: RaftAvatarSlot(
+                    name: 'Cindy',
+                    avatarUrl: 'pixel:mug',
+                    slot: RaftAvatarSlotContext.profileHero,
+                    sizeOverride: RaftAvatarSize.xl.extent,
+                  ),
                 ),
-              ),
-              SizedBox(height: desktop ? 20 : 12),
-              RaftCssText(
-                'Cindy',
-                style: style(
-                  desktop ? 36 : 24,
-                  desktop ? 40 : 32,
-                  FontWeight.w900,
+                Text(
+                  raftText(context, 'Cindy'),
+                  textAlign: TextAlign.center,
+                  style: t.scale(
+                    wide ? RaftTypeScale.display : RaftTypeScale.title,
+                    weight: FontWeight.w700,
+                    color: ui.foreground,
+                  ),
                 ),
-              ),
-              SizedBox(height: desktop ? 12 : 8),
-              RaftCssText(
-                raftText(
-                  context,
-                  'Your first agent. She helps you onboard, sets up the server, and brings your team in.',
+                SizedBox(height: wide ? 12 : 8),
+                Text(
+                  raftText(
+                    context,
+                    'Your first agent. She helps you onboard, sets up the server, and brings your team in.',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: t.scale(
+                    wide ? RaftTypeScale.body : RaftTypeScale.callout,
+                    weight: FontWeight.w500,
+                    color: ui.foregroundMuted,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                style: style(
-                  desktop ? 16 : 14,
-                  desktop ? 26 : 22.75,
-                  FontWeight.w500,
-                  color: muted,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
-    final fieldHost = SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: desktop ? 32 : 24,
-          vertical: 24,
+
+    final heroPane = Container(
+      decoration: BoxDecoration(
+        color: ui.layerSidebar,
+        border: wide ? Border(right: seam) : Border(bottom: seam),
+      ),
+      child: CustomPaint(
+        painter: _SetupPaperDotPainter(
+          color: ui.lineHairline.withValues(alpha: ui.lineHairline.a * 0.6),
+          grid: t.size('size.onboardingDotGrid', fallback: 14),
+          radius: t.size('size.onboardingDotRadius', fallback: 1.5),
         ),
-        child: fields,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: wide ? 32 : 20,
+          ),
+          child: heroSticker,
+        ),
       ),
     );
+
+    final fieldsPane = Padding(
+      padding: EdgeInsets.symmetric(horizontal: wide ? 32 : 24, vertical: 24),
+      child: fields,
+    );
+
     final create = RaftButton(
       label: raftText(context, 'Create Cindy'),
-      tone: RaftButtonRecipeVariant.accent,
-      size: RaftButtonRecipeSize.lg,
-      expand: !wide,
+      uiVariant: RaftButtonVariant.accent,
+      uiSize: RaftButtonSize.lg,
+      expand: !sm,
       busy: busy,
-      // Source's onboarding footer groups the disabled surface differently
-      // from ordinary CreateAgent dialogs (original99 measured RGBA bytes).
       opacityCompositing: RaftOpacityCompositing.alphaFilter,
       onPressed: busy ? null : onCreate,
     );
+
     final footer = Container(
-      padding: EdgeInsets.symmetric(horizontal: wide ? 36 : 20, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: border, width: 2)),
-      ),
-      child: wide
+      decoration: BoxDecoration(border: Border(top: seam)),
+      padding: EdgeInsets.symmetric(horizontal: sm ? 36 : 20, vertical: 12),
+      child: sm
           ? Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [sessionActions ?? const SizedBox.shrink(), create],
+              children: [
+                Flexible(child: sessionActions ?? const SizedBox.shrink()),
+                const SizedBox(width: 12),
+                create,
+              ],
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -176,103 +191,102 @@ class RaftCindySetupScreen extends StatelessWidget {
               ],
             ),
     );
-    final body = desktop
-        ? SizedBox(
-            height: math.min(720, size.height - 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                header,
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(flex: 95, child: hero),
-                      Expanded(flex: 105, child: fieldHost),
-                    ],
-                  ),
-                ),
-                footer,
-              ],
-            ),
+
+    final constraints = wide
+        ? BoxConstraints(
+            maxWidth: 960,
+            maxHeight: math.max(0, math.min(720.0, screen.height - 32.0)),
           )
-        : Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              header,
-              hero,
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: math.min(size.height * .7, size.height - 192),
+        : BoxConstraints(maxWidth: math.max(0, screen.width - 16.0));
+
+    return ConstrainedBox(
+      constraints: constraints,
+      child: RaftDialogSurface(
+        child: Column(
+          mainAxisSize: wide ? MainAxisSize.max : MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            header,
+            if (wide)
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 95, child: heroPane),
+                    Expanded(
+                      flex: 105,
+                      child: SingleChildScrollView(child: fieldsPane),
+                    ),
+                  ],
                 ),
-                child: fieldHost,
+              )
+            else
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [heroPane, fieldsPane],
               ),
-              footer,
-            ],
-          );
-    return Material(
-      type: MaterialType.transparency,
-      child: SizedBox(
-        width: math.min(desktop ? 960 : double.infinity, size.width - 16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: t.colors['layer-panel'],
-            border: Border.all(color: t.colors['line-muted']!, width: 1),
-            boxShadow: t.themeShadows.md.outer,
-          ),
-          child: body,
+            footer,
+          ],
         ),
       ),
     );
   }
 }
 
-/// SetupSessionFooter.tsx + the product muted TextLink (no button box).
+class _SetupPaperDotPainter extends CustomPainter {
+  const _SetupPaperDotPainter({
+    required this.color,
+    required this.grid,
+    required this.radius,
+  });
+
+  final Color color;
+  final double grid;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..isAntiAlias = false;
+    for (var y = grid / 2; y < size.height; y += grid) {
+      for (var x = grid / 2; x < size.width; x += grid) {
+        canvas.drawCircle(Offset(x, y), radius, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SetupPaperDotPainter old) =>
+      old.color != color || old.grid != grid || old.radius != radius;
+}
+
 class RaftCindySessionLink extends StatelessWidget {
   const RaftCindySessionLink({
     super.key,
     required this.onPressed,
     this.label = 'Switch Server',
   });
+
   final VoidCallback? onPressed;
   final String label;
+
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return RaftInteractive(
-      semanticLabel: raftText(context, label),
+    final text = raftText(context, label);
+    return RaftTextLink(
+      label: text,
+      semanticLabel: text,
+      variant: RaftTextLinkVariant.muted,
+      scale: RaftTypeScale.footnote,
       onPressed: onPressed,
-      builder: (context, state) => CustomPaint(
-        foregroundPainter: RaftCssFocusOutline(
-          enabled: state.focusVisible,
-          color: t.colors['line-strong']!,
-        ),
-        child: Opacity(
-          opacity: state.enabled ? 1 : .5,
-          child: RaftCssText(
-            raftText(context, label),
-            underline: true,
-            style: TextStyle(
-              fontFamily: t.bodyFont,
-              fontSize: 14,
-              height: 20 / 14,
-              color: state.hovered ? t.strong : t.colors['foreground-muted'],
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
 
 /// SetupSessionFooter.tsx: `flex items-center gap-4 text-sm` with the muted
 /// "Switch server" link and, for the server's owner, "Delete this server".
-/// Setup may make you finish before chatting, but it must never lock the
-/// owner out of abandoning the server (Settings is covered by the blocking
-/// setup surface). [showDeleteServer] defaults to `onDeleteServer != null`; a
-/// busy step passes a null callback with it true so the link stays, dimmed.
 class RaftCindySessionFooter extends StatelessWidget {
   const RaftCindySessionFooter({
     super.key,
@@ -280,14 +294,14 @@ class RaftCindySessionFooter extends StatelessWidget {
     this.onDeleteServer,
     this.showDeleteServer,
   });
+
   final VoidCallback? onSwitchServer, onDeleteServer;
   final bool? showDeleteServer;
+
   @override
   Widget build(BuildContext context) => Wrap(
-    // `gap-4`; the links wrap under each other when a narrow card or a large
-    // text size leaves no room for both.
     spacing: 16,
-    runSpacing: 4,
+    runSpacing: 8,
     crossAxisAlignment: WrapCrossAlignment.center,
     children: [
       RaftCindySessionLink(onPressed: onSwitchServer),

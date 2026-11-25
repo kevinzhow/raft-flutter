@@ -3,6 +3,8 @@
 // ServerSetupComputerRuntimeStep.tsx, SetupSessionFooter.tsx). Presentation
 // only: the app owns the projection, requests and state and passes values and
 // callbacks in.
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -14,17 +16,21 @@ import 'add_computer_dialog.dart';
 import 'components.dart';
 import 'css_pixel_snap.dart';
 import 'design_primitives.dart';
+import 'dialog_surface.dart';
 import 'form_controls.dart';
 import 'icons.dart';
+import 'indicators.dart';
 import 'keyboard_reveal.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
+import 'raft/avatar.dart';
 import 'raft/css_box.dart';
+import 'raft/status.dart';
 import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart' show RaftCssBoxDecoration;
-import 'tokens/tokens.dart' show RaftTypeScale;
+import 'tokens/raft_tokens.g.dart';
 import 'text_measure.dart';
-import 'text_scaling.dart' show RaftChrome, RaftScaled;
+import 'text_scaling.dart' show RaftChrome;
 import 'theme.dart';
 
 /// `sm:` breakpoint of the step footers (`flex-col-reverse gap-3
@@ -38,49 +44,32 @@ bool _wide(BuildContext context, [double? available]) =>
 /// stacks instead of overflowing.
 const double _rowMinWidth = 420;
 
-/// The step card chrome shared by survey / handoff: `flex w-full max-w-[N]
-/// flex-col overflow-hidden border border-line-muted bg-layer-panel
-/// shadow-raft-md theme-brutal:border-2 theme-brutal:border-black
-/// theme-brutal:bg-white theme-brutal:shadow-brutal` (+ `rounded-lg`, square in
-/// brutal).
+/// Shared step frame matching Web `DialogSurface`: `rounded-dialog`,
+/// `border-line-strong`, `elevation-float`, and `1px border-line-seam` dividers.
 class _StepCard extends StatelessWidget {
-  const _StepCard({
-    required this.maxWidth,
-    required this.child,
-    this.rounded = true,
-  });
+  const _StepCard({required this.maxWidth, this.height, required this.child});
   final double maxWidth;
-  final bool rounded;
+  final double? height;
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Material(
-      type: MaterialType.transparency,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Container(
-          decoration: RaftCssBoxDecoration(
-            color: t.panel,
-            border: Border.all(color: t.colors['line-muted']!, width: 1),
-            borderRadius: rounded ? BorderRadius.circular(8) : null,
-            boxShadow: t.themeShadows.md.outer,
-          ),
-          child: ClipRRect(
-            borderRadius: rounded
-                ? BorderRadius.circular(7)
-                : BorderRadius.zero,
-            child: child,
-          ),
-        ),
+  Widget build(BuildContext context) => Material(
+    type: MaterialType.transparency,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: RaftDialogSurface(
+        child: height == null ? child : SizedBox(height: height, child: child),
       ),
-    );
-  }
+    ),
+  );
 }
 
-Color _hairline(RaftTokens t) => t.colors['line-hairline']!;
-double _hairlineWidth(RaftTokens t) => 1;
+double _seamStroke(BuildContext context, RaftTokens t) =>
+    raftControlBorderPx(context, t.size('border.seam', fallback: 1));
+Color _seamColor(RaftTokens t) =>
+    raftChromeBlend(t.ui.lineSeam, t.ui['layer-dialog']);
+double _stickerStroke(BuildContext context, RaftTokens t) =>
+    raftControlBorderPx(context, t.size('border.sticker', fallback: 1.5));
 
 /// ServerSetupSurveyStep: header (eyebrow, title, hint), two [chip groups],
 /// footer with the session link and the Continue button.
@@ -123,8 +112,11 @@ class RaftSetupSurveyCard extends StatelessWidget {
 
   Widget _build(BuildContext context, double available) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     String tr(String s) => raftText(context, s);
-    final wide = _wide(context, available);
+    final size = MediaQuery.sizeOf(context);
+    final wide = _wide(context, available), md = size.width >= 768;
+    final frameHeight = md ? math.min(520.0, size.height - 48.0) : null;
     final canContinue = !saving && role != null && source != null;
     final cont = RaftPrimaryAction(
       child: RaftButton(
@@ -136,46 +128,98 @@ class RaftSetupSurveyCard extends StatelessWidget {
         onPressed: canContinue ? onContinue : null,
       ),
     );
-    final footer = wide
-        ? Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: _SessionFooter(
+    final footer = Container(
+      padding: EdgeInsets.symmetric(horizontal: wide ? 36 : 20, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: _seamColor(t), width: _seamStroke(context, t)),
+        ),
+      ),
+      child: wide
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: _SessionFooter(
+                    onSwitchServer: onSwitchServer,
+                    onDeleteServer: onDeleteServer,
+                    showDeleteServer: showDeleteServer,
+                  ),
+                ),
+                cont,
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                cont,
+                const SizedBox(height: 12),
+                _SessionFooter(
                   onSwitchServer: onSwitchServer,
                   onDeleteServer: onDeleteServer,
                   showDeleteServer: showDeleteServer,
                 ),
-              ),
-              cont,
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              cont,
-              const SizedBox(height: 12),
-              _SessionFooter(
-                onSwitchServer: onSwitchServer,
-                onDeleteServer: onDeleteServer,
-                showDeleteServer: showDeleteServer,
-              ),
-            ],
-          );
-    return _StepCard(
-      maxWidth: 620,
+              ],
+            ),
+    );
+    final body = Padding(
+      padding: EdgeInsets.symmetric(horizontal: wide ? 36 : 24, vertical: 24),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (error != null) ...[
+            RaftAuthBanner(text: tr(error!)),
+            const SizedBox(height: 20), // space-y-5
+          ],
+          _ChipGroup(
+            question: tr('What best describes you?'),
+            prefix: 'role',
+            options: roles,
+            value: role,
+            onChanged: onRole,
+          ),
+          const SizedBox(height: 20),
+          _ChipGroup(
+            question: tr('How did you hear about Raft?'),
+            prefix: 'source',
+            options: sources,
+            value: source,
+            onChanged: onSource,
+            trailing: source == 'other'
+                ? RaftTextInput(
+                    key: const Key('signup-source-other-input'),
+                    controller: otherController,
+                    maxLength: 200,
+                    padding: const EdgeInsets.all(8),
+                    style: t.scale(RaftTypeScale.callout, color: ui.foreground),
+                    hintText: tr('Where did you hear about us?'),
+                    semanticLabel: tr('How did you hear about Raft?'),
+                  )
+                : null,
+          ),
+        ],
+      ),
+    );
+    return _StepCard(
+      maxWidth: 720,
+      height: frameHeight,
+      child: Column(
+        mainAxisSize: frameHeight != null ? MainAxisSize.max : MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
             key: const Key('setup-survey-header'),
-            padding: const EdgeInsets.fromLTRB(32, 28, 32, 20),
+            padding: EdgeInsets.fromLTRB(
+              wide ? 36 : 24,
+              24,
+              wide ? 36 : 24,
+              16,
+            ),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: _hairline(t),
-                  width: _hairlineWidth(t),
+                  color: _seamColor(t),
+                  width: _seamStroke(context, t),
                 ),
               ),
             ),
@@ -189,55 +233,18 @@ class RaftSetupSurveyCard extends StatelessWidget {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (error != null) ...[
-                  RaftAuthBanner(text: tr(error!)),
-                  const SizedBox(height: 20), // space-y-5
-                ],
-                _ChipGroup(
-                  question: tr('What best describes you?'),
-                  prefix: 'role',
-                  options: roles,
-                  value: role,
-                  onChanged: onRole,
-                ),
-                const SizedBox(height: 20),
-                _ChipGroup(
-                  question: tr('How did you hear about Raft?'),
-                  prefix: 'source',
-                  options: sources,
-                  value: source,
-                  onChanged: onSource,
-                  trailing: source == 'other'
-                      ? RaftTextInput(
-                          key: const Key('signup-source-other-input'),
-                          controller: otherController,
-                          maxLength: 200,
-                          // `input-brutal mt-2 w-full p-2 text-sm`.
-                          padding: const EdgeInsets.all(8),
-                          style: const TextStyle(fontSize: 14, height: 20 / 14),
-                          hintText: tr('Where did you hear about us?'),
-                          semanticLabel: tr('How did you hear about Raft?'),
-                        )
-                      : null,
-                ),
-                const SizedBox(height: 20),
-                footer,
-              ],
-            ),
-          ),
+          if (frameHeight != null)
+            Expanded(child: SingleChildScrollView(child: body))
+          else
+            body,
+          footer,
         ],
       ),
     );
   }
 }
 
-/// `font-mono text-[10px] font-bold` eyebrow, `mt-2
-/// text-xl font-bold` title, `mt-1 text-xs leading-5` hint.
+/// `font-mono text-mono-meta` eyebrow, `mt-2 text-title` title, `mt-1.5 text-callout` hint.
 class _StepHeading extends StatelessWidget {
   const _StepHeading({
     required this.eyebrow,
@@ -249,30 +256,31 @@ class _StepHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           eyebrow,
-          style: TextStyle(
-            fontFamily: t.monoFont,
-            fontSize: 10,
-            height: 15 / 10,
-            fontWeight: FontWeight.w700,
-            color: t.muted,
+          style: t.scale(
+            RaftTypeScale.monoMeta,
+            mono: true,
+            color: ui.foregroundHint,
           ),
         ),
-        const SizedBox(height: 8),
-        Text(title, style: RaftTypography.heading(t, size: 20, line: 28)),
         const SizedBox(height: 4),
         Text(
+          title,
+          style: t.scale(
+            RaftTypeScale.title,
+            weight: FontWeight.w700,
+            color: ui.foreground,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
           hint,
-          style: RaftTypography.heading(
-            t,
-            size: 12,
-            line: 20,
-            weight: FontWeight.w400,
-          ).copyWith(color: t.muted),
+          style: t.scale(RaftTypeScale.callout, color: ui.foregroundMuted),
         ),
       ],
     );
@@ -304,7 +312,11 @@ class _ChipGroup extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 8),
           child: Text(
             question,
-            style: RaftTypography.heading(t, size: 14, line: 20),
+            style: t.scale(
+              RaftTypeScale.footnote,
+              weight: FontWeight.w700,
+              color: t.ui.foreground,
+            ),
           ),
         ),
         Wrap(
@@ -439,8 +451,11 @@ class RaftSetupHandoffCard extends StatelessWidget {
 
   Widget _build(BuildContext context, double available) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     String tr(String s) => raftText(context, s);
-    final wide = _wide(context, available);
+    final size = MediaQuery.sizeOf(context);
+    final wide = _wide(context, available), md = size.width >= 768;
+    final frameHeight = md ? math.min(520.0, size.height - 48.0) : null;
     final done = RaftButton(
       key: const Key('server-setup-handoff-done'),
       label: starting ? tr('Starting…') : tr("Let's go"),
@@ -449,64 +464,63 @@ class RaftSetupHandoffCard extends StatelessWidget {
       expand: !wide,
       onPressed: starting ? null : onDone,
     );
-    return _StepCard(
-      maxWidth: 560,
-      rounded: false,
+    final body = Padding(
+      padding: EdgeInsets.symmetric(horizontal: wide ? 36 : 24, vertical: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(32, 36, 32, 28),
-            child: Column(
-              children: [
-                DecoratedBox(
-                  decoration: RaftCssBoxDecoration(boxShadow: null),
-                  child: RaftAvatarSlot(
-                    name: agentName,
-                    avatarUrl: 'pixel:mug',
-                    slot: RaftAvatarSlotContext.profileTile,
-                    sizeOverride: 104,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  raftFormat(context, '{agentName} takes it from here', {
-                    'agentName': agentName,
-                  }),
-                  textAlign: TextAlign.center,
-                  style: RaftTypography.heading(
-                    t,
-                    size: 24,
-                    line: 32,
-                    weight: RaftTypography.black(t),
-                  ).copyWith(color: t.strong),
-                ),
-                const SizedBox(height: 12),
-                _BalancedText(
-                  raftFormat(
-                    context,
-                    "Your server is set up. {agentName} is waiting in your channel. She'll show you around Raft and get you working for real.",
-                    {'agentName': agentName},
-                  ),
-                  maxChars: 42,
-                  style: RaftTypography.heading(
-                    t,
-                    size: 16,
-                    line: 26,
-                    weight: FontWeight.w400,
-                  ).copyWith(color: t.muted),
-                ),
-              ],
+          RaftAvatarSlot(
+            name: agentName,
+            avatarUrl: 'pixel:mug',
+            slot: RaftAvatarSlotContext.profileHero,
+            sizeOverride: RaftAvatarSize.xl.extent,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            raftFormat(context, '{agentName} takes it from here', {
+              'agentName': agentName,
+            }),
+            textAlign: TextAlign.center,
+            style: t.scale(
+              wide ? RaftTypeScale.display : RaftTypeScale.title,
+              weight: FontWeight.w700,
+              color: ui.foreground,
             ),
           ),
+          const SizedBox(height: 12),
+          _BalancedText(
+            raftFormat(
+              context,
+              "Your server is set up. {agentName} is waiting in your channel. She'll show you around Raft and get you working for real.",
+              {'agentName': agentName},
+            ),
+            maxChars: 42,
+            style: t.scale(RaftTypeScale.subhead, color: ui.foregroundMuted),
+          ),
+        ],
+      ),
+    );
+    return _StepCard(
+      maxWidth: 720,
+      height: frameHeight,
+      child: Column(
+        mainAxisSize: frameHeight != null ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (frameHeight != null)
+            Expanded(child: Center(child: body))
+          else
+            body,
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: wide ? 36 : 20,
+              vertical: 12,
+            ),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: t.colors['line-muted']!,
-                  width: _hairlineWidth(t),
+                  color: _seamColor(t),
+                  width: _seamStroke(context, t),
                 ),
               ),
             ),
@@ -664,7 +678,7 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
         ? "They're all set up already — setup continues as soon as any one of them comes online."
         : widget.recovering
         ? "Your computer is already set up but isn't running. Start it and setup continues on its own."
-        : 'A computer is where your agents run. Your server needs at least one online.';
+        : 'A computer is the machine your agents run on. Your server needs at least one online.';
     final next = RaftButton(
       key: const Key('setup-computer-next'),
       label: widget.loading ? tr('Saving...') : tr('Next'),
@@ -677,7 +691,7 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
       padding: EdgeInsets.symmetric(horizontal: sideBody, vertical: 12),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: _hairline(t), width: _hairlineWidth(t)),
+          top: BorderSide(color: _seamColor(t), width: _seamStroke(context, t)),
         ),
       ),
       child: wide
@@ -755,42 +769,39 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
     final cardHeight = (size.height - 48).clamp(520.0, 720.0).toDouble();
     return _StepCard(
       maxWidth: 960,
-      child: SizedBox(
-        // border-box: the card chrome adds the border around this box.
-        height: md ? cardHeight - 2 * _hairlineWidth(t) : null,
-        child: Column(
-          mainAxisSize: md ? MainAxisSize.max : MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              key: const Key('setup-computer-header'),
-              padding: EdgeInsets.fromLTRB(
-                wide ? 36 : 24,
-                24,
-                wide ? 36 : 24,
-                16,
-              ),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: _hairline(t),
-                    width: _hairlineWidth(t),
-                  ),
+      height: md ? cardHeight : null,
+      child: Column(
+        mainAxisSize: md ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            key: const Key('setup-computer-header'),
+            padding: EdgeInsets.fromLTRB(
+              wide ? 36 : 24,
+              24,
+              wide ? 36 : 24,
+              16,
+            ),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: _seamColor(t),
+                  width: _seamStroke(context, t),
                 ),
               ),
-              child: _StepHeading(
-                eyebrow: tr('Set up your server'),
-                title: tr(title),
-                hint: tr(body),
-              ),
             ),
-            if (md)
-              Expanded(child: SingleChildScrollView(child: content))
-            else
-              content,
-            footer,
-          ],
-        ),
+            child: _StepHeading(
+              eyebrow: tr('Set up your server'),
+              title: tr(title),
+              hint: tr(body),
+            ),
+          ),
+          if (md)
+            Expanded(child: SingleChildScrollView(child: content))
+          else
+            content,
+          footer,
+        ],
       ),
     );
   }
@@ -818,10 +829,19 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
           setState(() => expandedRuntime = active == r.id ? '' : r.id),
       onCopyInstallCommand: widget.onCopyInstallCommand,
     );
+    final ui = t.ui;
+    final controlRadius = t.size(
+      'radius.control',
+      fallback: RaftRadius.control,
+    );
     return Container(
       decoration: RaftCssBoxDecoration(
-        border: Border.all(color: t.colors['line-muted']!, width: 1),
-        borderRadius: BorderRadius.circular(6),
+        color: ui.layerCanvas,
+        border: Border.all(
+          color: raftChromeBlend(ui.lineSeam, ui.layerCanvas),
+          width: _seamStroke(context, t),
+        ),
+        borderRadius: BorderRadius.all(Radius.circular(controlRadius)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -833,19 +853,21 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
               children: [
                 Text(
                   tr('No usable runtime yet'),
-                  style: RaftTypography.heading(t, size: 14, line: 20),
+                  style: t.scale(
+                    RaftTypeScale.callout,
+                    weight: FontWeight.w700,
+                    color: ui.foreground,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   tr(
                     'Install one of these on this computer, then hit refresh next to Runtime.',
                   ),
-                  style: RaftTypography.heading(
-                    t,
-                    size: 12,
-                    line: 16,
-                    weight: FontWeight.w400,
-                  ).copyWith(color: t.muted),
+                  style: t.scale(
+                    RaftTypeScale.footnote,
+                    color: ui.foregroundMuted,
+                  ),
                 ),
               ],
             ),
@@ -888,18 +910,11 @@ TextSpan _template(
 
 TextStyle _mono(
   RaftTokens t,
-  double size,
-  double line, {
+  RaftTypeStyle scale, {
   FontWeight weight = FontWeight.w700,
   Color? color,
-}) => TextStyle(
-  fontFamily: t.monoFont,
-  fontSize: size,
-  height: line / size,
-  fontWeight: weight,
-  color: color ?? t.strong,
-  leadingDistribution: TextLeadingDistribution.even,
-);
+}) =>
+    t.scale(scale, mono: true, weight: weight, color: color ?? t.ui.foreground);
 
 /// `border-t border-line-hairline px-3.5 pb-1 pt-2.5` group heading.
 class _GroupLabel extends StatelessWidget {
@@ -911,42 +926,29 @@ class _GroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final hint = t.colors['foreground-hint']!;
+    final hint = t.ui.foregroundHint;
+    final seam = _seamStroke(context, t);
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: t.colors['line-hairline']!,
-            width: first ? 0 : 1,
-          ),
-        ),
-      ),
+      decoration: first
+          ? null
+          : BoxDecoration(
+              border: Border(
+                top: BorderSide(color: t.ui.lineHairline, width: seam),
+              ),
+            ),
       child: Text.rich(
-        // The spans are inline in a `text-base` (16/24) block: every line box
-        // keeps the 24px strut.
-        strutStyle: StrutStyle(
-          fontFamily: t.headingFont,
-          fontSize: 16,
-          height: 1.5,
-          forceStrutHeight: true,
-        ),
         TextSpan(
           children: [
             TextSpan(
               text: label,
-              style: _mono(t, 10, 15, color: hint),
+              style: _mono(t, RaftTypeScale.monoMeta, color: hint),
             ),
             if (note != null) const WidgetSpan(child: SizedBox(width: 8)),
             if (note != null)
               TextSpan(
                 text: note,
-                style: RaftTypography.heading(
-                  t,
-                  size: 10,
-                  line: 15,
-                  weight: FontWeight.w400,
-                ).copyWith(color: hint),
+                style: t.scale(RaftTypeScale.monoMeta, color: hint),
               ),
           ],
         ),
@@ -973,38 +975,26 @@ class _RuntimeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     String tr(String s) => raftText(context, s);
-    final hint = t.colors['foreground-hint']!;
+    final hint = ui.foregroundHint;
     final command = _runtimeInstallCommands[runtime.id];
-    final tile = runtime.recommended ? 28.0 : 24.0;
-    final badgeColors = runtime.detected
-        ? (
-            fill: t.colors['success-soft']!,
-            text: t.colors['success-strong']!,
-            border: t.colors['line-muted']!,
-          )
-        : (
-            fill: t.colors['layer-inset']!,
-            text: hint,
-            border: t.colors['line-muted']!,
-          );
-    final detail = TextStyle(
-      fontFamily: t.headingFont,
-      fontSize: 11,
-      height: 20 / 11,
-      color: t.muted,
-      leadingDistribution: TextLeadingDistribution.even,
-    );
+    final tile = runtime.recommended ? 27.0 : 24.0;
+    final tileRadius = runtime.recommended
+        ? t.size('radius.chip', fallback: RaftRadius.chip)
+        : t.size('radius.sticker', fallback: RaftRadius.sticker);
+    final seam = _seamStroke(context, t);
+    final detail = t.scale(RaftTypeScale.footnote, color: ui.foregroundMuted);
     final strong = detail.copyWith(
       fontWeight: FontWeight.w700,
-      color: t.strong,
+      color: ui.foreground,
     );
     final computer = computerName ?? tr('your computer');
     return Container(
       decoration: BoxDecoration(
-        color: expanded ? t.colors['fill-muted']!.withValues(alpha: .4) : null,
+        color: expanded ? ui['fill-subtle'] : null,
         border: Border(
-          top: BorderSide(color: t.colors['line-hairline']!, width: 1),
+          top: BorderSide(color: ui.lineHairline, width: seam),
         ),
       ),
       child: Column(
@@ -1018,7 +1008,7 @@ class _RuntimeRow extends StatelessWidget {
             builder: (context, state) => DecoratedBox(
               decoration: BoxDecoration(
                 color: state.enabled && (state.pressed || state.hovered)
-                    ? t.colors['fill-muted']!.withValues(alpha: .6)
+                    ? ui['fill-subtle']
                     : null,
               ),
               child: Padding(
@@ -1028,48 +1018,48 @@ class _RuntimeRow extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Container(
+                    RaftCssBox(
                       width: tile,
                       height: tile,
+                      radius: tileRadius,
+                      fill: ui['fill-muted'],
                       alignment: Alignment.center,
-                      decoration: RaftCssBoxDecoration(
-                        color: t.panel,
-                        border: Border.all(
-                          color: t.colors['line-muted']!,
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
                       child: Text(
                         runtime.abbreviation,
-                        style: _mono(t, 9, 13.5),
+                        style: _mono(
+                          t,
+                          RaftTypeScale.monoMeta,
+                          color: ui.foregroundMuted,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         runtime.displayName,
-                        style: RaftTypography.heading(
-                          t,
-                          size: runtime.recommended ? 13 : 12,
-                          line: runtime.recommended ? 19.5 : 16,
-                        ).copyWith(color: quiet ? hint : t.ink),
+                        style: t.scale(
+                          runtime.recommended
+                              ? RaftTypeScale.callout
+                              : RaftTypeScale.footnote,
+                          weight: FontWeight.w600,
+                          color: quiet ? hint : ui.foreground,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: RaftCssBoxDecoration(
-                        color: badgeColors.fill,
-                        border: Border.all(color: badgeColors.border, width: 1),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: Text(
-                        runtime.detected ? tr('Detected') : tr('Not detected'),
-                        style: _mono(t, 9, 13.5, color: badgeColors.text),
+                    RaftBadge(
+                      label: runtime.detected
+                          ? tr('Detected')
+                          : tr('Not detected'),
+                      appearance: RaftBadgeRecipeAppearance.soft,
+                      variant: runtime.detected
+                          ? RaftBadgeRecipeVariant.success
+                          : RaftBadgeRecipeVariant.muted,
+                      leading: RaftStatus(
+                        size: RaftStatusSize.xs,
+                        variant: runtime.detected
+                            ? RaftStatusVariant.success
+                            : RaftStatusVariant.default_,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -1077,8 +1067,8 @@ class _RuntimeRow extends StatelessWidget {
                       quarterTurns: expanded ? 1 : 0,
                       child: RaftIcon(
                         RaftGlyph.chevronRight,
-                        size: 15,
-                        color: quiet ? hint : t.ink,
+                        size: 16,
+                        color: ui.foregroundMuted,
                       ),
                     ),
                   ],
@@ -1169,12 +1159,12 @@ class _Instructions extends StatelessWidget {
       tr('Approve the request when it opens in your browser.'),
       tr('Your computer shows up here on its own. No need to refresh.'),
     ];
-    final text = RaftTypography.heading(
-      t,
-      size: 12,
-      line: 20,
-      weight: FontWeight.w400,
-    ).copyWith(color: t.muted);
+    final text = t.scale(RaftTypeScale.footnote, color: t.ui.foregroundMuted);
+    final stickerRadius = t.size(
+      'radius.sticker',
+      fallback: RaftRadius.sticker,
+    );
+    final seam = _seamStroke(context, t);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1187,20 +1177,23 @@ class _Instructions extends StatelessWidget {
                 // ds-allow: Web ServerSetupComputerRuntimeStep.tsx step marker `mt-px`
                 padding: const EdgeInsets.only(top: 1),
                 // ignore: raft_lints/avoid_fixed_height_text -- a fixed 16px step marker: the digit is bounded by RaftChrome and always fits
-                child: Container(
+                child: RaftCssBox(
                   width: 16,
                   height: 16,
+                  radius: stickerRadius / 2,
+                  borderWidth: seam,
+                  borderColor: t.ui.lineHairline,
                   alignment: Alignment.center,
-                  decoration: RaftCssBoxDecoration(
-                    border: Border.all(color: t.colors['line-muted']!),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
                   child: Text(
                     '${i + 1}',
                     // The digit fills a fixed 16px box: it grows with the text
                     // size only up to the chrome bound.
                     textScaler: RaftChrome.boundedScalerOf(context),
-                    style: _mono(t, 9, 13.5, color: t.muted),
+                    style: _mono(
+                      t,
+                      RaftTypeScale.label,
+                      color: t.ui.foregroundMuted,
+                    ),
                   ),
                 ),
               ),
@@ -1298,12 +1291,9 @@ class _ProgressLog extends StatelessWidget {
                   width: 16,
                   height: 16,
                   child: line.done
-                      ? _Tick(
-                          fill: t.product.brutalLime,
-                          glyph: RaftGlyph.check,
-                        )
+                      ? _Tick(fill: t.ui.success, glyph: RaftGlyph.check)
                       : line.failed
-                      ? _Tick(fill: t.product.brutalOrange, glyph: RaftGlyph.x)
+                      ? _Tick(fill: t.ui.warning, glyph: RaftGlyph.x)
                       : line.pending
                       ? const RaftSpinner(size: 16)
                       : null,
@@ -1315,12 +1305,13 @@ class _ProgressLog extends StatelessWidget {
                   line.text,
                   style: _mono(
                     t,
-                    12,
-                    20,
+                    RaftTypeScale.monoMeta,
                     weight: line.done || line.failed
                         ? FontWeight.w700
                         : FontWeight.w400,
-                    color: line.done || line.failed ? t.strong : t.muted,
+                    color: line.done || line.failed
+                        ? t.ui.foreground
+                        : t.ui.foregroundMuted,
                   ),
                 ),
               ),
@@ -1332,27 +1323,33 @@ class _ProgressLog extends StatelessWidget {
   }
 }
 
-/// `flex size-4 items-center justify-center border-2 border-black` tick.
+/// `flex size-4 items-center justify-center rounded-sticker border-[1.5px] border-sticker-ink` tick.
 class _Tick extends StatelessWidget {
   const _Tick({required this.fill, required this.glyph});
   final Color fill;
   final RaftGlyph glyph;
 
   @override
-  Widget build(BuildContext context) => Container(
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: fill,
-      border: Border.all(color: Colors.black, width: 2),
-    ),
-    child: RaftIcon(
-      glyph,
-      size: 10,
-      strokeWidth: 4,
-      // currentColor: the page foreground (light in the dark theme).
-      color: RaftTokens.of(context).ink,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final ui = t.ui;
+    final tickStroke = t.size('border.width.3', fallback: 3);
+    return RaftCssBox(
+      width: 16,
+      height: 16,
+      radius: t.size('radius.sticker', fallback: RaftRadius.sticker),
+      fill: fill,
+      borderWidth: _stickerStroke(context, t),
+      borderColor: ui.stickerInk,
+      alignment: Alignment.center,
+      child: RaftIcon(
+        glyph,
+        size: 10,
+        strokeWidth: tickStroke,
+        color: ui.stickerInk,
+      ),
+    );
+  }
 }
 
 /// OfflineComputerRecovery (`space-y-4`).
@@ -1376,12 +1373,8 @@ class _RecoveryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
-    final note = RaftTypography.heading(
-      t,
-      size: 12,
-      line: 20,
-      weight: FontWeight.w400,
-    ).copyWith(color: t.muted);
+    final ui = t.ui;
+    final note = t.scale(RaftTypeScale.footnote, color: ui.foregroundMuted);
     Widget block(String text, List<Widget> rows) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1402,7 +1395,7 @@ class _RecoveryCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            RaftIcon(RaftGlyph.terminal, size: 16, color: t.strong),
+            RaftIcon(RaftGlyph.terminal, size: 16, color: ui.foreground),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1411,7 +1404,11 @@ class _RecoveryCard extends StatelessWidget {
                     : raftFormat(context, 'Bring {computer} back online', {
                         'computer': name,
                       }),
-                style: _mono(t, 10, 15, color: t.muted),
+                style: _mono(
+                  t,
+                  RaftTypeScale.monoMeta,
+                  color: ui.foregroundMuted,
+                ),
               ),
             ),
           ],
@@ -1463,12 +1460,7 @@ class _RecoveryCard extends StatelessWidget {
                       ? 'None of these work?'
                       : "Can't get this computer back?",
                 ),
-                style: RaftTypography.heading(
-                  t,
-                  size: 14,
-                  line: 20,
-                  weight: FontWeight.w400,
-                ).copyWith(color: t.ink),
+                style: t.scale(RaftTypeScale.callout, color: ui.foreground),
               ),
               const SizedBox(width: 4),
               RaftAuthTextLink(
@@ -1491,17 +1483,17 @@ class _OfflineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     String tr(String s) => raftText(context, s);
-    return Container(
+    return RaftCssBox(
+      radius: t.size('radius.control', fallback: RaftRadius.control),
+      fill: ui.layerCanvas,
+      borderWidth: _seamStroke(context, t),
+      borderColor: ui.lineHairline,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: RaftCssBoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.colors['line-muted']!, width: 1),
-        borderRadius: BorderRadius.circular(6),
-      ),
       child: Row(
         children: [
-          RaftIcon(RaftGlyph.monitor, size: 16, color: t.muted),
+          RaftIcon(RaftGlyph.monitor, size: 16, color: ui.foregroundMuted),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1511,24 +1503,22 @@ class _OfflineRow extends StatelessWidget {
                   computer.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: RaftTypography.heading(t, size: 12, line: 16),
+                  style: t.scale(
+                    RaftTypeScale.footnote,
+                    weight: FontWeight.w600,
+                    color: ui.foreground,
+                  ),
                 ),
-                // CSS keeps the 16.5px line box; a paragraph would round up.
-                RaftScaled.lineBox(
-                  context,
-                  height: 16.5,
-                  child: Text(
-                    computer.lastSeen == null
-                        ? tr('Offline')
-                        : raftFormat(context, 'Offline · last seen {when}', {
-                            'when': computer.lastSeen,
-                          }),
-                    style: RaftTypography.heading(
-                      t,
-                      size: 11,
-                      line: 16.5,
-                      weight: FontWeight.w400,
-                    ).copyWith(color: t.colors['foreground-hint']),
+                Text(
+                  computer.lastSeen == null
+                      ? tr('Offline')
+                      : raftFormat(context, 'Offline · last seen {when}', {
+                          'when': computer.lastSeen,
+                        }),
+                  style: t.scale(
+                    RaftTypeScale.label,
+                    weight: FontWeight.w400,
+                    color: ui.foregroundHint,
                   ),
                 ),
               ],
@@ -1540,8 +1530,8 @@ class _OfflineRow extends StatelessWidget {
   }
 }
 
-/// RecoveryCommandRow: `flex items-center gap-2`, the black code box and a
-/// `size="icon-sm" variant="outline"` copy button.
+/// RecoveryCommandRow: `flex items-center gap-2`, `bg-layer-code` command box
+/// and a `size="icon-sm" variant="outline"` copy button.
 class _RecoveryCommand extends StatefulWidget {
   const _RecoveryCommand(this.command);
   final String command;
@@ -1556,25 +1546,23 @@ class _RecoveryCommandState extends State<_RecoveryCommand> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     return Row(
       children: [
         Expanded(
-          child: Container(
+          child: RaftCssBox(
+            radius: t.size('radius.control', fallback: RaftRadius.control),
+            fill: t.colors['layer-code'] ?? ui.layerCard,
+            borderWidth: _seamStroke(context, t),
+            borderColor: ui.lineStrong,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: RaftCssBoxDecoration(
-              color: Colors.black,
-              border: Border.all(color: t.colors['line-strong']!, width: 1),
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: t.themeShadows.sm.outer,
-            ),
             child: Text(
               widget.command,
               style: _mono(
                 t,
-                12,
-                16,
+                RaftTypeScale.monoMeta,
                 weight: FontWeight.w400,
-                color: t.product.brutalLime,
+                color: ui.foreground,
               ),
             ),
           ),
@@ -1583,8 +1571,8 @@ class _RecoveryCommandState extends State<_RecoveryCommand> {
         RaftButton(
           label: '',
           glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
-          variant: RaftControlVariant.outline,
-          size: RaftButtonRecipeSize.iconSm,
+          uiVariant: RaftButtonVariant.outline,
+          uiSize: RaftButtonSize.iconSm,
           semanticLabel: raftFormat(context, 'Copy {command}', {
             'command': widget.command,
           }),

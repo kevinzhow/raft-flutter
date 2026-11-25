@@ -904,7 +904,7 @@
           "flutter": "missing",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web shows \"Loading newer messages\u2026\" (message.chatPanel.loadingNewer) while a newer window loads after a jump; no Flutter string and no case.",
+          "justification": "Web shows \"Loading newer messages…\" (message.chatPanel.loadingNewer) while a newer window loads after a jump; no Flutter string and no case.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -1384,7 +1384,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web popover shows \"Loading followers\u2026\" (thread-followers-loading) and \"No agents are following\" (thread-followers-empty); only the error and populated popovers have cases.",
+          "justification": "Web popover shows \"Loading followers…\" (thread-followers-loading) and \"No agents are following\" (thread-followers-empty); only the error and populated popovers have cases.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -1412,7 +1412,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web card shows \"Loading\u2026\" for the activity line and a \"profile unavailable\" minimal body (message.profilePreview.unavailable...); cases only render the loaded agent / human card.",
+          "justification": "Web card shows \"Loading…\" for the activity line and a \"profile unavailable\" minimal body (message.profilePreview.unavailable...); cases only render the loaded agent / human card.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -1885,7 +1885,7 @@
           "flutter": "partial",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web auto-loads the next page and shows a \"Loading more\u2026\" row (thread.loadingMore); Flutter shows a \"Load more\" TextButton (resource_view.dart:2905 / 4869) and never renders the loading row (ActivityInboxLoadingMore recipe unused). No case.",
+          "justification": "Web auto-loads the next page and shows a \"Loading more…\" row (thread.loadingMore); Flutter shows a \"Load more\" TextButton (resource_view.dart:2905 / 4869) and never renders the loading row (ActivityInboxLoadingMore recipe unused). No case.",
           "size": "S",
           "gapKind": "impl-diff"
         }
@@ -2103,7 +2103,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Flutter draws Web's Task header with \u00d7 over the EmptyState when the slot names a task this account cannot open (task_content_slot.dart _TaskUnavailable); no parity case exists for the slot.",
+          "justification": "Flutter draws Web's Task header with × over the EmptyState when the slot names a task this account cannot open (task_content_slot.dart _TaskUnavailable); no parity case exists for the slot.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -2184,7 +2184,7 @@
             "screens.members.agent-detail.profile.loading-state"
           ],
           "status": "gap",
-          "justification": "Web shows panel chrome + centred \"Loading\u2026\" for both agent and human until the profile resolves (ProfilePanel.tsx:349); only the agent profile has an official phone case, nothing for the human profile or on desktop.",
+          "justification": "Web shows panel chrome + centred \"Loading…\" for both agent and human until the profile resolves (ProfilePanel.tsx:349); only the agent profile has an official phone case, nothing for the human profile or on desktop.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -2194,7 +2194,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "intentional",
-          "justification": "Web has no profile load error (it waits forever on \"Loading\u2026\"); Flutter SourceProfileLoadingPanel adds \"Profile could not be loaded.\" + Retry. Deliberate usability addition."
+          "justification": "Web has no profile load error (it waits forever on \"Loading…\"); Flutter SourceProfileLoadingPanel adds \"Profile could not be loaded.\" + Retry. Deliberate usability addition."
         }
       ]
     },
@@ -2235,7 +2235,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Embedded skills block (AgentSkills): \"Loading skills\u2026\", \"Failed to load skills\" + Retry, \"No global skills installed on this computer\", \"No skills in this agent's workspace\". The populated list is collapsed by default (owner decision 2026-10-18), so a case must expand it before comparing cards; no case drives the loading / error / empty copy yet. Web v1.24 AgentSkills also reads ok | stale | unavailable: a stale list says so and offers Retry, an unavailable one is an error with Retry; both are widget-tested (agent_skills_state_test.dart), no case drives them.",
+          "justification": "Embedded skills block (AgentSkills): \"Loading skills…\", \"Failed to load skills\" + Retry, \"No global skills installed on this computer\", \"No skills in this agent's workspace\". The populated list is collapsed by default (owner decision 2026-10-18), so a case must expand it before comparing cards; no case drives the loading / error / empty copy yet. Web v1.24 AgentSkills also reads ok | stale | unavailable: a stale list says so and offers Retry, an unavailable one is an error with Retry; both are widget-tested (agent_skills_state_test.dart), no case drives them.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -2457,7 +2457,7 @@
           "flutter": "partial",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web keeps both section headers (Channels, Agent DMs) and shows \"Loading agent channels\u2026\" / \"Loading agent DMs\u2026\" per section; Flutter shows one centred \"Loading\u2026\" panel message (agent_detail_view.dart:1571) until either list arrives. Request-driven in Web, so a $pending route reproduces it.",
+          "justification": "Web keeps both section headers (Channels, Agent DMs) and shows \"Loading agent channels…\" / \"Loading agent DMs…\" per section; Flutter shows one centred \"Loading…\" panel message (agent_detail_view.dart:1571) until either list arrives. Request-driven in Web, so a $pending route reproduces it.",
           "size": "M",
           "gapKind": "impl-diff"
         },
@@ -2495,7 +2495,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web shows bold \"Loading\u2026\" above the list while loading; Flutter does the same. No case.",
+          "justification": "Web shows bold \"Loading…\" above the list while loading; Flutter does the same. No case.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -2608,7 +2608,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web shows \"Loading\u2026\" for grants / pending requests / events; Flutter (agent_apps_view.dart) has equivalents. Only the populated tab has a case (components.members-ext.agent.apps, screens.members.agent-detail.apps).",
+          "justification": "Web shows \"Loading…\" for grants / pending requests / events; Flutter (agent_apps_view.dart) has equivalents. Only the populated tab has a case (components.members-ext.agent.apps, screens.members.agent-detail.apps).",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -2965,7 +2965,7 @@
     },
     {
       "id": "settings.account.two-step",
-      "title": "Settings: Account \u203a Two-step verification",
+      "title": "Settings: Account › Two-step verification",
       "webEntry": "packages/web/src/components/settings/TwoStepVerificationSection.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/account_security_two_step.dart",
       "states": [
@@ -2992,7 +2992,7 @@
     },
     {
       "id": "settings.account.passkeys",
-      "title": "Settings: Account \u203a Passkeys",
+      "title": "Settings: Account › Passkeys",
       "webEntry": "packages/web/src/components/settings/PasskeysSection.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/account_security_passkeys.dart",
       "states": [
@@ -3099,7 +3099,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "intentional",
-          "justification": "Web \"Checking\u2026\" push status and enable / disable spinners are browser web push only; the native client has no equivalent flow."
+          "justification": "Web \"Checking…\" push status and enable / disable spinners are browser web push only; the native client has no equivalent flow."
         },
         {
           "state": "error",
@@ -3119,7 +3119,7 @@
           "status": "gap",
           "gapKind": "case-missing",
           "size": "S",
-          "justification": "PauseAndScheduleCard banner / ContentCard toast \"Couldn\u2019t save notification settings\" and the 409 \"changed on another device\" text; Flutter shows the same (notification_settings_view_test \"a 409 from another device\"); no parity case renders a failed PATCH yet."
+          "justification": "PauseAndScheduleCard banner / ContentCard toast \"Couldn’t save notification settings\" and the 409 \"changed on another device\" text; Flutter shows the same (notification_settings_view_test \"a 409 from another device\"); no parity case renders a failed PATCH yet."
         },
         {
           "state": "loading",
@@ -3136,7 +3136,7 @@
     },
     {
       "id": "settings.server-notifications",
-      "title": "Settings: On {server} \u203a Notifications",
+      "title": "Settings: On {server} › Notifications",
       "webEntry": "packages/web/src/components/settings/notifications/ServersCard.tsx#CurrentServerNotificationsCard",
       "flutterEntry": "apps/raft_flutter/lib/features/notification_settings_view.dart",
       "states": [
@@ -3389,7 +3389,7 @@
             "components.wp6.settings.provider-edit-error"
           ],
           "status": "gap",
-          "justification": "Edit modal failure is covered; the list \"Provider connections could not be loaded.\" banner and the assigned-agents loading / error / empty block have no case and \"Loading assigned Agents\u2026\" / \"No Agent holds this assignment anymore\" / \"Models could not be refreshed\" have no Flutter strings.",
+          "justification": "Edit modal failure is covered; the list \"Provider connections could not be loaded.\" banner and the assigned-agents loading / error / empty block have no case and \"Loading assigned Agents…\" / \"No Agent holds this assignment anymore\" / \"Models could not be refreshed\" have no Flutter strings.",
           "size": "M",
           "gapKind": "impl-diff"
         }
@@ -3419,7 +3419,7 @@
           "flutter": "missing",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web \"Loading Slack bridge setup\u2026\" (settings.slackBridge.loading) is absent in Flutter; no case.",
+          "justification": "Web \"Loading Slack bridge setup…\" (settings.slackBridge.loading) is absent in Flutter; no case.",
           "size": "S",
           "gapKind": "impl-diff"
         }
@@ -3526,7 +3526,7 @@
             "components.ext-settings.feedback.loading"
           ],
           "status": "gap",
-          "justification": "React capture of feedback.loading shows the \"No feedback yet\" empty state (the pending route does not produce a loading UI); Web has \"Loading feedback\u2026\" only in the lazy dialog host (settings.about.feedbackWorkspaceLoading, absent in Flutter).",
+          "justification": "React capture of feedback.loading shows the \"No feedback yet\" empty state (the pending route does not produce a loading UI); Web has \"Loading feedback…\" only in the lazy dialog host (settings.about.feedbackWorkspaceLoading, absent in Flutter).",
           "size": "S",
           "gapKind": "invalid-case",
           "caseValidity": "invalid"
@@ -4094,7 +4094,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Lines sit between the turns they fall between; three or more in a row fold into \"{count} actions \u00b7 latest: {latest}\"; Raft's own restart is fainter and names no one. Widget-tested (agent_operator_events_test.dart); the Web host has no case with events.",
+          "justification": "Lines sit between the turns they fall between; three or more in a row fold into \"{count} actions · latest: {latest}\"; Raft's own restart is fainter and names no one. Widget-tested (agent_operator_events_test.dart); the Web host has no case with events.",
           "size": "S",
           "gapKind": "case-missing"
         }
@@ -4138,7 +4138,7 @@
         },
         {
           "state": "partial",
-          "variant": "Working \u00b7 for {duration}, Idle \u00b7 last turn ended {time}",
+          "variant": "Working · for {duration}, Idle · last turn ended {time}",
           "web": "yes",
           "flutter": "yes",
           "parityCase": [],
@@ -4464,7 +4464,7 @@
         },
         {
           "state": "empty",
-          "variant": "No tasks yet (\u5168\u90e8), No tasks match (a filter or search), No tasks in a \u6211\u7684 section",
+          "variant": "No tasks yet (全部), No tasks match (a filter or search), No tasks in a 我的 section",
           "web": "yes",
           "flutter": "yes",
           "parityCase": [],
@@ -4499,7 +4499,7 @@
     },
     {
       "id": "settings.account.delete",
-      "title": "Settings: Account \u203a Delete Account",
+      "title": "Settings: Account › Delete Account",
       "webEntry": "packages/web/src/features/settings/account/DeleteAccountPage.tsx (AccountDeletionChecklist)",
       "flutterEntry": "apps/raft_flutter/lib/features/account_deletion_page.dart",
       "states": [
@@ -4564,7 +4564,7 @@
     },
     {
       "id": "settings.account.app-logins",
-      "title": "Settings: Account \u203a Apps you signed in to with Raft",
+      "title": "Settings: Account › Apps you signed in to with Raft",
       "webEntry": "packages/web/src/features/settings/account/AppLoginsSection.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/account_app_logins.dart",
       "states": [
@@ -58413,7 +58413,7 @@
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Notification center",
-        "reason": "Owns the preview\u2019s open state and dismissal."
+        "reason": "Owns the preview’s open state and dismissal."
       },
       "packages/raft_ui/lib/notification_previews.dart#function:notificationTriggerPreview": {
         "role": "entry_composition",
@@ -61831,6 +61831,180 @@
         ],
         "owner": "Legacy UI Wave 2",
         "reason": "Renders a monospace reference term inside RaftReportIssueDialog diagnostics."
+      },
+      "apps/raft_flutter/lib/features/create_agent_dialog.dart#local-function:CLASS:_CreateAgentDialogState@5201/METHOD:build@25468/FUNCTION:fields@33125": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "apps/raft_flutter/lib/features/human_login_servers.dart#local-function:CLASS:_HumanLoginServerFieldState@2934/METHOD:_marketplace@6345/FUNCTION:rowWidgets@6799": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/agent_create_form.dart#local-function:CLASS:RaftAgentMoreDisclosure@21578/METHOD:build@21912/FUNCTION:row@21991": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78587/METHOD:build@80059/FUNCTION:message@83644": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/banner.dart#local-function:CLASS:RaftBanner@1010/METHOD:build@5219/FUNCTION:bannerBox@11923": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/banner.dart#local-function:CLASS:RaftBanner@1010/METHOD:build@5219/FUNCTION:box@10341": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/cindy_setup_screen.dart#class:_SetupPaperDotPainter": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/empty_state.dart#local-function:CLASS:RaftEmptyState@1536/METHOD:build@2134/FUNCTION:text@2966": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/feedback_inbox.dart#local-function:CLASS:RaftFeedbackInbox@4065/METHOD:build@5642/FUNCTION:listFor@5771": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/feedback_workspace.dart#local-function:CLASS:_RaftFeedbackCloseSplitState@38236/METHOD:build@40085/FUNCTION:part@41087": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:addon@39158": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Input",
+        "reason": "Builds the canonical InputGroup control with its fitted toolbar hint."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:box@38848": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Input",
+        "reason": "Builds the canonical InputGroup control with its fitted toolbar hint."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:field@41510": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Input",
+        "reason": "Builds the canonical InputGroup control with its fitted toolbar hint."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:resolve@37528": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Input",
+        "reason": "Builds the canonical InputGroup control with its fitted toolbar hint."
+      },
+      "packages/raft_ui/lib/src/onboarding_previews.dart#local-function:CLASS:RaftIdentityImpactPreview@18084/METHOD:build@18477/FUNCTION:avatarOf@19294": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/onboarding_previews.dart#local-function:CLASS:RaftIdentityImpactPreview@18084/METHOD:build@18477/FUNCTION:mentionInline@19648": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/onboarding_previews.dart#local-function:CLASS:RaftServerCreatePreview@3667/METHOD:build@4045/FUNCTION:dot@5299": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/onboarding_previews.dart#local-function:CLASS:RaftServerCreatePreview@3667/METHOD:build@4045/FUNCTION:row@8441": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/onboarding_previews.dart#local-function:CLASS:RaftServerCreatePreview@3667/METHOD:build@4045/FUNCTION:rowText@9532": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/onboarding_previews.dart#local-function:CLASS:RaftServerCreatePreview@3667/METHOD:build@4045/FUNCTION:sectionLabel@7516": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/quick_switcher_results.dart#local-function:CLASS:RaftQuickSwitcherSkeleton@1950/METHOD:build@2071/FUNCTION:bar@2261": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/quick_switcher_results.dart#local-function:CLASS:RaftQuickSwitcherSkeleton@1950/METHOD:build@2071/FUNCTION:row@2444": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:CLASS:RaftListRow@6009/METHOD:_recipeBody@8000/FUNCTION:ink@9244": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:CLASS:RaftListRow@6009/METHOD:build@11892/FUNCTION:body@11933": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:CLASS:_SkeletonText@24051/METHOD:build@24380/FUNCTION:text@24558": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:FUNCTION:_line@13221/FUNCTION:build@14046": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:FUNCTION:_line@13221/FUNCTION:cell@13458": {
+        "role": "entry_composition",
+        "owner": "Legacy UI Wave 3A",
+        "familyRefs": [],
+        "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
+      },
+      "packages/raft_ui/lib/src/setup_steps.dart#local-function:CLASS:_RaftSetupComputerCardState@21505/METHOD:_runtimeBox@27112/FUNCTION:row@27390": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/setup_steps.dart#local-function:CLASS:_RecoveryCard@46045/METHOD:build@46514/FUNCTION:block@46740": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       }
     },
     "entries": {
@@ -64432,7 +64606,7 @@
         "lifecycleScreenId": "settings.server-notifications",
         "declarationRefs": [],
         "mountStatus": "unresolved",
-        "reason": "WP-NOTIF lifecycle screen (Settings \u203a On {server} \u203a Notifications); exact builder/family composition and current mounted state are not yet established."
+        "reason": "WP-NOTIF lifecycle screen (Settings › On {server} › Notifications); exact builder/family composition and current mounted state are not yet established."
       },
       "surface:apps/raft_flutter/lib/features/channel_settings.dart#method:_ChannelSettingsState.notificationLevelRow": {
         "owner": "design-system alignment",
@@ -67977,7 +68151,7 @@
         "entryId": "screen:agent.profile",
         "applicability": "required",
         "owner": "Choice9 design-system alignment",
-        "reason": "Model list delegates through RuntimeModelCombobox\u2192RaftAgentCombobox\u2192RaftComboboxPanel.items.",
+        "reason": "Model list delegates through RuntimeModelCombobox→RaftAgentCombobox→RaftComboboxPanel.items.",
         "reviewState": "legacy editor model closed/open/search/selected",
         "familyRefs": [
           "combobox",
@@ -68031,7 +68205,7 @@
         "entryId": "screen:agent.profile",
         "applicability": "required",
         "owner": "Choice9 design-system alignment",
-        "reason": "Legacy reasoning field is RaftAgentSelect\u2192RaftSelectField, distinct from searchable model.",
+        "reason": "Legacy reasoning field is RaftAgentSelect→RaftSelectField, distinct from searchable model.",
         "reviewState": "derived reasoning select",
         "familyRefs": [
           "combobox",
@@ -68691,7 +68865,7 @@
         "entryId": "screen:agent.profile",
         "applicability": "required",
         "owner": "Choice9 design-system alignment",
-        "reason": "Actual AgentDetail visible catalog and value feed canonical PanelTabBar\u2192TabButton; Web ConversationPanelTabs+SortableTabsList.",
+        "reason": "Actual AgentDetail visible catalog and value feed canonical PanelTabBar→TabButton; Web ConversationPanelTabs+SortableTabsList.",
         "reviewState": "selected tab/allowed visible tabs",
         "familyRefs": [
           "tabs"
@@ -72152,6 +72326,41 @@
         "owner": "Legacy UI Wave 2",
         "applicability": "required",
         "reason": "RaftImageReview resolves responsive dialog header and mobile spacing states."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:resolve@37528|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:resolve@37528|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:resolve@37528|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:resolve@37528|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:resolve@37528|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:resolve@37528|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35956/METHOD:_buildRecipe@37342/FUNCTION:resolve@37528|state:has:focus-visible": {
+        "applicability": "required",
+        "owner": "WP-SEARCH",
+        "reason": "The generated InputGroup paints its focus shadow when the enabled editor holds focus. Search exercises the recipe in both themes."
       }
     },
     "evidence": {},

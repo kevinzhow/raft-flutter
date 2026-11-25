@@ -170,6 +170,7 @@ class RaftBanner extends StatelessWidget {
       size,
       status,
       hasButton: hasAction || (raft && onClose != null),
+      surface: RaftSurfaceBackgroundScope.of(context),
     );
     // raft-ui 0.7 `banner`: `BannerAction` is `col-start-(--banner-text-col)
     // mt-2 flex flex-wrap gap-2`, a row under the copy; the description keeps
@@ -273,6 +274,7 @@ class RaftBanner extends StatelessWidget {
           );
     Widget box(bool wide) => RaftBannerOverhangHost(
       child: RaftRecipeBox(
+        declareSurface: true,
         style: recipe.root,
         tokens: tokens,
         decorationOverride: background == null

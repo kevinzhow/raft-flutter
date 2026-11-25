@@ -15,6 +15,7 @@ import 'banner.dart';
 import 'system_inset.dart';
 import 'components.dart' show RaftButton;
 import 'design_primitives.dart' show RaftControlVariant;
+import 'empty_state.dart';
 import 'feedback_workspace.dart'
     show RaftFeedbackCloseReason, RaftFeedbackCloseSplit;
 import 'icons.dart';
@@ -673,10 +674,7 @@ class RaftFeedbackUnreadCount extends StatelessWidget {
   );
 }
 
-/// The inbox EmptyState with the hands-feedback overrides: a 2px dashed
-/// `--color-brutal-stone` box (`padding: 40px 24px 48px`) centring the 44px
-/// cream icon tile (2px border, 2px hard shadow, `margin-bottom: 14px`), the
-/// 15.5px bold title and the 13px / 1.55 muted body.
+/// Canonical empty state for FeedbackInbox (`All` / `Active` / `Ended`).
 class RaftFeedbackEmptyState extends StatelessWidget {
   const RaftFeedbackEmptyState({super.key, required this.kind});
   final RaftFeedbackFilter kind;
@@ -698,95 +696,20 @@ class RaftFeedbackEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
     // ignore: raft_lints/avoid_render_index_assertion -- `copy` covers every empty-state kind; kind is a fixed enum.
     final (title, body) = copy[kind]!;
-    final strong = t.colors['line-strong']!;
-    final titleStyle = _system(
-      t,
-      size: 15.5,
-      line: 20,
-      weight: FontWeight.w700,
-    );
-    final bodyStyle = _system(
-      t,
-      size: 13,
-      line: 13 * 1.55,
-      color: t.colors['foreground-muted'],
-    );
-    return CustomPaint(
+    return RaftEmptyState(
       key: const ValueKey('feedback-empty'),
-      foregroundPainter: RaftDashedBorderPainter(t.product.brutalStone, 2),
-      child: Padding(
-        // `padding: 40px 24px 48px` inside the 2px dashed border.
-        padding: const EdgeInsets.fromLTRB(26, 42, 26, 50),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: t.product.brutalCream,
-                  border: Border.all(color: strong, width: 2),
-                  boxShadow: [
-                    BoxShadow(color: strong, offset: const Offset(2, 2)),
-                  ],
-                ),
-                child: RaftIcon(
-                  switch (kind) {
-                    RaftFeedbackFilter.all => RaftGlyph.messageSquare,
-                    RaftFeedbackFilter.active => RaftGlyph.clock,
-                    RaftFeedbackFilter.ended => RaftGlyph.check,
-                  },
-                  size: 20,
-                  color: t.colors['foreground'],
-                ),
-              ),
-              const SizedBox(height: 14),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 384),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      raftText(context, title),
-                      textAlign: TextAlign.center,
-                      style: titleStyle,
-                    ),
-                    const SizedBox(height: 8),
-                    ConstrainedBox(
-                      // `max-w-[32ch]` of the 13px face.
-                      constraints: BoxConstraints(
-                        maxWidth: 32 * _zeroWidth(bodyStyle),
-                      ),
-                      child: Text(
-                        raftText(context, body),
-                        textAlign: TextAlign.center,
-                        style: bodyStyle,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      glyph: switch (kind) {
+        RaftFeedbackFilter.all => RaftGlyph.messageSquare,
+        RaftFeedbackFilter.active => RaftGlyph.clock,
+        RaftFeedbackFilter.ended => RaftGlyph.check,
+      },
+      title: raftText(context, title),
+      detail: raftText(context, body),
+      iconGap: 8,
     );
   }
-}
-
-double _zeroWidth(TextStyle style) {
-  final painter = TextPainter(
-    text: TextSpan(text: '0', style: style),
-    textDirection: TextDirection.ltr,
-  )..layout();
-  final width = painter.width;
-  painter.dispose();
-  return width;
 }
 
 /// CSS `border: 2px dashed` (Chromium: dashes of 3x the width, gaps evenly

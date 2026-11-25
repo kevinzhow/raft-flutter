@@ -518,18 +518,14 @@ class _RaftComputerCommandGuideState extends State<RaftComputerCommandGuide> {
         const Flexible(child: RaftSectionEyebrow('Connect command')),
       ],
     );
-    final note = RaftTypography.body(
-      t,
-      size: 12,
-      line: 20,
+    final note = t.scale(
+      RaftTypeScale.footnote,
       color: t.colors['foreground-muted'],
     );
-    final label = RaftTypography.body(
-      t,
-      size: 12,
-      line: 16,
-      weight: FontWeight.w700,
-      color: t.colors['foreground-muted'],
+    final label = t.scale(
+      RaftTypeScale.footnote,
+      weight: FontWeight.w600,
+      color: t.colors['foreground'],
     );
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -559,10 +555,10 @@ class _RaftComputerCommandGuideState extends State<RaftComputerCommandGuide> {
         Text(
           windows
               ? 'Install Raft Computer from PowerShell, then connect this Windows x64 computer to the server.'
-              : 'Install the Raft Computer CLI on this macOS or Linux computer, then connect it to this server.',
+              : 'Install the Raft Computer CLI on this macOS or Linux machine, then connect it to this server.',
           style: note,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         if (windows) ...[
           Row(
             children: [

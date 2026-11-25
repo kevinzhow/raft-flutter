@@ -214,6 +214,7 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
 
   List<Widget> inlineContent(BuildContext context) {
     final sourceScope = authority;
+    final dark = RaftTokens.of(context).dark;
     final recipe = RaftAccountSignInRecipe(RaftTokens.of(context));
     final visible = [
       for (final provider in providers)
@@ -248,85 +249,66 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
           style: recipe.detail,
         ),
       if (visible.isNotEmpty) ...[
-        // `mb-2 text-sm font-bold`
-        Text(raftText(context, 'Connected accounts'), style: recipe.heading),
-        const SizedBox(height: RaftSpace.x2),
-        for (final provider in visible) ...[
-          Builder(
-            builder: (context) {
-              final id = provider['id'];
-              if (id is! String || id.isEmpty) return const SizedBox();
-              final identity = identities
-                  .where((i) => i['provider'] == id)
-                  .firstOrNull;
-              return Semantics(
-                container: true,
-                label: '${provider['label'] ?? id} account',
-                child: Container(
-                  padding: RaftAccountSignInRecipe.rowInset,
-                  decoration: recipe.providerDecoration,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        RaftSectionHeader(
+          label: raftText(context, 'Connected accounts'),
+          icon: const RaftIcon(RaftGlyph.plug, size: 16),
+        ),
+        const SizedBox(height: RaftSpace.x3),
+        RaftListRowGroup(
+          children: [
+            for (final provider in visible)
+              if (provider['id'] case final String id when id.isNotEmpty) ...[
+                (() {
+                  final identity = identities
+                      .where((i) => i['provider'] == id)
+                      .firstOrNull;
+                  final label = '${provider['label'] ?? id}';
+                  return RaftListRow(
+                    variant: RaftListRowVariant.plain,
+                    interactive: false,
+                    semanticLabel: '$label account',
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // `mb-1 flex items-center gap-2 text-xs`:
-                            // SocialProviderIcon `size-[18px]` + label.
-                            Row(
-                              children: [
-                                // SettingsProfileCard SocialProviderIcon:
-                                // actual provider SVG, size-[18px].
-                                switch (id) {
-                                  'google' => const RaftBrandMark(
-                                    RaftBrandMarkKind.google,
-                                    height: RaftSpace.providerIcon,
-                                  ),
-                                  'github' => RaftBrandMark(
-                                    RaftBrandMarkKind.github,
-                                    height: RaftSpace.providerIcon,
-                                    invert: RaftTokens.of(context).dark,
-                                  ),
-                                  'apple' => RaftBrandMark(
-                                    RaftBrandMarkKind.apple,
-                                    height: RaftSpace.providerIcon,
-                                    invert: RaftTokens.of(context).dark,
-                                  ),
-                                  _ => const SizedBox.square(
-                                    dimension: RaftSpace.providerIcon,
-                                  ),
-                                },
-                                const SizedBox(width: RaftSpace.x2),
-                                Text(
-                                  '${provider['label'] ?? id}',
-                                  style: recipe.providerTitle,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: RaftSpace.x1),
-                            Text(
-                              identity == null
-                                  ? raftText(context, 'Not connected')
-                                  : raftFormat(
-                                      context,
-                                      'Connected as {email}',
-                                      {
-                                        'email':
-                                            identity['providerEmail'] ?? '',
-                                      },
-                                    ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: recipe.detail,
-                            ),
-                          ],
-                        ),
+                      RaftIconTile(
+                        glyph: RaftGlyph.plug,
+                        iconBuilder: (size, color) => switch (id) {
+                          'google' => const RaftBrandMark(
+                            RaftBrandMarkKind.google,
+                            height: RaftSpace.providerIcon,
+                          ),
+                          'github' => RaftBrandMark(
+                            RaftBrandMarkKind.github,
+                            height: RaftSpace.providerIcon,
+                            invert: dark,
+                          ),
+                          'apple' => RaftBrandMark(
+                            RaftBrandMarkKind.apple,
+                            height: RaftSpace.providerIcon,
+                            invert: dark,
+                          ),
+                          _ => const SizedBox.square(
+                            dimension: RaftSpace.providerIcon,
+                          ),
+                        },
                       ),
-                      const SizedBox(width: RaftSpace.x3),
-                      RaftSettingsRecipeButton(
-                        label: identity == null ? 'Connect' : 'Disconnect',
-                        size: RaftButtonRecipeSize.sm,
+                      RaftListRowBody(
+                        children: [
+                          RaftListRowTitle(label),
+                          RaftListRowDescription(
+                            identity == null
+                                ? raftText(context, 'Not connected')
+                                : raftFormat(context, 'Connected as {email}', {
+                                    'email': identity['providerEmail'] ?? '',
+                                  }),
+                          ),
+                        ],
+                      ),
+                      RaftButton(
+                        label: raftText(
+                          context,
+                          identity == null ? 'Connect' : 'Disconnect',
+                        ),
+                        uiVariant: RaftButtonVariant.outline,
+                        uiSize: RaftButtonSize.md,
                         onPressed: loading || busy || !passwordStateKnown
                             ? null
                             : identity != null
@@ -336,16 +318,13 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
                             : null,
                       ),
                     ],
-                  ),
-                ),
-              );
-            },
-          ),
-          // `space-y-2`
-          const SizedBox(height: RaftSpace.x2),
-        ],
-        const SizedBox(height: RaftSpace.x1),
-        Container(height: recipe.dividerWidth, color: recipe.dividerColor),
+                  );
+                })(),
+              ],
+          ],
+        ),
+        const SizedBox(height: RaftSpace.x4),
+        const RaftSeparator(),
         const SizedBox(height: RaftAccountSignInRecipe.gap),
       ],
       if (!loading && passwordStateKnown)
@@ -371,11 +350,13 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
           const SizedBox(height: RaftAccountSignInRecipe.gap),
           Align(
             alignment: Alignment.centerLeft,
-            // `variant="accent" size="sm"`
-            child: RaftSettingsRecipeButton(
-              label: busy ? 'Sending setup email…' : 'Set password by email',
-              variant: RaftButtonRecipeVariant.accent,
-              size: RaftButtonRecipeSize.sm,
+            child: RaftButton(
+              label: raftText(
+                context,
+                busy ? 'Sending setup email…' : 'Set password by email',
+              ),
+              uiVariant: RaftButtonVariant.accent,
+              uiSize: RaftButtonSize.sm,
               onPressed: busy
                   ? null
                   : () {
@@ -400,16 +381,23 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
       if (visible.isEmpty || error != null || !passwordStateKnown)
         Align(
           alignment: Alignment.centerLeft,
-          child: RaftTextButton(
-            label: 'Refresh Sign-in Methods',
+          child: RaftButton(
+            label: raftText(context, 'Refresh Sign-in Methods'),
             glyph: RaftGlyph.refreshCw,
+            uiVariant: RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.md,
             onPressed: busy ? null : reload,
           ),
         ),
       if (broker != null)
-        RaftTextButton(
-          label: 'Cancel Sign-in',
-          onPressed: () => broker?.cancel(),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: RaftButton(
+            label: raftText(context, 'Cancel Sign-in'),
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.md,
+            onPressed: () => broker?.cancel(),
+          ),
         ),
     ];
   }
@@ -507,8 +495,10 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
           ),
         ),
       if (broker != null)
-        RaftTextButton(
-          label: 'Cancel Sign-in',
+        RaftButton(
+          label: raftText(context, 'Cancel Sign-in'),
+          uiVariant: RaftButtonVariant.ghost,
+          uiSize: RaftButtonSize.md,
           onPressed: () => broker?.cancel(),
         ),
     ]);

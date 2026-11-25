@@ -21,14 +21,14 @@ import 'package:flutter/services.dart';
 
 import 'anchored_popup.dart';
 import 'banner.dart';
-import 'components.dart' show RaftButton;
 import 'composer_recipe.dart';
-import 'dialog_card.dart' show RaftRecipeButton;
 import 'design_primitives.dart';
 import 'feedback_inbox.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'overlays/dialog.dart';
+import 'raft/button.dart';
+import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'menu_action_row.dart';
 import 'popover_surface.dart';
@@ -43,6 +43,7 @@ import 'recipes/textarea_counter.g.dart';
 import 'system_inset.dart';
 import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'theme.dart';
+import 'tokens/raft_tokens.g.dart';
 import 'tooltip.dart' show RaftTooltip;
 import 'sized_image.dart';
 
@@ -53,26 +54,13 @@ enum RaftFeedbackAuthor { reporter, staff, system }
 
 enum RaftFeedbackUploadState { ready, uploading, failed }
 
-/// hands-feedback `FeedbackProvider` wraps the workspace in
-/// `<ThemeProvider theme={elegant|brutal} syncDom={false}>` without a mode,
-/// so its portals (the close reason menu and the close dialog) render in the
-/// light scheme even when the app is dark. Mirrors that Web rendering.
+/// Portal wrapper kept for compatibility; portals now inherit the app theme
+/// natively (both light and dark).
 class RaftFeedbackPortalTheme extends StatelessWidget {
   const RaftFeedbackPortalTheme({super.key, required this.child});
   final Widget child;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (!t.dark) return child;
-    final light = raftTheme();
-    return Theme(
-      data: light,
-      child: DefaultTextStyle.merge(
-        style: TextStyle(color: light.extension<RaftTokens>()?.strong),
-        child: child,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => child;
 }
 
 /// `.hands-feedback-content` / composer root width.
@@ -103,10 +91,11 @@ class RaftFeedbackViewHeader extends StatelessWidget {
     return RaftFeedbackHeaderBand(
       leading: Row(
         children: [
-          RaftRecipeButton(
+          RaftButton(
             key: const ValueKey('feedback-back'),
-            variant: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.iconSm,
+            label: '',
+            uiVariant: RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.iconSm,
             glyph: RaftGlyph.arrowLeft,
             glyphSize: 16,
             tooltip: raftText(context, 'Back'),
@@ -634,10 +623,10 @@ class _PendingAttachment extends StatelessWidget {
           Positioned(
             top: -6,
             right: -6,
-            child: RaftRecipeButton(
-              variant: RaftButtonRecipeVariant.outline,
-              size: RaftButtonRecipeSize.iconXs,
-              squareExtent: 24,
+            child: RaftButton(
+              label: '',
+              uiVariant: RaftButtonVariant.outline,
+              uiSize: RaftButtonSize.iconXs,
               glyph: RaftGlyph.x,
               glyphSize: 12,
               tooltip: '${raftText(context, 'Remove')} ${file.name}',
@@ -664,10 +653,10 @@ class RaftFeedbackErrorBanner extends StatelessWidget {
     description: raftText(context, message),
     action: onRetry == null
         ? null
-        : RaftRecipeButton(
-            label: 'Try again',
-            variant: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.sm,
+        : RaftButton(
+            label: raftText(context, 'Try again'),
+            uiVariant: RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.sm,
             onPressed: onRetry,
           ),
   );
@@ -1095,9 +1084,13 @@ class RaftFeedbackConversation extends StatelessWidget {
         if (onLoadMore != null || loadingMore)
           Align(
             alignment: Alignment.centerLeft,
-            child: RaftRecipeButton(
-              label: loadingMore ? 'Loading Replies…' : 'Load More Replies',
-              variant: RaftButtonRecipeVariant.outline,
+            child: RaftButton(
+              label: raftText(
+                context,
+                loadingMore ? 'Loading Replies…' : 'Load More Replies',
+              ),
+              uiVariant: RaftButtonVariant.outline,
+              uiSize: RaftButtonSize.md,
               disabled: loadingMore,
               onPressed: onLoadMore,
             ),
@@ -1334,7 +1327,6 @@ class _RaftFeedbackCloseSplitState extends State<RaftFeedbackCloseSplit> {
         child: child,
       ),
     );
-    final open = menu != null;
     Widget split = Row(
       key: anchor,
       mainAxisSize: MainAxisSize.min,
@@ -1361,23 +1353,6 @@ class _RaftFeedbackCloseSplitState extends State<RaftFeedbackCloseSplit> {
       ],
     );
     if (widget.disabled) split = Opacity(opacity: .4, child: split);
-    if (open) {
-      // `[data-menu-open]`: 4px hard shadow, lifted 1px.
-      split = Transform.translate(
-        offset: const Offset(0, -1),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: t.colors['line-strong']!,
-                offset: const Offset(4, 4),
-              ),
-            ],
-          ),
-          child: split,
-        ),
-      );
-    }
     return split;
   }
 }
@@ -1509,17 +1484,10 @@ class _CloseMenuItem extends StatelessWidget {
           ),
           tokens: rt,
         ).item;
-        // A portal outside `.hands-feedback-root`: the app face.
-        final base = item.text(
-          rt,
-          base: raftCssText.merge(DefaultTextStyle.of(context).style),
-        );
         final glyph = 16.0;
-        final caption = base.copyWith(
-          fontSize: 12,
-          height: 1.4,
-          fontWeight: FontWeight.w400,
-          color: t.colors['foreground-muted'],
+        final caption = t.scale(
+          RaftTypeScale.caption,
+          color: t.ui.foregroundMuted,
         );
         return RaftMenuItemSurface(
           style: item,
@@ -1652,11 +1620,11 @@ class RaftFeedbackCloseDialog extends StatelessWidget {
               ),
               RaftDialogFooter(
                 children: [
-                  RaftRecipeButton(
+                  RaftButton(
                     key: const ValueKey('feedback-close-cancel'),
-                    label: 'Cancel',
-                    variant: RaftButtonRecipeVariant.outline,
-                    size: RaftButtonRecipeSize.sm,
+                    label: raftText(context, 'Cancel'),
+                    uiVariant: RaftButtonVariant.outline,
+                    uiSize: RaftButtonSize.sm,
                     disabled: busy,
                     onPressed: onCancel,
                   ),

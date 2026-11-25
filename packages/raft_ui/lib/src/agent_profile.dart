@@ -47,6 +47,7 @@ import 'product_empty_state.dart';
 import 'recipe_surface.dart'
     show RaftCssBoxDecoration, RaftCssOverflowY, RaftRecipeBox, raftCssText;
 import 'split_pane.dart';
+import 'surface_background_scope.dart';
 import 'theme.dart';
 import 'raft/avatar.dart';
 import 'raft/css_box.dart';
@@ -382,7 +383,7 @@ class RaftAvatarSlot extends StatelessWidget {
             1.5,
             slot == RaftAvatarSlotContext.mobileNavServer
                 ? t.ui.stickerEdge
-                : raftStickerEdge(t.ui),
+                : raftStickerEdge(t.ui, RaftSurfaceBackgroundScope.of(context)),
           ),
         ],
         child: ClipRRect(

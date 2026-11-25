@@ -73,6 +73,7 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
             style: s.code.withCssUsedBorderWidths(),
             tokens: rt,
             width: double.infinity,
+            declareSurface: true,
             child: Text(_breakAll(widget.command), style: codeStyle),
           ),
         ),

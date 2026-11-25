@@ -1,0 +1,108 @@
+{
+ "description": "Shared fixture data for Wave 3A legacy UI cleanup parity cases.",
+ "user": {
+  "id": "user-wave3a",
+  "email": "alex@raft.build",
+  "name": "alexchen",
+  "displayName": "Alex Chen",
+  "role": "owner",
+  "avatarUrl": null,
+  "emailVerified": true
+ },
+ "server": {
+  "id": "srv-wave3a",
+  "name": "Launch Studio",
+  "slug": "launch",
+  "ownerId": "user-wave3a",
+  "role": "owner",
+  "iconUrl": null,
+  "createdAt": "2026-06-01T00:00:00.000Z"
+ },
+ "machine": {
+  "id": "mach-wave3a",
+  "serverId": "srv-wave3a",
+  "name": "MacBook-Pro.local",
+  "hostname": "MacBook-Pro.local",
+  "status": "online",
+  "platform": "darwin",
+  "arch": "arm64",
+  "ownerId": "user-wave3a",
+  "isComputer": true,
+  "runtimes": [
+   "claude",
+   "codex"
+  ],
+  "lastSeenAt": "2026-06-15T12:00:00.000Z"
+ },
+ "runtimeOptions": [
+  {
+   "runtimeId": "claude",
+   "capabilityStatus": "available",
+   "canSelectInThisContext": true,
+   "reason": null,
+   "runtimeFormV2": {
+    "protocolVersion": 2
+   }
+  },
+  {
+   "runtimeId": "codex",
+   "capabilityStatus": "available",
+   "canSelectInThisContext": true,
+   "reason": null,
+   "runtimeFormV2": {
+    "protocolVersion": 2
+   }
+  },
+  {
+   "runtimeId": "opencode",
+   "capabilityStatus": "unavailable",
+   "canSelectInThisContext": false,
+   "reason": "not_installed"
+  }
+ ],
+ "providers": [
+  {
+   "id": "google",
+   "label": "Google",
+   "enabled": true
+  },
+  {
+   "id": "github",
+   "label": "GitHub",
+   "enabled": true
+  }
+ ],
+ "identities": [
+  {
+   "provider": "google",
+   "providerUserId": "g-1",
+   "providerEmail": "alex@raft.build"
+  }
+ ],
+ "loginServers": [
+  {
+   "id": "srv-1",
+   "name": "Acme Studio",
+   "slug": "acme",
+   "state": "ready"
+  },
+  {
+   "id": "srv-2",
+   "name": "Beta Labs",
+   "slug": "beta",
+   "state": "install"
+  },
+  {
+   "id": "srv-3",
+   "name": "Team C",
+   "slug": "team-c",
+   "state": "adminNeeded"
+  },
+  {
+   "id": "srv-4",
+   "name": "Offline Org",
+   "slug": "offline-org",
+   "state": "unavailable"
+  }
+ ]
+}

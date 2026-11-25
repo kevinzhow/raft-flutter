@@ -3089,7 +3089,9 @@ class RaftTextLink extends StatelessWidget {
         );
     return RaftControl(
       kind: RaftControlKind.textLink,
-      visualHeight: variant == RaftTextLinkVariant.saved ? 16 : 20,
+      visualHeight: variant == RaftTextLinkVariant.saved
+          ? 16
+          : (scale?.lineHeight ?? 20),
       flexibleHeight: variant != RaftTextLinkVariant.saved,
       // The Web link has no touch inflation: it keeps its own box, and the
       // caller extends the hit area (RaftTouchTarget) where a finger needs it.

@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
-import 'design_primitives.dart';
+import 'banner.dart';
 import 'icons.dart';
 import 'indicators.dart';
+import 'interaction.dart';
 import 'panel_layout.dart' show RaftCssText;
+import 'raft/avatar.dart';
+import 'raft/button.dart';
+import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/search.g.dart' as gen;
 import 'recipes/search_message.g.dart';
 import 'recipes/search_thread.g.dart';
 import 'search_result_surface.dart';
+import 'surface_background_scope.dart';
 import 'theme.dart';
 import 'flex_shrink_row.dart';
-import 'raft/ui_tokens.dart';
 import 'tokens/tokens.dart';
 
 /// Filter chips laid out like MessageSearchPage's `flex flex-wrap items-center
@@ -51,50 +55,116 @@ class RaftQuickSwitcherFilterRow extends StatelessWidget {
   }
 }
 
-/// `SearchSkeleton`: five placeholder cards (three meta bars, two text bars).
+/// `SearchSkeleton`: five `SearchMessageResult` rows matching Web `SearchSkeleton.tsx`.
 class RaftQuickSwitcherSkeleton extends StatelessWidget {
   const RaftQuickSwitcherSkeleton({super.key});
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final line = BorderSide(color: t.colors['line-muted']!, width: 1);
-    Widget bar([double? width]) =>
-        RaftSkeleton(variant: RaftSkeletonVariant.line, width: width);
-    return Column(
-      key: const Key('quick-switcher-skeleton'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 8,
+    final compact = RaftInteraction.of(context).touch;
+    final avatarSize = RaftAvatarSize.sm.extent;
+    final leftInset = compact ? 20.0 : 16.0;
+    Widget bar({double? width, double height = 10}) => RaftSkeleton(
+      variant: RaftSkeletonVariant.line,
+      width: width,
+      height: height,
+      fromRecipe: true,
+    );
+    Widget row() => Stack(
       children: [
-        for (var i = 0; i < 5; i++)
-          Container(
-            decoration: BoxDecoration(
-              color: t.card,
-              border: Border.fromBorderSide(line),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(spacing: 8, children: [bar(96), bar(80), bar(64)]),
-                  const SizedBox(height: 8),
-                  bar(),
-                  const SizedBox(height: 8),
-                  FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: .8,
-                    child: bar(),
-                  ),
-                ],
-              ),
-            ),
+        Positioned(
+          left: leftInset,
+          top: 12,
+          child: RaftSkeleton(
+            variant: RaftSkeletonVariant.block,
+            width: avatarSize,
+            height: avatarSize,
+            fromRecipe: true,
           ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            leftInset + 39,
+            compact ? 12 : 8,
+            leftInset,
+            compact ? 12 : 8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: compact ? 20 : 24,
+                child: Padding(
+                  padding: compact
+                      ? const EdgeInsets.only(top: 6)
+                      : EdgeInsets.zero,
+                  child: Row(
+                    crossAxisAlignment: compact
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.center,
+                    spacing: 6,
+                    children: [
+                      bar(width: 96),
+                      bar(width: 80),
+                      const Spacer(),
+                      bar(width: 48),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              SizedBox(
+                height: 20,
+                child: Padding(
+                  padding: compact
+                      ? const EdgeInsets.only(top: 6)
+                      : EdgeInsets.zero,
+                  child: Align(
+                    alignment: compact
+                        ? Alignment.topLeft
+                        : Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: .8,
+                      child: bar(),
+                    ),
+                  ),
+                ),
+              ),
+              if (compact)
+                SizedBox(
+                  height: 20,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: FractionallySizedBox(
+                        alignment: Alignment.topLeft,
+                        widthFactor: .5,
+                        child: bar(),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ],
+    );
+    return Padding(
+      key: const Key('quick-switcher-skeleton'),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 2,
+        children: [for (var i = 0; i < 5; i++) row()],
+      ),
     );
   }
 }
 
-/// The search failure card: title, one line of advice and an optional action.
+/// The search failure banner: warning status, title, body and an optional outline action.
 class RaftQuickSwitcherErrorCard extends StatelessWidget {
   const RaftQuickSwitcherErrorCard({
     super.key,
@@ -108,45 +178,26 @@ class RaftQuickSwitcherErrorCard extends StatelessWidget {
   final VoidCallback? onAction;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Container(
+    final banner = RaftBanner(
       key: const Key('quick-switcher-error'),
-      decoration: BoxDecoration(
-        color: t.card,
-        border: Border.all(color: t.colors['line-muted']!, width: 1),
-        boxShadow: t.shadows,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: RaftTypography.body(
-                t,
-                size: 14,
-                line: 20,
-                weight: FontWeight.w700,
-                color: t.strong,
-              ),
+      status: RaftBannerRecipeStatus.warning,
+      live: false,
+      glyph: RaftGlyph.triangleAlert,
+      title: title,
+      description: body,
+      action: actionLabel == null
+          ? null
+          : RaftButton(
+              label: actionLabel!,
+              uiVariant: RaftButtonVariant.outline,
+              uiSize: RaftButtonSize.md,
+              onPressed: onAction,
             ),
-            const SizedBox(height: 8),
-            Text(
-              body,
-              style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
-            ),
-            if (actionLabel != null) ...[
-              const SizedBox(height: 12),
-              RaftTextButton(
-                label: actionLabel!,
-                visualHeight: RaftMetrics.buttonSm,
-                onPressed: onAction,
-              ),
-            ],
-          ],
-        ),
-      ),
+    );
+    if (RaftSurfaceBackgroundScope.of(context) != null) return banner;
+    return RaftSurfaceBackgroundScope(
+      color: RaftTokens.of(context).ui.layerCanvas,
+      child: banner,
     );
   }
 }
@@ -406,13 +457,11 @@ class RaftQuickSwitcherThreadGroup extends StatelessWidget {
         .textStyle(rt)
         .copyWith(fontFamily: slot.textStyle(rt).fontFamily ?? t.bodyFont);
     // `text-[11px] font-bold text-foreground-muted` (decision 0002: no caps).
-    final metaStyle = RaftTypography.body(
-      t,
-      size: 11,
-      line: 16,
+    final metaStyle = t.scale(
+      RaftTypeScale.label,
       weight: FontWeight.w700,
-      color: t.muted,
-    ).copyWith(height: 1.5);
+      color: t.ui.foregroundMuted,
+    );
     return RaftRecipeBox(
       key: const Key('quick-switcher-thread-group'),
       style: g.thread.withCssUsedBorderWidths(),
@@ -496,24 +545,17 @@ class RaftQuickSwitcherEmpty extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: RaftTypography.body(
-              t,
-              size: 14,
-              line: 20,
+            style: t.scale(
+              RaftTypeScale.callout,
               weight: FontWeight.w700,
-              color: t.muted,
+              color: t.ui.foregroundMuted,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             detail,
             textAlign: TextAlign.center,
-            style: RaftTypography.body(
-              t,
-              size: 12,
-              line: 16,
-              color: t.muted.withValues(alpha: .7),
-            ),
+            style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
           ),
         ],
       ),

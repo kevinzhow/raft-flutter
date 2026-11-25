@@ -53,6 +53,7 @@ class RaftField extends StatelessWidget {
     this.labelAction,
     this.counter,
     this.reserveMessage = false,
+    this.stableLabelAccessory = false,
     this.belowControl = const [],
     this.belowDescription,
     this.hintBuilder,
@@ -78,6 +79,7 @@ class RaftField extends StatelessWidget {
   /// when empty (`StableField`: nothing below moves when a hint or an error appears).
   final String? counter;
   final bool reserveMessage;
+  final bool stableLabelAccessory;
 
   /// Nodes after the control, inside the field (status lines, inline retry actions).
   final List<Widget> belowControl;
@@ -193,7 +195,8 @@ class RaftField extends StatelessWidget {
       children: [
         if (labelAccessory == null && labelAction == null)
           labelText
-        else if (reserveMessage && labelAccessory != null)
+        else if ((reserveMessage || stableLabelAccessory) &&
+            labelAccessory != null)
           // StableField: the accessory sits at the end of the label row without making the row taller than its
           // label (the pack's `space.fieldLabelAccessoryOutset` is how far it pokes out above and below).
           Row(

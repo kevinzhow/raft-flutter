@@ -3,43 +3,59 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'agent_profile.dart';
-import 'design_primitives.dart';
 import 'icons.dart';
+import 'interaction.dart';
 import 'localization.dart';
+import 'raft/avatar.dart';
+import 'raft/css_box.dart';
+import 'raft/ui_tokens.dart';
 import 'text_scaling.dart' show RaftChrome;
 import 'theme.dart';
-import 'tokens/shadows.g.dart';
+import 'tokens/raft_tokens.g.dart';
 
-/// OnboardingCreateDotPane: `bg-layer-canvas-muted theme-brutal:bg-brutal-cream`, a 16px radial dot grid
-/// (`radial-gradient(var(--line-strong) 1px, transparent 1px)`, opacity 60%) and the preview centred in a
-/// `p-6 xl:p-8` box. Only mounted at the `lg` breakpoint (RaftOnboardingShell).
+/// OnboardingCreateDotPane: `bg-layer-onboarding-pane`, a 14px radial dot grid
+/// at 0.7 opacity behind the centered preview.
 class RaftOnboardingDotPane extends StatelessWidget {
   const RaftOnboardingDotPane({super.key, required this.child});
+
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final padding = MediaQuery.sizeOf(context).width >= 1280 ? 32.0 : 24.0;
-    return ClipRect(
-      child: ColoredBox(
-        color: t.colors['layer-onboarding-pane']!,
-        child: CustomPaint(
-          painter: _DotGridPainter(
-            t.colors['line-onboarding-dot']!.withValues(
-              alpha: t.size('opacity.onboardingDots', fallback: .7),
-            ),
-            grid: t.size('size.onboardingDotGrid', fallback: 14),
-            radius: t.size('size.onboardingDotRadius', fallback: 1.5),
+    final wide = MediaQuery.sizeOf(context).width >= 1280;
+    final padding = wide ? 32.0 : 24.0;
+    final dotBase = t.colors['line-onboarding-dot'] ?? t.ui.lineSeam;
+    return ColoredBox(
+      color: t.colors['layer-onboarding-pane'] ?? t.ui.layerSidebar,
+      child: CustomPaint(
+        painter: _DotGridPainter(
+          color: dotBase.withValues(
+            alpha: dotBase.a * t.size('opacity.onboardingDots', fallback: .7),
           ),
-          child: Padding(
-            padding: EdgeInsets.all(padding),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [child],
-            ),
-          ),
+          grid: t.size('size.onboardingDotGrid', fallback: 14),
+          radius: t.size('size.onboardingDotRadius', fallback: 1.5),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final padded = Padding(
+              padding: EdgeInsets.all(padding),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [child],
+              ),
+            );
+            if (constraints.maxHeight.isFinite &&
+                constraints.maxHeight >= 520 + padding * 2) {
+              return SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: padded,
+              );
+            }
+            return SingleChildScrollView(child: padded);
+          },
         ),
       ),
     );
@@ -47,17 +63,23 @@ class RaftOnboardingDotPane extends StatelessWidget {
 }
 
 class _DotGridPainter extends CustomPainter {
-  const _DotGridPainter(this.color, {required this.grid, required this.radius});
+  const _DotGridPainter({
+    required this.color,
+    required this.grid,
+    required this.radius,
+  });
+
   final Color color;
-  final double grid, radius;
+  final double grid;
+  final double radius;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    // A CSS `radial-gradient` tile centres its dot in the tile.
-    final half = grid / 2;
-    for (var y = half; y < size.height + half; y += grid) {
-      for (var x = half; x < size.width + half; x += grid) {
+    final paint = Paint()
+      ..color = color
+      ..isAntiAlias = false;
+    for (var y = grid / 2; y < size.height; y += grid) {
+      for (var x = grid / 2; x < size.width; x += grid) {
         canvas.drawCircle(Offset(x, y), radius, paint);
       }
     }
@@ -68,74 +90,39 @@ class _DotGridPainter extends CustomPainter {
       old.color != color || old.grid != grid || old.radius != radius;
 }
 
-const _black = Color(0xFF000000);
+double _stickerStroke(BuildContext context, RaftTokens t) =>
+    raftControlBorderPx(context, t.size('border.sticker', fallback: 1.5));
 
-BoxDecoration _brutalCard({
-  Color color = const Color(0xFFFFFFFF),
+double _hairlineStroke(BuildContext context, RaftTokens t) =>
+    raftControlBorderPx(context, t.size('border.seam', fallback: 1));
+
+List<BoxShadow> _stickerShadow(RaftTokens t) =>
+    (t.dark ? RaftDark.elevationSticker : RaftLight.elevationSticker).outer;
+
+BoxDecoration _stickerCardDecoration(
+  BuildContext context,
+  RaftTokens t, {
+  Color? color,
   bool shadow = false,
-  RaftTokens? t,
-}) {
-  // v1.21.23 preview cards: `rounded-container border-[1.5px]
-  // border-line-strong shadow-sticker`; a57b9dab drew square 2px black boxes
-  // with the brutal shadow (onboarding.preview).
-  final web =
-      t != null && t.option('onboarding.preview', or: 'sticker') == 'sticker';
-  return BoxDecoration(
-    color: color,
-    borderRadius: web
-        ? BorderRadius.circular(t.size('radius.container', fallback: 10))
-        : null,
-    border: Border.all(
-      color: web ? t.colors['line-strong']! : _black,
-      width: web ? 1.5 : 2,
-    ),
-    boxShadow: shadow ? RaftProductShadows.shadowBrutalLg.outer : null,
-  );
-}
+}) => BoxDecoration(
+  color: color ?? t.ui.layerCanvas,
+  borderRadius: BorderRadius.all(
+    Radius.circular(t.size('radius.container', fallback: RaftRadius.container)),
+  ),
+  border: Border.all(color: t.ui.lineStrong, width: _stickerStroke(context, t)),
+  boxShadow: shadow ? _stickerShadow(t) : null,
+);
 
-TextStyle _text(
-  RaftTokens t,
-  double size,
-  double line,
-  FontWeight weight,
-  Color color,
-) => RaftTypography.heading(
-  t,
-  size: size,
-  line: line,
-  weight: weight,
-).copyWith(color: color);
-
-TextStyle _mono(
-  RaftTokens t,
-  double size,
-  double line,
-  FontWeight weight,
-  Color color,
-) => RaftTypography.mono(
-  t,
-  size: size,
-  line: line,
-  color: color,
-).copyWith(fontWeight: weight);
-
-const _rotation1 = -math.pi / 180;
-
-// The identity cards combine Tailwind's `rotate-[-1deg]` / `rotate-[2deg]` (the `rotate` property) with the
-// `onboarding-identity-card-enter` animation's final `transform: rotate(-1deg / 2deg)`: the rendered angles
-// are double.
-const _identityRotation1 = -2 * math.pi / 180;
-const _identityRotation2 = 4 * math.pi / 180;
-
-/// ServerCreatePreview (components/auth/ServerCreatePreview.tsx): a rotated browser window showing the
-/// workspace the typed name and slug will create.
+/// Live ServerCreatePreview mirroring Web `ServerCreatePreview.tsx`.
 class RaftServerCreatePreview extends StatelessWidget {
   const RaftServerCreatePreview({
     super.key,
     this.serverName = '',
     this.serverSlug = '',
   });
-  final String serverName, serverSlug;
+
+  final String serverName;
+  final String serverSlug;
 
   static const defaultName = 'Alex Chen Studio';
   static const defaultSlug = 'alex-chen-studio';
@@ -144,82 +131,103 @@ class RaftServerCreatePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     String tr(String s) => raftText(context, s);
-    final name = serverName.trim().isEmpty ? defaultName : serverName.trim();
-    final slug = serverSlug.trim().isEmpty ? defaultSlug : serverSlug.trim();
-    final custom = name != defaultName;
-    final message = custom
+
+    final trimmedName = serverName.trim();
+    final name = trimmedName.isEmpty ? defaultName : trimmedName;
+    final trimmedSlug = serverSlug.trim();
+    final slug = trimmedSlug.isEmpty ? defaultSlug : trimmedSlug;
+    final hasCustomName = trimmedName.isNotEmpty;
+    final cindyMessage = hasCustomName
         ? raftFormat(context, 'I am getting {serverName} ready.', {
             'serverName': name,
           })
         : tr(
             'Once the server is created, I will help you connect a computer and create Cindy.',
           );
-    final dim = _black.withValues(alpha: .4);
-    Widget dot(Color color) =>
-        Container(width: 12, height: 12, decoration: _brutalCard(color: color));
-    final header = Container(
-      padding: const EdgeInsets.all(12),
+
+    final chipRadius = t.size('radius.chip', fallback: RaftRadius.chip);
+    final controlRadius = t.size(
+      'radius.control',
+      fallback: RaftRadius.control,
+    );
+    final containerRadius = t.size(
+      'radius.container',
+      fallback: RaftRadius.container,
+    );
+    final dotRadius =
+        t.size('radius.sticker', fallback: RaftRadius.sticker) / 2;
+    final stickerWidth = _stickerStroke(context, t);
+    final seamWidth = _hairlineStroke(context, t);
+    final stickerEdge = raftStickerEdge(ui);
+    final selectedBg = ui['selected'];
+
+    Widget dot(Color color) => RaftCssBox(
+      width: 12,
+      height: 12,
+      radius: dotRadius,
+      fill: color,
+      borderWidth: stickerWidth,
+      borderColor: ui.stickerInk,
+    );
+
+    final bar = Container(
       decoration: BoxDecoration(
-        color: t.product.brutalCream,
-        border: const Border(bottom: BorderSide(color: _black, width: 2)),
+        color: ui.layerSidebar,
+        border: Border(
+          bottom: BorderSide(color: ui.lineSeam, width: seamWidth),
+        ),
       ),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            // ds-allow: Web ServerCreatePreview.tsx `pl-px`
-            padding: const EdgeInsets.only(left: 1),
+          Transform.translate(
+            offset: const Offset(1, 0),
             child: Row(
               children: [
-                dot(t.product.brutalPink),
+                dot(ui.attention),
                 const SizedBox(width: 6),
-                dot(t.product.softSignal),
+                dot(ui.brand),
                 const SizedBox(width: 6),
-                dot(t.product.brutalLime),
+                dot(ui.success),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: _black, width: 2),
-              boxShadow: RaftProductShadows.shadowBrutalSm.outer,
-            ),
+          RaftCssBox(
+            height: 32,
+            radius: controlRadius,
+            fill: ui.layerCard,
+            borderWidth: stickerWidth,
+            borderColor: ui.lineStrong,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            alignment: Alignment.center,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                RaftIcon(RaftGlyph.lock, size: 12, color: ui.foregroundHint),
+                const SizedBox(width: 6),
+                Text(
+                  'app.raft.build/s/',
+                  style: t.scale(
+                    RaftTypeScale.monoMeta,
+                    mono: true,
+                    color: ui.foregroundHint,
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Flexible(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      RaftIcon(
-                        RaftGlyph.lockKeyhole,
-                        size: 12,
-                        color: _black.withValues(alpha: .5),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'app.raft.build/s/',
-                        style: _mono(
-                          t,
-                          12,
-                          16,
-                          FontWeight.w400,
-                          _black.withValues(alpha: .5),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          slug,
-                          overflow: TextOverflow.ellipsis,
-                          style: _mono(t, 12, 16, FontWeight.w700, _black),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    slug,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.scale(
+                      RaftTypeScale.monoMeta,
+                      mono: true,
+                      weight: FontWeight.w700,
+                      color: ui.foreground,
+                    ),
                   ),
                 ),
               ],
@@ -228,111 +236,126 @@ class RaftServerCreatePreview extends StatelessWidget {
         ],
       ),
     );
+
     Widget sectionLabel(String label, int count) => Padding(
       padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
       child: SizedBox(
-        height: 24,
+        height: 28,
         child: Row(
           children: [
-            // Expanded sections rotate the ChevronRight 90 degrees.
-            Transform.rotate(
-              angle: math.pi / 2,
-              child: const RaftIcon(
-                RaftGlyph.chevronRight,
-                size: 12,
-                strokeWidth: 3,
-                color: _black,
+            RaftIcon(RaftGlyph.chevronDown, size: 12, color: ui.foreground),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: t.scale(
+                  RaftTypeScale.monoMeta,
+                  mono: true,
+                  color: ui.foreground,
+                ),
               ),
             ),
             const SizedBox(width: 6),
-            Text(label, style: _text(t, 11, 16.5, FontWeight.w700, _black)),
-            const SizedBox(width: 6),
-            Text('$count', style: _mono(t, 11, 16.5, FontWeight.w700, dim)),
+            Text(
+              '$count',
+              style: t.scale(
+                RaftTypeScale.monoMeta,
+                mono: true,
+                color: ui.foregroundHint,
+              ),
+            ),
           ],
         ),
       ),
     );
+
     Widget row({
-      required Widget child,
-      Widget? avatar,
-      bool active = false,
       bool hash = false,
+      bool active = false,
       bool last = false,
+      Widget? avatar,
+      required Widget child,
     }) => Padding(
       padding: EdgeInsets.fromLTRB(8, 0, 8, last ? 0 : 4),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 32),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: active ? t.product.brutalPink : null,
-          border: Border.all(
-            color: active ? _black : Colors.transparent,
-            width: 2,
-          ),
-          boxShadow: active ? RaftProductShadows.shadowBrutalSm.outer : null,
-        ),
+      child: RaftCssBox(
+        minHeight: 32,
+        radius: controlRadius,
+        fill: active ? selectedBg : Colors.transparent,
+        borderWidth: active ? stickerWidth : 0,
+        borderColor: active ? ui.stickerInk : null,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
           children: [
             if (hash) ...[
               Text(
                 '#',
-                style: _text(
-                  t,
-                  12,
-                  16,
-                  active ? FontWeight.w700 : FontWeight.w500,
-                  _black.withValues(alpha: .45),
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  weight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: active ? ui.stickerInk : ui.foregroundHint,
                 ),
               ),
               const SizedBox(width: 6),
             ],
-            ?avatar,
-            if (avatar != null) const SizedBox(width: 6),
-            Flexible(child: child),
+            if (avatar != null) ...[avatar, const SizedBox(width: 6)],
+            Expanded(child: child),
           ],
         ),
       ),
     );
-    Widget rowText(String s, {bool active = false}) => Text(
-      s,
+
+    Text rowText(String text, {bool active = false}) => Text(
+      text,
       overflow: TextOverflow.ellipsis,
-      style: _text(
-        t,
-        12,
-        16,
-        active ? FontWeight.w700 : FontWeight.w500,
-        t.semantic.foreground,
+      style: t.scale(
+        RaftTypeScale.footnote,
+        weight: active ? FontWeight.w700 : FontWeight.w500,
+        color: active ? ui.stickerInk : ui.foreground,
       ),
     );
-    final sidebar = Container(
-      width: 200,
+
+    final headerHeight =
+        !RaftInteraction.of(context).touch &&
+            MediaQuery.sizeOf(context).width >= 768
+        ? 44.0
+        : 56.0;
+
+    final sidebar = DecoratedBox(
       decoration: BoxDecoration(
-        color: t.product.brutalCream,
-        border: const Border(right: BorderSide(color: _black, width: 2)),
+        color: ui.layerSidebar,
+        border: Border(
+          right: BorderSide(color: ui.lineSeam, width: seamWidth),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            height: 62,
+            height: headerHeight,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
-              color: t.product.softSignal,
-              border: const Border(bottom: BorderSide(color: _black, width: 2)),
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _black,
-                border: Border.all(color: _black, width: 2),
-                boxShadow: RaftProductShadows.shadowBrutalSm.outer,
+              border: Border(
+                bottom: BorderSide(color: ui.lineSeam, width: seamWidth),
               ),
+            ),
+            alignment: Alignment.centerLeft,
+            child: RaftCssBox(
+              height: 32,
+              radius: controlRadius,
+              fill: ui.stickerInk,
+              insetRingWidth: stickerWidth,
+              insetRingColor: stickerEdge,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              alignment: Alignment.centerLeft,
               child: Text(
                 name,
-                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: _text(t, 12, 16, FontWeight.w700, t.product.softSignal),
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  weight: FontWeight.w700,
+                  color: ui.brand,
+                ),
               ),
             ),
           ),
@@ -347,62 +370,77 @@ class RaftServerCreatePreview extends StatelessWidget {
           sectionLabel(tr('Direct messages'), 1),
           row(
             last: true,
-            avatar: const RaftAvatarSlot(
+            avatar: RaftAvatarSlot(
               name: 'Cindy',
               avatarUrl: 'pixel:mug',
               slot: RaftAvatarSlotContext.compactList,
+              sizeOverride: RaftAvatarSize.xs.extent,
             ),
             child: rowText('Cindy'),
           ),
+          const SizedBox(height: 12),
         ],
       ),
     );
-    final main = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          height: 62,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: _black, width: 2)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: _brutalCard(color: t.product.softSignal, t: t),
-                child: const Center(
-                  child: RaftIcon(RaftGlyph.hash, size: 16, color: _black),
-                ),
+
+    final chatPane = ColoredBox(
+      color: ui.layerCanvas,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: headerHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: ui.lineSeam, width: seamWidth),
               ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  channel,
-                  overflow: TextOverflow.ellipsis,
-                  style: _text(t, 14, 20, FontWeight.w700, _black),
+            ),
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                RaftCssBox(
+                  width: RaftAvatarSize.sm.extent,
+                  height: RaftAvatarSize.sm.extent,
+                  radius: chipRadius,
+                  fill: ui.brand,
+                  borderWidth: stickerWidth,
+                  borderColor: ui.stickerInk,
+                  alignment: Alignment.center,
+                  child: RaftIcon(
+                    RaftGlyph.hash,
+                    size: 14,
+                    color: ui.stickerInk,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    channel,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.scale(
+                      RaftTypeScale.headline,
+                      weight: FontWeight.w700,
+                      color: ui.foreground,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Align(
-              alignment: Alignment.topLeft,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Padding(
-                    // ds-allow: Web ServerCreatePreview.tsx MessageRow avatar `mt-px`
-                    padding: EdgeInsets.only(top: 1),
+                  Transform.translate(
+                    offset: const Offset(0, 1),
                     child: RaftAvatarSlot(
                       name: 'Cindy',
                       avatarUrl: 'pixel:mug',
                       slot: RaftAvatarSlotContext.surfaceList,
-                      sizeOverride: 28,
+                      sizeOverride: RaftAvatarSize.sm.extent,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -410,42 +448,36 @@ class RaftServerCreatePreview extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Cindy',
-                                style: _text(
-                                  t,
-                                  12,
-                                  16,
-                                  FontWeight.w700,
-                                  _black,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Cindy',
+                              style: t.scale(
+                                RaftTypeScale.footnote,
+                                weight: FontWeight.w700,
+                                color: ui.foreground,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                tr('onboarding agent'),
+                                overflow: TextOverflow.ellipsis,
+                                style: t.scale(
+                                  RaftTypeScale.caption,
+                                  color: ui.foregroundHint,
                                 ),
                               ),
-                              const WidgetSpan(child: SizedBox(width: 6)),
-                              TextSpan(
-                                text: tr('onboarding agent'),
-                                style: _mono(
-                                  t,
-                                  9.5,
-                                  12.6667,
-                                  FontWeight.w700,
-                                  dim,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          message,
-                          style: _text(
-                            t,
-                            12,
-                            20,
-                            FontWeight.w400,
-                            _black.withValues(alpha: .8),
+                          cindyMessage,
+                          style: t.scale(
+                            RaftTypeScale.callout,
+                            color: ui.foreground,
                           ),
                         ),
                       ],
@@ -455,60 +487,73 @@ class RaftServerCreatePreview extends StatelessWidget {
               ),
             ),
           ),
-        ),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: _black, width: 2)),
-          ),
-          child: Opacity(
-            opacity: .6,
-            child: Container(
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: RaftCssBox(
+              radius: containerRadius,
+              fill: ui.layerCard,
+              borderWidth: stickerWidth,
+              borderColor: ui.lineStrong,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: _black, width: 2),
-                boxShadow: RaftProductShadows.shadowBrutalSm.outer,
-              ),
               child: Text(
                 raftFormat(context, 'Message #{channel}', {'channel': channel}),
-                style: _text(t, 12, 16, FontWeight.w400, dim),
+                overflow: TextOverflow.ellipsis,
+                style: t.scale(RaftTypeScale.callout, color: ui.foregroundHint),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
-    return Transform.rotate(
-      angle: _rotation1,
-      child: SizedBox(
-        height: 520,
-        child: Container(
-          decoration: _brutalCard(shadow: true, t: t),
-          clipBehavior: Clip.hardEdge,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              header,
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    sidebar,
-                    Expanded(child: main),
-                  ],
+
+    return RaftChrome(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final showSidebar = constraints.maxWidth >= 420;
+          const targetHeight = 520.0;
+          final targetWidth = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : 640.0;
+          return Transform.rotate(
+            angle: -math.pi / 180,
+            child: SizedBox(
+              width: targetWidth,
+              height: targetHeight,
+              child: Container(
+                decoration: _stickerCardDecoration(context, t, shadow: true),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(
+                      math.max(0, containerRadius - stickerWidth),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      bar,
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (showSidebar)
+                              SizedBox(width: 200, child: sidebar),
+                            Expanded(child: chatPane),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-/// IdentityImpactPreview (AccountIdentitySetupPage.tsx): a rotated channel message card and a profile card
-/// that mirror the typed display name, handle and avatar.
+/// Live IdentityImpactPreview mirroring Web `AccountIdentitySetupPage.tsx`.
 class RaftIdentityImpactPreview extends StatelessWidget {
   const RaftIdentityImpactPreview({
     super.key,
@@ -516,7 +561,9 @@ class RaftIdentityImpactPreview extends StatelessWidget {
     this.handle = '',
     this.avatar,
   });
-  final String displayName, handle;
+
+  final String displayName;
+  final String handle;
 
   /// Avatar builder for a square size (the form's avatar); null draws the default human avatar.
   final Widget Function(double size)? avatar;
@@ -524,258 +571,278 @@ class RaftIdentityImpactPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final ui = t.ui;
     String tr(String s) => raftText(context, s);
-    final name = displayName.trim().isEmpty
+
+    final displayNameText = displayName.trim().isEmpty
         ? tr('Alex Chen')
         : displayName.trim();
     final handleText = handle.trim().isEmpty ? tr('alexchen') : handle.trim();
-    // AvatarSlot `account-tile` (56) / `members-row` (28): Brutal lavender tile, user glyph 24 / 16.
-    Widget avatarOf(double size) =>
-        avatar?.call(size) ??
-        (size >= 48
-            ? RaftAvatarSlot(
-                name: name,
-                agent: false,
-                slot: RaftAvatarSlotContext.profileTile,
-                sizeOverride: size,
-              )
-            : Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  color: t.semantic.fillMuted,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: RaftIcon(
-                    RaftGlyph.user,
-                    size: 16,
-                    color: t.semantic.foregroundMuted,
-                  ),
-                ),
-              ));
-    final body = _text(
-      t,
-      12,
-      20,
-      FontWeight.w400,
-      _black.withValues(alpha: .8),
+
+    final smSize = RaftAvatarSize.sm.extent;
+    final lgSize = RaftAvatarSize.lg.extent;
+    final stickerWidth = _stickerStroke(context, t);
+    final seamWidth = _hairlineStroke(context, t);
+    final containerRadius = t.size(
+      'radius.container',
+      fallback: RaftRadius.container,
     );
+    final chipRadius = t.size('radius.chip', fallback: RaftRadius.chip);
+    final stickerRadius = t.size(
+      'radius.sticker',
+      fallback: RaftRadius.sticker,
+    );
+
+    Widget avatarOf(double size) => avatar != null
+        ? avatar!(size)
+        : RaftAvatarSlot(
+            name: displayNameText,
+            slot: size <= smSize + 2
+                ? RaftAvatarSlotContext.surfaceList
+                : RaftAvatarSlotContext.profileTile,
+            sizeOverride: size,
+            agent: false,
+          );
+
+    InlineSpan mentionInline() => WidgetSpan(
+      alignment: PlaceholderAlignment.baseline,
+      baseline: TextBaseline.alphabetic,
+      child: RaftCssBox(
+        radius: stickerRadius,
+        fill: ui.brand,
+        insetRingWidth: stickerWidth,
+        insetRingColor: ui.stickerInk,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Text(
+          '@$handleText',
+          style: t.scale(
+            RaftTypeScale.callout,
+            weight: FontWeight.w600,
+            color: ui.stickerInk,
+          ),
+        ),
+      ),
+    );
+
     final template = tr(
       'morning — can <mention>@{handle}</mention> take a look at the Q3 draft?',
     );
-    final open = template.indexOf('<mention>');
-    final close = template.indexOf('</mention>');
-    final before = template.substring(0, open);
-    final after = template.substring(close + '</mention>'.length);
-    final seeded = Text.rich(
-      TextSpan(
-        style: body,
-        children: [
-          TextSpan(text: before),
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: t.product.softSignal,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '@$handleText',
-                style: _text(t, 12, 20, FontWeight.w700, _black),
-              ),
-            ),
-          ),
-          TextSpan(text: after),
-        ],
+    const mentionTag = '<mention>@{handle}</mention>';
+    final tagIdx = template.indexOf(mentionTag);
+    final calloutStyle = t.scale(RaftTypeScale.callout, color: ui.foreground);
+
+    final seededMessage = RichText(
+      text: TextSpan(
+        style: calloutStyle,
+        children: tagIdx >= 0
+            ? [
+                TextSpan(text: template.substring(0, tagIdx)),
+                mentionInline(),
+                TextSpan(text: template.substring(tagIdx + mentionTag.length)),
+              ]
+            : [TextSpan(text: template)],
       ),
     );
+
     final channelCard = Container(
-      decoration: _brutalCard(shadow: true, t: t),
-      clipBehavior: Clip.hardEdge,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: _black, width: 2)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 29,
-                  height: 29,
-                  decoration: _brutalCard(color: t.product.softSignal, t: t),
-                  child: const Center(
-                    child: RaftIcon(RaftGlyph.hash, size: 15, color: _black),
-                  ),
+      decoration: _stickerCardDecoration(
+        context,
+        t,
+        color: ui.layerCanvas,
+        shadow: true,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(
+          Radius.circular(math.max(0, containerRadius - stickerWidth)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height:
+                  !RaftInteraction.of(context).touch &&
+                      MediaQuery.sizeOf(context).width >= 768
+                  ? 44
+                  : 48,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: ui.layerCanvas,
+                border: Border(
+                  bottom: BorderSide(color: ui.lineSeam, width: seamWidth),
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    tr('pricing'),
-                    overflow: TextOverflow.ellipsis,
-                    style: _text(
-                      t,
-                      14,
-                      20,
-                      FontWeight.w900,
-                      t.semantic.foreground,
+              ),
+              child: Row(
+                children: [
+                  RaftCssBox(
+                    width: smSize,
+                    height: smSize,
+                    radius: chipRadius,
+                    fill: ui.brand,
+                    borderWidth: stickerWidth,
+                    borderColor: ui.stickerInk,
+                    alignment: Alignment.center,
+                    child: RaftIcon(
+                      RaftGlyph.hash,
+                      size: 14,
+                      color: ui.stickerInk,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      tr('pricing'),
+                      overflow: TextOverflow.ellipsis,
+                      style: t.scale(
+                        RaftTypeScale.headline,
+                        weight: FontWeight.w700,
+                        color: ui.foreground,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      // ds-allow: Web AccountIdentitySetupPage.tsx avatar `mt-px`
-                      padding: const EdgeInsets.only(top: 1),
-                      // ignore: raft_lints/avoid_fixed_height_text -- a fixed 28px avatar: the initial is bounded by RaftChrome and always fits
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        alignment: Alignment.center,
-                        decoration: _brutalCard(
-                          color: t.product.brutalLavender.withValues(alpha: .7),
-                        ),
-                        child: Text(
-                          'M',
-                          textScaler: RaftChrome.boundedScalerOf(context),
-                          style: _text(
-                            t,
-                            11,
-                            16.5,
-                            FontWeight.w900,
-                            t.semantic.foreground,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Transform.translate(
+                        offset: const Offset(0, 1),
+                        child: RaftCssBox(
+                          width: smSize,
+                          height: smSize,
+                          radius: stickerRadius,
+                          fill: ui['palette-lavender-400'],
+                          borderWidth: stickerWidth,
+                          borderColor: ui.stickerInk,
+                          alignment: Alignment.center,
+                          child: Text(
+                            'M',
+                            style: t.scale(
+                              RaftTypeScale.caption,
+                              weight: FontWeight.w700,
+                              color: ui.stickerInk,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tr('Maya'),
-                            style: _text(t, 12, 16, FontWeight.w700, _black),
-                          ),
-                          const SizedBox(height: 2),
-                          seeded,
-                        ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tr('Maya'),
+                              style: t.scale(
+                                RaftTypeScale.footnote,
+                                weight: FontWeight.w700,
+                                color: ui.foreground,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            seededMessage,
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      // ds-allow: Web AccountIdentitySetupPage.tsx avatar `mt-px`
-                      padding: const EdgeInsets.only(top: 1),
-                      child: SizedBox.square(
-                        dimension: 28,
-                        child: avatarOf(28),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Transform.translate(
+                        offset: const Offset(0, 1),
+                        child: SizedBox(
+                          width: smSize,
+                          height: smSize,
+                          child: avatarOf(smSize),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text.rich(
-                            TextSpan(
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 2,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                TextSpan(
-                                  text: name,
-                                  style: _text(
-                                    t,
-                                    12,
-                                    16,
-                                    FontWeight.w700,
-                                    _black,
+                                Text(
+                                  displayNameText,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: t.scale(
+                                    RaftTypeScale.footnote,
+                                    weight: FontWeight.w700,
+                                    color: ui.foreground,
                                   ),
                                 ),
-                                const WidgetSpan(child: SizedBox(width: 6)),
-                                TextSpan(
-                                  text: tr('2:41 PM').toUpperCase(),
-                                  style: _mono(
-                                    t,
-                                    9.5,
-                                    14.25,
-                                    FontWeight.w700,
-                                    _black.withValues(alpha: .35),
+                                Text(
+                                  tr('2:41 PM'),
+                                  style: t.scale(
+                                    RaftTypeScale.monoMeta,
+                                    mono: true,
+                                    color: ui.foregroundHint,
                                   ),
                                 ),
                               ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            tr('On it, will have comments by noon.'),
-                            style: body,
-                          ),
-                        ],
+                            const SizedBox(height: 2),
+                            Text(
+                              tr('On it, will have comments by noon.'),
+                              style: calloutStyle,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+
     final profileCard = Container(
       padding: const EdgeInsets.all(16),
-      decoration: _brutalCard(shadow: true, t: t),
+      decoration: _stickerCardDecoration(
+        context,
+        t,
+        color: ui['layer-popover'],
+        shadow: true,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox.square(dimension: 56, child: avatarOf(56)),
+          SizedBox(width: lgSize, height: lgSize, child: avatarOf(lgSize)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
-                  maxLines: 1,
+                  displayNameText,
                   overflow: TextOverflow.ellipsis,
-                  style: _text(
-                    t,
-                    16,
-                    24,
-                    FontWeight.w900,
-                    t.semantic.foreground,
+                  style: t.scale(
+                    RaftTypeScale.headline,
+                    weight: FontWeight.w700,
+                    color: ui.foreground,
                   ),
                 ),
                 Text(
                   '@$handleText',
-                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: _mono(
-                    t,
-                    12,
-                    16,
-                    FontWeight.w700,
-                    _black.withValues(alpha: .5),
+                  style: t.scale(
+                    RaftTypeScale.monoMeta,
+                    mono: true,
+                    color: ui.foregroundHint,
                   ),
                 ),
               ],
@@ -784,55 +851,53 @@ class RaftIdentityImpactPreview extends StatelessWidget {
         ],
       ),
     );
-    // `relative z-10 min-h-[520px] w-full max-w-[640px] p-4 sm:p-6` > `h-full min-h-[460px]` centred >
-    // `w-[min(100%,520px)]` > `relative pb-24` (card 1 w-[min(92%,480px)], card 2 absolute bottom-2 right-0
-    // w-[min(78%,360px)]).
-    return Center(
+
+    return RaftChrome(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640, minHeight: 520),
         child: Padding(
           padding: const EdgeInsets.all(24),
-          // `h-full min-h-[460px]` inside the 472px content box of the border-box `min-h-[520px]` preview: the
-          // 460px box sits at the top (36px spare below), the cards centre inside it.
           child: Align(
             alignment: Alignment.topCenter,
             heightFactor: 1,
-            child: SizedBox(
-              height: 460,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520, minHeight: 460),
               child: Center(
+                heightFactor: 1,
                 child: LayoutBuilder(
-                  builder: (context, box) {
-                    final zone = math.min(box.maxWidth, 520.0);
-                    return SizedBox(
-                      width: zone,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 96),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              heightFactor: 1,
-                              child: SizedBox(
-                                width: math.min(zone * .92, 480),
-                                child: Transform.rotate(
-                                  angle: _identityRotation1,
-                                  child: channelCard,
-                                ),
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth.isFinite
+                        ? constraints.maxWidth
+                        : 520.0;
+                    final channelWidth = math.min(width * 0.92, 480.0);
+                    final profileWidth = math.min(width * 0.78, 360.0);
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 96),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            heightFactor: 1,
+                            child: SizedBox(
+                              width: channelWidth,
+                              child: Transform.rotate(
+                                angle: -2 * math.pi / 180,
+                                child: channelCard,
                               ),
                             ),
                           ),
-                          Positioned(
-                            right: 0,
-                            bottom: 8,
-                            width: math.min(zone * .78, 360),
-                            child: Transform.rotate(
-                              angle: _identityRotation2,
-                              child: profileCard,
-                            ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 8,
+                          width: profileWidth,
+                          child: Transform.rotate(
+                            angle: 4 * math.pi / 180,
+                            child: profileCard,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     );
                   },
                 ),

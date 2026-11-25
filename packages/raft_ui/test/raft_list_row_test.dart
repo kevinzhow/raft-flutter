@@ -278,7 +278,8 @@ void main() {
         final rule = find.byWidgetPredicate(
           (w) =>
               w is ColoredBox &&
-              w.color.toARGB32() == ui.lineHairline.toARGB32(),
+              w.color.toARGB32() ==
+                  raftChromeBlend(ui.lineHairline, ui.layerCard).toARGB32(),
         );
         expect(rule, findsOneWidget);
         final b = tester.getRect(find.byKey(const ValueKey('b')));

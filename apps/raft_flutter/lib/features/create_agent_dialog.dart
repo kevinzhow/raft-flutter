@@ -883,6 +883,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       RaftStableField(
         label: 'Runtime',
         required: true,
+        reserveMessage: !widget.onboarding,
         // Web `runtimeBelowDescription`: signed out is said, never enforced.
         belowDescription: RuntimeSignInNotice(
           controller: w,

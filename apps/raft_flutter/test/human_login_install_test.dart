@@ -446,7 +446,10 @@ void main() {
             find.byKey(ValueKey('human-login-server-state-$id')),
           )
           .label;
-      expect(state('srv-1'), 'Installed');
+      expect(
+        find.byKey(const ValueKey('human-login-server-state-srv-1')),
+        findsNothing,
+      );
       expect(state('srv-2'), 'Not installed');
       expect(state('srv-3'), 'Admin needed');
       // The best server is the one selected: Acme, installed.

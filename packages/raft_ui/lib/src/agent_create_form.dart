@@ -199,10 +199,12 @@ class RaftStableField extends StatelessWidget {
     this.belowControl = const [],
     this.belowDescription,
     this.hintBuilder,
+    this.reserveMessage = true,
   });
   final String label;
   final Widget child;
   final bool required;
+  final bool reserveMessage;
   final String? hint, error, counter;
   final Widget? labelAccessory;
   final List<Widget> belowControl;
@@ -224,7 +226,8 @@ class RaftStableField extends StatelessWidget {
     belowControl: belowControl,
     belowDescription: belowDescription,
     hintBuilder: hintBuilder,
-    reserveMessage: true,
+    reserveMessage: reserveMessage,
+    stableLabelAccessory: true,
     child: child,
   );
 }

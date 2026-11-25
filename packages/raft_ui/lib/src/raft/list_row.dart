@@ -14,6 +14,7 @@ import '../recipe_surface.dart';
 import '../recipes/list_row.g.dart';
 import '../recipes/list_row_skeleton.g.dart';
 import '../recipes/recipe_runtime.dart';
+import '../surface_background_scope.dart';
 import '../theme.dart';
 import 'ui_tokens.dart';
 
@@ -281,6 +282,33 @@ class RaftListRow extends StatelessWidget {
       ink('--list-row-ink-2'),
       ink('--list-row-ink-3'),
     );
+    final rowSurface = RaftSurfaceBackgroundScope.of(context);
+    final selectedFill = selected
+        ? recipe.root.before?.backgroundColor?.resolve(
+            tokens,
+            currentColor: inherited.ink,
+          )
+        : null;
+    final childSurface =
+        selected &&
+            selectedFill != null &&
+            rowSurface != null &&
+            rowSurface.a == 1
+        ? (selectedFill.a < 1
+              ? raftChromeBlend(selectedFill, rowSurface)
+              : selectedFill)
+        : null;
+    final rowContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) SizedBox(width: recipe.root.columnGap ?? 0),
+          children[i] is RaftListRowBody
+              ? Expanded(child: children[i])
+              : children[i],
+        ],
+      ],
+    );
     final row = LayoutBuilder(
       builder: (context, constraints) => RaftRecipeBox(
         style: recipe.root,
@@ -295,17 +323,12 @@ class RaftListRow extends StatelessWidget {
                     recipe.root.padding.horizontal -
                     recipe.root.borderWidth.horizontal
               : 0,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              for (var i = 0; i < children.length; i++) ...[
-                if (i > 0) SizedBox(width: recipe.root.columnGap ?? 0),
-                children[i] is RaftListRowBody
-                    ? Expanded(child: children[i])
-                    : children[i],
-              ],
-            ],
-          ),
+          child: childSurface == null
+              ? rowContent
+              : RaftSurfaceBackgroundScope(
+                  color: childSurface,
+                  child: rowContent,
+                ),
         ),
       ),
     );
@@ -316,6 +339,11 @@ class RaftListRow extends StatelessWidget {
         (before['display'] as CssKeyword).value == 'none') {
       return row;
     }
+    final ruleColor = before.borderColorOf('top')!.resolve(tokens);
+    final effectiveRuleColor =
+        ruleColor.a < 1 && rowSurface != null && rowSurface.a == 1
+        ? raftChromeBlend(ruleColor, rowSurface)
+        : ruleColor;
     return Stack(
       children: [
         row,
@@ -324,11 +352,7 @@ class RaftListRow extends StatelessWidget {
           left: before.length('left'),
           right: before.length('right'),
           height: before.borderWidth.top,
-          child: IgnorePointer(
-            child: ColoredBox(
-              color: before.borderColorOf('top')!.resolve(tokens),
-            ),
-          ),
+          child: IgnorePointer(child: ColoredBox(color: effectiveRuleColor)),
         ),
       ],
     );
@@ -633,6 +657,7 @@ class RaftListRowGroup extends StatelessWidget {
       tokens: t.recipeTokens,
     ).group;
     return RaftRecipeBox(
+      declareSurface: true,
       style: group,
       tokens: t.recipeTokens,
       clip: true,

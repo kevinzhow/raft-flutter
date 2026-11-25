@@ -78,7 +78,7 @@ void main() {
 
   testWidgets('the skeleton shows five placeholder cards', (t) async {
     await t.pumpWidget(host(false, const RaftQuickSwitcherSkeleton()));
-    expect(find.byType(RaftSkeleton), findsNWidgets(5 * 5));
+    expect(find.byType(RaftSkeleton), findsNWidgets(5 * 6));
     await t.pumpWidget(const SizedBox.shrink());
   });
 }
