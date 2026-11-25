@@ -578,7 +578,10 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
             builder: (context, box) {
               final chrome = RaftPanelHeaderChrome.maybeOf(context);
               final moves = chrome?.moves ?? const [];
-              final hasClose = widget.onBack == null && widget.showClose;
+              // Stacked over another pane by its host (the channel side area):
+              // Back replaces the close X and reveals the pane underneath.
+              final back = widget.onBack ?? chrome?.onBack;
+              final hasClose = back == null && widget.showClose;
               final showMessage =
                   widget.onMessage != null &&
                   !isChannelSummaryHuman(profile) &&
@@ -623,7 +626,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                         ),
                       )
                     : null,
-                onBack: widget.onBack,
+                onBack: back,
                 iconAlwaysVisible: true,
                 profileBody: true,
                 backTooltip: raftText(context, 'Back'),

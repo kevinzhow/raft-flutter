@@ -562,6 +562,7 @@ class RaftPanelHeaderChrome extends InheritedWidget {
     required this.actions,
     this.moves = const [],
     this.plannedProfile = false,
+    this.onBack,
     this.wrap,
     required super.child,
   });
@@ -569,6 +570,11 @@ class RaftPanelHeaderChrome extends InheritedWidget {
   final List<Widget> actions;
   final List<RaftMenuEntry> moves;
   final bool plannedProfile;
+
+  /// The host stacks this panel over another one and this is its Back: the
+  /// panel's head draws a back arrow instead of its own close, and pressing it
+  /// reveals the panel underneath. Null where the panel stands on its own.
+  final VoidCallback? onBack;
   final Widget Function(BuildContext, Widget)? wrap;
 
   static RaftPanelHeaderChrome? maybeOf(BuildContext context) =>
@@ -601,6 +607,7 @@ class RaftPanelHeaderChrome extends InheritedWidget {
       actions != oldWidget.actions ||
       moves != oldWidget.moves ||
       plannedProfile != oldWidget.plannedProfile ||
+      onBack != oldWidget.onBack ||
       wrap != oldWidget.wrap;
 }
 

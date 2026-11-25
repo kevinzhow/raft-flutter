@@ -604,7 +604,11 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     final moves = chrome?.moves ?? const [];
     final showMessage = a['deletedAt'] == null && _canMessage;
     final inlineCommands = a['deletedAt'] == null && panelWidth > 480;
+    // Stacked over another pane by its host (the channel side area): Back
+    // replaces the close X and reveals the pane underneath.
+    final stackedBack = chrome?.onBack;
     final hasClose =
+        stackedBack == null &&
         widget.actions.onClose != null &&
         MediaQuery.sizeOf(context).width >= 768;
     final foldMessage =
@@ -642,10 +646,11 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             iconAlwaysVisible: true,
             // `useMobileBack` renders the chevron below `md` only.
             onBack:
-                MediaQuery.sizeOf(context).width >= 768 &&
-                    !widget.actions.backAlways
-                ? null
-                : widget.actions.onBack,
+                stackedBack ??
+                (MediaQuery.sizeOf(context).width >= 768 &&
+                        !widget.actions.backAlways
+                    ? null
+                    : widget.actions.onBack),
             backTooltip: raftText(context, 'Back'),
             iconSlot: (chrome?.showsProfileAvatar(panelWidth) ?? true)
                 ? RaftAvatarSlot(

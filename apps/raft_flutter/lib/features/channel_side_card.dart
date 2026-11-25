@@ -7,6 +7,8 @@
 //     Back there), no X;
 //   - stacked with another section: a chevron folds it to its head, the body
 //     stays mounted;
+//   - standing beside the chat with another pane waiting behind it: its own
+//     Back pops it and reveals that pane, in place of the X;
 //   - otherwise: X.
 // Escape does not close it (Web passes no `closeOnEscape` for these two).
 import 'package:flutter/widgets.dart';
@@ -35,6 +37,7 @@ class ChannelSideCardView extends StatelessWidget {
     required this.mode,
     required this.phone,
     required this.child,
+    this.stacked = false,
     this.onCreateTask,
     this.moves = const [],
     this.onCollapsedChanged,
@@ -56,6 +59,11 @@ class ChannelSideCardView extends StatelessWidget {
   /// A phone: the channel header's Back closes the covering card, so the card
   /// draws no Back and no X of its own.
   final bool phone;
+
+  /// Another open pane waits behind this one (it stands beside the chat and
+  /// one that did not fit is stacked under it), so its head's control is a
+  /// back arrow to that pane rather than an X.
+  final bool stacked;
 
   /// The Tasks header’s own action, also reachable from its overflow menu.
   final VoidCallback? onCreateTask;
@@ -89,7 +97,8 @@ class ChannelSideCardView extends StatelessWidget {
         // adding the card's own action. A clipped column uses the small icons
         // so its essential actions stay operable at the 160px column floor.
         final leadingWidth = foldable ? 40.0 : 0.0;
-        final controls = (onExpand == null ? 0 : 1) + (covering ? 0 : 1);
+        final controls =
+            (onExpand == null ? 0 : 1) + (covering || stacked ? 0 : 1);
         final actions = controls + (moves.isEmpty ? 0 : 1) + 1;
         final showCreate = !collapsed && onCreateTask != null;
         final createInline =
@@ -127,7 +136,7 @@ class ChannelSideCardView extends StatelessWidget {
           bottomBorder: stackEnd
               ? const Border()
               : RaftSidePanelFrame.headerRule(t),
-          onBack: covering && !phone ? onClose : null,
+          onBack: (covering || stacked) && !phone ? onClose : null,
           backKey: Key('$id-back'),
           backTooltip: closeLabel,
           leading: foldable
@@ -184,7 +193,7 @@ class ChannelSideCardView extends StatelessWidget {
                 size: actionSize,
                 onPressed: onExpand,
               ),
-            if (!covering)
+            if (!covering && !stacked)
               RaftPanelAction(
                 key: Key('$id-close'),
                 glyph: RaftGlyph.x,

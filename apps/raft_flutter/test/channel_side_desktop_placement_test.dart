@@ -3,9 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/channel_side_area.dart';
 import 'package:raft_flutter/features/channel_side_card.dart'
     show ChannelSideMode;
-import 'package:raft_flutter/features/channel_side_column.dart';
 import 'package:raft_flutter/features/channel_side_layout.dart';
-import 'package:raft_flutter/features/channel_side_store.dart';
+import 'package:raft_flutter/features/channel_side_stack.dart';
 import 'package:raft_flutter/features/message_task_actions.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -29,119 +28,173 @@ void main() {
   final tasks = sideColumn(1, ChannelSideSection.tasks, 360);
   final details = sideColumn(3, ChannelSideSection.details, 400);
 
-  test('desktop side columns clip in proportion before becoming tabs', () {
+  test('columns that fit at their own minimum share the room in proportion', () {
+    // 360 chat + 280 Tasks + 320 Details = 960, inside 1000.
+    final placement = placeChannelSide(
+      [tasks, details],
+      width: 1000,
+      compact: false,
+      layout: RaftLayoutClass.wide,
+    );
+    expect(placement.mode, ChannelSideMode.beside);
+    expect(placement.stackedBelow, 0);
+    expect(placement.columns.map((c) => c.sections), [
+      const [ChannelSideSection.tasks],
+      const [ChannelSideSection.details],
+    ]);
+    expect(placement.columns.map((c) => c.width), [300.0, 340.0]);
+    expect(
+      1000 - placement.columns.fold(0.0, (sum, c) => sum + c.width),
+      channelSideChatMinWidth,
+    );
+  });
+
+  test('one column that fits is placed exactly as it was before', () {
+    // The chat's saved share is what is left, so nothing is given back.
+    final placement = placeChannelSide(
+      [details],
+      width: 1143,
+      compact: false,
+      layout: RaftLayoutClass.wide,
+    );
+    expect(placement.mode, ChannelSideMode.beside);
+    expect(placement.columns.single.width, 400);
+    expect(placement.stackedBelow, 0);
+  });
+
+  test('a column too wide for the room beside the chat covers instead', () {
+    // 360 + 280 is already past 600: squeezing both to 160 is what the Web
+    // desktop rule did here.
     final placement = placeChannelSide(
       [tasks, details],
       width: 600,
       compact: false,
+      layout: RaftLayoutClass.wide,
     );
-    expect(placement.mode, ChannelSideMode.beside);
-    expect(placement.columns.map((c) => c.width), [175.0, 200.0]);
+    expect(placement.mode, ChannelSideMode.overlay);
+    expect(placement.columns.single.sections, const [
+      ChannelSideSection.tasks,
+    ]);
+    expect(placement.columns.single.width, 600);
+    expect(placement.stackedBelow, 1);
   });
 
-  test('a folded thread gives way before a side column clips', () {
+  test('a folded thread does not reserve a second chat', () {
     final placement = placeChannelSide(
       [details],
       width: 700,
       compact: false,
+      layout: RaftLayoutClass.wide,
       threadFolded: true,
     );
-    expect(placement.columns.single.width, 320);
+    expect(placement.columns.single.width, 340);
+    expect(
+      placement.columns.single.width,
+      greaterThanOrEqualTo(channelSideColumnMinWidth(const [
+        ChannelSideSection.details,
+      ]).toDouble()),
+    );
+    expect(700 - placement.columns.single.width, channelSideChatMinWidth);
   });
 
-  test(
-    'desktop overflow gathers the rightmost columns into their neighbour',
-    () {
-      final files = sideColumn(2, ChannelSideSection.files, 360);
-      final artifact = sideColumn(3, ChannelSideSection.artifact, 480);
-      final placement = placeChannelSide(
-        [
-          tasks,
-          files,
-          artifact,
-          sideColumn(4, ChannelSideSection.details, 400),
-        ],
-        width: 620,
-        compact: false,
-      );
-      expect(placement.mode, ChannelSideMode.beside);
-      expect(placement.columns.map((c) => c.sections), [
-        const [ChannelSideSection.tasks],
-        const [
-          ChannelSideSection.files,
-          ChannelSideSection.artifact,
-          ChannelSideSection.details,
-        ],
-      ]);
-    },
-  );
-
-  test('a compact viewport covers the panel even if it is 600 wide', () {
-    final placement = placeChannelSide([details], width: 600, compact: true);
-    expect(placement.mode, ChannelSideMode.overlay);
-  });
-
-  testWidgets('picking a grouped column restores its whole stack', (t) async {
-    final (w, api) = await settingsFixture(t);
-    final store = ChannelSideStore.of(w)..focus('details');
-    try {
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(),
-          home: Material(
-            child: Center(
-              child: SizedBox(
-                width: 220,
-                height: 640,
-                child: ListenableBuilder(
-                  listenable: store,
-                  builder: (context, _) => ChannelSideColumnView(
-                    store: store,
-                    mode: ChannelSideMode.beside,
-                    sections: const [
-                      ChannelSideSection.tasks,
-                      ChannelSideSection.files,
-                      ChannelSideSection.details,
-                    ],
-                    tabGroups: const [
-                      [ChannelSideSection.tasks, ChannelSideSection.files],
-                      [ChannelSideSection.details],
-                    ],
-                    titles: const {
-                      ChannelSideSection.tasks: 'Tasks',
-                      ChannelSideSection.files: 'Files',
-                      ChannelSideSection.details: 'Details',
-                    },
-                    cardOf: (_, section, _) => SizedBox.expand(
-                      key: Key('grouped-body-${section.name}'),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+  test('the panes that do not fit wait behind the one opened last', () {
+    final files = sideColumn(2, ChannelSideSection.files, 360);
+    final artifact = sideColumn(3, ChannelSideSection.artifact, 480);
+    final last = sideColumn(4, ChannelSideSection.details, 400);
+    final placement = placeChannelSide(
+      [tasks, files, artifact, last],
+      width: 1200,
+      compact: false,
+      layout: RaftLayoutClass.wide,
+      stack: const ChannelSideStack({
+        ChannelSideSection.tasks: 1,
+        ChannelSideSection.files: 2,
+        ChannelSideSection.artifact: 3,
+        ChannelSideSection.details: 4,
+      }),
+    );
+    expect(placement.mode, ChannelSideMode.beside);
+    // Tasks fits first but is the oldest, so it gives its place to Details,
+    // the pane opened last. The shown pair keeps the layout's order.
+    expect(placement.columns.map((c) => c.sections), [
+      const [ChannelSideSection.files],
+      const [ChannelSideSection.details],
+    ]);
+    expect(placement.stackedBelow, 2);
+    for (final column in placement.columns) {
+      expect(
+        column.width,
+        greaterThanOrEqualTo(
+          channelSideColumnMinWidth(column.sections).toDouble(),
         ),
       );
-      Finder card(ChannelSideSection section) =>
-          find.byKey(Key('grouped-body-${section.name}'));
-      expect(card(ChannelSideSection.details), findsOneWidget);
-      expect(card(ChannelSideSection.tasks), findsNothing);
-      final tasksTab = find.byKey(const Key('channel-side-column-tab-tasks'));
-      expect(tasksTab.hitTestable(), findsOneWidget);
-      await t.tap(tasksTab);
-      await t.pumpAndSettle();
-      expect(card(ChannelSideSection.tasks), findsOneWidget);
-      expect(card(ChannelSideSection.files), findsOneWidget);
-      expect(card(ChannelSideSection.details), findsNothing);
-      expect(api.calls.where((call) => call.method == 'PATCH'), isEmpty);
-    } finally {
-      await t.pumpWidget(const SizedBox.shrink());
-      await t.pumpAndSettle();
     }
   });
 
+  test('the medium class covers the conversation with the pane on top', () {
+    final placement = placeChannelSide(
+      [tasks, details],
+      width: 640,
+      compact: false,
+      layout: RaftLayoutClass.medium,
+      stack: const ChannelSideStack({
+        ChannelSideSection.details: 1,
+        ChannelSideSection.tasks: 2,
+      }),
+    );
+    expect(placement.mode, ChannelSideMode.overlay);
+    expect(placement.columns.single.sections, const [
+      ChannelSideSection.tasks,
+    ]);
+    expect(placement.columns.single.width, 640);
+    expect(placement.stackedBelow, 1);
+  });
+
+  test('the medium class covers even where two columns would fit', () {
+    final placement = placeChannelSide(
+      [tasks, details],
+      width: 1000,
+      compact: false,
+      layout: RaftLayoutClass.medium,
+    );
+    expect(placement.mode, ChannelSideMode.overlay);
+    expect(placement.columns, hasLength(1));
+  });
+
+  test('a saved width survives being covered at a medium width', () {
+    final dragged = sideColumn(3, ChannelSideSection.details, 520);
+    expect(
+      placeChannelSide(
+        [dragged],
+        width: 544,
+        compact: false,
+        layout: RaftLayoutClass.medium,
+      ).columns.single.width,
+      544,
+    );
+    expect(
+      placeChannelSide(
+        [dragged],
+        width: 1143,
+        compact: false,
+        layout: RaftLayoutClass.wide,
+      ).columns.single.width,
+      520,
+    );
+  });
+
+  test('a compact viewport covers the panel even if it is 600 wide', () {
+    final placement = placeChannelSide(
+      [details],
+      width: 600,
+      compact: true,
+      layout: RaftLayoutClass.compact,
+    );
+    expect(placement.mode, ChannelSideMode.overlay);
+  });
+
   testWidgets(
-    'a narrow desktop row docks Details and Tasks below the workspace bar',
+    'a desktop row docks Details and Tasks below the workspace bar',
     (t) async {
       final (w, api) = await settingsFixture(t);
       api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};
@@ -151,7 +204,7 @@ void main() {
       api.routes['GET /announcements/active'] = (_) => {'announcements': []};
       TaskV2ConversationsFlag.of(w).markEnabled();
       t.view.devicePixelRatio = 1;
-      t.view.physicalSize = const Size(928, 800);
+      t.view.physicalSize = const Size(1440, 800);
       addTearDown(t.view.reset);
       try {
         await t.pumpWidget(
@@ -172,7 +225,6 @@ void main() {
 
         final area = find.byType(ChannelSideArea);
         final room = t.getRect(area);
-        expect(room.width, inInclusiveRange(520, 679));
         final tasksTrigger = find.byKey(const Key('channel-tasks-toggle'));
         expect(tasksTrigger.hitTestable(), findsOneWidget);
         await t.tap(tasksTrigger);
@@ -199,9 +251,27 @@ void main() {
         expect(tasks.right, details.left);
         expect(details.right, room.right);
         expect(details.bottom, room.bottom);
-        expect(tasks.width, greaterThanOrEqualTo(160));
-        expect(details.width, greaterThanOrEqualTo(160));
-        expect(tasks.left - room.left, greaterThanOrEqualTo(160));
+        // Each column at its own minimum or wider, and the chat keeps 360.
+        expect(
+          tasks.width,
+          greaterThanOrEqualTo(
+            channelSideColumnMinWidth(const [
+              ChannelSideSection.tasks,
+            ]).toDouble(),
+          ),
+        );
+        expect(
+          details.width,
+          greaterThanOrEqualTo(
+            channelSideColumnMinWidth(const [
+              ChannelSideSection.details,
+            ]).toDouble(),
+          ),
+        );
+        expect(
+          tasks.left - room.left,
+          greaterThanOrEqualTo(channelSideChatMinWidth),
+        );
         final close = find.byKey(const Key('channel-details-close'));
         expect(close.hitTestable(), findsOneWidget);
         await t.tap(close);
