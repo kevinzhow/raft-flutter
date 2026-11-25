@@ -253,6 +253,43 @@ def self_hosted_fonts(spec):
     return 'function visualFontFile(' in spec
 
 
+SECOND_FACTOR_ROUTES_SNIPPET = """    if (pathname.endsWith("/auth/second-factor/status")) {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          enabled: false,
+          methods: { totp: false, passkeys: 0, backupCodesRemaining: 0 },
+        }),
+      });
+      return;
+    }
+    if (pathname.endsWith("/auth/second-factor/passkeys")) {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ passkeys: [] }),
+      });
+      return;
+    }
+    if (pathname.endsWith("/auth/me")) {"""
+
+
+def patch_second_factor_routes(spec):
+    # Web v1.24 retired the auth_second_factor_v1 gate so AccountSection mounts
+    # PasskeysSection and TwoStepVerificationSection unconditionally. Upstream
+    # quietApi() has no handlers for these routes yet, so both hit the
+    # {agents:[],humans:[],results:[]} catch-all and crash on status.methods.
+    if '/auth/second-factor/status' in spec:
+        return spec
+    return patch_exactly_once(
+        spec,
+        '    if (pathname.endsWith("/auth/me")) {',
+        SECOND_FACTOR_ROUTES_SNIPPET,
+        'react-provider.spec.ts (second-factor routes)',
+    )
+
+
 def patch_exactly_once(text, old, new, what):
     count = text.count(old)
     if count != 1:
@@ -385,6 +422,8 @@ def prepare_react_provider():
     self_hosted = self_hosted_fonts(spec)
     for old, new in (SPEC_PATCHES_SELF_HOSTED if self_hosted else SPEC_PATCHES):
         spec = patch_exactly_once(spec, old, new, 'react-provider.spec.ts')
+    if self_hosted:
+        spec = patch_second_factor_routes(spec)
     # Deterministic CSS animations/transitions: every capture call gets
     # Playwright's animations: "disabled" (finite animations/transitions jump
     # to their end state, infinite ones reset to their initial at-rest frame;

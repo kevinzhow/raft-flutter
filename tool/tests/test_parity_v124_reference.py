@@ -33,6 +33,15 @@ class ReferenceV124(unittest.TestCase):
         self.assertFalse(parity.self_hosted_fonts('const GOOGLE_FONT_CSS_URL = "x";'))
         self.assertEqual(len(parity.SPEC_PATCHES_SELF_HOSTED), 6)
 
+    def test_second_factor_routes_patch_is_idempotent(self):
+        parity = load_parity()
+        spec = '    if (pathname.endsWith("/auth/me")) {\n      return;\n    }\n'
+        patched = parity.patch_second_factor_routes(spec)
+        self.assertIn('/auth/second-factor/status', patched)
+        self.assertIn('backupCodesRemaining: 0', patched)
+        self.assertIn('/auth/second-factor/passkeys', patched)
+        self.assertEqual(parity.patch_second_factor_routes(patched), patched)
+
 
 if __name__ == '__main__':
     unittest.main()
