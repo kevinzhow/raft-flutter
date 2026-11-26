@@ -153,8 +153,14 @@ class RaftChannelMembersModal extends StatelessWidget {
     this.onConfirm,
     this.page = false,
     this.afterRoster,
+    this.inviteAction,
   });
   final Widget? afterRoster;
+
+  /// The external-invite entry, pinned in the page footer under Add member
+  /// (Web ChannelMembers.tsx:1187-1219: one `border-t … p-3` bar, `gap-2`,
+  /// both buttons `w-full`). Null when the viewer cannot invite outside.
+  final Widget? inviteAction;
   final VoidCallback onClose;
   final TextEditingController search;
   final String channelName;
@@ -867,6 +873,9 @@ class _MembersPageState extends State<_MembersPage> {
                       ),
                     ),
                   ),
+                // Web renders the Invited group above Humans
+                // (ChannelMembers.tsx:1120-1128).
+                ?m.afterRoster,
                 if (!m.loading && humans.isNotEmpty)
                   _MemberSection(
                     key: const ValueKey('member-page-section-humans'),
@@ -881,7 +890,6 @@ class _MembersPageState extends State<_MembersPage> {
                     count: agents.length,
                     rows: agents,
                   ),
-                ?m.afterRoster,
                 if (!m.loading && total == 0)
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -912,7 +920,7 @@ class _MembersPageState extends State<_MembersPage> {
             ),
           ),
         ),
-        if (!m.loading && m.onAdd != null)
+        if (!m.loading && (m.onAdd != null || m.inviteAction != null))
           Container(
             // `shrink-0 border-t border-line-seam p-3`;
             // the system inset is added so the button clears the gesture bar.
@@ -922,16 +930,28 @@ class _MembersPageState extends State<_MembersPage> {
                 top: BorderSide(color: t.colors['line-seam']!, width: 1),
               ),
             ),
-            child: RaftButton(
-              key: const ValueKey('add-member-open'),
-              label: raftText(context, 'Add member'),
-              glyph: RaftGlyph.userPlus,
-              glyphSize: 14,
-              uiVariant: RaftButtonVariant.outline,
-              uiSize: RaftButtonSize.lg,
-              expand: true,
-              disabled: !m.hasCandidates,
-              onPressed: m.onAdd,
+            // Web stacks Add member and the external-invite entry in this one
+            // bar with `gap-2` (ChannelMembers.tsx:1188-1218).
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (m.onAdd != null)
+                  RaftButton(
+                    key: const ValueKey('add-member-open'),
+                    label: raftText(context, 'Add member'),
+                    glyph: RaftGlyph.userPlus,
+                    glyphSize: 14,
+                    uiVariant: RaftButtonVariant.outline,
+                    uiSize: RaftButtonSize.lg,
+                    expand: true,
+                    disabled: !m.hasCandidates,
+                    onPressed: m.onAdd,
+                  ),
+                if (m.onAdd != null && m.inviteAction != null)
+                  const SizedBox(height: 8),
+                ?m.inviteAction,
+              ],
             ),
           ),
       ],

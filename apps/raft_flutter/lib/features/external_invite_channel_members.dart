@@ -59,110 +59,50 @@ Future<bool> readExternalChannelFlag(WorkspaceController w) async {
   }
 }
 
-class ChannelExternalInvites extends StatelessWidget {
-  const ChannelExternalInvites({
+/// The pinned "Invite people outside {server}" entry of the members page.
+/// Web keeps it in the footer bar beside Add member, never in the roster
+/// scroll area (ChannelMembers.tsx:1205-1217, `member-page-invite-outside`,
+/// Mail icon, `size="lg" variant="outline" className="w-full"`).
+///
+/// It reads only the cached flag: [ChannelExternalInvites] owns the one
+/// `/feature-flags/evaluate` call and reports the answer through
+/// `onEnabledChanged`, so splitting the two surfaces adds no round trip.
+class ChannelExternalInviteEntry extends StatefulWidget {
+  const ChannelExternalInviteEntry({
     super.key,
     required this.workspace,
     required this.channel,
-    this.search,
+    this.onSent,
   });
 
   final WorkspaceController workspace;
   final RaftChannel channel;
-  final TextEditingController? search;
+
+  /// Invites were sent or members added: the Invited group reloads.
+  final VoidCallback? onSent;
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: workspace,
-    builder: (context, _) {
-      final current =
-          workspace.channels.where((row) => row.id == channel.id).firstOrNull ??
-          channel;
-      if (!externalInvitable(workspace, current)) {
-        return const SizedBox.shrink();
-      }
-      return _ChannelExternalInvites(
-        key: ValueKey((workspace, pageIdentity(workspace), current.id)),
-        workspace: workspace,
-        channel: current,
-        search: search,
-      );
-    },
-  );
+  State<ChannelExternalInviteEntry> createState() =>
+      _ChannelExternalInviteEntryState();
 }
 
-class _ChannelExternalInvites extends StatefulWidget {
-  const _ChannelExternalInvites({
-    super.key,
-    required this.workspace,
-    required this.channel,
-    this.search,
-  });
-  final WorkspaceController workspace;
-  final RaftChannel channel;
-  final TextEditingController? search;
+class _ChannelExternalInviteEntryState
+    extends State<ChannelExternalInviteEntry> {
+  WorkspaceController get _w => widget.workspace;
+  late final _identity = pageIdentity(_w);
+  late final _api = ExternalInviteApi(_w.command);
+  bool _atLimit = false, _opening = false;
 
-  @override
-  State<_ChannelExternalInvites> createState() =>
-      _ChannelExternalInvitesState();
-}
-
-class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
-  WorkspaceController get _workspace => widget.workspace;
-  String get _channelId => widget.channel.id;
-  String get _snapshot => 'external-invites:$_channelId';
-  late final _identity = pageIdentity(_workspace);
-  late final _api = ExternalInviteApi(_workspace.command);
-  late bool _enabled =
-      cachedServerFlag(_workspace, RaftFeatureFlags.externalChannels) ?? false;
-  late List<ExternalJson> _invites = externalRows(
-    readPageSnapshot(_workspace, _snapshot)?['invites'],
-  );
-  bool _failed = false, _atLimit = false, _opening = false;
-  int _readVersion = 0;
-  final _busy = <String>{};
-
-  bool get _current => mounted && _identity == pageIdentity(_workspace);
-  bool get _canRead => _enabled || widget.channel.hasExternalRelation == true;
+  bool get _current => mounted && _identity == pageIdentity(_w);
   bool get _shouldCheckLimit =>
-      _workspace.server?.string('plan') == 'free' &&
-      !externalSlotHeldBy(widget.channel, _workspace.server?.id);
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_start());
-  }
-
-  Future<void> _start() async {
-    final enabled = await readExternalChannelFlag(_workspace);
-    if (!mounted || !_current) return;
-    setState(() => _enabled = enabled);
-    if (_canRead) unawaited(_load());
-    if (_enabled && _shouldCheckLimit) unawaited(_readLimit());
-  }
+      _w.server?.string('plan') == 'free' &&
+      !externalSlotHeldBy(widget.channel, _w.server?.id);
 
   Future<bool> _readLimit() async {
     try {
       return _atLimit = await _api.atFreeLimit();
     } on RaftApiException {
       return _atLimit = false;
-    }
-  }
-
-  Future<void> _load() async {
-    final version = ++_readVersion;
-    try {
-      final result = await _api.channelInvites(_channelId);
-      if (!_current || version != _readVersion) return;
-      final invites = externalRows(result['invites']);
-      writePageSnapshot(_workspace, _snapshot, _identity, {'invites': invites});
-      setState(() {
-        _failed = false;
-        _invites = invites;
-      });
-    } catch (_) {
-      if (_current && version == _readVersion) setState(() => _failed = true);
     }
   }
 
@@ -175,13 +115,13 @@ class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
           await _readLimit() &&
           mounted &&
           _current) {
-        await showExternalChannelLimit(context, _workspace, _channelId);
+        await showExternalChannelLimit(context, _w, widget.channel.id);
         return;
       }
       if (!mounted || !_current) return;
       final result = await showExternalInviteDialog(
         context,
-        _workspace,
+        _w,
         widget.channel,
       );
       if (!mounted || result == null || !_current) return;
@@ -217,10 +157,156 @@ class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
           "The invites were sent, but your servers weren't connected. Try connecting them again.",
         );
       }
-      showExternalConnectionOutcomes(context, result, _workspace.servers);
-      unawaited(_load());
+      showExternalConnectionOutcomes(context, result, _w.servers);
+      widget.onSent?.call();
     } finally {
       if (_current) setState(() => _opening = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: _w,
+    builder: (context, _) {
+      final current =
+          _w.channels.where((row) => row.id == widget.channel.id).firstOrNull ??
+          widget.channel;
+      final enabled =
+          cachedServerFlag(_w, RaftFeatureFlags.externalChannels) ?? false;
+      if (!enabled || !externalInvitable(_w, current)) {
+        return const SizedBox.shrink();
+      }
+      return RaftButton(
+        key: const ValueKey('member-page-invite-outside'),
+        label: raftFormat(context, 'Invite people outside {server}', {
+          'server': _w.server?.name ?? '',
+        }),
+        glyph: RaftGlyph.mail,
+        glyphSize: 14,
+        uiVariant: RaftButtonVariant.outline,
+        uiSize: RaftButtonSize.lg,
+        expand: true,
+        onPressed: _opening ? null : _open,
+      );
+    },
+  );
+}
+
+class ChannelExternalInvites extends StatelessWidget {
+  const ChannelExternalInvites({
+    super.key,
+    required this.workspace,
+    required this.channel,
+    this.search,
+    this.revision = 0,
+    this.onEnabledChanged,
+  });
+
+  final WorkspaceController workspace;
+  final RaftChannel channel;
+  final TextEditingController? search;
+
+  /// Bumped by the page when the entry sent invites: the group reloads.
+  final int revision;
+
+  /// Reports the resolved `external_channels_v1` answer to the page so the
+  /// footer entry can render from the cache.
+  final ValueChanged<bool>? onEnabledChanged;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: workspace,
+    builder: (context, _) {
+      final current =
+          workspace.channels.where((row) => row.id == channel.id).firstOrNull ??
+          channel;
+      if (!externalInvitable(workspace, current)) {
+        return const SizedBox.shrink();
+      }
+      return _ChannelExternalInvites(
+        key: ValueKey((workspace, pageIdentity(workspace), current.id)),
+        workspace: workspace,
+        channel: current,
+        search: search,
+        revision: revision,
+        onEnabledChanged: onEnabledChanged,
+      );
+    },
+  );
+}
+
+class _ChannelExternalInvites extends StatefulWidget {
+  const _ChannelExternalInvites({
+    super.key,
+    required this.workspace,
+    required this.channel,
+    this.search,
+    this.revision = 0,
+    this.onEnabledChanged,
+  });
+  final WorkspaceController workspace;
+  final RaftChannel channel;
+  final TextEditingController? search;
+  final int revision;
+  final ValueChanged<bool>? onEnabledChanged;
+
+  @override
+  State<_ChannelExternalInvites> createState() =>
+      _ChannelExternalInvitesState();
+}
+
+class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
+  WorkspaceController get _workspace => widget.workspace;
+  String get _channelId => widget.channel.id;
+  String get _snapshot => 'external-invites:$_channelId';
+  late final _identity = pageIdentity(_workspace);
+  late final _api = ExternalInviteApi(_workspace.command);
+  late bool _enabled =
+      cachedServerFlag(_workspace, RaftFeatureFlags.externalChannels) ?? false;
+  late List<ExternalJson> _invites = externalRows(
+    readPageSnapshot(_workspace, _snapshot)?['invites'],
+  );
+  bool _failed = false;
+  int _readVersion = 0;
+  final _busy = <String>{};
+
+  bool get _current => mounted && _identity == pageIdentity(_workspace);
+  bool get _canRead => _enabled || widget.channel.hasExternalRelation == true;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_start());
+  }
+
+  @override
+  void didUpdateWidget(_ChannelExternalInvites old) {
+    super.didUpdateWidget(old);
+    // The footer entry sent invites: pick the new ones up in place.
+    if (widget.revision != old.revision && _canRead) unawaited(_load());
+  }
+
+  Future<void> _start() async {
+    final enabled = await readExternalChannelFlag(_workspace);
+    if (!mounted || !_current) return;
+    setState(() => _enabled = enabled);
+    widget.onEnabledChanged?.call(enabled);
+    if (_canRead) unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    final version = ++_readVersion;
+    try {
+      final result = await _api.channelInvites(_channelId);
+      if (!_current || version != _readVersion) return;
+      final invites = externalRows(result['invites']);
+      writePageSnapshot(_workspace, _snapshot, _identity, {'invites': invites});
+      setState(() {
+        _failed = false;
+        _invites = invites;
+      });
+    } catch (_) {
+      if (_current && version == _readVersion) setState(() => _failed = true);
     }
   }
 
@@ -302,22 +388,23 @@ class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_enabled)
-          RaftButton(
-            label: raftFormat(context, 'Invite people outside {server}', {
-              'server': _workspace.server?.name ?? '',
-            }),
-            onPressed: _opening ? null : _open,
-            tone: RaftButtonRecipeVariant.outline,
-          ),
+        // Web shows a failed read above the group, in its own `p-3` box
+        // (ChannelMembers.tsx:729-743, :1119).
         if (_failed && _invites.isEmpty)
-          RaftErrorBanner(
-            raftText(context, "Couldn't load the invites."),
-            onRetry: _load,
-            retryLabel: 'Retry',
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: RaftErrorBanner(
+              raftText(context, "Couldn't load the invites."),
+              onRetry: _load,
+              retryLabel: 'Retry',
+            ),
           ),
+        // `MemberPageSection kind="invited"` (ChannelMembers.tsx:1120-1128).
         if (rows.isNotEmpty)
-          RaftDialogSectionEyebrow(raftText(context, 'Invited')),
+          RaftDialogSectionEyebrow(
+            raftText(context, 'Invited'),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          ),
         for (final row in rows) _inviteRow(context, row),
       ],
     );
@@ -339,12 +426,27 @@ class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
             days == 1 ? '{count} day left' : '{count} days left',
             {'count': days},
           );
-    return Row(
+    // Web renders an invite as a ChannelMemberRow: a Mail IconTile, the email
+    // with its state on the same baseline in hint ink, then the actions
+    // (ExternalInviteRows.tsx:146-164). The row therefore carries the member
+    // row's px-4 / gap-3 / min-h-16 geometry (channel_members_view.dart:1167).
+    // A minimum, not a fixed height: the row grows with the text scale.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 64),
+      child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
       children: [
+        const RaftIconTile(glyph: RaftGlyph.mail),
+        const SizedBox(width: 12),
         Expanded(child: _ExternalInviteRowLabel(email, subtitle)),
-        if (_enabled && row['connecting'] != true)
+        // Web: a resend is a fresh send, so an invite that is connecting or
+        // awaiting approval has none (ExternalInviteRows.tsx:52).
+        if (_enabled &&
+            row['connecting'] != true &&
+            row['awaitingApproval'] != true)
           RaftButton(
-            glyph: RaftGlyph.refreshCw,
+            glyph: RaftGlyph.mail,
             uiSize: RaftButtonSize.iconMd,
             uiVariant: RaftButtonVariant.ghost,
             tooltip: raftText(context, 'Resend invite'),
@@ -365,6 +467,8 @@ class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
               : () => _manage(row, withdraw: true),
         ),
       ],
+      ),
+      ),
     );
   }
 }
@@ -374,11 +478,34 @@ class _ExternalInviteRowLabel extends StatelessWidget {
 
   final String email, subtitle;
 
+  /// Web puts the state after the email on one line
+  /// (ExternalInviteRows.tsx:157-162: `flex items-baseline gap-1.5`, the
+  /// state `text-caption font-normal text-foreground-hint`).
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [Text(email), RaftAuthNote(subtitle)],
-  );
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Flexible(
+          child: Text(
+            email,
+            maxLines: RaftScaled.grows(context) ? null : 1,
+            overflow: RaftScaled.grows(context)
+                ? TextOverflow.clip
+                : TextOverflow.ellipsis,
+            style: t.scale(RaftTypeScale.subhead, color: t.ui.foreground),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          subtitle,
+          style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
+        ),
+      ],
+    );
+  }
 }
 
 Future<void> showExternalChannelLimit(

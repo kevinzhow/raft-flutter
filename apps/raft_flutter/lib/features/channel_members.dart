@@ -470,6 +470,13 @@ class _ChannelMembersState extends State<ChannelMembers> {
   bool get canAdd =>
       w.can('addChannelMembers', resource: channel) && !channel.archived;
 
+  /// Bumped when the footer entry sends invites: the Invited group reloads.
+  int inviteRevision = 0;
+
+  /// The resolved `external_channels_v1` answer, reported by the Invited
+  /// group so the footer entry renders from the cache (one flag read).
+  bool externalInviteEnabled = false;
+
   /// The created agent that could not join this channel (Web
   /// `pendingJoinAgent`): the banner stays until the roster holds it.
   ({String id, String name})? pendingJoin;
@@ -955,6 +962,20 @@ class _ChannelMembersState extends State<ChannelMembers> {
         key: ValueKey('external-invites-${channel.id}'),
         workspace: w,
         channel: channel,
+        revision: inviteRevision,
+        onEnabledChanged: (on) {
+          if (mounted && on != externalInviteEnabled) {
+            setState(() => externalInviteEnabled = on);
+          }
+        },
+      ),
+      // Web keeps the entry in the footer bar beside Add member
+      // (ChannelMembers.tsx:1187-1219), not in the roster scroll area.
+      inviteAction: ChannelExternalInviteEntry(
+        key: ValueKey('external-invite-entry-${channel.id}'),
+        workspace: w,
+        channel: channel,
+        onSent: () => setState(() => inviteRevision++),
       ),
       addView: addView,
       loading: loading,
