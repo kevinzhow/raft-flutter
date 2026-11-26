@@ -150,9 +150,7 @@ class RaftChannelInvitedGroup extends StatelessWidget {
         uiVariant: RaftButtonVariant.ghost,
         tooltip: raftText(
           context,
-          invite.revocable
-              ? 'Withdraw invite'
-              : 'You can withdraw this invite once its server finishes connecting.',
+          invite.revocable ? 'Withdraw invite' : 'You can withdraw this invite once its server finishes connecting.',
         ),
         onPressed: invite.busy || !invite.revocable ? null : invite.onWithdraw,
       ),
