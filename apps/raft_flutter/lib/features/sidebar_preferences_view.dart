@@ -239,11 +239,24 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
     onChanged: busy ? null : (value) => run(() => save({key: value})),
   );
 
-  static double _reorderListHeight(int count, {bool compact = true}) =>
-      (count * (compact ? 56.0 : 72.0)).clamp(80.0, 320.0);
+  static const _reorderListMaxHeight = 320.0;
 
-  static ScrollPhysics? _reorderListPhysics(double height) =>
-      height < 320.0 ? const NeverScrollableScrollPhysics() : null;
+  static Widget _reorderList({
+    required int itemCount,
+    required bool compact,
+    required ReorderCallback onReorderItem,
+    required IndexedWidgetBuilder itemBuilder,
+  }) {
+    final short = itemCount * (compact ? 56.0 : 72.0) < _reorderListMaxHeight;
+    final list = ReorderableListView.builder(
+      shrinkWrap: short,
+      physics: short ? const NeverScrollableScrollPhysics() : null,
+      itemCount: itemCount,
+      onReorderItem: onReorderItem,
+      itemBuilder: itemBuilder,
+    );
+    return short ? list : SizedBox(height: _reorderListMaxHeight, child: list);
+  }
 
   Widget sectionOrderList() {
     final labels = {
@@ -258,7 +271,6 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
       ...managementStrings(prefs['sectionOrder']).where(labels.containsKey),
       ...labels.keys,
     }.toList();
-    final listHeight = _reorderListHeight(ids.length);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -267,31 +279,23 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
           raftText(context, 'Section order'),
           style: RaftTokens.of(context).scale(RaftTypeScale.headline),
         ),
-        SizedBox(
-          height: listHeight,
-          child: ReorderableListView.builder(
-            physics: _reorderListPhysics(listHeight),
-            itemCount: ids.length,
-            onReorderItem: (from, to) => run(() async {
-              final next = List<String>.from(ids);
-              next.insert(to, next.removeAt(from));
-              await save({'sectionOrder': next}, sectionChange: true);
-            }),
-            itemBuilder: (context, index) => RaftListRow(
-              key: ValueKey('sidebar-section-${ids[index]}'),
-              interactive: false,
-              children: [
-                RaftListRowBody(
-                  children: [
-                    RaftListRowTitle(
-                      // ignore: raft_lints/avoid_render_index_assertion -- `labels` and `ids` are built together from the same section list.
-                      labels[ids[index]]!,
-                    ),
-                  ],
-                ),
-                const RaftListRowIcon(RaftGlyph.gripVertical),
-              ],
-            ),
+        _reorderList(
+          itemCount: ids.length,
+          compact: true,
+          onReorderItem: (from, to) => run(() async {
+            final next = List<String>.from(ids);
+            next.insert(to, next.removeAt(from));
+            await save({'sectionOrder': next}, sectionChange: true);
+          }),
+          itemBuilder: (context, index) => RaftListRow(
+            key: ValueKey('sidebar-section-${ids[index]}'),
+            interactive: false,
+            children: [
+              RaftListRowBody(
+                children: [RaftListRowTitle(labels[ids[index]] ?? ids[index])],
+              ),
+              const RaftListRowIcon(RaftGlyph.gripVertical),
+            ],
           ),
         ),
       ],
@@ -317,35 +321,31 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
           id;
     }
 
-    final pinnedHeight = _reorderListHeight(refs.length);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: RaftSpace.x5),
         sortPicker('Pinned sort', 'pinnedSortMode'),
         if (refs.isNotEmpty)
-          SizedBox(
-            height: pinnedHeight,
-            child: ReorderableListView.builder(
-              physics: _reorderListPhysics(pinnedHeight),
-              itemCount: refs.length,
-              onReorderItem: (from, to) => run(() async {
-                final next = List<Map<String, dynamic>>.from(refs);
-                next.insert(to, next.removeAt(from));
-                await save({'pinned': next, 'pinnedSortMode': 'manual'});
-              }),
-              itemBuilder: (context, index) => RaftListRow(
-                key: ValueKey(
-                  'sidebar-pinned-${refs[index]['kind']}-${refs[index]['id']}',
-                ),
-                interactive: false,
-                children: [
-                  RaftListRowBody(
-                    children: [RaftListRowTitle(label(refs[index]))],
-                  ),
-                  const RaftListRowIcon(RaftGlyph.gripVertical),
-                ],
+          _reorderList(
+            itemCount: refs.length,
+            compact: true,
+            onReorderItem: (from, to) => run(() async {
+              final next = List<Map<String, dynamic>>.from(refs);
+              next.insert(to, next.removeAt(from));
+              await save({'pinned': next, 'pinnedSortMode': 'manual'});
+            }),
+            itemBuilder: (context, index) => RaftListRow(
+              key: ValueKey(
+                'sidebar-pinned-${refs[index]['kind']}-${refs[index]['id']}',
               ),
+              interactive: false,
+              children: [
+                RaftListRowBody(
+                  children: [RaftListRowTitle(label(refs[index]))],
+                ),
+                const RaftListRowIcon(RaftGlyph.gripVertical),
+              ],
             ),
           ),
       ],
@@ -361,7 +361,6 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
   }) {
     final sorted = ordered(rows, orderKey),
         hidden = managementStrings(prefs['hiddenDmIds']).toSet();
-    final listHeight = _reorderListHeight(sorted.length, compact: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -371,57 +370,52 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
           style: RaftTokens.of(context).scale(RaftTypeScale.headline),
         ),
         sortPicker('Sort', sortKey),
-        SizedBox(
-          height: listHeight,
-          child: ReorderableListView.builder(
-            physics: _reorderListPhysics(listHeight),
-            itemCount: sorted.length,
-            onReorderItem: (from, to) => run(() async {
-              final next = sorted.map((c) => c.id).toList();
-              next.insert(to, next.removeAt(from));
-              await save({orderKey: next, sortKey: 'manual'});
-            }),
-            itemBuilder: (context, index) {
-              final c = sorted[index];
-              return RaftListRow(
-                key: ValueKey('sidebar-item-${c.id}'),
-                onPressed: busy
-                    ? null
-                    : () => run(() => place('channel', c.id)),
-                children: [
-                  RaftListRowBody(children: [RaftListRowTitle(c.name)]),
-                  if (dms)
-                    RaftTooltip(
-                      message: raftText(
-                        context,
-                        hidden.contains(c.id)
-                            ? 'Show Direct Message'
-                            : 'Hide Direct Message',
-                      ),
-                      child: RaftButton.iconAction(
-                        icon: RaftIcon(
-                          hidden.contains(c.id)
-                              ? RaftGlyph.eyeOff
-                              : RaftGlyph.eye,
-                          size: RaftSpace.x3 + RaftSpace.half,
-                        ),
-                        onPressed: busy
-                            ? null
-                            : () => run(() async {
-                                if (!hidden.remove(c.id)) hidden.add(c.id);
-                                await save({'hiddenDmIds': hidden.toList()});
-                              }),
-                      ),
-                    )
-                  else
-                    const Padding(
-                      padding: EdgeInsets.only(right: RaftSpace.x6),
-                      child: RaftListRowIcon(RaftGlyph.gripVertical),
+        _reorderList(
+          itemCount: sorted.length,
+          compact: false,
+          onReorderItem: (from, to) => run(() async {
+            final next = sorted.map((c) => c.id).toList();
+            next.insert(to, next.removeAt(from));
+            await save({orderKey: next, sortKey: 'manual'});
+          }),
+          itemBuilder: (context, index) {
+            final c = sorted[index];
+            return RaftListRow(
+              key: ValueKey('sidebar-item-${c.id}'),
+              onPressed: busy ? null : () => run(() => place('channel', c.id)),
+              children: [
+                RaftListRowBody(children: [RaftListRowTitle(c.name)]),
+                if (dms)
+                  RaftTooltip(
+                    message: raftText(
+                      context,
+                      hidden.contains(c.id)
+                          ? 'Show Direct Message'
+                          : 'Hide Direct Message',
                     ),
-                ],
-              );
-            },
-          ),
+                    child: RaftButton.iconAction(
+                      icon: RaftIcon(
+                        hidden.contains(c.id)
+                            ? RaftGlyph.eyeOff
+                            : RaftGlyph.eye,
+                        size: RaftSpace.x3 + RaftSpace.half,
+                      ),
+                      onPressed: busy
+                          ? null
+                          : () => run(() async {
+                              if (!hidden.remove(c.id)) hidden.add(c.id);
+                              await save({'hiddenDmIds': hidden.toList()});
+                            }),
+                    ),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.only(right: RaftSpace.x6),
+                    child: RaftListRowIcon(RaftGlyph.gripVertical),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
