@@ -471,33 +471,22 @@ class RaftOverflowBareSheet extends StatelessWidget {
     required this.child,
     this.page = false,
     this.details = false,
-    this.onClose,
-    this.headerWrapper,
-  }) : assert(!details || onClose != null);
+  });
   final Widget child;
   final bool page, details;
-  final VoidCallback? onClose;
-  final Widget Function(BuildContext, Widget)? headerWrapper;
 
   @override
   Widget build(BuildContext context) {
     if (!details) return _OverflowDrawerFrame(page: page, child: child);
+    // No header of its own at any width: [child] is a page that brings one
+    // (the members page's `member-page-back` bar). Drawing a Details header
+    // here stacked a second bar above it in the side pane (task #377).
     return ColoredBox(
       key: const ValueKey('channel-details'),
       color: RaftTokens.of(context).ui.layerCanvas,
       child: SizedBox.expand(
         key: const ValueKey('channel-overflow-sheet'),
-        child: Column(
-          children: [
-            if (!page)
-              _ChannelDetailsHeader(
-                page: false,
-                onClose: onClose!,
-                headerWrapper: headerWrapper,
-              ),
-            Expanded(child: child),
-          ],
-        ),
+        child: child,
       ),
     );
   }
