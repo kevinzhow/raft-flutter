@@ -37,6 +37,7 @@ void main() {
     t,
   ) async {
     final (w, api) = await settingsFixture(t);
+    api.routes['GET /channels/c1/notification-settings'] = (_) => {};
     var fail = true;
     var reads = 0;
     api.routes['GET /channels/c1/message-display-settings'] = (_) {
@@ -79,6 +80,7 @@ void main() {
 
   testWidgets('a failed roster read shows no banner, as Web does', (t) async {
     final (w, api) = await settingsFixture(t);
+    api.routes['GET /channels/c1/notification-settings'] = (_) => {};
     api.routes['GET /channels/c1/members'] = (_) =>
         throw RaftApiException('Boom', status: null);
     await mountSettingsWorkspace(t, w, false, PrivateRouteGuard());
@@ -86,6 +88,43 @@ void main() {
     expect(find.text(_generic), findsNothing);
     expect(find.text(_displayFailed), findsNothing);
 
+    await t.pumpWidget(const SizedBox.shrink());
+    await t.pumpAndSettle();
+  });
+
+  // Found by an adversary review of this change. Web names the read itself
+  // whatever the request returned (ChatPanel.tsx:505-514), and renders the
+  // two notices independently, both at once (:1919-1946).
+  testWidgets('a structured server error still names the read', (t) async {
+    final (w, api) = await settingsFixture(t);
+    api.routes['GET /channels/c1/notification-settings'] = (_) => {};
+    api.routes['GET /channels/c1/message-display-settings'] = (_) =>
+        throw RaftApiException.response(
+          'Channel preference store unavailable',
+          status: 500,
+          body: const {'error': 'Channel preference store unavailable'},
+        );
+    await mountSettingsWorkspace(t, w, false, PrivateRouteGuard());
+    expect(find.text(_displayFailed), findsOneWidget);
+    expect(find.text('Channel preference store unavailable'), findsNothing);
+    await t.pumpWidget(const SizedBox.shrink());
+    await t.pumpAndSettle();
+  });
+
+  testWidgets('both failed preference reads are named', (t) async {
+    final (w, api) = await settingsFixture(t);
+    api.routes['GET /channels/c1/message-display-settings'] = (_) =>
+        throw RaftApiException('Boom', status: null);
+    api.routes['GET /channels/c1/notification-settings'] = (_) =>
+        throw RaftApiException('Boom', status: null);
+    await mountSettingsWorkspace(t, w, false, PrivateRouteGuard());
+    final banner = find.textContaining(_displayFailed);
+    expect(banner, findsOneWidget);
+    expect(
+      t.widget<Text>(banner).data,
+      contains('Failed to load Activity mute setting.'),
+      reason: 'the mute read failed and would otherwise be silent',
+    );
     await t.pumpWidget(const SizedBox.shrink());
     await t.pumpAndSettle();
   });

@@ -308,17 +308,34 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       // useChannelMembers does; a failed preference keeps its accepted value).
       Object? failure;
       final failed = <String>{};
-      final failures = <String, Object>{};
       final values = await Future.wait([
         for (final part in wanted)
           Future<dynamic>.sync(() => fetch(part)).catchError((Object e) {
             failure ??= e;
             failed.add(part);
-            failures[part] = e;
             return null;
           }),
       ]);
       if (!mounted || generation != w.client.generation) return;
+      // Decide the notice before touching state, walking only this const
+      // list: a revalidating read can still be writing `failed` here, and
+      // iterating it then throws. Web names the read itself and ignores what
+      // the request returned (ChatPanel.tsx:505-514), and renders the two
+      // notices independently, both at once (:1919-1946). A reload of other
+      // parts must not clear a notice for a read it did not repeat.
+      final reportedFailures = <String>[
+        for (final part in const ['display', 'notification'])
+          if (wanted.contains(part)
+              ? failed.contains(part)
+              : _retryParts.contains(part))
+            part,
+      ];
+      final nextError = reportedFailures.isEmpty
+          ? null
+          : [
+              for (final part in reportedFailures)
+                raftText(context, _loadFailureText[part]!),
+            ].join('\n');
       T stable<T>(T old, T next) => stableValue(old, next) as T;
       setState(() {
         for (var i = 0; i < wanted.length; i++) {
@@ -359,32 +376,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           }
           known.add(part);
         }
-        // Name the read that failed and keep just that read retryable. Web
-        // reports only these two; a failed roster or sidebar order keeps its
-        // accepted value and says nothing (useChannelMembers.ts:187-190,
-        // serverStore.ts:826-835), so neither does this.
-        // A reload of other parts must not clear a notice for a read it did
-        // not repeat, or the Retry disappears while the row is still pending.
-        bool stillFailed(String part) => wanted.contains(part)
-            ? failed.contains(part)
-            : _retryParts.contains(part);
-        final displayFailed = stillFailed('display');
-        final notificationFailed = stillFailed('notification');
-        _retryParts = [
-          if (displayFailed) 'display',
-          if (notificationFailed) 'notification',
-        ];
-        final named = displayFailed
-            ? 'display'
-            : notificationFailed
-            ? 'notification'
-            : '';
-        error = named.isEmpty
-            ? null
-            : failures.containsKey(named)
-            ? failText(failures[named]!, _loadFailureText[named]!)
-            // Carried over from an earlier load that did fail this read.
-            : error ?? raftText(context, _loadFailureText[named]!);
+        _retryParts = reportedFailures;
+        error = nextError;
       });
       // The member roster is not shown here and is never cached.
       writePageSnapshot(w, snapshotKey, identity, {
