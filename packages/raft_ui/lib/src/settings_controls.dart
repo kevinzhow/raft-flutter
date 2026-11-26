@@ -17,6 +17,7 @@ import 'form_presentation.dart';
 import 'hover_region.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'notification_settings_rows.dart' show raftSettingsRowNarrowWidth;
 import 'overlays/dialog.dart'
     show
         RaftDialog,
@@ -24,7 +25,7 @@ import 'overlays/dialog.dart'
         RaftDialogSize,
         RaftDialogSlots,
         showRaftDialog;
-import 'tokens/tokens.dart' show RaftTypeScale;
+import 'tokens/tokens.dart' show RaftRadius, RaftTypeScale;
 import 'panel_layout.dart' show RaftCssText;
 import 'recipes/recipe_runtime.dart';
 import 'recipes/recipes.g.dart';
@@ -44,13 +45,7 @@ import 'tooltip.dart' show RaftTooltip;
 TextStyle _slotText(RaftTokens t, RaftSlotStyle s, {TextStyle? base}) {
   final tokens = RaftRecipeTokens(t);
   final style = s.textStyle(tokens);
-  return (base ??
-          RaftTypography.heading(
-            t,
-            size: 14,
-            line: 20,
-            weight: FontWeight.w400,
-          ))
+  return (base ?? t.scale(RaftTypeScale.callout, weight: FontWeight.w400))
       .merge(style)
       .copyWith(fontVariations: const [], fontFamilyFallback: t.fontFallback);
 }
@@ -390,9 +385,7 @@ class RaftConfirmSlug extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: t.colors['layer-confirm-slug'] ?? t.colors['fill-muted'],
-        borderRadius: BorderRadius.circular(
-          t.size('radius.sticker', fallback: 4),
-        ),
+        borderRadius: t.corner('radius.sticker', fallback: RaftRadius.sticker),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -748,10 +741,8 @@ class RaftSettingsActionCard extends StatelessWidget {
       children: [
         Text(
           raftText(context, title),
-          style: RaftTypography.body(
-            t,
-            size: 14,
-            line: 20,
+          style: t.scale(
+            RaftTypeScale.callout,
             weight: FontWeight.w700,
             color: t.strong,
           ),
@@ -759,24 +750,32 @@ class RaftSettingsActionCard extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           raftText(context, description),
-          style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
+          style: t.scale(
+            RaftTypeScale.caption,
+            weight: FontWeight.w400,
+            color: t.muted,
+          ),
         ),
       ],
     );
-    final wide = MediaQuery.sizeOf(context).width >= 640;
-    return RaftSettingsCard(
-      child: stacked && !wide
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [text, const SizedBox(height: 12), action],
-            )
-          : Row(
-              children: [
-                Expanded(child: text),
-                const SizedBox(width: 16),
-                action,
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= raftSettingsRowNarrowWidth;
+        return RaftSettingsCard(
+          child: stacked && !wide
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [text, const SizedBox(height: 12), action],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: text),
+                    const SizedBox(width: 16),
+                    action,
+                  ],
+                ),
+        );
+      },
     );
   }
 }
@@ -812,7 +811,7 @@ class RaftSettingsRecipeBadge extends StatelessWidget {
         _slotText(
           t,
           s,
-          base: RaftTypography.body(t, size: 10, line: 10),
+          base: t.scale(RaftTypeScale.label, weight: FontWeight.w400),
         ).copyWith(
           fontFamily: RaftInheritedFontScope.active(context)
               ? t.headingFont
@@ -858,7 +857,8 @@ class RaftSettingsReadonlyValue extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: text.insetFill,
-        border: Border.all(color: text.softEdge, width: 1),
+        borderRadius: t.corner('radius.control', fallback: RaftRadius.control),
+        border: Border.all(color: t.ui.lineHairline, width: RaftSpace.hairline),
       ),
       child: Text(value, style: text.mono.copyWith(color: text.muted)),
     );
@@ -912,14 +912,21 @@ class RaftServerProfileTile extends StatelessWidget {
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: const Color(0x66000000),
-                        borderRadius: t.corner('radius.sticker', fallback: 4),
+                        color:
+                            t.colors['layer-backdrop'] ??
+                            t.ui.foreground.withValues(alpha: .4),
+                        borderRadius: t.corner(
+                          'radius.sticker',
+                          fallback: RaftRadius.sticker,
+                        ),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: RaftIcon(
                           RaftGlyph.upload,
                           size: 18,
-                          color: Color(0xFFFFFFFF),
+                          color:
+                              t.colors['foreground-on-hud'] ??
+                              t.ui.foregroundOnFrame,
                         ),
                       ),
                     ),
@@ -939,10 +946,8 @@ class RaftServerProfileTile extends StatelessWidget {
     final initialText = Center(
       child: Text(
         initial,
-        style: RaftTypography.heading(
-          t,
-          size: 22,
-          line: 28,
+        style: t.scale(
+          RaftTypeScale.title,
           weight: FontWeight.w700,
           color: t.colors['foreground-avatar-server'] ?? t.strong,
         ),
@@ -1049,13 +1054,19 @@ class RaftSettingsSavedNote extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          t.product.brutalLime.withValues(alpha: .3),
-          t.panel,
-        ),
-        border: Border.all(color: t.semantic.lineMuted, width: 1),
+        color:
+            t.colors['success-soft'] ??
+            Color.alphaBlend(
+              t.ui.success.withValues(alpha: .16),
+              t.ui.layerCard,
+            ),
+        borderRadius: t.corner('radius.control', fallback: RaftRadius.control),
+        border: Border.all(color: t.ui.lineHairline, width: RaftSpace.hairline),
       ),
-      child: Text(text, style: RaftTypography.heading(t, size: 12, line: 16)),
+      child: Text(
+        text,
+        style: t.scale(RaftTypeScale.footnote, weight: FontWeight.w700),
+      ),
     );
   }
 }

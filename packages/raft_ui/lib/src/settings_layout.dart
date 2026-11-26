@@ -31,6 +31,8 @@ import 'recipes/token_binding.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftRadius, RaftTypeScale;
+import 'token_geometry.dart';
 import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 
 /// Shared Settings page pieces from the Web client:
@@ -777,13 +779,17 @@ TextStyle raftSettingsBody(
   double line = 24,
   FontWeight weight = FontWeight.w400,
   Color? color,
-}) => RaftTypography.inherited(
-  t,
-  size: size,
-  line: line,
-  weight: weight,
+}) => TextStyle(
+  locale: t.textLocale,
+  fontFamily: t.headingFont,
+  fontFamilyFallback: t.fontFallback,
+  fontSize: size,
+  height: line / size,
+  fontWeight: weight,
+  letterSpacing: 0,
   color: color ?? t.strong,
-).copyWith(leadingDistribution: TextLeadingDistribution.even);
+  leadingDistribution: TextLeadingDistribution.even,
+);
 
 /// SectionHeader.tsx: `flex items-center gap-2`, a 16px icon in
 /// `text-foreground-muted theme-brutal:text-black/60`, and SectionEyebrow
@@ -812,16 +818,24 @@ class RaftSettingsSectionHeader extends StatelessWidget {
   /// The eyebrow inherits the oracle host's `font-display` ancestor and is
   /// laid out as a Blink line box ([RaftCssText]).
   final bool display;
-  static TextStyle eyebrow(RaftTokens t, {bool display = false}) =>
-      // Web SectionEyebrow (`text-footnote font-bold`): 13/18 in the Raft pack,
-      // 12/16 in the a57b9dab packs (type.sectionEyebrow.*).
-      (display ? raftSettingsBody : RaftTypography.body)(
-        t,
-        size: t.size('type.sectionEyebrow.size', fallback: 13),
-        line: t.size('type.sectionEyebrow.line', fallback: 18),
-        weight: FontWeight.w700,
-        color: t.muted,
-      );
+  static TextStyle eyebrow(RaftTokens t, {bool display = false}) {
+    // Web SectionEyebrow (`text-footnote font-bold`): 13/18 in the Raft pack,
+    // 12/16 in the a57b9dab packs (type.sectionEyebrow.*).
+    final size = t.size('type.sectionEyebrow.size', fallback: 13);
+    final line = t.size('type.sectionEyebrow.line', fallback: 18);
+    return TextStyle(
+      locale: t.textLocale,
+      fontFamily: display ? t.headingFont : t.bodyFont,
+      fontFamilyFallback: t.fontFallback,
+      fontSize: size,
+      height: line / size,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0,
+      color: t.muted,
+      leadingDistribution: display ? TextLeadingDistribution.even : null,
+    );
+  }
+
   Widget rich(InlineSpan span, TextStyle style) => display
       ? RaftCssText.rich(span, style: style)
       : Text.rich(span, style: style);
@@ -829,43 +843,59 @@ class RaftSettingsSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottom),
-      child: Row(
+    final text = rich(
+      TextSpan(
         children: [
-          if (glyph != null) ...[
-            RaftIcon(glyph!, size: 16, color: t.muted),
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: rich(
-              TextSpan(
-                children: [
-                  TextSpan(text: raftText(context, label)),
-                  if (count != null && count! >= 0) ...[
-                    const WidgetSpan(child: SizedBox(width: 8)),
-                    TextSpan(
-                      text: '$count',
-                      style:
-                          RaftTypography.mono(
-                            t,
-                            size: 12,
-                            line: 16,
-                            color: t.colors['foreground-placeholder'],
-                          ).copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                          ),
-                    ),
-                  ],
-                ],
+          TextSpan(text: raftText(context, label)),
+          if (count != null && count! >= 0) ...[
+            const WidgetSpan(child: SizedBox(width: 8)),
+            TextSpan(
+              text: '$count',
+              style: t.scale(
+                RaftTypeScale.monoMeta,
+                mono: true,
+                weight: FontWeight.w700,
+                trackingEm: 0.1,
+                color: t.ui.foregroundHint,
               ),
-              eyebrow(t, display: display),
             ),
-          ),
-          ?action,
+          ],
         ],
       ),
+      eyebrow(t, display: display),
+    );
+    final trailing = action;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: trailing == null
+          ? Row(
+              children: [
+                if (glyph != null) ...[
+                  RaftIcon(glyph!, size: 16, color: t.muted),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(child: text),
+              ],
+            )
+          : Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: RaftSpace.x3,
+              runSpacing: RaftSpace.x3,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (glyph != null) ...[
+                      RaftIcon(glyph!, size: 16, color: t.muted),
+                      const SizedBox(width: 8),
+                    ],
+                    Flexible(child: text),
+                  ],
+                ),
+                trailing,
+              ],
+            ),
     );
   }
 }
@@ -892,10 +922,14 @@ class RaftSettingsCard extends StatelessWidget {
       // Web's settings Card is `bg-layer-card`; a pack without
       // `layer-settings-card` keeps the a57b9dab `bg-layer-panel`.
       color: t.colors['layer-settings-card'] ?? t.panel,
-      borderRadius: BorderRadius.circular(
-        t.size('radius.settingsCard', fallback: 0),
+      borderRadius: t.corner(
+        'radius.settingsCard',
+        fallback: RaftRadius.container,
       ),
-      border: Border.all(color: t.colors['line-muted']!, width: 1),
+      border: Border.all(
+        color: t.colors['line-muted']!,
+        width: RaftSpace.hairline,
+      ),
       boxShadow: t.themeShadows.sm.outer,
     );
     // CSS geometry (padding-box clip, concentric rings).
@@ -1034,39 +1068,49 @@ class RaftSettingsText {
   Color get readonlyGroupFill => t.dark ? t.colors['layer-card']! : insetFill;
 
   /// `text-sm font-bold`
-  TextStyle get title => RaftTypography.inherited(
-    t,
-    size: _semantic ? t.typeSlot('subhead').fontSize : 14,
-    line: _semantic ? t.typeSlot('subhead').lineHeight : 20,
-    weight: _semantic ? FontWeight.w600 : FontWeight.w700,
-    color: strong,
-  );
+  TextStyle get title =>
+      (_semantic
+              ? t.scale(
+                  RaftTypeScale.subhead,
+                  weight: FontWeight.w600,
+                  color: strong,
+                )
+              : t.scale(
+                  RaftTypeScale.callout,
+                  weight: FontWeight.w700,
+                  color: strong,
+                ))
+          .copyWith(fontFamily: t.headingFont);
 
   /// `text-xs` muted description.
-  TextStyle get description => RaftTypography.inherited(
-    t,
-    size: _semantic ? t.typeSlot('footnote').fontSize : 12,
-    line: _semantic ? t.typeSlot('footnote').lineHeight : 16,
-    color: muted,
-  );
+  TextStyle get description =>
+      (_semantic
+              ? t.scale(
+                  RaftTypeScale.footnote,
+                  weight: FontWeight.w400,
+                  color: muted,
+                )
+              : t.scale(
+                  RaftTypeScale.caption,
+                  weight: FontWeight.w400,
+                  color: muted,
+                ))
+          .copyWith(fontFamily: t.headingFont);
 
   /// `text-sm` muted copy.
-  TextStyle get bodyMuted =>
-      RaftTypography.inherited(t, size: 14, line: 20, color: muted);
+  TextStyle get bodyMuted => t
+      .scale(RaftTypeScale.callout, weight: FontWeight.w400, color: muted)
+      .copyWith(fontFamily: t.headingFont);
 
   /// `font-mono text-sm`
   TextStyle get mono =>
-      RaftTypography.mono(t, size: 14, line: 20, color: strong);
+      t.scale(RaftTypeScale.callout, mono: true, color: strong);
 
   /// `font-mono text-sm font-bold`
   TextStyle get monoBold => mono.copyWith(fontWeight: FontWeight.w700);
 
-  /// `text-xs font-bold` alert copy (`text-brutal-red` / danger).
-  TextStyle get alert => RaftTypography.inherited(
-    t,
-    size: 12,
-    line: 16,
-    weight: FontWeight.w700,
-    color: t.colors['color-brutal-red'] ?? t.colors['danger'],
-  );
+  /// `text-xs font-bold` alert copy (`danger`).
+  TextStyle get alert => t
+      .scale(RaftTypeScale.caption, weight: FontWeight.w700, color: t.ui.danger)
+      .copyWith(fontFamily: t.headingFont);
 }

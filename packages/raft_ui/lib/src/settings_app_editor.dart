@@ -3,14 +3,15 @@ import 'raft/ui_tokens.dart';
 
 import 'package:flutter/material.dart';
 
+import 'banner.dart';
 import 'card.dart';
-import 'design_primitives.dart' show RaftTypography;
 import 'form_controls.dart' show RaftField;
 import 'form_presentation.dart' show RaftFormFrame, RaftFormSheet;
 import 'icons.dart';
 
 import 'list_items.dart' show RaftSectionEyebrow;
 import 'localization.dart';
+import 'notification_settings_rows.dart' show raftSettingsRowNarrowWidth;
 import 'overlays/dialog.dart';
 import 'panel_layout.dart' show RaftCssText, RaftPanelAction;
 import 'recipe_surface.dart';
@@ -22,10 +23,12 @@ import 'recipes/recipe_runtime.dart' show CssNum;
 import 'recipes/table.g.dart';
 import 'raft/badge.dart' show RaftBadge;
 import 'select_field.dart';
+import 'separator.dart';
 import 'settings_applications.dart' show RaftAppLogo, RaftAppLogoSize;
 import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
+import 'token_geometry.dart';
 import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
 import 'tooltip.dart';
 import 'tokens/tokens.dart';
@@ -466,20 +469,23 @@ class RaftAppEditorFieldPair extends StatelessWidget {
   });
   final Widget first, second;
   @override
-  Widget build(BuildContext context) => raftBreakpointWidth(context) >= 640
-      ? Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: RaftSpace.x3,
-          children: [
-            Expanded(child: first),
-            Expanded(child: second),
-          ],
-        )
-      : Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: RaftSpace.x3,
-          children: [first, second],
-        );
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) =>
+        constraints.maxWidth >= raftSettingsRowNarrowWidth
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: RaftSpace.x3,
+            children: [
+              Expanded(child: first),
+              Expanded(child: second),
+            ],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: RaftSpace.x3,
+            children: [first, second],
+          ),
+  );
 }
 
 class RaftAppEditorLogoActions extends StatelessWidget {
@@ -531,40 +537,37 @@ class RaftAppEditorCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final (edge, fill) = switch (tone) {
-      RaftAppEditorCalloutTone.muted => (
-        t.colors['line-muted']!,
-        t.colors['layer-canvas-muted']!,
-      ),
-      RaftAppEditorCalloutTone.warning => (
-        t.colors['warning']!,
-        t.colors['warning-soft']!,
-      ),
-      RaftAppEditorCalloutTone.success => (
-        t.product.brutalLime,
-        Color.alphaBlend(t.product.brutalLime.withValues(alpha: .15), t.panel),
-      ),
-    };
-    final color = tone == RaftAppEditorCalloutTone.muted ? t.muted : t.muted;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: RaftSpace.x3,
-        vertical: RaftSpace.x2,
-      ),
-      decoration: BoxDecoration(
-        color: fill,
-        border: Border(left: BorderSide(color: edge, width: 4)),
-      ),
-      child: Text(
-        raftText(context, message),
-        style: RaftTypography.body(
-          t,
-          size: 12,
-          line: bold ? 16 : 12 * 1.625,
-          weight: bold ? FontWeight.w700 : FontWeight.w400,
-          color: color,
+    if (tone == RaftAppEditorCalloutTone.muted) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x3,
+          vertical: RaftSpace.x2,
         ),
-      ),
+        decoration: BoxDecoration(
+          color: t.ui.fillMuted,
+          borderRadius: t.corner(
+            'radius.container',
+            fallback: RaftRadius.container,
+          ),
+        ),
+        child: Text(
+          raftText(context, message),
+          style: t.scale(
+            RaftTypeScale.footnote,
+            weight: bold ? FontWeight.w700 : FontWeight.w400,
+            color: t.ui.foregroundMuted,
+          ),
+        ),
+      );
+    }
+    return RaftBanner(
+      status: tone == RaftAppEditorCalloutTone.warning
+          ? RaftBannerRecipeStatus.warning
+          : RaftBannerRecipeStatus.success,
+      size: RaftBannerRecipeSize.sm,
+      live: false,
+      description: message,
+      descriptionWeight: bold ? FontWeight.w700 : null,
     );
   }
 }
@@ -598,7 +601,6 @@ class RaftAppEditorBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
     final fill = _connection
         ? t.colors['layer-sidebar']!
         : cream
@@ -616,7 +618,11 @@ class RaftAppEditorBox extends StatelessWidget {
       padding: const EdgeInsets.all(RaftSpace.x3),
       decoration: BoxDecoration(
         color: fill,
-        border: Border.all(color: text.edge, width: 1),
+        borderRadius: t.corner(
+          'radius.container',
+          fallback: RaftRadius.container,
+        ),
+        border: Border.all(color: t.ui.lineHairline),
       ),
       child: child,
     );
@@ -665,27 +671,34 @@ class RaftAppEditorActionRow extends StatelessWidget {
           const SizedBox(height: RaftSpace.x2),
           Text(
             extra!,
-            style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
+            style: t.scale(
+              RaftTypeScale.caption,
+              weight: FontWeight.w400,
+              color: t.ui.foregroundMuted,
+            ),
           ),
         ],
       ],
     );
     final action = this.action;
     if (action == null) return copy;
-    return raftBreakpointWidth(context) >= 640
-        ? Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: copy),
-              const SizedBox(width: RaftSpace.x3),
-              action,
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: RaftSpace.x3,
-            children: [copy, action],
-          );
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.maxWidth >= raftSettingsRowNarrowWidth
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: copy),
+                const SizedBox(width: RaftSpace.x3),
+                action,
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: RaftSpace.x3,
+              children: [copy, action],
+            ),
+    );
   }
 }
 
@@ -711,11 +724,17 @@ class RaftAppEditorSecretReveal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(RaftSpace.x3),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          t.product.brutalLime.withValues(alpha: .2),
-          t.panel,
+        color:
+            t.colors['success-soft'] ??
+            Color.alphaBlend(
+              t.ui.success.withValues(alpha: .16),
+              t.ui.layerCard,
+            ),
+        borderRadius: t.corner(
+          'radius.container',
+          fallback: RaftRadius.container,
         ),
-        border: Border.all(color: text.edge, width: 1),
+        border: Border.all(color: t.ui.lineHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -724,12 +743,7 @@ class RaftAppEditorSecretReveal extends StatelessWidget {
           RaftSectionEyebrow(raftText(context, 'Client secret')),
           Text(
             raftText(context, 'This secret is only shown once. Copy it now.'),
-            style: RaftTypography.body(
-              t,
-              size: 14,
-              line: 20,
-              color: text.strong,
-            ),
+            style: t.scale(RaftTypeScale.callout, color: text.strong),
           ),
           Row(
             spacing: RaftSpace.x2,
@@ -738,15 +752,18 @@ class RaftAppEditorSecretReveal extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(RaftSpace.x2),
                   decoration: BoxDecoration(
-                    color: t.panel,
-                    border: Border.all(color: text.edge, width: 1),
+                    color: t.colors['layer-code'] ?? t.ui.layerCard,
+                    borderRadius: t.corner(
+                      'radius.control',
+                      fallback: RaftRadius.control,
+                    ),
+                    border: Border.all(color: t.ui.lineHairline),
                   ),
                   child: SelectableText(
                     secret,
-                    style: RaftTypography.mono(
-                      t,
-                      size: 12,
-                      line: 16,
+                    style: t.scale(
+                      RaftTypeScale.monoMeta,
+                      mono: true,
                       color: text.strong,
                     ),
                   ),
@@ -800,25 +817,24 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
-    final chipBorder = t.colors['line-strong']!;
-    final chipText = RaftTypography.body(
-      t,
-      size: 11,
-      line: 11 * 1.5,
-      weight: FontWeight.w700,
-      color: t.muted,
+    final chipText = t.scale(
+      RaftTypeScale.monoMeta,
+      mono: true,
+      color: t.ui.foreground,
     );
     Widget chip(String scope, {required bool checkable, double vertical = 4}) {
       final selected = value.contains(scope);
       final label = Text(scope, style: chipText);
       final body = Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: RaftSpace.x2,
-          vertical: vertical,
-        ),
+        constraints: const BoxConstraints(minHeight: 32),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: vertical),
         decoration: BoxDecoration(
-          color: t.panel,
-          border: Border.all(color: chipBorder),
+          color: t.ui.layerCard,
+          borderRadius: t.corner(
+            'radius.control',
+            fallback: RaftRadius.control,
+          ),
+          border: Border.all(color: t.ui.lineHairline),
         ),
         child: checkable
             ? Row(
@@ -833,27 +849,30 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
                   Flexible(child: label),
                 ],
               )
-            : label,
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [label],
+              ),
       );
       return RaftTooltip(message: tooltips[scope] ?? scope, child: body);
     }
 
     Widget group(String title, Widget chips, {String? note}) => Container(
-      padding: const EdgeInsets.all(RaftSpace.x2),
+      padding: const EdgeInsets.all(RaftSpace.x3),
       decoration: BoxDecoration(
-        color: t.colors['layer-canvas-muted'],
-        border: Border.all(color: t.colors['line-muted']!, width: 1),
+        color: t.ui.fillMuted,
+        borderRadius: t.corner('radius.control', fallback: RaftRadius.control),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             raftText(context, title),
-            style: RaftTypography.body(
-              t,
-              size: 12,
-              line: 16,
-              weight: RaftTypography.black(t),
+            style: t.scale(
+              RaftTypeScale.footnote,
+              weight: FontWeight.w600,
               color: text.strong,
             ),
           ),
@@ -863,12 +882,9 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
             const SizedBox(height: RaftSpace.x2),
             Text(
               raftText(context, note),
-              style: RaftTypography.body(
-                t,
-                size: 12,
-                line: 16,
-                weight: FontWeight.w700,
-                color: t.muted,
+              style: t.scale(
+                RaftTypeScale.footnote,
+                color: t.ui.foregroundMuted,
               ),
             ),
           ],
@@ -876,9 +892,11 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
       ),
     );
 
-    return RaftAppEditorBox(
+    return RaftCard(
       key: const ValueKey('connected-app-declared-scopes'),
+      padding: const EdgeInsets.all(RaftSpace.x3),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (legacyAgentScopeNote != null) ...[
@@ -886,7 +904,11 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
             Text(
               raftText(context, legacyAgentScopeNote!),
               key: const ValueKey('legacy-agent-login-scope'),
-              style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
+              style: t.scale(
+                RaftTypeScale.caption,
+                weight: FontWeight.w400,
+                color: t.ui.foregroundMuted,
+              ),
             ),
           ],
           const SizedBox(height: RaftSpace.x3),
@@ -908,8 +930,7 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
               spacing: RaftSpace.x2,
               runSpacing: RaftSpace.x2,
               children: [
-                for (final s in agentMessaging)
-                  chip(s, checkable: true, vertical: 6),
+                for (final s in agentMessaging) chip(s, checkable: true),
               ],
             ),
             note: agentMessaging.any(value.contains) ? resourceNote : null,
@@ -1090,8 +1111,9 @@ class RaftAppEditorCheckTile extends StatelessWidget {
         vertical: RaftSpace.x1_5,
       ),
       decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.colors['line-muted']!),
+        color: t.ui.layerCard,
+        borderRadius: t.corner('radius.control', fallback: RaftRadius.control),
+        border: Border.all(color: t.ui.lineHairline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1108,22 +1130,19 @@ class RaftAppEditorCheckTile extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: RaftTypography.body(
-                    t,
-                    size: 12,
-                    line: 16,
-                    weight: FontWeight.w700,
-                    color: t.muted,
+                  style: t.scale(
+                    RaftTypeScale.footnote,
+                    weight: FontWeight.w600,
+                    color: t.ui.foreground,
                   ),
                 ),
                 if (caption != null)
                   Text(
                     caption!,
-                    style: RaftTypography.body(
-                      t,
-                      size: 10,
-                      line: 15,
-                      color: t.muted,
+                    style: t.scale(
+                      RaftTypeScale.caption,
+                      weight: FontWeight.w400,
+                      color: t.ui.foregroundMuted,
                     ),
                   ),
               ],
@@ -1141,36 +1160,38 @@ class RaftAppEditorTwoColumn extends StatelessWidget {
   const RaftAppEditorTwoColumn({super.key, required this.children});
   final List<Widget> children;
   @override
-  Widget build(BuildContext context) {
-    if (raftBreakpointWidth(context) < 640) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (constraints.maxWidth < raftSettingsRowNarrowWidth) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: RaftSpace.x2,
+          children: children,
+        );
+      }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: RaftSpace.x2,
-        children: children,
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: RaftSpace.x2,
-      children: [
-        for (var i = 0; i < children.length; i += 2)
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: RaftSpace.x2,
-              children: [
-                Expanded(child: children[i]),
-                Expanded(
-                  child: i + 1 < children.length
-                      ? children[i + 1]
-                      : const SizedBox.shrink(),
-                ),
-              ],
+        children: [
+          for (var i = 0; i < children.length; i += 2)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: RaftSpace.x2,
+                children: [
+                  Expanded(child: children[i]),
+                  Expanded(
+                    child: i + 1 < children.length
+                        ? children[i + 1]
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
             ),
-          ),
-      ],
-    );
-  }
+        ],
+      );
+    },
+  );
 }
 
 class RaftAppEditorPanel extends StatelessWidget {
@@ -1241,11 +1262,12 @@ class RaftAppEditorFootnote extends StatelessWidget {
     final t = RaftTokens.of(context);
     return Text(
       raftText(context, message),
-      style: RaftTypography.body(
-        t,
-        size: 12,
-        line: 16,
-        color: warning ? t.colors['warning-strong'] ?? t.muted : t.muted,
+      style: t.scale(
+        RaftTypeScale.caption,
+        weight: FontWeight.w400,
+        color: warning
+            ? t.colors['warning-strong'] ?? t.ui.foregroundMuted
+            : t.ui.foregroundMuted,
       ),
     );
   }
@@ -1272,7 +1294,11 @@ class RaftAppEditorActionLine extends StatelessWidget {
       children: [
         Text(
           message,
-          style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
+          style: t.scale(
+            RaftTypeScale.caption,
+            weight: FontWeight.w400,
+            color: t.ui.foregroundMuted,
+          ),
         ),
         Wrap(
           spacing: RaftSpace.x2,
@@ -1293,20 +1319,23 @@ class RaftAppEditorInlineForm extends StatelessWidget {
   });
   final Widget field, action;
   @override
-  Widget build(BuildContext context) => raftBreakpointWidth(context) >= 640
-      ? Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          spacing: RaftSpace.x2,
-          children: [
-            Expanded(child: field),
-            action,
-          ],
-        )
-      : Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: RaftSpace.x2,
-          children: [field, action],
-        );
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) =>
+        constraints.maxWidth >= raftSettingsRowNarrowWidth
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            spacing: RaftSpace.x2,
+            children: [
+              Expanded(child: field),
+              action,
+            ],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: RaftSpace.x2,
+            children: [field, action],
+          ),
+  );
 }
 
 /// The one-time webhook signing secret strip.
@@ -1327,13 +1356,14 @@ class RaftAppEditorSigningSecret extends StatelessWidget {
     final code = Container(
       padding: const EdgeInsets.all(RaftSpace.x2),
       decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.colors['line-strong']!),
+        color: t.colors['layer-code'] ?? t.ui.layerCard,
+        borderRadius: t.corner('radius.control', fallback: RaftRadius.control),
+        border: Border.all(color: t.ui.lineHairline),
       ),
       child: SelectableText(
         secret,
         key: const ValueKey('app-notifications-secret'),
-        style: RaftTypography.mono(t, size: 11, line: 16.5, color: text.strong),
+        style: t.scale(RaftTypeScale.monoCode, mono: true, color: text.strong),
       ),
     );
     final button = RaftSettingsRecipeButton(
@@ -1343,7 +1373,6 @@ class RaftAppEditorSigningSecret extends StatelessWidget {
       size: RaftButtonRecipeSize.sm,
       onPressed: onCopy,
     );
-    final wide = raftBreakpointWidth(context) >= 640;
     return Container(
       key: const ValueKey('app-notifications-secret-reveal'),
       padding: const EdgeInsets.symmetric(
@@ -1351,47 +1380,56 @@ class RaftAppEditorSigningSecret extends StatelessWidget {
         vertical: RaftSpace.x2,
       ),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          t.product.brutalLime.withValues(alpha: .15),
-          t.panel,
+        color:
+            t.colors['success-soft'] ??
+            Color.alphaBlend(
+              t.ui.success.withValues(alpha: .16),
+              t.ui.layerCard,
+            ),
+        borderRadius: t.corner(
+          'radius.container',
+          fallback: RaftRadius.container,
         ),
-        border: Border(left: BorderSide(color: t.product.brutalLime, width: 4)),
+        border: Border.all(color: t.ui.lineHairline),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: RaftSpace.x2,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= raftSettingsRowNarrowWidth;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: RaftSpace.x2,
             children: [
-              RaftIcon(RaftGlyph.keyRound, size: 14, color: text.strong),
-              Expanded(
-                child: Text(
-                  raftText(context, 'Signing secret · shown once'),
-                  style: RaftTypography.body(
-                    t,
-                    size: 12,
-                    line: 16,
-                    weight: RaftTypography.black(t),
-                    color: text.strong,
+              Row(
+                spacing: RaftSpace.x2,
+                children: [
+                  RaftIcon(RaftGlyph.keyRound, size: 14, color: text.strong),
+                  Expanded(
+                    child: Text(
+                      raftText(context, 'Signing secret · shown once'),
+                      style: t.scale(
+                        RaftTypeScale.footnote,
+                        weight: FontWeight.w700,
+                        color: text.strong,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-          if (wide)
-            Row(
-              spacing: RaftSpace.x2,
-              children: [
-                Expanded(child: code),
+              if (wide)
+                Row(
+                  spacing: RaftSpace.x2,
+                  children: [
+                    Expanded(child: code),
+                    button,
+                  ],
+                )
+              else ...[
+                code,
                 button,
               ],
-            )
-          else ...[
-            code,
-            button,
-          ],
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -1441,31 +1479,22 @@ class RaftAppEditorEventGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
-    return Container(
-      padding: const EdgeInsets.only(top: RaftSpace.x2),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: t.colors['line-muted']!, width: 2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            title,
-            style: RaftTypography.body(
-              t,
-              size: 12,
-              line: 16,
-              weight: RaftTypography.black(t),
-              color: text.strong,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const RaftSeparator(),
+        const SizedBox(height: RaftSpace.x2),
+        Text(
+          title,
+          style: t.scale(
+            RaftTypeScale.footnote,
+            weight: FontWeight.w700,
+            color: t.ui.foregroundHint,
           ),
-          const SizedBox(height: RaftSpace.x2),
-          RaftAppEditorTwoColumn(children: children),
-        ],
-      ),
+        ),
+        const SizedBox(height: RaftSpace.x2),
+        RaftAppEditorTwoColumn(children: children),
+      ],
     );
   }
 }

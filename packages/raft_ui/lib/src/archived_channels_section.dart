@@ -10,10 +10,16 @@ import 'css_pixel_snap.dart';
 import 'icons.dart';
 import 'error_presentation.dart';
 import 'localization.dart';
+import 'notification_settings_rows.dart' show raftSettingsRowNarrowWidth;
+import 'panel_layout.dart' show RaftCssText;
+import 'raft/icon_tile.dart';
+import 'raft/ui_tokens.dart';
 import 'recipes/button_variants.g.dart';
+import 'separator.dart';
 import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'tooltip.dart';
 
 /// One archived channel row; [metadata] is the formatted
@@ -32,9 +38,10 @@ class RaftArchivedChannelRow {
 }
 
 /// `<section className="mb-6">`: SectionHeader (Archive icon, label, count),
-/// an optional warning banner and `space-y-2` rows: a 32px type icon, the
-/// underlined `#name` link with its metadata line, and a success "Unarchive"
-/// button (`w-full` on a phone, `sm:w-auto` from 640px).
+/// an optional warning banner and `<Card className="rule-y rule-line-hairline">`
+/// rows: an sm `IconTile` holding a 16px channel glyph, the underlined `#name`
+/// link with its metadata line, and an outline `md` "Unarchive" button (`w-full`
+/// below 512px, auto from 512px).
 class RaftArchivedChannelsSection extends StatelessWidget {
   const RaftArchivedChannelsSection({
     super.key,
@@ -69,35 +76,52 @@ class RaftArchivedChannelsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final wide = MediaQuery.sizeOf(context).width >= 640;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          RaftSettingsSectionHeader(
-            label: 'Archived channels',
-            glyph: RaftGlyph.archive,
-            count: rows.length,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide =
+            !constraints.maxWidth.isFinite ||
+            constraints.maxWidth >= raftSettingsRowNarrowWidth;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              RaftSettingsSectionHeader(
+                label: 'Archived channels',
+                glyph: RaftGlyph.archive,
+                count: rows.length,
+              ),
+              if (error != null) ...[
+                RaftErrorBanner(
+                  error!,
+                  key: const ValueKey('archived-channels-error'),
+                  small: true,
+                ),
+                const SizedBox(height: 12),
+              ],
+              RaftCard(
+                clip: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final (index, row) in rows.indexed) ...[
+                      if (index > 0) const RaftSeparator(),
+                      Padding(
+                        key: ValueKey('archived-channel-row-${row.id}'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: RaftSpace.x4,
+                          vertical: RaftSpace.x3,
+                        ),
+                        child: _row(context, t, row, wide),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
-          if (error != null) ...[
-            RaftErrorBanner(
-              error!,
-              key: const ValueKey('archived-channels-error'),
-              small: true,
-            ),
-            const SizedBox(height: 12),
-          ],
-          for (final (index, row) in rows.indexed) ...[
-            if (index > 0) const SizedBox(height: 8),
-            RaftCard.item(
-              key: ValueKey('archived-channel-row-${row.id}'),
-              interactive: false,
-              child: _row(context, t, row, wide),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -107,15 +131,14 @@ class RaftArchivedChannelsSection extends StatelessWidget {
     RaftArchivedChannelRow row,
     bool wide,
   ) {
-    final text = RaftSettingsText(t);
     final label = typeLabel(context, row.type);
     final unarchive = RaftSettingsRecipeButton(
       key: ValueKey('archived-channel-unarchive-${row.id}'),
       label: busyId == row.id ? 'Unarchiving…' : 'Unarchive',
       glyph: RaftGlyph.archiveRestore,
       glyphSize: 14,
-      variant: RaftButtonRecipeVariant.success,
-      size: RaftButtonRecipeSize.sm,
+      variant: RaftButtonRecipeVariant.outline,
+      size: RaftButtonRecipeSize.md,
       expand: !wide,
       semanticLabel: raftFormat(context, 'Unarchive {name}', {
         'name': row.name,
@@ -126,19 +149,12 @@ class RaftArchivedChannelsSection extends StatelessWidget {
       children: [
         RaftTooltip(
           message: label,
-          child: Semantics(
-            label: label,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: t.semantic.fillMuted,
-                border: Border.all(color: text.softEdge, width: t.border),
-              ),
-              child: Center(
-                child: RaftIcon(typeGlyph(row.type), size: 16, color: t.muted),
-              ),
-            ),
+          child: RaftIconTile(
+            glyph: typeGlyph(row.type),
+            size: RaftIconTileSize.sm,
+            semanticLabel: label,
+            iconBuilder: (_, color) =>
+                RaftIcon(typeGlyph(row.type), size: 16, color: color),
           ),
         ),
         const SizedBox(width: 12),
@@ -157,17 +173,18 @@ class RaftArchivedChannelsSection extends StatelessWidget {
                     raftFormat(context, '#{name}', {'name': row.name}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: text.title,
+                    style: t.scale(RaftTypeScale.subhead),
                   ),
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
+              RaftCssText(
                 row.metadata,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: text.description.copyWith(
-                  color: text.faint.withValues(alpha: 1),
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  color: t.ui.foregroundMuted,
                 ),
               ),
             ],
@@ -176,13 +193,16 @@ class RaftArchivedChannelsSection extends StatelessWidget {
       ],
     );
     if (wide) {
-      return Row(
-        children: [
-          Expanded(child: info),
-          const SizedBox(width: 12),
-          // A right-aligned button sits at a fractional x; Blink snaps it.
-          RaftCssPixelSnap(child: unarchive),
-        ],
+      return ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Row(
+          children: [
+            Expanded(child: info),
+            const SizedBox(width: 12),
+            // A right-aligned button sits at a fractional x; Blink snaps it.
+            RaftCssPixelSnap(child: unarchive),
+          ],
+        ),
       );
     }
     return Column(

@@ -1,0 +1,28 @@
+{
+  "declaredScopes": [
+    "openid",
+    "profile",
+    "identity",
+    "email",
+    "agent:event:write"
+  ],
+  "oauthScopes": [
+    "openid",
+    "profile",
+    "identity",
+    "agent:event:write"
+  ],
+  "publicChannels": [
+    {
+      "id": "ch-pub-1",
+      "name": "announcements",
+      "description": "Weekly product notes and changelogs."
+    },
+    {
+      "id": "ch-pub-2",
+      "name": "showcase",
+      "description": "Community demos and shared prompts."
+    }
+  ],
+  "agreementBody": "Welcome to Design Team.\n\n- Be respectful in shared channels.\n- Keep confidential workspace data internal."
+}

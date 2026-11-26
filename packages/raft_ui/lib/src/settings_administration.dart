@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 
 import '../raft_ui.dart';
 import 'recipes/input.g.dart' show RaftInputRecipe;
+import 'token_geometry.dart';
 
 /// Save button label state shared by the section forms.
 enum RaftAdminSaveState { idle, saving, saved }
@@ -387,17 +388,22 @@ class _AdminListRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final p = row.principal;
-    return RaftAvatarListRow(
+    return RaftListRow(
       key: ValueKey('admin-row-${p.key}'),
-      avatar: RaftAvatarSlot(
-        name: p.label,
-        slot: RaftAvatarSlotContext.surfaceList,
-        agent: p.agent,
-        avatarUrl: p.avatarUrl,
-      ),
-      name: p.label,
-      subtitle: p.subtitle,
-      rightContent: [
+      interactive: false,
+      children: [
+        RaftAvatarSlot(
+          name: p.label,
+          slot: RaftAvatarSlotContext.surfaceList,
+          agent: p.agent,
+          avatarUrl: p.avatarUrl,
+        ),
+        RaftListRowBody(
+          children: [
+            RaftListRowTitle(p.label),
+            if (p.subtitle != null) RaftListRowMeta(p.subtitle!),
+          ],
+        ),
         if (row.removeLabel != null)
           RaftSettingsRecipeButton(
             key: ValueKey('admin-remove-${p.key}'),
@@ -436,11 +442,9 @@ class RaftAdminPrincipalPicker extends StatefulWidget {
 }
 
 class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
-  final portal = OverlayPortalController();
-  final link = LayerLink();
+  final controller = MenuController();
   final search = TextEditingController();
   final region = GlobalKey();
-  double width = 0;
 
   @override
   void dispose() {
@@ -451,23 +455,21 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
   @override
   void didUpdateWidget(covariant RaftAdminPrincipalPicker oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.enabled && portal.isShowing) portal.hide();
+    if (!widget.enabled && controller.isOpen) controller.close();
   }
 
   void toggle() {
-    setState(() {
-      if (portal.isShowing) {
-        portal.hide();
-      } else {
-        // Reset-on-open search, like the Web effect.
-        search.clear();
-        portal.show();
-      }
-    });
+    if (controller.isOpen) {
+      controller.close();
+    } else {
+      // Reset-on-open search, like the Web effect.
+      search.clear();
+      controller.open();
+    }
   }
 
   void close() {
-    if (portal.isShowing) setState(portal.hide);
+    if (controller.isOpen) controller.close();
   }
 
   @override
@@ -476,7 +478,7 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
     final selected = widget.candidates
         .where((c) => c.key == widget.selectedKey)
         .firstOrNull;
-    final open = portal.isShowing;
+    final open = controller.isOpen;
     final grows = RaftScaled.grows(context);
     // Agents read their plain label on the trigger; humans `Label · email`.
     final label =
@@ -488,65 +490,68 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
               ? 'Search members...'
               : 'No members to promote',
         );
-    final trigger = RaftInteractive(
-      key: const ValueKey('admin-principal-picker'),
-      onPressed: widget.enabled ? toggle : null,
-      semanticLabel: label,
-      builder: (context, state) {
-        final hover = state.hovered && state.enabled;
-        final box = RaftSettingsCard.box(
-          t,
-          height: grows ? null : 40,
-          minHeight: grows ? 40 : null,
-          padding: grows
-              ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
-              : const EdgeInsets.symmetric(horizontal: 12),
-          color: hover ? t.colors['primary-soft'] : null,
-          child: Row(
-            children: [
-              Expanded(
-                child: RaftCssText(
-                  label,
-                  maxLines: grows ? null : 1,
-                  softWrap: grows,
-                  overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
-                  style: raftSettingsBody(
-                    t,
-                    size: 12,
-                    line: 16,
-                    weight: FontWeight.w700,
-                    color: selected != null ? text.strong : t.muted,
+    final trigger = KeyedSubtree(
+      key: region,
+      child: RaftInteractive(
+        key: const ValueKey('admin-principal-picker'),
+        onPressed: widget.enabled ? toggle : null,
+        semanticLabel: label,
+        builder: (context, state) {
+          final hover = state.hovered && state.enabled;
+          final box = RaftSettingsCard.box(
+            t,
+            height: grows ? null : 40,
+            minHeight: grows ? 40 : null,
+            padding: grows
+                ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+                : const EdgeInsets.symmetric(horizontal: 12),
+            color: hover ? t.colors['primary-soft'] : null,
+            child: Row(
+              children: [
+                Expanded(
+                  child: RaftCssText(
+                    label,
+                    maxLines: grows ? null : 1,
+                    softWrap: grows,
+                    overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
+                    style: t.scale(
+                      RaftTypeScale.caption,
+                      weight: FontWeight.w700,
+                      color: selected != null ? text.strong : t.muted,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              AnimatedRotation(
-                turns: open ? .25 : 0,
-                duration: raftMotionDuration(
-                  context,
-                  const Duration(milliseconds: 150),
+                const SizedBox(width: 8),
+                AnimatedRotation(
+                  turns: open ? .25 : 0,
+                  duration: raftMotionDuration(
+                    context,
+                    const Duration(milliseconds: 150),
+                  ),
+                  child: RaftIcon(
+                    RaftGlyph.chevronRight,
+                    size: 14,
+                    color: text.strong,
+                  ),
                 ),
-                child: RaftIcon(
-                  RaftGlyph.chevronRight,
-                  size: 14,
-                  color: text.strong,
-                ),
-              ),
-            ],
-          ),
-        );
-        return state.enabled ? box : Opacity(opacity: .5, child: box);
-      },
+              ],
+            ),
+          );
+          return state.enabled ? box : Opacity(opacity: .5, child: box);
+        },
+      ),
     );
     return KeyedSubtree(
       key: const ValueKey('admin-principal-picker-region'),
-      child: CompositedTransformTarget(
-        key: region,
-        link: link,
-        child: OverlayPortal(
-          controller: portal,
-          overlayChildBuilder: raftBackDismissed(close, (context) {
-            final box = this.context.findRenderObject() as RenderBox?;
+      child: RaftPopoverAnchor(
+        controller: controller,
+        anchorKey: region,
+        gap: 8,
+        onOpen: () => setState(() {}),
+        onClose: () => setState(() {}),
+        popup: StatefulBuilder(
+          builder: (popupContext, setPopupState) {
+            final box = region.currentContext?.findRenderObject() as RenderBox?;
             final width = box?.size.width ?? 240;
             final needle = search.text.trim().toLowerCase();
             final options = [
@@ -557,79 +562,58 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
                         .contains(needle))
                   c,
             ];
-            return CallbackShortcuts(
-              bindings: {
-                const SingleActivator(LogicalKeyboardKey.escape): close,
-              },
-              child: Stack(
-                children: [
-                  // Web: a mousedown outside the picker closes it.
-                  Positioned.fill(
-                    child: Listener(
-                      behavior: HitTestBehavior.translucent,
-                      onPointerDown: (_) => close(),
-                    ),
-                  ),
-                  RaftAnchoredPopup(
-                    anchorKey: region,
-                    movement: Scrollable.maybeOf(this.context)?.position,
-                    gap: 8,
-                    child: RaftSelectionPopover(
-                      key: const ValueKey('admin-principal-popover'),
-                      title: raftText(context, 'Members'),
-                      width: width,
-                      searchController: search,
-                      searchPlaceholder: raftText(context, 'Search members...'),
-                      onSearchChanged: (_) => setState(() {}),
-                      emptyLabel: raftText(
-                        context,
-                        'No members match your search',
-                      ),
-                      clearLabel: raftText(context, 'Clear'),
-                      onClear: selected == null
-                          ? null
-                          : () {
-                              widget.onSelect(null);
-                              close();
-                            },
-                      options: [
-                        for (final c in options)
-                          RaftSelectionOption(
-                            rowKey: ValueKey('admin-candidate-${c.key}'),
-                            label: c.optionLabel ?? c.label,
-                            checked: c.key == widget.selectedKey,
-                            reserveLeadingSlot: true,
-                            leading: RaftAvatarSlot(
-                              name: c.label,
-                              slot: RaftAvatarSlotContext.compactList,
-                              agent: c.agent,
-                              avatarUrl: c.avatarUrl,
-                            ),
-                            onTap: () {
-                              widget.onSelect(c.key);
-                              search.clear();
-                              close();
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+            return RaftSelectionPopover(
+              key: const ValueKey('admin-principal-popover'),
+              title: raftText(popupContext, 'Members'),
+              width: width,
+              searchController: search,
+              searchPlaceholder: raftText(popupContext, 'Search members...'),
+              onSearchChanged: (_) => setPopupState(() {}),
+              emptyLabel: raftText(
+                popupContext,
+                'No members match your search',
               ),
+              clearLabel: raftText(popupContext, 'Clear'),
+              onClear: selected == null
+                  ? null
+                  : () {
+                      widget.onSelect(null);
+                      close();
+                    },
+              options: [
+                for (final c in options)
+                  RaftSelectionOption(
+                    rowKey: ValueKey('admin-candidate-${c.key}'),
+                    label: c.optionLabel ?? c.label,
+                    checked: c.key == widget.selectedKey,
+                    reserveLeadingSlot: true,
+                    leading: RaftAvatarSlot(
+                      name: c.label,
+                      slot: RaftAvatarSlotContext.compactList,
+                      agent: c.agent,
+                      avatarUrl: c.avatarUrl,
+                    ),
+                    onTap: () {
+                      widget.onSelect(c.key);
+                      search.clear();
+                      close();
+                    },
+                  ),
+              ],
             );
-          }),
-          child: Shortcuts(
-            shortcuts: const {
-              SingleActivator(LogicalKeyboardKey.escape): DismissIntent(),
+          },
+        ),
+        builder: (context, _, _) => Shortcuts(
+          shortcuts: const {
+            SingleActivator(LogicalKeyboardKey.escape): DismissIntent(),
+          },
+          child: Actions(
+            actions: {
+              DismissIntent: CallbackAction<DismissIntent>(
+                onInvoke: (_) => close(),
+              ),
             },
-            child: Actions(
-              actions: {
-                DismissIntent: CallbackAction<DismissIntent>(
-                  onInvoke: (_) => close(),
-                ),
-              },
-              child: trigger,
-            ),
+            child: trigger,
           ),
         ),
       ),
@@ -873,17 +857,17 @@ class _JoinLinkRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: t.colors['fill-muted'] ?? text.panel,
-                borderRadius: BorderRadius.circular(
-                  t.size('radius.control', fallback: RaftRadius.control),
+                borderRadius: t.corner(
+                  'radius.control',
+                  fallback: RaftRadius.control,
                 ),
               ),
               child: SelectableText(
                 link.url,
                 maxLines: 1,
-                style: RaftTypography.mono(
-                  t,
-                  size: 12,
-                  line: 18,
+                style: t.scale(
+                  RaftTypeScale.monoMeta,
+                  mono: true,
                   color: text.strong,
                 ),
               ),
@@ -934,21 +918,335 @@ class RaftAdminDateTimeField extends StatelessWidget {
 
   Future<void> pick(BuildContext context) async {
     final now = DateTime.now();
-    final date = await showDatePicker(
+    final initial = value ?? now;
+    var selectedDate = DateTime(initial.year, initial.month, initial.day);
+    var displayMonth = DateTime(selectedDate.year, selectedDate.month);
+    var hour = initial.hour;
+    var minute = initial.minute;
+    final firstDate = DateTime(initial.year - 1);
+    final lastDate = DateTime(initial.year + 10, 12, 31);
+
+    final picked = await showRaftDialog<({bool cleared, DateTime? value})>(
       context: context,
-      initialDate: value ?? now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 10),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          final t = RaftTokens.of(context);
+          final l10n = MaterialLocalizations.of(context);
+          final daysInMonth = DateUtils.getDaysInMonth(
+            displayMonth.year,
+            displayMonth.month,
+          );
+          final offset = DateUtils.firstDayOffset(
+            displayMonth.year,
+            displayMonth.month,
+            l10n,
+          );
+          final cellRadius = t.corner('radius.chip', fallback: RaftRadius.chip);
+          final weekdays = [
+            for (var i = 0; i < 7; i++)
+              l10n.narrowWeekdays[(l10n.firstDayOfWeekIndex + i) % 7],
+          ];
+          final prevMonth = DateTime(displayMonth.year, displayMonth.month - 1);
+          final nextMonth = DateTime(displayMonth.year, displayMonth.month + 1);
+          final canPrev = !prevMonth.isBefore(
+            DateTime(firstDate.year, firstDate.month),
+          );
+          final canNext = !nextMonth.isAfter(
+            DateTime(lastDate.year, lastDate.month),
+          );
+          final weeks = ((offset + daysInMonth) / 7).ceil();
+          return RaftDialog.shell(
+            title: raftText(context, 'Expires at'),
+            cssTitle: true,
+            surfaceKey: const ValueKey('admin-datetime-dialog'),
+            onClose: () => Navigator.of(dialogContext).pop(),
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    RaftSettingsRecipeButton(
+                      key: const ValueKey('admin-datetime-prev-month'),
+                      label: '',
+                      semanticLabel: l10n.previousMonthTooltip,
+                      glyph: RaftGlyph.chevronLeft,
+                      glyphSize: 14,
+                      variant: RaftButtonRecipeVariant.ghost,
+                      size: RaftButtonRecipeSize.iconSm,
+                      onPressed: canPrev
+                          ? () => setState(() => displayMonth = prevMonth)
+                          : null,
+                    ),
+                    Expanded(
+                      child: Text(
+                        l10n.formatMonthYear(displayMonth),
+                        textAlign: TextAlign.center,
+                        style: t.scale(
+                          RaftTypeScale.subhead,
+                          weight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    RaftSettingsRecipeButton(
+                      key: const ValueKey('admin-datetime-next-month'),
+                      label: '',
+                      semanticLabel: l10n.nextMonthTooltip,
+                      glyph: RaftGlyph.chevronRight,
+                      glyphSize: 14,
+                      variant: RaftButtonRecipeVariant.ghost,
+                      size: RaftButtonRecipeSize.iconSm,
+                      onPressed: canNext
+                          ? () => setState(() => displayMonth = nextMonth)
+                          : null,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: RaftSpace.x2),
+                Row(
+                  children: [
+                    for (final dayName in weekdays)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: RaftSpace.x1,
+                          ),
+                          child: Text(
+                            dayName,
+                            textAlign: TextAlign.center,
+                            style: t.scale(
+                              RaftTypeScale.caption,
+                              color: t.ui.foregroundHint,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                for (var w = 0; w < weeks; w++)
+                  Row(
+                    children: [
+                      for (var c = 0; c < 7; c++)
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              final dayNum = w * 7 + c - offset + 1;
+                              if (dayNum < 1 || dayNum > daysInMonth) {
+                                return const SizedBox(height: 32);
+                              }
+                              final candidate = DateTime(
+                                displayMonth.year,
+                                displayMonth.month,
+                                dayNum,
+                              );
+                              final isSelected =
+                                  candidate.year == selectedDate.year &&
+                                  candidate.month == selectedDate.month &&
+                                  candidate.day == selectedDate.day;
+                              final enabled =
+                                  !candidate.isBefore(firstDate) &&
+                                  !candidate.isAfter(lastDate);
+                              return RaftInteractive(
+                                key: ValueKey('admin-datetime-day-$dayNum'),
+                                onPressed: enabled
+                                    ? () => setState(
+                                        () => selectedDate = candidate,
+                                      )
+                                    : null,
+                                builder: (context, state) {
+                                  final fill = isSelected
+                                      ? t.ui.stickerInk
+                                      : state.hovered
+                                      ? t.ui.fillMuted
+                                      : null;
+                                  return Container(
+                                    constraints: const BoxConstraints(
+                                      minHeight: 32,
+                                    ),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: fill,
+                                      borderRadius: cellRadius,
+                                    ),
+                                    child: Text(
+                                      '$dayNum',
+                                      style: t.scale(
+                                        RaftTypeScale.footnote,
+                                        weight: isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.w400,
+                                        color: isSelected
+                                            ? t.ui.stickerPaper
+                                            : enabled
+                                            ? t.ui.foreground
+                                            : t.ui.foregroundDisabled,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                const SizedBox(height: RaftSpace.x3),
+                Container(
+                  padding: const EdgeInsets.all(RaftSpace.x2),
+                  decoration: BoxDecoration(
+                    color: t.ui.fillMuted,
+                    borderRadius: t.corner(
+                      'radius.control',
+                      fallback: RaftRadius.control,
+                    ),
+                    border: Border.all(color: t.ui.lineHairline),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        raftText(context, 'Time'),
+                        style: t.scale(
+                          RaftTypeScale.footnote,
+                          weight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RaftSettingsRecipeButton(
+                            key: const ValueKey('admin-datetime-hour-down'),
+                            label: '',
+                            semanticLabel: '-',
+                            glyph: RaftGlyph.minus,
+                            glyphSize: 12,
+                            variant: RaftButtonRecipeVariant.outline,
+                            size: RaftButtonRecipeSize.iconSm,
+                            onPressed: () =>
+                                setState(() => hour = (hour + 23) % 24),
+                          ),
+                          SizedBox(
+                            width: 32,
+                            child: Text(
+                              _two(hour),
+                              textAlign: TextAlign.center,
+                              style: t.scale(
+                                RaftTypeScale.monoMeta,
+                                mono: true,
+                                weight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          RaftSettingsRecipeButton(
+                            key: const ValueKey('admin-datetime-hour-up'),
+                            label: '',
+                            semanticLabel: '+',
+                            glyph: RaftGlyph.plus,
+                            glyphSize: 12,
+                            variant: RaftButtonRecipeVariant.outline,
+                            size: RaftButtonRecipeSize.iconSm,
+                            onPressed: () =>
+                                setState(() => hour = (hour + 1) % 24),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: RaftSpace.x1,
+                        ),
+                        child: Text(
+                          ':',
+                          style: t.scale(
+                            RaftTypeScale.monoMeta,
+                            mono: true,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RaftSettingsRecipeButton(
+                            key: const ValueKey('admin-datetime-min-down'),
+                            label: '',
+                            semanticLabel: '-',
+                            glyph: RaftGlyph.minus,
+                            glyphSize: 12,
+                            variant: RaftButtonRecipeVariant.outline,
+                            size: RaftButtonRecipeSize.iconSm,
+                            onPressed: () =>
+                                setState(() => minute = (minute + 55) % 60),
+                          ),
+                          SizedBox(
+                            width: 32,
+                            child: Text(
+                              _two(minute),
+                              textAlign: TextAlign.center,
+                              style: t.scale(
+                                RaftTypeScale.monoMeta,
+                                mono: true,
+                                weight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          RaftSettingsRecipeButton(
+                            key: const ValueKey('admin-datetime-min-up'),
+                            label: '',
+                            semanticLabel: '+',
+                            glyph: RaftGlyph.plus,
+                            glyphSize: 12,
+                            variant: RaftButtonRecipeVariant.outline,
+                            size: RaftButtonRecipeSize.iconSm,
+                            onPressed: () =>
+                                setState(() => minute = (minute + 5) % 60),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            footer: [
+              RaftSettingsRecipeButton(
+                key: const ValueKey('admin-datetime-clear'),
+                label: 'Clear',
+                variant: RaftButtonRecipeVariant.ghost,
+                size: RaftButtonRecipeSize.sm,
+                onPressed: () =>
+                    Navigator.of(dialogContext)
+                        .pop((cleared: true, value: null)),
+              ),
+              RaftSettingsRecipeButton(
+                key: const ValueKey('admin-datetime-cancel'),
+                label: 'Cancel',
+                variant: RaftButtonRecipeVariant.outline,
+                size: RaftButtonRecipeSize.sm,
+                onPressed: () => Navigator.of(dialogContext).pop(),
+              ),
+              RaftSettingsRecipeButton(
+                key: const ValueKey('admin-datetime-apply'),
+                label: 'Apply',
+                variant: RaftButtonRecipeVariant.default_,
+                size: RaftButtonRecipeSize.sm,
+                onPressed: () => Navigator.of(dialogContext).pop((
+                  cleared: false,
+                  value: DateTime(
+                    selectedDate.year,
+                    selectedDate.month,
+                    selectedDate.day,
+                    hour,
+                    minute,
+                  ),
+                )),
+              ),
+            ],
+          );
+        },
+      ),
     );
-    if (date == null || !context.mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(value ?? now),
-    );
-    if (time == null) return;
-    onChanged(
-      DateTime(date.year, date.month, date.day, time.hour, time.minute),
-    );
+    if (picked == null) return;
+    onChanged(picked.cleared ? null : picked.value);
   }
 
   @override
@@ -963,9 +1261,7 @@ class RaftAdminDateTimeField extends StatelessWidget {
           states: t.recipeStates(focusVisible: state.focusVisible),
           tokens: tokens,
         ).root;
-        final style = s
-            .text(tokens, base: DefaultTextStyle.of(context).style)
-            .copyWith(fontSize: 14, height: 20 / 14);
+        final style = s.text(tokens, base: t.scale(RaftTypeScale.callout));
         final grows = s.height != null && RaftScaled.grows(context);
         final minHeight = grows
             ? math.max(s.minHeight ?? 0, s.height!)
@@ -1063,7 +1359,7 @@ class RaftAgreementBody extends StatelessWidget {
     if (blocks.isEmpty) {
       return RaftCssText(
         raftText(context, 'Nothing to preview yet'),
-        style: base.copyWith(color: Colors.black.withValues(alpha: .5)),
+        style: base.copyWith(color: RaftTokens.of(context).ui.foregroundHint),
       );
     }
     Widget item(String marker, String value) => Padding(
@@ -1083,6 +1379,7 @@ class RaftAgreementBody extends StatelessWidget {
     return DefaultTextStyle.merge(
       style: base,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final (i, (kind, lines)) in blocks.indexed) ...[
@@ -1091,6 +1388,7 @@ class RaftAgreementBody extends StatelessWidget {
               RaftCssText(lines.join('\n'), style: base)
             else
               Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   for (final (j, line) in lines.indexed) ...[
@@ -1175,11 +1473,18 @@ class RaftAdminAgreementCard extends StatelessWidget {
                       enabled: !busy,
                       invalid: tooLong,
                       // `font-mono text-xs`: the recipe keeps the field's ink colour.
-                      textStyle: TextStyle(
-                        fontFamily: t.monoFont,
-                        fontSize: 12,
-                        height: 16 / 12,
-                      ),
+                      textStyle: () {
+                        final mono = t.scale(
+                          RaftTypeScale.monoMeta,
+                          mono: true,
+                        );
+                        return TextStyle(
+                          fontFamily: mono.fontFamily,
+                          fontFamilyFallback: mono.fontFamilyFallback,
+                          fontSize: mono.fontSize,
+                          height: mono.height,
+                        );
+                      }(),
                     ),
                   ),
                   // `mt-1` plus the inline-block textarea's baseline gap
@@ -1223,8 +1528,12 @@ class RaftAdminAgreementCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: t.colors['layer-canvas-muted'],
-                border: Border.all(color: text.softEdge, width: 1),
+                color: t.ui.layerCanvas,
+                borderRadius: t.corner(
+                  'radius.container',
+                  fallback: RaftRadius.container,
+                ),
+                border: Border.all(color: t.ui.lineHairline),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1298,28 +1607,34 @@ class RaftPublicChannelList extends StatelessWidget {
   final List<RaftPublicChannel> channels;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), text = RaftSettingsText(t);
-    final radius = BorderRadius.circular(6);
+    final t = RaftTokens.of(context);
+    final radius = t.corner('radius.container', fallback: RaftRadius.container);
     if (channels.isEmpty) {
-      // `border border-dashed border-line-hairline`, no fill, hint text.
+      // `rounded-container border border-dashed border-line-hairline`, no fill, hint text.
       return CustomPaint(
         foregroundPainter: RaftDashedBorderPainter(
           t.colors['line-hairline'] ?? t.colors['line-muted']!,
-          1,
+          RaftSpace.hairline,
+          radius: radius.topLeft.x,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-          child: SizedBox(
-            width: double.infinity,
-            child: Center(
-              child: RaftCssText(
-                raftText(context, 'No channels visible to visitors yet'),
-                textAlign: TextAlign.center,
-                style: raftSettingsBody(
-                  t,
-                  size: 12,
-                  line: 16,
-                  color: t.colors['foreground-hint'],
+          padding: const EdgeInsets.all(RaftSpace.hairline),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: RaftSpace.x3,
+              vertical: RaftSpace.x4,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: Center(
+                heightFactor: 1,
+                child: RaftCssText(
+                  raftText(context, 'No channels visible to visitors yet'),
+                  textAlign: TextAlign.center,
+                  style: t.scale(
+                    RaftTypeScale.footnote,
+                    color: t.colors['foreground-hint'],
+                  ),
                 ),
               ),
             ),
@@ -1331,9 +1646,9 @@ class RaftPublicChannelList extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(maxHeight: 120),
       decoration: BoxDecoration(
-        color: text.panel,
+        color: t.ui.layerCard,
         borderRadius: radius,
-        border: Border.all(color: text.edge, width: 1),
+        border: Border.all(color: hairline),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -1341,62 +1656,55 @@ class RaftPublicChannelList extends StatelessWidget {
           children: [
             for (final (i, channel) in channels.indexed)
               Container(
-                height: 58,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: i == 0
-                    ? null
-                    : BoxDecoration(
-                        border: Border(top: BorderSide(color: hairline)),
-                      ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                constraints: const BoxConstraints(minHeight: 58),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      width: 28,
-                      height: 28,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: t.colors['layer-inset'],
-                        borderRadius: radius,
-                        border: Border.all(color: t.colors['line-muted']!),
-                      ),
-                      child: RaftIcon(
-                        RaftGlyph.hash,
-                        size: 14,
-                        strokeWidth: 2.5,
-                        color: text.strong,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
+                    if (i > 0) const RaftSeparator(),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          RaftCssText(
-                            channel.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: text.title.copyWith(color: t.strong),
-                          ),
-                          if (channel.description case final d?
-                              when d.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            RaftCssText(
-                              d,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: raftSettingsBody(
-                                t,
-                                size: 12,
-                                line: 16,
-                                color: t.muted,
-                              ),
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: RaftIconTile(
+                              glyph: RaftGlyph.hash,
+                              size: RaftIconTileSize.sm,
                             ),
-                          ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RaftCssText(
+                                  channel.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: t.scale(
+                                    RaftTypeScale.subhead,
+                                    weight: FontWeight.w600,
+                                    color: t.ui.foreground,
+                                  ),
+                                ),
+                                if (channel.description case final d?
+                                    when d.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  RaftCssText(
+                                    d,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: t.scale(
+                                      RaftTypeScale.footnote,
+                                      color: t.ui.foregroundMuted,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1508,10 +1816,8 @@ class RaftPublicVisibilityCard extends StatelessWidget {
         child: Padding(padding: const EdgeInsets.only(left: 16), child: child),
       ),
     );
-    return RaftSettingsCard.box(
-      t,
-      padding: const EdgeInsets.all(16),
-      radius: BorderRadius.circular(8),
+    return RaftCard(
+      padding: const EdgeInsets.all(RaftSpace.x4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

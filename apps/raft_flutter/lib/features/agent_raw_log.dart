@@ -402,8 +402,8 @@ class AgentLogRowMapper {
         id: id,
         time: time,
         dot: kind == 'compaction_started'
-            ? t.product.brutalOrange
-            : t.product.brutalLime,
+            ? raftActivityDotColor(t, 'working')
+            : raftActivityDotColor(t, 'online'),
         title: raftText(
           context,
           kind == 'compaction_started'
@@ -430,14 +430,15 @@ class AgentLogRowMapper {
           time: time,
           dot: switch (kind) {
             'thinking' => t.product.statusBusy,
-            'text' => t.product.brutalCyan,
+            'text' => raftActivityDotColor(t, 'online'),
             'slock_action' => raftActivityDotColor(t, 'online'),
             // A system row that is a subagent's lifecycle reads as that
             // subagent's state, not as an error.
             _ => switch (subagentRowPresence(lineage)) {
               SubagentPresence.busy => raftActivityDotColor(t, 'working'),
               SubagentPresence.online => raftActivityDotColor(t, 'online'),
-              SubagentPresence.error || null => t.product.brutalOrange,
+              SubagentPresence.error ||
+              null => raftActivityDotColor(t, 'error'),
             },
           },
           title: switch (kind) {

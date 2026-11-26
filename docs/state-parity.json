@@ -58902,6 +58902,12 @@
         ],
         "owner": "Wave 3B",
         "reason": "Overflow menu trigger composes RaftButton inside RaftDropdownMenu."
+      },
+      "packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminDateTimeField.pick": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
@@ -63134,6 +63140,15 @@
           "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState/METHOD:build/FUNCTION:toggle"
         ],
         "reason": "Toggles the anchored dropdown or submenu from its mounted trigger (shifted offset after deleting legacy RaftLightboxRecipe and brutalPanelHeader)."
+      },
+      "surface:packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminDateTimeField.pick": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminDateTimeField.pick"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Opens the RaftDialog date and time picker for join link expiration."
       }
     },
     "requirements": {

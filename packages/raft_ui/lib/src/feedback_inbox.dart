@@ -715,12 +715,36 @@ class RaftFeedbackEmptyState extends StatelessWidget {
 /// CSS `border: 2px dashed` (Chromium: dashes of 3x the width, gaps evenly
 /// distributed per side).
 class RaftDashedBorderPainter extends CustomPainter {
-  const RaftDashedBorderPainter(this.color, this.width);
+  const RaftDashedBorderPainter(this.color, this.width, {this.radius = 0});
   final Color color;
   final double width;
+  final double radius;
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (radius > 0) {
+      final stroke = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width
+        ..isAntiAlias = true;
+      final rrect = RRect.fromRectAndRadius(
+        Offset.zero & size,
+        Radius.circular(radius),
+      ).deflate(width / 2);
+      final path = Path()..addRRect(rrect);
+      final dash = width * 3;
+      final step = dash * 2;
+      for (final metric in path.computeMetrics()) {
+        var distance = 0.0;
+        while (distance < metric.length) {
+          final end = (distance + dash).clamp(0.0, metric.length);
+          canvas.drawPath(metric.extractPath(distance, end), stroke);
+          distance += step;
+        }
+      }
+      return;
+    }
     final paint = Paint()
       ..color = color
       ..isAntiAlias = false;
@@ -747,7 +771,7 @@ class RaftDashedBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(RaftDashedBorderPainter old) =>
-      old.color != color || old.width != width;
+      old.color != color || old.width != width || old.radius != radius;
 }
 
 /// The Settings host's own RaftButton for the header slot (`Button

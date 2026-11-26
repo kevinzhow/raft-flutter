@@ -22,8 +22,7 @@ import 'design_primitives.dart'
         RaftDropdownMenu,
         RaftInheritedFontScope,
         RaftInteractive,
-        RaftMenuEntry,
-        RaftTypography;
+        RaftMenuEntry;
 import 'empty_state.dart';
 import 'error_presentation.dart';
 import 'icons.dart';
@@ -822,7 +821,7 @@ class _AppsScope extends RaftFitItem {
 
 /// `text-xs leading-relaxed` (12 / 19.5).
 TextStyle _relaxed(RaftTokens t, Color color) =>
-    RaftTypography.inherited(t, size: 12, line: 12 * 1.625, color: color);
+    t.scale(RaftTypeScale.footnote, color: color);
 
 /// ConnectedAppsErrorBanner: `Banner intent="warning" density="sm"`.
 class RaftConnectedAppsError extends StatelessWidget {
@@ -1371,12 +1370,7 @@ class _Summary extends StatelessWidget {
           value,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: RaftTypography.inherited(
-            t,
-            size: 14,
-            line: 14 * 1.375,
-            color: t.muted,
-          ),
+          style: t.scale(RaftTypeScale.callout, color: t.ui.foregroundMuted),
         ),
       ),
     );
@@ -1747,13 +1741,12 @@ class RaftConnectedAppMonoValue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final style = t.typeSlot('mono-meta');
     return Text(
       value,
-      style: RaftTypography.mono(
-        t,
-        size: style.fontSize,
-        line: style.lineHeight,
+      style: t.scale(
+        RaftTypeScale.monoMeta,
+        mono: true,
+        weight: DefaultTextStyle.of(context).style.fontWeight,
         color: RaftSettingsText(t).strong,
       ),
     );
@@ -1773,6 +1766,7 @@ class RaftOAuthScopeSummary extends StatefulWidget {
     this.tooltips = const {},
     this.emptyLabel,
     this.resourceScopes = const {},
+    this.initialOpen = false,
   });
   final String title;
   final String? description;
@@ -1786,12 +1780,15 @@ class RaftOAuthScopeSummary extends StatefulWidget {
 
   /// `No active grant scopes…` when [scopes] is empty.
   final String? emptyLabel;
+
+  /// Whether the disclosure starts expanded.
+  final bool initialOpen;
   @override
   State<RaftOAuthScopeSummary> createState() => _RaftOAuthScopeSummaryState();
 }
 
 class _RaftOAuthScopeSummaryState extends State<RaftOAuthScopeSummary> {
-  bool open = false;
+  late bool open = widget.initialOpen;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -1805,29 +1802,25 @@ class _RaftOAuthScopeSummaryState extends State<RaftOAuthScopeSummary> {
     Widget chip(String scope) => RaftTooltip(
       message: widget.tooltips[scope] ?? scope,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
           color: widget.resourceScopes.contains(scope)
-              ? (Color.alphaBlend(
-                  t.colors['accent-soft']!.withValues(alpha: .3),
-                  t.panel,
-                ))
-              : (t.panel),
-          border: Border.all(color: t.colors['line-strong']!),
+              ? (t.colors['info-soft'] ?? t.ui.fillMuted)
+              : t.ui.fillMuted,
+          borderRadius: t.corner('radius.chip', fallback: RaftRadius.chip),
         ),
         child: Text(
           scope,
-          style: RaftTypography.body(
-            t,
-            size: 11,
-            line: 11 * 1.5,
-            weight: FontWeight.w700,
-            color: t.muted,
+          style: t.scale(
+            RaftTypeScale.monoMeta,
+            mono: true,
+            color: t.ui.foreground,
           ),
         ),
       ),
     );
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftSectionEyebrow(widget.title),
@@ -1845,9 +1838,13 @@ class _RaftOAuthScopeSummaryState extends State<RaftOAuthScopeSummary> {
           decoration: BoxDecoration(
             color: t.ui.layerCard,
             border: Border.all(color: soft),
-            borderRadius: t.corner('radius.container', fallback: 10),
+            borderRadius: t.corner(
+              'radius.container',
+              fallback: RaftRadius.container,
+            ),
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               GestureDetector(
@@ -1860,7 +1857,7 @@ class _RaftOAuthScopeSummaryState extends State<RaftOAuthScopeSummary> {
                     children: [
                       // The `<summary>` disclosure marker.
                       SizedBox(
-                        width: 10,
+                        width: 14,
                         height: summary.fontSize!,
                         child: CustomPaint(
                           painter: _DisclosureMarker(open, text.strong),
@@ -1882,8 +1879,12 @@ class _RaftOAuthScopeSummaryState extends State<RaftOAuthScopeSummary> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: t.panel,
-                      border: Border.all(color: soft, width: 1),
+                      color: t.ui.layerCard,
+                      borderRadius: t.corner(
+                        'radius.control',
+                        fallback: RaftRadius.control,
+                      ),
+                      border: Border.all(color: soft),
                     ),
                     child: Text(
                       widget.emptyLabel ?? '',
@@ -2349,21 +2350,16 @@ class RaftAppPermissionsApproval extends StatelessWidget {
   final List<String> groups;
   final Widget? action;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final copy = Column(
+  Widget build(BuildContext context) => RaftBanner(
+    status: RaftBannerRecipeStatus.warning,
+    size: RaftBannerRecipeSize.sm,
+    live: false,
+    centerAction: true,
+    action: action,
+    descriptionBuilder: (style) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          notice,
-          style: RaftTypography.body(
-            t,
-            size: 12,
-            line: 16,
-            weight: FontWeight.w700,
-            color: t.muted,
-          ),
-        ),
+        Text(notice, style: style),
         if (groups.isNotEmpty) ...[
           const SizedBox(height: 8),
           Wrap(
@@ -2371,52 +2367,11 @@ class RaftAppPermissionsApproval extends StatelessWidget {
             runSpacing: 6,
             children: [
               for (final g in groups)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: t.panel,
-                    border: Border.all(color: t.colors['line-strong']!),
-                  ),
-                  child: Text(
-                    g,
-                    style: RaftTypography.body(
-                      t,
-                      size: 11,
-                      line: 11 * 1.5,
-                      weight: FontWeight.w700,
-                      color: t.muted,
-                    ),
-                  ),
-                ),
+                RaftBadge(label: g, appearance: RaftBadgeRecipeAppearance.soft),
             ],
           ),
         ],
       ],
-    );
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: t.colors['warning-soft'],
-        border: Border(left: BorderSide(color: t.colors['warning']!, width: 4)),
-      ),
-      child: raftBreakpointWidth(context) >= 640 && action != null
-          ? Row(
-              children: [
-                Expanded(child: copy),
-                const SizedBox(width: 12),
-                action!,
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                copy,
-                if (action != null) ...[const SizedBox(height: 12), action!],
-              ],
-            ),
-    );
-  }
+    ),
+  );
 }
