@@ -106,7 +106,7 @@ extension _WorkspacePanelDismissal on _WorkspaceViewState {
   /// False where the pane the person can see is none of this area's: then the
   /// rest of [dismissPanel] decides as before.
   bool takeChannelSideEscape(({bool thread, bool profile}) panels) {
-    if (w.section != 'chat') return false;
+    if (ChannelSideCards.conversation(w) == null) return false;
     final stack = ChannelSideArea.stackForWorkspace(this);
     if (stack == null) return false;
     // A profile and a thread together are the adaptive workspace's own pair
@@ -117,6 +117,7 @@ extension _WorkspacePanelDismissal on _WorkspaceViewState {
         (panels.thread || !stack.open.contains(ChannelSideSection.profile))) {
       return false;
     }
+    if (w.section != 'chat' && panels.thread) return false;
     // Covering, the whole conversation column is behind the pane on top: the
     // chat, a folded thread and every pane waiting under it. Beside the chat,
     // only a pane in this area's stack is this area's to name.

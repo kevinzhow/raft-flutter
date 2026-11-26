@@ -25,6 +25,7 @@ import '../../platform/macos_voice_over.dart';
 import '../../platform/system_bars.dart';
 import '../channel_artifact_place.dart';
 import '../channel_side_area.dart' show insideChannelSideArea;
+import '../channel_side_cards.dart' show ChannelSideCards;
 import '../channel_side_web_preview.dart';
 import '../private_route_guard.dart'
     show channelSearchPageAuthority, workspaceAuthority;
@@ -59,10 +60,8 @@ Future<void> openWorkspaceArtifact(
   ArtifactLinkTarget target, {
   ArtifactCard? seed,
 }) {
-  final channel = w.channel;
+  final channel = ChannelSideCards.conversation(w);
   if (channel != null &&
-      channel.type != 'thread' &&
-      w.section == 'chat' &&
       insideChannelSideArea(context) &&
       desktopBrowserAvailable(w)) {
     final opener = FocusManager.instance.primaryFocus;

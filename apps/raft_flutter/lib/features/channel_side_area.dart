@@ -167,15 +167,23 @@ RaftWorkspaceSideRow channelSideRow(
   );
 }
 
+bool _hostsChannelSideSection(
+  WorkspaceController w, {
+  required bool detailPane,
+}) => detailPane
+    ? (w.section == 'activity' || w.section == 'search')
+    : w.section == 'chat';
+
 (Set<ChannelSideSection>, WebPreviewPage?) _openChannelSide(
   WorkspaceController w,
   WebPreviewStore preview,
   ChannelDetailsStore details, {
   required bool profile,
+  bool detailPane = false,
 }) {
-  final channel = w.channel;
-  final here =
-      channel != null && channel.type != 'thread' && w.section == 'chat';
+  final hosts = _hostsChannelSideSection(w, detailPane: detailPane);
+  final channel = hosts ? ChannelSideCards.conversation(w) : null;
+  final here = channel != null;
   final page = here ? preview.pageFor(channel.id) : null;
   return (
     {
@@ -187,7 +195,7 @@ RaftWorkspaceSideRow channelSideRow(
       if (page != null || (here && ChannelSideCards.hasDesktopPlace(w)))
         ChannelSideSection.artifact,
       if (profile) ChannelSideSection.profile,
-      if (details.channel != null) ChannelSideSection.details,
+      if (here && details.channel != null) ChannelSideSection.details,
     },
     page,
   );
@@ -264,16 +272,20 @@ List<double> _solveChannelSideWidths(
   ];
 }
 
-/// Whether [context] is inside a [ChannelSideArea]: only there do Tasks and
-/// Files open as cards, so a conversation panel elsewhere (the Search /
-/// Activity detail pane) keeps its Tasks and Files tabs.
+/// Whether [context] is inside a [ChannelSideArea] that hosts side sections
+/// for the current route.
 bool insideChannelSideArea(BuildContext context) =>
-    context.getInheritedWidgetOfExactType<_ChannelSideAreaScope>() != null;
+    context.getInheritedWidgetOfExactType<_ChannelSideAreaScope>()?.hosts ??
+    false;
 
 class _ChannelSideAreaScope extends InheritedWidget {
-  const _ChannelSideAreaScope({required super.child});
+  const _ChannelSideAreaScope({required this.hosts, required super.child});
+
+  final bool hosts;
+
   @override
-  bool updateShouldNotify(_ChannelSideAreaScope oldWidget) => false;
+  bool updateShouldNotify(_ChannelSideAreaScope oldWidget) =>
+      hosts != oldWidget.hosts;
 }
 
 /// The side sections open beside one conversation, the ones of them on
@@ -292,12 +304,14 @@ class ChannelSideArea extends StatefulWidget {
     super.key,
     required this.controller,
     required this.child,
+    this.detailPane = false,
     this.onOpenTask,
     this.headWrapper,
     this.profile,
     @visibleForTesting this.bodyOf,
   });
   final WorkspaceController controller;
+  final bool detailPane;
   final Widget? profile;
 
   /// The channel column: header and chat. It stays where it is.
@@ -321,14 +335,19 @@ class ChannelSideArea extends StatefulWidget {
   static GlobalKey<ChannelSideAreaState> workspaceKey(Object owner) =>
       _WorkspaceChannelSideKey(owner);
 
+  static GlobalKey<ChannelSideAreaState> detailKey(Object owner) =>
+      _DetailChannelSideKey(owner);
+
   static bool restoreForWorkspace(Object owner) =>
-      workspaceKey(owner).currentState?.restore() ?? false;
+      (detailKey(owner).currentState?.restore() ?? false) ||
+      (workspaceKey(owner).currentState?.restore() ?? false);
 
   /// The panes open beside the conversation of the workspace [owner] and which
   /// of them is on top, as of the last frame. Null where none is open or this
   /// area is not mounted. What the shell's own keys act on: a pane hidden
   /// behind another is not theirs to close.
   static OpenChannelSideStack? stackForWorkspace(Object owner) =>
+      detailKey(owner).currentState?.openStack ??
       workspaceKey(owner).currentState?.openStack;
 
   @override
@@ -337,6 +356,10 @@ class ChannelSideArea extends StatefulWidget {
 
 class _WorkspaceChannelSideKey extends GlobalObjectKey<ChannelSideAreaState> {
   const _WorkspaceChannelSideKey(super.value);
+}
+
+class _DetailChannelSideKey extends GlobalObjectKey<ChannelSideAreaState> {
+  const _DetailChannelSideKey(super.value);
 }
 
 class _DockSeam {
@@ -423,6 +446,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     _expanded = null;
     _resizePreview = null;
     store = ChannelSideStore.of(w);
+    store.registerArea(this);
     preview = WebPreviewStore.of(w);
     details = ChannelDetailsStore.of(w);
     media = ChannelFilesMedia(w);
@@ -437,7 +461,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     listenable = Listenable.merge([_previewChanges, store, details]);
     previewOpenedAt = preview.openedAt;
     _browserPanes = ChannelBrowserPanes.of(w);
-    _previewConversation = w.channel?.id;
+    _previewConversation = ChannelSideCards.conversation(w)?.id;
     desktopPlaceOpenedAt = ChannelSideCards.latestDesktopOpen(w);
     _previewChanges.addListener(previewChanged);
   }
@@ -446,6 +470,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   void didUpdateWidget(ChannelSideArea oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != w) {
+      store.unregisterArea(this);
       _previewChanges.removeListener(previewChanged);
       bind();
     }
@@ -453,7 +478,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
 
   /// The page that opened last is the one showing where only one fits.
   void previewChanged() {
-    final conversation = w.channel?.id;
+    final conversation = ChannelSideCards.conversation(w)?.id;
     final desktopOpened = ChannelSideCards.latestDesktopOpen(w);
     final legacyOpened =
         preview.page != null && preview.openedAt != previewOpenedAt;
@@ -472,6 +497,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
 
   @override
   void dispose() {
+    store.unregisterArea(this);
     _previewChanges.removeListener(previewChanged);
     drag.dispose();
     super.dispose();
@@ -490,11 +516,9 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   );
 
   @override
-  Widget build(BuildContext context) => _ChannelSideAreaScope(
-    child: ListenableBuilder(
-      listenable: listenable,
-      builder: (context, _) => LayoutBuilder(builder: _build),
-    ),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: listenable,
+    builder: (context, _) => LayoutBuilder(builder: _build),
   );
 
   void _resizeDock(_DockSeam seam, double width, bool commit, bool profile) {
@@ -513,13 +537,19 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   }
 
   Widget _build(BuildContext context, BoxConstraints box) {
-    final (open, page) = _openChannelSide(
-      w,
-      preview,
-      details,
-      profile: widget.profile != null,
-    );
-    final ownsBrowser = !MobileRouteGate.coveredReader(context)();
+    final covered = MobileRouteGate.coveredReader(context)();
+    final hosts =
+        !covered && _hostsChannelSideSection(w, detailPane: widget.detailPane);
+    final (open, page) = hosts
+        ? _openChannelSide(
+            w,
+            preview,
+            details,
+            profile: widget.profile != null,
+            detailPane: widget.detailPane,
+          )
+        : (<ChannelSideSection>{}, null);
+    final ownsBrowser = hosts;
     if (page == null && (!ownsBrowser || MobileRouteGate.holds(context, w))) {
       open.remove(ChannelSideSection.artifact);
     }
@@ -570,7 +600,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
             columns.any(
               (column) => column.sections.contains(ChannelSideSection.artifact),
             )
-        ? w.channel?.id
+        ? ChannelSideCards.conversation(w)?.id
         : null;
     if (ownsBrowser) {
       _browserPanes.update(
@@ -783,14 +813,30 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
         Positioned.fill(child: ChannelSideDragLayer(drag: drag)),
       ],
     );
-    return Actions(
-      actions: {
-        if (_expanded != null)
-          DismissIntent: CallbackAction<DismissIntent>(
-            onInvoke: (_) => restore(),
-          ),
-      },
-      child: row,
+    final renderedShown = <ChannelSideSection>{
+      for (final column in placement.columns)
+        if (_expanded == null &&
+            channelSideOneAtATime(
+              placement.mode,
+              box.maxHeight,
+              column.sections.length,
+            ))
+          channelSideActiveSection(store, column.sections)
+        else
+          ...column.sections,
+    };
+    store.setAreaRenderedShown(this, hosts ? renderedShown : const {});
+    return _ChannelSideAreaScope(
+      hosts: hosts,
+      child: Actions(
+        actions: {
+          if (_expanded != null)
+            DismissIntent: CallbackAction<DismissIntent>(
+              onInvoke: (_) => restore(),
+            ),
+        },
+        child: row,
+      ),
     );
   }
 
@@ -871,7 +917,8 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     bool stacked = false,
     VoidCallback? back,
   }) {
-    final channelId = w.channel?.id ?? '';
+    final channelId =
+        ChannelSideCards.conversation(w)?.id ?? w.channel?.id ?? '';
     final body = widget.bodyOf?.call(context, section);
     switch (section) {
       case ChannelSideSection.thread:

@@ -8,6 +8,7 @@ import '../data/raft_navigation_history.dart';
 import 'channel_files_media.dart';
 import 'channel_announcement_host.dart';
 import 'channel_side_area.dart' show insideChannelSideArea;
+import 'channel_side_cards.dart' show ChannelSideCards;
 import 'channel_side_flags.dart';
 import 'chat_view.dart';
 import 'conversation_tab_reorder.dart';
@@ -144,13 +145,14 @@ class _ConversationPanelState extends State<ConversationPanel> {
       );
     }
     final channel = w.channel;
-    // Task v2 moves Tasks and Files into cards beside the chat; a panel with
-    // no side area around it (the Search / Activity detail pane) keeps them
-    // as tabs, so they stay reachable.
+    // Task v2 moves Tasks and Files into cards beside the chat; a panel outside
+    // a hosted side-area conversation keeps them as tabs so they stay reachable.
     final hasTabs =
         channel != null &&
         channel.type != 'thread' &&
-        !(sideFlags.taskV2 && insideChannelSideArea(context));
+        !(sideFlags.taskV2 &&
+            insideChannelSideArea(context) &&
+            ChannelSideCards.conversation(w) != null);
     if (!hasTabs) tab = RaftConversationTabId.chat;
     w.setChatTabPresentation(this, tab == RaftConversationTabId.chat);
     final order = <RaftConversationTabId>[];

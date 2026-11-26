@@ -107,6 +107,8 @@ import 'system_notification_center.dart';
 import 'workspace_browser.dart';
 import 'workspace_channel_header.dart';
 import 'workspace_channel_access.dart';
+import 'channel_side_cards.dart'
+    show channelSideListener, channelSideToggles, ChannelSideCards;
 import 'workspace_dm_header.dart';
 import 'workspace_view_sidebar_menus.dart';
 import 'management_support.dart' show managementLaunch;
@@ -2602,10 +2604,16 @@ class _WorkspaceViewState extends State<WorkspaceView>
       if (wide && channel != null && channel.type == 'dm') {
         return dmHeader(headerKey: const Key('workspace-content-dm-header'));
       }
-      return RaftPageHeader(
-        title: channel?.name ?? '',
-        height: raftPageHeaderHeight(context),
-        onBack: wide ? null : closeDesktopDetail,
+      return channelSideListener(
+        w,
+        (context) => RaftPageHeader(
+          title: channel?.name ?? '',
+          height: raftPageHeaderHeight(context),
+          onBack: wide ? null : closeDesktopDetail,
+          actions: wide && channel != null
+              ? channelSideToggles(context, w)
+              : const [],
+        ),
       );
     }
 
@@ -2644,15 +2652,23 @@ class _WorkspaceViewState extends State<WorkspaceView>
         ),
       ],
     );
-    return thread
-        ? workspaceSideThread(
-            wide,
-            RaftConversationSurface(
-              role: RaftConversationSurfaceRole.threadTimeline,
-              child: content,
-            ),
-          )
-        : content;
+    if (thread) {
+      return workspaceSideThread(
+        wide,
+        RaftConversationSurface(
+          role: RaftConversationSurfaceRole.threadTimeline,
+          child: content,
+        ),
+      );
+    }
+    if (!wide) return content;
+    return ChannelSideArea(
+      key: ChannelSideArea.detailKey(this),
+      controller: w,
+      detailPane: true,
+      onOpenTask: openTaskSurface,
+      child: content,
+    );
   }
 
   List<RaftRailDestination> get railDestinations => workspaceRailDestinations(

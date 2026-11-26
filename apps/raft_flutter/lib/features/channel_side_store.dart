@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../data/device_preferences.dart';
 import '../data/workspace_controller.dart';
@@ -75,6 +76,66 @@ class ChannelSideStore extends ChangeNotifier {
   final _openedAt = <ChannelSideSection, int>{};
   int _tick = 0;
   ChannelTasksFilter _taskFilter = ChannelTasksFilter.all;
+  final _areaShown = <Object, Set<ChannelSideSection>>{};
+  Set<ChannelSideSection>? _renderedShown;
+  bool _renderedNotifyScheduled = false;
+
+  /// Sections actually rendered on screen across mounted `ChannelSideArea`
+  /// hosts, or null when no host is mounted.
+  Set<ChannelSideSection>? get renderedShown => _renderedShown;
+
+  void registerArea(Object owner) {
+    if (_areaShown.containsKey(owner)) return;
+    _areaShown[owner] = const {};
+    _syncRenderedShown();
+  }
+
+  void unregisterArea(Object owner) {
+    if (_areaShown.remove(owner) == null) return;
+    _syncRenderedShown();
+  }
+
+  void setAreaRenderedShown(Object owner, Set<ChannelSideSection> shown) {
+    final current = _areaShown[owner];
+    if (current != null && setEquals(current, shown)) return;
+    _areaShown[owner] = Set.of(shown);
+    _syncRenderedShown();
+  }
+
+  void _syncRenderedShown() {
+    final Set<ChannelSideSection>? next = _areaShown.isEmpty
+        ? null
+        : {for (final s in _areaShown.values) ...s};
+    final unchanged =
+        (_renderedShown == null && next == null) ||
+        (_renderedShown != null &&
+            next != null &&
+            setEquals(_renderedShown, next));
+    if (unchanged) return;
+    _renderedShown = next == null ? null : Set.unmodifiable(next);
+    if (_ended || _renderedNotifyScheduled) return;
+    _renderedNotifyScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _renderedNotifyScheduled = false;
+      if (!_ended) notifyListeners();
+    });
+  }
+
+  /// Opens [card] if closed and brings its section to the front of any switch
+  /// or side stack.
+  void revealCard(ChannelSideCard card) {
+    final tick = ++_tick;
+    if (_open[card] != true) {
+      _open = {..._open, card: true};
+      _writeCards(_openKey, _open);
+    }
+    _focusAt[card.name] = tick;
+    _openedAt[card == ChannelSideCard.tasks
+            ? ChannelSideSection.tasks
+            : ChannelSideSection.files] =
+        tick;
+    notifyListeners();
+  }
 
   bool cardOpen(ChannelSideCard card) => _open[card]!;
   bool collapsed(ChannelSideCard card) => _collapsed[card]!;

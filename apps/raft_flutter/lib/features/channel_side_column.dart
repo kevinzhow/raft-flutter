@@ -48,6 +48,19 @@ bool channelSideOneAtATime(ChannelSideMode mode, double height, int sections) =>
     (mode == ChannelSideMode.overlay ||
         height < channelSideStackMinHeight(sections));
 
+/// The store key representing [section] in focus order (`app` for artifact).
+String channelSideFocusKey(ChannelSideSection section) =>
+    section == ChannelSideSection.artifact ? 'app' : section.name;
+
+/// Returns the single visible section for a one-at-a-time column in [store].
+ChannelSideSection channelSideActiveSection(
+  ChannelSideStore store,
+  List<ChannelSideSection> sections,
+) {
+  final byKey = {for (final s in sections) channelSideFocusKey(s): s};
+  return byKey[store.activeCard(byKey.keys)] ?? sections.first;
+}
+
 class ChannelSideColumnView extends StatefulWidget {
   const ChannelSideColumnView({
     super.key,
@@ -149,6 +162,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                         switchHeight,
                       ),
                     Expanded(
+                      key: const ValueKey('channel-side-stack'),
                       child: LayoutBuilder(
                         builder: (context, stackBox) => _stack(
                           context,
@@ -219,13 +233,10 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
   );
 
   /// The store's focus order knows the web page as `app`.
-  String _focusKey(ChannelSideSection s) =>
-      s == ChannelSideSection.artifact ? 'app' : s.name;
+  String _focusKey(ChannelSideSection s) => channelSideFocusKey(s);
 
-  ChannelSideSection _active(List<ChannelSideSection> sections) {
-    final key = {for (final s in sections) _focusKey(s): s};
-    return key[store.activeCard(key.keys)] ?? sections.first;
-  }
+  ChannelSideSection _active(List<ChannelSideSection> sections) =>
+      channelSideActiveSection(store, sections);
 
   Widget _switch(
     BuildContext context,

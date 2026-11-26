@@ -4,14 +4,18 @@
 // conversation to conversation. An old `?chatTab=tasks|files` link opens its
 // card; closing the card clears the query.
 import 'package:flutter/widgets.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_controller.dart';
 import 'channel_artifact_place.dart';
 import 'channel_side_flags.dart';
+import 'channel_side_layout.dart';
 import 'channel_side_store.dart';
 import 'channel_side_web_preview.dart';
+import 'workspace_channel_access.dart';
 
 abstract final class ChannelSideCards {
   static int latestDesktopOpen(WorkspaceController w) {
@@ -51,13 +55,29 @@ abstract final class ChannelSideCards {
         : artifact?.title ?? raftText(context, 'Artifact');
   }
 
-  /// Task v2 on and a conversation that can have cards (not a thread).
-  static bool enabled(WorkspaceController w) {
+  /// The conversation currently shown inside `ChannelSideArea`, or null when
+  /// the active route does not show a channel or DM conversation.
+  static RaftChannel? conversation(WorkspaceController w) {
     final channel = w.channel;
-    return channel != null &&
-        channel.type != 'thread' &&
-        ChannelSideFlags.of(w).taskV2;
+    if (channel == null || channel.type == 'thread') return null;
+    if (WorkspaceChannelAccess.forChannel(w, channel.id) != null) return null;
+    final section = w.section;
+    if (section == 'chat') return channel;
+    if (section == 'activity' || section == 'search') {
+      final content = w.location.content;
+      if (content != null &&
+          (content.kind == RaftContentKind.channel ||
+              content.kind == RaftContentKind.dm) &&
+          content.id == channel.id) {
+        return channel;
+      }
+    }
+    return null;
   }
+
+  /// Task v2 on and a conversation that can have cards (not a thread).
+  static bool enabled(WorkspaceController w) =>
+      conversation(w) != null && ChannelSideFlags.of(w).taskV2;
 
   static bool isOpen(WorkspaceController w, ChannelSideCard card) =>
       enabled(w) &&
@@ -85,6 +105,20 @@ abstract final class ChannelSideCards {
       close(w, card);
     } else {
       ChannelSideStore.of(w).setCardOpen(card, true);
+    }
+  }
+
+  /// Header toggle press against the panel's rendered visibility: close if
+  /// actually on screen, otherwise open and bring to front.
+  static void press(
+    WorkspaceController w,
+    ChannelSideCard card, {
+    required bool shown,
+  }) {
+    if (shown) {
+      close(w, card);
+    } else {
+      ChannelSideStore.of(w).revealCard(card);
     }
   }
 
@@ -147,22 +181,29 @@ abstract final class ChannelSideCards {
 /// Task v2 or for a thread.
 List<Widget> channelSideToggles(BuildContext context, WorkspaceController w) {
   if (!ChannelSideCards.enabled(w)) return const [];
-  final tasks = ChannelSideCards.isOpen(w, ChannelSideCard.tasks);
-  final files = ChannelSideCards.isOpen(w, ChannelSideCard.files);
+  final shown = ChannelSideStore.of(w).renderedShown;
+  final tasks = shown != null
+      ? shown.contains(ChannelSideSection.tasks)
+      : ChannelSideCards.isOpen(w, ChannelSideCard.tasks);
+  final files = shown != null
+      ? shown.contains(ChannelSideSection.files)
+      : ChannelSideCards.isOpen(w, ChannelSideCard.files);
   return [
     raftConversationHeaderToggle(
       key: const Key('channel-tasks-toggle'),
       glyph: RaftGlyph.listTodo,
       label: raftText(context, tasks ? 'Close Tasks' : 'Open Tasks'),
       pressed: tasks,
-      onPressed: () => ChannelSideCards.toggle(w, ChannelSideCard.tasks),
+      onPressed: () =>
+          ChannelSideCards.press(w, ChannelSideCard.tasks, shown: tasks),
     ),
     raftConversationHeaderToggle(
       key: const Key('channel-files-toggle'),
       glyph: RaftGlyph.paperclip,
       label: raftText(context, files ? 'Close files' : 'Open files'),
       pressed: files,
-      onPressed: () => ChannelSideCards.toggle(w, ChannelSideCard.files),
+      onPressed: () =>
+          ChannelSideCards.press(w, ChannelSideCard.files, shown: files),
     ),
   ];
 }
