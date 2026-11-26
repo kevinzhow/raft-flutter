@@ -58902,6 +58902,72 @@
         ],
         "owner": "Wave 3B",
         "reason": "Overflow menu trigger composes RaftButton inside RaftDropdownMenu."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:ChannelExternalInviteEntry": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "The pinned members-page entry; composes an existing Raft button."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:_ChannelExternalInviteEntryState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "State for the pinned external-invite entry."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInviteEntry.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "State factory for the pinned external-invite entry."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInviteEntryState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Builds the entry from existing Raft controls."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInviteEntryState._open": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Opens the existing external-invite dialog or the limit notice."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Reloads the Invited group after the entry sends invites."
       }
     },
     "entries": {
@@ -63134,6 +63200,14 @@
           "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState/METHOD:build/FUNCTION:toggle"
         ],
         "reason": "Toggles the anchored dropdown or submenu from its mounted trigger (shifted offset after deleting legacy RaftLightboxRecipe and brutalPanelHeader)."
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInviteEntryState._open": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInviteEntryState._open"
+        ],
+        "mountStatus": "source_reviewed"
       }
     },
     "requirements": {
