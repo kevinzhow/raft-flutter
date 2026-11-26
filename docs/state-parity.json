@@ -15290,12 +15290,10 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/sidebar_preferences_view.dart#method:_SidebarPreferencesState._reorderList": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "list-row"
-        ],
+        "role": "unresolved",
+        "familyRefs": [],
         "owner": "design-system alignment",
-        "reason": "Shared helper composing shrink-wrapped or bounded ReorderableListView.builder around RaftListRow entries for SidebarPreferencesView."
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/sidebar_preferences_view.dart#method:_SidebarPreferencesState.pinnedOrderList": {
         "role": "unresolved",
