@@ -10,7 +10,7 @@ void main() {
     testWidgets('Raft $dark sidebar seam paints over its own background', (
       t,
     ) async {
-      t.view.physicalSize = const Size(1280, 100);
+      t.view.physicalSize = const Size(1280, 500);
       t.view.devicePixelRatio = 1;
       addTearDown(t.view.reset);
       final key = GlobalKey();

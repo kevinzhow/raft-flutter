@@ -86,7 +86,7 @@ class _RaftDismissScopeState extends State<RaftDismissScope> {
   void deactivate() {
     if (node.hasFocus) {
       node.canRequestFocus = false;
-      node.unfocus();
+      node.unfocus(disposition: UnfocusDisposition.previouslyFocusedChild);
     }
     super.deactivate();
   }

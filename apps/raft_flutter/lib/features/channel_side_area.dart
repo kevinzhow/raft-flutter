@@ -202,7 +202,7 @@ bool _hostsChannelSideSection(
       if (page != null || (here && ChannelSideCards.hasDesktopPlace(w)))
         ChannelSideSection.artifact,
       if (profile) ChannelSideSection.profile,
-      if (here && details.channel != null) ChannelSideSection.details,
+      if (hosts && details.channel != null) ChannelSideSection.details,
     },
     page,
   );
