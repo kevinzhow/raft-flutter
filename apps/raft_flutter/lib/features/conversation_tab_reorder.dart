@@ -67,18 +67,19 @@ class _TabSlotState extends State<_TabSlot> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: t.colors['layer-panel'],
+        borderRadius: BorderRadius.circular(t.fieldRadius),
         border: Border.all(color: t.colors['line-strong']!),
         boxShadow: t.shadows,
       ),
       child: Text(
         widget.tab.label,
-        style: RaftTypography.heading(
-          t,
-          size: 13,
-          line: 19.5,
-          weight: FontWeight.w500,
-          color: t.strong,
-        ).copyWith(decoration: TextDecoration.none),
+        style: t
+            .scale(
+              RaftTypeScale.control,
+              weight: FontWeight.w500,
+              color: t.strong,
+            )
+            .copyWith(decoration: TextDecoration.none),
       ),
     );
     final source = widget.touch

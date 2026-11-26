@@ -174,7 +174,7 @@ class _QuotedMessagePermalinkPreviewState
                 'senderAvatarUrl': hidden.senderAvatarUrl,
                 'createdAt': hidden.createdAt,
               }));
-    if (message == null) return const RaftQuotedMessageSkeleton();
+    if (message == null) return const QuotedMessageLoadingCard();
     final link = widget.permalink;
     final channel = [
       ...w.channels,
@@ -233,6 +233,87 @@ class _QuotedMessagePermalinkPreviewState
           ? raftText(context, attachments.key)
           : raftFormat(context, attachments.key, {'count': attachments.count}),
       onTap: hidden == null ? () => widget.onOpen(link) : null,
+    );
+  }
+}
+
+const double _quotedSkeletonHeaderHeight = 34;
+const double _quotedSkeletonAvatarSize = 28;
+const double _quotedSkeletonTitleWidth = 128;
+const double _quotedSkeletonLastLineFactor = .75;
+
+/// Loading skeleton matching Web v1.24 `QuotedMessagePermalinkPreview.tsx`
+/// (`Card` with 34px `line-hairline` header bar, 28px block skeleton, and
+/// three line skeletons).
+class QuotedMessageLoadingCard extends StatelessWidget {
+  const QuotedMessageLoadingCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return RaftCard(
+      key: const Key('quoted-message-skeleton'),
+      clip: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: _quotedSkeletonHeaderHeight,
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: raftChromeBlend(t.ui.lineHairline, t.ui.layerCard),
+                ),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: RaftSpace.x3,
+              vertical: RaftSpace.x2 + RaftSpace.half,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: RaftSpace.x3,
+              children: [
+                RaftSkeleton(
+                  variant: RaftSkeletonVariant.block,
+                  width: _quotedSkeletonAvatarSize,
+                  height: _quotedSkeletonAvatarSize,
+                  fromRecipe: true,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: RaftSpace.x2,
+                    children: [
+                      RaftSkeleton(
+                        variant: RaftSkeletonVariant.line,
+                        width: _quotedSkeletonTitleWidth,
+                        fromRecipe: true,
+                      ),
+                      RaftSkeleton(
+                        variant: RaftSkeletonVariant.line,
+                        width: double.infinity,
+                        fromRecipe: true,
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: _quotedSkeletonLastLineFactor,
+                        child: RaftSkeleton(
+                          variant: RaftSkeletonVariant.line,
+                          width: double.infinity,
+                          fromRecipe: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'raft/ui_tokens.dart';
 
 /// The a57b9dab small icon surface, expressed through structural theme data.
 /// Surface and press options are independent; generic retains the base recipe.
@@ -56,7 +57,7 @@ class RaftSmallIconRecipe extends RaftControlRecipe {
       : switch (variant) {
           RaftControlVariant.primary => tokens.primaryFill,
           RaftControlVariant.accent => tokens.accentFill,
-          RaftControlVariant.danger => tokens.colors['color-brutal-red']!,
+          RaftControlVariant.danger => tokens.ui.danger,
           RaftControlVariant.ghost => Colors.transparent,
           RaftControlVariant.outline ||
           RaftControlVariant.surface => tokens.panel,

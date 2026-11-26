@@ -1,0 +1,52 @@
+{
+  "description": "Wave 4B migrated E5/E6 component fixtures shared between host/LegacyWave4bCases.tsx and cases/ext_legacy_wave4b.dart.",
+  "selectField": {
+    "label": "Visibility",
+    "hint": "Who can view this channel.",
+    "value": "workspace",
+    "options": [
+      {
+        "value": "workspace",
+        "label": "Workspace"
+      },
+      {
+        "value": "private",
+        "label": "Private"
+      }
+    ]
+  },
+  "mermaidMenu": {
+    "triggerLabel": "Download Mermaid Diagram",
+    "items": [
+      {
+        "id": "mmd",
+        "label": "Download Source",
+        "icon": "code2"
+      },
+      {
+        "id": "png",
+        "label": "Download PNG",
+        "icon": "download"
+      },
+      {
+        "id": "svg",
+        "label": "Download SVG",
+        "icon": "download"
+      }
+    ]
+  },
+  "memberMenu": {
+    "triggerLabel": "Member Actions",
+    "items": [
+      "Make Owner",
+      "Make Admin",
+      "Make Member",
+      "Make Guest",
+      "Remove member"
+    ]
+  },
+  "filterTrigger": {
+    "title": "Filter by channel",
+    "label": "All Channels"
+  }
+}

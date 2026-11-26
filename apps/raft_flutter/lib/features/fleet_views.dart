@@ -1,5 +1,3 @@
-import 'page_layout.dart';
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -111,6 +109,9 @@ void _closeFleetDialog(BuildContext context) {
   }
 }
 
+const double _credentialDialogWidth = 480;
+const double _fileDialogWidth = 600;
+
 Future<void> showCredential(
   BuildContext context,
   String value, {
@@ -123,8 +124,8 @@ Future<void> showCredential(
   if (!valid()) return;
   Widget builder(BuildContext dialog) => RaftAlertDialog(
     title: Text(raftText(context, 'Save this credential')),
-    content: SizedBox(
-      width: 480,
+    content: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: _credentialDialogWidth),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -133,7 +134,7 @@ Future<void> showCredential(
             Text(
               detail ?? 'This credential is shown once. Store it securely before closing.',
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: RaftSpace.x4),
             RaftSecretView(
               value: value,
               onCopy: (v) async {
@@ -508,20 +509,23 @@ class _FleetViewState extends State<FleetView> {
   ) => Column(
     children: [
       Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(RaftSpace.x4),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 raftText(context, widget.computers ? 'Computers' : 'Agents'),
-                style: Theme.of(context).textTheme.titleLarge,
+                style: RaftTokens.of(context).scale(RaftTypeScale.title),
               ),
             ),
             RaftTooltip(
               message: raftText(context, 'Refresh'),
               child: RaftButton.iconAction(
                 onPressed: load,
-                icon: const Icon(Icons.refresh),
+                icon: const RaftIcon(
+                  RaftGlyph.refreshCw,
+                  size: RaftSpace.x3 + RaftSpace.half,
+                ),
               ),
             ),
             if (w.can(widget.computers ? 'registerMachines' : 'createAgents'))
@@ -537,7 +541,7 @@ class _FleetViewState extends State<FleetView> {
       ),
       if (!widget.computers && w.can('createAgents'))
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
           child: Align(
             alignment: Alignment.centerRight,
             child: RaftButton.text(
@@ -549,7 +553,7 @@ class _FleetViewState extends State<FleetView> {
         ),
       if (error != null)
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(RaftSpace.x4),
           child: RaftErrorBanner(error),
         ),
       Expanded(
@@ -1850,19 +1854,21 @@ class _FleetInspectionState extends State<FleetInspection> {
       () => current && ticket == fileRequest,
       (dialog) => RaftAlertDialog(
         title: Text('${row['name']}'),
-        content: SizedBox(
-          width: 600,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _fileDialogWidth),
           child: SingleChildScrollView(
             child: ValueListenableBuilder<Object?>(
               valueListenable: content,
-              builder: (_, data, _) => SelectableText(switch (data) {
-                _PendingFile() => raftText(context, 'Loading file…'),
-                _FileReadFailed(:final message) => raftText(context, message),
-                Map() when data['binary'] == true =>
-                  'Binary file · ${data['mimeType'] ?? ''} · ${data['size']} bytes',
-                Map() => '${data['content'] ?? ''}',
-                _ => '',
-              }),
+              builder: (_, data, _) => RaftSelectionArea(
+                child: Text(switch (data) {
+                  _PendingFile() => raftText(context, 'Loading file…'),
+                  _FileReadFailed(:final message) => raftText(context, message),
+                  Map() when data['binary'] == true =>
+                    'Binary file · ${data['mimeType'] ?? ''} · ${data['size']} bytes',
+                  Map() => '${data['content'] ?? ''}',
+                  _ => '',
+                }),
+              ),
             ),
           ),
         ),
@@ -1877,94 +1883,109 @@ class _FleetInspectionState extends State<FleetInspection> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: raftPageAppBar(
-      context,
-      title: switch (widget.kind) {
-        'activity-log' => 'Activity log',
-        'channels' => 'Agent channels',
-        'agent-dms' => 'Agent conversations',
-        'workspace-files' => 'Workspace files',
-        'skills' => 'Skills',
-        _ => 'Workspaces',
-      },
-      actions: [
-        RaftTooltip(
-          message: raftText(context, 'Refresh'),
-          child: RaftButton.iconAction(
-            onPressed: load,
-            icon: const RaftIcon(RaftGlyph.refreshCw, size: 12),
-          ),
-        ),
-      ],
-    ),
-    body: loading
-        ? const Center(child: RaftSpinner())
-        : error != null && shownDir != dir
-        ? Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [RaftLoadError(error!, onRetry: load, expand: false)],
+  Widget build(BuildContext context) {
+    final title = switch (widget.kind) {
+      'activity-log' => 'Activity log',
+      'channels' => 'Agent channels',
+      'agent-dms' => 'Agent conversations',
+      'workspace-files' => 'Workspace files',
+      'skills' => 'Skills',
+      _ => 'Workspaces',
+    };
+    final navigator = Navigator.of(context);
+    return RaftSystemBarSurface(
+      statusBarFallback: RaftTokens.of(context).sidebar,
+      child: SafeArea(
+        bottom: false,
+        child: RaftSettingsPanelFrame(
+          attached: false,
+          header: RaftPanelHeaderBar(
+            title: raftText(context, title),
+            bottomRule: true,
+            onBack: navigator.canPop() ? () => navigator.maybePop() : null,
+            actions: [
+              RaftTooltip(
+                message: raftText(context, 'Refresh'),
+                child: RaftButton.iconAction(
+                  onPressed: load,
+                  icon: const RaftIcon(RaftGlyph.refreshCw, size: 12),
+                ),
               ),
-            ),
-          )
-        : rows.isEmpty && error == null
-        ? RaftEmptyState(
-            title: 'No entries',
-            detail: 'There are no entries to show.',
-          )
-        : ListView(
-            children: [
-              // A failed revalidation keeps the accepted rows.
-              if (error != null)
-                Padding(
-                  padding: const EdgeInsets.all(RaftSpace.x4),
-                  child: RaftErrorBanner(error!),
-                ),
-              if (dir.isNotEmpty)
-                RaftListRow(
-                  onPressed: () {
-                    dir = '';
-                    load();
-                  },
-                  children: [
-                    const RaftListRowIcon(RaftGlyph.arrowUp),
-                    RaftListRowBody(
-                      children: [RaftListRowTitle('Root folder')],
-                    ),
-                  ],
-                ),
-              for (final row in rows)
-                RaftListRow(
-                  interactive: widget.kind == 'workspace-files',
-                  onPressed: widget.kind == 'workspace-files'
-                      ? () => openFile(row)
-                      : null,
-                  children: [
-                    if (widget.kind == 'workspace-files')
-                      RaftListRowIcon(
-                        row['type'] == 'directory' || row['isDirectory'] == true
-                            ? RaftGlyph.folderClosed
-                            : RaftGlyph.fileText,
-                      ),
-                    RaftListRowBody(
-                      children: [
-                        RaftListRowTitle(
-                          '${row['name'] ?? row['agentName'] ?? row['directoryName'] ?? row['activity'] ?? row['eventType'] ?? 'Entry'}',
-                        ),
-                        RaftListRowDescription(
-                          '${row['detail'] ?? row['message'] ?? row['description'] ?? row['createdAt'] ?? row['status'] ?? ''}',
-                          wrap: true,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
             ],
           ),
-  );
+          child: loading
+              ? const Center(child: RaftSpinner())
+              : error != null && shownDir != dir
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(RaftSpace.x6),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RaftLoadError(error!, onRetry: load, expand: false),
+                      ],
+                    ),
+                  ),
+                )
+              : rows.isEmpty && error == null
+              ? RaftEmptyState(
+                  title: 'No entries',
+                  detail: 'There are no entries to show.',
+                )
+              : ListView(
+                  children: [
+                    // A failed revalidation keeps the accepted rows.
+                    if (error != null)
+                      Padding(
+                        padding: const EdgeInsets.all(RaftSpace.x4),
+                        child: RaftErrorBanner(error!),
+                      ),
+                    if (dir.isNotEmpty)
+                      RaftListRow(
+                        onPressed: () {
+                          dir = '';
+                          load();
+                        },
+                        children: [
+                          const RaftListRowIcon(RaftGlyph.arrowUp),
+                          RaftListRowBody(
+                            children: [RaftListRowTitle('Root folder')],
+                          ),
+                        ],
+                      ),
+                    for (final row in rows)
+                      RaftListRow(
+                        interactive: widget.kind == 'workspace-files',
+                        onPressed: widget.kind == 'workspace-files'
+                            ? () => openFile(row)
+                            : null,
+                        children: [
+                          if (widget.kind == 'workspace-files')
+                            RaftListRowIcon(
+                              row['type'] == 'directory' ||
+                                      row['isDirectory'] == true
+                                  ? RaftGlyph.folderClosed
+                                  : RaftGlyph.fileText,
+                            ),
+                          RaftListRowBody(
+                            children: [
+                              RaftListRowTitle(
+                                '${row['name'] ?? row['agentName'] ?? row['directoryName'] ?? row['activity'] ?? row['eventType'] ?? 'Entry'}',
+                              ),
+                              RaftListRowDescription(
+                                '${row['detail'] ?? row['message'] ?? row['description'] ?? row['createdAt'] ?? row['status'] ?? ''}',
+                                wrap: true,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
 }
 
 /// What a Members row of a managed agent can do without opening its profile

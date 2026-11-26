@@ -118,8 +118,8 @@ class RaftPickerTriggerButton extends StatelessWidget {
           style: style,
           tokens: rt,
           controlLabel: true,
-          child: Builder(
-            builder: (context) => Row(
+          child: LayoutBuilder(
+            builder: (context, constraints) => Row(
               mainAxisSize: MainAxisSize.min,
               spacing: style.columnGap ?? 0,
               children: [
@@ -140,15 +140,25 @@ class RaftPickerTriggerButton extends StatelessWidget {
                       ),
                     ),
                 ])
-                  if (snapLabel || exactLabelHeight)
-                    RaftCssText(
-                      text,
-                      style: labelStyle,
-                      maxLines: 1,
-                      controlLabel: true,
-                    )
-                  else
-                    Text(text, style: labelStyle, maxLines: 1),
+                  () {
+                    final labelWidget = snapLabel || exactLabelHeight
+                        ? RaftCssText(
+                            text,
+                            style: labelStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            controlLabel: true,
+                          )
+                        : Text(
+                            text,
+                            style: labelStyle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                    return constraints.hasBoundedWidth
+                        ? Flexible(child: labelWidget)
+                        : labelWidget;
+                  }(),
                 if (indicator != null)
                   inlineIndicator
                       ? indicator

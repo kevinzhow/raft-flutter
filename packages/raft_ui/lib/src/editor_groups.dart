@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'icons.dart';
 import 'design_primitives.dart';
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
+import 'raft/ui_tokens.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 
@@ -141,7 +142,7 @@ class _RaftEditorGroupsState extends State<RaftEditorGroups> {
                 color: selected
                     ? RaftEditorGroupMetrics.paper
                     : state.hovered
-                    ? RaftTokens.of(context).colors['brutal-cream']
+                    ? RaftTokens.of(context).ui['palette-cream-200']
                     : Colors.transparent,
                 border: Border(
                   right: BorderSide(

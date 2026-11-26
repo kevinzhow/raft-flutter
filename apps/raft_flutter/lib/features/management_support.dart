@@ -100,6 +100,8 @@ void rememberServerFlag(
 /// controller's in-memory page cache, bound to [snapshotIdentity]: a revisit
 /// renders it in the first frame and revalidates in the background; only a
 /// true cold load shows the loading state.
+const double _secretDialogWidth = 480;
+
 abstract class ManagementState<T extends StatefulWidget> extends State<T>
     with WidgetsBindingObserver {
   WorkspaceController get w;
@@ -510,8 +512,8 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     await scopedDialog<void>(
       (context) => RaftAlertDialog(
         title: Text(raftText(context, label)),
-        content: SizedBox(
-          width: 480,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _secretDialogWidth),
           child: RaftSecretView(
             value: value,
             label: 'Save this credential before closing.',
@@ -535,18 +537,21 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   }) => Column(
     children: [
       Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(RaftSpace.x4),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final titleWidget = Text(
               raftText(context, title),
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: RaftTokens.of(context).scale(RaftTypeScale.title),
             );
             final refresh = RaftTooltip(
               message: raftText(context, 'Refresh'),
               child: RaftButton.iconAction(
                 onPressed: busy ? null : reload,
-                icon: const Icon(Icons.refresh),
+                icon: const RaftIcon(
+                  RaftGlyph.refreshCw,
+                  size: RaftSpace.x3 + RaftSpace.half,
+                ),
               ),
             );
             if (constraints.maxWidth < 600) {
@@ -560,7 +565,11 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
                     ],
                   ),
                   if (actions.isNotEmpty)
-                    Wrap(spacing: 4, runSpacing: 4, children: actions),
+                    Wrap(
+                      spacing: RaftSpace.x1,
+                      runSpacing: RaftSpace.x1,
+                      children: actions,
+                    ),
                 ],
               );
             }
@@ -576,24 +585,27 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
       ),
       if (error != null)
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
           child: RaftErrorBanner(error!, small: true),
         ),
       if (loading) const RaftProgressBar(),
       Expanded(
         child: ListView(
           key: PageStorageKey((widget.runtimeType, title)),
-          padding: raftScrollPadding(context, const EdgeInsets.all(16)),
+          padding: raftScrollPadding(
+            context,
+            const EdgeInsets.all(RaftSpace.x4),
+          ),
           children: children,
         ),
       ),
     ],
   );
   Widget heading(String title) => Padding(
-    padding: const EdgeInsets.only(top: 16, bottom: 8),
+    padding: const EdgeInsets.only(top: RaftSpace.x4, bottom: RaftSpace.x2),
     child: Text(
       raftText(context, title),
-      style: Theme.of(context).textTheme.titleMedium,
+      style: RaftTokens.of(context).scale(RaftTypeScale.headline),
     ),
   );
 
@@ -609,7 +621,9 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     onPressed: busy ? null : callback,
     icon: glyph != null
         ? RaftIcon(glyph, size: glyphSize)
-        : Icon(icon ?? Icons.chevron_right),
+        : icon != null
+        ? Icon(icon)
+        : RaftIcon(RaftGlyph.chevronRight, size: glyphSize),
     label: Text(raftText(context, label)),
   );
   @override

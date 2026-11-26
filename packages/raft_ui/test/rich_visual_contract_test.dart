@@ -116,11 +116,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<PopupMenuItem<String>>(
-              find.widgetWithText(PopupMenuItem<String>, 'Download PNG'),
+            .widget<RaftMenuItem>(
+              find.widgetWithText(RaftMenuItem, 'Download PNG'),
             )
-            .enabled,
-        isTrue,
+            .onPressed,
+        isNotNull,
       );
       await tester.tap(find.text('Download PNG'));
       await tester.pumpAndSettle();

@@ -252,7 +252,7 @@ void main() {
           ),
         );
         await _open(tester);
-        await tester.tap(find.byType(DropdownButtonFormField<String>));
+        await tester.tap(find.byType(RaftSelectField<String>));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Deutsch').last);
         await tester.pumpAndSettle();

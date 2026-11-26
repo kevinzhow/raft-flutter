@@ -239,6 +239,12 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
     onChanged: busy ? null : (value) => run(() => save({key: value})),
   );
 
+  static double _reorderListHeight(int count, {bool compact = true}) =>
+      (count * (compact ? 56.0 : 72.0)).clamp(80.0, 320.0);
+
+  static ScrollPhysics? _reorderListPhysics(double height) =>
+      height < 320.0 ? const NeverScrollableScrollPhysics() : null;
+
   Widget sectionOrderList() {
     final labels = {
       'system:pinned': raftText(context, 'Pinned'),
@@ -252,17 +258,19 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
       ...managementStrings(prefs['sectionOrder']).where(labels.containsKey),
       ...labels.keys,
     }.toList();
+    final listHeight = _reorderListHeight(ids.length);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 20),
+        const SizedBox(height: RaftSpace.x5),
         Text(
           raftText(context, 'Section order'),
-          style: Theme.of(context).textTheme.titleLarge,
+          style: RaftTokens.of(context).scale(RaftTypeScale.headline),
         ),
         SizedBox(
-          height: (ids.length * 56.0).clamp(80, 320),
+          height: listHeight,
           child: ReorderableListView.builder(
+            physics: _reorderListPhysics(listHeight),
             itemCount: ids.length,
             onReorderItem: (from, to) => run(() async {
               final next = List<String>.from(ids);
@@ -309,15 +317,17 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
           id;
     }
 
+    final pinnedHeight = _reorderListHeight(refs.length);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 20),
+        const SizedBox(height: RaftSpace.x5),
         sortPicker('Pinned sort', 'pinnedSortMode'),
         if (refs.isNotEmpty)
           SizedBox(
-            height: (refs.length * 56.0).clamp(80, 320),
+            height: pinnedHeight,
             child: ReorderableListView.builder(
+              physics: _reorderListPhysics(pinnedHeight),
               itemCount: refs.length,
               onReorderItem: (from, to) => run(() async {
                 final next = List<Map<String, dynamic>>.from(refs);
@@ -351,18 +361,20 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
   }) {
     final sorted = ordered(rows, orderKey),
         hidden = managementStrings(prefs['hiddenDmIds']).toSet();
+    final listHeight = _reorderListHeight(sorted.length, compact: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 20),
+        const SizedBox(height: RaftSpace.x5),
         Text(
           raftText(context, title),
-          style: Theme.of(context).textTheme.titleLarge,
+          style: RaftTokens.of(context).scale(RaftTypeScale.headline),
         ),
         sortPicker('Sort', sortKey),
         SizedBox(
-          height: (sorted.length * 72.0).clamp(80, 320),
+          height: listHeight,
           child: ReorderableListView.builder(
+            physics: _reorderListPhysics(listHeight),
             itemCount: sorted.length,
             onReorderItem: (from, to) => run(() async {
               final next = sorted.map((c) => c.id).toList();
@@ -387,10 +399,11 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
                             : 'Hide Direct Message',
                       ),
                       child: RaftButton.iconAction(
-                        icon: Icon(
+                        icon: RaftIcon(
                           hidden.contains(c.id)
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                              ? RaftGlyph.eyeOff
+                              : RaftGlyph.eye,
+                          size: RaftSpace.x3 + RaftSpace.half,
                         ),
                         onPressed: busy
                             ? null
@@ -402,7 +415,7 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
                     )
                   else
                     const Padding(
-                      padding: EdgeInsets.only(right: 24),
+                      padding: EdgeInsets.only(right: RaftSpace.x6),
                       child: RaftListRowIcon(RaftGlyph.gripVertical),
                     ),
                 ],
@@ -419,11 +432,14 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
       ? const Center(child: RaftSpinner())
       : ListView(
           key: const Key('sidebar-preferences'),
-          padding: raftScrollPadding(context, const EdgeInsets.all(24)),
+          padding: raftScrollPadding(
+            context,
+            const EdgeInsets.all(RaftSpace.x6),
+          ),
           children: [
             Text(
               raftText(context, 'Sidebar preferences'),
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: RaftTokens.of(context).scale(RaftTypeScale.title),
             ),
             if (error != null) RaftErrorBanner(error!, small: true),
             Text(
@@ -445,14 +461,14 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
               'dmSortMode',
               dms: true,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: RaftSpace.x5),
             sortPicker('Joint channel sort', 'jointChannelSortMode'),
             pinnedOrderList(),
             sectionOrderList(),
-            const SizedBox(height: 20),
+            const SizedBox(height: RaftSpace.x5),
             Text(
               raftText(context, 'Custom sections'),
-              style: Theme.of(context).textTheme.titleLarge,
+              style: RaftTokens.of(context).scale(RaftTypeScale.headline),
             ),
             for (final section in sections)
               RaftListRow(

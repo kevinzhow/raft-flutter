@@ -730,7 +730,7 @@ class _RaftTextInputState extends State<RaftTextInput>
         t.recipeStates(responsive: true),
         rt,
       );
-      final red = t.product.brutalRed;
+      final red = t.ui.danger;
       textStyle = raftCssText
           .merge(base)
           .copyWith(

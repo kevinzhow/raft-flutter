@@ -550,8 +550,10 @@ class _MembersViewState extends State<MembersView> {
           valueListenable: profile,
           builder: (context, value, _) => RaftAlertDialog(
             title: Text(humanDisplayName(value)),
-            content: SelectableText(
-              '${value['description'] ?? ''}\n\n${value['email'] ?? ''}',
+            content: RaftSelectionArea(
+              child: Text(
+                '${value['description'] ?? ''}\n\n${value['email'] ?? ''}',
+              ),
             ),
             actions: [
               RaftButton.text(
@@ -615,10 +617,15 @@ class _MembersViewState extends State<MembersView> {
         RaftMobileRootHeader(
           title: 'Members',
           actions: [
-            RaftIconButton(
-              tooltip: 'Refresh Members',
-              onPressed: load,
-              glyph: RaftGlyph.refreshCw,
+            RaftTooltip(
+              message: raftText(context, 'Refresh Members'),
+              child: RaftButton.iconAction(
+                onPressed: load,
+                icon: const RaftIcon(
+                  RaftGlyph.refreshCw,
+                  size: RaftSpace.x3 + RaftSpace.half,
+                ),
+              ),
             ),
           ],
         ),
@@ -626,7 +633,10 @@ class _MembersViewState extends State<MembersView> {
         child: loading
             ? const Center(child: RaftSpinner())
             : ListView(
-                padding: raftScrollPadding(context, const EdgeInsets.all(24)),
+                padding: raftScrollPadding(
+                  context,
+                  const EdgeInsets.all(RaftSpace.x6),
+                ),
                 children: [
                   if (!widget.mobileRoot)
                     Row(
@@ -634,14 +644,18 @@ class _MembersViewState extends State<MembersView> {
                         Expanded(
                           child: Text(
                             raftText(context, 'Members'),
-                            style: Theme.of(context).textTheme.headlineSmall,
+                            style: RaftTokens.of(context)
+                                .scale(RaftTypeScale.title),
                           ),
                         ),
                         RaftTooltip(
                           message: raftText(context, 'Refresh Members'),
                           child: RaftButton.iconAction(
                             onPressed: load,
-                            icon: const Icon(Icons.refresh),
+                            icon: const RaftIcon(
+                              RaftGlyph.refreshCw,
+                              size: RaftSpace.x3 + RaftSpace.half,
+                            ),
                           ),
                         ),
                       ],
@@ -663,43 +677,51 @@ class _MembersViewState extends State<MembersView> {
                         ),
                         if (w.can('changeMemberRoles') ||
                             w.can('removeMembers'))
-                          RaftTooltip(
-                            message: raftText(context, 'Member Actions'),
-                            child: PopupMenuButton<String>(
-                              onSelected: (role) => change(member, role),
-                              itemBuilder: (_) => [
-                                if (w.can('changeMemberRoles')) ...[
-                                  for (final role
-                                      in w.server!.string('role') == 'owner'
-                                          ? [
-                                              'owner',
-                                              'admin',
-                                              'member',
-                                              'guest',
-                                            ]
-                                          : ['member', 'guest'])
-                                    PopupMenuItem(
-                                      value: role,
-                                      child: Text(
-                                        raftFormat(context, 'Make {role}', {
-                                          'role': raftText(
-                                            context,
-                                            '${role[0].toUpperCase()}${role.substring(1)}',
-                                          ),
-                                        }),
+                          RaftDropdownMenu(
+                            key: ValueKey(
+                              'member-actions-${member['userId'] ?? member['id']}',
+                            ),
+                            kind: RaftMenuKind.dropdownMenu,
+                            align: RaftDropdownAlign.end,
+                            label: raftText(context, 'Member Actions'),
+                            tooltip: raftText(context, 'Member Actions'),
+                            entries: [
+                              if (w.can('changeMemberRoles')) ...[
+                                for (final role
+                                    in w.server!.string('role') == 'owner'
+                                        ? const [
+                                            'owner',
+                                            'admin',
+                                            'member',
+                                            'guest',
+                                          ]
+                                        : const ['member', 'guest'])
+                                  RaftMenuEntry(
+                                    label: raftFormat(context, 'Make {role}', {
+                                      'role': raftText(
+                                        context,
+                                        '${role[0].toUpperCase()}${role.substring(1)}',
                                       ),
-                                    ),
-                                ],
-                                if (w.can('removeMembers') &&
-                                    member['userId'] != w.client.user!.id)
-                                  PopupMenuItem(
-                                    value: 'remove',
-                                    child: Text(
-                                      raftText(context, 'Remove member'),
-                                    ),
+                                    }),
+                                    onPressed: () => change(member, role),
                                   ),
                               ],
-                            ),
+                              if (w.can('removeMembers') &&
+                                  member['userId'] != w.client.user!.id)
+                                RaftMenuEntry(
+                                  label: raftText(context, 'Remove member'),
+                                  onPressed: () => change(member, 'remove'),
+                                ),
+                            ],
+                            triggerBuilder: (context, focusNode, onPressed) =>
+                                RaftButton(
+                                  focusNode: focusNode,
+                                  uiVariant: RaftButtonVariant.ghost,
+                                  uiSize: RaftButtonSize.iconMd,
+                                  glyph: RaftGlyph.ellipsisVertical,
+                                  tooltip: raftText(context, 'Member Actions'),
+                                  onPressed: onPressed,
+                                ),
                           ),
                       ],
                     ),

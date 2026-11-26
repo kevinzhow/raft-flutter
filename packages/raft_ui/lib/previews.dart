@@ -464,12 +464,17 @@ class _WorkspacePreviewState extends State<_WorkspacePreview> {
       sidebarVisible: selected == 'chat',
       sidebar: ListView(
         children: [
-          const Material(
-            type: MaterialType.transparency,
-            child: ListTile(
-              title: Text('Raft workspace'),
-              subtitle: Text('Channels'),
-            ),
+          const RaftListRow(
+            variant: RaftListRowVariant.plain,
+            interactive: false,
+            children: [
+              RaftListRowBody(
+                children: [
+                  RaftListRowTitle('Raft workspace'),
+                  RaftListRowDescription('Channels'),
+                ],
+              ),
+            ],
           ),
           for (final name in ['general', 'design', 'release'])
             RaftNavItem(
@@ -527,15 +532,21 @@ class _WorkspacePreviewState extends State<_WorkspacePreview> {
           ? null
           : Column(
               children: [
-                ListTile(
-                  title: const Text('Thread'),
-                  trailing: RaftTooltip(
-                    message: 'Close Thread',
-                    child: RaftButton.iconAction(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => setState(() => thread = false),
+                RaftListRow(
+                  variant: RaftListRowVariant.plain,
+                  interactive: false,
+                  children: [
+                    const RaftListRowBody(
+                      children: [RaftListRowTitle('Thread')],
                     ),
-                  ),
+                    RaftTooltip(
+                      message: 'Close Thread',
+                      child: RaftButton.iconAction(
+                        icon: const RaftIcon(RaftGlyph.x, size: 14),
+                        onPressed: () => setState(() => thread = false),
+                      ),
+                    ),
+                  ],
                 ),
                 const Expanded(
                   child: Center(child: Text('Thread conversation')),

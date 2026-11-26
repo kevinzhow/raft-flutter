@@ -7,9 +7,9 @@ import 'design_primitives.dart';
 import 'error_presentation.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'raft/ui_tokens.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart';
 
 /// Packaged brand palettes. The choice is independent of the page theme.
 enum RaftAppIconPalette {
@@ -22,11 +22,11 @@ enum RaftAppIconPalette {
   const RaftAppIconPalette(this.label);
   final String label;
   Color get background => switch (this) {
-    yellow => RaftTokenSet.light.product.brutalYellow,
-    blue => RaftTokenSet.light.product.brutalCyan,
-    green => RaftTokenSet.light.product.brutalLime,
-    white => RaftTokenSet.light.product.codeSurface,
-    pink => RaftTokenSet.light.product.brutalPink,
+    yellow => RaftUiColors.light.brand,
+    blue => RaftUiColors.light.info,
+    green => RaftUiColors.light.success,
+    white => RaftUiColors.light['layer-code'],
+    pink => RaftUiColors.light.attention,
   };
 }
 

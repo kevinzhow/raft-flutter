@@ -44,21 +44,28 @@ class _SectionPagerPreviewState extends State<SectionPagerPreview> {
                   hintText: 'Draft',
                 ),
               for (var i = 1; i <= 30; i++)
-                ListTile(
-                  title: Text('$section item $i'),
-                  subtitle: section == 'Chat'
-                      ? Align(
-                          alignment: Alignment.centerLeft,
-                          child: RaftMountedMessageTaskChip(
-                            number: i,
-                            status: RaftMessageTaskStatus.values[i % 5],
-                            title: 'Preview task $i',
-                            claimant: 'Alice',
-                            openLabel: 'Open preview task $i',
-                            onOpen: () {},
+                RaftListRow(
+                  variant: RaftListRowVariant.plain,
+                  interactive: false,
+                  children: [
+                    RaftListRowBody(
+                      children: [
+                        RaftListRowTitle('$section item $i'),
+                        if (section == 'Chat')
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: RaftMountedMessageTaskChip(
+                              number: i,
+                              status: RaftMessageTaskStatus.values[i % 5],
+                              title: 'Preview task $i',
+                              claimant: 'Alice',
+                              openLabel: 'Open preview task $i',
+                              onOpen: () {},
+                            ),
                           ),
-                        )
-                      : null,
+                      ],
+                    ),
+                  ],
                 ),
             ],
           ),

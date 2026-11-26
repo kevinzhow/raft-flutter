@@ -2684,7 +2684,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     final body = surface == null
         ? box
         : RaftStatusBarSource(
-            color: surface.color ?? Colors.transparent,
+            color: surface.color ?? t.canvas.withAlpha(0),
             border: surface.border is Border ? surface.border as Border : null,
             child: box,
           );
@@ -2767,7 +2767,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                   Expanded(
                     child: Text(
                       '${rows.length} ${widget.section}',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: RaftTokens.of(context)
+                          .scale(RaftTypeScale.headline),
                     ),
                   ),
                 if (widget.section == 'tasks')
@@ -2819,7 +2820,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             !(widget.section == 'activity' && rows.isEmpty) &&
             !(errorWhileLoading && rows.isEmpty && widget.section == 'saved'))
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(RaftSpace.x4),
             child: RaftErrorBanner(error!, small: true),
           ),
         Expanded(child: resourceResults(context)),
@@ -3056,7 +3057,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
               ),
             ),
           )
-        : Material(
+        : ColoredBox(
             color: widget.section == 'activity' || widget.section == 'saved'
                 ? resourceSurface
                 : RaftTokens.of(context).sidebar,
@@ -3114,7 +3115,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                       RaftTokens.of(context),
                       saved: true,
                     ).listInset
-                  : const EdgeInsets.all(16),
+                  : const EdgeInsets.all(RaftSpace.x4),
             ),
             // SavedPanel loads the next page when its sentinel comes
             // within `rootMargin: 240px` of the scroller.
@@ -3525,6 +3526,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: t.colors['primary-soft'],
+              borderRadius: BorderRadius.circular(t.fieldRadius),
               border: Border.all(color: t.line, width: t.border),
             ),
             child: const RaftIcon(RaftGlyph.search, size: 18),
@@ -4419,9 +4421,15 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             // of `p-4` (Brutal resets it).
             padding: raftScrollPadding(
               context,
-              MediaQuery.sizeOf(context).width < 768 &&
+              MediaQuery.sizeOf(context).width <
+                          RaftLayoutMetrics.desktopBreakpoint &&
                       t.option('listGroup.frame', or: 'framed') != 'plain'
-                  ? const EdgeInsets.fromLTRB(20, 16, 14, 16)
+                  ? const EdgeInsets.fromLTRB(
+                      RaftSpace.x5,
+                      RaftSpace.x4,
+                      RaftSpace.x3 + RaftSpace.half,
+                      RaftSpace.x4,
+                    )
                   : RaftTaskSectionRecipe(t).viewportInset,
             ),
             sliver: SliverMainAxisGroup(
@@ -4431,7 +4439,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                 )) ...[
                   // ignore: raft_lints/avoid_render_index_assertion -- `groups` is initialised with one list per raftTaskStatuses entry and `status` iterates raftTaskStatuses.
                   taskSection(status, groups[status]!, scope),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: RaftSpace.x6),
+                  ),
                 ],
                 if (hasMore && !lanePaged)
                   SliverToBoxAdapter(
@@ -4598,6 +4608,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     }
   }
 
+  static const double _filterTriggerMaxWidth = 220;
+  static const double _filterFieldWidth = 220;
+  static const double _taskDragFeedbackWidth = 292;
+
   Widget filterMenu(
     String title,
     String label,
@@ -4606,39 +4620,31 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     bool labelIsContent = false,
   }) {
     final scope = authority;
-    return RaftTooltip(
-      message: raftText(context, title),
-      child: PopupMenuButton<String>(
-        onSelected: (value) {
-          if (accepts(scope)) changed(value);
-        },
-        itemBuilder: (_) => [
+    final displayLabel = labelIsContent ? label : raftText(context, label);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: _filterTriggerMaxWidth),
+      child: RaftDropdownMenu(
+        key: ValueKey(('filter-menu', title, scope)),
+        kind: RaftMenuKind.dropdownMenu,
+        label: displayLabel,
+        tooltip: raftText(context, title),
+        entries: [
           for (final option in options.entries)
-            PopupMenuItem(
-              value: option.key,
-              child: privateMenuLabel(scope, raftText(context, option.value)),
+            RaftMenuEntry(
+              label: raftText(context, option.value),
+              onPressed: () {
+                if (accepts(scope)) changed(option.key);
+              },
             ),
         ],
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 220, minHeight: 48),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    labelIsContent ? label : raftText(context, label),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const RaftIcon(RaftGlyph.chevronDown, size: 18),
-              ],
+        triggerBuilder: (context, focusNode, onPressed) =>
+            RaftPickerTriggerButton(
+              label: displayLabel,
+              semanticLabel: raftText(context, title),
+              tooltip: raftText(context, title),
+              focusNode: focusNode,
+              onPressed: onPressed,
             ),
-          ),
-        ),
       ),
     );
   }
@@ -4674,14 +4680,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       }
     }
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x3),
       child: Wrap(
-        spacing: 4,
-        runSpacing: 0,
+        spacing: RaftSpace.x1,
         children: [
           if (widget.section == 'activity')
             SizedBox(
-              width: 220,
+              width: _filterFieldWidth,
               child: RaftTextInput(
                 controller: query,
                 hintText: raftText(context, 'Filter Activity'),
@@ -5069,14 +5074,6 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   }
 
   bool matchesTask(Map<String, dynamic> row) => taskAdvanced.matches(row);
-  Widget privateMenuLabel(String scope, String value) => Builder(
-    builder: (context) {
-      final route = ModalRoute.of(context);
-      dialogs.removeWhere((r) => !r.isActive);
-      if (route != null) dialogs.add(route);
-      return accepts(scope) ? Text(value) : const SizedBox.shrink();
-    },
-  );
   Widget taskFilters() {
     final scope = authority;
     final names = <String, String>{
@@ -5110,6 +5107,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       tokens: rt,
     ).toolbar;
     // TasksPanelToolbar > `flex flex-wrap items-center gap-2`.
+    final rightGap =
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint
+        ? toolbar.columnGap
+        : null;
     return Container(
       padding: toolbar.padding,
       decoration: toolbar.decoration(rt),
@@ -5118,18 +5119,14 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         child: Padding(
           // The mobile CSS grid keeps its 8px column gap even with an empty
           // auto track. Desktop switches to flex and has no reserved track.
-          padding: EdgeInsets.only(
-            right:
-                MediaQuery.sizeOf(context).width <
-                    RaftLayoutMetrics.desktopBreakpoint
-                ? toolbar.columnGap ?? 0
-                : 0,
-          ),
+          padding: rightGap != null
+              ? EdgeInsets.only(right: rightGap)
+              : EdgeInsets.zero,
           child: TaskV2FlagBuilder(
             controller: w,
             builder: (_, v2) => Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: RaftSpace.x2,
+              runSpacing: RaftSpace.x2,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 for (final field in [
@@ -5358,9 +5355,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       builder: (context, _) {
         final current = accepts(scope) ? taskById(row['id']) : null;
         return current != null
-            ? Material(
-                color: Colors.transparent,
-                child: SizedBox(width: 292, child: item(current)),
+            ? DefaultTextStyle(
+                style: DefaultTextStyle.of(context).style
+                    .copyWith(decoration: TextDecoration.none),
+                child: SizedBox(
+                  width: _taskDragFeedbackWidth,
+                  child: item(current),
+                ),
               )
             : const SizedBox.shrink();
       },
@@ -5424,9 +5425,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                   horizontal:
                       MediaQuery.sizeOf(context).width <
                           RaftLayoutMetrics.desktopBreakpoint
-                      ? 16
-                      : t.size('space.tasksViewportInline', fallback: 20),
-                  vertical: 16,
+                      ? RaftSpace.x4
+                      : t.size(
+                          'space.tasksViewportInline',
+                          fallback: RaftSpace.x5,
+                        ),
+                  vertical: RaftSpace.x4,
                 ),
         ),
         child: Row(
@@ -5436,7 +5440,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
               (s) => filter == 'all' || filter == s,
             ))
               Padding(
-                padding: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.only(right: RaftSpace.x4),
                 child: DragTarget<_TaskDrag>(
                   key: ValueKey('task-drop-$status'),
                   onWillAcceptWithDetails: (details) =>

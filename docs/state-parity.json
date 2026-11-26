@@ -58908,6 +58908,22 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/quoted_message_preview.dart#class:QuotedMessageLoadingCard": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 4B",
+        "reason": "Loading skeleton for quoted message permalink previews composed on canonical RaftCard and RaftSkeleton."
+      },
+      "apps/raft_flutter/lib/features/quoted_message_preview.dart#method:QuotedMessageLoadingCard.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Legacy UI Wave 4B",
+        "reason": "Builds canonical RaftCard and RaftSkeleton layout matching Web v1.24 QuotedMessagePermalinkPreview loading state."
       }
     },
     "entries": {

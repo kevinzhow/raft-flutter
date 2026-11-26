@@ -1932,12 +1932,16 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                                 message: w.connected
                                                     ? tr('Connected')
                                                     : tr('Reconnecting'),
-                                                child: Icon(
-                                                  Icons.circle,
-                                                  size: 8,
-                                                  color: w.connected
-                                                      ? t.colors['success']
-                                                      : t.muted,
+                                                child: DecoratedBox(
+                                                  decoration: BoxDecoration(
+                                                    color: w.connected
+                                                        ? t.colors['success']
+                                                        : t.muted,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: const SizedBox.square(
+                                                    dimension: RaftSpace.x2,
+                                                  ),
                                                 ),
                                               ),
                                               if (route == 'chat' &&

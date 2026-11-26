@@ -33,6 +33,7 @@ import 'package:mermaid_core/mermaid_core.dart' as core;
 import 'package:re_highlight/re_highlight.dart';
 
 import 'panel_layout.dart' show RaftCssLineBox, raftTextMetricsCache;
+import 'raft/button.dart';
 import 'raft_selection_area.dart';
 import 'recipe_surface.dart';
 import 'recipes/message_item.g.dart';
@@ -87,7 +88,6 @@ import 'localization.dart';
 import 'message_semantics.dart';
 import 'selected_text_quote.dart';
 import 'theme.dart';
-import 'tooltip.dart' show RaftTooltip;
 
 part 'message_body_preparation.dart';
 
@@ -1840,36 +1840,48 @@ class _MermaidToolbar extends StatelessWidget {
             onCopy,
           ),
           SizedBox(width: toolbarRecipe.gap),
-          RaftTooltip(
-            message: raftText(context, 'Download Mermaid Diagram'),
-            child: PopupMenuButton<String>(
-              enabled: onExport != null,
-              onSelected: onExport,
-              itemBuilder: (_) => [
-                const PopupMenuItem(
-                  value: 'mmd',
-                  child: Text('Download Source'),
-                ),
-                PopupMenuItem(
-                  value: 'png',
-                  enabled: valid,
-                  child: const Text('Download PNG'),
-                ),
-                PopupMenuItem(
-                  value: 'svg',
-                  enabled: valid,
-                  child: const Text('Download SVG'),
-                ),
-              ],
-              padding: EdgeInsets.zero,
-              child: IgnorePointer(
-                child: control(
-                  RaftGlyph.download,
-                  'Download Mermaid Diagram',
-                  onExport == null ? null : () {},
-                  ownTooltip: false,
-                ),
+          RaftDropdownMenu(
+            key: const ValueKey('mermaid-download-menu'),
+            kind: RaftMenuKind.dropdownMenu,
+            align: RaftDropdownAlign.end,
+            enabled: onExport != null,
+            label: raftText(context, 'Download Mermaid Diagram'),
+            tooltip: raftText(context, 'Download Mermaid Diagram'),
+            entries: [
+              RaftMenuEntry(
+                label: raftText(context, 'Download Source'),
+                glyph: RaftGlyph.code2,
+                onPressed: onExport == null ? null : () => onExport!('mmd'),
               ),
+              RaftMenuEntry(
+                label: raftText(context, 'Download PNG'),
+                glyph: RaftGlyph.download,
+                onPressed: valid && onExport != null
+                    ? () => onExport!('png')
+                    : null,
+              ),
+              RaftMenuEntry(
+                label: raftText(context, 'Download SVG'),
+                glyph: RaftGlyph.download,
+                onPressed: valid && onExport != null
+                    ? () => onExport!('svg')
+                    : null,
+              ),
+            ],
+            triggerBuilder: (context, focusNode, onPressed) => RaftButton(
+              key: const ValueKey('mermaid-download-trigger'),
+              focusNode: focusNode,
+              uiVariant: RaftButtonVariant.outline,
+              uiSize: RaftButtonSize.iconMd,
+              visualHeight: RaftMermaidToolbarRecipe.iconButton,
+              visualWidth: RaftMermaidToolbarRecipe.iconButton,
+              minimumTargetSize: toolbarRecipe.targetSize(
+                RaftMermaidToolbarRecipe.iconButton,
+              ),
+              glyph: RaftGlyph.download,
+              glyphSize: RaftMetrics.iconMd,
+              tooltip: raftText(context, 'Download Mermaid Diagram'),
+              onPressed: onPressed,
             ),
           ),
           if (!showSource) ...[

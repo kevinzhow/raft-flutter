@@ -37,7 +37,19 @@ class _RefreshPreviewState extends State<_RefreshPreview> {
             ]
           : [
               for (var i = 0; i < 3; i++)
-                ListTile(title: Text('Member ${i + 1} · refresh $refreshed')),
+                RaftListRow(
+                  variant: RaftListRowVariant.plain,
+                  interactive: false,
+                  children: [
+                    RaftListRowBody(
+                      children: [
+                        RaftListRowTitle(
+                          'Member ${i + 1} · refresh $refreshed',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
             ],
     ),
   );

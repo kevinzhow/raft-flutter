@@ -137,7 +137,7 @@ class _GroupPreviewState extends State<_GroupPreview> {
             ],
             children: const [],
           ),
-        const Divider(),
+        const RaftSeparator(),
         // Fixture controls are outside the source section composition.
         Wrap(
           spacing: 8,

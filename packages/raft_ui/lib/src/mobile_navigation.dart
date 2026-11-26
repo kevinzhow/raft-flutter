@@ -36,7 +36,7 @@ import 'raft/avatar.dart' show RaftAvatarBadge, RaftAvatarSize;
 import 'raft/blink_snap.dart';
 import 'raft/css_box.dart' show RaftCssBox, raftControlBorderPx;
 import 'raft/status.dart' show RaftStatus, RaftStatusSize, RaftStatusVariant;
-import 'raft/ui_tokens.dart' show RaftTokensUi;
+import 'raft/ui_tokens.dart';
 import 'panel_layout.dart' show RaftCssText, RaftCssFocusOutline;
 
 part 'mobile_navigation_docked.dart';
@@ -677,10 +677,7 @@ class _SelectorPainter extends CustomPainter {
       return Path()..addPolygon(points, true);
     }
 
-    canvas.drawPath(
-      path(2),
-      Paint()..color = RaftTokenSet.light.product.brutalBlack,
-    );
+    canvas.drawPath(path(2), Paint()..color = RaftUiColors.light.stickerInk);
     canvas.drawPath(path(0), Paint()..color = Colors.black);
     canvas.restore();
   }

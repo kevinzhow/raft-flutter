@@ -9,11 +9,13 @@ import 'dismiss_scope.dart';
 import 'form_controls.dart' show RaftField, RaftTextInput;
 import 'form_presentation.dart';
 import 'overlays/dialog.dart';
+import 'raft/ui_tokens.dart';
+import 'select_field.dart' show RaftSelectField, RaftSelectItem;
 import 'settings_layout.dart' show RaftSpace;
 import 'error_presentation.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'design_primitives.dart';
-import 'icons.dart';
 
 class RaftFormField {
   const RaftFormField(
@@ -306,6 +308,41 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
     if (field._code) return _codeField(field);
     final t = RaftTokens.of(context);
     final label = raftText(context, field.label);
+    if (field.choices != null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: RaftSpace.x4),
+        child: RaftField(
+          label: label,
+          hint: field.help == null ? null : raftText(context, field.help!),
+          error: fieldErrors[field.id],
+          child: RaftSelectField<String>(
+            key: ValueKey('field-${field.id}'),
+            label: label,
+            value: choices[field.id],
+            invalid: fieldErrors[field.id] != null,
+            items: [
+              for (final entry in field.choices!.entries)
+                RaftSelectItem<String>(
+                  value: entry.key,
+                  label: field.localizeChoices
+                      ? raftText(context, entry.value)
+                      : entry.value,
+                ),
+            ],
+            onChanged: busy
+                ? null
+                : (v) {
+                    if (v == null) return;
+                    setState(() {
+                      choices[field.id] = v;
+                      fieldErrors.remove(field.id);
+                    });
+                    RaftUnsavedGuard.maybeOf(context)?.recheck();
+                  },
+          ),
+        ),
+      );
+    }
     final decoration = InputDecoration(
       helperText: field.help == null ? null : raftText(context, field.help!),
     );
@@ -320,12 +357,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
             child: ExcludeSemantics(
               child: Text(
                 label,
-                style: RaftTypography.heading(
-                  t,
-                  size: 14,
-                  line: 20,
-                  weight: FontWeight.w500,
-                ),
+                style: t.scale(RaftTypeScale.callout, weight: FontWeight.w500),
               ),
             ),
           ),
@@ -333,71 +365,42 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
           Semantics(
             label: label,
             child: RaftFieldSurface(
-              child: field.choices != null
-                  ? DropdownButtonFormField<String>(
-                      isExpanded: true,
-                      key: ValueKey('field-${field.id}'),
-                      initialValue: choices[field.id],
-                      decoration: decoration,
-                      style: t.fieldStyle,
-                      icon: const RaftIcon(RaftGlyph.chevronDown, size: 14),
-                      dropdownColor: t.popover,
-                      borderRadius: RaftShapes.field(t),
-                      items: [
-                        for (final entry in field.choices!.entries)
-                          DropdownMenuItem(
-                            value: entry.key,
-                            child: Text(
-                              field.localizeChoices
-                                  ? raftText(context, entry.value)
-                                  : entry.value,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                      onChanged: busy
-                          ? null
-                          : (v) {
-                              choices[field.id] = v!;
-                              RaftUnsavedGuard.maybeOf(context)?.recheck();
-                            },
-                    )
-                  : TextFormField(
-                      contextMenuBuilder: RaftTextSelectionToolbar.editableText,
-                      autofillHints: field.autofillHints,
-                      keyboardType:
-                          field.keyboardType ??
-                          (field.multiline ? TextInputType.multiline : null),
-                      autocorrect: field.autocorrect,
-                      enableSuggestions: field.autocorrect,
-                      key: ValueKey('field-${field.id}'),
-                      controller: editors[field.id],
-                      enabled: !busy,
-                      obscureText: field.obscure,
-                      forceErrorText: fieldErrors[field.id],
-                      // Web `<form onSubmit>`: Enter in a one-line field
-                      // submits; a multiline field takes the new line.
-                      textInputAction: field.multiline
-                          ? TextInputAction.newline
-                          : TextInputAction.done,
-                      onFieldSubmitted: field.multiline
-                          ? null
-                          : (_) {
-                              if (_canSubmit) submit();
-                            },
-                      onChanged: (_) {
-                        final cleared = fieldErrors.remove(field.id) != null;
-                        if (cleared || widget.submitWhenFilled) {
-                          setState(() {});
-                        }
+              child: TextFormField(
+                contextMenuBuilder: RaftTextSelectionToolbar.editableText,
+                autofillHints: field.autofillHints,
+                keyboardType:
+                    field.keyboardType ??
+                    (field.multiline ? TextInputType.multiline : null),
+                autocorrect: field.autocorrect,
+                enableSuggestions: field.autocorrect,
+                key: ValueKey('field-${field.id}'),
+                controller: editors[field.id],
+                enabled: !busy,
+                obscureText: field.obscure,
+                forceErrorText: fieldErrors[field.id],
+                // Web `<form onSubmit>`: Enter in a one-line field
+                // submits; a multiline field takes the new line.
+                textInputAction: field.multiline
+                    ? TextInputAction.newline
+                    : TextInputAction.done,
+                onFieldSubmitted: field.multiline
+                    ? null
+                    : (_) {
+                        if (_canSubmit) submit();
                       },
-                      autofocus: field == widget.fields.first,
-                      minLines: field.multiline ? 3 : 1,
-                      maxLines: field.multiline ? 8 : 1,
-                      style: t.fieldStyle,
-                      decoration: decoration,
-                      validator: (value) => _validate(field, value),
-                    ),
+                onChanged: (_) {
+                  final cleared = fieldErrors.remove(field.id) != null;
+                  if (cleared || widget.submitWhenFilled) {
+                    setState(() {});
+                  }
+                },
+                autofocus: field == widget.fields.first,
+                minLines: field.multiline ? 3 : 1,
+                maxLines: field.multiline ? 8 : 1,
+                style: t.fieldStyle,
+                decoration: decoration,
+                validator: (value) => _validate(field, value),
+              ),
             ),
           ),
         ],
