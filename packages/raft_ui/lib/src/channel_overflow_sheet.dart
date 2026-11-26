@@ -1503,11 +1503,14 @@ class RaftOverflowLoading extends StatelessWidget {
 
 /// The form's `Banner intent="warning"` (`space-y-5`: 20px below it).
 class RaftOverflowFormError extends StatelessWidget {
-  const RaftOverflowFormError(this.message, {super.key});
+  const RaftOverflowFormError(this.message, {super.key, this.onRetry});
   final String message;
+
+  /// Reloads what the message names; null leaves the banner read-only.
+  final VoidCallback? onRetry;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 20),
-    child: RaftErrorBanner(message),
+    child: RaftErrorBanner(message, onRetry: onRetry, retryLabel: 'Retry'),
   );
 }

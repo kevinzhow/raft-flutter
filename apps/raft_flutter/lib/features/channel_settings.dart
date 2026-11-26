@@ -125,6 +125,22 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   final _queued = <String>{};
   String get snapshotKey => 'channel-settings:${widget.channel.id}';
   static const _parts = {'members', 'sidebar', 'display', 'notification'};
+
+  /// The reads Web reports by name; any other part keeps its accepted value
+  /// and says nothing, as Web does.
+  static const _loadFailureText = {
+    'display': 'Failed to load message display settings.',
+    'notification': 'Failed to load Activity mute setting.',
+  };
+
+  /// The named reads behind the current [error]; its Retry reloads only these.
+  List<String> _retryParts = const [];
+
+  /// Web gives each failed preference read its own retry; a plain list keeps
+  /// this off any collection `load` is still writing to.
+  VoidCallback? get retryLoad => _retryParts.isEmpty
+      ? null
+      : () => unawaited(load({..._retryParts}));
   late final activity = ChannelActivitySession.of(w);
 
   /// The Slack channel this channel is paired with (Web
@@ -293,11 +309,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       // useChannelMembers does; a failed preference keeps its accepted value).
       Object? failure;
       final failed = <String>{};
+      final failures = <String, Object>{};
       final values = await Future.wait([
         for (final part in wanted)
           Future<dynamic>.sync(() => fetch(part)).catchError((Object e) {
             failure ??= e;
             failed.add(part);
+            failures[part] = e;
             return null;
           }),
       ]);
@@ -342,9 +360,24 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           }
           known.add(part);
         }
-        error = failure == null
+        // Name the read that failed and keep just that read retryable. Web
+        // reports only these two; a failed roster or sidebar order keeps its
+        // accepted value and says nothing (useChannelMembers.ts:187-190,
+        // serverStore.ts:826-835), so neither does this.
+        final displayFailed = failed.contains('display');
+        final notificationFailed = failed.contains('notification');
+        _retryParts = [
+          if (displayFailed) 'display',
+          if (notificationFailed) 'notification',
+        ];
+        final named = displayFailed
+            ? 'display'
+            : notificationFailed
+            ? 'notification'
+            : '';
+        error = named.isEmpty
             ? null
-            : failText(failure!, raftGenericErrorText);
+            : failText(failures[named]!, _loadFailureText[named]!);
       });
       // The member roster is not shown here and is never cached.
       writePageSnapshot(w, snapshotKey, identity, {
@@ -1987,7 +2020,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                         description:
                             'Name and description shown across the server.',
                       ),
-                    if (error != null) RaftOverflowFormError(error!),
+                    if (error != null)
+                      RaftOverflowFormError(error!, onRetry: retryLoad),
                     if (!widget.details && info)
                       RaftChannelInfoForm(
                         nameController: name,
