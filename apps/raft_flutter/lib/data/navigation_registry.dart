@@ -137,7 +137,12 @@ abstract final class NavigationRegistry {
           'Members open the Apps route. Guests retain Settings link previews.',
     ),
     NavigationSettingsTab('labs'),
-    NavigationSettingsTab('mcp'),
+    NavigationSettingsTab(
+      'mcp',
+      phone: false,
+      wide: false,
+      reason: 'Web v1.24 retired the Settings MCP destination: MCP Apps live on the Apps route, and a legacy mcp link resolves there.',
+    ),
     NavigationSettingsTab('providers'),
     NavigationSettingsTab(
       'computers',

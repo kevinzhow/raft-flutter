@@ -83,6 +83,7 @@ class RaftConnectedAppEditorCard extends StatefulWidget {
     required this.sections,
     this.onSubmit,
     this.banner,
+    this.body,
     this.railLabel = 'App editor sections',
   });
   final String formTitle, closeLabel, submitLabel;
@@ -94,6 +95,7 @@ class RaftConnectedAppEditorCard extends StatefulWidget {
 
   /// Error and one-time secret rows under the header.
   final Widget? banner;
+  final Widget? body;
   final List<RaftAppEditorSection> sections;
   @override
   State<RaftConnectedAppEditorCard> createState() =>
@@ -106,7 +108,7 @@ class _RaftConnectedAppEditorCardState
   late final Map<String, GlobalKey> sectionKeys = {
     for (final s in widget.sections) s.id: GlobalKey(),
   };
-  late String active = widget.sections.first.id;
+  late String active = widget.sections.firstOrNull?.id ?? '';
 
   @override
   void initState() {
@@ -123,7 +125,7 @@ class _RaftConnectedAppEditorCardState
   /// `syncAppEditorSectionFromScroll`: the last section whose top passed the
   /// activation line (16px under the content top); the last one at the bottom.
   void syncFromScroll() {
-    if (!scroll.hasClients) return;
+    if (!scroll.hasClients || widget.sections.isEmpty) return;
     final position = scroll.position;
     final ids = [for (final s in widget.sections) s.id];
     var next = ids.first;
@@ -189,19 +191,27 @@ class _RaftConnectedAppEditorCardState
           onPressed: widget.onClose,
         ),
         commit: commit,
+        notice: widget.banner == null
+            ? null
+            : Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: RaftSpace.x5,
+                  vertical: RaftSpace.x3,
+                ),
+                decoration: BoxDecoration(border: Border(bottom: edge)),
+                child: widget.banner,
+              ),
         body: Padding(
           padding: const EdgeInsets.only(top: RaftSpace.x4),
           child: Column(
             key: bodyKey,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (widget.banner case final banner?)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: RaftSpace.x4),
-                  child: banner,
-                ),
-              for (final (index, section) in widget.sections.indexed)
-                RaftAppEditorSectionCard(section: section, first: index == 0),
+              if (widget.body case final body?)
+                body
+              else
+                for (final (index, section) in widget.sections.indexed)
+                  RaftAppEditorSectionCard(section: section, first: index == 0),
             ],
           ),
         ),
@@ -288,15 +298,18 @@ class _RaftConnectedAppEditorCardState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          for (final (index, section)
-                              in widget.sections.indexed)
-                            KeyedSubtree(
-                              key: sectionKeys[section.id],
-                              child: RaftAppEditorSectionCard(
-                                section: section,
-                                first: index == 0,
+                          if (widget.body case final body?)
+                            body
+                          else
+                            for (final (index, section)
+                                in widget.sections.indexed)
+                              KeyedSubtree(
+                                key: sectionKeys[section.id],
+                                child: RaftAppEditorSectionCard(
+                                  section: section,
+                                  first: index == 0,
+                                ),
                               ),
-                            ),
                         ],
                       ),
                     ),
@@ -398,10 +411,11 @@ class RaftAppEditorSectionCard extends StatelessWidget {
                   ),
                 ],
               ),
-              RaftCssText(
-                raftText(context, section.description),
-                style: recipe.description.text(tokens),
-              ),
+              if (section.description.isNotEmpty)
+                RaftCssText(
+                  raftText(context, section.description),
+                  style: recipe.description.text(tokens),
+                ),
             ],
           ),
           section.child,
@@ -418,17 +432,25 @@ class RaftAppEditorField extends StatelessWidget {
     required this.label,
     required this.child,
     this.optional = false,
+    this.required = false,
+    this.compact = false,
     this.hint,
     this.error,
   });
   final String label;
   final Widget child;
-  final bool optional;
+  final bool optional, required;
+
+  /// FormField `size="compact"`: the `sm` label step. The MCP App editor and
+  /// "When to use" ask for it; an ordinary App's editor keeps the default.
+  final bool compact;
   final String? hint, error;
   @override
   Widget build(BuildContext context) => RaftField(
     label: raftText(context, label),
     optional: optional,
+    required: required,
+    compact: compact,
     optionalLabel: raftText(context, '(optional)'),
     hint: hint == null ? null : raftText(context, hint!),
     error: error,
@@ -556,7 +578,12 @@ class RaftAppEditorBox extends StatelessWidget {
     this.cream = false,
     this.shadow = true,
     this.softBorder = false,
-  });
+  }) : _connection = false;
+  const RaftAppEditorBox.connection({super.key, required this.child})
+    : cream = false,
+      shadow = false,
+      softBorder = true,
+      _connection = true;
   final Widget child;
 
   /// `bg-layer-canvas-muted theme-brutal:bg-brutal-cream`.
@@ -567,11 +594,16 @@ class RaftAppEditorBox extends StatelessWidget {
 
   /// `theme-brutal:border-black/20` (no shadow blocks).
   final bool softBorder;
+  final bool _connection;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
-    final fill = cream ? (t.colors['layer-canvas-muted']!) : t.panel;
+    final fill = _connection
+        ? t.colors['layer-sidebar']!
+        : cream
+        ? (t.colors['layer-canvas-muted']!)
+        : t.panel;
     if (shadow && !softBorder) {
       return RaftSettingsCard.box(
         t,

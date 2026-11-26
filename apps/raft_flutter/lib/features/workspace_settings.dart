@@ -45,7 +45,6 @@ import 'management_support.dart'
         readPageSnapshot,
         rememberServerFlag,
         writePageSnapshot;
-import 'mcp_views.dart';
 import 'network_settings.dart';
 import 'storage_settings.dart';
 import 'notification_settings_view.dart';
@@ -423,15 +422,6 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
               RaftGlyph.flaskConical,
               (_) => LabsView(controller: w),
               group: WorkspaceSettings.workspace,
-            ),
-          if (!guest)
-            RaftSettingsDestination(
-              'mcp',
-              'MCP Servers',
-              RaftGlyph.blocks,
-              (_) => AgentMcpView(controller: w),
-              group: WorkspaceSettings.workspace,
-              scroll: false,
             ),
           if (widget.providerEnabled && w.can('manageExternalAuth'))
             RaftSettingsDestination(

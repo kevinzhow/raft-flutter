@@ -394,7 +394,7 @@ class WorkspaceNavigation {
   };
   static String settingsTab(String slug) => switch (slug) {
     'applications' => 'integrations',
-    'mcp-servers' => 'mcp',
+    'mcp-servers' || 'mcp' => 'integrations',
     'browser' => 'notifications',
     'moderation' => 'administration',
     'server-labs' => 'labs',

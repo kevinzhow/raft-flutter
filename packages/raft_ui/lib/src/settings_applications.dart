@@ -206,6 +206,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
     this.loading = false,
     this.scrollable = false,
     this.onRegister,
+    this.onRegisterMcp,
     this.onSearch,
     this.error,
     this.marketplace = const [],
@@ -241,6 +242,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
 
   /// Register app (managers).
   final VoidCallback? onRegister;
+  final VoidCallback? onRegisterMcp;
   final RaftConnectedAppsTab tab;
 
   /// Marketplace is absent in Settings and until its total arrives on the page.
@@ -718,6 +720,12 @@ class RaftConnectedAppsSection extends StatelessWidget {
       glyph: RaftGlyph.globe,
       onPressed: onRegister,
     ),
+    if (onRegisterMcp != null)
+      RaftMenuEntry(
+        label: raftText(context, 'Add a custom MCP app'),
+        glyph: RaftGlyph.blocks,
+        onPressed: onRegisterMcp,
+      ),
   ];
 }
 

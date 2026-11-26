@@ -3,11 +3,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_client/raft_client.dart' show RaftApiException;
 
+import '../data/managed_mcp_apps.dart';
+import '../data/cause_notice.dart';
 import '../data/user_error.dart';
 import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
+import 'agent_mcp_access.dart';
 import 'management_support.dart';
 import 'integrations_views.dart';
 import 'second_factor_step_up.dart';
@@ -28,13 +32,17 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
   @override
   WorkspaceController get w => widget.controller;
   List<Map<String, dynamic>> access = [], apps = [], events = [];
+  List<ManagedMcpAgentApp> mcpApps = [];
+  late final _mcpNotice = CauseNotice(scope: () => authority);
+  String? get mcpError => _mcpNotice.message;
+  set mcpError(String? message) => _mcpNotice.raise(message);
   Map<String, dynamic> agent = {};
 
   /// Filter chips come from the apps seen so far in the unfiltered list.
   Map<String, String> eventApps = {};
   String? nextCursor, filter;
   bool get manager =>
-      w.can('manageIntegrations') ||
+      w.can('manageExternalAuth') ||
       (agent['creatorType'] == 'user' &&
           agent['creatorId'] == w.client.user?.id);
   String get base => '/integrations/agents/${widget.agentId}';
@@ -49,6 +57,8 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     access = [];
     apps = [];
     events = [];
+    mcpApps = [];
+    mcpError = null;
     _openEvents.clear();
     _payloads.clear();
     _payloadFailures.clear();
@@ -64,6 +74,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
   Map<String, Object?> captureSnapshot() => {
     'access': access,
     'apps': apps,
+    'mcpApps': mcpApps,
     'events': events,
     'eventApps': eventApps,
     'agent': agent,
@@ -74,6 +85,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
   bool restoreSnapshot(Map<String, Object?> fields) {
     access = fields['access'] as List<Map<String, dynamic>>;
     apps = fields['apps'] as List<Map<String, dynamic>>;
+    mcpApps = fields['mcpApps'] as List<ManagedMcpAgentApp>;
     events = fields['events'] as List<Map<String, dynamic>>;
     eventApps = fields['eventApps'] as Map<String, String>;
     agent = fields['agent'] as Map<String, dynamic>;
@@ -88,10 +100,39 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
       withWebError(fallback, action, where: 'agent apps');
 
   @override
-  Future<void> loadData(int request, int generation) => _web(
-    'Failed to load connected apps',
-    () => _loadData(request, generation),
-  );
+  Future<void> loadData(int request, int generation) =>
+      _web('Failed to load connected apps', () async {
+        await Future.wait([
+          _loadData(request, generation),
+          _loadMcp(generation, authority, request: request),
+        ]);
+      });
+
+  Future<void> _loadMcp(int generation, String source, {int? request}) async {
+    final path = '/mcp/agents/${Uri.encodeComponent(widget.agentId)}';
+    bool current() => accepts(generation, request) && source == authority;
+    try {
+      final result = managementMap(await w.client.get(path));
+      if (!current()) return;
+      setState(() {
+        mcpApps = managementRows(result['servers'])
+            .map(ManagedMcpAgentApp.new)
+            .toList();
+        mcpError = null;
+      });
+    } catch (failure) {
+      if (!current()) return;
+      setState(() {
+        if (failure is RaftApiException &&
+            [401, 403, 404].contains(failure.status)) {
+          mcpApps = [];
+        }
+        mcpError = failure is RaftApiException && failure.status == 404
+            ? null
+            : "Couldn't load MCP Apps.";
+      });
+    }
+  }
 
   Future<void> _loadData(int request, int generation) async {
     final agentData = managementMap(
@@ -99,7 +140,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     );
     if (!accepts(generation, request)) return;
     final manages =
-        w.can('manageIntegrations') ||
+        w.can('manageExternalAuth') ||
         (agentData['creatorType'] == 'user' &&
             agentData['creatorId'] == w.client.user?.id);
     final results = await Future.wait([
@@ -159,25 +200,43 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
   }
 
   Future<void> grant() async {
-    if (apps.isEmpty) {
+    final ungranted = [
+      for (final app in mcpApps)
+        if (!app.granted) app,
+    ];
+    if (apps.isEmpty && ungranted.isEmpty) {
       throw const RaftUserError('No apps on this server yet');
     }
     Map<String, dynamic>? selected;
+    ManagedMcpAgentApp? selectedMcp;
     final picked = await form(
       'Choose app',
       [
         RaftFormField(
           'clientId',
           'App',
-          choices: {for (final a in apps) '${a['clientId']}': '${a['name']}'},
+          choices: {
+            for (final a in apps) '${a['clientId']}': '${a['name']}',
+            for (final app in ungranted) 'mcp:${app.id}': app.name,
+          },
         ),
       ],
       (v) async {
-        selected = apps.firstWhere((a) => a['clientId'] == v['clientId']);
+        selectedMcp = ungranted
+            .where((app) => 'mcp:${app.id}' == v['clientId'])
+            .firstOrNull;
+        selected = apps
+            .where((app) => app['clientId'] == v['clientId'])
+            .firstOrNull;
       },
       submit: 'Review Permissions',
     );
-    if (!picked || selected == null) return;
+    if (!picked || !mounted) return;
+    if (selectedMcp case final app?) {
+      await _configureMcp(app, granting: true);
+      return;
+    }
+    if (selected == null) return;
     final scopes = managementStrings(selected!['scopes']);
     await form(
       'Grant ${selected!['name']} access',
@@ -207,6 +266,57 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
       }),
       submit: 'Grant Access',
       description: 'Allow this app to send the approved events or notifications to this agent.',
+    );
+  }
+
+  Future<void> _configureMcp(
+    ManagedMcpAgentApp app, {
+    bool granting = false,
+  }) async {
+    final generation = w.client.generation, source = authority;
+    final saved = await scopedRaftModal<bool>(
+      form: true,
+      // McpAgentConnectionDrawer closes on an outside click; the backdrop's
+      // scrollbar would swallow that press before it reached the barrier.
+      formScrollbar: false,
+      (modal) => AgentMcpAccess(
+        workspace: w,
+        agentId: widget.agentId,
+        app: app,
+        granting: granting,
+        onSaved: () => Navigator.of(modal).pop(true),
+        onClose: () => Navigator.of(modal).pop(false),
+      ),
+    );
+    if (saved == true) {
+      await _loadMcp(generation, source);
+      if (accepts(generation) && source == authority) saveSnapshot();
+    }
+  }
+
+  Future<void> _setMcpEnabled(ManagedMcpAgentApp app, bool enabled) async {
+    final generation = w.client.generation, source = authority;
+    final agentId = Uri.encodeComponent(widget.agentId);
+    final appId = Uri.encodeComponent(app.id);
+    await ManagedMcpAppsApi(w.client).request(
+      'PUT',
+      '/mcp/agents/$agentId/assignments/$appId',
+      data: {'enabled': enabled},
+    );
+    await _loadMcp(generation, source);
+    if (!mounted || !accepts(generation) || source != authority || !manager) {
+      return;
+    }
+    if (enabled) return;
+    showRaftToast(
+      context,
+      raftFormat(context, 'Revoked {app} for this agent', {'app': app.name}),
+      tone: RaftToastRecipeTone.success,
+      actionLabel: 'Undo',
+      onAction: () {
+        if (!accepts(generation) || source != authority || !manager) return;
+        run(() => _setMcpEnabled(app, true), refresh: false);
+      },
     );
   }
 
@@ -290,28 +400,33 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
             for (final item in pending) _accessCard(context, item),
           ],
         [
-          RaftDescribedSectionHeader(
-            label: raftText(context, 'Applications'),
-            description: raftText(
-              context,
-              'Connected apps this agent can use.',
-            ),
+          RaftSectionHeader(
+            label: raftText(context, 'Apps'),
             action: loading
                 ? Text(
                     raftText(context, 'Loading apps…'),
                     style: RaftPanelText.caption(t),
                   )
                 : manager
-                ? _small(
-                    raftText(context, 'Grant Access'),
-                    busy ? null : () => run(grant),
+                ? RaftRecipeTextButton(
+                    label: raftText(context, 'Grant access'),
+                    size: RaftButtonRecipeSize.md,
+                    onPressed: busy ? null : () => run(grant),
                   )
                 : null,
           ),
-          if (active.isEmpty)
+          if (mcpError case final failure?)
+            RaftLoadError(
+              failure,
+              onRetry: () => _loadMcp(w.client.generation, authority),
+            ),
+          if (active.isEmpty && !mcpApps.any((app) => app.granted))
             Text(raftText(context, 'No connected apps yet'), style: empty)
-          else
+          else ...[
             for (final item in active) _accessCard(context, item),
+            for (final app in mcpApps)
+              if (app.granted) _mcpAccessCard(app),
+          ],
         ],
         [
           RaftDescribedSectionHeader(
@@ -363,6 +478,88 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
               ),
             ),
         ],
+      ],
+    );
+  }
+
+  Widget _mcpAccessCard(ManagedMcpAgentApp app) {
+    final connection = app.connection;
+    final name = connection['connectionName'] as String?;
+    final pinned = connection['mode'] == 'pinned';
+    final status = switch ((
+      connection['status'],
+      connection['connectionMissing'],
+    )) {
+      ('disabled', _) => 'Disabled on this server',
+      (_, true) => 'No connection',
+      ('login_required', _) => 'Needs sign-in',
+      ('authorization_expired', _) => 'Authorization expired',
+      _ => 'Active',
+    };
+    final connectionLabel = switch ((
+      app.auth,
+      connection['connectionMissing'],
+    )) {
+      (McpAuthKind.none, _) => raftText(context, 'No connection needed'),
+      (_, true) => raftText(context, 'No connection selected'),
+      _ when name == null => raftText(
+        context,
+        pinned ? 'Pinned to a connection' : 'Uses the server default',
+      ),
+      _ => raftFormat(
+        context,
+        pinned ? 'Pinned to {name}' : 'Uses the server default · {name}',
+        {'name': name},
+      ),
+    };
+    return RaftAccessCard(
+      key: ValueKey('agent-mcp-app-row-${app.id}'),
+      title: app.name,
+      subtitle: connectionLabel,
+      badge: RaftBadge(
+        label: raftText(context, status),
+        variant: switch (status) {
+          'Active' => RaftBadgeRecipeVariant.success,
+          // Switched off for the whole server: nothing here can fix it.
+          'Disabled on this server' => RaftBadgeRecipeVariant.muted,
+          _ => RaftBadgeRecipeVariant.warning,
+        },
+      ),
+      details: [
+        RaftAppEditorFootnote(
+          raftText(
+            context,
+            app.grant == 'person'
+                ? 'Granted by a person'
+                : 'Granted automatically',
+          ),
+        ),
+        RaftAppEditorFootnote(
+          raftFormat(
+            context,
+            app.toolCount == 1 ? '{count} tool' : '{count} tools',
+            {'count': app.toolCount},
+          ),
+        ),
+      ],
+      actions: [
+        if (manager && app.auth != McpAuthKind.none)
+          _small(
+            raftText(context, 'Change connection'),
+            busy ? null : () => run(() => _configureMcp(app), refresh: false),
+          ),
+        if (manager)
+          _small(
+            raftText(context, 'Revoke'),
+            busy
+                ? null
+                : () => run(() => _setMcpEnabled(app, false), refresh: false),
+          ),
+        if (app.homepage case final homepage?)
+          _small(
+            raftText(context, 'View service'),
+            () => run(() => managementLaunch(homepage), refresh: false),
+          ),
       ],
     );
   }

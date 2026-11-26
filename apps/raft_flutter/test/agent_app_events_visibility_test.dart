@@ -76,7 +76,7 @@ void main() {
     expect(find.text('Delivered'), findsNWidgets(2));
     expect(a.calls.where((c) => c.path.endsWith('/events')), isNotEmpty);
     // Granting stays with the managers.
-    expect(find.text('Grant Access'), findsNothing);
+    expect(find.text('Grant access'), findsNothing);
     expect(find.text('Revoke'), findsNothing);
   });
 

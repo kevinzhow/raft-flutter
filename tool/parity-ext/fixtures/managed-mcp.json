@@ -1,0 +1,59 @@
+{
+  "routes": {
+    "GET /integrations/clients": [],
+    "GET /integrations/marketplace": [],
+    "GET /integrations/overview": [],
+    "GET /integrations/link-preview-consents": {"allowed": []},
+    "GET /mcp/apps": {
+      "apps": [
+        {
+          "id": "wiki",
+          "name": "Team Wiki",
+          "description": "Search the team handbook.",
+          "category": "Productivity & Collaboration",
+          "source": {"kind": "url", "maintainedByRaft": false}
+        }
+      ]
+    },
+    "GET /mcp/apps/wiki": {
+      "id": "wiki",
+      "kind": "mcp",
+      "sections": ["profile", "mcp_server", "connections", "agents", "distribution", "danger"],
+      "profile": {
+        "name": "Team Wiki",
+        "description": "Search the team handbook.",
+        "category": "Productivity & Collaboration"
+      },
+      "source": {"kind": "url", "maintainedByRaft": false},
+      "server": {
+        "endpointUrl": "https://mcp.example.invalid/mcp",
+        "transport": "streamable_http",
+        "authKind": "headers",
+        "requiredHeaderNames": ["Authorization"],
+        "health": {"status": "reachable", "checkedAt": null, "error": null, "latencyMs": 14},
+        "toolCount": 1,
+        "tools": [{"name": "search", "title": "Search"}],
+        "enabled": true
+      },
+      "connections": [],
+      "defaultConnectionId": null,
+      "agentsSummary": {"total": 2, "usingDefault": 1, "pinned": 0, "off": 1, "actionNeeded": 0},
+      "distribution": {"kind": "server_local", "publishStatus": "private"},
+      "viewer": {"canManage": true}
+    },
+    "POST /mcp/probe": {
+      "endpointUrl": "https://mcp.example.invalid/mcp",
+      "outcome": "headers",
+      "latencyMs": 14,
+      "suggestedHeaderNames": ["Authorization"]
+    }
+  },
+  "routeSets": {
+    "editor-loading": {
+      "GET /mcp/apps/wiki": {"$pending": true}
+    },
+    "editor-error": {
+      "GET /mcp/apps/wiki": {"$status": 503}
+    }
+  }
+}

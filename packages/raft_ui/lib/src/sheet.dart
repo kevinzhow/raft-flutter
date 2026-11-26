@@ -329,6 +329,7 @@ class RaftSheet extends StatelessWidget {
     this.headerExtent = 0,
     this.headerColor,
     this.footer,
+    this.notice,
     this.padding = EdgeInsets.zero,
     this.insetBodyViewport = false,
     this.showHandle = true,
@@ -344,6 +345,7 @@ class RaftSheet extends StatelessWidget {
       headerExtent = 0,
       headerColor = null,
       footer = null,
+      notice = null,
       insetBodyViewport = false,
       showHandle = true,
       padding = EdgeInsets.zero;
@@ -351,7 +353,7 @@ class RaftSheet extends StatelessWidget {
   final Widget body;
 
   /// Pinned under the handle; drags the sheet. [headerExtent] is its height.
-  final Widget? header, footer;
+  final Widget? header, footer, notice;
   final double headerExtent;
   final Color? headerColor;
   final bool showHandle;
@@ -406,6 +408,7 @@ class RaftSheet extends StatelessWidget {
               ),
             ),
           ),
+        ?notice,
         Expanded(
           child: Padding(
             padding: insetBodyViewport ? padding : EdgeInsets.zero,

@@ -18,6 +18,7 @@ import 'package:raft_ui/agent_subagents_previews.dart';
 import 'package:raft_ui/agent_surface_previews.dart';
 import 'package:raft_ui/announcement_previews.dart';
 import 'package:raft_ui/app_icon_previews.dart';
+import 'package:raft_ui/app_profile_previews.dart';
 import 'package:raft_ui/attachment_comments_previews.dart';
 import 'package:raft_ui/attachment_previews.dart';
 import 'package:raft_ui/banner_previews.dart';
@@ -148,6 +149,13 @@ final auditSurfaces = <AuditSurface>[
     'Language & Region',
     languageSettingsReferencePreview,
     Size(390, 844),
+    representative: true,
+  ),
+  AuditSurface(
+    'appProfilePreview',
+    'App editor · Profile',
+    appProfilePreview,
+    Size(680, 600),
     representative: true,
   ),
   AuditSurface(

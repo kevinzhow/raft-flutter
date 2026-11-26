@@ -13,6 +13,7 @@ import 'close_registry_external_invites.dart';
 import 'close_registry_human_avatar.dart';
 import 'close_registry_limit_notice.dart';
 import 'close_registry_links.dart';
+import 'close_registry_managed_mcp.dart';
 import 'close_registry_mobile_nav_server.dart';
 import 'close_registry_orphaned_joint.dart';
 import 'close_registry_panels.dart';
@@ -39,6 +40,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...dialogSurfaces,
   ...actionCardSurfaces,
   ...appsSurfaces,
+  ...managedMcpSurfaces,
   ...draftsSurfaces,
   ...externalInviteCloseSurfaces,
   ...humanAvatarSurfaces,

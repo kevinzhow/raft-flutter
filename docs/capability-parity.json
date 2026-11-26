@@ -9034,17 +9034,13 @@
    "capability": "Load an agent's MCP usage (which managed servers it called, last tool, counts)",
    "background": false,
    "status": "covered",
-   "webEntry": "Agent detail > MCP tab > AgentMcpTab scope=agent (read-only usage list)",
+   "webEntry": "Agent detail > Apps tab > AgentAppAccessTab (v1.24 retired the MCP tab)",
    "gate": "Any member who can open the agent",
-   "flutterEntry": "mcp_views.dart AgentMcpView(agentId) via AgentDetailTab.mcp -> agentUsage()",
+   "flutterEntry": "agent_apps_view.dart reads the agent's MCP catalogue into the Apps tab",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/mcp_views.dart",
-     "needle": "'/mcp/agents/${widget.agentId}'"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "AgentDetailTab.mcp => AgentMcpView"
+     "file": "apps/raft_flutter/lib/features/agent_apps_view.dart",
+     "needle": "'/mcp/agents/${Uri.encodeComponent(widget.agentId)}'"
     }
    ],
    "justification": "",
@@ -9055,20 +9051,16 @@
    "kind": "endpoint",
    "id": "GET /mcp/servers",
    "area": "integrations-apps-mcp",
-   "capability": "List managed MCP servers, status, tool catalog and recommendations (Settings > MCP Servers)",
+   "capability": "List managed MCP servers, status, tool catalog and recommendations (v1.24: the Apps page lists MCP Apps from /mcp/apps)",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > MCP Servers > AgentMcpTab scope=server load()",
-   "gate": "Tab hidden for guests; Add/Edit/Test/Delete/Connect need manageIntegrations",
-   "flutterEntry": "mcp_views.dart AgentMcpView (Settings > MCP Servers destination, hidden for guests)",
+   "webEntry": "Apps > Installed (v1.24 retired the Settings > MCP Servers destination; the route is still served)",
+   "gate": "Hidden for guests; add, edit, delete and connect need manageIntegrations",
+   "flutterEntry": "integrations_views.dart lists MCP Apps from /mcp/apps; mcp_views.dart keeps the legacy reader for fixtures",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/mcp_views.dart",
-     "needle": "'/mcp/servers'"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/workspace_settings.dart",
-     "needle": "'MCP Servers'"
+     "file": "apps/raft_flutter/lib/features/integrations_views.dart",
+     "needle": "'/mcp/apps'"
     }
    ],
    "justification": "",
@@ -10160,7 +10152,7 @@
    "flutterEntry": "connected_app_editor.dart profile()",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/app_when_to_use.dart",
+     "file": "packages/raft_ui/lib/src/settings_app_profile.dart",
      "needle": "When to use"
     },
     {

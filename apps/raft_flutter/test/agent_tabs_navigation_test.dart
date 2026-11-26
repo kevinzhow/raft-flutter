@@ -154,7 +154,6 @@ void main() {
             'reminders',
             'workspace',
             'apps',
-            'mcp',
           ])
             if (find.byKey(ValueKey('panel-tab-$tab')).evaluate().isNotEmpty)
               tab,
@@ -178,7 +177,6 @@ void main() {
         'reminders',
         'workspace',
         'apps',
-        'mcp',
       ]);
       await drag(tester, 'chat', 'profile');
       expect(order(tester).take(3), ['chat', 'profile', 'activity']);
@@ -192,7 +190,6 @@ void main() {
         'reminders',
         'workspace',
         'integrations',
-        'mcp',
       ]);
     });
   });

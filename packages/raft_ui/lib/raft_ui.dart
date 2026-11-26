@@ -186,6 +186,7 @@ export 'src/raftbench/raftbench_date_field.dart';
 export 'src/meter.dart';
 export 'src/settings_applications.dart';
 export 'src/settings_app_editor.dart';
+export 'src/settings_app_profile.dart';
 export 'src/settings_app_setup.dart';
 export 'src/public_server.dart';
 export 'src/agent_dialogs.dart';

@@ -59,7 +59,6 @@ import 'agent_status_state.dart';
 import 'agent_tool_stuck_notice.dart';
 import 'model_label_catalog.dart';
 import 'model_label_listener.dart';
-import 'mcp_views.dart';
 import 'panel_width_store.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
 import 'resource_cards.dart' show resourceRelativeTime;
@@ -281,7 +280,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   @override
   WorkspaceController? get modelLabelWorkspace =>
       _bounded ? null : widget.controller;
-  late AgentDetailTab tab = widget.initialTab;
+  late AgentDetailTab tab = widget.initialTab == AgentDetailTab.mcp
+      ? AgentDetailTab.apps
+      : widget.initialTab;
 
   Map<String, dynamic> get a => widget.agent;
   String get displayName => agentRowName(a);
@@ -344,14 +345,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               AgentDetailTab.workspace,
               AgentDetailTab.apps,
             ],
-            if (_canManage) AgentDetailTab.mcp,
           ];
     final stored = widget.controller.sidebarOrder['agentPanelTabOrder'];
     final ordered = <AgentDetailTab>[];
     for (final raw in stored is List ? stored : const []) {
       final id = switch (raw) {
         'channels' || 'dms' => AgentDetailTab.chat,
-        'integrations' => AgentDetailTab.apps,
+        'integrations' || 'mcp' => AgentDetailTab.apps,
         _ => AgentDetailTab.values.where((t) => t.name == raw).firstOrNull,
       };
       if (id != null && visible.contains(id) && !ordered.contains(id)) {
@@ -782,22 +782,17 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     AgentDetailTab.reminders => RaftPanelTab(
       id,
       raftText(context, 'Reminders'),
-      RaftGlyph.bellRing,
+      RaftGlyph.alarmClock,
     ),
     AgentDetailTab.workspace => RaftPanelTab(
       id,
       raftText(context, 'Workspace'),
       RaftGlyph.folderOpen,
     ),
-    AgentDetailTab.apps => RaftPanelTab(
+    AgentDetailTab.apps || AgentDetailTab.mcp => RaftPanelTab(
       id,
       raftText(context, 'Apps'),
-      RaftGlyph.link2,
-    ),
-    AgentDetailTab.mcp => RaftPanelTab(
-      id,
-      raftText(context, 'MCP'),
-      RaftGlyph.blocks,
+      RaftGlyph.appWindow,
     ),
   };
 
@@ -842,11 +837,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         agentId: agentId,
         hosted: external,
       ),
-      AgentDetailTab.apps => AgentAppAccessView(
-        controller: w,
-        agentId: agentId,
-      ),
-      AgentDetailTab.mcp => AgentMcpView(controller: w, agentId: agentId),
+      AgentDetailTab.apps ||
+      AgentDetailTab.mcp => AgentAppAccessView(controller: w, agentId: agentId),
     };
   }
 

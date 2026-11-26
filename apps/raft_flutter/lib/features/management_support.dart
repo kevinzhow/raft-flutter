@@ -364,12 +364,14 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     Widget Function(BuildContext) builder, {
     bool form = false,
     bool formDismissible = true,
+    bool formScrollbar = true,
     double dialogMaxWidth = 560,
   }) => _scopedRoute<V>(
     builder,
     raft: true,
     form: form,
     formDismissible: formDismissible,
+    formScrollbar: formScrollbar,
     dialogMaxWidth: dialogMaxWidth,
   );
 
@@ -378,6 +380,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     required bool raft,
     required bool form,
     bool formDismissible = true,
+    bool formScrollbar = true,
     double dialogMaxWidth = 560,
   }) async {
     final sourceAuthority = _operationAuthority ?? authority;
@@ -414,6 +417,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
           context,
           builder: scoped,
           dialogMaxWidth: dialogMaxWidth,
+          dialogScrollbar: formScrollbar,
           dismissible: formDismissible,
           dragDismissible: formDismissible,
           guardUnsaved: formDismissible,

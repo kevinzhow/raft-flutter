@@ -8,6 +8,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/app_install_expectation.dart';
 import '../data/cause_notice.dart';
 import '../data/device_preferences.dart';
+import '../data/managed_mcp_apps.dart';
 import '../data/raft_location.dart' show RaftProfileKind;
 import '../data/raft_navigation_history.dart';
 import '../data/user_error.dart';
@@ -25,6 +26,7 @@ import 'connected_app_consent.dart';
 import 'connected_app_bot.dart';
 import 'connected_app_prompt_text_panel.dart';
 import 'link_preview_consents.dart';
+import 'mcp_app_editor.dart';
 import 'second_factor_step_up.dart';
 
 const integrationScopeLabels = <String, String>{
@@ -417,6 +419,60 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     await Future.wait([mcpLoad = _loadMcpApps(), reload()]);
   }
 
+  Future<void> _openMcpEditor([String? id]) => scopedRaftModal<void>(
+    form: true,
+    formDismissible: false,
+    // FormDialog's backdrop draws no scrollbar; the route is not dismissible,
+    // so an outside press still does not close the editor.
+    formScrollbar: false,
+    dialogMaxWidth: 1024,
+    (modal) => McpAppEditor(
+      controller: w,
+      appId: id,
+      onClose: () => Navigator.of(modal).pop(),
+      onChanged: () => mcpLoad = _loadMcpApps(),
+      onBrowse: () {
+        Navigator.of(modal).pop();
+        _clearFilters();
+        selectTab(RaftConnectedAppsTab.marketplace);
+      },
+    ),
+  );
+
+  Future<void> _installMcpTemplate(Map<String, dynamic> row) async {
+    ManagedMcpApp? installed;
+    final source = authority;
+    await run(() async {
+      if (!w.can('manageIntegrations') || row['templateKey'] is! String) return;
+      installed = ManagedMcpApp(
+        await ManagedMcpAppsApi(w.client).request(
+          'POST',
+          '/mcp/apps',
+          data: {
+            'source': {'kind': 'template', 'templateKey': row['templateKey']},
+            'profile': {
+              for (final key in [
+                'name',
+                'description',
+                'homepageUrl',
+                'category',
+              ])
+                key: row[key],
+              'whenToUse': null,
+            },
+          },
+        ),
+      );
+      if (mounted && source == authority) {
+        unawaited(mcpLoad = _loadMcpApps());
+        unawaited(_loadListings());
+      }
+    }, refresh: false);
+    if (mounted && source == authority && installed != null) {
+      await _openMcpEditor(installed!.id);
+    }
+  }
+
   Future<bool> _readInstallTextFlag() {
     final serverId = w.server?.id;
     return installTextFlag ??= serverId == null
@@ -502,6 +558,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
   Future<bool?> _showEditor(Map<String, dynamic>? app) => scopedRaftModal<bool>(
     form: true,
     formDismissible: false,
+    // FormDialog's backdrop draws no scrollbar; the route is not dismissible,
+    // so an outside press still does not close the editor.
+    formScrollbar: false,
     dialogMaxWidth: 1024,
     (modal) => ConnectedAppEditor(
       controller: w,
@@ -1445,10 +1504,19 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             badge: RaftConnectedAppBadge.outline(tr('MCP')),
             state: row['installed'] == true
                 ? RaftMarketplaceAppState.installed
+                : canManage
+                ? RaftMarketplaceAppState.install
                 : RaftMarketplaceAppState.available,
             stateLabel: tr(
-              row['installed'] == true ? 'Installed' : 'Available',
+              row['installed'] == true
+                  ? 'Installed'
+                  : canManage
+                  ? 'Install'
+                  : 'Available',
             ),
+            onOpen: canManage && !busy && row['installed'] != true
+                ? () => _installMcpTemplate(row)
+                : null,
           )
         else if (row case {'app': final Map<String, dynamic> app})
           if (app['id'] case final String id) appTile(id, app),
@@ -1548,6 +1616,10 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             homepageUrl: app['homepageUrl'] as String?,
             homepageLabel: integrationDomain(app['homepageUrl']),
             onOpenHomepage: _homepageAction(app),
+            onOpenName: canManage ? () => _openMcpEditor(id) : null,
+            actionLabel: canManage ? tr('Edit') : null,
+            actionGlyph: RaftGlyph.pencil,
+            onAction: canManage ? () => _openMcpEditor(id) : null,
           ),
     ];
     final registeredRows = [
@@ -1722,6 +1794,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
               ],
             ),
       onRegister: canManage ? openEditor : null,
+      onRegisterMcp: canManage ? _openMcpEditor : null,
       tab: shownTab,
       counts: (
         marketplace: widget.standalone ? marketplaceTotal : null,

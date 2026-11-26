@@ -10,7 +10,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/features/app_when_to_use.dart';
 import 'package:raft_flutter/features/im_bridges_view.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_ui/raft_ui.dart';

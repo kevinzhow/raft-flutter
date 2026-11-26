@@ -80,6 +80,7 @@ RaftPresentedRoute<T> raftFormRoute<T>(
   bool guardUnsaved = true,
   String? label,
   double dialogMaxWidth = 560,
+  bool dialogScrollbar = true,
   double sheetInitialSize = RaftSheetMetrics.largeDetent,
 }) => raftPresentedRoute<T>(
   context,
@@ -91,6 +92,7 @@ RaftPresentedRoute<T> raftFormRoute<T>(
   label: label,
   dialogMaxWidth: dialogMaxWidth,
   scrollDialogSurface: true,
+  dialogScrollbar: dialogScrollbar,
   sheetInitialSize: sheetInitialSize,
 );
 
@@ -117,6 +119,7 @@ Future<T?> showRaftForm<T>(
   bool guardUnsaved = true,
   String? label,
   double dialogMaxWidth = 560,
+  bool dialogScrollbar = true,
   double sheetInitialSize = RaftSheetMetrics.largeDetent,
 }) => Navigator.of(context, rootNavigator: true).push(
   raftFormRoute<T>(
@@ -129,6 +132,7 @@ Future<T?> showRaftForm<T>(
     guardUnsaved: guardUnsaved,
     label: label,
     dialogMaxWidth: dialogMaxWidth,
+    dialogScrollbar: dialogScrollbar,
     sheetInitialSize: sheetInitialSize,
   ),
 );
@@ -353,6 +357,7 @@ class RaftFormSheet extends StatelessWidget {
     this.showHandle = true,
     this.headerColor,
     this.insetBodyViewport = false,
+    this.notice,
   });
 
   /// The title as it is shown (already localized).
@@ -379,6 +384,7 @@ class RaftFormSheet extends StatelessWidget {
   final bool showHandle;
   final Color? headerColor;
   final bool insetBodyViewport;
+  final Widget? notice;
 
   /// The close X of the head: the supplied [closeButton], else the scaffold's own.
   Widget _closeAction(BuildContext context) =>
@@ -511,6 +517,7 @@ class RaftFormSheet extends StatelessWidget {
     final seam = ColoredBox(color: t.colors['line-seam']!);
     return RaftSheet(
       showHandle: showHandle,
+      notice: notice,
       headerColor: headerColor,
       insetBodyViewport: insetBodyViewport,
       header: Column(

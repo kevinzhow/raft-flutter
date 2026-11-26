@@ -51,6 +51,7 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
           role: SemanticsRole.dialog,
           label: title,
           child: RaftFormSheet(
+            key: d.contentKey,
             title: title,
             onClose: d.closeEnabled ? d.onClose : null,
             titleGlyph: d.titleGlyph,
@@ -70,6 +71,7 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         );
       }
       return RaftFormSheet(
+        key: d.contentKey,
         title: raftText(context, d.title! as String),
         onClose: d.closeEnabled ? d.onClose : null,
         closeButton: d.showClose

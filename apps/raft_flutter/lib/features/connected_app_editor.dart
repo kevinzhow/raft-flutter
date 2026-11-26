@@ -20,7 +20,6 @@ import '../platform/file_selection.dart';
 import 'app_notifications_catalog.dart';
 import 'app_permission_updates.dart';
 import 'app_setup.dart';
-import 'app_when_to_use.dart';
 import 'connected_app_prompt_text_panel.dart';
 import 'integrations_views.dart';
 import 'management_support.dart';
@@ -1138,7 +1137,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           enabled: app == null || clientIdEditable,
         ),
       ),
-      AppWhenToUseField(
+      RaftAppWhenToUseField(
+        fieldKey: const ValueKey('connected-app-when-to-use'),
+        countKey: const ValueKey('connected-app-when-to-use-count'),
         controller: whenToUse,
         onChanged: (_) => setState(() {}),
       ),

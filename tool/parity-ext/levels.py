@@ -38,6 +38,7 @@ OFFICIAL_PAGE_GLOBS = (
 
 # --- extension surfaces (first three id segments) -----------------------------------------------------------------
 EXT_SURFACE_LEVEL = {
+    'components.managed-mcp.editor': COMPONENT,
     'components.browser.desktop': COMPONENT,
     # L1 frame (the shell family's menus, dialogs and primitives are L3: see SHELL_FRAME)
     'components.shell.desktop': COMPONENT,

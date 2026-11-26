@@ -159,6 +159,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     double? dialogMaxHeight,
     bool dialogFillsHeight = false,
     bool scrollDialogSurface = false,
+    bool dialogScrollbar = true,
     bool sheetFillsHeight = false,
     double Function(BuildContext)? sheetFixedHeight,
     double sheetInitialSize = RaftSheetMetrics.largeDetent,
@@ -179,6 +180,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
          dialogMaxHeight: dialogMaxHeight,
          dialogFillsHeight: dialogFillsHeight,
          scrollDialogSurface: scrollDialogSurface,
+         dialogScrollbar: dialogScrollbar,
          sheetFillsHeight: sheetFillsHeight,
          sheetFixedHeight: sheetFixedHeight,
          sheetInitialSize: sheetInitialSize,
@@ -201,6 +203,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     required this.dialogMaxHeight,
     required this.dialogFillsHeight,
     required this.scrollDialogSurface,
+    required this.dialogScrollbar,
     required this.sheetFillsHeight,
     required this.sheetFixedHeight,
     required this.sheetInitialSize,
@@ -290,6 +293,9 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
   /// A form's ordinary dialog scrolls its entire padded surface as Web Modal
   /// does, instead of clipping an inner scrollport at the window inset.
   final bool scrollDialogSurface;
+
+  /// Whether that scrolling backdrop draws a scrollbar ([RaftDialogFrame]).
+  final bool dialogScrollbar;
 
   /// Content manages its own scrolling in a sheet of [sheetFixedHeight],
   /// or [RaftSheetMetrics.largeDetent] of the window by default. Otherwise
@@ -657,6 +663,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
   double? dialogMaxHeight,
   bool dialogFillsHeight = false,
   bool scrollDialogSurface = false,
+  bool dialogScrollbar = true,
   bool sheetFillsHeight = false,
   double Function(BuildContext)? sheetFixedHeight,
   double sheetInitialSize = RaftSheetMetrics.largeDetent,
@@ -680,6 +687,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
     dialogMaxHeight: dialogMaxHeight,
     dialogFillsHeight: dialogFillsHeight,
     scrollDialogSurface: scrollDialogSurface,
+    dialogScrollbar: dialogScrollbar,
     sheetFillsHeight: sheetFillsHeight,
     sheetFixedHeight: sheetFixedHeight,
     sheetInitialSize: sheetInitialSize,
@@ -712,6 +720,7 @@ class _PresentedFrame extends StatelessWidget {
           maxHeight: route.dialogMaxHeight,
           fillsHeight: route.dialogFillsHeight,
           scrollSurface: route.scrollDialogSurface,
+          showScrollbar: route.dialogScrollbar,
           child: content,
         );
     }
@@ -727,6 +736,7 @@ class RaftDialogFrame extends StatelessWidget {
     this.maxHeight,
     this.fillsHeight = false,
     this.scrollSurface = false,
+    this.showScrollbar = true,
   });
   final Widget child;
   final double maxWidth;
@@ -736,6 +746,11 @@ class RaftDialogFrame extends StatelessWidget {
   /// Scroll the padded surface in the whole available viewport at normal
   /// text size. Large text retains the bounded, pinned-control form layout.
   final bool scrollSurface;
+
+  /// Web's Modal backdrop draws no scrollbar. A surface that wants Web's bare
+  /// backdrop turns it off; it also lets a press outside the card reach a
+  /// dismissible barrier, which the scrollbar would otherwise swallow.
+  final bool showScrollbar;
 
   /// Space between the window edge and the dialog.
   static const inset = RaftSpace.x4;
@@ -754,18 +769,22 @@ class RaftDialogFrame extends StatelessWidget {
             final available = math.max(0.0, box.maxHeight - keyboard);
             return Padding(
               padding: EdgeInsets.only(bottom: keyboard),
-              child: SingleChildScrollView(
-                // Let a tap outside the card reach the route's dismissible
-                // barrier; dragging can still scroll the full backdrop.
-                hitTestBehavior: HitTestBehavior.translucent,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: available),
-                  child: Padding(
-                    padding: const EdgeInsets.all(inset),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: maxWidth),
-                        child: child,
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context)
+                    .copyWith(scrollbars: showScrollbar),
+                child: SingleChildScrollView(
+                  // Let a tap outside the card reach the route's dismissible
+                  // barrier; dragging can still scroll the full backdrop.
+                  hitTestBehavior: HitTestBehavior.translucent,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: available),
+                    child: Padding(
+                      padding: const EdgeInsets.all(inset),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: maxWidth),
+                          child: child,
+                        ),
                       ),
                     ),
                   ),

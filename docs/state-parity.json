@@ -3778,53 +3778,53 @@
     },
     {
       "id": "settings.mcp-editor",
-      "title": "Settings managed MCP connection editor",
-      "webEntry": "packages/web/src/components/agent/AgentMcpTab.tsx (server scope)",
-      "flutterEntry": "apps/raft_flutter/lib/features/mcp_server_editor.dart",
+      "title": "Managed MCP app editor",
+      "webEntry": "packages/web/src/components/settings/mcpApps/McpAppEditor.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/mcp_app_editor.dart",
       "states": [
         {
           "state": "loading",
-          "variant": "inline test and save pending",
+          "variant": "initial app read pending",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "Fields remain mounted while draft testing or saving runs; the relevant action is disabled and shows Testing/Saving. Web 1.21.12 behavior is widget-tested on phone/desktop; no matched React/Flutter editor parity capture is registered.",
+          "parityCase": ["components.managed-mcp.editor.editor-loading.desktop.raft-light"],
+          "status": "fixing",
+          "justification": "The shared fixture holds the app read open while each editor renders its loading state.",
           "size": "S",
-          "gapKind": "case-missing"
+          "gapKind": "impl-diff"
         },
         {
           "state": "empty",
-          "variant": "credential header list",
+          "variant": "saved app with no connections",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "Removing every credential row shows the same No credential headers copy and Add Header action. Web 1.21.12 behavior is widget-tested on phone/desktop; no matched React/Flutter editor parity capture is registered.",
+          "parityCase": ["components.managed-mcp.editor.edit.desktop.raft-light"],
+          "status": "fixing",
+          "justification": "The fixture opens a saved API-key app with no connections.",
           "size": "S",
-          "gapKind": "case-missing"
+          "gapKind": "impl-diff"
         },
         {
           "state": "error",
-          "variant": "validation, connection and save failure",
+          "variant": "opening an app fails",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "Validation and failed requests preserve the draft, show the error and allow correction/retry; stale test results and authority changes are fenced. Web 1.21.12 behavior is widget-tested on phone/desktop; no matched React/Flutter editor parity capture is registered.",
+          "parityCase": ["components.managed-mcp.editor.editor-error.desktop.raft-light"],
+          "status": "fixing",
+          "justification": "The shared fixture returns HTTP 503 for the app view. The next successful read replaces the retry screen.",
           "size": "S",
-          "gapKind": "case-missing"
+          "gapKind": "impl-diff"
         },
         {
           "state": "partial",
-          "variant": "stored credentials and OAuth provider",
+          "variant": "validated API-key endpoint before a connection exists",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "Catalogs expose header names only. Blank unchanged rows retain stored values, renamed/new rows need a value; OAuth providers keep their fixed URL/auth and hide draft testing. Web 1.21.12 behavior is widget-tested on phone/desktop; no matched React/Flutter editor parity capture is registered.",
+          "parityCase": ["components.managed-mcp.editor.probe-headers.desktop.raft-light"],
+          "status": "fixing",
+          "justification": "The probe fixture returns required header names. The app stores their names and the connection form accepts their values.",
           "size": "S",
-          "gapKind": "case-missing"
+          "gapKind": "impl-diff"
         }
       ]
     },
@@ -5723,6 +5723,86 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/agent_apps_view.dart#method:_AgentAppsState._configureMcp": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "list_row"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The Agent's Apps tab hosts its MCP rows and the connection chooser."
+      },
+      "apps/raft_flutter/lib/features/agent_apps_view.dart#method:_AgentAppsState._mcpAccessCard": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "list_row"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The Agent's Apps tab hosts its MCP rows and the connection chooser."
+      },
+      "apps/raft_flutter/lib/features/agent_apps_view.dart#method:_AgentAppsState._setMcpEnabled": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "list_row"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The Agent's Apps tab hosts its MCP rows and the connection chooser."
+      },
+      "apps/raft_flutter/lib/features/agent_mcp_access.dart#class:AgentMcpAccess": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "radio_group",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "Connection chooser for one Agent's App grant; a dialog on wide windows, a sheet on narrow ones."
+      },
+      "apps/raft_flutter/lib/features/agent_mcp_access.dart#class:_AgentMcpAccessState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "radio_group",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "Connection chooser for one Agent's App grant; a dialog on wide windows, a sheet on narrow ones."
+      },
+      "apps/raft_flutter/lib/features/agent_mcp_access.dart#method:AgentMcpAccess.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "radio_group",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "Connection chooser for one Agent's App grant; a dialog on wide windows, a sheet on narrow ones."
+      },
+      "apps/raft_flutter/lib/features/agent_mcp_access.dart#method:_AgentMcpAccessState._radio": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "radio_group",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "Connection chooser for one Agent's App grant; a dialog on wide windows, a sheet on narrow ones."
+      },
+      "apps/raft_flutter/lib/features/agent_mcp_access.dart#method:_AgentMcpAccessState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "radio_group",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "Connection chooser for one Agent's App grant; a dialog on wide windows, a sheet on narrow ones."
+      },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@2331/FUNCTION:viewer@3056": {
         "role": "entry_composition",
         "familyRefs": [
@@ -6137,6 +6217,349 @@
         "owner": "WP-BROWSER",
         "reason": "Hosts WebView2 for a browser tab and uses the shared fallback when the renderer is unavailable."
       },
+      "apps/raft_flutter/lib/features/integrations_views.dart#method:_IntegrationsState._openMcpEditor": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MCP",
+        "reason": "Apps opens the managed MCP App editor."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_connections.dart#class:McpAppConnections": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "menu",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP App editor's Connections section and its per-connection row."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_connections.dart#class:_McpAppConnectionsState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "menu",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP App editor's Connections section and its per-connection row."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_connections.dart#method:McpAppConnections.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "menu",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP App editor's Connections section and its per-connection row."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_connections.dart#method:_McpAppConnectionsState._connectionRow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "menu",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP App editor's Connections section and its per-connection row."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_connections.dart#method:_McpAppConnectionsState._fields": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "menu",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP App editor's Connections section and its per-connection row."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_connections.dart#method:_McpAppConnectionsState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "menu",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP App editor's Connections section and its per-connection row."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_editor.dart#class:McpAppEditor": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "select"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The managed MCP App editor inside the shared connected-app editor card."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_editor.dart#class:_McpAppEditorState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "select"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The managed MCP App editor inside the shared connected-app editor card."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_editor.dart#method:McpAppEditor.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "select"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The managed MCP App editor inside the shared connected-app editor card."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_editor.dart#method:_McpAppEditorState._input": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "select"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The managed MCP App editor inside the shared connected-app editor card."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_editor.dart#method:_McpAppEditorState._profile": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "select"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The managed MCP App editor inside the shared connected-app editor card."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_editor.dart#method:_McpAppEditorState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "select"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The managed MCP App editor inside the shared connected-app editor card."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_editor.dart#method:_McpAppEditorState.save": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "button",
+          "select"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The managed MCP App editor inside the shared connected-app editor card."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_facts.dart#class:McpAppFacts": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server's facts: transport, sign-in, health and tools."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_facts.dart#class:_McpAppFactsState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server's facts: transport, sign-in, health and tools."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_facts.dart#method:McpAppFacts.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server's facts: transport, sign-in, health and tools."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_facts.dart#method:_McpAppFactsState._tools": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server's facts: transport, sign-in, health and tools."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_facts.dart#method:_McpAppFactsState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server's facts: transport, sign-in, health and tools."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#class:McpAppAgentSummary": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#class:McpAppServerSection": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#class:_McpAppServerSectionState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#local-function:CLASS:McpAppAgentSummary@12400/METHOD:build@12660/FUNCTION:caption@13052": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#local-function:CLASS:McpAppAgentSummary@12400/METHOD:build@12660/FUNCTION:warning@12837": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#method:McpAppAgentSummary.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#method:McpAppServerSection.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#method:_McpAppServerSectionState._endpoint": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#method:_McpAppServerSectionState._headers": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#method:_McpAppServerSectionState._probeFacts": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#method:_McpAppServerSectionState._probeResult": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_app_server.dart#method:_McpAppServerSectionState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "checkbox"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The MCP server section: endpoint, probe outcome, required headers, and the App's Agent summary."
+      },
+      "apps/raft_flutter/lib/features/mcp_connection_fields.dart#class:McpConnectionFields": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The add / replace-key / rename form for one MCP connection."
+      },
+      "apps/raft_flutter/lib/features/mcp_connection_fields.dart#class:_McpConnectionFieldsState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The add / replace-key / rename form for one MCP connection."
+      },
+      "apps/raft_flutter/lib/features/mcp_connection_fields.dart#method:McpConnectionFields.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The add / replace-key / rename form for one MCP connection."
+      },
+      "apps/raft_flutter/lib/features/mcp_connection_fields.dart#method:_McpConnectionFieldsState._input": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The add / replace-key / rename form for one MCP connection."
+      },
+      "apps/raft_flutter/lib/features/mcp_connection_fields.dart#method:_McpConnectionFieldsState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "The add / replace-key / rename form for one MCP connection."
+      },
       "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5977/METHOD:_body@32396/FUNCTION:body@32600": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -6151,6 +6574,36 @@
         ],
         "owner": "WP-BROWSER",
         "reason": "Uses the message context menu to choose where to open a desktop link."
+      },
+      "packages/raft_ui/lib/app_profile_previews.dart#class:_AppProfilePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-MCP",
+        "reason": "SDK widget preview for the App editor Profile; a text-scale audit surface."
+      },
+      "packages/raft_ui/lib/app_profile_previews.dart#class:_AppProfilePreviewState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-MCP",
+        "reason": "SDK widget preview for the App editor Profile; a text-scale audit surface."
+      },
+      "packages/raft_ui/lib/app_profile_previews.dart#function:appProfilePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-MCP",
+        "reason": "SDK widget preview for the App editor Profile; a text-scale audit surface."
+      },
+      "packages/raft_ui/lib/app_profile_previews.dart#method:_AppProfilePreview.createState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-MCP",
+        "reason": "SDK widget preview for the App editor Profile; a text-scale audit surface."
+      },
+      "packages/raft_ui/lib/app_profile_previews.dart#method:_AppProfilePreviewState.build": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-MCP",
+        "reason": "SDK widget preview for the App editor Profile; a text-scale audit surface."
       },
       "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@71776/METHOD:build@81033/FUNCTION:toggle@81263": {
         "role": "entry_composition",
@@ -6287,11 +6740,59 @@
         "owner": "Message row",
         "reason": "Mounts the existing row focus and hover behavior on pointer input."
       },
-      "packages/raft_ui/lib/src/presentation.dart#local-function:CLASS:RaftPresentedRoute@4833/METHOD:_buildSheet@11419/FUNCTION:surface@11717": {
+      "packages/raft_ui/lib/src/presentation.dart#local-function:CLASS:RaftPresentedRoute@4833/METHOD:_buildSheet@11638/FUNCTION:surface@11936": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS2 overlay family",
         "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_app_profile.dart#class:RaftAppProfileGrid": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "App editor Profile parts shared by the ordinary and MCP App editors (McpAppProfileSection.tsx)."
+      },
+      "packages/raft_ui/lib/src/settings_app_profile.dart#class:RaftAppProfileLogo": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "App editor Profile parts shared by the ordinary and MCP App editors (McpAppProfileSection.tsx)."
+      },
+      "packages/raft_ui/lib/src/settings_app_profile.dart#class:RaftAppWhenToUseField": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "App editor Profile parts shared by the ordinary and MCP App editors (McpAppProfileSection.tsx)."
+      },
+      "packages/raft_ui/lib/src/settings_app_profile.dart#method:RaftAppProfileGrid.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "App editor Profile parts shared by the ordinary and MCP App editors (McpAppProfileSection.tsx)."
+      },
+      "packages/raft_ui/lib/src/settings_app_profile.dart#method:RaftAppProfileLogo.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "App editor Profile parts shared by the ordinary and MCP App editors (McpAppProfileSection.tsx)."
+      },
+      "packages/raft_ui/lib/src/settings_app_profile.dart#method:RaftAppWhenToUseField.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MCP",
+        "reason": "App editor Profile parts shared by the ordinary and MCP App editors (McpAppProfileSection.tsx)."
       },
       "packages/raft_ui/lib/src/sheet.dart#method:RaftSheetMetrics.snapOverlayOpacity": {
         "role": "entry_composition",
@@ -8931,18 +9432,6 @@
         "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/app_setup.dart#method:_AppSetupPanelState.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/app_when_to_use.dart#class:AppWhenToUseField": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "apps/raft_flutter/lib/features/app_when_to_use.dart#method:AppWhenToUseField.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -41120,7 +41609,7 @@
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "packages/raft_ui/lib/src/form_presentation.dart#local-function:CLASS:RaftUnsavedGuardState@6767/METHOD:_scan@7850/FUNCTION:visit@7939": {
+      "packages/raft_ui/lib/src/form_presentation.dart#local-function:CLASS:RaftUnsavedGuardState@6903/METHOD:_scan@7986/FUNCTION:visit@8075": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
@@ -44544,7 +45033,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@6362": {
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@6420": {
         "role": "internal_wrapper",
         "familyRefs": [
           "dialog"
@@ -44555,7 +45044,7 @@
         ],
         "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@5930": {
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@5988": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
@@ -59974,7 +60463,7 @@
         "owner": "WP-APPS",
         "reason": "Composes the shared progress and native login controls."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:build@50544/FUNCTION:page@50660": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7299/METHOD:build@52437/FUNCTION:page@52553": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -60130,19 +60619,19 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@28186/METHOD:build@28511/FUNCTION:head@29734": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@29295/METHOD:build@29620/FUNCTION:head@30843": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23156/METHOD:build@23860/FUNCTION:chip@24175": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@24265/METHOD:build@24969/FUNCTION:chip@25284": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@23156/METHOD:build@23860/FUNCTION:group@25153": {
+      "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@24265/METHOD:build@24969/FUNCTION:group@26262": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -60166,43 +60655,43 @@
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@62129/METHOD:build@62638/FUNCTION:scopeRow@63215": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@62376/METHOD:build@62885/FUNCTION:scopeRow@63462": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5841/METHOD:build@8449/FUNCTION:gap@14478": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5841/METHOD:build@8510/FUNCTION:gap@14539": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5841/METHOD:build@8449/FUNCTION:heading@14576": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@5841/METHOD:build@8510/FUNCTION:heading@14637": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29626/METHOD:build@29848/FUNCTION:block@29927": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29873/METHOD:build@30095/FUNCTION:block@30174": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29626/METHOD:build@29848/FUNCTION:line@30046": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppCardSkeleton@29873/METHOD:build@30095/FUNCTION:line@30293": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@28186/METHOD:build@28552/FUNCTION:placeholder@28943": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_AppsLoadingState@28433/METHOD:build@28799/FUNCTION:placeholder@29190": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Apps mount or composition of existing Raft controls."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@57337/METHOD:build@57446/FUNCTION:chip@57722": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@57584/METHOD:build@57693/FUNCTION:chip@57969": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -60423,7 +60912,7 @@
         "owner": "Raft Flutter component wiring",
         "reason": "Presents the existing FleetDetail in RaftPageFrame from the Computer detail opened by a system notification."
       },
-      "apps/raft_flutter/lib/features/management_support.dart#local-function:CLASS:ManagementState@3881/METHOD:_scopedRoute@12561/FUNCTION:scoped@13307": {
+      "apps/raft_flutter/lib/features/management_support.dart#local-function:CLASS:ManagementState@3881/METHOD:_scopedRoute@12626/FUNCTION:scoped@13403": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -60515,13 +61004,13 @@
         "owner": "WP-APPS",
         "reason": "Opens the webhook signing-secret warning from the Apps editor; a mounted behavior test checks its confirm action."
       },
-      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7229/METHOD:section@51338/FUNCTION:appTile@52221": {
+      "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@7299/METHOD:section@53231/FUNCTION:appTile@54114": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
         "reason": "Projects an Apps Marketplace tile with its independent bot action."
       },
-      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@39207/METHOD:build@39416/FUNCTION:label@39589": {
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_MarketplaceCard@39454/METHOD:build@39663/FUNCTION:label@39836": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-APPS",
@@ -62090,6 +62579,24 @@
       }
     },
     "entries": {
+      "surface:apps/raft_flutter/lib/features/mcp_app_editor.dart#method:_McpAppEditorState.save": {
+        "owner": "WP-MCP",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "Creates or saves the MCP App and reports the result in a toast.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/mcp_app_editor.dart#method:_McpAppEditorState.save"
+        ]
+      },
+      "surface:apps/raft_flutter/lib/features/agent_apps_view.dart#method:_AgentAppsState._setMcpEnabled": {
+        "owner": "WP-MCP",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "Grants or revokes this Agent's access to an MCP App, with an Undo toast.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_apps_view.dart#method:_AgentAppsState._setMcpEnabled"
+        ]
+      },
       "surface:apps/raft_flutter/lib/features/web_link_open.dart#function:showDesktopWebLinkMenu": {
         "owner": "WP-BROWSER",
         "kind": "surface_factory",
