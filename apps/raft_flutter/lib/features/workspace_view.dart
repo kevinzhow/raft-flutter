@@ -65,6 +65,8 @@ import 'workspace_task_host.dart';
 import 'task_content_slot.dart' show taskSlotId;
 import 'page_layout.dart';
 import 'channel_side_area.dart';
+import 'channel_side_layout.dart' show ChannelSideSection;
+import 'channel_side_stack.dart' show closeChannelSideSection;
 import 'workspace_offline_notice.dart';
 import 'section_glyph.dart';
 import 'channel_settings.dart';
@@ -1874,9 +1876,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
                               key: ChannelSideArea.workspaceKey(this),
                               controller: w,
                               profile: plannedProfile ? profile : null,
-                              headerExtent: wide
-                                  ? raftPageHeaderHeight(context)
-                                  : 0,
                               onOpenTask: openTaskSurface,
                               child: Column(
                                 children: [

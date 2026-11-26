@@ -240,6 +240,11 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
       final actionWidth = tiny
           ? RaftDesktopMetrics.controlEmbeddedSize
           : RaftDesktopMetrics.barButtonSize;
+      // Stacked over another pane by its host (the channel side area): Back
+      // replaces the close X and reveals the pane underneath.
+      final back =
+          RaftPanelHeaderChrome.maybeOf(context)?.onBack ??
+          (widget.covering ? _close : null);
       return RaftPanelHeaderBar(
         key: const ValueKey('browser-header'),
         title: '',
@@ -264,7 +269,7 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
         background: tokens.colors['layer-canvas'],
         bottomRule: true,
         bottomBorder: RaftSidePanelFrame.headerRule(tokens),
-        onBack: widget.covering ? _close : null,
+        onBack: back,
         backKey: const ValueKey('browser-back'),
         backTooltip: close,
         leading: swap == null
@@ -301,7 +306,7 @@ class _DesktopBrowserPanelState extends State<DesktopBrowserPanel> {
                 size: tiny ? RaftButtonSize.iconXs : RaftButtonSize.iconSm,
               ),
             ),
-          if (!widget.covering)
+          if (back == null)
             SizedBox(
               width: actionWidth,
               child: RaftPanelAction(

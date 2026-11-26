@@ -3,6 +3,10 @@
 // between each two, the width handle on the column's left edge, and, where
 // the sections don't fit one under the other, one at a time under a switch.
 // Beside the chat, floating over it or covering it.
+//
+// Web's second switch (saved columns sharing one column's space as tabs) is
+// not here: columns that do not fit beside the chat wait behind the top one
+// (`ChannelSideStack`) instead of sharing a clipped column.
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart' show DragStartBehavior;
@@ -53,7 +57,6 @@ class ChannelSideColumnView extends StatefulWidget {
     required this.titles,
     required this.cardOf,
     this.resize,
-    this.tabGroups = const [],
     this.expanded,
   });
 
@@ -67,9 +70,6 @@ class ChannelSideColumnView extends StatefulWidget {
 
   /// Beside the chat: how its width drags. Null: not resizable.
   final ChannelSideResize? resize;
-
-  /// Saved columns sharing this column's space. Each tab shows its own stack.
-  final List<List<ChannelSideSection>> tabGroups;
   final ChannelSideSection? expanded;
 
   @override
@@ -125,20 +125,12 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
         builder: (context, box) {
           final height = box.maxHeight;
           final sections = widget.sections;
-          final grouped = widget.tabGroups.isNotEmpty;
           final expanded = widget.expanded;
-          final selected = grouped ? expanded ?? _active(sections) : null;
-          final stack = grouped
-              ? widget.tabGroups.firstWhere(
-                  (group) => group.contains(selected),
-                  orElse: () => widget.tabGroups.first,
-                )
-              : sections;
           final oneAtATime =
               expanded == null &&
-              channelSideOneAtATime(widget.mode, height, stack.length);
-          final active = oneAtATime ? _active(stack) : null;
-          final shown = active == null ? stack : [active];
+              channelSideOneAtATime(widget.mode, height, sections.length);
+          final active = oneAtATime ? _active(sections) : null;
+          final shown = active == null ? sections : [active];
           final switchHeight = touch ? 48.0 : _head(context);
           return Stack(
             clipBehavior: Clip.none,
@@ -146,21 +138,12 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
               Positioned.fill(
                 child: Column(
                   children: [
-                    if (grouped)
-                      _switch(
-                        context,
-                        t,
-                        widget.tabGroups,
-                        stack.first,
-                        switchHeight,
-                        columns: true,
-                      ),
                     if (oneAtATime)
                       _switch(
                         context,
                         t,
                         [
-                          for (final section in stack) [section],
+                          for (final section in sections) [section],
                         ],
                         active!,
                         switchHeight,
@@ -173,7 +156,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                           shown,
                           sections,
                           stackBox.maxHeight,
-                          folds: !oneAtATime && stack.length > 1,
+                          folds: !oneAtATime && sections.length > 1,
                         ),
                       ),
                     ),
@@ -249,19 +232,16 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
     RaftTokens t,
     List<List<ChannelSideSection>> groups,
     ChannelSideSection active,
-    double height, {
-    bool columns = false,
-  }) {
+    double height,
+  ) {
     return Container(
-      key: Key(columns ? 'channel-side-column-switch' : 'channel-side-switch'),
+      key: const Key('channel-side-switch'),
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
       alignment: AlignmentDirectional.centerStart,
       decoration: BoxDecoration(border: RaftSidePanelFrame.headerRule(t)),
       child: RaftTabsList<ChannelSideSection>(
-        label: columns
-            ? raftTextZh(context, 'Columns', '分栏')
-            : raftText(context, 'Show Tasks or files'),
+        label: raftText(context, 'Show Tasks or files'),
         value: active,
         onChanged: (s) => store.focus(_focusKey(s)),
         tabs: [
@@ -269,18 +249,12 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
             RaftTabItem(
               value: group.first,
               label: group.map((s) => widget.titles[s] ?? s.name).join(' · '),
-              glyph: columns
-                  ? null
-                  : switch (group.first) {
-                      ChannelSideSection.tasks => RaftGlyph.listTodo,
-                      ChannelSideSection.files => RaftGlyph.paperclip,
-                      _ => RaftGlyph.globe,
-                    },
-              itemKey: Key(
-                columns
-                    ? 'channel-side-column-tab-${group.first.name}'
-                    : 'channel-side-switch-${group.first.name}',
-              ),
+              glyph: switch (group.first) {
+                ChannelSideSection.tasks => RaftGlyph.listTodo,
+                ChannelSideSection.files => RaftGlyph.paperclip,
+                _ => RaftGlyph.globe,
+              },
+              itemKey: Key('channel-side-switch-${group.first.name}'),
             ),
         ],
       ),

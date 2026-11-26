@@ -290,6 +290,40 @@ WP-INBOX; nothing is evaluated); Web used 768 with the flag and 1024 without.
 (`DesktopActivityFlag.masterDetail`; covered by
 `test/activity_fold_widths_test.dart`.)
 
+## Channel side panes by screen class: intended difference from Web (owner decision 2026-11-25)
+
+Owner decision 2026-11-25: the panes beside a conversation get one presentation
+per screen class, instead of Web's single desktop rule at every width
+(`ChannelSideArea.tsx:373`, `layout/rowPlan.ts`: `width / 160 - 1` columns beside
+the conversation, each clipped to 160 and below its own minimum).
+
+- Medium (768 up to 1024, `RaftLayoutClass.medium`, where a foldable inner
+  screen and a narrow desktop window land): the top pane covers the whole
+  conversation column, its channel header included, because the pane carries
+  its own head with the back arrow. The rail and the channel sidebar stay.
+  Opening another pane stacks on top of it, and its head's back arrow pops it
+  and reveals the pane underneath; closing the last returns to the chat. A
+  folded thread is a layer of the conversation, so it is covered with it: one
+  back arrow on screen, nothing underneath to click or tab to.
+- Wide (1024 and up), pointer and touch alike: a pane stands beside the chat
+  only if it fits there at its own minimum (`channelSideColumnMinWidth`) beside
+  a `channelSideChatMinWidth` (360) chat. Panes that do not fit wait behind the
+  top one instead of squeezing it. With a single pane that fits, the
+  arrangement is Web's.
+- Compact is unchanged.
+
+Web's rule treats 768 as a desktop, so on a foldable the conversation and the
+panes were both driven below their own minimums and the conversation was
+clipped. Measured on origin/cindy/integration b746d4b47, rendered widths against
+each column's own minimum: at 841x701 channel details stood at 256 against a
+minimum of 320 with the conversation at 288, and details plus Tasks at 160/280
+and 181/320 with the conversation at 203; 884x1104 behaved the same, and the
+1104x884 and 1180x820 tablets squeezed two panes (235/280 and 269/320, 258/280
+and 294/320). Replacing the rule also retires Web's tab grouping of the
+overflow columns and the doubled chat floor behind a folded thread, which
+reserved room beside a thread that stands in the conversation's own slot.
+(Covered by `test/channel_side_fit_guard_test.dart`.)
+
 ## Visual suite levels and looks (owner scope 2026-10-24)
 
 The visual suite has three explicit levels, because a theme change can move any of them:

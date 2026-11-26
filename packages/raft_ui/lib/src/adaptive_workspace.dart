@@ -295,9 +295,16 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
             split && widget.focusScope != null && widget.profile == null
             ? toggleFocus
             : null,
-        child: RaftCoveredPane(
-          covered: widget.profile != null && !both,
-          child: widget.thread!,
+        // Read where the thread is mounted, not where it is built: folded in
+        // the side row it hangs inside the conversation slot, and a pane
+        // covering that slot covers it too. A cover is never cancelled from
+        // the inside.
+        child: Builder(
+          builder: (context) => RaftCoveredPane(
+            covered:
+                widget.profile != null && !both || RaftCoveredPane.of(context),
+            child: widget.thread!,
+          ),
         ),
       ),
     );

@@ -604,7 +604,11 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     final moves = chrome?.moves ?? const [];
     final showMessage = a['deletedAt'] == null && _canMessage;
     final inlineCommands = a['deletedAt'] == null && panelWidth > 480;
+    // Stacked over another pane by its host (the channel side area): Back
+    // replaces the close X and reveals the pane underneath.
+    final stackedBack = chrome?.onBack;
     final hasClose =
+        stackedBack == null &&
         widget.actions.onClose != null &&
         MediaQuery.sizeOf(context).width >= 768;
     final foldMessage =
@@ -642,10 +646,11 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             iconAlwaysVisible: true,
             // `useMobileBack` renders the chevron below `md` only.
             onBack:
-                MediaQuery.sizeOf(context).width >= 768 &&
-                    !widget.actions.backAlways
-                ? null
-                : widget.actions.onBack,
+                stackedBack ??
+                (MediaQuery.sizeOf(context).width >= 768 &&
+                        !widget.actions.backAlways
+                    ? null
+                    : widget.actions.onBack),
             backTooltip: raftText(context, 'Back'),
             iconSlot: (chrome?.showsProfileAvatar(panelWidth) ?? true)
                 ? RaftAvatarSlot(
@@ -2419,13 +2424,14 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
   @override
   Widget build(BuildContext context) {
     final path = '~/.slock/agents/${widget.agentId}/';
-    final wide = MediaQuery.sizeOf(context).width >= 768;
     return RaftWorkspaceTreeView(
       preview: openFile == null
           ? null
-          : RaftWorkspaceFilePreview(
-              // The phone shows the pane alone and closes it with the arrow.
-              onBack: wide ? null : () => setState(() => openFile = null),
+          : (context, alone) => RaftWorkspaceFilePreview(
+              // Shown alone (a phone, or a profile column too narrow for the
+              // split) the pane closes with the arrow; beside the tree the
+              // tree is the way back.
+              onBack: alone ? () => setState(() => openFile = null) : null,
               embedded: true,
               path: openFile!,
               content: openContent ?? '',

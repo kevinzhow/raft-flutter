@@ -19,32 +19,42 @@ const panelSurfaces = <CloseSurface>[
     kind: SurfaceKind.panel,
     web: 'HumanDetailPanel.tsx: Back md:hidden, X hidden md:flex; ProfilePanel Esc',
     phone: {_back, _sys},
-    fold: {_x, _esc, _sys, _scrim},
+    // A medium window covers the conversation with the pane on top: its head
+    // draws Back in place of the desktop X.
+    fold: {_back, _esc, _sys, _scrim},
     desktop: {_x, _esc, _sys, _scrim},
     files: ['lib/features/profile_side_panel.dart'],
     status: 'approved',
-    fix: 'scrim: owner-approved outside tap (docs/parity.md)',
+    fix:
+        'scrim: owner-approved outside tap (docs/parity.md); fold: the pane '
+        'covers and draws Back (screen classes, Kevin 2026-11-25)',
   ),
   CloseSurface(
     'profile-agent',
     kind: SurfaceKind.panel,
     web: 'AgentDetailPanel.tsx: Back md:hidden, X hidden md:flex; Esc',
     phone: {_back, _sys},
-    fold: {_x, _esc, _sys, _scrim},
+    fold: {_back, _esc, _sys, _scrim},
     desktop: {_x, _esc, _sys, _scrim},
     files: ['lib/features/agent_detail_view.dart'],
-    status: 'fixed',
-    fix: 'header X (97b3f5f7), outside tap (39e0c61c)',
+    status: 'approved',
+    fix:
+        'header X (97b3f5f7), outside tap (39e0c61c); fold: the pane covers '
+        'and draws Back (screen classes, Kevin 2026-11-25)',
   ),
   CloseSurface(
     'profile-external',
     kind: SurfaceKind.panel,
     web: 'ExternalIdentityDetailPanel.tsx: Back md:hidden, X hidden md:flex',
     phone: {_back, _sys},
-    fold: {_x, _esc, _sys, _scrim},
+    fold: {_back, _esc, _sys, _scrim},
     desktop: {_x, _esc, _sys, _scrim},
     files: ['lib/features/external_identity.dart'],
     status: 'approved',
+    fix:
+        'fold: the pane covers and draws Back, as profile-human and '
+        'profile-agent do (it ignored RaftPanelHeaderChrome.onBack and kept '
+        'drawing the desktop X)',
   ),
   CloseSurface(
     'computers-rack-side-panel',

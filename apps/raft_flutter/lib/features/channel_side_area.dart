@@ -1,6 +1,13 @@
-// Web v1.24 ChannelSideArea and rowPlan: desktop side columns stand beside
-// the conversation. They give way to their content floors, clip to 160, then
-// share the rightmost column as tabs. Compact layouts cover the conversation.
+// Where the sections beside a conversation stand. Web v1.24 ChannelSideArea
+// and rowPlan are the reference for the wide class only: there, side columns
+// stand beside the conversation and give way to their content floors. Web's
+// 160px clip and its rightmost-column tabs are gone, because they squeeze the
+// chat and the panes below the width at which they can be read (Kevin,
+// #raft-flutter:1f51a8b6, 2026-11-25: each screen class gets its own
+// presentation; a pane never renders below its own minimum width, the chat
+// never below 360). A pane that does not fit beside the chat waits behind the
+// top one instead (`ChannelSideStack`). Compact and medium layouts cover the
+// conversation.
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -18,6 +25,7 @@ import 'channel_side_column.dart';
 import 'channel_side_drag.dart';
 import 'channel_side_flags.dart';
 import 'channel_side_layout.dart';
+import 'channel_side_stack.dart';
 import 'channel_side_store.dart';
 import 'channel_side_tasks_panel.dart';
 import 'channel_side_web_preview.dart';
@@ -35,21 +43,39 @@ const channelSideColumnClip = 160.0;
 typedef PlacedChannelSideColumn = ({
   int column,
   List<ChannelSideSection> sections,
-  List<List<ChannelSideSection>> tabGroups,
   double width,
 });
 
 class ChannelSidePlacement {
-  const ChannelSidePlacement(this.mode, this.columns);
+  const ChannelSidePlacement(this.mode, this.columns, {this.stackedBelow = 0});
   final ChannelSideMode mode;
   final List<PlacedChannelSideColumn> columns;
+
+  /// Open panes waiting behind the shown one. Non-zero: the top pane's head
+  /// draws a back arrow that pops it and reveals the one underneath.
+  final int stackedBelow;
 }
 
+/// Where the open side columns [visible] stand in [width] px of room.
+///
+/// Each screen class gets its own presentation (Kevin, 2026-11-25); Web's
+/// desktop rule is the reference for the wide class only.
+///   - compact: the panes cover the conversation, as one stack.
+///   - medium (768-1023, a foldable inner screen or a narrow desktop window):
+///     the top pane covers the conversation full width. The rail and the
+///     channel sidebar stay. Opening another pane stacks on top of it.
+///   - wide: a pane stands beside the chat only if it fits there at its own
+///     minimum width beside a [channelSideChatMinWidth] chat. The ones that
+///     do not fit wait behind the top one instead of squeezing it; where not
+///     even the top pane fits, the area covers.
+/// A column is never laid out below its own minimum and the chat never below
+/// [channelSideChatMinWidth].
 ChannelSidePlacement placeChannelSide(
   List<VisibleChannelSideColumn> visible, {
   required double width,
   required bool compact,
-  bool threadFolded = false,
+  required RaftLayoutClass layout,
+  ChannelSideStack stack = ChannelSideStack.unordered,
   double? conversationWidth,
   Map<int, double> dockWidths = const {},
 }) {
@@ -61,51 +87,51 @@ ChannelSidePlacement placeChannelSide(
       (
         column: visible.first.column,
         sections: [for (final column in visible) ...column.sections],
-        tabGroups: const [],
         width: width,
       ),
     ]);
   }
-  final sideCount = width ~/ channelSideColumnClip - 1;
-  final groups = <List<VisibleChannelSideColumn>>[];
-  for (final column in visible) {
-    if (groups.length < sideCount) {
-      groups.add([column]);
-    } else {
-      groups.last.add(column);
-    }
-  }
-  final sideSaved = visible.fold(0.0, (sum, column) => sum + column.width);
-  final chatFloor = threadFolded
-      ? channelSideChatMinWidth * 2
-      : channelSideChatMinWidth;
+  // The chat keeps 360 whether or not a thread is folded into its slot: the
+  // folded thread replaces the chat there instead of standing beside it, so
+  // reserving two chats' worth asked for room nothing rendered in. That is
+  // why this function no longer needs to know about the thread at all.
+  const chatFloor = channelSideChatMinWidth;
+  final shown = layout == RaftLayoutClass.medium
+      ? const <VisibleChannelSideColumn>[]
+      : stack.fitting(visible, width: width, chatFloor: chatFloor);
+  if (shown.isEmpty) return _coverChannelSide(visible, stack, width);
+  final sideSaved = shown.fold(0.0, (sum, column) => sum + column.width);
   final saved = [
     conversationWidth ?? math.max(chatFloor, width - sideSaved),
-    for (final group in groups)
-      dockWidths[group.first.column] ?? group.first.width.toDouble(),
+    for (final column in shown)
+      dockWidths[column.column] ?? column.width.toDouble(),
   ];
   final floors = [
     math.min(saved.first, chatFloor),
-    for (var i = 0; i < groups.length; i++)
-      math.min(saved[i + 1], groups[i].first.minWidth.toDouble()),
+    for (var i = 0; i < shown.length; i++)
+      math.min(saved[i + 1], shown[i].minWidth.toDouble()),
   ];
-  final widths = _solveChannelSideWidths(
-    saved,
-    floors,
-    width,
-    threadFolded: threadFolded,
-  );
+  final widths = _solveChannelSideWidths(saved, floors, width);
   return ChannelSidePlacement(ChannelSideMode.beside, [
-    for (var i = 0; i < groups.length; i++)
+    for (var i = 0; i < shown.length; i++)
       (
-        column: groups[i].first.column,
-        sections: [for (final column in groups[i]) ...column.sections],
-        tabGroups: groups[i].length == 1
-            ? const []
-            : [for (final column in groups[i]) column.sections],
+        column: shown[i].column,
+        sections: shown[i].sections,
         width: widths[i + 1],
       ),
-  ]);
+  ], stackedBelow: visible.length - shown.length);
+}
+
+/// The top pane over the whole conversation area, the rest waiting behind it.
+ChannelSidePlacement _coverChannelSide(
+  List<VisibleChannelSideColumn> visible,
+  ChannelSideStack stack,
+  double width,
+) {
+  final top = visible[stack.topOf(visible)];
+  return ChannelSidePlacement(ChannelSideMode.overlay, [
+    (column: top.column, sections: top.sections, width: width),
+  ], stackedBelow: visible.length - 1);
 }
 
 double _contentFloor(VisibleChannelSideColumn column) =>
@@ -209,50 +235,33 @@ List<VisibleChannelSideColumn> _visibleSideColumns(
 bool _profileOnly(Set<ChannelSideSection> sections) =>
     sections.length == 1 && sections.contains(ChannelSideSection.profile);
 
+/// The chat and the shown columns at [saved] px each, fitted into [available]:
+/// they share the spare room in proportion, and give the deficit back toward
+/// their [floors] in proportion to what each has above its own floor.
+///
+/// Nothing is ever laid out below its floor: only columns that fit at their
+/// minimums beside a [channelSideChatMinWidth] chat are shown, so the floors
+/// always add up to [available] or less. That is why Web's 160px clip is gone
+/// from here (it was what squeezed a column below its own minimum).
 List<double> _solveChannelSideWidths(
   List<double> saved,
   List<double> floors,
-  double available, {
-  required bool threadFolded,
-}) {
+  double available,
+) {
   final total = saved.fold(0.0, (sum, width) => sum + width);
   if (total <= available) {
     return [for (final width in saved) width * available / total];
   }
   final floorTotal = floors.fold(0.0, (sum, width) => sum + width);
-  if (floorTotal <= available) {
-    final ratio = (total - available) / (total - floorTotal);
-    return [
-      for (var i = 0; i < saved.length; i++)
-        saved[i] - ratio * (saved[i] - floors[i]),
-    ];
-  }
-  final widths = [...floors];
-  var remaining = floorTotal - available;
-  if (threadFolded) {
-    final drop = math.min(remaining, widths.first - channelSideChatMinWidth);
-    widths[0] -= drop;
-    remaining -= drop;
-  }
-  while (remaining > .01) {
-    final shrinkable = [
-      for (var i = 0; i < widths.length; i++)
-        if (widths[i] > channelSideColumnClip) i,
-    ];
-    if (shrinkable.isEmpty) break;
-    final sum = shrinkable.fold(0.0, (sum, i) => sum + widths[i]);
-    var taken = 0.0;
-    for (final i in shrinkable) {
-      final drop = math.min(
-        widths[i] - channelSideColumnClip,
-        remaining * widths[i] / sum,
-      );
-      widths[i] -= drop;
-      taken += drop;
-    }
-    remaining -= taken;
-  }
-  return widths;
+  assert(
+    floorTotal <= available + .01,
+    'floors $floors do not fit in $available',
+  );
+  final ratio = (total - available) / (total - floorTotal);
+  return [
+    for (var i = 0; i < saved.length; i++)
+      saved[i] - ratio * (saved[i] - floors[i]),
+  ];
 }
 
 /// Whether [context] is inside a [ChannelSideArea]: only there do Tasks and
@@ -267,12 +276,22 @@ class _ChannelSideAreaScope extends InheritedWidget {
   bool updateShouldNotify(_ChannelSideAreaScope oldWidget) => false;
 }
 
+/// The side sections open beside one conversation, the ones of them on
+/// screen (a pane waiting behind another is not among them), when each opened
+/// ([ChannelSideStack.openedAt]) and whether the panes cover the conversation
+/// instead of standing beside it.
+typedef OpenChannelSideStack = ({
+  Set<ChannelSideSection> open,
+  List<ChannelSideSection> shown,
+  Map<ChannelSideSection, int> openedAt,
+  bool covering,
+});
+
 class ChannelSideArea extends StatefulWidget {
   const ChannelSideArea({
     super.key,
     required this.controller,
     required this.child,
-    this.headerExtent = 0,
     this.onOpenTask,
     this.headWrapper,
     this.profile,
@@ -283,10 +302,6 @@ class ChannelSideArea extends StatefulWidget {
 
   /// The channel column: header and chat. It stays where it is.
   final Widget child;
-
-  /// How much of [child]'s top is the channel header: a floating or covering
-  /// column starts under it. 0 where the header stands above this widget.
-  final double headerExtent;
 
   /// Opens a task (the workspace's task surface).
   final void Function(
@@ -308,6 +323,13 @@ class ChannelSideArea extends StatefulWidget {
 
   static bool restoreForWorkspace(Object owner) =>
       workspaceKey(owner).currentState?.restore() ?? false;
+
+  /// The panes open beside the conversation of the workspace [owner] and which
+  /// of them is on top, as of the last frame. Null where none is open or this
+  /// area is not mounted. What the shell's own keys act on: a pane hidden
+  /// behind another is not theirs to close.
+  static OpenChannelSideStack? stackForWorkspace(Object owner) =>
+      workspaceKey(owner).currentState?.openStack;
 
   @override
   State<ChannelSideArea> createState() => ChannelSideAreaState();
@@ -374,6 +396,10 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
   final _chatKey = GlobalKey();
   late ChannelBrowserPanes _browserPanes;
   ChannelSideSection? _expanded;
+
+  /// See [ChannelSideArea.stackForWorkspace]. Written once per build, because
+  /// which pane is on top is worked out there and nowhere else.
+  OpenChannelSideStack? openStack;
   ({_DockSeam seam, double width})? _resizePreview;
   late Listenable listenable;
   late Listenable _previewChanges;
@@ -506,6 +532,9 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       open,
       legacyThreadWidth: dockedThread?.width,
     );
+    // One owner for "which pane is on top": the open set, in the order it
+    // grew. Nothing else here tracks opens.
+    final stack = ChannelSideStack.of(store, open);
     final ownsSeam =
         !compact &&
         foldedThread == null &&
@@ -528,7 +557,8 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       visible,
       width: box.maxWidth,
       compact: compact,
-      threadFolded: foldedThread != null,
+      layout: raftLayoutClassOf(context),
+      stack: stack,
       conversationWidth: live?.conversation ?? conversationWidth,
       dockWidths: live?.columns ?? const {},
     );
@@ -558,7 +588,6 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
         (
           column: columns[i].column,
           sections: columns[i].sections,
-          tabGroups: columns[i].tabGroups,
           width: expandedIndex < 0
               ? columns[i].width
               : i == expandedIndex
@@ -623,6 +652,29 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       child: child,
     );
     final chat = _Inert(key: _chatKey, inert: covering, child: widget.child);
+    // Back always means "close the pane on top". Beside the chat only the top
+    // pane draws it, and only while another pane waits behind it; covering the
+    // conversation, whichever pane shows draws it (a phone keeps the channel
+    // header's Back instead, see ChannelSideCardView.phone).
+    final topColumn = visible.isEmpty ? null : visible[stack.topOf(visible)];
+    final backSection =
+        placement.stackedBelow > 0 && beside && topColumn != null
+        ? stack.topSectionOf(topColumn)
+        : null;
+    VoidCallback? backOf(ChannelSideSection section) =>
+        !compact && (covering || section == backSection)
+        ? () => closeChannelSideSection(w, section)
+        : null;
+    // The one answer to "which pane is on top", for the keys the shell owns
+    // (Escape, see workspace_panel_dismissal.dart).
+    openStack = topColumn == null
+        ? null
+        : (
+            open: open,
+            shown: [for (final column in placement.columns) ...column.sections],
+            openedAt: stack.openedAt,
+            covering: covering,
+          );
     // Web suspends section moves while a unit is expanded.
     drag.sync(
       store: store,
@@ -661,7 +713,12 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
                                 RaftCoveredPane(covered: true, child: chat),
                               ),
                             ),
-                            chatContent(foldedThread),
+                            // Folded, the thread stands in the chat's place,
+                            // so a covering pane puts it away exactly as it
+                            // puts the chat away.
+                            chatContent(
+                              _Inert(inert: covering, child: foldedThread),
+                            ),
                           ],
                         ),
                 ),
@@ -677,11 +734,12 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
                       c.sections,
                       page,
                       compact,
-                      tabGroups: c.tabGroups,
+                      backSection: backSection,
+                      backOf: backOf,
                       expanded: c.sections.contains(_expanded)
                           ? _expanded
                           : null,
-                      movesOf: _expanded == null && c.tabGroups.isEmpty
+                      movesOf: _expanded == null
                           ? (section) =>
                                 _moveItems(context, open, visible, section)
                           : null,
@@ -692,16 +750,25 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
           ),
         ),
         if (!beside && placement.columns.isNotEmpty)
-          Positioned(
+          // The whole conversation column, the channel header included: the
+          // covering pane carries its own head with the Back that pops it, so
+          // the header underneath would only be a strip of dead buttons (it is
+          // inside `chat`, which is inert while a pane covers).
+          Positioned.fill(
             key: const Key('channel-side-overlay'),
-            top: widget.headerExtent,
-            right: 0,
-            left: 0,
-            bottom: 0,
             child: _CoverFocus(
-              onBack: () => open.contains(ChannelSideSection.profile)
-                  ? w.closeProfile()
-                  : ChannelSideCards.closeCovering(w),
+              // A phone's Back closes what covers the conversation (Web
+              // `headerMobileBack`); wider, it pops the pane on top and the
+              // one underneath shows.
+              onBack: () {
+                if (!compact && topColumn != null) {
+                  closeChannelSideSection(w, stack.topSectionOf(topColumn));
+                } else if (open.contains(ChannelSideSection.profile)) {
+                  w.closeProfile();
+                } else {
+                  ChannelSideCards.closeCovering(w);
+                }
+              },
               child: _column(
                 context,
                 placement.mode,
@@ -709,6 +776,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
                 placement.columns.first.sections,
                 page,
                 compact,
+                backOf: backOf,
               ),
             ),
           ),
@@ -764,8 +832,9 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     WebPreviewPage? page,
     bool compact, {
     ChannelSideResize? resize,
-    List<List<ChannelSideSection>> tabGroups = const [],
     ChannelSideSection? expanded,
+    ChannelSideSection? backSection,
+    VoidCallback? Function(ChannelSideSection)? backOf,
     List<RaftMenuEntry> Function(ChannelSideSection)? movesOf,
   }) => ChannelSideColumnView(
     key: Key('channel-side-column-$index'),
@@ -774,11 +843,20 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     sections: sections,
     titles: _titles(context, page),
     resize: resize,
-    tabGroups: tabGroups,
     expanded: expanded,
     cardOf: (context, section, fold) => drag.card(
       section,
-      _card(context, section, fold, mode, page, compact, movesOf),
+      _card(
+        context,
+        section,
+        fold,
+        mode,
+        page,
+        compact,
+        movesOf,
+        stacked: section == backSection,
+        back: backOf?.call(section),
+      ),
     ),
   );
 
@@ -789,8 +867,10 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     ChannelSideMode mode,
     WebPreviewPage? page,
     bool compact,
-    List<RaftMenuEntry> Function(ChannelSideSection)? movesOf,
-  ) {
+    List<RaftMenuEntry> Function(ChannelSideSection)? movesOf, {
+    bool stacked = false,
+    VoidCallback? back,
+  }) {
     final channelId = w.channel?.id ?? '';
     final body = widget.bodyOf?.call(context, section);
     switch (section) {
@@ -819,6 +899,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
                       section,
                       head,
                     ),
+                    onBack: back,
                     actions: [
                       if (moves.isNotEmpty)
                         RaftOverflowMenuButton(
@@ -843,6 +924,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
               (widget.headWrapper ?? _wrapHead)(context, section, head),
           moves: moves,
           plannedProfile: true,
+          onBack: back,
           actions: [
             if (expand != null)
               raftConversationHeaderToggle(
@@ -866,6 +948,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
           onClose: () => ChannelSideCards.close(w, ChannelSideCard.tasks),
           mode: mode,
           phone: compact,
+          stacked: stacked,
           collapsed: fold.collapsed,
           stackEnd: fold.stackEnd,
           onCollapsedChanged: fold.onCollapsedChanged,
@@ -900,6 +983,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
           onClose: () => ChannelSideCards.close(w, ChannelSideCard.files),
           mode: mode,
           phone: compact,
+          stacked: stacked,
           collapsed: fold.collapsed,
           stackEnd: fold.stackEnd,
           onCollapsedChanged: fold.onCollapsedChanged,
@@ -931,37 +1015,50 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
               ),
         );
       case ChannelSideSection.details:
-        return ChannelDetailsHost(
-          key: ValueKey('channel-details-host-${details.channel?.id}'),
-          controller: w,
-          headerWrapper: (context, header) =>
-              (widget.headWrapper ?? _wrapHead)(context, section, header),
+        // The details head is built deep inside RaftOverflowSheet; the chrome
+        // is how this area hands it a Back (it draws one in place of its X).
+        return RaftPanelHeaderChrome(
+          actions: const [],
+          onBack: back,
+          child: ChannelDetailsHost(
+            key: ValueKey('channel-details-host-${details.channel?.id}'),
+            controller: w,
+            headerWrapper: (context, header) =>
+                (widget.headWrapper ?? _wrapHead)(context, section, header),
+          ),
         );
       case ChannelSideSection.artifact:
-        if (body == null &&
-            !MobileRouteGate.coveredReader(context)() &&
-            ChannelSideCards.hasDesktopPlace(w)) {
-          return ChannelBrowserPlace(
-            key: ValueKey('channel-browser-place-$channelId'),
-            workspace: w,
-            conversation: channelId,
-            browserKey: _browserPanes.keyFor(channelId),
-            showing: fold.showing,
-            covering: mode == ChannelSideMode.overlay,
-            collapsed: fold.collapsed,
-            expanded: _expanded == section,
-            onExpand: _expandAction(mode, section),
-            headWrapper: widget.headWrapper ?? _wrapHead,
-          );
-        }
-        // The page's panel has the head every card has of its own.
-        return body ??
-            WebPreviewPanel(
-              store: preview,
-              page: page!,
-              covering: mode == ChannelSideMode.overlay,
-              headWrapper: widget.headWrapper ?? _wrapHead,
-            );
+        // Three heads can stand in this column (the Artifact, the desktop
+        // browser, a web page's panel) and each builds its own; the chrome is
+        // how this area hands whichever shows a Back, as it does for Details.
+        return RaftPanelHeaderChrome(
+          actions: const [],
+          onBack: back,
+          child:
+              body == null &&
+                  !MobileRouteGate.coveredReader(context)() &&
+                  ChannelSideCards.hasDesktopPlace(w)
+              ? ChannelBrowserPlace(
+                  key: ValueKey('channel-browser-place-$channelId'),
+                  workspace: w,
+                  conversation: channelId,
+                  browserKey: _browserPanes.keyFor(channelId),
+                  showing: fold.showing,
+                  covering: mode == ChannelSideMode.overlay,
+                  collapsed: fold.collapsed,
+                  expanded: _expanded == section,
+                  onExpand: _expandAction(mode, section),
+                  headWrapper: widget.headWrapper ?? _wrapHead,
+                )
+              // The page's panel has the head every card has of its own.
+              : body ??
+                    WebPreviewPanel(
+                      store: preview,
+                      page: page!,
+                      covering: mode == ChannelSideMode.overlay,
+                      headWrapper: widget.headWrapper ?? _wrapHead,
+                    ),
+        );
       default:
         return const SizedBox.shrink();
     }
@@ -1025,17 +1122,24 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
 
 /// The chat under a cover can't be reached: no focus, no pointer, nothing read
 /// out (Web `inert`). The widgets stay in the tree (the chat is not rebuilt).
+///
+/// Its rows' hover toolbars float in the route's overlay, above the covering
+/// pane, so they are told to put themselves away ([RaftCoveredPane]) as they
+/// are under the folded profile and the folded thread.
 class _Inert extends StatelessWidget {
   const _Inert({super.key, required this.inert, required this.child});
   final bool inert;
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => ExcludeFocus(
-    excluding: inert,
-    child: ExcludeSemantics(
+  Widget build(BuildContext context) => RaftCoveredPane(
+    covered: inert || RaftCoveredPane.of(context),
+    child: ExcludeFocus(
       excluding: inert,
-      child: IgnorePointer(ignoring: inert, child: child),
+      child: ExcludeSemantics(
+        excluding: inert,
+        child: IgnorePointer(ignoring: inert, child: child),
+      ),
     ),
   );
 }
@@ -1062,7 +1166,18 @@ class _CoverFocusState extends State<_CoverFocus> {
 
     opener = FocusManager.instance.primaryFocus;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) scope.requestFocus();
+      if (!mounted) return;
+      // The cover takes focus from the conversation it covers (the same focus
+      // scope it lives in), never from a window above it: a cover can appear
+      // because the window reached a width where the pane covers, and an open
+      // editor in a dialog keeps what it had.
+      final focused = FocusManager.instance.primaryFocus;
+      if (focused != null &&
+          focused.enclosingScope != scope.enclosingScope &&
+          !scope.hasFocus) {
+        return;
+      }
+      scope.requestFocus();
     });
   }
 

@@ -286,6 +286,12 @@ class _ChannelDetailsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Stacked over another panel by its host (the channel side area covering
+    // the conversation, or a column with another pane waiting behind it):
+    // Back takes the place of the close X and reveals that pane.
+    final stackedBack = page
+        ? null
+        : RaftPanelHeaderChrome.maybeOf(context)?.onBack;
     final header = RaftPanelHeaderBar(
       title: raftText(context, 'Details'),
       background: RaftTokens.of(context).ui.layerCanvas,
@@ -293,11 +299,11 @@ class _ChannelDetailsHeader extends StatelessWidget {
       bottomBorder: page
           ? null
           : RaftSidePanelFrame.headerRule(RaftTokens.of(context)),
-      onBack: page ? onClose : null,
+      onBack: page ? onClose : stackedBack,
       backKey: const ValueKey('channel-overflow-back'),
       backTooltip: raftText(context, 'Back'),
       actions: [
-        if (!page)
+        if (!page && stackedBack == null)
           RaftPanelAction(
             key: const ValueKey('channel-details-close'),
             glyph: RaftGlyph.x,

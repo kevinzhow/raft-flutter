@@ -8,6 +8,15 @@ import 'desktop_detail_host.dart';
 abstract final class DesktopMasterPanelBounds {
   static const wideDefault = 560.0, wideMin = 400.0, wideMax = 720.0;
   static const compactDefault = 320.0, compactMin = 320.0, compactMax = 480.0;
+
+  /// The narrowest the classic detail (a conversation, an activity target) and
+  /// the Web ProfilePanel column get. The master trades its width for them
+  /// down to its own minimum; below that the split does not fit at all.
+  static const detailMin = 320.0, profileMin = 300.0;
+
+  /// The classic directory master is the independently persisted Sidebar,
+  /// with the Sidebar's own bounds (`RaftAdaptiveWorkspace` clamps them too).
+  static const directoryMin = 180.0, directoryMax = 320.0;
   static double resolve({
     required double available,
     required bool compact,
@@ -17,7 +26,7 @@ abstract final class DesktopMasterPanelBounds {
     final desired = compact
         ? compactWidth.clamp(compactMin, compactMax)
         : wideWidth.clamp(wideMin, wideMax);
-    return desired.clamp(0, (available - 320).clamp(0, available));
+    return desired.clamp(0, (available - detailMin).clamp(0, available));
   }
 }
 
@@ -101,20 +110,53 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, size) {
       final split = widget.detail != null;
-      final folded = RaftAdaptiveWorkspace.compactOf(context);
-      final compact = widget.compact || MediaQuery.sizeOf(context).width < 1024;
       final panelMode = widget.detailPanelWidth != null;
+      // This shell's own box, never the window: it is a column of the
+      // workspace (rail, sidebar, docked thread or profile), so the window is
+      // always the wider of the two. Reading the window left the master at
+      // 64-107 px beside a 320 detail inside a 384-427 content column.
+      final compact = widget.compact || size.maxWidth < 1024;
+      // Each column keeps its own minimum, or the detail covers the master as
+      // it does on a phone. The master's minimum depends on which split this
+      // is: the list beside a ProfilePanel trades down to [listFloor], the
+      // classic directory to the Sidebar's own floor, the classic results
+      // column to its panel bounds.
+      final masterMin = panelMode
+          ? DesktopMasterDetail.listFloor
+          : directoryWidth != null
+          ? DesktopMasterPanelBounds.directoryMin
+          : compact
+          ? DesktopMasterPanelBounds.compactMin
+          : DesktopMasterPanelBounds.wideMin;
+      final folded =
+          size.maxWidth <
+          masterMin +
+              (panelMode
+                  ? DesktopMasterPanelBounds.profileMin
+                  : DesktopMasterPanelBounds.detailMin);
       final panelMax = (size.maxWidth - DesktopMasterDetail.listFloor).clamp(
-        300.0,
+        DesktopMasterPanelBounds.profileMin,
         double.infinity,
       );
-      final panelWidth = panel.clamp(300.0, panelMax);
+      final panelWidth = panel.clamp(
+        DesktopMasterPanelBounds.profileMin,
+        panelMax,
+      );
       final width = panelMode && split
           ? (size.maxWidth - panelWidth).clamp(0.0, size.maxWidth)
           : split && directoryWidth != null
           ? directoryWidth!
-                .clamp(180, 320)
-                .clamp(0, (size.maxWidth - 320).clamp(0, size.maxWidth))
+                .clamp(
+                  DesktopMasterPanelBounds.directoryMin,
+                  DesktopMasterPanelBounds.directoryMax,
+                )
+                .clamp(
+                  0,
+                  (size.maxWidth - DesktopMasterPanelBounds.detailMin).clamp(
+                    0,
+                    size.maxWidth,
+                  ),
+                )
           : split
           ? DesktopMasterPanelBounds.resolve(
               available: size.maxWidth,
@@ -134,10 +176,19 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
           : lastVisibleMaster = widget.master;
       void resize(double next) {
         final accepted = directoryWidth != null
-            ? next.clamp(180.0, 320.0)
+            ? next.clamp(
+                DesktopMasterPanelBounds.directoryMin,
+                DesktopMasterPanelBounds.directoryMax,
+              )
             : compact
-            ? next.clamp(320.0, 480.0)
-            : next.clamp(400.0, 720.0);
+            ? next.clamp(
+                DesktopMasterPanelBounds.compactMin,
+                DesktopMasterPanelBounds.compactMax,
+              )
+            : next.clamp(
+                DesktopMasterPanelBounds.wideMin,
+                DesktopMasterPanelBounds.wideMax,
+              );
         setState(() {
           if (directoryWidth != null) {
             directoryWidth = accepted;
@@ -220,16 +271,23 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
                       : 'Resize results',
                   value: panelMode ? panelWidth : width.toDouble(),
                   reversed: panelMode,
-                  min: panelMode ? 300 : null,
+                  min: panelMode ? DesktopMasterPanelBounds.profileMin : null,
                   max: panelMode ? panelMax : null,
                   defaultValue: panelMode ? 380 : null,
                   onChanged: panelMode
-                      ? (next) =>
-                            setState(() => panel = next.clamp(300.0, panelMax))
+                      ? (next) => setState(
+                          () => panel = next.clamp(
+                            DesktopMasterPanelBounds.profileMin,
+                            panelMax,
+                          ),
+                        )
                       : resize,
                   onChangeEnd: panelMode
                       ? () => widget.onDetailPanelWidthChanged?.call(
-                          panel.clamp(300.0, panelMax),
+                          panel.clamp(
+                            DesktopMasterPanelBounds.profileMin,
+                            panelMax,
+                          ),
                         )
                       : null,
                 ),

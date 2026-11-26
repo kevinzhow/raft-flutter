@@ -211,14 +211,10 @@ void main() {
       await t.tap(avatar('ma'));
       await frames(t, 20);
       expect(find.byKey(const Key('profile-panel')), findsOneWidget);
-      final Finder dmButton;
-      if (size == const Size(856, 944)) {
-        await t.tap(find.byKey(const Key('agent-profile-overflow-trigger')));
-        await frames(t);
-        dmButton = find.text('Direct message');
-      } else {
-        dmButton = find.byKey(const Key('agent-profile-message'));
-      }
+      // An unfolded foldable covers the conversation with the profile, so its
+      // head has room for Message inline (it used to fold into the overflow
+      // menu in a 380px column).
+      final dmButton = find.byKey(const Key('agent-profile-message'));
       expect(dmButton.hitTestable(), findsOneWidget);
       await t.tap(dmButton);
       await frames(t, 30);

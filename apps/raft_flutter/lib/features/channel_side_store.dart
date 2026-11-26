@@ -70,6 +70,9 @@ class ChannelSideStore extends ChangeNotifier {
 
   late Map<ChannelSideCard, bool> _open, _collapsed;
   final _focusAt = <String, int>{};
+
+  /// When each open side section opened (see [openOrder]).
+  final _openedAt = <ChannelSideSection, int>{};
   int _tick = 0;
   ChannelTasksFilter _taskFilter = ChannelTasksFilter.all;
 
@@ -108,6 +111,22 @@ class ChannelSideStore extends ChangeNotifier {
   void focus(String card) {
     _focusAt[card] = ++_tick;
     notifyListeners();
+  }
+
+  /// When each of the sections [open] beside the conversation opened, as an
+  /// order on the same clock as [focusAt]: one that was not open on the last
+  /// call takes the next tick, one that stays keeps its own and one that
+  /// closed loses it. The newest is the top of the side stack
+  /// (`ChannelSideStack`).
+  ///
+  /// Called while the area lays out, so it never notifies: the same set twice
+  /// changes nothing.
+  Map<ChannelSideSection, int> openOrder(Set<ChannelSideSection> open) {
+    _openedAt.removeWhere((section, _) => !open.contains(section));
+    for (final section in open) {
+      _openedAt.putIfAbsent(section, () => ++_tick);
+    }
+    return Map.unmodifiable(_openedAt);
   }
 
   void setTaskFilter(ChannelTasksFilter filter) {

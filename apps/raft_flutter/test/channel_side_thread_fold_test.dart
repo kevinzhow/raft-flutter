@@ -118,13 +118,6 @@ void main() {
           await t.pumpAndSettle();
           expect(sideThread, findsNothing, reason: 'the thread has folded');
           expect(threadHeader, findsOneWidget);
-          expect(threadBack.hitTestable(), findsOneWidget);
-          expect(detailsClose.hitTestable(), findsOneWidget);
-          expect(
-            t.getRect(conversation).right,
-            closeTo(t.getRect(details).left, .01),
-          );
-          expect(t.getRect(details).right, width);
           expect(
             channelChat,
             findsNothing,
@@ -134,14 +127,50 @@ void main() {
           expect(t.state(threadChat), same(threadState));
           expect(w.location, location);
           expect(t.takeException(), isNull);
+          final covers = width < RaftLayoutMetrics.threadOverlayBreakpoint;
+          final overlay = find.byKey(const Key('channel-side-overlay'));
+          final detailsBack = find.byKey(const Key('channel-overflow-back'));
+          if (covers) {
+            // A medium window covers the conversation with Details instead of
+            // squeezing both below what they can be read at. The cover takes
+            // the whole conversation column, the folded thread with it, so
+            // the one Back on screen is Details' (in place of its X); the
+            // thread's own Back is reachable again once Details is popped.
+            expect(overlay, findsOneWidget);
+            expect(detailsClose.hitTestable(), findsNothing);
+            expect(threadBack.hitTestable(), findsNothing);
+            expect(detailsBack.hitTestable(), findsOneWidget);
+            expect(
+              t.getRect(details).left,
+              closeTo(t.getRect(conversation).left, .01),
+            );
+            expect(t.getRect(details).right, width);
+            await t.tap(detailsBack.hitTestable());
+            await frames(t, () {});
+            await t.pumpAndSettle();
+            expect(overlay, findsNothing);
+            expect(details, findsNothing);
+            expect(threadHeader, findsOneWidget);
+          } else {
+            expect(overlay, findsNothing);
+            expect(threadBack.hitTestable(), findsOneWidget);
+            expect(detailsClose.hitTestable(), findsOneWidget);
+            expect(
+              t.getRect(conversation).right,
+              closeTo(t.getRect(details).left, .01),
+            );
+            expect(t.getRect(details).right, width);
+          }
           await t.tap(threadBack);
           await frames(t, () {});
           await t.pumpAndSettle();
           expect(threadHeader, findsNothing);
           expect(channelChat, findsOneWidget);
           expect(t.state(channelChat), same(chatState));
-          expect(detailsClose.hitTestable(), findsOneWidget);
-          expect(t.state(find.byType(ChannelSettings)), same(detailsState));
+          if (!covers) {
+            expect(detailsClose.hitTestable(), findsOneWidget);
+            expect(t.state(find.byType(ChannelSettings)), same(detailsState));
+          }
         } finally {
           await t.pumpWidget(const SizedBox.shrink());
           await t.pumpAndSettle();

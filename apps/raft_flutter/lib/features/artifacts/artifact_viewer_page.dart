@@ -272,10 +272,20 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       current &&
       discussion?.current == true;
 
+  /// The viewer's own box, from the body's [LayoutBuilder]. The viewer is a
+  /// channel side column (`ChannelBrowserPlace`) or a pane of the Artifacts
+  /// collection as often as it is the whole window, so the window width says
+  /// nothing about the room the discussion has.
+  double? _paneWidth;
+
+  /// Web keeps the discussion beside the artifact only where both fit; in a
+  /// narrower pane it is a sheet over the artifact, as it is on a phone.
+  bool get _commentsBeside =>
+      (_paneWidth ?? double.infinity) >= RaftLayoutMetrics.desktopBreakpoint;
+
   void _syncRegularCommentsRoute() {
     if (!mounted) return;
-    final needsSheet =
-        _regularCommentsOpen && RaftAdaptiveWorkspace.compactOf(context);
+    final needsSheet = _regularCommentsOpen && !_commentsBeside;
     if (!needsSheet) {
       _removeRegularCommentsRoute();
     } else if (_regularCommentsRoute == null) {
@@ -363,7 +373,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   void _showSentDrafts() {
     if (!current || discussion?.current != true || report != null) return;
     if (!_regularCommentsOpen) _toggleComments();
-    if (!RaftAdaptiveWorkspace.compactOf(context)) _focusCommentsEntry();
+    if (_commentsBeside) _focusCommentsEntry();
   }
 
   void _toggleComments({bool fromMore = false}) {
@@ -1490,6 +1500,10 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
             context,
             data,
             openActionInHeader: openActionInHeader,
+            // Header room, not the discussion's arrangement: [foldComments]
+            // measures this header, and the window stands in for it only where
+            // the viewer is the whole window (the page and the full-bleed
+            // dialog build their header without a LayoutBuilder).
             menuComments:
                 showComments &&
                     (foldComments || RaftAdaptiveWorkspace.compactOf(context))
@@ -1530,6 +1544,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           : _collectionMeta(context, card, data);
       final close = panel == _Panel.comments ? _closeComments : widget.onClose;
       const closeKey = ValueKey('artifact-viewer-close');
+      // Stacked over another pane by its host (the channel side area): Back
+      // replaces the close X and reveals the pane underneath. The comments
+      // panel keeps its own Back, which closes the comments.
+      final back = panel == _Panel.comments
+          ? (widget.page ? close : null)
+          : RaftPanelHeaderChrome.maybeOf(context)?.onBack ??
+                (widget.page ? close : null);
       return RaftPanelHeaderBar(
         title: title,
         titleSuffix: version,
@@ -1552,7 +1573,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         itemGap: widget.headerLeading == null ? null : RaftSpace.x2,
         bottomRule: widget.inline,
         bottomBorder: widget.inline ? RaftSidePanelFrame.headerRule(t) : null,
-        onBack: widget.page ? close : null,
+        onBack: back,
         backKey: closeKey,
         titleSlot: widget.page
             ? null
@@ -1581,7 +1602,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         actions: [
           ...actions,
           ...widget.headerActions,
-          if (!widget.page)
+          if (back == null)
             RaftPanelAction(
               key: closeKey,
               responsiveRecipe: true,
@@ -1639,9 +1660,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       ),
       _Panel.comments =>
         discussion == null ||
-                report == null &&
-                    (!_regularCommentsOpen ||
-                        RaftAdaptiveWorkspace.compactOf(context))
+                report == null && (!_regularCommentsOpen || !_commentsBeside)
             ? null
             : _commentsPanel(data, onClose: _closeComments),
       _Panel.none => null,
@@ -1781,13 +1800,6 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final needsSheet =
-        _regularCommentsOpen && RaftAdaptiveWorkspace.compactOf(context);
-    if (needsSheet != (_regularCommentsRoute != null)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _syncRegularCommentsRoute();
-      });
-    }
     final busy = switching || data == null && !unavailable;
     final view = Semantics(
       container: true,
@@ -1820,7 +1832,24 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
             ),
             if (!widget.collapsed && busy && data != null)
               const RaftProgressBar(size: RaftProgressRecipeSize.sm),
-            if (!widget.collapsed) Expanded(child: _body(context)),
+            if (!widget.collapsed)
+              Expanded(
+                // The body's own width decides whether the discussion sits
+                // beside the artifact; the sheet it falls back to is a route,
+                // so the decision is taken where the width is known.
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    _paneWidth = constraints.maxWidth;
+                    final needsSheet = _regularCommentsOpen && !_commentsBeside;
+                    if (needsSheet != (_regularCommentsRoute != null)) {
+                      WidgetsBinding.instance.addPostFrameCallback(
+                        (_) => _syncRegularCommentsRoute(),
+                      );
+                    }
+                    return _body(context);
+                  },
+                ),
+              ),
           ],
         ),
       ),

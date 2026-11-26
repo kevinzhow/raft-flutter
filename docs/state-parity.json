@@ -5782,6 +5782,12 @@
         "owner": "Workspace side panels",
         "reason": "Mounts the chat or folded thread inside the clipped conversation region."
       },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@13062/METHOD:_build@16775/FUNCTION:chatContent@21698": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Mounts the chat or folded thread inside the clipped conversation region."
+      },
       "apps/raft_flutter/lib/features/desktop_browser_address.dart#class:DesktopBrowserAddress": {
         "role": "entry_composition",
         "familyRefs": [
@@ -22243,6 +22249,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#method:RaftWorkspaceTreeView._pane": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-FOLD",
+        "reason": "The view body moved out of build() so the md: split is measured on this view's own box instead of the window. Resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/agent_profile.dart#method:_ProfileAvatarAction.createState": {
         "role": "unresolved",
@@ -61163,6 +61175,12 @@
         "owner": "Workspace side panels",
         "reason": "Connects the workspace panel and its dismissal actions to the accepted location."
       },
+      "apps/raft_flutter/lib/features/workspace_panel_dismissal.dart#method:_WorkspacePanelDismissal.takeChannelSideEscape": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Routes Escape on the channel side panes to the pane on top (ChannelSideStack) before the location-driven dismissal."
+      },
       "apps/raft_flutter/lib/features/workspace_panel_dismissal.dart#method:_WorkspacePanelDismissal.workspaceSideThread": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -61300,7 +61318,19 @@
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6292/METHOD:buildWorkspace@45401/FUNCTION:<anonymous>@45657/FUNCTION:conversation@49352": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
       "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6170/METHOD:buildWorkspace@45279/FUNCTION:<anonymous>@45535/FUNCTION:workspace@63754": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6292/METHOD:buildWorkspace@45401/FUNCTION:<anonymous>@45657/FUNCTION:workspace@63876": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
@@ -61312,7 +61342,21 @@
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
       },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6292/METHOD:desktopContentDetail@98475/FUNCTION:header@100369": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
       "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6170/METHOD:settingsRailAction@105933/FUNCTION:action@105967": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Composes the mounted Settings rail action using the shared frame action, with route selection and the update badge supplied by the host."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@6292/METHOD:settingsRailAction@105901/FUNCTION:action@105935": {
         "role": "entry_composition",
         "familyRefs": [
           "workspace-shell"
@@ -61328,7 +61372,21 @@
         "owner": "Shared desktop chrome",
         "reason": "Projects safe-area insets for the mounted keyboard layout beside a rail."
       },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@50531/METHOD:build@50991/FUNCTION:withoutRailInset@51229": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "Shared desktop chrome",
+        "reason": "Projects safe-area insets for the mounted keyboard layout beside a rail."
+      },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:mainContent@12774": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Keeps the workspace content mounted and projects the thread only when folded."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:mainContent@13131": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace side panels",
@@ -61340,7 +61398,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:panel@13590": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:profile@11946": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@9365/METHOD:conversation@10422/FUNCTION:profile@12303": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -61369,6 +61439,12 @@
         "familyRefs": [],
         "owner": "WP-SIDEBAR",
         "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78587/METHOD:_pane@80641/FUNCTION:message@84179": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-FOLD",
+        "reason": "The existing builder has a new lexical identity after the workspace tree's md: split moved into a LayoutBuilder. Its separate family and state mapping remain unreviewed."
       },
       "packages/raft_ui/lib/src/root_error_fallback.dart#local-function:EXTENSION:<anonymous>@8014/METHOD:_web@8060/FUNCTION:code@8215": {
         "role": "unresolved",
@@ -61527,6 +61603,12 @@
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
       "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@11246/METHOD:_build@14959/FUNCTION:chatContent@19733": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Mounts the chat or folded thread inside the clipped conversation region."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:ChannelSideAreaState@13677/METHOD:_build@17570/FUNCTION:chatContent@22493": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Workspace side panels",

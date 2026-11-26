@@ -115,7 +115,6 @@ Future<AreaRig> pumpArea(
       home: Scaffold(
         body: ChannelSideArea(
           controller: w,
-          headerExtent: 56,
           bodyOf: (context, section) => SizedBox.expand(
             key: Key('body-${section.name}'),
             child: const ColoredBox(color: Color(0xFFEEEEEE)),
@@ -189,8 +188,11 @@ void main() {
     );
 
     testWidgets(
-      'columns clip in proportion after reaching their content floors',
+      'a medium window covers with the pane opened last, nothing clipped',
       (t) async {
+        // 360 for the chat and the two panes at their own minimums (280 and
+        // 480) do not fit in 800. Clipping both to 160 was the Web desktop
+        // rule; a medium window covers instead.
         final rig = await pumpArea(t, size: const Size(800, 800));
         rig.store.setCardOpen(ChannelSideCard.tasks, true);
         WebPreviewStore.of(rig.w).open(
@@ -200,14 +202,13 @@ void main() {
           ),
         );
         await t.pump();
-        final a = rect(t, 'channel-side-column-1');
-        final b = rect(t, 'channel-side-column-2');
-        expect(a.left, closeTo(800 * 360 / 1120, .5));
-        expect(a.width, closeTo(800 * 280 / 1120, .5));
-        expect(b.width, closeTo(800 * 480 / 1120, .5));
-        expect(rect(t, 'chat-header').width, closeTo(360, .5));
-        expect(b.right, 800);
-        expect(a.right, b.left);
+        expect(rect(t, 'channel-side-overlay').width, 800);
+        expect(find.byKey(const Key('channel-side-column-1')), findsNothing);
+        // The web page opened last, so it is the one on top.
+        expect(find.byKey(const Key('body-artifact')), findsOne);
+        expect(find.byKey(const Key('body-tasks')), findsNothing);
+        // The chat keeps its whole slot instead of being clipped into it.
+        expect(rect(t, 'chat-header').width, 800);
       },
     );
 
@@ -494,13 +495,16 @@ void main() {
 
   group('compact: covering', () {
     testWidgets(
-      'a phone: one card covers the chat under the header, no X, no Back of its own',
+      'a phone: one card covers the whole conversation column, no X, no Back of its own',
       (t) async {
         final rig = await pumpArea(t, size: const Size(390, 844));
         rig.store.setCardOpen(ChannelSideCard.tasks, true);
         await t.pump();
+        // A phone's channel header stands above this area (workspace_view
+        // mounts `mobilePageHeader` outside RaftAdaptiveWorkspace), and its
+        // Back is what closes the card, so the cover takes the whole area.
         final cover = rect(t, 'channel-side-overlay');
-        expect(cover, const Rect.fromLTRB(0, 56, 390, 844));
+        expect(cover, const Rect.fromLTRB(0, 0, 390, 844));
         expect(
           find.byKey(const Key('channel-side-card-tasks-close')),
           findsNothing,
@@ -593,7 +597,7 @@ void main() {
       await t.pump();
       expect(
         rect(t, 'channel-side-overlay'),
-        const Rect.fromLTRB(0, 56, 600, 800),
+        const Rect.fromLTRB(0, 0, 600, 800),
       );
       await t.tapAt(const Offset(100, 300));
       expect(probeTaps, 0);
@@ -669,7 +673,7 @@ void main() {
 
   group('interaction at the folding sizes', () {
     testWidgets(
-      '856x944 Android: beside by width, a finger drags the 24px handle',
+      '856x944 Android: the card covers, its head has Back, nothing to drag',
       (t) async {
         final rig = await pumpArea(
           t,
@@ -678,20 +682,36 @@ void main() {
         );
         rig.store.setCardOpen(ChannelSideCard.tasks, true);
         await t.pump();
-        expect(find.byKey(const Key('channel-side-column-1')), findsOne);
+        expect(rect(t, 'channel-side-overlay').width, 856);
+        // The column is the cover, not a dock beside the chat.
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('channel-side-overlay')),
+            matching: find.byKey(const Key('channel-side-column-1')),
+          ),
+          findsOne,
+        );
+        // A covering column has no width to drag.
+        expect(
+          find.byKey(const Key('channel-side-column-resize-1')),
+          findsNothing,
+        );
+        // Not a phone: the card draws its own Back, and no X beside it.
+        final back = find.byKey(const Key('channel-side-card-tasks-back'));
+        expect(back.hitTestable(), findsOne);
+        expect(
+          find.byKey(const Key('channel-side-card-tasks-close')),
+          findsNothing,
+        );
+        expect(rect(t, 'chat-header').width, 856);
+        await t.tap(back);
+        await t.pump();
+        expect(rig.store.cardOpen(ChannelSideCard.tasks), isFalse);
         expect(find.byKey(const Key('channel-side-overlay')), findsNothing);
-        final handle = find.byKey(const Key('channel-side-column-resize-1'));
-        expect(t.getRect(handle).width, 24);
-        final drag = await t.startGesture(t.getCenter(handle));
-        await drag.moveBy(const Offset(-50, 0));
-        await drag.up();
-        await settle(t);
-        expect(rig.store.layout.columns[1].width, 410);
-        expect(rect(t, 'chat-header').width, closeTo(856 - 410, .5));
       },
     );
 
-    testWidgets('944x856 Android: beside, the chat keeps 360', (t) async {
+    testWidgets('944x856 Android: the chat keeps its whole slot', (t) async {
       final rig = await pumpArea(
         t,
         size: const Size(944, 856),
@@ -700,8 +720,10 @@ void main() {
       rig.store.setCardOpen(ChannelSideCard.tasks, true);
       rig.store.setCardOpen(ChannelSideCard.files, true);
       await t.pump();
-      expect(rect(t, 'chat-header').width, 944 - 360);
-      expect(find.byKey(const Key('channel-side-switch')), findsNothing);
+      expect(rect(t, 'chat-header').width, 944);
+      // Both open in one column: the cover shows one at a time under a switch.
+      expect(find.byKey(const Key('channel-side-switch')), findsOne);
+      expect(rect(t, 'channel-side-overlay').width, 944);
     });
 
     testWidgets(
@@ -735,25 +757,38 @@ void main() {
       [column(1, 360)],
       width: 1000,
       compact: false,
+      layout: RaftLayoutClass.wide,
     );
     expect(fits.mode, ChannelSideMode.beside);
     expect(fits.columns.single.width, 360);
-    final shrunk = placeChannelSide(
+    // 360 for the chat and both columns at their 280 minimum do not fit in
+    // 800: the second waits behind the first instead of both clipping.
+    final stacked = placeChannelSide(
       [column(1, 360), column(2, 480)],
       width: 800,
       compact: false,
+      layout: RaftLayoutClass.wide,
     );
+    expect(stacked.mode, ChannelSideMode.beside);
+    expect(stacked.columns.single.width, 360);
+    expect(stacked.stackedBelow, 1);
+    expect(stacked.columns.every((c) => c.width >= 280), isTrue);
     expect(
-      shrunk.columns.map((c) => c.width).reduce((a, b) => a + b),
-      closeTo(800 * 560 / 920, .01),
-    );
-    expect(shrunk.columns.every((c) => c.width >= 160), isTrue);
-    expect(
-      placeChannelSide([column(1, 360)], width: 600, compact: true).mode,
+      placeChannelSide(
+        [column(1, 360)],
+        width: 600,
+        compact: true,
+        layout: RaftLayoutClass.compact,
+      ).mode,
       ChannelSideMode.overlay,
     );
     expect(
-      placeChannelSide([column(1, 360)], width: 519, compact: true).mode,
+      placeChannelSide(
+        [column(1, 360)],
+        width: 519,
+        compact: true,
+        layout: RaftLayoutClass.compact,
+      ).mode,
       ChannelSideMode.overlay,
     );
   });

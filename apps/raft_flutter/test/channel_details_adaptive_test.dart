@@ -28,9 +28,13 @@ void main() {
         await t.tap(find.byKey(const Key('channel-overflow-trigger')));
         await frames(t, 25);
         expect(find.text('Details'), findsOneWidget);
-        final phone = scenario.size.width < 768;
+        // Details covers the conversation on a phone and on a medium window
+        // (a foldable inner screen), so its head's control is Back there and
+        // the close X only where it stands beside the chat.
+        final covers =
+            scenario.size.width < RaftLayoutMetrics.threadOverlayBreakpoint;
         final close = find.byKey(
-          Key(phone ? 'channel-overflow-back' : 'channel-details-close'),
+          Key(covers ? 'channel-overflow-back' : 'channel-details-close'),
         );
         expect(close, findsOneWidget);
         expect(find.byKey(const Key('channel-overflow-scrim')), findsNothing);

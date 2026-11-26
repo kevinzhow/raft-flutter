@@ -164,8 +164,17 @@ class RaftThreadHeader extends StatelessWidget {
     final desktopSidePanel =
         !RaftAdaptiveWorkspace.compactOf(context) && placement != null;
     final folded = placement?.foldedInSideRow ?? false;
-    final showBack = (showBackOverride ?? (folded || recipe.showBack));
-    final showClose = (showCloseOverride ?? (!folded && recipe.showClose));
+    // Its host stacks this panel over another one and this is its Back: the
+    // head draws a back arrow in place of its own close, and pressing it
+    // reveals the panel underneath (RaftPanelHeaderChrome.onBack).
+    final hostBack = desktopSidePanel
+        ? RaftPanelHeaderChrome.maybeOf(context)?.onBack
+        : null;
+    final showBack =
+        (showBackOverride ?? (folded || recipe.showBack || hostBack != null));
+    final showClose =
+        (showCloseOverride ??
+        (!folded && hostBack == null && recipe.showClose));
     final toggleFocus = allowFocusMode ? placement?.toggleFocus : null;
     final focused = placement?.focused ?? false;
     final width = viewportWidth ?? viewport.width;
@@ -253,7 +262,7 @@ class RaftThreadHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [title, meta],
             ),
-      onBack: showBack ? onBack : null,
+      onBack: showBack ? (hostBack ?? onBack) : null,
       backKey: backKey,
       backTooltip: backLabel,
       background: recipe.headerBackground,

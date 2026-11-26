@@ -94,6 +94,9 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
     );
     final t = RaftTokens.of(context);
     final wide = !RaftAdaptiveWorkspace.compactOf(context);
+    // Stacked over another pane by its host (the channel side area): Back
+    // replaces the close X and reveals the pane underneath.
+    final back = onBack ?? RaftPanelHeaderChrome.maybeOf(context)?.onBack;
     return RaftPanelTextScope(
       sans: true,
       child: Column(
@@ -107,11 +110,11 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
             iconSlot: avatar(t.desktop ? RaftAvatarSize.sm : RaftAvatarSize.md),
             iconAlwaysVisible: true,
             profileBody: true,
-            onBack: onBack,
+            onBack: back,
             backKey: const Key('external-mobile-back'),
             backTooltip: raftText(context, 'Back'),
             actions: [
-              if (wide || showCompactClose)
+              if (back == null && (wide || showCompactClose))
                 RaftPanelIconButton(
                   glyph: RaftGlyph.x,
                   tooltip: raftText(context, 'Close'),

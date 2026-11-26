@@ -106,20 +106,7 @@ abstract final class ChannelSideCards {
                 ]) ==
                 appCardKey);
     if (onTop) {
-      if (desktop) {
-        final conversation = w.channel!.id;
-        final browser = preview.browserTabs.forConversation(conversation);
-        final artifact = ChannelArtifactPlace.of(w)
-            .forConversation(conversation);
-        if (browser != null &&
-            (artifact == null || browser.inFrontOf(artifact.openedAt))) {
-          preview.browserTabs.close(conversation);
-        } else {
-          ChannelArtifactPlace.of(w).close(conversation);
-        }
-      } else {
-        preview.close();
-      }
+      closeArtifact(w);
       return true;
     }
     if (cards.isEmpty) return false;
@@ -127,6 +114,28 @@ abstract final class ChannelSideCards {
       close(w, card);
     }
     return true;
+  }
+
+  /// Closes what stands in the Artifact's place for this conversation and
+  /// nothing else: the browser or the artifact, whichever is in front, else
+  /// the legacy single page. The phone's Back ([closeCovering]) and the side
+  /// stack's Back (`closeChannelSideSection`) both come through here, so the
+  /// stack can close the Artifact without taking Tasks and Files with it.
+  static void closeArtifact(WorkspaceController w) {
+    final preview = WebPreviewStore.of(w);
+    if (!hasDesktopPlace(w)) {
+      preview.close();
+      return;
+    }
+    final conversation = w.channel!.id;
+    final browser = preview.browserTabs.forConversation(conversation);
+    final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
+    if (browser != null &&
+        (artifact == null || browser.inFrontOf(artifact.openedAt))) {
+      preview.browserTabs.close(conversation);
+    } else {
+      ChannelArtifactPlace.of(w).close(conversation);
+    }
   }
 
   /// The side area's key for the web page in the store's focus order.
