@@ -472,7 +472,7 @@ class RaftListRowTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RaftCssText(
+    return Text(
       raftText(context, text),
       maxLines: 1,
       softWrap: false,

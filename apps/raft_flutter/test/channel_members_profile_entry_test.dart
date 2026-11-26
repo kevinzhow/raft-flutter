@@ -118,7 +118,7 @@ void main() {
                     of: profile,
                     matching: find.byWidgetPredicate(
                       (widget) =>
-                          widget is RaftPanelIconButton &&
+                          widget is RaftButton &&
                           widget.tooltip == 'Close Profile',
                     ),
                   )

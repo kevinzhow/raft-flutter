@@ -275,7 +275,7 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
       _ => RaftGlyph.hash,
     };
     final muteMessage = c.muteFromSeq != null
-        ? raftFormat(context, 'Activity muted from message #{seq}', {
+        ? raftFormat(context, 'Activity muted from seq {seq}', {
             'seq': c.muteFromSeq,
           })
         : raftText(context, 'Activity muted');
