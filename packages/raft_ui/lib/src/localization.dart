@@ -1,6 +1,21 @@
 import 'package:flutter/widgets.dart';
 
+import 'l10n/display_catalogs.g.dart';
 import 'l10n/zh_index.g.dart' show zhCatalogAll;
+
+export 'l10n/display_catalogs.g.dart' show raftDisplayLanguages;
+
+String raftDisplayLanguageId(Locale? locale) => switch (locale?.languageCode) {
+  'zh'
+      when locale?.scriptCode == 'Hant' ||
+          locale?.scriptCode != 'Hans' &&
+              const ['TW', 'HK', 'MO'].contains(locale?.countryCode) =>
+    'zh-tw',
+  'zh' => 'zh-cn',
+  'pt' => 'pt-br',
+  final code? when raftDisplayLanguages.containsKey(code) => code,
+  _ => 'en',
+};
 
 // Plain-text catalog derived from pinned Web en/zh-cn catalogs (26f77ef),
 // plus native UI entries. ICU messages are not interpreted by this helper.
@@ -24,16 +39,44 @@ import 'l10n/zh_index.g.dart' show zhCatalogAll;
 // in [raftChineseLateAdditions] below are the former tail of the map; appending
 // right after them still merges cleanly, but move such lines into a feature file.
 String raftText(BuildContext context, String source) {
-  if (Localizations.maybeLocaleOf(context)?.languageCode != 'zh') return source;
-  return raftChinese[source] ?? source;
+  final language = raftDisplayLanguageId(Localizations.maybeLocaleOf(context));
+  final catalog = language == 'zh-cn' ? raftChinese : displayCatalogs[language];
+  return catalog?[source] ?? source;
 }
 
 /// Fixed UI copy whose Chinese differs per Web catalog key although the English
 /// source collides (for example `Unassigned`: the task property says 未指派,
 /// the board filter 未分配, the history detail 取消指派). The call site names
-/// the Web key's Chinese; non-Chinese locales show [source].
-String raftTextZh(BuildContext context, String source, String zh) =>
-    Localizations.maybeLocaleOf(context)?.languageCode == 'zh' ? zh : source;
+/// the Web key's Simplified Chinese translation.
+String raftTextZh(BuildContext context, String source, String zh) {
+  final language = raftDisplayLanguageId(Localizations.maybeLocaleOf(context));
+  return language == 'zh-cn'
+      ? zh
+      : displayVariants[language]?[(source, zh)] ?? source;
+}
+
+/// Fixed UI copy whose English matches several Web keys that share a Chinese
+/// translation but not the others. `Saved` is three Web keys, all 已保存, and
+/// Сохранённое (the sidebar collection), Сохранено (a confirmation) and
+/// Сохранённые (a filter) in Russian — so [raftTextZh] cannot tell them apart
+/// and the call site names the Web key it means.
+///
+/// The generator checks the id exists and that its English is this [source],
+/// so a renamed or mistyped key fails the build rather than silently falling
+/// back to English.
+/// Labels that travel to their widget as data rather than through a
+/// [raftTextKeyed] call, so the generator would not otherwise see which Web
+/// key they mean (`RaftSettingsNavEntry.labelKey`). Declaring the pair here
+/// is what puts the translation in the catalogs.
+const raftKeyedLabels = <(String, String)>[
+  ('Account', 'settings.tabs.account'),
+  ('Feedback', 'settings.about.feedbackTitle'),
+];
+
+String raftTextKeyed(BuildContext context, String source, String webKey) {
+  final language = raftDisplayLanguageId(Localizations.maybeLocaleOf(context));
+  return displayKeyed[language]?[(source, webKey)] ?? source;
+}
 
 /// Localizes fixed UI copy before inserting untouched user-provided values.
 String raftFormat(

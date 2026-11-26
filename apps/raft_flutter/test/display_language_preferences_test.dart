@@ -39,7 +39,7 @@ void main() {
   );
 
   test('unsupported and wrong-typed disk values are ignored without destroying old preferences', () async {
-    for (final value in <Object>['ja', true, 42]) {
+    for (final value in <Object>['fr', true, 42]) {
       SharedPreferences.setMockInitialValues({
         displayLanguagePreferenceKey: value,
         'raft.mode': 'dark',

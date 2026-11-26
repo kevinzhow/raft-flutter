@@ -4076,7 +4076,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   String relativeTime(dynamic value) => resourceRelativeTime(
     value is String ? value : null,
     now: widget.clock?.call(),
-    chinese: Localizations.localeOf(context).languageCode == 'zh',
+    locale: Localizations.localeOf(context).toLanguageTag(),
   );
 
   Widget savedCard(

@@ -16,7 +16,7 @@ class RaftMessageSavedIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final label = raftText(context, 'Saved');
+    final label = raftTextKeyed(context, 'Saved', 'message.messageItem.saved');
     final slot = RaftMessageFooterRecipe.resolve(tokens: t.recipeTokens)
         .savedIndicator;
     final svgKey = slot.targets.keys

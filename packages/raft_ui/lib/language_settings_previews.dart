@@ -18,7 +18,6 @@ class _LanguageSettingsPreview extends StatefulWidget {
 
 class _LanguageSettingsPreviewState extends State<_LanguageSettingsPreview> {
   final values = <String, String>{
-    'display': 'en',
     'mode': 'manual',
     'target': 'ja',
     'view': 'original',
@@ -31,13 +30,18 @@ class _LanguageSettingsPreviewState extends State<_LanguageSettingsPreview> {
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(RaftSpace.x4),
     child: RaftLanguageRegionView(
-      displayLanguage: values['display'] ?? 'en',
-      displayLanguageOptions: const [('en', 'English'), ('zh-cn', '简体中文')],
+      displayLanguage:
+          values['display'] ??
+          raftDisplayLanguageId(Localizations.maybeLocaleOf(context)),
+      displayLanguageOptions: [
+        for (final entry in raftDisplayLanguages.entries)
+          (entry.key, entry.value.$2),
+      ],
       translationMode: values['mode'] ?? 'manual',
       translationNotice: null,
       translationTarget: values['target'] ?? 'ja',
-      translationTargetOptions: const [
-        ('display', 'Same as display language'),
+      translationTargetOptions: [
+        ('display', raftText(context, 'Same as display language')),
         ('ja', 'Japanese'),
         ('en', 'English'),
       ],

@@ -111,18 +111,8 @@ DateTime? _parse(Object? value) {
 
 /// The clock of a list row in the person's 12-hour or 24-hour choice, with no
 /// leading zero: "5:20 PM", "17:20", "9:05".
-String formatRowClock(DateTime at, SourceTimeFormatter formatter) {
-  final wall = formatter.wallTime(at);
-  if (formatter.effectiveTimeFormat == SourceTimeFormat.twelveHour) {
-    final chinese =
-        formatter.locale == 'zh' || formatter.locale.startsWith('zh_');
-    return DateFormat(
-      chinese ? 'ah:mm' : 'h:mm a',
-      formatter.locale,
-    ).format(wall);
-  }
-  return '${wall.hour}:${wall.minute.toString().padLeft(2, '0')}';
-}
+String formatRowClock(DateTime at, SourceTimeFormatter formatter) =>
+    formatter.rowClock(at);
 
 /// Web `formatRowTime`: null when [value] is not a time.
 RowTime? formatRowTime(

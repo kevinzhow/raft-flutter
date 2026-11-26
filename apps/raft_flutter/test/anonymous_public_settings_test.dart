@@ -206,9 +206,18 @@ void main() {
         var view = t.widget<RaftLanguageRegionView>(
           find.byType(RaftLanguageRegionView),
         );
+        // Web v1.24 SUPPORTED_LOCALES (i18n/locale.ts, from raft-shared
+        // DISPLAY_LOCALES): the signed-out picker offers every shipped
+        // language, in Web's order and with Web's own endonyms.
         expect(view.displayLanguageOptions, [
           ('en', 'English'),
+          ('es', 'Español'),
+          ('pt-br', 'Português (Brasil)'),
+          ('ru', 'Русский'),
+          ('ko', '한국어'),
+          ('ja', '日本語'),
           ('zh-cn', '简体中文'),
+          ('zh-tw', '繁體中文'),
         ]);
         // Use the actual select, not the view callbacks.
         await t.tap(find.byKey(const ValueKey('display-language-select')));

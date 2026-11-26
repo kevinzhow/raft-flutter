@@ -21,6 +21,7 @@ void main() {
           theme: raftTheme(),
           home: Scaffold(
             body: RaftThreadReplies(
+              replyCountLabel: '12 replies',
               replyCount: 12,
               replies: [
                 reply('system', type: 'system'),
@@ -46,6 +47,7 @@ void main() {
           theme: raftTheme(),
           home: Scaffold(
             body: RaftThreadReplies(
+              replyCountLabel: '1 reply',
               replyCount: 1,
               replies: [reply('system', type: 'system')],
               onOpen: () {},
@@ -74,6 +76,7 @@ void main() {
               theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: RaftThreadReplies(
+                  replyCountLabel: '5 replies',
                   replyCount: 5,
                   unreadCount: 2,
                   hasDraft: true,

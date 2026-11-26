@@ -685,6 +685,7 @@ class RaftPublicThreadPanel extends StatelessWidget {
     required this.showClose,
     required this.parent,
     required this.replies,
+    required this.replyCountLabel,
     required this.loading,
     required this.emptyTitle,
     required this.scrollController,
@@ -699,6 +700,9 @@ class RaftPublicThreadPanel extends StatelessWidget {
   final ScrollController scrollController;
   final Widget parent;
   final List<Widget> replies;
+
+  /// Already localized; see [RaftThreadReplies.replyCountLabel].
+  final String replyCountLabel;
   final String? error;
   final VoidCallback? onLoadOlder;
   @override
@@ -777,7 +781,7 @@ class RaftPublicThreadPanel extends StatelessWidget {
             backLabel: raftText(context, 'Back'),
             closeLabel: raftText(context, closeLabel),
             parentLabel: channelContext.replaceFirst('— ', ''),
-            replyCount: replies.length,
+            replyCountLabel: replyCountLabel,
             stackMeta: true,
             interactiveTitle: false,
             showBackOverride: narrow && !showClose,

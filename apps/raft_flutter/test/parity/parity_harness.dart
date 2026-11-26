@@ -216,26 +216,23 @@ String parityThemeLabel(({String pack, bool dark}) selection) =>
     '${selection.pack}-${selection.dark ? 'dark' : 'light'}';
 
 Map<String, List<String>> paritySystemFonts() => {
-  'Noto Sans CJK JP': [
-    systemTestFont('opentype/noto/NotoSansCJK-Regular.ttc').path,
-    systemTestFont('opentype/noto/NotoSansCJK-Bold.ttc').path,
-  ],
-  'Noto Sans CJK SC': [
-    systemTestFont('opentype/noto/NotoSansCJK-Regular.ttc').path,
-    systemTestFont('opentype/noto/NotoSansCJK-Bold.ttc').path,
-  ],
+  for (final family in cjkStandInFaces.keys)
+    family: [
+      systemTestFont('opentype/noto/NotoSansCJK-Regular.ttc').path,
+      systemTestFont('opentype/noto/NotoSansCJK-Bold.ttc').path,
+    ],
   'Noto Color Emoji': [systemTestFont('truetype/noto/NotoColorEmoji.ttf').path],
-  // `ui-sans-serif, system-ui` (the hands-feedback Feedback workspace):
-  // Chromium resolves it through fontconfig, which is Noto Sans on the
-  // capture host; product code names `system-ui` (raftSystemUiFont), which
-  // a device resolves to its own UI face.
-  'system-ui': [
-    systemTestFont('truetype/noto/NotoSans-Regular.ttf').path,
-    systemTestFont('truetype/noto/NotoSans-Bold.ttf').path,
-  ],
+  // Every generic a recipe declaration can end in, which Chromium resolves
+  // through fontconfig and flutter_test resolves to its own box font unless
+  // it has a file. `font-mono` is the one that showed it: the channel date
+  // divider is mono, so a Japanese date hit `ui-monospace` and drew boxes.
+  for (final MapEntry(key: family, value: paths) in genericStandInFonts.entries)
+    family: [for (final path in paths) systemTestFont(path).path],
   // flutter_test has no OS fallback chain. On Android the system resolves
   // emoji through its own fallback; here the theme's trailing `sans-serif`
-  // fallback family stands in for it so emoji do not render as tofu.
+  // fallback family stands in for it so emoji do not render as tofu. One
+  // family resolves to one typeface, so this cannot also carry the CJK faces:
+  // those are their own families above, ahead of it in every chain.
   'sans-serif': [systemTestFont('truetype/noto/NotoColorEmoji.ttf').path],
 };
 
@@ -282,7 +279,12 @@ Future<List<String>> loadParityFonts() async {
     if (files.isEmpty) continue;
     final loader = FontLoader(family);
     for (final file in files) {
-      loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
+      final face = cjkStandInFaces[family];
+      loader.addFont(
+        face != null
+            ? Future.value(cjkTestFontData(file, face))
+            : file.readAsBytes().then((b) => ByteData.sublistView(b)),
+      );
     }
     await loader.load();
     loaded.add(family);
@@ -409,13 +411,19 @@ Future<Map<String, dynamic>> captureParityCase(
     dark: dark,
   );
   try {
+    final locale = raftDisplayLanguages[ctx.props['displayLanguage']]?.$1;
     final size = Size(ctx.width, mapping.fullLengthHeight ?? ctx.height);
     t.view.physicalSize = size * ctx.density;
     t.view.devicePixelRatio = ctx.density;
     addTearDown(t.view.reset);
 
     final rootKey = GlobalKey(debugLabel: 'parity-root');
-    final raft = raftTheme(dark: dark, pack: packForThemeId(selection.pack));
+    final raft = raftTheme(
+      dark: dark,
+      pack: packForThemeId(selection.pack),
+      locale: locale,
+      textLocale: locale,
+    );
     final tokens = raft.extension<RaftTokens>()!;
     final selectedFonts = {
       'heading': tokens.headingFont,
@@ -440,8 +448,8 @@ Future<Map<String, dynamic>> captureParityCase(
     await t.pumpWidget(
       MaterialApp(
         debugShowCheckedModeBanner: false,
-        locale: const Locale('en'),
-        supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
+        locale: locale ?? const Locale('en'),
+        supportedLocales: raftDisplayLanguages.values.map((entry) => entry.$1),
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         theme: theme,
         builder: (context, child) => MediaQuery(
@@ -1053,6 +1061,7 @@ List<Map<String, dynamic>> _typographyProbes(BuildContext? context) {
             'packages/raft_ui/',
             '',
           ),
+          'fontFamilyFallback': style.fontFamilyFallback,
           'fontSize': fontSize,
           'fontWeight': (style.fontWeight ?? FontWeight.w400).value,
           'fontVariations': [

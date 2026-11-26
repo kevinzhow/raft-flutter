@@ -15,6 +15,7 @@ import '../data/workspace_controller.dart';
 
 import 'sender_avatar_projection.dart';
 import 'workspace_web_billing.dart';
+import 'icu_message.dart';
 
 /// Web `HistoryPaywallScope`: the words differ by where the count sits in the
 /// zh sentence, so each scope has its own keys.
@@ -361,16 +362,8 @@ class RaftHistoryPaywallView extends StatelessWidget {
       if (box != null) {
         final latest = box.latest;
         replies = RaftHiddenTargetReplies(
-          summary: raftFormat(
-            context,
-            box.count == 1 ? '{count} reply' : '{count} replies',
-            {'count': box.count},
-          ),
-          semanticLabel: raftFormat(
-            context,
-            box.count == 1 ? '{count} reply' : '{count} replies',
-            {'count': box.count},
-          ),
+          summary: replyCountText(context, box.count),
+          semanticLabel: replyCountText(context, box.count),
           onOpen: () => w.openThreadIdentity(
             parentChannelId: channelId!,
             parentMessageId: target.target.id,

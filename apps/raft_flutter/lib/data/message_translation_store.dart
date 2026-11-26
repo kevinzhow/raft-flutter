@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:raft_client/raft_client.dart';
 
 import 'cause_notice.dart';
+import 'display_language_preferences.dart';
 import 'user_error.dart';
 import 'workspace_cache.dart';
 
@@ -258,14 +259,11 @@ class MessageTranslationStore extends ChangeNotifier {
   ];
 
   /// The display locale the no-preference translation target follows (Web
-  /// translationStore `displayLanguageTarget`), in translation-language ids
-  /// (`en`, `zh-cn`). Seeded from the device like the first render's locale;
+  /// translationStore `displayLanguageTarget`), in translation-language ids.
+  /// Seeded from the device like the first render's locale;
   /// [followDisplayLanguage] keeps it current.
   static String get displayLanguageTarget =>
-      _followed ??
-      (deviceLanguages().firstOrNull?.toLowerCase().startsWith('zh') == true
-          ? 'zh-cn'
-          : 'en');
+      _followed ?? systemDisplayLanguage(deviceLanguages());
   static String? _followed;
 
   /// The live stores, told when the display language changes (Web's one

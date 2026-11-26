@@ -200,6 +200,7 @@ void main() {
           row: (tap, text) => touchRow(
             text,
             threadRepliesBadge: RaftThreadRepliesBadge(
+              replyCountLabel: '3 replies',
               replyCount: 3,
               onPressed: tap,
             ),

@@ -86,7 +86,7 @@ class WorkspaceDmHeader extends StatelessWidget {
                 lastSeenAt: DateTime.tryParse('${profile?['lastSeenAt']}'),
                 relativeTime: (seen) => resourceRelativeTime(
                   seen.toIso8601String(),
-                  chinese: Localizations.localeOf(context).languageCode == 'zh',
+                  locale: Localizations.localeOf(context).toLanguageTag(),
                 ),
                 translate: (source, values) =>
                     raftFormat(context, source, values),

@@ -875,8 +875,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
           : resourceRelativeTime(
               iso,
               now: widget.now?.call(),
-              chinese:
-                  Localizations.maybeLocaleOf(context)?.languageCode == 'zh',
+              locale: Localizations.maybeLocaleOf(context)?.toLanguageTag(),
             );
       facts = when.isEmpty
           ? tr('Offline')

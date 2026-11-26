@@ -50,11 +50,11 @@ void main() {
     );
     expect(
       displayLocale(null, device: const Locale('ja', 'JP')),
-      const Locale('en'),
+      const Locale('ja'),
     );
     expect(
       displayLocale(null, device: const Locale('zh', 'TW')),
-      const Locale('en'),
+      const Locale('zh', 'TW'),
     );
   });
   testWidgets(

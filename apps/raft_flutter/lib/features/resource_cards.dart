@@ -1,3 +1,8 @@
+import 'package:intl/intl.dart';
+
+import '../data/display_relative_times.g.dart';
+import '../data/source_number_format.dart';
+
 export 'package:raft_ui/raft_ui.dart'
     show
         SourceTaskRowExtent,
@@ -11,6 +16,7 @@ String resourceRelativeTime(
   String? value, {
   DateTime? now,
   bool chinese = false,
+  String? locale,
 }) {
   final time = value == null ? null : DateTime.tryParse(value);
   if (time == null) return '';
@@ -28,7 +34,32 @@ String resourceRelativeTime(
       : 86400000;
   // JavaScript Math.round rounds negative half values toward positive infinity.
   final count = (delta / divisor + .5).floor();
-  if (chinese) {
+  final patterns =
+      displayRelativeTimes[locale?.toLowerCase().replaceAll('_', '-')];
+  if (patterns != null) {
+    final (words, before, after) =
+        patterns[unit == 'minute'
+            ? 0
+            : unit == 'hour'
+            ? 1
+            : 2];
+    final word = words[count];
+    if (word != null) return word;
+    final forms = count < 0 ? before : after;
+    final magnitude = count.abs();
+    final pattern = Intl.pluralLogic(
+      magnitude,
+      locale: locale,
+      one: forms['one'],
+      two: forms['two'],
+      few: forms['few'],
+      many: forms['many'],
+      other: forms['other']!,
+      useExplicitNumberCases: false,
+    );
+    return pattern.replaceFirst('{number}', sourceDecimal(magnitude, locale));
+  }
+  if (chinese || locale?.toLowerCase().startsWith('zh') == true) {
     if (count == 0) {
       return unit == 'minute'
           ? '此刻'

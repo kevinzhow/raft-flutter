@@ -472,7 +472,7 @@ SECTIONS = [
           p=['components.wp6.settings.usage-data-mobile'],
           note='The workspace-mode card left with the desktop grid (Web v1.21.x).'),
         R('9.05', 'Language & Region (translation modes, display, provider missing, server off)', 'components/settings/SettingsPanel.tsx LanguageRegionSection', 'DP',
-          d=['components.wp6.settings.language*', '!*-mobile'], p=['components.wp6.settings.language*-mobile']),
+          d=['components.wp6.settings.language.*'], p=['components.wp6.settings.language-mobile.*']),
         R('9.06', 'Appearance tab (theme picker, text size)', 'components/settings/SettingsPanel.tsx AppearanceSection, AppearanceThemePicker.tsx', 'DP',
           off=['components.settings.appearance.page', 'screens.settings.appearance'], d=['components.ext-settings.appearance.*'], prio=2),
         R('9.07', 'Notifications tab (web push, desktop native, app notification controls)', 'components/settings/SettingsPanel.tsx NotificationsSection, AppNotificationsControls.tsx', 'DP',

@@ -110,7 +110,7 @@ class RaftThreadHeader extends StatelessWidget {
     required this.backLabel,
     required this.closeLabel,
     this.parentLabel,
-    this.replyCount,
+    this.replyCountLabel,
     this.onViewParent,
     this.showBackOverride,
     this.showCloseOverride,
@@ -132,7 +132,10 @@ class RaftThreadHeader extends StatelessWidget {
   final RaftThreadPresentation presentation;
   final String threadLabel, jumpLabel, backLabel, closeLabel;
   final String? parentLabel;
-  final int? replyCount;
+
+  /// Already localized: an ICU plural the app expands, because the forms a
+  /// language needs cannot be chosen from an int here.
+  final String? replyCountLabel;
   final VoidCallback? onViewParent;
   final bool? showBackOverride, showCloseOverride;
   final bool allowFocusMode, stackMeta;
@@ -198,7 +201,7 @@ class RaftThreadHeader extends StatelessWidget {
             ),
           )
         : Semantics(header: true, child: Text(threadLabel, style: titleStyle));
-    final count = replyCount;
+    final count = replyCountLabel;
     final label = parentLabel;
     final meta = label == null
         ? null
@@ -227,7 +230,7 @@ class RaftThreadHeader extends StatelessWidget {
                 if (count != null)
                   Flexible(
                     child: Text(
-                      ' · ${raftFormat(context, count == 1 ? '{count} reply' : '{count} replies', {'count': count})}',
+                      ' · $count',
                       key: const Key('thread-header-reply-count'),
                       style: metaStyle,
                       maxLines: 1,

@@ -9,6 +9,7 @@ import '../data/workspace_controller.dart';
 import 'history_paywall_view.dart';
 import 'thread_outline_list.dart';
 import 'thread_outline_scope.dart';
+import 'icu_message.dart';
 
 // The thread view mounts the outline viewport and the find bar together.
 export 'thread_find_bar.dart' show threadFindBar;
@@ -40,11 +41,7 @@ Widget buildThreadTimelineTop(
     recentDivider: replyCount > 0,
   ),
   beginningLabel: raftText(context, 'Beginning of replies'),
-  replyCountLabel: raftFormat(
-    context,
-    replyCount == 1 ? '{count} reply' : '{count} replies',
-    {'count': replyCount},
-  ),
+  replyCountLabel: replyCountText(context, replyCount),
 );
 
 class ThreadOutlineViewport extends StatelessWidget {

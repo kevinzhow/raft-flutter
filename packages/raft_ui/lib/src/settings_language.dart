@@ -95,8 +95,7 @@ class RaftLanguageRegionView extends StatelessWidget {
       onTimezone,
       onTimeFormat;
 
-  Widget _select(
-    BuildContext context, {
+  Widget _select({
     required Key key,
     required String value,
     required List<RaftLanguageOption> options,
@@ -117,7 +116,7 @@ class RaftLanguageRegionView extends StatelessWidget {
       for (final (v, text) in options)
         RaftSelectItem(
           value: v,
-          label: raftText(context, text),
+          label: text,
           listed: !unlisted.contains(v) && !(hideSelected && v == value),
         ),
     ],
@@ -234,7 +233,6 @@ class RaftLanguageRegionView extends StatelessWidget {
               title: 'Display language',
               save: displayLanguageSave,
               control: _select(
-                context,
                 key: const ValueKey('display-language-select'),
                 label: 'Display language',
                 value: displayLanguage,
@@ -269,7 +267,6 @@ class RaftLanguageRegionView extends StatelessWidget {
                 title: 'Translation target',
                 save: translationTargetSave,
                 control: _select(
-                  context,
                   key: const ValueKey('translation-target'),
                   label: 'Translation target',
                   placeholder: 'Preferred language',
@@ -316,7 +313,6 @@ class RaftLanguageRegionView extends StatelessWidget {
               title: 'Timezone',
               save: timezoneSave,
               control: _select(
-                context,
                 key: const ValueKey('timezone-select'),
                 label: 'Timezone',
                 placeholder: 'Timezone',

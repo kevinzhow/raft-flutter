@@ -71,7 +71,7 @@ void main() {
         final view = t.widget<RaftLanguageRegionView>(
           find.byType(RaftLanguageRegionView),
         );
-        expect(view.displayLanguage, 'zh-cn');
+        expect(view.displayLanguage, 'es');
         expect(find.byKey(const ValueKey('language-save')), findsNothing);
         // The preview's timezone choice fails: the line is an alert under it.
         final timezone = find.byKey(const ValueKey('timezone-select'));

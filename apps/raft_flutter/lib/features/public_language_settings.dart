@@ -91,9 +91,7 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
   @override
   Widget build(BuildContext context) {
     final s = settings;
-    final live = Localizations.localeOf(context).languageCode == 'zh'
-        ? 'zh-cn'
-        : 'en';
+    final live = raftDisplayLanguageId(Localizations.localeOf(context));
     final choices = localeTimezoneChoices(savedTimezone);
     return RaftLanguageRegionView(
       displayLanguage: live,

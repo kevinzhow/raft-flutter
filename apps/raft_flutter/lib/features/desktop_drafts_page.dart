@@ -269,7 +269,7 @@ class _DraftsPageState extends State<DraftsPage> {
     final text = row.entry.text;
     final time = resourceRelativeTime(
       row.entry.updatedAt?.toIso8601String(),
-      chinese: Localizations.localeOf(context).languageCode == 'zh',
+      locale: Localizations.localeOf(context).toLanguageTag(),
     );
     return RaftInboxItem(
       key: ValueKey('draft-${row.entry.scope}'),

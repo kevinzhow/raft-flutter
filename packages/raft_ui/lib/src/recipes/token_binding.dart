@@ -94,4 +94,11 @@ class RaftRecipeTokens extends RaftThemeRecipeTokens {
       _ => null,
     };
   }
+
+  /// The locale's CJK families and the platform generic, which Web gets from
+  /// fontconfig and Flutter has to name. The design family itself is already
+  /// the style's `fontFamily`, so only the coverage is appended.
+  @override
+  List<String>? fontStack(String name) =>
+      fontFamily(name) == null ? null : tokens.fontFallback;
 }

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/display_language_preferences.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_cache.dart';
@@ -93,7 +94,7 @@ Widget buildRaftApplication({
     routeInformationParser: const RaftAppRouteParser(),
     routeInformationProvider: routeInformation,
     locale: locale,
-    supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
+    supportedLocales: supportedDisplayLocales,
     localizationsDelegates: GlobalMaterialLocalizations.delegates,
     builder: (context, child) => router.withHoverDismiss(
       RaftHoverScope.forPlatform(

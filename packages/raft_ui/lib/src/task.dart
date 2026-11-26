@@ -362,19 +362,32 @@ class RaftTaskCard extends StatelessWidget {
               children: [
                 // The badge is inline content of a block wrapper: it sits on
                 // the line box of the inherited document text (16px / 1.5).
-                RaftInlineLineBox(
-                  style: document,
-                  child: editable
-                      ? RaftTaskStatusEditor(
-                          status: status,
-                          options: statusOptions,
-                          onSelect: onStatus!,
-                          alignRight: false,
-                        )
-                      : RaftTaskStatus(status: status),
+                //
+                // Flexible, so a long status in a long language (Russian at
+                // 2.0x) gives way instead of overflowing the card. The two
+                // flex values matter: an even split let the badge claim half
+                // the row, and `footerEnd` then got its share rather than the
+                // rest, which squeezed the facts until they dropped the
+                // assignee (task_card_facts.dart gives it up below 30px). The
+                // badge is the one that may shrink, so it gets the smaller
+                // share; at every scale where it fits it is still drawn at its
+                // own width, because a loose fit only caps it.
+                Flexible(
+                  child: RaftInlineLineBox(
+                    style: document,
+                    child: editable
+                        ? RaftTaskStatusEditor(
+                            status: status,
+                            options: statusOptions,
+                            onSelect: onStatus!,
+                            alignRight: false,
+                          )
+                        : RaftTaskStatus(status: status),
+                  ),
                 ),
                 if (footerEnd != null)
                   Expanded(
+                    flex: 2,
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: footerEnd,
@@ -739,14 +752,18 @@ class RaftTaskSectionBadge extends StatelessWidget {
             status: raftTaskStatusOf(status),
             color: t.ui.foregroundHint,
           ),
-          RaftCssText(
-            label,
-            style: t.scale(
-              RaftTypeScale.footnote,
-              weight: FontWeight.w700,
-              color: ink ?? t.ui.foregroundHint,
+          Flexible(
+            child: RaftCssText(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: t.scale(
+                RaftTypeScale.footnote,
+                weight: FontWeight.w700,
+                color: ink ?? t.ui.foregroundHint,
+              ),
+              controlLabel: true,
             ),
-            controlLabel: true,
           ),
         ],
       );
@@ -933,7 +950,13 @@ class RaftTaskBoardColumn extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: r.heading.columnGap ?? 8,
       children: [
-        RaftTaskSectionBadge(status: status, label: label, board: true),
+        Flexible(
+          child: RaftTaskSectionBadge(
+            status: status,
+            label: label,
+            board: true,
+          ),
+        ),
         countText,
       ],
     );

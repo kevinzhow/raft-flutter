@@ -18,6 +18,7 @@ class RaftSettingsDestination {
     this.label,
     this.glyph,
     this.builder, {
+    this.labelKey,
     this.group = 'Personal',
     this.scroll = true,
     this.title,
@@ -40,6 +41,7 @@ class RaftSettingsDestination {
     this.id,
     this.label,
     this.glyph, {
+    this.labelKey,
     required VoidCallback this.onOpen,
     this.group = 'Personal',
     this.mobileOnly = false,
@@ -56,6 +58,9 @@ class RaftSettingsDestination {
        headerIcon = false,
        contentColor = null;
   final String id, label, group;
+
+  /// The Web message id [label] means; see RaftSettingsNavEntry.labelKey.
+  final String? labelKey;
 
   /// The row's accessible name when the label alone repeats another row's.
   final String? semanticLabel;
@@ -299,6 +304,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
             RaftSettingsNavEntry(
               id: d.id,
               label: d.label,
+              labelKey: d.labelKey,
               glyph: d.glyph,
               onTap: () => open(d),
               attention: d.attention,

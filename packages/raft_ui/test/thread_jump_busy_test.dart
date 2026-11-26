@@ -34,7 +34,11 @@ void main() {
       MaterialApp(
         theme: raftTheme(),
         home: const Scaffold(
-          body: RaftThreadRepliesBadge(replyCount: 2, unreadCount: 0),
+          body: RaftThreadRepliesBadge(
+            replyCount: 2,
+            replyCountLabel: '2 replies',
+            unreadCount: 0,
+          ),
         ),
       ),
     );

@@ -10,6 +10,7 @@ import 'thread_viewport_handle.dart';
 import 'mobile_route_gate.dart';
 import 'thread_actions.dart';
 import 'thread_agent_followers_view.dart';
+import 'icu_message.dart';
 
 class WorkspaceThreadHeader extends StatefulWidget {
   const WorkspaceThreadHeader({
@@ -116,9 +117,9 @@ class _WorkspaceThreadHeaderState extends State<WorkspaceThreadHeader> {
               parentLabel: unresolved || channel == null
                   ? null
                   : threadChannelLabel(channel),
-              replyCount: count == 0 && messages.state.threadLoading
+              replyCountLabel: count == 0 && messages.state.threadLoading
                   ? null
-                  : count,
+                  : replyCountText(context, count),
               interactiveTitle: !unresolved,
               onBack: widget.onClose,
               onClose: widget.onClose,

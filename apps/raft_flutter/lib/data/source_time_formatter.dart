@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as database;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'display_date_patterns.g.dart';
+
 /// Initialize once before constructing a formatter. This does not assign
 /// timezone's process-global `local`, which otherwise defaults to UTC.
 Future<void>? _initialization;
@@ -74,6 +76,23 @@ class SourceTimeFormatter {
       : tz.TZDateTime.from(instant, preferredZone!);
 
   bool get _chinese => locale == 'zh' || locale.startsWith('zh_');
+
+  late final _displayPatterns =
+      displayDatePatterns[locale.toLowerCase().replaceAll('_', '-')];
+  final _displayFormatters = <String, DateFormat>{};
+
+  String _displayDate(DateTime wall, String pattern) {
+    final format = _displayFormatters.putIfAbsent(
+      pattern,
+      () => DateFormat(pattern, locale),
+    );
+    final text = format.format(wall);
+    final patterns = _displayPatterns!;
+    return text.replaceFirst(
+      '{period}',
+      wall.hour < 12 ? patterns.am : patterns.pm,
+    );
+  }
 
   bool get _localeUsesTwelveHours {
     return DateFormat.jm(locale).pattern!.contains('h');
@@ -165,6 +184,13 @@ class SourceTimeFormatter {
   String _clock(DateTime date, {bool seconds = false, bool force24 = false}) {
     final wall = wallTime(date);
     if (!force24 && effectiveTimeFormat == SourceTimeFormat.twelveHour) {
+      final patterns = _displayPatterns;
+      if (patterns != null) {
+        return _displayDate(
+          wall,
+          seconds ? patterns.clockSeconds12 : patterns.clock12,
+        );
+      }
       // Preserve shipped locale AM/PM placement and two-digit hour requested
       // by toLocaleTimeString. Intl's generic jm omits the leading hour zero.
       final pattern = _chinese
@@ -186,6 +212,23 @@ class SourceTimeFormatter {
     return date == null
         ? (value?.toString() ?? '')
         : _clock(date, seconds: seconds, force24: force24);
+  }
+
+  String rowClock(DateTime date) {
+    final wall = wallTime(date);
+    if (effectiveTimeFormat == SourceTimeFormat.twelveHour) {
+      if (_displayPatterns case final patterns?) {
+        final pattern = patterns.clock12.replaceFirst('hh', 'h');
+        return _displayDate(
+          wall,
+          locale == 'zh_TW'
+              ? pattern.replaceFirst('{period}', '{period} ')
+              : pattern,
+        );
+      }
+      return DateFormat(_chinese ? 'ah:mm' : 'h:mm a', locale).format(wall);
+    }
+    return '${wall.hour}:${wall.minute.toString().padLeft(2, '0')}';
   }
 
   /// Web 1.24 `formatGutterClock`: a continuation row's gutter (and the
@@ -301,6 +344,14 @@ class SourceTimeFormatter {
   String shortDateTime(Object? value) {
     final date = _date(value);
     if (date == null) return value?.toString() ?? '';
+    if (_displayPatterns case final patterns?) {
+      return _displayDate(
+        wallTime(date),
+        effectiveTimeFormat == SourceTimeFormat.twelveHour
+            ? patterns.short12
+            : patterns.short24,
+      );
+    }
     final day = DateFormat.MMMd(locale).format(wallTime(date));
     return '$day${_chinese ? ' ' : ', '} ${_clock(date)}'.replaceAll('  ', ' ');
   }
@@ -318,6 +369,15 @@ class SourceTimeFormatter {
     final date = _date(value);
     if (date == null) return value?.toString() ?? '';
     final wall = wallTime(date);
+    if (_displayPatterns case final patterns?) {
+      final twelveHours = followPreference
+          ? effectiveTimeFormat == SourceTimeFormat.twelveHour
+          : _localeUsesTwelveHours;
+      return _displayDate(
+        wall,
+        twelveHours ? patterns.medium12 : patterns.medium24,
+      );
+    }
     final day = DateFormat.yMMMd(locale).format(wall);
     final String clock;
     if (!followPreference) {

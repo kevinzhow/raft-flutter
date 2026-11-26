@@ -54,6 +54,7 @@ class RaftSettingsNavEntry {
   const RaftSettingsNavEntry({
     required this.id,
     required this.label,
+    this.labelKey,
     this.glyph,
     required this.onTap,
     this.attention = false,
@@ -63,6 +64,10 @@ class RaftSettingsNavEntry {
     this.external = false,
   });
   final String id, label;
+
+  /// The Web message id this row's [label] means, when the English alone
+  /// matches several that are translated differently (`Account`, `Feedback`).
+  final String? labelKey;
   final RaftGlyph? glyph;
   final VoidCallback onTap;
 
@@ -233,10 +238,13 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
     final line = (text.fontSize ?? 15) * (text.height ?? 1.3);
     final iconBox = icon.width ?? 19;
     // Web v1.21.23: `AI Providers`.
-    final title = raftText(
-      context,
-      widget.entry.label == 'Providers' ? 'AI Providers' : widget.entry.label,
-    );
+    final label = widget.entry.label == 'Providers'
+        ? 'AI Providers'
+        : widget.entry.label;
+    final key = widget.entry.labelKey;
+    final title = key == null
+        ? raftText(context, label)
+        : raftTextKeyed(context, label, key);
     final before = s.before;
     final hint = t.colors['foreground-hint'] ?? t.muted;
     return Semantics(

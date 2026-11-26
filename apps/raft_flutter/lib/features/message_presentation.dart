@@ -859,9 +859,9 @@ class MessagePresentation extends StatelessWidget {
 
   /// A card message (RFC 082): the card instead of its fallback text.
   Widget messageCard(BuildContext context, ReadMessageCard card) {
-    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final locale = Localizations.localeOf(context).toLanguageTag();
     String relative(DateTime at) =>
-        resourceRelativeTime(at.toIso8601String(), chinese: chinese);
+        resourceRelativeTime(at.toIso8601String(), locale: locale);
     final updatedAt = card.updatedAt;
     Widget cardOf({bool interactive = false}) => RaftMessageCard(
       key: ValueKey('message-card-${message.id}'),

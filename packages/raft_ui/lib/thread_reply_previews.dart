@@ -21,6 +21,7 @@ class _PreviewState extends State<_Preview> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftThreadReplies(
+          replyCountLabel: '3 replies',
           replyCount: 12,
           unreadCount: 2,
           hasDraft: true,

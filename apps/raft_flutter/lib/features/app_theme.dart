@@ -12,5 +12,8 @@ ThemeData raftAppTheme({
   dark: dark,
   pack: appearance.pack,
   locale: locale,
-  textLocale: textLocale,
+  textLocale: switch (raftDisplayLanguageId(locale)) {
+    'ja' || 'ko' || 'zh-tw' => locale,
+    _ => textLocale,
+  },
 );

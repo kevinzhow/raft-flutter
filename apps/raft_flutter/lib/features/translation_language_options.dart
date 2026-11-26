@@ -1,13 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/display_translation_names.g.dart';
 import '../data/message_translation_store.dart';
 
 /// Web translationStore `getTranslationLanguageOptions`: "Same as display
 /// language" first, then every translation language named in the UI language
-/// (CLDR names, as `Intl.DisplayNames` gives them) in the order that language
-/// sorts them. The app has two display languages, so the two lists are the
-/// data: English sorts by name, Chinese by pinyin.
+/// (CLDR names, as `Intl.DisplayNames` gives them) in that language's order.
 const _namesEn = <String, String>{
   'en': 'English',
   'fr': 'French',
@@ -38,15 +37,31 @@ const _namesZh = <String, String>{
 
 /// The translation-target choices for the UI language of [context].
 List<RaftLanguageOption> translationTargetOptions(BuildContext context) {
-  final zh = Localizations.maybeLocaleOf(context)?.languageCode == 'zh';
-  final names = zh ? _namesZh : _namesEn;
+  final language = raftDisplayLanguageId(Localizations.maybeLocaleOf(context));
+  final names = switch (language) {
+    'en' => _namesEn,
+    'zh-cn' => _namesZh,
+    _ => null,
+  };
+  final choices = [
+    if (names != null)
+      for (final entry in names.entries) (entry.key, entry.value)
+    else
+      ...displayTranslationNames[language]!,
+  ];
   assert(
-    names.keys.toSet().containsAll(messageTranslationLanguages.keys) &&
-        names.length == messageTranslationLanguages.length,
+    choices
+            .map((option) => option.$1)
+            .toSet()
+            .containsAll(messageTranslationLanguages.keys) &&
+        choices.length == messageTranslationLanguages.length,
     'a translation language has no name',
   );
   return [
-    (followDisplayLanguageTarget, 'Same as display language'),
-    for (final entry in names.entries) (entry.key, entry.value),
+    (
+      followDisplayLanguageTarget,
+      raftText(context, 'Same as display language'),
+    ),
+    ...choices,
   ];
 }

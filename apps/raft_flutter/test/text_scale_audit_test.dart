@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -15,13 +17,37 @@ import 'support/activity_row_harness.dart';
 import 'support/app_services_fixture.dart';
 
 void main() {
-  const auditModes = [
-    AuditMode.base,
-    AuditMode.x13,
-    AuditMode('1.5x', textScale: 1.5),
-    AuditMode.x2,
-    AuditMode('zh-1.3x', textScale: 1.3, locale: Locale('zh', 'CN')),
-  ];
+  final auditModes =
+      [
+        AuditMode.base,
+        AuditMode.x13,
+        AuditMode('1.5x', textScale: 1.5),
+        AuditMode.x2,
+        if (const bool.fromEnvironment('RAFT_TEXT_SCALE_DISPLAY_LOCALES'))
+          const AuditMode('en-3.1x', textScale: 3.1, locale: Locale('en')),
+        const AuditMode('zh-1.3x', textScale: 1.3, locale: Locale('zh', 'CN')),
+        if (const bool.fromEnvironment('RAFT_TEXT_SCALE_DISPLAY_LOCALES'))
+          for (final entry in raftDisplayLanguages.entries)
+            if (entry.key != 'en' && entry.key != 'zh-cn')
+              for (final scale in [1.0, 1.3, 2.0, 3.1])
+                AuditMode(
+                  '${entry.key}-${scale}x',
+                  locale: entry.value.$1,
+                  textScale: scale,
+                ),
+      ].where((mode) {
+        const locale = String.fromEnvironment('RAFT_AUDIT_LOCALE');
+        final maxScale = double.parse(
+          const String.fromEnvironment(
+            'RAFT_AUDIT_MAX_SCALE',
+            defaultValue: '3.1',
+          ),
+        );
+        return mode.textScale <= maxScale &&
+            (locale.isEmpty ||
+                raftDisplayLanguageId(mode.locale ?? const Locale('en')) ==
+                    locale);
+      }).toList();
 
   List<Map<String, dynamic>> makeMessages() => [
     for (var i = 1; i <= 6; i++)
@@ -229,13 +255,19 @@ void main() {
           onLogout: () async {},
         ),
       ),
-      theme: raftTheme(platform: platform),
+      theme: raftTheme(
+        platform: platform,
+        textLocale: raftDisplayLanguageId(mode.locale) == 'zh-cn'
+            ? null
+            : mode.locale,
+      ),
       platform: platform,
       mode: mode,
       size: size,
       truncationBaseline: truncation,
       settle: const Duration(milliseconds: 250),
       after: verifyMounted,
+      screenshotDir: Platform.environment['RAFT_TEXT_SCALE_OUT'],
     );
     return report;
   }
@@ -339,6 +371,7 @@ void main() {
           mode: mode,
           size: const Size(390, 500),
           truncationBaseline: truncation,
+          screenshotDir: Platform.environment['RAFT_TEXT_SCALE_OUT'],
         );
         if (!report.ok) {
           problems.add('${mode.name}:\n  ${report.failures.join('\n  ')}');

@@ -276,7 +276,7 @@ class _AgentHostedRuntimeUsageState extends State<AgentHostedRuntimeUsage> {
     final relative = resourceRelativeTime(
       _asOf,
       now: (widget.now ?? DateTime.now)(),
-      chinese: locale.toLowerCase().startsWith('zh'),
+      locale: locale,
     );
     if (relative.isNotEmpty) return relative;
     final at = DateTime.tryParse(_asOf);

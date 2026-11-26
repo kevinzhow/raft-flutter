@@ -357,6 +357,11 @@ abstract class RaftTokenResolver {
   /// Font family token (e.g. `headingFont`): the primary family name.
   String? fontFamily(String name) => null;
 
+  /// Scripts the bound font token has to cover beyond the families the CSS
+  /// declaration names, appended to its fallback chain. Null leaves the
+  /// declaration's own list alone.
+  List<String>? fontStack(String name) => null;
+
   /// Regional glyph locale, independent of translated UI copy.
   Locale? get textLocale => null;
 
@@ -1361,13 +1366,28 @@ class RaftSlotStyle {
     return fontFamilyFallback?.firstOrNull;
   }
 
-  /// All literal family names of the declaration (fallback chain).
+  /// All literal family names of the declaration (fallback chain), then the
+  /// script coverage the bound font token carries ([RaftTokenResolver.fontStack]).
+  ///
+  /// Web's declaration names Latin families and a generic, and a browser
+  /// resolves the rest of a script through fontconfig. Flutter has no such
+  /// step, so a label with CJK in it (the display-language picker lists every
+  /// language in its own script) needs those families named. They go AFTER the
+  /// declaration's own list: the first family that covers a character does not
+  /// change, so nothing that renders today moves.
   List<String>? get fontFamilyFallback {
     var v = this['font-family'];
-    if (v is CssVar) v = v.fallback;
-    if (v == null) return null;
-    final items = v is CssList ? v.items : [v];
-    return [
+    List<String>? coverage;
+    if (v is CssVar) {
+      if (v.token case final token?) coverage = tokens?.fontStack(token);
+      v = v.fallback;
+    }
+    final items = switch (v) {
+      null => const <Object?>[],
+      CssList(:final items) => items,
+      _ => [v],
+    };
+    final names = [
       for (final x in items)
         switch (x) {
           CssString(:final value) => value,
@@ -1376,6 +1396,8 @@ class RaftSlotStyle {
           _ => x.toString(),
         },
     ];
+    if (coverage == null) return names.isEmpty ? null : names;
+    return [...names, ...coverage.where((f) => !names.contains(f))];
   }
 
   /// Line height as a multiple of the font size (Flutter [TextStyle.height]).

@@ -21,6 +21,7 @@ void main() {
             child: Padding(
               padding: const EdgeInsets.only(left: 48),
               child: RaftThreadReplies(
+                replyCountLabel: '9 replies',
                 replyCount: 9,
                 onOpen: () {},
                 onOpenReply: (_) {},

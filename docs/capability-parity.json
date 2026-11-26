@@ -16939,23 +16939,27 @@
    "kind": "ui",
    "id": "ui:global-ui.pref-display-language",
    "area": "global-ui",
-   "capability": "Display language picker: Web offers English and Simplified Chinese (zh-cn), cached locally and stored on the account; Flutter offers English, 简体中文 plus Auto (follow system)",
+   "capability": "Display language picker: Web v1.24 offers English, Español, Português (Brasil), Русский, 한국어, 日本語, 简体中文 and 繁體中文, cached locally and stored on the account; Flutter offers the same eight plus Auto (follow system)",
    "background": false,
    "status": "covered",
-   "webEntry": "i18n/locale.ts SUPPORTED_LOCALES [en, zh-cn], LOCALE_LABELS, LocaleProvider.tsx, Settings > Language & Region 'Display language'",
+   "webEntry": "i18n/locale.ts SUPPORTED_LOCALES / LOCALE_LABELS, single-sourced from @botiverse/raft-shared DISPLAY_LOCALES + DISPLAY_LOCALE_INFO.nativeName; LocaleProvider.tsx; Settings > Language & Region 'Display language'",
    "gate": "",
-   "flutterEntry": "display_language_preferences.dart resolves explicit account language, local UI language, then device locale; app_root.dart listens to DeviceDisplayPreferences before rendering public and authenticated surfaces",
+   "flutterEntry": "raftDisplayLanguages (generated from the Web catalogs by tool/gen_display_catalogs.mjs) is the one registry of locale and endonym; display_language_preferences.dart resolves explicit account language, local UI language, then device locale through it; app_root.dart listens to DeviceDisplayPreferences before rendering public and authenticated surfaces",
    "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/l10n/display_catalogs.g.dart",
+     "needle": "const raftDisplayLanguages = <String, (Locale, String)>{"
+    },
     {
      "file": "apps/raft_flutter/lib/data/display_language_preferences.dart",
      "needle": "Locale resolve("
     },
     {
      "file": "apps/raft_flutter/lib/features/app_viewport.dart",
-     "needle": "supportedLocales: const [Locale('en'), Locale('zh', 'CN')]"
+     "needle": "supportedLocales: supportedDisplayLocales"
     }
    ],
-   "justification": "Anonymous UI language is stored under the existing slock.displayLanguage key. An explicit account preference wins after sign-in and neither fallback resolution nor anonymous selection PATCHes the account. The browser-only query override and html lang attribute do not apply to native windows. Native and paired Web visual acceptance are pending.",
+   "justification": "Anonymous UI language is stored under the existing slock.displayLanguage key. An explicit account preference wins after sign-in and neither fallback resolution nor anonymous selection PATCHes the account. The browser-only query override and html lang attribute do not apply to native windows. Web tags each picker option with its own lang so a browser picks that language's Han variant; Flutter draws every option in the UI locale's variant (follow-up on RaftSelectItem). Native and paired Web visual acceptance are pending.",
    "impact": "",
    "size": ""
   },

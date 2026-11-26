@@ -224,6 +224,7 @@ class _HostState extends State<_Host> {
     }
     final bool desktopHome =
         (surface == 'home.index' || surface == 'offline.cached') &&
+        widget.ctx.props['route'] == null &&
         widget.ctx.props['platform'] == 'desktop';
     final id = desktopHome
         ? w.channels.firstOrNull?.id

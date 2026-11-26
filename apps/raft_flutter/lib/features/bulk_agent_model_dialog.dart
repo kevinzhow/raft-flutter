@@ -378,7 +378,7 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
       final reset = resourceRelativeTime(
         limited['resetsAt'] as String?,
         now: _now(),
-        chinese: Localizations.localeOf(context).languageCode == 'zh',
+        locale: Localizations.localeOf(context).toLanguageTag(),
       );
       return reset.isEmpty
           ? raftFormat(context, '{plan} · Used up', {'plan': plan})

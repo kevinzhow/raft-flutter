@@ -30,7 +30,7 @@ void main() {
       backLabel: 'Close thread',
       closeLabel: 'Close thread',
       parentLabel: '#test',
-      replyCount: 1,
+      replyCountLabel: '1 reply',
       backKey: const Key('thread-back'),
       closeKey: const Key('thread-close'),
       // The thread's own Back and close (workspace_view passes one callback

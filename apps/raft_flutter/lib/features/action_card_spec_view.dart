@@ -393,7 +393,7 @@ class ActionCardSpecTree extends StatelessWidget {
       root: element,
       relativeTime: (at) => resourceRelativeTime(
         at.toIso8601String(),
-        chinese: Localizations.localeOf(context).languageCode == 'zh',
+        locale: Localizations.localeOf(context).toLanguageTag(),
       ),
       duration: (start, end) {
         final seconds = ((end ?? DateTime.now()).difference(start).inSeconds)

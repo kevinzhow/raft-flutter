@@ -502,7 +502,7 @@ class _LinkCard extends StatelessWidget {
             contentOnly: true,
             relativeTime: (at) => resourceRelativeTime(
               at.toIso8601String(),
-              chinese: Localizations.localeOf(context).languageCode == 'zh',
+              locale: Localizations.localeOf(context).toLanguageTag(),
             ),
             duration: (start, end) =>
                 _duration(context, (end ?? DateTime.now()).difference(start)),

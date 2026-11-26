@@ -128,7 +128,7 @@ String artifactRelativeTime(
     : resourceRelativeTime(
         at.toIso8601String(),
         now: now,
-        chinese: Localizations.maybeLocaleOf(context)?.languageCode == 'zh',
+        locale: Localizations.maybeLocaleOf(context)?.toLanguageTag(),
       );
 
 /// "Developer updated 2 days ago" (`formatArtifactUpdated`).

@@ -1,6 +1,7 @@
 import 'dart:ui' show Locale;
 
 import 'package:flutter/scheduler.dart';
+import 'package:raft_ui/raft_ui.dart' show raftDisplayLanguageId;
 
 import '../data/message_translation_store.dart';
 
@@ -9,7 +10,7 @@ import '../data/message_translation_store.dart';
 /// whenever the locale changes. Called by [buildRaftApplication] with the
 /// locale it builds the app in.
 void followDisplayLanguage(Locale locale) {
-  final id = locale.languageCode == 'zh' ? 'zh-cn' : 'en';
+  final id = raftDisplayLanguageId(locale);
   if (id == MessageTranslationStore.displayLanguageTarget) return;
   // The stores tell their listeners; that is not for the middle of a build.
   SchedulerBinding.instance.addPostFrameCallback((_) {

@@ -919,7 +919,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         // An explicit offline (the agent declared it stopped) shows at once.
         final online =
             seenOnline && !(hasState && display.activity == 'offline');
-        final chinese = Localizations.localeOf(context).languageCode == 'zh';
+        final locale = Localizations.localeOf(context).toLanguageTag();
         return resolveExternalStatusChip(
           online: online,
           showDetail: _canViewPrivate,
@@ -929,7 +929,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               ? resourceRelativeTime(
                   a['lastSeenAt'] as String,
                   now: now,
-                  chinese: chinese,
+                  locale: locale,
                 )
               : null,
           name: displayName,
@@ -1926,15 +1926,15 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
       );
     }
     final origin = w.client.origin;
-    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final locale = Localizations.localeOf(context).toLanguageTag();
     // The peers' faces are read live from the agent directory.
     return ListenableBuilder(
       listenable: w.services.entityDirectory,
-      builder: (context, _) => _chatView(origin, chinese),
+      builder: (context, _) => _chatView(origin, locale),
     );
   }
 
-  Widget _chatView(String origin, bool chinese) {
+  Widget _chatView(String origin, String locale) {
     return RaftAgentChatView(
       channelsError: snapshot.channelsError,
       dmsError: snapshot.dmsError,
@@ -1974,7 +1974,7 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
             timestamp: resourceRelativeTime(
               '${d['lastMessageAt'] ?? d['createdAt']}',
               now: widget.clock?.call(),
-              chinese: chinese,
+              locale: locale,
             ),
             preview: (d['lastMessagePreview'] as String?)?.isNotEmpty == true
                 ? d['lastMessagePreview'] as String
@@ -2094,7 +2094,6 @@ class _AgentRemindersTabState extends State<AgentRemindersTab>
   @override
   Widget build(BuildContext context) {
     final f = agentTimeFormatter(context, w);
-    final chinese = Localizations.localeOf(context).languageCode == 'zh';
     return RaftReminderListView(
       loading: loading,
       error: loadError,
@@ -2106,7 +2105,7 @@ class _AgentRemindersTabState extends State<AgentRemindersTab>
             relative: resourceRelativeTime(
               '${r['fireAt']}',
               now: widget.clock?.call(),
-              chinese: chinese,
+              locale: f.locale,
             ),
             dateTime: f.shortDateTime(r['fireAt']),
             recurrence: r['recurrence'] is Map

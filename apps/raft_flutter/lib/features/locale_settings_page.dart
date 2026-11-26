@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../data/display_language_preferences.dart';
 import '../data/message_translation_store.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
@@ -116,7 +117,7 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
 
   /// The live UI locale in Web's `Locale` ids.
   String liveLocale(BuildContext context) =>
-      Localizations.localeOf(context).languageCode == 'zh' ? 'zh-cn' : 'en';
+      raftDisplayLanguageId(Localizations.localeOf(context));
 
   /// One `PATCH /auth/me`, then the answer joins the signed-in user (Web
   /// `useAuthStore.setState({ user: { ...user, ...data } })`): no second read.
@@ -207,7 +208,7 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
     final choices = localeTimezoneChoices(savedTimezone);
     return RaftLanguageRegionView(
       displayLanguage: displayLanguageSave.pending ?? liveLocale(context),
-      displayLanguageOptions: const [('en', 'English'), ('zh-cn', '简体中文')],
+      displayLanguageOptions: displayLanguageOptions,
       translationMode: modeSave.pending ?? savedMode,
       translationNotice: !settings.loaded || settings.available
           ? null

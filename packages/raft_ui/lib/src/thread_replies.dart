@@ -32,6 +32,7 @@ class RaftThreadReplies extends StatelessWidget {
     super.key,
     required this.replies,
     required this.replyCount,
+    required this.replyCountLabel,
     required this.onOpen,
     required this.onOpenReply,
     this.unreadCount = 0,
@@ -39,6 +40,10 @@ class RaftThreadReplies extends StatelessWidget {
   });
   final List<RaftThreadReplyPreview> replies;
   final int replyCount, unreadCount;
+
+  /// Already localized: the count is an ICU plural, and the forms a language
+  /// needs (Russian has one/few/many) cannot be chosen from an int here.
+  final String replyCountLabel;
   final bool hasDraft;
   final VoidCallback? onOpen;
   final ValueChanged<String>? onOpenReply;
@@ -55,11 +60,7 @@ class RaftThreadReplies extends StatelessWidget {
         .toList();
     if (replyCount <= 0 || visible.isEmpty) return const SizedBox.shrink();
     final tokens = RaftTokens.of(context);
-    final count = raftFormat(
-      context,
-      replyCount == 1 ? '{count} reply' : '{count} replies',
-      {'count': replyCount},
-    );
+    final count = replyCountLabel;
     final suffix = [
       if (unreadCount > 0)
         raftFormat(context, '{count} new', {'count': unreadCount}),
@@ -194,11 +195,15 @@ class RaftThreadRepliesBadge extends StatefulWidget {
   const RaftThreadRepliesBadge({
     super.key,
     required this.replyCount,
+    required this.replyCountLabel,
     this.unreadCount = 0,
     this.hasDraft = false,
     this.onPressed,
   });
   final int replyCount, unreadCount;
+
+  /// Already localized; see [RaftThreadReplies.replyCountLabel].
+  final String replyCountLabel;
   final bool hasDraft;
   final VoidCallback? onPressed;
 
@@ -245,14 +250,7 @@ class _RaftThreadRepliesBadgeState extends State<RaftThreadRepliesBadge> {
       if (hasReplies) ...[
         RaftThreadIcon(size: 12, color: color),
         gap,
-        Text(
-          raftFormat(
-            context,
-            widget.replyCount == 1 ? '{count} reply' : '{count} replies',
-            {'count': widget.replyCount},
-          ),
-          style: text,
-        ),
+        Text(widget.replyCountLabel, style: text),
       ] else
         RaftIcon(RaftGlyph.pencil, size: 12, color: color),
       if (hasUnread) ...[

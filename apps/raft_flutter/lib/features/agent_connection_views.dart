@@ -96,7 +96,7 @@ class AgentConnectionHealthDetail extends StatelessWidget {
     final t = RaftTokens.of(context);
     final checked = resourceRelativeTime(
       checkedAt,
-      chinese: Localizations.maybeLocaleOf(context)?.languageCode == 'zh',
+      locale: Localizations.maybeLocaleOf(context)?.toLanguageTag(),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

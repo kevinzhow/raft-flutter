@@ -4,7 +4,10 @@
 // ICU message and its zh value the zh-cn one, which is how Web's `formatMessage`
 // reads them.
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
+
+import '../data/source_number_format.dart';
 
 /// The localized [source] with its `{n, plural, ...}` arms and `{name}`
 /// placeholders filled from [values].
@@ -12,11 +15,19 @@ String icuText(
   BuildContext context,
   String source,
   Map<String, Object?> values,
-) => expandIcuMessage(
-  raftText(context, source),
-  values,
-  oneForm: Localizations.localeOf(context).languageCode != 'zh',
-);
+) {
+  final locale = Localizations.localeOf(context);
+  final language = raftDisplayLanguageId(locale);
+  final message = raftText(context, source);
+  return expandIcuMessage(
+    message,
+    values,
+    oneForm: language != 'zh-cn',
+    locale: language == 'en' || language == 'zh-cn' || message == source
+        ? null
+        : locale.toLanguageTag(),
+  );
+}
 
 /// [oneForm]: the language has a distinct `one` plural (English); zh has only
 /// `other`.
@@ -24,6 +35,7 @@ String expandIcuMessage(
   String message,
   Map<String, Object?> values, {
   bool oneForm = true,
+  String? locale,
   num? hash,
 }) {
   final out = StringBuffer();
@@ -31,11 +43,7 @@ String expandIcuMessage(
   while (i < message.length) {
     final c = message[i];
     if (c != '{') {
-      out.write(
-        c == '#' && hash != null
-            ? (hash == hash.roundToDouble() ? '${hash.toInt()}' : '$hash')
-            : c,
-      );
+      out.write(c == '#' && hash != null ? _formatNumber(hash, locale) : c);
       i++;
       continue;
     }
@@ -45,7 +53,7 @@ String expandIcuMessage(
       break;
     }
     final inner = message.substring(i + 1, end);
-    out.write(_placeholder(inner, values, oneForm, hash));
+    out.write(_placeholder(inner, values, oneForm, locale));
     i = end + 1;
   }
   return out.toString();
@@ -61,11 +69,17 @@ int _close(String s, int open) {
   return -1;
 }
 
+String _formatNumber(num value, String? locale) => locale != null
+    ? sourceDecimal(value, locale)
+    : value == value.roundToDouble()
+    ? '${value.toInt()}'
+    : '$value';
+
 String _placeholder(
   String inner,
   Map<String, Object?> values,
   bool oneForm,
-  num? hash,
+  String? locale,
 ) {
   final parts = RegExp(
     r'^\s*([A-Za-z0-9_]+)\s*(?:,\s*(?:plural\s*,(.*)|number\s*))?$',
@@ -75,7 +89,12 @@ String _placeholder(
   final name = parts[1]!;
   final arms = parts[2];
   final value = values[name];
-  if (arms == null) return value == null ? '{$name}' : '$value';
+  if (arms == null) {
+    if (value == null) return '{$name}';
+    return value is num && inner.contains(',')
+        ? _formatNumber(value, locale)
+        : '$value';
+  }
   final n = value is num ? value : num.tryParse('$value') ?? 0;
   final bodies = <String, String>{};
   var i = 0;
@@ -91,10 +110,41 @@ String _placeholder(
     bodies[selector] = arms.substring(brace + 1, end);
     i = end + 1;
   }
+  final other = bodies['other'] ?? '';
+  final explicit = n == n.toInt() ? bodies['=${n.toInt()}'] : null;
   final body =
-      bodies['=${n is int ? n : n.toInt()}'] ??
-      (oneForm && n == 1 ? bodies['one'] : null) ??
-      bodies['other'] ??
-      '';
-  return expandIcuMessage(body, values, oneForm: oneForm, hash: n);
+      explicit ??
+      (locale == null
+          ? (oneForm && n == 1 ? bodies['one'] : null) ?? other
+          : Intl.pluralLogic<String>(
+              n,
+              locale: locale,
+              zero: bodies['zero'],
+              one: bodies['one'],
+              two: bodies['two'],
+              few: bodies['few'],
+              many: bodies['many'],
+              other: other,
+              useExplicitNumberCases: false,
+            ));
+  return expandIcuMessage(
+    body,
+    values,
+    oneForm: oneForm,
+    locale: locale,
+    hash: n,
+  );
 }
+
+/// Web `message.inlineThreadReplies.replyCount` (en.ts:3583): the reply count
+/// an inline thread, a thread outline and a task conversation all show.
+///
+/// It is one ICU message, not a pair of English singular/plural strings,
+/// because a two-way branch cannot express Russian, which needs `one`, `few`
+/// and `many` (1 ответ, 2 ответа, 5 ответов). The `#` takes the locale's digit
+/// grouping with it.
+String replyCountText(BuildContext context, int count) => icuText(
+  context,
+  '{count, plural, one {# reply} other {# replies}}',
+  {'count': count},
+);

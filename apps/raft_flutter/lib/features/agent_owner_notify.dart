@@ -283,9 +283,8 @@ class AgentOwnerNotifyActions extends StatelessWidget {
         notifier.notifiedAt[agent.id],
       );
       final (:limited, at: nextAt) = notifier.nextReminder(agent);
-      final chinese = Localizations.localeOf(context).languageCode == 'zh';
-      String relative(String iso) =>
-          resourceRelativeTime(iso, chinese: chinese);
+      final locale = Localizations.localeOf(context).toLanguageTag();
+      String relative(String iso) => resourceRelativeTime(iso, locale: locale);
       final failed = notifier.failed.contains(agent.id);
       final undelivered = notifier.undelivered.contains(agent.id);
       return RaftAgentOwnerNotifyActions(

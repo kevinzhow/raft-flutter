@@ -315,7 +315,7 @@ String searchThreadTime(
       : resourceRelativeTime(
           latest.toIso8601String(),
           now: now,
-          chinese: Localizations.localeOf(context).languageCode == 'zh',
+          locale: Localizations.localeOf(context).toLanguageTag(),
         );
 }
 
@@ -678,7 +678,7 @@ class ResourceSearchResults extends StatelessWidget {
             : resourceRelativeTime(
                 row['createdAt'] as String?,
                 now: now,
-                chinese: Localizations.localeOf(context).languageCode == 'zh',
+                locale: Localizations.localeOf(context).toLanguageTag(),
               ),
         snippet: SearchHighlight(
           text: '${row['snippet'] ?? row['content'] ?? ''}',

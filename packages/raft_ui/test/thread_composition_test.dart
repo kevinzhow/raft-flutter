@@ -229,7 +229,7 @@ void main() {
             presentation: RaftThreadPresentation.side,
             threadLabel: 'Thread',
             parentLabel: '#wp-thread-acceptance-1119',
-            replyCount: 200,
+            replyCountLabel: '200 replies',
             jumpLabel: 'Scroll to first message',
             backLabel: 'Back',
             closeLabel: 'Close thread',

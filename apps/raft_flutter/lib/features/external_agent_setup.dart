@@ -446,7 +446,7 @@ class _ExternalAgentSetupState extends State<ExternalAgentSetup> {
       ? resourceRelativeTime(
           iso,
           now: (widget.clock ?? DateTime.now)(),
-          chinese: Localizations.localeOf(context).languageCode == 'zh',
+          locale: Localizations.localeOf(context).toLanguageTag(),
         )
       : '';
 

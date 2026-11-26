@@ -317,7 +317,7 @@ class _SavedSidebarEntryState extends State<SavedSidebarEntry> {
 
   @override
   Widget build(BuildContext context) => RaftNavItem(
-    label: raftText(context, 'Saved'),
+    label: raftTextKeyed(context, 'Saved', 'layout.sidebar.saved'),
     glyph: RaftGlyph.bookmark,
     role: RaftNavItemRole.saved,
     precededByEntry: widget.precededByEntry,

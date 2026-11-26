@@ -29,6 +29,7 @@ import 'public_translation.dart';
 import 'public_server_panels.dart';
 import 'public_server_settings.dart';
 import 'sender_avatar_projection.dart';
+import 'icu_message.dart';
 
 /// A message of the public readback (`PublicMessage`).
 @immutable
@@ -711,11 +712,7 @@ class _PublicServerViewState extends State<PublicServerView> {
       return null;
     }
     final formatter = timeFormatter;
-    final count = raftFormat(
-      context,
-      m.replyCount == 1 ? '{count} reply' : '{count} replies',
-      {'count': m.replyCount},
-    );
+    final count = replyCountText(context, m.replyCount);
     return RaftInlineThreadSurface(
       key: ValueKey('public-inline-thread-${m.id}'),
       replies: [
@@ -918,6 +915,7 @@ class _PublicServerViewState extends State<PublicServerView> {
           ? RaftThreadRepliesBadge(
               key: ValueKey('public-thread-open-${m.id}'),
               replyCount: m.replyCount,
+              replyCountLabel: replyCountText(context, m.replyCount),
               onPressed: onThread,
             )
           : null,
@@ -938,6 +936,7 @@ class _PublicServerViewState extends State<PublicServerView> {
       child: RaftDismissScope(
         onDismiss: closeThread,
         child: RaftPublicThreadPanel(
+          replyCountLabel: replyCountText(context, threadMessages.length),
           title: tr('Thread'),
           channelContext: raftFormat(context, '— #{name}', {
             'name': channel?['name'],

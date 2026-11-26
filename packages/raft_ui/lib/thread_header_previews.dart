@@ -21,7 +21,7 @@ Widget _threadHeaderPreview({required bool dark}) => MaterialApp(
           viewportWidth: 1280,
           threadLabel: 'Thread',
           parentLabel: '#design',
-          replyCount: 200,
+          replyCountLabel: '200 replies',
           jumpLabel: 'Scroll to first message',
           closeLabel: 'Close thread',
           backLabel: 'Back',

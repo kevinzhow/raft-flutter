@@ -29,7 +29,11 @@ Widget activityFilterBar(
       RaftActivityFilterChoice.unread: raftText(context, 'Unread'),
       RaftActivityFilterChoice.mentions: raftText(context, 'Mentions'),
       RaftActivityFilterChoice.pinned: raftText(context, 'Pinned'),
-      RaftActivityFilterChoice.saved: raftText(context, 'Saved'),
+      RaftActivityFilterChoice.saved: raftTextKeyed(
+        context,
+        'Saved',
+        'thread.filter.saved',
+      ),
       RaftActivityFilterChoice.artifacts: raftText(context, 'Artifacts'),
     },
   ),

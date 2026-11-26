@@ -30,6 +30,7 @@ import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../test/support/app_services_fixture.dart';
 
 /// Fixture client: identical lookup rule to web-runtime.mjs `lookup()`.
@@ -143,14 +144,15 @@ void main() {
     final fixtureBytes = File(fixturePath).readAsBytesSync();
     final fixtureSha = crypto.sha256.convert(fixtureBytes).toString();
     final fixtureJson = utf8.decode(fixtureBytes);
-    final cases = (jsonDecode(File(casesPath).readAsStringSync())['cases'] as List)
-        .cast<Map<String, dynamic>>()
-        .where(
-          (c) =>
-              only.isEmpty ||
-              only.split(',').any((s) => (c['id'] as String).contains(s)),
-        )
-        .toList();
+    final cases =
+        (jsonDecode(File(casesPath).readAsStringSync())['cases'] as List)
+            .cast<Map<String, dynamic>>()
+            .where(
+              (c) =>
+                  only.isEmpty ||
+                  only.split(',').any((s) => (c['id'] as String).contains(s)),
+            )
+            .toList();
     if (cases.isEmpty) {
       throw StateError('Desktop selection matched no cases: $only');
     }
@@ -164,6 +166,8 @@ void main() {
       );
       final flow = props['flutter'] as String;
       final (dark) = _themes[visualCase['theme']]!;
+      final locale =
+          raftDisplayLanguages[visualCase['locale']]?.$1 ?? const Locale('en');
       final viewport = Size(
         (visualCase['viewport']['width'] as num).toDouble(),
         (visualCase['viewport']['height'] as num).toDouble(),
@@ -207,7 +211,9 @@ void main() {
       Future<void> hover(Finder f) async {
         await until(() => f.evaluate().isNotEmpty, '$f');
         mouse ??= await t.createGesture(kind: PointerDeviceKind.mouse);
-        await mouse!.addPointer(location: Offset(viewport.width - 1, viewport.height - 1));
+        await mouse!.addPointer(
+          location: Offset(viewport.width - 1, viewport.height - 1),
+        );
         await mouse!.moveTo(t.getCenter(f.first));
         await frames();
       }
@@ -216,7 +222,10 @@ void main() {
       Future<void> waitText(String s) =>
           until(() => text(s).evaluate().isNotEmpty, 'text "$s"');
       Future<void> chatReady() => until(
-        () => find.byKey(const ValueKey('message-msg-agent-reply')).evaluate().isNotEmpty,
+        () => find
+            .byKey(const ValueKey('message-msg-agent-reply'))
+            .evaluate()
+            .isNotEmpty,
         'channel messages',
       );
 
@@ -224,11 +233,17 @@ void main() {
         await t.pumpWidget(
           MaterialApp(
             debugShowCheckedModeBanner: false,
-            locale: const Locale('en'),
-            supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
+            locale: locale,
+            supportedLocales: raftDisplayLanguages.values.map(
+              (entry) => entry.$1,
+            ),
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
-            theme: raftTheme(),
-            darkTheme: raftTheme(dark: true),
+            theme: raftTheme(locale: locale, textLocale: locale),
+            darkTheme: raftTheme(
+              dark: true,
+              locale: locale,
+              textLocale: locale,
+            ),
             themeMode: dark ? ThemeMode.dark : ThemeMode.light,
             builder: (context, child) => Align(
               alignment: Alignment.topLeft,
@@ -238,10 +253,8 @@ void main() {
                   width: viewport.width,
                   height: viewport.height,
                   child: MediaQuery(
-                    data: MediaQuery.of(context).copyWith(
-                      size: viewport,
-                      devicePixelRatio: 1,
-                    ),
+                    data: MediaQuery.of(context)
+                        .copyWith(size: viewport, devicePixelRatio: 1),
                     child: RaftTooltipProvider(
                       delay: const Duration(milliseconds: 600),
                       child: child!,
@@ -281,7 +294,9 @@ void main() {
             'applications' => 'integrations',
             _ => tab,
           };
-          await tap(find.byKey(ValueKey('workspace-settings-nav-$destination')));
+          await tap(
+            find.byKey(ValueKey('workspace-settings-nav-$destination')),
+          );
           await frames(30);
         }
 
@@ -291,11 +306,22 @@ void main() {
           case 'channel-loading':
             break;
           case 'dm':
-            await tap(find.byKey(const ValueKey('sidebar-channel-dm-agent-cindy-artin')));
+            await tap(
+              find.byKey(
+                const ValueKey('sidebar-channel-dm-agent-cindy-artin'),
+              ),
+            );
             await waitText('On it. Desktop tasks');
           case 'thread-open':
-            await tap(find.byKey(const ValueKey('inline-thread-msg-agent-reply')));
-            await until(() => w.messageDomain.state.threadParent != null && !w.messageDomain.state.threadLoading, 'thread');
+            await tap(
+              find.byKey(const ValueKey('inline-thread-msg-agent-reply')),
+            );
+            await until(
+              () =>
+                  w.messageDomain.state.threadParent != null &&
+                  !w.messageDomain.state.threadLoading,
+              'thread',
+            );
             await frames(30);
           case 'channel-tasks-tab':
             await tap(find.byKey(const ValueKey('panel-tab-tasks')));
@@ -312,14 +338,19 @@ void main() {
           case 'tasks-list':
             await tap(find.byKey(const ValueKey('rail-tasks')));
             await waitText('Align the tabbar capture crops');
-            await tap(find.text('List')); // Source task view buttons expose their label.
+            await tap(
+              find.text('List'),
+            ); // Source task view buttons expose their label.
             await frames(30);
           case 'search-empty':
             await tap(find.byKey(const ValueKey('rail-search')));
             await frames(30);
           case 'search-results':
             await tap(find.byKey(const ValueKey('rail-search')));
-            await until(() => find.byType(TextField).evaluate().isNotEmpty, 'search field');
+            await until(
+              () => find.byType(TextField).evaluate().isNotEmpty,
+              'search field',
+            );
             // The rail Search opens the overlay, the topmost route's field.
             await t.enterText(find.byType(TextField).last, 'visual');
             await t.pump(const Duration(milliseconds: 400));
@@ -333,24 +364,36 @@ void main() {
             await waitText('Product UX Designer');
           case 'members-agent':
             await tap(find.byKey(const ValueKey('rail-members')));
-            await tap(find.byKey(const ValueKey('desktop-directory-agent-agent-cindy')));
+            await tap(
+              find.byKey(const ValueKey('desktop-directory-agent-agent-cindy')),
+            );
             await frames(40);
           case 'members-human':
             await tap(find.byKey(const ValueKey('rail-members')));
-            await tap(find.byKey(const ValueKey('desktop-directory-human-visual-human-designer')));
+            await tap(
+              find.byKey(
+                const ValueKey('desktop-directory-human-visual-human-designer'),
+              ),
+            );
             await frames(40);
           case 'computers':
             await tap(find.byKey(const ValueKey('rail-computers')));
             await waitText('Studio Test Rig');
           case 'computers-detail':
             await tap(find.byKey(const ValueKey('rail-computers')));
-            await tap(find.byKey(const ValueKey('desktop-directory-computer-computer-mbp')));
+            await tap(
+              find.byKey(
+                const ValueKey('desktop-directory-computer-computer-mbp'),
+              ),
+            );
             await frames(40);
           case 'notification-center':
             await hover(find.byType(SystemNotificationBell));
             await frames(30);
           case 'hover-sidebar-row':
-            await hover(find.byKey(const ValueKey('sidebar-channel-channel-android')));
+            await hover(
+              find.byKey(const ValueKey('sidebar-channel-channel-android')),
+            );
           case 'hover-rail-tasks':
             await hover(find.byKey(const ValueKey('rail-tasks')));
             await t.pump(const Duration(milliseconds: 700));
@@ -361,14 +404,21 @@ void main() {
           case 'reaction-picker':
             await hover(msg);
             await frames(10);
-            await t.tap(find.byKey(const ValueKey('message-react-msg-agent-reply')));
+            await t.tap(
+              find.byKey(const ValueKey('message-react-msg-agent-reply')),
+            );
             await until(
               () => find.byType(RaftQuickReactionPicker).evaluate().isNotEmpty,
               'reaction picker',
             );
             await frames(20);
           case 'composer-focused':
-            await tap(find.descendant(of: find.byType(RaftComposer), matching: find.byType(TextField)));
+            await tap(
+              find.descendant(
+                of: find.byType(RaftComposer),
+                matching: find.byType(TextField),
+              ),
+            );
             await frames(20);
           default:
             if (flow.startsWith('settings:')) {
@@ -386,23 +436,34 @@ void main() {
           final hits = f.evaluate().toList();
           if (hits.isEmpty) return;
           final r = t.getRect(f.first);
-          regions[name] = {'x': r.left, 'y': r.top, 'width': r.width, 'height': r.height};
+          regions[name] = {
+            'x': r.left,
+            'y': r.top,
+            'width': r.width,
+            'height': r.height,
+          };
         }
+
         probe('rail.first', find.byKey(const ValueKey('rail-search')));
         probe('sidebar', find.byKey(const Key('workspace-sidebar-panel')));
         probe('thread', find.byKey(const Key('workspace-thread-panel')));
         probe('master', find.byKey(const Key('desktop-master-panel')));
         probe('detail', find.byKey(const Key('desktop-content-detail')));
-        probe('notificationCenter', find.byKey(const Key('notification-center-surface')));
+        probe(
+          'notificationCenter',
+          find.byKey(const Key('notification-center-surface')),
+        );
         probe('reactionPicker', find.byType(RaftQuickReactionPicker));
         probe('composer', find.byType(RaftComposer));
         probe('message.agent-reply', msg);
         final boundary =
-            shotKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+            shotKey.currentContext!.findRenderObject()!
+                as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 1);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
         image.dispose();
-        File('${outDir.path}/$id.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+        File('${outDir.path}/$id.png')
+            .writeAsBytesSync(bytes!.buffer.asUint8List());
         File('${outDir.path}/$id.metadata.json').writeAsStringSync(
           const JsonEncoder.withIndent('  ').convert({
             'provider': 'android',
@@ -417,8 +478,18 @@ void main() {
             'crop': {
               'mode': 'viewport',
               'contract': 'screen-route',
-              'rect': {'x': 0, 'y': 0, 'width': viewport.width, 'height': viewport.height},
-              'targetRect': {'x': 0, 'y': 0, 'width': viewport.width, 'height': viewport.height},
+              'rect': {
+                'x': 0,
+                'y': 0,
+                'width': viewport.width,
+                'height': viewport.height,
+              },
+              'targetRect': {
+                'x': 0,
+                'y': 0,
+                'width': viewport.width,
+                'height': viewport.height,
+              },
               'outset': null,
             },
             'renderer': 'Flutter Linux desktop engine (xvfb), RepaintBoundary.toImage at 1x',
@@ -432,12 +503,21 @@ void main() {
             'capturedAt': DateTime.now().toUtc().toIso8601String(),
           }),
         );
-        summary.add({'id': id, 'ok': true, 'ms': DateTime.now().difference(started).inMilliseconds});
+        summary.add({
+          'id': id,
+          'ok': true,
+          'ms': DateTime.now().difference(started).inMilliseconds,
+        });
         // ignore: avoid_print
         print('ok   $id');
       } catch (error, stack) {
         File('${outDir.path}/$id.failure.json').writeAsStringSync(
-          jsonEncode({'caseId': id, 'error': '$error', 'stack': '$stack'.split('\n').take(12).join('\n'), 'misses': client.misses.toList()}),
+          jsonEncode({
+            'caseId': id,
+            'error': '$error',
+            'stack': '$stack'.split('\n').take(12).join('\n'),
+            'misses': client.misses.toList(),
+          }),
         );
         summary.add({'id': id, 'ok': false, 'error': '$error'});
         // ignore: avoid_print
@@ -463,7 +543,8 @@ void main() {
     expect(
       summary.where((result) => result['ok'] != true),
       isEmpty,
-      reason: 'Each selected desktop capture must finish its real navigation flow.',
+      reason:
+          'Each selected desktop capture must finish its real navigation flow.',
     );
   }, timeout: const Timeout(Duration(minutes: 60)));
 }

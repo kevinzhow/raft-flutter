@@ -96,6 +96,7 @@ import 'composer_slot.dart';
 import 'workspace_offline_notice.dart';
 import 'dm_read_status.dart';
 import 'channel_activity_session.dart';
+import 'icu_message.dart';
 
 export 'thread_viewport_handle.dart';
 
@@ -1681,6 +1682,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     return RaftThreadRepliesBadge(
       key: ValueKey('thread-replies-badge-${m.id}'),
       replyCount: replies,
+      replyCountLabel: replyCountText(context, replies),
       unreadCount: unread,
       hasDraft: hasDraft,
       onPressed: () => _messages.threads.openThread(m),
@@ -1761,11 +1763,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
 
     final unread = int.tryParse('${summary['unreadCount']}') ?? 0;
     final draft = w.drafts['thread:${parent.id}']?.trim().isNotEmpty == true;
-    final countLabel = raftFormat(
-      context,
-      count == 1 ? '{count} reply' : '{count} replies',
-      {'count': count},
-    );
+    final countLabel = replyCountText(context, count);
     final unreadLabel = unread > 0
         ? ' · ${raftFormat(context, '{count} new', {'count': unread})}'
         : '';

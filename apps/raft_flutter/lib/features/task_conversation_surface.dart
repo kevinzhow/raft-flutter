@@ -11,6 +11,7 @@ import '../data/user_error.dart';
 import 'task_conversation_facts.dart';
 import 'task_surface_controller.dart';
 import 'task_v2_mode.dart';
+import 'icu_message.dart';
 
 /// The conversation props of [o]'s task. [onLeave] closes the dialog (the
 /// route change that follows owns the history entry); [compact] is a phone
@@ -50,11 +51,7 @@ RaftTaskConversation taskConversation(
       earlier = (
         label: count == null
             ? raftText(context, 'View')
-            : raftFormat(
-                context,
-                count == 1 ? '{count} reply' : '{count} replies',
-                {'count': count},
-              ),
+            : replyCountText(context, count),
         onOpen: () => unawaited(
           openTaskEarlierDiscussion(
             w,

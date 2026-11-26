@@ -274,6 +274,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
           'Account',
           RaftGlyph.user,
           (_) => AccountSettings(controller: w, onLogout: widget.onLogout),
+          labelKey: 'settings.tabs.account',
         ),
         RaftSettingsDestination(
           'language-region',
@@ -503,6 +504,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
               initialTicketId: _feedbackTicketId(w.location.settingsPath),
               onUnreadChanged: _setUnread,
             ),
+            labelKey: 'settings.about.feedbackTitle',
             group: WorkspaceSettings.resources,
             scroll: false,
             attention: feedbackUnread > 0,
@@ -859,7 +861,7 @@ class _WorkspaceAboutSectionState extends State<WorkspaceAboutSection> {
       'time': resourceRelativeTime(
         at.toIso8601String(),
         now: DateTime.now(),
-        chinese: Localizations.localeOf(context).languageCode == 'zh',
+        locale: Localizations.localeOf(context).toLanguageTag(),
       ),
     });
   }

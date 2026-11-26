@@ -146,8 +146,11 @@ void main() {
         glyph: RaftGlyph.atSign,
         variant: RaftBadgeRecipeVariant.primary,
       ),
-      'RaftThreadRepliesBadge': () =>
-          const RaftThreadRepliesBadge(replyCount: 5, unreadCount: 2),
+      'RaftThreadRepliesBadge': () => const RaftThreadRepliesBadge(
+        replyCount: 5,
+        replyCountLabel: '5 条回复',
+        unreadCount: 2,
+      ),
       'RaftRecipeButton': () => RaftRecipeButton(label: '选择', onPressed: () {}),
       'RaftTextButton': () => RaftTextButton(label: '全部已读', onPressed: () {}),
       'RaftSegmentedControl buttons': () => RaftSegmentedControl<String>(

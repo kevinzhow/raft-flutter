@@ -213,8 +213,23 @@ void main() {
       expect(select.placeholder, 'Timezone');
     });
 
-    testWidgets('the display language list offers both languages', (t) async {
+    testWidgets('the display language list uses Web endonyms and order', (
+      t,
+    ) async {
       await _mount(t);
+      final picker = t.widget<RaftSettingsSelect<String>>(
+        _key('display-language-select'),
+      );
+      expect(picker.items.map((item) => item.label), [
+        'English',
+        'Español',
+        'Português (Brasil)',
+        'Русский',
+        '한국어',
+        '日本語',
+        '简体中文',
+        '繁體中文',
+      ]);
       await t.tap(_key('display-language-select'));
       await t.pumpAndSettle();
       expect(find.text('English'), findsNWidgets(2));
@@ -290,9 +305,9 @@ void main() {
     ) async {
       final (client, w) = await _mount(t);
       client.onPatch = (fields) => {...fields};
-      await _choose(t, 'display-language-select', '简体中文');
-      expect(client.patches.single, {'displayLanguage': 'zh-cn'});
-      expect(w.client.user?.string('displayLanguage'), 'zh-cn');
+      await _choose(t, 'display-language-select', '日本語');
+      expect(client.patches.single, {'displayLanguage': 'ja'});
+      expect(w.client.user?.string('displayLanguage'), 'ja');
       expect(client.requests.where((r) => r == 'GET /auth/me'), isEmpty);
     });
 

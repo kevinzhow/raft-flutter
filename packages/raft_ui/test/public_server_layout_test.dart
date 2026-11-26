@@ -192,6 +192,7 @@ void main() {
       await mount(
         tester,
         RaftPublicThreadPanel(
+          replyCountLabel: '3 replies',
           title: 'Thread',
           channelContext: '— #general',
           closeLabel: 'Close thread',

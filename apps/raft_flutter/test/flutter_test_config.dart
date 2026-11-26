@@ -160,6 +160,16 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   // that wants one passes its own to the card.
   VideoFrameProbe.debugOverride = () => null;
   final binding = RaftTestBinding();
+  // The suite asserts English copy, and the app picks its display language from
+  // the device's language list (Web `matchSystemDisplayLocale`). Without this,
+  // what the tests see depends on the languages configured on whoever's machine
+  // runs them: a host listing English then Chinese starts the app in Chinese,
+  // because Chinese wins over an earlier English in Web's rule. Pin the list so
+  // the result is the same everywhere. A test for the resolution itself passes
+  // its own languages (display_language_v124_test.dart), and one that wants a
+  // different UI language sets `localesTestValue` for its own case.
+  binding.platformDispatcher.localeTestValue = const ui.Locale('en', 'US');
+  binding.platformDispatcher.localesTestValue = const [ui.Locale('en', 'US')];
   // An unmocked native call can outlive a widget's fake clock and leave the
   // send's timeout pending. Ordinary fixtures have no device timezone; tests
   // of the native boundary install their own success/failure/stalled handler.

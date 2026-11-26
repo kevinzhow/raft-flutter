@@ -81,9 +81,9 @@ Future<void> loadAuditFonts(WidgetTester t, AuditFonts fonts) => _fontsLoaded
     ? Future.value()
     : t.runAsync(() async {
         _fontsLoaded = true;
+        final cjkFiles = cjkTestFonts().where((f) => f.existsSync()).toList();
         final cjk = [
-          for (final f in cjkTestFonts())
-            if (f.existsSync()) ByteData.sublistView(f.readAsBytesSync()),
+          for (final f in cjkFiles) cjkTestFontData(f, 'Noto Sans CJK JP'),
         ];
         for (final family in [
           'SpaceGrotesk',
@@ -122,19 +122,49 @@ Future<void> loadAuditFonts(WidgetTester t, AuditFonts fonts) => _fontsLoaded
               .load();
         }
         if (cjk.isNotEmpty) {
-          for (final family in [
-            'Noto Sans CJK SC',
-            'Noto Sans CJK TC',
-            'Noto Sans CJK JP',
-            'Noto Sans CJK KR',
-            'sans-serif',
-          ]) {
+          // Every family the theme's chains name, including the ones only a
+          // device has: an unregistered name is answered by flutter_test's own
+          // box font, so it would swallow the glyph before the chain reaches a
+          // real face (see [cjkStandInFaces]).
+          for (final MapEntry(key: family, value: face)
+              in cjkStandInFaces.entries) {
             final loader = FontLoader(family);
-            for (final d in cjk) {
-              loader.addFont(Future.value(d));
+            for (final file in cjkFiles) {
+              loader.addFont(Future.value(cjkTestFontData(file, face)));
             }
             await loader.load();
           }
+          // Every generic a recipe declaration can end in, with the face a
+          // host resolves it to. The mono pair matters as much as the sans
+          // one: the channel date divider is `font-mono`, so a Japanese date
+          // reaches `ui-monospace` before any CJK family.
+          for (final MapEntry(key: family, value: paths)
+              in genericStandInFonts.entries) {
+            final generic = FontLoader(family);
+            for (final path in paths) {
+              final file = systemTestFont(path);
+              if (file.existsSync()) {
+                generic.addFont(
+                  Future.value(ByteData.sublistView(file.readAsBytesSync())),
+                );
+              }
+            }
+            await generic.load();
+          }
+          // The trailing generic also stands in for the OS emoji fallback.
+          final sans = FontLoader('sans-serif');
+          for (final face in ['Regular', 'Bold']) {
+            final file = systemTestFont('truetype/noto/NotoSans-$face.ttf');
+            if (file.existsSync()) {
+              sans.addFont(
+                Future.value(ByteData.sublistView(file.readAsBytesSync())),
+              );
+            }
+          }
+          for (final data in cjk) {
+            sans.addFont(Future.value(data));
+          }
+          await sans.load();
         }
       });
 

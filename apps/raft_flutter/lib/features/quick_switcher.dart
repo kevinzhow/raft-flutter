@@ -1086,7 +1086,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
           : resourceRelativeTime(
               row['createdAt'] as String?,
               now: widget.clock?.call(),
-              chinese: Localizations.localeOf(context).languageCode == 'zh',
+              locale: Localizations.localeOf(context).toLanguageTag(),
             ),
       snippet: SearchHighlight(
         text: '${row['snippet'] ?? row['content'] ?? ''}',

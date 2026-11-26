@@ -640,7 +640,6 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
                 'isComputer': computer['isComputer'],
               },
           ];
-    final chinese = Localizations.localeOf(context).languageCode == 'zh';
     final commands = ComputerSetupCommands.build(
       slug: w.server?.string('slug') ?? '',
       serverUrl: w.client.origin,
@@ -665,7 +664,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
                 : resourceRelativeTime(
                     '${m['lastHeartbeat']}',
                     now: widget.now?.call(),
-                    chinese: chinese,
+                    locale: Localizations.localeOf(context).toLanguageTag(),
                   ),
           ),
       ],

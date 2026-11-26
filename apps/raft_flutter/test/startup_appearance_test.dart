@@ -53,10 +53,20 @@ void main() {
     'device glyph locale remains independent of English UI and updates live',
     (t) async {
       final sessions = _PendingSessionStore();
-      // Traditional Chinese is not a shipped UI translation, but its regional
-      // glyph preference must survive the English UI fallback.
+      // Traditional Chinese IS a shipped UI translation now, so the UI
+      // language has to be held to English by the device's language LIST,
+      // which is what the app reads (Web `matchSystemDisplayLocale`). The
+      // single `locale` still drives the regional glyph preference, and that
+      // is what this test is about: English copy, Traditional Chinese glyphs.
+      // Setting only one of the two would leave the result depending on which
+      // the app happens to read.
+      t.platformDispatcher.localesTestValue = const [Locale('en', 'US')];
       t.platformDispatcher.localeTestValue = const Locale('zh', 'TW');
-      addTearDown(t.platformDispatcher.clearLocaleTestValue);
+      addTearDown(() {
+        // Back to what flutter_test_config pins, not to the real host.
+        t.platformDispatcher.localeTestValue = const Locale('en', 'US');
+        t.platformDispatcher.localesTestValue = const [Locale('en', 'US')];
+      });
       final app = await _firstBuilt(t, {}, preload: true, sessions: sessions);
       expect(app.locale, const Locale('en'));
       expect(app.theme!.textTheme.bodyMedium!.locale, const Locale('zh', 'TW'));
