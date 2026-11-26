@@ -61886,7 +61886,7 @@
         "familyRefs": [],
         "reason": "Legacy UI Wave 3A composition/helper aligned to Web v1.24."
       },
-      "packages/raft_ui/lib/src/feedback_workspace.dart#local-function:CLASS:_RaftFeedbackCloseSplitState@38236/METHOD:build@40085/FUNCTION:part@41087": {
+      "packages/raft_ui/lib/src/feedback_workspace.dart#local-function:CLASS:_RaftFeedbackCloseSplitState@38339/METHOD:build@40188/FUNCTION:part@41190": {
         "role": "entry_composition",
         "owner": "Legacy UI Wave 3A",
         "familyRefs": [],
