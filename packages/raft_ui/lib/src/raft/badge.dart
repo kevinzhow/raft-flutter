@@ -11,6 +11,7 @@ import '../icons.dart';
 import '../recipe_surface.dart';
 import '../recipes/badge.g.dart';
 import '../recipes/recipe_runtime.dart';
+import '../surface_background_scope.dart';
 import '../text_scaling.dart' show RaftChrome;
 import '../theme.dart';
 import '../tokens/tokens.dart';
@@ -49,6 +50,7 @@ class RaftBadgeColors {
     RaftBadgeRecipeVariant variant, {
     bool hovered = false,
     bool disabled = false,
+    Color? surface,
   }) {
     const clear = _clearFill;
     if (disabled) {
@@ -57,10 +59,13 @@ class RaftBadgeColors {
         foreground: ui.foregroundDisabled,
       );
     }
+    final canvas = (surface != null && surface.a == 1)
+        ? surface
+        : ui.layerCanvas;
     Color over(Color fill, Color pressed) =>
         hovered ? Color.alphaBlend(pressed, fill) : fill;
-    // Translucent fills (dark `fill-muted`) composite over the page the way Blink does (see [raftChromeBlend]).
-    Color opaque(Color c) => c.a < 1 ? raftChromeBlend(c, ui.layerCanvas) : c;
+    // Translucent fills (dark `fill-muted`) composite over the enclosing surface the way Blink does (see [raftChromeBlend]).
+    Color opaque(Color c) => c.a < 1 ? raftChromeBlend(c, canvas) : c;
     switch (appearance) {
       case RaftBadgeRecipeAppearance.solid:
         final fill = switch (variant) {
@@ -79,7 +84,7 @@ class RaftBadgeColors {
           fill: over(fill, ui.stickerPressed),
           foreground: ui.stickerInk,
           ink: ui.stickerInk,
-          edge: raftStickerEdge(ui),
+          edge: raftStickerEdge(ui, canvas),
         );
       case RaftBadgeRecipeAppearance.soft:
         final fill = switch (variant) {
@@ -108,10 +113,10 @@ class RaftBadgeColors {
           RaftBadgeRecipeVariant.danger => ui['danger-strong'],
           _ => ui.foregroundMuted,
         };
-        // Translucent tokens over the page: composite them the way Blink does (see [raftChromeBlend]).
+        // Translucent tokens over the enclosing surface: composite them the way Blink does (see [raftChromeBlend]).
         final backdrop = hovered
-            ? Color.alphaBlend(ui.fillPressed, ui.layerCanvas)
-            : ui.layerCanvas;
+            ? Color.alphaBlend(ui.fillPressed, canvas)
+            : canvas;
         Color opaqueOver(Color c) => c.a < 1 ? raftChromeBlend(c, backdrop) : c;
         return RaftBadgeColors(
           fill: hovered ? ui.fillPressed : clear,
@@ -214,6 +219,10 @@ class RaftBadge extends StatelessWidget {
   Widget _body(BuildContext context, {required bool hovered}) {
     final t = RaftTokens.of(context);
     final ui = t.ui;
+    final surface = RaftSurfaceBackgroundScope.of(context);
+    final canvas = (surface != null && surface.a == 1)
+        ? surface
+        : ui.layerCanvas;
     final solid = appearance == RaftBadgeRecipeAppearance.solid;
     final outline = appearance == RaftBadgeRecipeAppearance.outline;
     var colors = RaftBadgeColors.resolve(
@@ -222,6 +231,7 @@ class RaftBadge extends StatelessWidget {
       variant,
       hovered: hovered,
       disabled: disabled,
+      surface: surface,
     );
     // Height and corner radius come from the recipe (`md:pointer-fine:h-5 md:pointer-fine:rounded-sticker` on
     // soft and outline, `h-5 rounded-sticker` solid, `h-[22px] rounded-chip` otherwise); so do the `you` /
@@ -238,7 +248,7 @@ class RaftBadge extends StatelessWidget {
       final wash = recipe.backgroundColor?.resolve(t.recipeTokens);
       final base = wash == null
           ? _clearFill
-          : (wash.a < 1 ? raftChromeBlend(wash, ui.layerCanvas) : wash);
+          : (wash.a < 1 ? raftChromeBlend(wash, canvas) : wash);
       colors = RaftBadgeColors(
         fill: hovered && wash != null
             ? Color.alphaBlend(solid ? ui.stickerPressed : ui.fillPressed, base)

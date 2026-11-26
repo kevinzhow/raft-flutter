@@ -190,7 +190,8 @@ void main() {
         expect((previews, jumps, downloads), (0, 1, 1));
         final t = raftTheme(dark: dark).extension<RaftTokens>()!;
         final recipe = SourceChannelFilesRecipe(t);
-        final boundary = 560 + 24 + recipe.border(false).width * 2;
+        final boundary =
+            560 + recipe.rowInset.horizontal + recipe.border(false).width * 2;
         expect(recipe.collapsedActions(boundary), true);
         expect(recipe.collapsedActions(boundary + .1), false);
         expect(tester.takeException(), isNull);

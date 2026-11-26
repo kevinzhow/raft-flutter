@@ -10,6 +10,7 @@ import '../theme.dart';
 import '../icons.dart' show RaftIconViewport;
 import '../recipe_surface.dart' show RaftRecipeBinding;
 import '../recipes/avatar.g.dart';
+import '../surface_background_scope.dart';
 import '../tokens/tokens.dart';
 import '../tooltip.dart';
 import 'css_box.dart';
@@ -260,6 +261,7 @@ class RaftStickerAvatar extends StatelessWidget {
     final ui = t.ui;
     final dimension = extent ?? size.extent;
     final border = raftControlBorderPx(context, 1.5);
+    final surface = badgeOutlineColor ?? RaftSurfaceBackgroundScope.of(context);
     // Both radii come from the theme. The inner one is its own token rather
     // than outer - inset: the official Raft specimen insets the image by 1px
     // and still rounds it to 2, so concentric arithmetic would give 3.
@@ -273,7 +275,7 @@ class RaftStickerAvatar extends StatelessWidget {
           : ui.inactive,
       borderWidth: border,
       borderColor: ui.stickerInk,
-      rings: [RaftRing(1.5, raftStickerEdge(ui, badgeOutlineColor))],
+      rings: [RaftRing(1.5, raftStickerEdge(ui, surface))],
       width: dimension,
       height: dimension,
       child: ClipRRect(
@@ -290,7 +292,7 @@ class RaftStickerAvatar extends StatelessWidget {
                 key: presenceKey,
                 size: size,
                 presence: presence!,
-                outlineColor: badgeOutlineColor,
+                outlineColor: surface,
                 label: presenceLabel,
               ));
     final cast = size == RaftAvatarSize.xl && extent == null;

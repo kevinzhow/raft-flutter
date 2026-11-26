@@ -406,8 +406,9 @@ SECTIONS = [
           note='Desktop Agent-detail cases are being extended on cindy/alignment-audit.'),
         R('7.09', 'Agent detail: Activity tab (log, empty, loading, error)', 'components/agent/AgentActivityLog.tsx', 'DP',
           off=['screens.members.agent-detail.activity'], d=['components.members-ext.agent.activity*']),
-        R('7.10', 'Agent detail: Chat tab (channels and DMs of the agent)', 'components/agent/AgentDetailPanel.tsx (AgentChatTab)', 'DP', prio=2,
-          note='Desktop: in progress on cindy/alignment-audit. Phone: no case.'),
+        R('7.10', 'Agent detail: Chat tab (channels and DMs of the agent)', 'components/agent/AgentDetailPanel.tsx (AgentChatTab)', 'DP',
+          d=['components.legacy-wave3b.agent-chat.desktop', 'components.legacy-wave3b.agent-chat-empty.desktop'],
+          p=['components.legacy-wave3b.agent-chat.phone', 'components.legacy-wave3b.agent-chat-empty.phone'], prio=2),
         R('7.11', 'Agent detail: Reminders tab', 'components/agent/AgentRemindersSection.tsx', 'DP',
           off=['screens.members.agent-detail.reminders'], d=['components.members-ext.agent.reminders']),
         R('7.12', 'Agent detail: Workspace tab (files)', 'components/agent/AgentWorkspace.tsx', 'DP',
@@ -603,8 +604,8 @@ INLINE_SURFACES = [
       note='Desktop forward modal chrome & file-share preview (packages/raft_ui/lib/src/forward_desktop_dialog.dart, forward_composer.dart).'),
     R('I.06', 'Agent detail: Chat tab (agent-chat)',
       'features/agent/AgentChatTab.tsx', 'DP',
-      d=['components.members-pages.desktop.agent.chat*'],
-      p=['components.members-pages.phone.agent.chat*'], prio=2,
+      d=['components.legacy-wave3b.agent-chat.desktop', 'components.legacy-wave3b.agent-chat-empty.desktop'],
+      p=['components.legacy-wave3b.agent-chat.phone', 'components.legacy-wave3b.agent-chat-empty.phone'], prio=2,
       note='Agent channels/DMs tab and inline empty state (packages/raft_ui/lib/src/agent_chat_view.dart; route row 7.10).'),
 ]
 

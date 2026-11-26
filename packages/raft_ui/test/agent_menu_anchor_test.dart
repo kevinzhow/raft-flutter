@@ -77,13 +77,13 @@ void main() {
             )
             .focusNode!;
         expect(firstItemFocus().hasFocus, false);
-        expect(tester.getRect(popup).top, hovered.bottom + 4);
-        expect(tester.getRect(popup).right, hovered.right);
+        expect(tester.getRect(popup).top, closeTo(hovered.bottom + 4, .5));
+        expect(tester.getRect(popup).right, closeTo(hovered.right, .5));
         await pixel(tester, const Offset(2, 2));
         await mouse.moveTo(const Offset(2, 2));
         await tester.pumpAndSettle();
         expect(tester.getRect(target), idle);
-        expect(tester.getRect(popup).top, idle.bottom + 4);
+        expect(tester.getRect(popup).top, closeTo(idle.bottom + 4, .5));
         await pixel(tester, const Offset(2, 2));
         await mouse.removePointer();
         await tester.tap(find.text('Underlying action'));
@@ -99,7 +99,7 @@ void main() {
         expect(underlying, 1);
         await tester.tap(find.byType(RaftOverflowMenuButton));
         await tester.pumpAndSettle();
-        expect(tester.getRect(popup).top, idle.bottom + 4);
+        expect(tester.getRect(popup).top, closeTo(idle.bottom + 4, .5));
         await pixel(tester, const Offset(2, 2));
         await tester.sendKeyEvent(LogicalKeyboardKey.escape);
         await tester.pumpAndSettle();

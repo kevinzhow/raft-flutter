@@ -98,6 +98,7 @@ EXT_AREA_LEVEL = {
     'action-card-v124': COMPONENT, 'app-links': COMPONENT,
     'legacy-wave2': COMPONENT,
     'legacy-wave3a': COMPONENT,
+    'legacy-wave3b': COMPONENT,
     # the coverage families added by this audit name their level in the id: components.<area>.<level>.<...>
     'frame': FRAME, 'framework': FRAME, 'pages': PAGE, 'states': FRAME,
 }

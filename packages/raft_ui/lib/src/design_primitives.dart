@@ -2178,20 +2178,21 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
     }
     hoverOpen?.cancel();
     openedOnHover = false;
+    final focusEdge = edge ?? (RaftFocusVisible.shared.keyboard ? 1 : null);
     focusPopup =
         widget.submenuTriggerBuilder != null ||
         !widget.openOnHover ||
         RaftFocusVisible.shared.keyboard ||
-        edge != null;
+        focusEdge != null;
     controller.open();
-    if (edge != null) {
+    if (focusEdge != null) {
       final captured = ticket;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted &&
             triggerEnabled &&
             captured == ticket &&
             controller.isOpen) {
-          _edge(edge);
+          _edge(focusEdge);
         }
       });
     }

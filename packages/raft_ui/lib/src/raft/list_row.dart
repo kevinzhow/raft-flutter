@@ -10,6 +10,7 @@ import '../indicators.dart';
 import '../interaction.dart';
 import '../icons.dart';
 import '../localization.dart';
+import '../panel_layout.dart' show RaftCssText;
 import '../recipe_surface.dart';
 import '../recipes/list_row.g.dart';
 import '../recipes/list_row_skeleton.g.dart';
@@ -471,7 +472,7 @@ class RaftListRowTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
+    return RaftCssText(
       raftText(context, text),
       maxLines: 1,
       softWrap: false,
@@ -531,7 +532,7 @@ class RaftListRowMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
+    return RaftCssText(
       text,
       maxLines: 1,
       softWrap: false,

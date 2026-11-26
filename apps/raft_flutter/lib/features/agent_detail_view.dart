@@ -87,9 +87,12 @@ class SourceProfileLoadingPanel extends StatelessWidget {
           backTooltip: raftText(context, 'Back'),
           actions: [
             if (onClose != null)
-              RaftPanelIconButton(
+              RaftButton(
+                uiVariant: RaftButtonVariant.ghost,
+                uiSize: RaftButtonSize.iconMd,
                 glyph: RaftGlyph.x,
                 tooltip: raftText(context, 'Close Profile'),
+                semanticLabel: raftText(context, 'Close Profile'),
                 onPressed: onClose,
               ),
           ],
@@ -664,11 +667,14 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                 : null,
             actions: [
               if (showMessage && !foldMessage)
-                RaftPanelIconButton(
+                RaftButton(
                   key: const Key('agent-profile-message'),
-                  icon: (size, color) =>
+                  uiVariant: RaftButtonVariant.ghost,
+                  uiSize: RaftButtonSize.iconMd,
+                  iconBuilder: (size, color) =>
                       RaftDirectMessageIcon(size: size, color: color),
                   tooltip: raftText(context, 'Direct message'),
+                  semanticLabel: raftText(context, 'Direct message'),
                   onPressed: widget.actions.onMessage,
                 ),
               if (inlineCommands && menu.isNotEmpty) ..._inlineActions(context),
@@ -681,9 +687,12 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               // AgentDetailHeader `onClose` (`hidden md:flex`): the profile
               // overlay's close action once the back chevron is gone.
               if (hasClose)
-                RaftPanelIconButton(
+                RaftButton(
+                  uiVariant: RaftButtonVariant.ghost,
+                  uiSize: RaftButtonSize.iconMd,
                   glyph: RaftGlyph.x,
                   tooltip: raftText(context, 'Close Profile'),
+                  semanticLabel: raftText(context, 'Close Profile'),
                   onPressed: widget.actions.onClose,
                 ),
             ],
@@ -740,20 +749,29 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   List<Widget> _inlineActions(BuildContext context) => [
     ?(_bounded ? null : agentLoungeInlineAction(context, widget.controller, a)),
     if (_controls.start || _controls.stop)
-      RaftPanelIconButton(
+      RaftButton(
         key: const Key('agent-profile-inline-start-stop'),
+        uiVariant: RaftButtonVariant.ghost,
+        uiSize: RaftButtonSize.iconMd,
         glyph: _controls.stop ? RaftGlyph.square : RaftGlyph.play,
         tooltip: raftText(
+          context,
+          _controls.stop ? 'Stop agent' : 'Start agent',
+        ),
+        semanticLabel: raftText(
           context,
           _controls.stop ? 'Stop agent' : 'Start agent',
         ),
         onPressed: widget.actions.onStartStop,
       ),
     if (_controls.restartReset)
-      RaftPanelIconButton(
+      RaftButton(
         key: const Key('agent-profile-inline-restart-reset'),
+        uiVariant: RaftButtonVariant.ghost,
+        uiSize: RaftButtonSize.iconMd,
         glyph: RaftGlyph.rotateCcw,
         tooltip: raftText(context, 'Restart / reset'),
+        semanticLabel: raftText(context, 'Restart / reset'),
         onPressed: widget.actions.onRestartReset,
       ),
   ];
@@ -1326,11 +1344,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               RaftCssText(
                 source,
                 style: raftCssText.merge(
-                  RaftTypography.heading(
-                    t,
-                    size: 14,
-                    line: 20,
-                  ).copyWith(color: t.colors['foreground-strong']),
+                  t.scale(
+                    RaftTypeScale.callout,
+                    color: t.colors['foreground-strong'],
+                  ),
                 ),
               ),
             ],

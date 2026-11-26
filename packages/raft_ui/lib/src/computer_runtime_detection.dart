@@ -108,11 +108,9 @@ class _RaftRuntimeDetectionNoticeState
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final note = RaftTypography.body(
-      t,
-      size: 12,
-      line: 20,
-      color: raftPanelInk(t, .6, t.colors['foreground-muted']!),
+    final note = t.scale(
+      RaftTypeScale.footnote,
+      color: raftPanelInk(t, .6, t.ui.foregroundMuted),
     );
     final incomplete =
         widget.detection.status == RaftRuntimeDetectionStatus.incomplete;
@@ -126,18 +124,15 @@ class _RaftRuntimeDetectionNoticeState
           const SizedBox.square(dimension: 16, child: RaftSpinner(size: 16)),
         Text(_message(context), style: note),
         if (incomplete && widget.canRescan)
-          RaftRecipeButton(
+          RaftButton(
             key: const ValueKey('machine-runtime-detection-rescan'),
             label: raftText(
               context,
               state == _Rescan.running ? 'Rescanning…' : 'Rescan runtimes',
             ),
-            variant: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.sm,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            textStep: (12, 16),
-            disabled: state == _Rescan.running,
-            onPressed: _rescan,
+            uiVariant: RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.sm,
+            onPressed: state == _Rescan.running ? null : _rescan,
           ),
         if (incomplete && !widget.canRescan)
           Text(
@@ -157,7 +152,7 @@ class _RaftRuntimeDetectionNoticeState
                   : 'Rescan request failed. Check the Computer is online and try again.',
             ),
             key: const ValueKey('machine-runtime-detection-rescan-error'),
-            style: note.copyWith(color: t.product.brutalOrange),
+            style: note.copyWith(color: t.ui['warning-strong']),
           ),
       ],
     );

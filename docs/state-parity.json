@@ -2482,12 +2482,12 @@
         {
           "state": "empty",
           "web": "yes",
-          "flutter": "partial",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "Web EmptyState \"No reminders yet\" + \"This agent hasn't scheduled anything. To set one, just tell your agent: ...\"; Flutter RaftReminderListView (agent_profile.dart:1333) shows a bell icon + \"No reminders\" and no description. Real copy and layout difference; only the populated tab has a case (components.members-ext.agent.reminders, screens.members.agent-detail.reminders).",
-          "size": "S",
-          "gapKind": "impl-diff"
+          "flutter": "yes",
+          "parityCase": [
+            "components.legacy-wave3b.agent-reminders-empty.desktop.*"
+          ],
+          "status": "covered",
+          "caseValidity": "react-checked"
         },
         {
           "state": "loading",
@@ -58885,6 +58885,23 @@
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/agent_chat_view.dart#method:_RaftAgentChatViewState._channelRow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "Wave 3B",
+        "reason": "Channel row in RaftAgentChatView composes canonical RaftListRow parts with mute icon and channel visibility badge."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#method:RaftOverflowMenuButton.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "menu"
+        ],
+        "owner": "Wave 3B",
+        "reason": "Overflow menu trigger composes RaftButton inside RaftDropdownMenu."
       }
     },
     "entries": {
@@ -68770,6 +68787,11 @@
         "applicability": "required",
         "owner": "WP-SEARCH",
         "reason": "The generated InputGroup paints its focus shadow when the enabled editor holds focus. Search exercises the recipe in both themes."
+      },
+      "packages/raft_ui/lib/src/agent_chat_view.dart#method:_RaftAgentChatViewState.build|state:dark": {
+        "owner": "Wave 3B",
+        "applicability": "required",
+        "reason": "Resolves dark-mode RaftTokens semantic colors for agent chat tabs."
       }
     },
     "evidence": {},

@@ -96,13 +96,9 @@ class _CompactRowFrameState extends State<CompactRowFrame> {
 }
 
 TextStyle _title(RaftTokens t) =>
-    RaftTypography.body(t, size: 14, line: 20, color: t.strong);
-TextStyle _meta(RaftTokens t) => RaftTypography.mono(
-  t,
-  size: 12,
-  line: 20,
-  color: t.colors['foreground-hint'],
-);
+    t.scale(RaftTypeScale.callout, color: t.strong);
+TextStyle _meta(RaftTokens t) =>
+    t.scale(RaftTypeScale.monoMeta, mono: true, color: t.ui.foregroundHint);
 
 Widget _time(
   BuildContext context,
@@ -330,81 +326,71 @@ class _ArtifactRowState extends State<ConversationArtifactRow> {
   Widget _card(BuildContext context) {
     final t = RaftTokens.of(context), recipe = SourceChannelFilesRecipe(t);
     final card = widget.card;
-    return RaftHoverRegion(
-      onEnter: (_) => setState(() => hovered = true),
-      onExit: (_) => setState(() => hovered = false),
-      child: AnimatedContainer(
-        duration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : recipe.hoverTransition,
-        decoration: RaftCssBoxDecoration(
-          color: recipe.rowBackground,
-          borderRadius: recipe.radius,
-          border: Border.fromBorderSide(recipe.border(hovered)),
-          boxShadow: recipe.shadows(hovered),
-        ),
-        padding: recipe.rowInset,
-        child: ChannelFileOpen(
-          label: _label(context),
-          onPressed: widget.onOpen,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: recipe.thumbnailSize,
-                height: recipe.thumbnailSize,
-                decoration: BoxDecoration(
-                  color: t.colors['layer-card'],
-                  border: Border.all(color: t.colors['line-muted']!),
-                ),
-                child: Center(
-                  child: RaftIcon(artifactKindGlyph(card.kind), size: 18),
-                ),
+    final controlRadius = t.size('radius.control', fallback: 8);
+    return RaftCard.item(
+      interactive: true,
+      padding: recipe.rowInset,
+      child: ChannelFileOpen(
+        label: _label(context),
+        onPressed: widget.onOpen,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: recipe.thumbnailSize,
+              height: recipe.thumbnailSize,
+              decoration: BoxDecoration(
+                color: t.ui.fillMuted,
+                borderRadius: BorderRadius.circular(controlRadius),
+                border: Border.all(color: t.ui.lineHairline),
               ),
-              SizedBox(width: recipe.bodyGap),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      card.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: recipe.filename,
-                    ),
-                    SizedBox(height: recipe.textGap),
-                    Wrap(
-                      spacing: RaftSpace.x2,
-                      runSpacing: RaftSpace.x1,
-                      children: [
-                        Text(_version(context, card), style: recipe.metadata),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RaftIcon(
-                              RaftGlyph.clock3,
-                              size: 12,
-                              color: recipe.metadata.color,
-                            ),
-                            const SizedBox(width: RaftSpace.x1),
-                            Flexible(
-                              child: _time(
-                                context,
-                                widget.formattedDate,
-                                widget.fullDate,
-                                recipe.metadata,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              child: Center(
+                child: RaftIcon(artifactKindGlyph(card.kind), size: 18),
               ),
-            ],
-          ),
+            ),
+            SizedBox(width: recipe.bodyGap),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    card.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: recipe.filename,
+                  ),
+                  SizedBox(height: recipe.textGap),
+                  Wrap(
+                    spacing: RaftSpace.x2,
+                    runSpacing: RaftSpace.x1,
+                    children: [
+                      Text(_version(context, card), style: recipe.metadata),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RaftIcon(
+                            RaftGlyph.clock3,
+                            size: 12,
+                            color: recipe.metadata.color,
+                          ),
+                          const SizedBox(width: RaftSpace.x1),
+                          Flexible(
+                            child: _time(
+                              context,
+                              widget.formattedDate,
+                              widget.fullDate,
+                              recipe.metadata,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -430,15 +416,10 @@ class ConversationArtifactsNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final danger = RaftTypography.body(
-      t,
-      size: 14,
-      line: 20,
-      color: t.colors['danger'],
-    );
+    final danger = t.scale(RaftTypeScale.callout, color: t.colors['danger']);
     final loading = Text(
       raftText(context, 'Loading Artifacts…'),
-      style: RaftTypography.mono(t, size: 14, line: 20),
+      style: t.scale(RaftTypeScale.callout, mono: true),
     );
     RaftButton button(String label) => RaftButton(
       label: raftText(context, label),

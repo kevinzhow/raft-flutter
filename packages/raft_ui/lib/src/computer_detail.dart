@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 
 import '../raft_ui.dart';
+import 'surface_background_scope.dart';
 
 // ------------------------------------------------------------------- data
 
@@ -342,29 +343,31 @@ class _Ink {
   Color get strong => t.colors['foreground-strong']!;
   Color muted(double brutalAlpha) =>
       raftPanelInk(t, brutalAlpha, t.colors['foreground-muted']!);
-  Color get orange => t.product.brutalOrange;
+  Color get orange => t.ui['warning-strong'];
 
-  TextStyle body(double size, double line, {Color? color, FontWeight? w}) =>
-      raftCssText.merge(
-        RaftTypography.body(
-          t,
-          size: size,
-          line: line,
-          color: color,
-          weight: w ?? FontWeight.w400,
-        ),
-      );
-  TextStyle mono(double size, double line, {Color? color, FontWeight? w}) =>
-      raftCssText.merge(
-        RaftTypography.mono(
-          t,
-          size: size,
-          line: line,
-          color: color,
-        ).copyWith(fontWeight: w),
-      );
+  TextStyle body(double size, double line, {Color? color, FontWeight? w}) {
+    final slot = switch (size) {
+      <= 11 => RaftTypeScale.label,
+      <= 12 => RaftTypeScale.caption,
+      <= 13 => RaftTypeScale.footnote,
+      <= 14 => RaftTypeScale.callout,
+      <= 15 => RaftTypeScale.subhead,
+      <= 17 => RaftTypeScale.headline,
+      _ => RaftTypeScale.title,
+    };
+    return raftCssText.merge(
+      t.scale(slot, color: color, weight: w ?? FontWeight.w400),
+    );
+  }
 
-  /// `text-xs leading-5 text-foreground-muted theme-brutal:text-black/60`.
+  TextStyle mono(double size, double line, {Color? color, FontWeight? w}) {
+    final slot = size <= 12 ? RaftTypeScale.monoMeta : RaftTypeScale.monoCode;
+    return raftCssText.merge(
+      t.scale(slot, mono: true, color: color, weight: w),
+    );
+  }
+
+  /// `text-xs leading-5 text-foreground-muted`.
   TextStyle get note => body(12, 20, color: muted(.6));
 }
 
@@ -422,17 +425,13 @@ Widget _smallButton(
   String? tooltip,
 }) {
   final button = Builder(
-    builder: (context) => RaftRecipeButton(
+    builder: (context) => RaftButton(
       key: key,
       label: label,
       glyph: glyph,
       glyphSize: 12,
-      variant: raftVariant ?? variant,
-      size: RaftButtonRecipeSize.sm,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      textStep: (12, 16),
-      gap: 4,
-      disabled: onPressed == null,
+      uiVariant: RaftButtonVariant.fromRecipe(raftVariant ?? variant),
+      uiSize: RaftButtonSize.sm,
       onPressed: onPressed,
     ),
   );
@@ -460,21 +459,16 @@ Widget _actionButton(
 }) => Builder(
   builder: (context) {
     final sourceSize = raftSize != null;
-    return RaftRecipeButton(
+    return RaftButton(
       key: key,
       label: label,
       glyph: glyph,
       glyphSize: sourceSize ? null : 14,
-      variant: raftVariant ?? variant,
-      size: sourceSize ? raftSize : RaftButtonRecipeSize.sm,
-      padding: sourceSize
-          ? null
-          : EdgeInsets.symmetric(horizontal: horizontal, vertical: 8),
-      textStep: sourceSize ? null : (14, 20),
-      gap: sourceSize ? null : 6,
+      uiVariant: RaftButtonVariant.fromRecipe(raftVariant ?? variant),
+      uiSize: sourceSize
+          ? RaftButtonSize.fromRecipe(raftSize)
+          : RaftButtonSize.sm,
       tooltip: tooltip,
-      fontWeight: sourceSize ? null : FontWeight.w700,
-      disabled: onPressed == null,
       onPressed: onPressed,
     );
   },
@@ -936,9 +930,6 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                             padding: EdgeInsets.zero,
                             child: _rule(
                               t,
-                              key: const ValueKey(
-                                'computer-section-workspaces',
-                              ),
                               top: true,
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 16),
@@ -1785,69 +1776,99 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         ],
       ],
     );
-    Widget row(RaftComputerAgent a) {
+    Widget row(
+      RaftComputerAgent a, {
+      required bool wide,
+      required double maxWidth,
+    }) {
       final subtitle = a.subtitle;
       final name = a.name;
       final activityText = a.activityText;
-      // The activity text is `hidden sm:inline-block max-w-[min(32rem,42vw)]`.
-      final viewport = MediaQuery.sizeOf(context).width;
-      final right = [
-        RaftActivityDot(color: raftActivityDotColor(t, a.activity)),
-        if (viewport >= 640)
-          Flexible(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: math.min(512, viewport * .42),
-              ),
-              child: RaftCssText(
-                activityText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: ink.mono(12, 16, color: ink.muted(.5)),
-              ),
-            ),
-          ),
-      ];
+      final plainPresence =
+          activityText == 'Online' ||
+          activityText == 'Offline' ||
+          activityText == 'Likely online' ||
+          (activityText.isEmpty &&
+              (a.activity == 'online' || a.activity == 'offline'));
+      final dot = RaftStatus(color: raftActivityDotColor(t, a.activity));
+      final trailing = wide || plainPresence
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                dot,
+                if (wide && activityText.isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: math.min(512, maxWidth * .42),
+                    ),
+                    child: RaftCssText(
+                      activityText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: ink.mono(12, 16, color: t.ui.foregroundHint),
+                    ),
+                  ),
+                ],
+              ],
+            )
+          : const SizedBox.shrink();
       final avatar = RaftAvatarSlot(
         name: name,
         avatarUrl: a.avatarUrl,
-        slot: RaftAvatarSlotContext.surfaceList,
+        slot: RaftAvatarSlotContext.listRow,
       );
       final isSelected = selected.contains(a.id);
-      final row = RaftAvatarListRow(
+      final located = d.highlightedAgentIds.contains(a.id);
+      final item = RaftListRow(
         key: ValueKey('computer-agent-${a.id}'),
-        avatar: selectionMode
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RaftCheckboxIndicator(
-                    checked: isSelected,
-                    previewOnHover: true,
-                  ),
-                  const SizedBox(width: 12),
-                  avatar,
-                ],
-              )
-            : avatar,
-        name: name,
-        subtitle: subtitle,
-        rightContent: right,
-        selected: selectionMode && manage && isSelected,
-        // `bg-layer-canvas-muted theme-brutal:bg-gray-100` rows.
-        background: d.highlightedAgentIds.contains(a.id)
-            ? t.colors['success-soft']
-            : selectionMode && isSelected
-            ? null
-            : t.colors['layer-canvas-muted'],
-        onTap: selectionMode
+        variant: RaftListRowVariant.standard,
+        selected: (selectionMode && manage && isSelected) || located,
+        onPressed: selectionMode
             ? () => setState(() {
                 if (!selected.remove(a.id)) selected.add(a.id);
               })
             : () => widget.actions.openAgent?.call(a.id),
+        children: [
+          if (selectionMode)
+            RaftCheckboxIndicator(checked: isSelected, previewOnHover: true),
+          avatar,
+          RaftListRowBody(
+            children: [
+              RaftListRowTitle(name),
+              if (subtitle.isNotEmpty) RaftListRowMeta(subtitle),
+              if (!wide && !plainPresence && activityText.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 16,
+                        child: Center(
+                          child: RaftStatus(
+                            color: raftActivityDotColor(t, a.activity),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: RaftCssText(
+                          activityText,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: ink.mono(12, 16, color: t.ui.foregroundMuted),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          if (wide || plainPresence) trailing,
+        ],
       );
-      if (!selectionMode) return row;
-      // MachineAgentRow selection mode: the row is a toggle button; hover
-      // says Select / Deselect agent, assistive tech hears the agent's name.
+      if (!selectionMode) return item;
       return RaftTooltip(
         message: raftText(
           context,
@@ -1865,7 +1886,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           onTap: () => setState(() {
             if (!selected.remove(a.id)) selected.add(a.id);
           }),
-          child: row,
+          child: item,
         ),
       );
     }
@@ -1986,7 +2007,17 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                   ],
                 ),
               ),
-            for (final a in list) row(a),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 448;
+                return RaftListRowGroup(
+                  children: [
+                    for (final a in list)
+                      row(a, wide: wide, maxWidth: constraints.maxWidth),
+                  ],
+                );
+              },
+            ),
           ]),
       ],
     );
@@ -2003,19 +2034,27 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     final deleted = workspaces.where((e) => e.status == 'deleted').length;
     String plural(int n, String one, String other) => n == 1 ? one : other;
     return Column(
+      key: const ValueKey('computer-section-workspaces'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftSectionHeader(
           label: 'Agent workspaces',
-          icon: RaftIcon(RaftGlyph.folderOpen, size: 14, color: ink.strong),
-          action: _smallButton(
-            scanning
+          icon: RaftIcon(
+            RaftGlyph.folderOpen,
+            size: 14,
+            color: t.ui.foregroundMuted,
+          ),
+          action: RaftButton(
+            key: const ValueKey('computer-workspaces-scan'),
+            label: scanning
                 ? 'Scanning…'
                 : scanned
                 ? 'Rescan'
                 : 'Scan',
-            key: const ValueKey('computer-workspaces-scan'),
             glyph: RaftGlyph.refreshCw,
+            glyphSize: 16,
+            uiVariant: RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.md,
             onPressed: scanning ? null : scan,
           ),
         ),
@@ -2155,11 +2194,11 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                     children: [
                       RaftIcon(
                         progress.error != null
-                            ? RaftGlyph.alertCircle
+                            ? RaftGlyph.triangleAlert
                             : RaftGlyph.checkCircle,
                         size: 14,
                         color: progress.error != null
-                            ? t.product.brutalRed
+                            ? t.ui['warning-strong']
                             : ink.muted(.7),
                       ),
                       const SizedBox(width: 8),
@@ -2170,7 +2209,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                             12,
                             16,
                             color: progress.error != null
-                                ? t.product.brutalRed
+                                ? t.ui['warning-strong']
                                 : ink.muted(.7),
                           ),
                         ),
@@ -2471,42 +2510,33 @@ class _DeletedWorkspaceNote extends StatelessWidget {
   const _DeletedWorkspaceNote({required this.count});
   final int count;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final ink = _Ink(t);
-    final style = ink.body(12, 16, color: ink.strong);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: t.colors['fill-muted'],
-        border: Border.all(color: t.colors['line-muted']!, width: 2),
-      ),
-      child: Text.rich(
-        TextSpan(
-          style: style,
-          // `machine.detail.deletedWorkspaceBanner`: the count is bold.
-          children: raftRichText(
-            context,
-            count == 1
-                ? '<strong>{count} archived-agent</strong> workspace found — the agent is archived but its files are still on this Computer. Delete them if they are no longer needed.'
-                : '<strong>{count} archived-agent</strong> workspaces found — the agent is archived but its files are still on this Computer. Delete them if they are no longer needed.',
-            {
-              'strong': (inner) => TextSpan(
-                text: inner,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            },
-            values: {'count': count},
-          ),
+  Widget build(BuildContext context) => RaftBanner(
+    status: RaftBannerRecipeStatus.info,
+    size: RaftBannerRecipeSize.sm,
+    live: false,
+    descriptionBuilder: (style) => RaftCssText.rich(
+      TextSpan(
+        style: style,
+        // `machine.detail.deletedWorkspaceBanner`: the count is bold.
+        children: raftRichText(
+          context,
+          count == 1
+              ? '<strong>{count} archived-agent</strong> workspace found — the agent is archived but its files are still on this Computer. Delete them if they are no longer needed.'
+              : '<strong>{count} archived-agent</strong> workspaces found — the agent is archived but its files are still on this Computer. Delete them if they are no longer needed.',
+          {
+            'strong': (inner) => TextSpan(
+              text: inner,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          },
+          values: {'count': count},
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-/// WorkspacesSection row: `flex items-center gap-2 border-2 px-3 py-2`,
-/// tinted per status, FolderOpen 14, name (`font-bold text-xs`) + status
-/// badge, mono path, status note, size · files · modified, delete button.
+/// WorkspacesSection row: `flex items-center gap-3 rounded-container border border-line-hairline px-3 py-2.5`.
 class _WorkspaceRow extends StatelessWidget {
   const _WorkspaceRow({super.key, required this.ws, this.onDelete});
   final RaftComputerWorkspace ws;
@@ -2514,110 +2544,129 @@ class _WorkspaceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final ink = _Ink(t);
     final status = ws.status;
-    final (border, fill) = switch (status) {
-      'orphan' => (t.colors['warning']!, t.colors['warning-soft']),
-      'deleted' => (t.colors['line-muted']!, t.colors['fill-muted']),
-      _ => (t.colors['line-muted']!, null),
+    final fill = switch (status) {
+      'orphan' => t.colors['warning-soft'],
+      'deleted' => t.ui.fillMuted,
+      _ => t.ui.layerCard,
     };
-    final meta = ink.mono(10, 15, color: ink.muted(.5));
+    final parentSurface =
+        RaftSurfaceBackgroundScope.of(context) ?? t.ui.layerCanvas;
+    final backdrop = fill != null && fill.a < 1
+        ? raftChromeBlend(fill, parentSurface)
+        : (fill ?? parentSurface);
+    final borderColor = t.ui.lineHairline.a < 1
+        ? raftChromeBlend(t.ui.lineHairline, backdrop)
+        : t.ui.lineHairline;
+    final containerRadius = t.size('radius.container', fallback: 10);
+    final meta = t.scale(
+      RaftTypeScale.monoMeta,
+      mono: true,
+      color: t.ui.foregroundHint,
+    );
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: fill,
-        border: Border.all(color: border, width: 2),
+        color: backdrop,
+        borderRadius: BorderRadius.circular(containerRadius),
+        border: Border.all(color: borderColor),
       ),
-      child: Row(
-        children: [
-          RaftIcon(RaftGlyph.folderOpen, size: 14, color: ink.muted(.4)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: RaftCssText(
-                        ws.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ink.body(
-                          12,
-                          16,
-                          color: ink.strong,
-                          w: FontWeight.w700,
+      child: RaftSurfaceBackgroundScope(
+        color: backdrop,
+        child: Row(
+          children: [
+            RaftIcon(
+              RaftGlyph.folderOpen,
+              size: 16,
+              color: t.ui.foregroundMuted,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: RaftCssText(
+                          ws.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: t.scale(
+                            RaftTypeScale.callout,
+                            weight: FontWeight.w600,
+                            color: t.ui.foreground,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    RaftRecipeBadge(
-                      // `machine.detail.workspaceStatus.deleted` reads "archived".
+                      const SizedBox(width: 8),
+                      RaftBadge(
+                        label: status == 'deleted'
+                            ? raftText(context, 'archived')
+                            : status,
+                        appearance: RaftBadgeRecipeAppearance.soft,
+                        variant: switch (status) {
+                          'active' => RaftBadgeRecipeVariant.success,
+                          'orphan' => RaftBadgeRecipeVariant.warning,
+                          _ => RaftBadgeRecipeVariant.default_,
+                        },
+                        leading: RaftStatus(
+                          variant: switch (status) {
+                            'active' => RaftStatusVariant.success,
+                            'orphan' => RaftStatusVariant.warning,
+                            _ => RaftStatusVariant.default_,
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  RaftCssText(ws.location, style: meta),
+                  if (status == 'deleted' || status == 'orphan') ...[
+                    const SizedBox(height: 2),
+                    RaftCssText(
                       status == 'deleted'
-                          ? raftText(context, 'archived')
-                          : status,
-                      appearance: RaftBadgeRecipeAppearance.solid,
-                      variant: switch (status) {
-                        'active' => RaftBadgeRecipeVariant.success,
-                        'orphan' => RaftBadgeRecipeVariant.warning,
-                        _ => RaftBadgeRecipeVariant.muted,
-                      },
+                          ? raftText(
+                              context,
+                              'Agent archived. Workspace still on this Computer.',
+                            )
+                          : raftText(context, 'No matching agent record'),
+                      style: t.scale(
+                        RaftTypeScale.caption,
+                        weight: status == 'orphan'
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: status == 'orphan'
+                            ? t.ui['warning-strong']
+                            : t.ui.foregroundMuted,
+                      ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 2),
-                RaftCssText(
-                  ws.location,
-                  style: ink.mono(10, 15, color: ink.muted(.4)),
-                ),
-                if (status == 'deleted' || status == 'orphan') ...[
                   const SizedBox(height: 2),
-                  RaftCssText(
-                    status == 'deleted'
-                        ? raftText(
-                            context,
-                            'Agent archived. Workspace still on this Computer.',
-                          ).toUpperCase()
-                        : 'NO MATCHING AGENT RECORD FOUND.',
-                    style: ink
-                        .body(
-                          10,
-                          15,
-                          color: status == 'orphan'
-                              ? ink.orange
-                              : ink.muted(.6),
-                          w: FontWeight.w700,
-                        )
-                        .copyWith(letterSpacing: .25),
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      RaftCssText(ws.sizeLabel, style: meta),
+                      RaftCssText(ws.filesLabel, style: meta),
+                      if (ws.modifiedLabel != null)
+                        RaftCssText(ws.modifiedLabel!, style: meta),
+                    ],
                   ),
                 ],
-                const SizedBox(height: 2),
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    RaftCssText(ws.sizeLabel, style: meta),
-                    RaftCssText(ws.filesLabel, style: meta),
-                    if (ws.modifiedLabel != null)
-                      RaftCssText(ws.modifiedLabel!, style: meta),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-          if (onDelete != null)
-            RaftRecipeButton(
-              key: ValueKey('computer-workspace-delete-${ws.directoryName}'),
-              variant: RaftButtonRecipeVariant.danger,
-              size: RaftButtonRecipeSize.sm,
-              padding: const EdgeInsets.all(4),
-              glyph: RaftGlyph.trash2,
-              // The sm recipe's `& svg` 14px beats Lucide's size={12}.
-              glyphSize: 14,
-              tooltip: 'Delete workspace',
-              onPressed: onDelete,
-            ),
-        ],
+            if (onDelete != null)
+              RaftButton(
+                key: ValueKey('computer-workspace-delete-${ws.directoryName}'),
+                uiVariant: RaftButtonVariant.outline,
+                uiSize: RaftButtonSize.iconMd,
+                glyph: RaftGlyph.trash2,
+                tooltip: 'Delete workspace',
+                semanticLabel: 'Delete workspace',
+                onPressed: onDelete,
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -431,7 +431,7 @@ class AgentLogRowMapper {
           dot: switch (kind) {
             'thinking' => t.product.statusBusy,
             'text' => t.product.brutalCyan,
-            'slock_action' => raftBlue300,
+            'slock_action' => raftActivityDotColor(t, 'online'),
             // A system row that is a subagent's lifecycle reads as that
             // subagent's state, not as an error.
             _ => switch (subagentRowPresence(lineage)) {

@@ -6,21 +6,21 @@ import 'card.dart' show RaftCard;
 
 import 'package:flutter/material.dart';
 
-import 'agent_profile.dart' show raftGray400;
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'icons.dart';
 import 'localization.dart';
 import 'indicators.dart' show RaftBadge, RaftSkeletonRow;
 import 'panel_layout.dart' show RaftCssText;
+import 'raft/raft.dart';
 import 'recipe_surface.dart' show raftCssText, RaftRecipeBox;
 import 'recipes/badge.g.dart';
 import 'recipes/card.g.dart';
 import 'recipes/panel_header.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
-import 'sidebar_section.dart' show RaftSidebarSectionActionRecipe;
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 /// AppPanelHeader `icon` + `iconBg`: the PanelHeaderIcon cell with the
 /// callsite fill (`bg-primary-soft theme-brutal:bg-soft-signal`; elegant
@@ -46,7 +46,7 @@ class RaftPanelHeaderIconTile extends StatelessWidget {
     var decoration = s.decoration(rt).copyWith(color: background);
     if (borderless) {
       decoration = decoration.copyWith(
-        border: Border.all(width: 0, color: Colors.transparent),
+        border: const Border.fromBorderSide(BorderSide.none),
       );
     }
     return Container(
@@ -167,7 +167,7 @@ class RaftOptionCard extends StatelessWidget {
           color: selected
               ? Color.alphaBlend(selectedFill, t.colors['layer-panel']!)
               : t.colors['layer-panel'],
-          border: Border.all(color: border, width: 1),
+          border: Border.all(color: border),
           boxShadow: base.boxShadow,
         ),
         child: child,
@@ -200,13 +200,7 @@ class RaftComputerSidebarHeading extends StatelessWidget {
     final t = RaftTokens.of(context);
     final strong = t.colors['foreground-strong']!;
     final style = raftCssText.merge(
-      RaftTypography.body(
-        t,
-        size: 12,
-        line: 16,
-        weight: FontWeight.w700,
-        color: strong,
-      ),
+      t.scale(RaftTypeScale.caption, weight: FontWeight.w700, color: strong),
     );
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
@@ -234,16 +228,14 @@ class RaftComputerSidebarHeading extends StatelessWidget {
               ),
             ),
             if (onAdd != null)
-              RaftControl(
+              RaftButton(
                 key: addKey,
                 semanticLabel: addLabel,
                 tooltip: addLabel,
-                visualHeight: 24,
-                visualWidth: 24,
-                minimumTargetSize: 24,
-                recipe: RaftSidebarSectionActionRecipe(t),
+                uiVariant: RaftButtonVariant.ghost,
+                uiSize: RaftButtonSize.iconXs,
+                glyph: RaftGlyph.plus,
                 onPressed: onAdd,
-                child: const RaftIcon(RaftGlyph.plus, size: 14),
               ),
           ],
         ),
@@ -328,20 +320,21 @@ class RaftComputerRow extends StatelessWidget {
       final muted = mobile
           ? t.colors['foreground-hint']!
           : t.colors['foreground-muted']!;
-      // Text inherits the item's line box: `text-[13px]` (19.5/13 = 1.5).
       final metaLine = mobile ? 16.5 : 11 * 1.5;
       final meta = raftCssText.merge(
-        RaftTypography.mono(
-          t,
-          size: 11,
-          line: metaLine,
+        t.scale(
+          RaftTypeScale.monoMeta,
+          mono: true,
+          weight: mobile ? FontWeight.w400 : FontWeight.w500,
           color: muted,
-        ).copyWith(fontWeight: mobile ? FontWeight.w400 : FontWeight.w500),
+        ),
       );
       final orange = meta.copyWith(
-        color: t.product.brutalOrange,
+        color: t.ui['warning-strong'],
         fontWeight: FontWeight.w700,
       );
+      final chipRadius = t.size('radius.chip', fallback: 6);
+      final controlRadius = t.size('radius.control', fallback: 8);
       final cardRoot = RaftCardRecipe.resolve(
         states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
         tokens: RaftRecipeTokens(t),
@@ -388,8 +381,8 @@ class RaftComputerRow extends StatelessWidget {
             : EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: paint,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: border, width: 1),
+          borderRadius: BorderRadius.circular(chipRadius),
+          border: Border.all(color: border),
           boxShadow: shadow,
         ),
         child: Row(
@@ -404,9 +397,11 @@ class RaftComputerRow extends StatelessWidget {
                         ? Container(
                             decoration: BoxDecoration(
                               color: t.colors['layer-inset'],
+                              borderRadius: BorderRadius.circular(
+                                controlRadius,
+                              ),
                               border: Border.all(
                                 color: t.colors['line-muted']!,
-                                width: 1,
                               ),
                             ),
                             child: Center(
@@ -431,19 +426,13 @@ class RaftComputerRow extends StatelessWidget {
                   Positioned(
                     right: (mobile ? (1) : cardBorder) - 4,
                     top: (mobile ? (1) : cardBorder) - 4,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: switch (dot) {
-                          RaftComputerDot.upgrade => t.product.brutalPink,
-                          RaftComputerDot.online => t.product.brutalLime,
-                          RaftComputerDot.offline => raftGray400,
-                          RaftComputerDot.upgrading => t.product.brutalCyan,
-                        },
-                        border: Border.all(color: t.colors['line-strong']!),
-                      ),
+                    child: RaftStatus(
+                      presence: switch (dot) {
+                        RaftComputerDot.upgrade => RaftPresence.error,
+                        RaftComputerDot.online => RaftPresence.online,
+                        RaftComputerDot.offline => RaftPresence.offline,
+                        RaftComputerDot.upgrading => RaftPresence.busy,
+                      },
                     ),
                   ),
                 ],
@@ -460,10 +449,8 @@ class RaftComputerRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: raftCssText.merge(
-                      RaftTypography.body(
-                        t,
-                        size: 14,
-                        line: 20,
+                      t.scale(
+                        RaftTypeScale.callout,
                         weight: FontWeight.w700,
                         color: ink,
                       ),
@@ -478,14 +465,12 @@ class RaftComputerRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: raftCssText.merge(
-                          RaftTypography.body(
-                            t,
-                            size: mobile ? 12 : 11,
-                            line: mobile ? 15 : 13.75,
+                          t.scale(
+                            mobile
+                                ? RaftTypeScale.caption
+                                : RaftTypeScale.label,
                             weight: mobile ? FontWeight.w400 : FontWeight.w500,
-                            color: mobile
-                                ? t.colors['foreground-muted']
-                                : t.colors['foreground-muted']!,
+                            color: t.colors['foreground-muted'],
                           ),
                         ),
                       ),
@@ -582,16 +567,17 @@ class RaftMachineTypeOption extends StatelessWidget {
       // Composite translucent tints (`bg-primary-soft`) over the dialog
       // surface so the ring shadow does not show through them.
       final surface = Color.alphaBlend(fill, t.colors['layer-panel']!);
+      final chipRadius = t.size('radius.chip', fallback: 6);
       return CustomPaint(
         foregroundPainter: disabled
-            ? _DashedBorder(color: border, width: 1, radius: 6)
+            ? _DashedBorder(color: border, width: 1, radius: chipRadius)
             : null,
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: surface,
-            borderRadius: BorderRadius.circular(6),
-            border: disabled ? null : Border.all(color: border, width: 1),
+            borderRadius: BorderRadius.circular(chipRadius),
+            border: disabled ? null : Border.all(color: border),
             boxShadow: shadow,
           ),
           child: Row(
@@ -605,10 +591,8 @@ class RaftMachineTypeOption extends StatelessWidget {
                     RaftCssText(
                       title,
                       style: raftCssText.merge(
-                        RaftTypography.body(
-                          t,
-                          size: 14,
-                          line: 20,
+                        t.scale(
+                          RaftTypeScale.callout,
                           weight: FontWeight.w700,
                           color: titleInk,
                         ),
@@ -617,10 +601,9 @@ class RaftMachineTypeOption extends StatelessWidget {
                     RaftCssText(
                       description,
                       style: raftCssText.merge(
-                        RaftTypography.body(
-                          t,
-                          size: 12,
-                          line: 16,
+                        t.scale(
+                          RaftTypeScale.caption,
+                          weight: FontWeight.w400,
                           color: descInk,
                         ),
                       ),
@@ -697,12 +680,9 @@ class RaftComputerSidebarList extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final bleed = 6.0;
-    // SidebarSectionDescription: `px-2 text-xs font-mono leading-snug
-    // text-foreground-muted theme-brutal:text-black/50`.
-    final description = RaftTypography.mono(
-      t,
-      size: 12,
-      line: 16.5,
+    final description = t.scale(
+      RaftTypeScale.monoMeta,
+      mono: true,
       color: t.colors['foreground-muted'],
     );
     return ListView(

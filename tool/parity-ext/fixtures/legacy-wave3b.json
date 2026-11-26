@@ -1,0 +1,233 @@
+{
+ "description": "Shared fixture data for Wave 3B legacy UI cleanup parity cases.",
+ "user": {
+  "id": "user-wave3b",
+  "email": "alex@raft.build",
+  "name": "alexchen",
+  "displayName": "Alex Chen",
+  "role": "owner",
+  "avatarUrl": null,
+  "emailVerified": true,
+  "preferredLanguage": "en",
+  "preferredTimezone": "UTC",
+  "preferredTimeFormat": "24h"
+ },
+ "server": {
+  "id": "srv-wave3b",
+  "name": "Launch Studio",
+  "slug": "launch",
+  "ownerId": "user-wave3b",
+  "role": "owner",
+  "iconUrl": null,
+  "createdAt": "2026-06-01T00:00:00.000Z"
+ },
+ "agent": {
+  "id": "agent-wave3b",
+  "serverId": "srv-wave3b",
+  "name": "martin",
+  "displayName": "Martin",
+  "description": "UI cleanup worker agent.",
+  "status": "active",
+  "runtime": "claude",
+  "model": "claude-sonnet-4-5",
+  "avatarUrl": "pixel:robot",
+  "machineId": "mach-wave3b",
+  "envVars": {
+   "RAFT_ENV": "staging",
+   "API_TOKEN": "secret-token-value"
+  },
+  "createdAt": "2026-06-01T00:00:00.000Z"
+ },
+ "channels": [
+  {
+   "id": "ch-general",
+   "name": "general",
+   "description": "Team coordination and daily standups",
+   "type": "channel",
+   "createdAt": "2026-06-01T00:00:00.000Z",
+   "archivedAt": null,
+   "activityMuted": false,
+   "muteFromSeq": null
+  },
+  {
+   "id": "ch-private",
+   "name": "release-ops",
+   "description": "Private deployment checklists",
+   "type": "private",
+   "createdAt": "2026-06-02T00:00:00.000Z",
+   "archivedAt": null,
+   "activityMuted": true,
+   "muteFromSeq": 42
+  },
+  {
+   "id": "ch-joint",
+   "name": "partner-sync",
+   "description": null,
+   "type": "joint",
+   "createdAt": "2026-06-03T00:00:00.000Z",
+   "archivedAt": null,
+   "activityMuted": false,
+   "muteFromSeq": null
+  }
+ ],
+ "agentDms": [
+  {
+   "id": "dm-1",
+   "createdAt": "2026-11-24T10:00:00.000Z",
+   "peerId": "agent-scout",
+   "peerName": "scout",
+   "peerDisplayName": "Scout",
+   "peerAvatarUrl": "pixel:owl",
+   "lastMessageAt": "2026-11-24T10:00:00.000Z",
+   "lastMessagePreview": "Verified the layout diff captures on desktop."
+  }
+ ],
+ "reminders": [
+  {
+   "reminderId": "rem-1",
+   "title": "Follow up on parity score audit",
+   "fireAt": "2026-12-01T14:00:00.000Z",
+   "recurrence": {
+    "cron": "0 14 * * 1",
+    "description": "Every Monday"
+   },
+   "msgRef": "#general:ab12cd",
+   "msgPermalink": "/s/launch/channels/ch-general?msg=ab12cd"
+  },
+  {
+   "reminderId": "rem-2",
+   "title": "Check staging computer daemon logs",
+   "fireAt": "2026-12-03T09:30:00.000Z",
+   "recurrence": null,
+   "msgRef": "#release-ops:ef34gh",
+   "msgPermalink": null
+  }
+ ],
+ "machine": {
+  "id": "mach-wave3b",
+  "serverId": "srv-wave3b",
+  "name": "Studio-Mac.local",
+  "hostname": "Studio-Mac.local",
+  "status": "online",
+  "platform": "darwin",
+  "arch": "arm64",
+  "ownerId": "user-wave3b",
+  "isComputer": true,
+  "daemonVersion": "1.0.58",
+  "runtimes": [
+   "claude",
+   "codex"
+  ],
+  "lastSeenAt": "2026-11-26T00:00:00.000Z"
+ },
+ "computerAgents": [
+  {
+   "id": "ca-1",
+   "serverId": "srv-wave3b",
+   "machineId": "mach-wave3b",
+   "name": "martin",
+   "displayName": "Martin",
+   "runtime": "claude",
+   "model": "claude-sonnet-4-5",
+   "avatarUrl": "pixel:robot",
+   "activity": "working",
+   "activityDetail": "Running parity checks"
+  },
+  {
+   "id": "ca-2",
+   "serverId": "srv-wave3b",
+   "machineId": "mach-wave3b",
+   "name": "scout",
+   "displayName": "Scout",
+   "runtime": "codex",
+   "model": "gpt-5-codex",
+   "avatarUrl": "pixel:owl",
+   "activity": "offline",
+   "activityDetail": null
+  }
+ ],
+ "workspaces": [
+  {
+   "directoryName": "martin-ws",
+   "agentId": "ca-1",
+   "agentName": "Martin",
+   "status": "active",
+   "totalSizeBytes": 12582912,
+   "fileCount": 42,
+   "lastModified": "2026-10-10T12:00:00.000Z",
+   "displayPath": "/srv/workspaces/martin-ws"
+  },
+  {
+   "directoryName": "archived-bot",
+   "agentId": null,
+   "agentName": "Old Helper",
+   "status": "deleted",
+   "totalSizeBytes": 4194304,
+   "fileCount": 9,
+   "lastModified": "2026-09-18T12:00:00.000Z",
+   "displayPath": "/srv/workspaces/archived-bot"
+  },
+  {
+   "directoryName": "build-runner-ws",
+   "agentId": "ca-2",
+   "agentName": "Scout",
+   "status": "stopped",
+   "totalSizeBytes": 2097152,
+   "fileCount": 6,
+   "lastModified": "2026-08-05T12:00:00.000Z",
+   "displayPath": "/srv/workspaces/build-runner-ws"
+  }
+ ],
+ "channel": {
+  "id": "ch-files",
+  "serverId": "srv-wave3b",
+  "name": "design-assets",
+  "type": "channel",
+  "createdAt": "2026-06-01T00:00:00.000Z",
+  "joined": true
+ },
+ "channelFiles": [
+  {
+   "id": "cf-1",
+   "messageId": "msg-1",
+   "channelId": "ch-files",
+   "filename": "architecture-spec.pdf",
+   "mimeType": "application/pdf",
+   "sizeBytes": 245760,
+   "createdAt": "2026-10-12T10:30:00.000Z",
+   "uploader": {
+    "type": "user",
+    "id": "user-wave3b",
+    "name": "alexchen",
+    "displayName": "Alex Chen"
+   },
+   "source": {
+    "type": "channel",
+    "channelId": "ch-files",
+    "parentMessageId": null,
+    "parentMessageShortId": null
+   }
+  },
+  {
+   "id": "cf-2",
+   "messageId": "msg-2",
+   "channelId": "ch-files",
+   "filename": "release-assets.zip",
+   "mimeType": "application/zip",
+   "sizeBytes": 1572864,
+   "createdAt": "2026-10-14T16:45:00.000Z",
+   "uploader": {
+    "type": "agent",
+    "id": "agent-wave3b",
+    "name": "martin",
+    "displayName": "Martin"
+   },
+   "source": {
+    "type": "channel",
+    "channelId": "ch-files",
+    "parentMessageId": null,
+    "parentMessageShortId": null
+   }
+  }
+ ]
+}

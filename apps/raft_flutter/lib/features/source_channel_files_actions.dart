@@ -25,22 +25,20 @@ class SourceChannelImageLease {
   final Future<void> Function() release;
 }
 
-typedef SourceChannelImageAcquire =
-    Future<SourceChannelImageLease?> Function(
-      SourceChannelFileEntry file,
-      bool Function() authorized,
-      SourceChannelImageRendition rendition,
-    );
+typedef SourceChannelImageAcquire = Future<SourceChannelImageLease?> Function(
+  SourceChannelFileEntry file,
+  bool Function() authorized,
+  SourceChannelImageRendition rendition,
+);
 
 /// Synchronous counterpart of [SourceChannelImageAcquire]: a lease on an image
 /// the host already holds decoded, or null. Lets a recycled or revisited row
 /// paint its thumbnail in the first frame.
-typedef SourceChannelImagePeek =
-    SourceChannelImageLease? Function(
-      SourceChannelFileEntry file,
-      bool Function() authorized,
-      SourceChannelImageRendition rendition,
-    );
+typedef SourceChannelImagePeek = SourceChannelImageLease? Function(
+  SourceChannelFileEntry file,
+  bool Function() authorized,
+  SourceChannelImageRendition rendition,
+);
 
 enum SourceChannelImageRendition { thumbnail, original }
 
@@ -219,9 +217,11 @@ class SourceChannelFilesActions {
             title: file.filename,
             titleBold: true,
             onClose: () => _close(route),
-            footer: RaftTextButton(
+            footer: RaftButton(
               label: raftText(context(), 'Download Original'),
               glyph: RaftGlyph.download,
+              uiVariant: RaftButtonVariant.outline,
+              uiSize: RaftButtonSize.md,
               onPressed: () => download(file),
             ),
             child: _FileLightboxImage(
