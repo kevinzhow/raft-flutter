@@ -971,12 +971,14 @@ class _ChannelMembersState extends State<ChannelMembers> {
       ),
       // Web keeps the entry in the footer bar beside Add member
       // (ChannelMembers.tsx:1187-1219), not in the roster scroll area.
-      inviteAction: ChannelExternalInviteEntry(
-        key: ValueKey('external-invite-entry-${channel.id}'),
-        workspace: w,
-        channel: channel,
-        onSent: () => setState(() => inviteRevision++),
-      ),
+      inviteAction: externalInviteEnabled && externalInvitable(w, channel)
+          ? ChannelExternalInviteEntry(
+              key: ValueKey('external-invite-entry-${channel.id}'),
+              workspace: w,
+              channel: channel,
+              onSent: () => setState(() => inviteRevision++),
+            )
+          : null,
       addView: addView,
       loading: loading,
       adding: adding,

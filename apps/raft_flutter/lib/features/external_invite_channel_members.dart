@@ -93,10 +93,20 @@ class _ChannelExternalInviteEntryState
   late final _api = ExternalInviteApi(_w.command);
   bool _atLimit = false, _opening = false;
 
+  bool _limitRead = false;
+
   bool get _current => mounted && _identity == pageIdentity(_w);
   bool get _shouldCheckLimit =>
       _w.server?.string('plan') == 'free' &&
       !externalSlotHeldBy(widget.channel, _w.server?.id);
+
+  /// The entry only renders once the flag is cached, so the first limit read
+  /// is kicked off from build rather than initState.
+  void _ensureLimitRead() {
+    if (_limitRead || !_shouldCheckLimit) return;
+    _limitRead = true;
+    unawaited(_readLimit());
+  }
 
   Future<bool> _readLimit() async {
     try {
@@ -176,6 +186,7 @@ class _ChannelExternalInviteEntryState
       if (!enabled || !externalInvitable(_w, current)) {
         return const SizedBox.shrink();
       }
+      _ensureLimitRead();
       return RaftButton(
         key: const ValueKey('member-page-invite-outside'),
         label: raftFormat(context, 'Invite people outside {server}', {
@@ -434,40 +445,40 @@ class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 64),
       child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-      children: [
-        const RaftIconTile(glyph: RaftGlyph.mail),
-        const SizedBox(width: 12),
-        Expanded(child: _ExternalInviteRowLabel(email, subtitle)),
-        // Web: a resend is a fresh send, so an invite that is connecting or
-        // awaiting approval has none (ExternalInviteRows.tsx:52).
-        if (_enabled &&
-            row['connecting'] != true &&
-            row['awaitingApproval'] != true)
-          RaftButton(
-            glyph: RaftGlyph.mail,
-            uiSize: RaftButtonSize.iconMd,
-            uiVariant: RaftButtonVariant.ghost,
-            tooltip: raftText(context, 'Resend invite'),
-            onPressed: busy ? null : () => _manage(row, withdraw: false),
-          ),
-        RaftButton(
-          glyph: RaftGlyph.x,
-          uiSize: RaftButtonSize.iconMd,
-          uiVariant: RaftButtonVariant.ghost,
-          tooltip: raftText(
-            context,
-            row['revocable'] == false
-                ? 'You can withdraw this invite once its server finishes connecting.'
-                : 'Withdraw invite',
-          ),
-          onPressed: busy || row['revocable'] == false
-              ? null
-              : () => _manage(row, withdraw: true),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            const RaftIconTile(glyph: RaftGlyph.mail),
+            const SizedBox(width: 12),
+            Expanded(child: _ExternalInviteRowLabel(email, subtitle)),
+            // Web: a resend is a fresh send, so an invite that is connecting or
+            // awaiting approval has none (ExternalInviteRows.tsx:52).
+            if (_enabled &&
+                row['connecting'] != true &&
+                row['awaitingApproval'] != true)
+              RaftButton(
+                glyph: RaftGlyph.mail,
+                uiSize: RaftButtonSize.iconMd,
+                uiVariant: RaftButtonVariant.ghost,
+                tooltip: raftText(context, 'Resend invite'),
+                onPressed: busy ? null : () => _manage(row, withdraw: false),
+              ),
+            RaftButton(
+              glyph: RaftGlyph.x,
+              uiSize: RaftButtonSize.iconMd,
+              uiVariant: RaftButtonVariant.ghost,
+              tooltip: raftText(
+                context,
+                row['revocable'] == false
+                    ? 'You can withdraw this invite once its server finishes connecting.'
+                    : 'Withdraw invite',
+              ),
+              onPressed: busy || row['revocable'] == false
+                  ? null
+                  : () => _manage(row, withdraw: true),
+            ),
+          ],
         ),
-      ],
-      ),
       ),
     );
   }
@@ -484,25 +495,33 @@ class _ExternalInviteRowLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final grows = RaftScaled.grows(context);
+    final name = Text(
+      email,
+      maxLines: grows ? null : 1,
+      overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
+      style: t.scale(RaftTypeScale.subhead, color: t.ui.foreground),
+    );
+    final state = Text(
+      subtitle,
+      style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
+    );
+    // Side by side at the default size, stacked once the text grows, so the
+    // email keeps the row's full width instead of wrapping one letter a line.
+    if (grows) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [name, state],
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
-        Flexible(
-          child: Text(
-            email,
-            maxLines: RaftScaled.grows(context) ? null : 1,
-            overflow: RaftScaled.grows(context)
-                ? TextOverflow.clip
-                : TextOverflow.ellipsis,
-            style: t.scale(RaftTypeScale.subhead, color: t.ui.foreground),
-          ),
-        ),
+        Flexible(child: name),
         const SizedBox(width: 6),
-        Text(
-          subtitle,
-          style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
-        ),
+        state,
       ],
     );
   }

@@ -15,6 +15,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_members.dart';
 
 import 'support/joint_channel_fixture.dart' show fixture, host;
@@ -122,4 +123,79 @@ void main() {
 
     await t.pumpWidget(const SizedBox());
   });
+
+  // Regressions found by an adversary review of this change (task #377).
+  testWidgets('the desktop roster modal keeps the invite entry', (t) async {
+    final (w, api) = await _inviteFixture(t, invites: const []);
+    await t.pumpWidget(
+      host(ChannelMembers(channel: w.channels.single, controller: w)),
+    );
+    await t.pumpAndSettle();
+    // The modal has no pinned footer; moving the entry there must not drop it.
+    expect(find.text('Invite people outside Myoland'), findsOneWidget);
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('an archived channel draws no empty footer bar', (t) async {
+    final (w, api) = await _inviteFixture(t, invites: const [], archived: true);
+    await t.pumpWidget(
+      host(
+        ChannelMembers(channel: w.channels.single, controller: w, page: true),
+      ),
+    );
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('add-member-open')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('member-page-invite-outside')),
+      findsNothing,
+    );
+    // With neither control the bordered bar must not render at all.
+    expect(
+      find.byKey(const ValueKey('member-page-footer')),
+      findsNothing,
+      reason: 'an empty footer still paints its top rule',
+    );
+    await t.pumpWidget(const SizedBox());
+  });
+}
+
+Future<(WorkspaceController, dynamic)> _inviteFixture(
+  WidgetTester t, {
+  required List<Map<String, Object?>> invites,
+  bool archived = false,
+}) async {
+  final (workspace, api) = (await t.runAsync(fixture))!;
+  addTearDown(workspace.dispose);
+  final channel = RaftChannel({
+    'id': 'c1',
+    'serverId': 's1',
+    'name': 'project',
+    'type': 'private',
+    'joined': true,
+    if (archived) 'archivedAt': '2026-01-01T00:00:00Z',
+  });
+  workspace.channels = [channel];
+  workspace.server = RaftRecord({
+    'id': 's1',
+    'name': 'Myoland',
+    'slug': 'myoland',
+    'role': 'owner',
+    'plan': 'pro',
+  });
+  api.routes['POST /feature-flags/evaluate'] = (_) => {
+    'evaluations': [
+      {'key': 'external_channels_v1', 'enabled': true},
+    ],
+  };
+  api.routes['GET /channels/c1/members'] = (_) => {
+    'humans': [
+      {'id': 'u1', 'name': 'Kevin', 'displayName': 'Kevin'},
+    ],
+    'agents': [],
+  };
+  api.routes['GET /channels/external-availability'] = (_) => {
+    'freeLimitReached': false,
+  };
+  api.routes['GET /channels/c1/external-invites'] = (_) => {'invites': invites};
+  return (workspace, api);
 }

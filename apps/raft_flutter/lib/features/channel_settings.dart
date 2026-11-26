@@ -138,9 +138,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
 
   /// Web gives each failed preference read its own retry; a plain list keeps
   /// this off any collection `load` is still writing to.
-  VoidCallback? get retryLoad => _retryParts.isEmpty
-      ? null
-      : () => unawaited(load({..._retryParts}));
+  VoidCallback? get retryLoad =>
+      _retryParts.isEmpty ? null : () => unawaited(load({..._retryParts}));
   late final activity = ChannelActivitySession.of(w);
 
   /// The Slack channel this channel is paired with (Web
@@ -364,8 +363,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         // reports only these two; a failed roster or sidebar order keeps its
         // accepted value and says nothing (useChannelMembers.ts:187-190,
         // serverStore.ts:826-835), so neither does this.
-        final displayFailed = failed.contains('display');
-        final notificationFailed = failed.contains('notification');
+        // A reload of other parts must not clear a notice for a read it did
+        // not repeat, or the Retry disappears while the row is still pending.
+        bool stillFailed(String part) => wanted.contains(part)
+            ? failed.contains(part)
+            : _retryParts.contains(part);
+        final displayFailed = stillFailed('display');
+        final notificationFailed = stillFailed('notification');
         _retryParts = [
           if (displayFailed) 'display',
           if (notificationFailed) 'notification',
@@ -377,7 +381,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             : '';
         error = named.isEmpty
             ? null
-            : failText(failures[named]!, _loadFailureText[named]!);
+            : failures.containsKey(named)
+            ? failText(failures[named]!, _loadFailureText[named]!)
+            // Carried over from an earlier load that did fail this read.
+            : error ?? raftText(context, _loadFailureText[named]!);
       });
       // The member roster is not shown here and is never cached.
       writePageSnapshot(w, snapshotKey, identity, {

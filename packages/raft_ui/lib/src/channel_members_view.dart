@@ -312,6 +312,13 @@ class RaftChannelMembersModal extends StatelessWidget {
                 for (var i = 0; i < agents.length; i++) row(agents[i], i),
               ],
               ?afterRoster,
+              // The modal has no pinned footer, so the entry stays with the
+              // roster here (the page puts it beside Add member instead).
+              if (inviteAction case final action?)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                  child: action,
+                ),
               if (humans.isEmpty && agents.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -922,6 +929,7 @@ class _MembersPageState extends State<_MembersPage> {
         ),
         if (!m.loading && (m.onAdd != null || m.inviteAction != null))
           Container(
+            key: const ValueKey('member-page-footer'),
             // `shrink-0 border-t border-line-seam p-3`;
             // the system inset is added so the button clears the gesture bar.
             padding: EdgeInsets.fromLTRB(12, 12, 12, 12 + bottomInset),
