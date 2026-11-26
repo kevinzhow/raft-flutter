@@ -127,7 +127,7 @@ void main() {
             of: find.byType(ResourceView),
             matching: find.byWidgetPredicate(
               (w) =>
-                  w is Material &&
+                  w is ColoredBox &&
                   w.child is Stack &&
                   (w.child! as Stack).children.firstOrNull is Positioned &&
                   ((w.child! as Stack).children.first as Positioned).bottom ==
@@ -135,7 +135,7 @@ void main() {
             ),
           );
           expect(list, findsOneWidget);
-          expect(t.widget<Material>(list).color, Color(color));
+          expect(t.widget<ColoredBox>(list).color, Color(color));
           final header = find.descendant(
             of: find.byType(ResourceView),
             matching: find.byType(RaftPageHeader),
