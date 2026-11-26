@@ -385,18 +385,115 @@ class ResolvedReviewRegressionTest(unittest.TestCase):
     def test_nested_and_same_named_block_scopes_keep_exact_reference_owners(self):
         local = {r['id']: r for r in self.report['declarations'] if r['name'] == 'localPanel'}
         self.assertEqual(len(local), 5)
+        self.assertTrue(all('@' not in identity for identity in local), local)
         nested = [r for r in local.values() if r['owner'] in local]
         self.assertEqual(len(nested), 1)
         self.assertEqual(local[nested[0]['owner']]['owner'], self.file + '#function:firstScope')
-        self.assertEqual(nested[0]['id'].count('FUNCTION:localPanel@'), 2)
+        self.assertEqual(
+            nested[0]['id'],
+            self.file + '#local-function:FUNCTION:firstScope/FUNCTION:localPanel/FUNCTION:localPanel',
+        )
         method_local = [r for r in local.values() if r['owner'] == self.file + '#method:LocalBuilderSample.build']
         self.assertEqual(len(method_local), 1)
-        self.assertIn('CLASS:LocalBuilderSample@', method_local[0]['id'])
-        self.assertIn('METHOD:build@', method_local[0]['id'])
+        self.assertEqual(
+            method_local[0]['id'],
+            self.file + '#local-function:CLASS:LocalBuilderSample/METHOD:build/FUNCTION:localPanel',
+        )
         blocks = [r for r in local.values() if r['owner'] == self.file + '#function:secondScope']
         self.assertEqual(len(blocks), 2)
+        self.assertEqual(
+            {r['id'] for r in blocks},
+            {
+                self.file + '#local-function:FUNCTION:secondScope/FUNCTION:localPanel',
+                self.file + '#local-function:FUNCTION:secondScope/FUNCTION:localPanel#2',
+            },
+        )
         targets = {r['target'] for r in self.report['references'] if r.get('kind') == 'function_call'}
         self.assertTrue(set(local) <= targets)
+
+    def test_local_function_ids_are_invariant_to_edits_above_and_disambiguate_collisions(self):
+        loader = importlib.machinery.SourceFileLoader('ds_stability_cli', str(ROOT / 'tool/ds-audit'))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        cli = importlib.util.module_from_spec(spec)
+        loader.exec_module(cli)
+
+        body = (
+            "import 'package:flutter/widgets.dart';\n\n"
+            "class StabilitySample extends StatelessWidget {\n"
+            "  const StabilitySample({super.key});\n\n"
+            "  @override\n"
+            "  Widget build(BuildContext context) {\n"
+            "    Widget sibling(bool pick) {\n"
+            "      if (pick) {\n"
+            "        Widget item() => const Text('a');\n"
+            "        return item();\n"
+            "      } else {\n"
+            "        Widget item() => const Text('b');\n"
+            "        return item();\n"
+            "      }\n"
+            "    }\n"
+            "    Widget nested() {\n"
+            "      Widget nested() => const Text('inner');\n"
+            "      return nested();\n"
+            "    }\n"
+            "    return Column(children: [sibling(true), nested()]);\n"
+            "  }\n"
+            "}\n"
+        )
+        edited = (
+            "// Inserted header comment\n"
+            "// More lines above to shift every byte offset\n\n"
+            "import 'package:flutter/widgets.dart';\n\n"
+            "int insertedHelperAbove() => 42;\n\n\n"
+            "class StabilitySample extends StatelessWidget {\n"
+            "  const StabilitySample({super.key});\n\n"
+            "  // Extra lines inside class before method\n\n"
+            "  @override\n"
+            "  Widget build(BuildContext context) {\n"
+            "    // Extra comment inside method\n"
+            "    Widget sibling(bool pick) {\n"
+            "      if (pick) {\n"
+            "        Widget item() => const Text('a');\n"
+            "        return item();\n"
+            "      } else {\n"
+            "        Widget item() => const Text('b');\n"
+            "        return item();\n"
+            "      }\n"
+            "    }\n"
+            "    Widget nested() {\n"
+            "      Widget nested() => const Text('inner');\n"
+            "      return nested();\n"
+            "    }\n"
+            "    return Column(children: [sibling(true), nested()]);\n"
+            "  }\n"
+            "}\n"
+        )
+
+        rel = 'packages/raft_ui/test/fixtures/ds_audit_ownership/_tmp_stability_probe.dart'
+        probe = ROOT / rel
+        try:
+            probe.write_text(body)
+            before = cli.run_scanner([rel], contract=[], bypass=[], inventory=True,
+                                     inventory_paths=[rel])['ownership']
+            probe.write_text(edited)
+            after = cli.run_scanner([rel], contract=[], bypass=[], inventory=True,
+                                    inventory_paths=[rel])['ownership']
+        finally:
+            if probe.exists():
+                probe.unlink()
+
+        before_ids = sorted(d['id'] for d in before['declarations'] if '#local-function:' in d['id'])
+        after_ids = sorted(d['id'] for d in after['declarations'] if '#local-function:' in d['id'])
+        self.assertEqual(before_ids, after_ids)
+        self.assertTrue(all('@' not in identity for identity in before_ids), before_ids)
+        prefix = rel + '#local-function:CLASS:StabilitySample/METHOD:build/'
+        self.assertEqual(before_ids, sorted([
+            prefix + 'FUNCTION:sibling',
+            prefix + 'FUNCTION:sibling/FUNCTION:item',
+            prefix + 'FUNCTION:sibling/FUNCTION:item#2',
+            prefix + 'FUNCTION:nested',
+            prefix + 'FUNCTION:nested/FUNCTION:nested',
+        ]))
 
     def test_local_factory_registration_is_required_and_unknown_stays_nonvisual(self):
         ledger = self.decisions()

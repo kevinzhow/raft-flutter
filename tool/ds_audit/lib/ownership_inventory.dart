@@ -22,6 +22,8 @@ class OwnershipInventory {
   final recipes = <String, Map<String, Object?>>{};
   final stateAtoms = <String, String>{};
   final files = <String>{};
+  final _localFunctionIds = <Fragment, String>{};
+  final _indexedUnits = <LibraryFragment>{};
 
   String? relative(String? path) {
     if (path == null) return null;
@@ -31,6 +33,61 @@ class OwnershipInventory {
   String? fileOf(Element? e) =>
       relative(e?.firstFragment.libraryFragment?.source.fullName);
 
+  static String _scopeLabel(Fragment scope) =>
+      '${scope.element.kind.name}:${scope.name ?? '<anonymous>'}';
+
+  /// Pre-indexes all local functions in [unit] so their IDs are deterministic
+  /// and independent of AST visit or reference order.
+  void indexUnit(ResolvedUnitResult unit) {
+    final libraryFragment = unit.libraryFragment;
+    if (!_indexedUnits.add(libraryFragment)) return;
+    final file = relative(libraryFragment.source.fullName);
+    if (file == null) return;
+
+    final collector = _LocalFunctionCollector();
+    unit.unit.accept(collector);
+    if (collector.fragments.isEmpty) return;
+
+    final childrenByParent = <Fragment, Set<Fragment>>{};
+    for (final local in collector.fragments) {
+      for (
+        Fragment? scope = local;
+        scope != null && scope is! LibraryFragment;
+        scope = scope.enclosingFragment
+      ) {
+        final parent = scope.enclosingFragment ?? libraryFragment;
+        childrenByParent.putIfAbsent(parent, () => <Fragment>{}).add(scope);
+      }
+    }
+
+    final segmentOf = <Fragment, String>{};
+    for (final children in childrenByParent.values) {
+      final byLabel = <String, List<Fragment>>{};
+      for (final child in children) {
+        byLabel.putIfAbsent(_scopeLabel(child), () => <Fragment>[]).add(child);
+      }
+      for (final entry in byLabel.entries) {
+        final group = entry.value..sort((a, b) => a.offset.compareTo(b.offset));
+        for (var i = 0; i < group.length; i++) {
+          segmentOf[group[i]] = i == 0 ? entry.key : '${entry.key}#${i + 1}';
+        }
+      }
+    }
+
+    for (final local in collector.fragments) {
+      final scopes = <String>[];
+      for (
+        Fragment? scope = local;
+        scope != null && scope is! LibraryFragment;
+        scope = scope.enclosingFragment
+      ) {
+        scopes.add(segmentOf[scope] ?? _scopeLabel(scope));
+      }
+      _localFunctionIds[local] =
+          '$file#local-function:${scopes.reversed.join('/')}';
+    }
+  }
+
   String? idOf(Element? e) {
     if (e is ConstructorElement) e = e.enclosingElement;
     if (e == null || e.name == null) return null;
@@ -38,17 +95,17 @@ class OwnershipInventory {
     if (file == null) return null;
     if (e is LocalFunctionElement) {
       // Local functions belong to fragments: their enclosingElement is null
-      // in analyzer 12.1. Follow the resolved lexical fragment chain instead,
-      // including real offsets so nested/block-local names cannot collide.
+      // in analyzer 12.1. Use the pre-indexed lexical scope path with
+      // per-enclosing-scope duplicate-name ordinals (no raw byte offsets).
+      final cached = _localFunctionIds[e.firstFragment];
+      if (cached != null) return cached;
       final scopes = <String>[];
       for (
         Fragment? scope = e.firstFragment;
         scope != null && scope is! LibraryFragment;
         scope = scope.enclosingFragment
       ) {
-        scopes.add(
-          '${scope.element.kind.name}:${scope.name ?? '<anonymous>'}@${scope.offset}',
-        );
+        scopes.add(_scopeLabel(scope));
       }
       return '$file#local-function:${scopes.reversed.join('/')}';
     }
@@ -158,10 +215,25 @@ class RecipeMetadataVisitor extends RecursiveAstVisitor<void> {
   }
 }
 
+class _LocalFunctionCollector extends RecursiveAstVisitor<void> {
+  final fragments = <Fragment>[];
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {
+    final element = node.declaredFragment?.element;
+    if (element is LocalFunctionElement) {
+      fragments.add(element.firstFragment);
+    }
+    super.visitFunctionDeclaration(node);
+  }
+}
+
 /// Visits only resolved runtime units, including private render owners and
 /// tracked runtime path dependencies. No style allowlist is added by this pass.
 class OwnershipVisitor extends RecursiveAstVisitor<void> {
-  OwnershipVisitor(this.inventory, this.unit, this.file);
+  OwnershipVisitor(this.inventory, this.unit, this.file) {
+    inventory.indexUnit(unit);
+  }
   final OwnershipInventory inventory;
   final ResolvedUnitResult unit;
   final String file;
