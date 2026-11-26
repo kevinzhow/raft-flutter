@@ -44,9 +44,22 @@ Map<String, dynamic> _routes(ParityContext ctx) {
   };
   return {
     for (final MapEntry(:key, :value) in merged.entries)
-      key: value is Map && value[r'$pending'] == true
-          ? Completer<Object?>().future
-          : value,
+      key: switch (value) {
+        // `$pending` never answers (the read stays in flight); `$status`
+        // fails with that status, as the React provider's fulfilled error
+        // does, so a case can render a failed read on both providers.
+        Map() when value[r'$pending'] == true => Completer<Object?>().future,
+        // `ignore()` so a route the case never reads is not an unhandled
+        // error; an awaiting caller still gets it.
+        Map() when value[r'$status'] is int => Future<Object?>.error(
+          RaftApiException.response(
+            'parity fixture ${value[r'$status']}',
+            status: value[r'$status'] as int,
+            body: value[r'$body'],
+          ),
+        )..ignore(),
+        _ => value,
+      },
   };
 }
 
@@ -91,10 +104,15 @@ WorkspaceController _workspace(ParityContext ctx) {
         },
       ],
       'GET /servers/visual-server/members': base.serverMembers,
-      // Only the server_guest flag follows the case (props.guestFlag).
+      // Only these two flags follow the case; every other registered flag
+      // reads as off, as the React host's seeded store does.
       'POST /feature-flags/evaluate': {
         'evaluations': [
           {'key': 'server_guest_v0', 'enabled': guestFlag},
+          {
+            'key': 'external_channels_v1',
+            'enabled': ctx.props['externalFlag'] == 'true',
+          },
         ],
       },
     },

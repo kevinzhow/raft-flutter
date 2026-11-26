@@ -4688,11 +4688,12 @@
           "variant": "invitation list retry",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "gapKind": "case-missing",
-          "size": "S",
-          "justification": "No paired v1.24 visual case is registered for this state."
+          "parityCase": [
+            "components.members-invite.*.invited-failed.*"
+          ],
+          "status": "covered",
+          "justification": "tool/parity-ext members-invite: the failed read draws Web's warning banner with Retry above the group, phone 412x915 and foldable 1124x1240.",
+          "caseValidity": "react-checked"
         },
         {
           "state": "partial",

@@ -1264,7 +1264,12 @@ class _MemberPageRowState extends State<_MemberPageRow> {
                             children: [
                               Row(
                                 children: [
-                                  Expanded(
+                                  // The name shrinks to its text and truncates
+                                  // only when it has to, so what follows sits
+                                  // beside it rather than at the row's end
+                                  // (`flex min-w-0 items-center gap-1.5`,
+                                  // MEMBER_ROW_TITLE_WITH_BADGE_CLASS).
+                                  Flexible(
                                     child: RaftMemberNameLine(
                                       labels: r.serverBadges,
                                       name: Text(
