@@ -391,138 +391,54 @@ class _ChannelExternalInvitesState extends State<_ChannelExternalInvites> {
           );
   }
 
+  /// Web's `MemberPageSection kind="invited"` and its failed-read notice are
+  /// drawn by raft_ui beside the member row, because an invite row IS a
+  /// member row there (ExternalInviteRows.tsx:140-165). This end owns the
+  /// reads, the two requests and the copy that names a server or a date.
   Widget _build(BuildContext context, String query) {
     if (!_canRead) return const SizedBox.shrink();
-    final rows = _invites.where(
-      (row) => externalString(row['email']).toLowerCase().contains(query),
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Web shows a failed read above the group, in its own `p-3` box
-        // (ChannelMembers.tsx:729-743, :1119).
-        if (_failed && _invites.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: RaftErrorBanner(
-              raftText(context, "Couldn't load the invites."),
-              onRetry: _load,
-              retryLabel: 'Retry',
+    return RaftChannelInvitedGroup(
+      // Web shows a failed read above the group (ChannelMembers.tsx:729-743).
+      onRetry: _failed && _invites.isEmpty ? _load : null,
+      invites: [
+        for (final row in _invites)
+          if (externalString(row['email']).toLowerCase().contains(query))
+            RaftChannelInvite(
+              id: externalString(row['id']),
+              email: externalString(row['email']),
+              state: _state(context, row),
+              // A resend is a fresh send, so an invite that is connecting or
+              // awaiting approval has none (ExternalInviteRows.tsx:52).
+              canResend:
+                  _enabled &&
+                  row['connecting'] != true &&
+                  row['awaitingApproval'] != true,
+              revocable: row['revocable'] != false,
+              busy: _busy.contains(row['id']),
+              onResend: () => _manage(row, withdraw: false),
+              onWithdraw: () => _manage(row, withdraw: true),
             ),
-          ),
-        // `MemberPageSection kind="invited"` (ChannelMembers.tsx:1120-1128).
-        if (rows.isNotEmpty)
-          RaftDialogSectionEyebrow(
-            raftText(context, 'Invited'),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          ),
-        for (final row in rows) _inviteRow(context, row),
       ],
     );
   }
 
-  Widget _inviteRow(BuildContext context, ExternalJson row) {
-    final email = externalString(row['email']);
-    final busy = _busy.contains(row['id']);
+  /// Where the invite stands: the flow it waits on, else the days left
+  /// (`externalInviteDaysLeft`, ExternalInviteRows.tsx:40-49).
+  String _state(BuildContext context, ExternalJson row) {
+    if (row['connecting'] == true) {
+      return raftText(context, 'Connecting a server');
+    }
+    if (row['awaitingApproval'] == true) {
+      return raftText(context, 'Waiting for approval');
+    }
     final expiry = DateTime.tryParse(externalString(row['expiresAt']));
     final days = expiry == null
         ? 1
         : (expiry.difference(DateTime.now()).inHours / 24).ceil().clamp(1, 365);
-    final subtitle = row['connecting'] == true
-        ? raftText(context, 'Connecting a server')
-        : row['awaitingApproval'] == true
-        ? raftText(context, 'Waiting for approval')
-        : raftFormat(
-            context,
-            days == 1 ? '{count} day left' : '{count} days left',
-            {'count': days},
-          );
-    // Web renders an invite as a ChannelMemberRow: a Mail IconTile, the email
-    // with its state on the same baseline in hint ink, then the actions
-    // (ExternalInviteRows.tsx:146-164). The row therefore carries the member
-    // row's px-4 / gap-3 / min-h-16 geometry (channel_members_view.dart:1167).
-    // A minimum, not a fixed height: the row grows with the text scale.
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 64),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            const RaftIconTile(glyph: RaftGlyph.mail),
-            const SizedBox(width: 12),
-            Expanded(child: _ExternalInviteRowLabel(email, subtitle)),
-            // Web: a resend is a fresh send, so an invite that is connecting or
-            // awaiting approval has none (ExternalInviteRows.tsx:52).
-            if (_enabled &&
-                row['connecting'] != true &&
-                row['awaitingApproval'] != true)
-              RaftButton(
-                glyph: RaftGlyph.mail,
-                uiSize: RaftButtonSize.iconMd,
-                uiVariant: RaftButtonVariant.ghost,
-                tooltip: raftText(context, 'Resend invite'),
-                onPressed: busy ? null : () => _manage(row, withdraw: false),
-              ),
-            RaftButton(
-              glyph: RaftGlyph.x,
-              uiSize: RaftButtonSize.iconMd,
-              uiVariant: RaftButtonVariant.ghost,
-              tooltip: raftText(
-                context,
-                row['revocable'] == false
-                    ? 'You can withdraw this invite once its server finishes connecting.'
-                    : 'Withdraw invite',
-              ),
-              onPressed: busy || row['revocable'] == false
-                  ? null
-                  : () => _manage(row, withdraw: true),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ExternalInviteRowLabel extends StatelessWidget {
-  const _ExternalInviteRowLabel(this.email, this.subtitle);
-
-  final String email, subtitle;
-
-  /// Web puts the state after the email on one line
-  /// (ExternalInviteRows.tsx:157-162: `flex items-baseline gap-1.5`, the
-  /// state `text-caption font-normal text-foreground-hint`).
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final grows = RaftScaled.grows(context);
-    final name = Text(
-      email,
-      maxLines: grows ? null : 1,
-      overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
-      style: t.scale(RaftTypeScale.subhead, color: t.ui.foreground),
-    );
-    final state = Text(
-      subtitle,
-      style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
-    );
-    // Side by side at the default size, stacked once the text grows, so the
-    // email keeps the row's full width instead of wrapping one letter a line.
-    if (grows) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [name, state],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Flexible(child: name),
-        const SizedBox(width: 6),
-        state,
-      ],
+    return raftFormat(
+      context,
+      days == 1 ? '{count} day left' : '{count} days left',
+      {'count': days},
     );
   }
 }

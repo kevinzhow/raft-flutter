@@ -17,6 +17,7 @@ import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 import 'joint_server_badges.dart';
 import 'localization.dart';
 import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
+import 'raft/icon_tile.dart' show RaftIconTile;
 import 'raft/ui_tokens.dart';
 import 'recipe_min_height.dart' show RaftMinHeightBox;
 import 'system_inset.dart';
@@ -25,6 +26,8 @@ import 'status_bar.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeScale;
+
+part 'channel_members_invited.dart';
 
 /// Header trigger: `Button size="sm" className="min-w-7 gap-1 px-1.5"` with
 /// `Users size={14}` and the mono participant count (spinner while loading).
@@ -84,8 +87,14 @@ class RaftMemberRowData {
     this.onRoleAction,
     this.roleActionDisabled = false,
     this.serverBadges = const [],
+    this.actions,
     this.testId,
   });
+
+  /// The trailing slot's own controls, when the row's actions are not a role
+  /// change and a removal (`ChannelMemberRoleAndActions actions`: the invite
+  /// rows' Resend and Withdraw). Replaces them; revealed on hover the same way.
+  final Widget? actions;
   final String label;
   final String? searchText;
 
@@ -1142,13 +1151,15 @@ class _MemberPageRowState extends State<_MemberPageRow> {
             onPressed: r.onRemove!,
           );
     // `ChannelMemberHoverActions`: `flex items-center gap-2`.
-    final actions = roleAction == null && remove == null
-        ? null
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 8,
-            children: [?roleAction, ?remove],
-          );
+    final actions =
+        r.actions ??
+        (roleAction == null && remove == null
+            ? null
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
+                children: [?roleAction, ?remove],
+              ));
     Widget? trailing;
     // Hover swaps the role tag for the actions: a pointer affordance. A finger
     // has no hover, so touch keeps both in view at any width.

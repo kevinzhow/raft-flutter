@@ -54064,17 +54064,6 @@
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:_ExternalInviteRowLabel": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
       "apps/raft_flutter/lib/features/external_invite_channel_members.dart#function:showExternalConnectionOutcomes": {
         "role": "entry_composition",
         "familyRefs": [
@@ -54130,17 +54119,6 @@
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._inviteRow": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
       "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._manage": {
         "role": "entry_composition",
         "familyRefs": [
@@ -54164,17 +54142,6 @@
         "reason": "Composes existing Raft controls for external-channel actions."
       },
       "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState.build": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ExternalInviteRowLabel.build": {
         "role": "entry_composition",
         "familyRefs": [
           "button",
@@ -58968,6 +58935,32 @@
         ],
         "owner": "WP-EXT",
         "reason": "Reloads the Invited group after the entry sends invites."
+      },
+      "packages/raft_ui/lib/src/channel_members_invited.dart#class:RaftChannelInvitedGroup": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "The members page's Invited group; composes the existing member row, banner and buttons."
+      },
+      "packages/raft_ui/lib/src/channel_members_invited.dart#method:RaftChannelInvitedGroup.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Builds the Invited section and its failed-read notice from existing Raft components."
+      },
+      "packages/raft_ui/lib/src/channel_members_invited.dart#method:RaftChannelInvitedGroup._inviteActions": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "An invite row's Resend and Withdraw: existing ghost icon buttons."
       }
     },
     "entries": {
