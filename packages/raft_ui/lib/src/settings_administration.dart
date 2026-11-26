@@ -445,9 +445,11 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
   final controller = MenuController();
   final search = TextEditingController();
   final region = GlobalKey();
+  final focus = FocusNode(debugLabel: 'admin principal picker trigger');
 
   @override
   void dispose() {
+    focus.dispose();
     search.dispose();
     super.dispose();
   }
@@ -494,6 +496,7 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
       key: region,
       child: RaftInteractive(
         key: const ValueKey('admin-principal-picker'),
+        focusNode: focus,
         onPressed: widget.enabled ? toggle : null,
         semanticLabel: label,
         builder: (context, state) {
@@ -546,6 +549,7 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
       child: RaftPopoverAnchor(
         controller: controller,
         anchorKey: region,
+        childFocusNode: focus,
         gap: 8,
         onOpen: () => setState(() {}),
         onClose: () => setState(() {}),
@@ -1046,44 +1050,47 @@ class RaftAdminDateTimeField extends StatelessWidget {
                               final enabled =
                                   !candidate.isBefore(firstDate) &&
                                   !candidate.isAfter(lastDate);
-                              return RaftInteractive(
-                                key: ValueKey('admin-datetime-day-$dayNum'),
-                                onPressed: enabled
-                                    ? () => setState(
-                                        () => selectedDate = candidate,
-                                      )
-                                    : null,
-                                builder: (context, state) {
-                                  final fill = isSelected
-                                      ? t.ui.stickerInk
-                                      : state.hovered
-                                      ? t.ui.fillMuted
-                                      : null;
-                                  return Container(
-                                    constraints: const BoxConstraints(
-                                      minHeight: 32,
-                                    ),
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: fill,
-                                      borderRadius: cellRadius,
-                                    ),
-                                    child: Text(
-                                      '$dayNum',
-                                      style: t.scale(
-                                        RaftTypeScale.footnote,
-                                        weight: isSelected
-                                            ? FontWeight.w700
-                                            : FontWeight.w400,
-                                        color: isSelected
-                                            ? t.ui.stickerPaper
-                                            : enabled
-                                            ? t.ui.foreground
-                                            : t.ui.foregroundDisabled,
+                              return Semantics(
+                                selected: isSelected,
+                                child: RaftInteractive(
+                                  key: ValueKey('admin-datetime-day-$dayNum'),
+                                  onPressed: enabled
+                                      ? () => setState(
+                                          () => selectedDate = candidate,
+                                        )
+                                      : null,
+                                  builder: (context, state) {
+                                    final fill = isSelected
+                                        ? t.ui.stickerInk
+                                        : state.hovered
+                                        ? t.ui.fillMuted
+                                        : null;
+                                    return Container(
+                                      constraints: const BoxConstraints(
+                                        minHeight: 32,
                                       ),
-                                    ),
-                                  );
-                                },
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: fill,
+                                        borderRadius: cellRadius,
+                                      ),
+                                      child: Text(
+                                        '$dayNum',
+                                        style: t.scale(
+                                          RaftTypeScale.footnote,
+                                          weight: isSelected
+                                              ? FontWeight.w700
+                                              : FontWeight.w400,
+                                          color: isSelected
+                                              ? t.ui.stickerPaper
+                                              : enabled
+                                              ? t.ui.foreground
+                                              : t.ui.foregroundDisabled,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                               );
                             },
                           ),
@@ -1101,23 +1108,22 @@ class RaftAdminDateTimeField extends StatelessWidget {
                     ),
                     border: Border.all(color: t.ui.lineHairline),
                   ),
-                  child: Row(
-                    children: [
-                      Text(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final timeLabel = Text(
                         raftText(context, 'Time'),
                         style: t.scale(
                           RaftTypeScale.footnote,
                           weight: FontWeight.w700,
                         ),
-                      ),
-                      const Spacer(),
-                      Row(
+                      );
+                      final hourStepper = Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           RaftSettingsRecipeButton(
                             key: const ValueKey('admin-datetime-hour-down'),
                             label: '',
-                            semanticLabel: '-',
+                            semanticLabel: '${l10n.timePickerHourLabel} -',
                             glyph: RaftGlyph.minus,
                             glyphSize: 12,
                             variant: RaftButtonRecipeVariant.outline,
@@ -1125,22 +1131,27 @@ class RaftAdminDateTimeField extends StatelessWidget {
                             onPressed: () =>
                                 setState(() => hour = (hour + 23) % 24),
                           ),
-                          SizedBox(
-                            width: 32,
-                            child: Text(
-                              _two(hour),
-                              textAlign: TextAlign.center,
-                              style: t.scale(
-                                RaftTypeScale.monoMeta,
-                                mono: true,
-                                weight: FontWeight.w700,
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(minWidth: 32),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: RaftSpace.x1,
+                              ),
+                              child: Text(
+                                _two(hour),
+                                textAlign: TextAlign.center,
+                                style: t.scale(
+                                  RaftTypeScale.monoMeta,
+                                  mono: true,
+                                  weight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
                           RaftSettingsRecipeButton(
                             key: const ValueKey('admin-datetime-hour-up'),
                             label: '',
-                            semanticLabel: '+',
+                            semanticLabel: '${l10n.timePickerHourLabel} +',
                             glyph: RaftGlyph.plus,
                             glyphSize: 12,
                             variant: RaftButtonRecipeVariant.outline,
@@ -1149,8 +1160,8 @@ class RaftAdminDateTimeField extends StatelessWidget {
                                 setState(() => hour = (hour + 1) % 24),
                           ),
                         ],
-                      ),
-                      Padding(
+                      );
+                      final colon = Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: RaftSpace.x1,
                         ),
@@ -1162,47 +1173,81 @@ class RaftAdminDateTimeField extends StatelessWidget {
                             weight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                      Row(
+                      );
+                      final minuteStepper = Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           RaftSettingsRecipeButton(
                             key: const ValueKey('admin-datetime-min-down'),
                             label: '',
-                            semanticLabel: '-',
+                            semanticLabel: '${l10n.timePickerMinuteLabel} -',
                             glyph: RaftGlyph.minus,
                             glyphSize: 12,
                             variant: RaftButtonRecipeVariant.outline,
                             size: RaftButtonRecipeSize.iconSm,
-                            onPressed: () =>
-                                setState(() => minute = (minute + 55) % 60),
+                            onPressed: () => setState(
+                              () => minute = (((minute - 1) % 60) ~/ 5) * 5,
+                            ),
                           ),
-                          SizedBox(
-                            width: 32,
-                            child: Text(
-                              _two(minute),
-                              textAlign: TextAlign.center,
-                              style: t.scale(
-                                RaftTypeScale.monoMeta,
-                                mono: true,
-                                weight: FontWeight.w700,
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(minWidth: 32),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: RaftSpace.x1,
+                              ),
+                              child: Text(
+                                _two(minute),
+                                textAlign: TextAlign.center,
+                                style: t.scale(
+                                  RaftTypeScale.monoMeta,
+                                  mono: true,
+                                  weight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
                           RaftSettingsRecipeButton(
                             key: const ValueKey('admin-datetime-min-up'),
                             label: '',
-                            semanticLabel: '+',
+                            semanticLabel: '${l10n.timePickerMinuteLabel} +',
                             glyph: RaftGlyph.plus,
                             glyphSize: 12,
                             variant: RaftButtonRecipeVariant.outline,
                             size: RaftButtonRecipeSize.iconSm,
-                            onPressed: () =>
-                                setState(() => minute = (minute + 5) % 60),
+                            onPressed: () => setState(
+                              () => minute = (((minute ~/ 5) + 1) * 5) % 60,
+                            ),
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                      final stackTime =
+                          RaftScaled.grows(context) ||
+                          constraints.maxWidth < 260;
+                      if (stackTime) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            timeLabel,
+                            const SizedBox(height: RaftSpace.x2),
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: RaftSpace.x1,
+                              runSpacing: RaftSpace.x1,
+                              children: [hourStepper, colon, minuteStepper],
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          timeLabel,
+                          const Spacer(),
+                          hourStepper,
+                          colon,
+                          minuteStepper,
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -1245,7 +1290,7 @@ class RaftAdminDateTimeField extends StatelessWidget {
         },
       ),
     );
-    if (picked == null) return;
+    if (!context.mounted || picked == null) return;
     onChanged(picked.cleared ? null : picked.value);
   }
 

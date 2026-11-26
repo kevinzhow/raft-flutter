@@ -722,6 +722,7 @@ class RaftDashedBorderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || width <= 0) return;
     if (radius > 0) {
       final stroke = Paint()
         ..color = color

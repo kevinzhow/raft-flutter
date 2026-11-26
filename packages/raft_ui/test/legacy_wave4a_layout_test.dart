@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -251,4 +252,169 @@ void main() {
     expect(current, isNull);
     expect(t.takeException(), isNull);
   });
+
+  testWidgets(
+    'RaftAdminDateTimeField dialog scales at 2.0x and 3.1x without overflow',
+    (t) async {
+      final errors = <String>[];
+      final prevOnError = FlutterError.onError;
+      FlutterError.onError = (details) =>
+          errors.add(details.exceptionAsString());
+      addTearDown(() {
+        FlutterError.onError = prevOnError;
+        t.view.resetPhysicalSize();
+        t.view.resetDevicePixelRatio();
+      });
+
+      for (final (size, platform, scale) in const [
+        (Size(390, 844), TargetPlatform.android, 2.0),
+        (Size(390, 844), TargetPlatform.iOS, 3.1),
+        (Size(1280, 900), TargetPlatform.linux, 2.0),
+        (Size(1280, 900), TargetPlatform.macOS, 3.1),
+      ]) {
+        errors.clear();
+        t.view.physicalSize = size;
+        t.view.devicePixelRatio = 1.0;
+
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme().copyWith(platform: platform),
+            builder: (context, inner) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(size: size, textScaler: TextScaler.linear(scale)),
+              child: RaftTextScaling(child: inner!),
+            ),
+            home: Scaffold(
+              body: RaftAdminDateTimeField(
+                value: DateTime(2028, 2, 29, 23, 17),
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        );
+        await t.tap(find.byKey(const ValueKey('admin-join-link-expires-at')));
+        await t.pumpAndSettle();
+        expect(
+          errors,
+          isEmpty,
+          reason: 'Unexpected layout error at $size @ ${scale}x: $errors',
+        );
+        await t.tap(find.byKey(const ValueKey('admin-datetime-cancel')));
+        await t.pumpAndSettle();
+      }
+    },
+  );
+
+  testWidgets(
+    'RaftAdminDateTimeField snaps arbitrary minutes to 5-minute steps',
+    (t) async {
+      DateTime? current = DateTime(2028, 2, 29, 12, 17);
+      await t.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) => host(
+            RaftAdminDateTimeField(
+              value: current,
+              onChanged: (next) => setState(() => current = next),
+            ),
+            const Size(841, 701),
+          ),
+        ),
+      );
+
+      await t.tap(find.byKey(const ValueKey('admin-join-link-expires-at')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('admin-datetime-min-up')));
+      await t.tap(find.byKey(const ValueKey('admin-datetime-apply')));
+      await t.pumpAndSettle();
+      expect(current, DateTime(2028, 2, 29, 12, 20));
+
+      current = DateTime(2028, 2, 29, 12, 17);
+      await t.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) => host(
+            RaftAdminDateTimeField(
+              value: current,
+              onChanged: (next) => setState(() => current = next),
+            ),
+            const Size(841, 701),
+          ),
+        ),
+      );
+      await t.tap(find.byKey(const ValueKey('admin-join-link-expires-at')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('admin-datetime-min-down')));
+      await t.tap(find.byKey(const ValueKey('admin-datetime-apply')));
+      await t.pumpAndSettle();
+      expect(current, DateTime(2028, 2, 29, 12, 15));
+    },
+  );
+
+  testWidgets('RaftAdminPrincipalPicker restores focus to trigger on Escape', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      host(
+        RaftAdminPrincipalPicker(
+          candidates: const [
+            RaftAdminPrincipal(
+              key: 'human:1',
+              label: 'Ada Lovelace',
+              agent: false,
+            ),
+          ],
+          selectedKey: null,
+          onSelect: (_) {},
+        ),
+        const Size(841, 701),
+      ),
+    );
+
+    final trigger = find.byKey(const ValueKey('admin-principal-picker'));
+    await t.tap(trigger);
+    await t.pumpAndSettle();
+    final searchField = find.descendant(
+      of: find.byKey(const ValueKey('admin-principal-popover')),
+      matching: find.byType(EditableText),
+    );
+    await t.tap(searchField);
+    await t.pumpAndSettle();
+
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('admin-principal-popover')), findsNothing);
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'admin principal picker trigger',
+    );
+  });
+
+  testWidgets(
+    'RaftDashedBorderPainter handles zero size and zero width safely',
+    (t) async {
+      for (final (sz, w) in const [
+        (Size.zero, 1.0),
+        (Size(2, 2), 1.0),
+        (Size(40, 20), 0.0),
+      ]) {
+        await t.pumpWidget(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Center(
+              child: SizedBox.fromSize(
+                size: sz,
+                child: CustomPaint(
+                  foregroundPainter: RaftDashedBorderPainter(
+                    Colors.black,
+                    w,
+                    radius: 8,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(t.takeException(), isNull);
+      }
+    },
+  );
 }
