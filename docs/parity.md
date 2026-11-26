@@ -310,7 +310,20 @@ the conversation, each clipped to 160 and below its own minimum).
   a `channelSideChatMinWidth` (360) chat. Panes that do not fit wait behind the
   top one instead of squeezing it. With a single pane that fits, the
   arrangement is Web's.
-- Compact is unchanged.
+- Compact (`< 768` wide or `height < 480` phone landscape): Tasks and Files
+  cover the chat under the conversation header (one at a time, with Back/X);
+  Thread, Profile, Details, and Artifact push full pages.
+- Activity and Search detail panes: decide presentation against the detail
+  pane's own `LayoutBuilder` width (`>= 640` stands beside when room fits;
+  `< 640` covers only the detail pane, never the master list).
+- Per-conversation state and header toggle truth: open state for Tasks and Files
+  is stored per conversation (default closed), and header toggle highlights
+  follow rendered visibility on screen (`pressed == visible`); tapping an
+  open-but-hidden card brings it to the front rather than closing it.
+- Phone Android/system Back closes a covering card (intended difference from
+  Web): Flutter keeps `RaftBackDismiss` closing a covering Tasks/Files card
+  before leaving the conversation, whereas Web leaves the conversation without
+  a history entry.
 
 Web's rule treats 768 as a desktop, so on a foldable the conversation and the
 panes were both driven below their own minimums and the conversation was

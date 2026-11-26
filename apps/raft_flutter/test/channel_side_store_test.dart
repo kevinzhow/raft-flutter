@@ -527,9 +527,10 @@ void main() {
   });
 
   group('the cards beside the chat', () {
-    test('open and collapsed are the person\'s, not the channel\'s, and kept on the device', () async {
+    test('open state is per conversation (default closed); collapsed stays device-wide', () async {
       await boot();
       final store = ChannelSideStore.of(w);
+      w.channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
       expect(store.cardOpen(ChannelSideCard.tasks), isFalse);
       expect(store.collapsed(ChannelSideCard.files), isFalse);
       store.setCardOpen(ChannelSideCard.tasks, true);
@@ -538,23 +539,46 @@ void main() {
       expect(store.cardOpen(ChannelSideCard.files), isFalse);
       expect(store.collapsed(ChannelSideCard.files), isTrue);
       expect(store.collapsed(ChannelSideCard.tasks), isFalse);
-      // Another channel, even another server: the same cards.
-      w.channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
-      w.ping();
-      expect(store.cardOpen(ChannelSideCard.tasks), isTrue);
+      // Switching conversation defaults closed without leaking c1's card.
       w.channel = RaftChannel({'id': 'c2', 'name': 'two', 'type': 'channel'});
       w.ping();
-      expect(store.cardOpen(ChannelSideCard.tasks), isTrue);
+      expect(store.cardOpen(ChannelSideCard.tasks), isFalse);
+      expect(store.cardOpen(ChannelSideCard.files), isFalse);
       expect(store.collapsed(ChannelSideCard.files), isTrue);
-      // The next launch (a new workspace on the same device) starts from them.
+      expect(
+        store.cardOpen(ChannelSideCard.tasks, conversationId: 'c1'),
+        isTrue,
+      );
+      // The next launch on the same device restores c1 open and c2 closed.
       final next = _Workspace(client)
-        ..server = RaftRecord({'id': 's2', 'role': 'member'});
+        ..server = RaftRecord({'id': 's2', 'role': 'member'})
+        ..channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
       addTearDown(next.dispose);
       final again = ChannelSideStore.of(next);
       expect(again.cardOpen(ChannelSideCard.tasks), isTrue);
       expect(again.cardOpen(ChannelSideCard.files), isFalse);
+      expect(
+        again.cardOpen(ChannelSideCard.tasks, conversationId: 'c2'),
+        isFalse,
+      );
       expect(again.collapsed(ChannelSideCard.files), isTrue);
       expect(again.collapsed(ChannelSideCard.tasks), isFalse);
+    });
+
+    test('upgrading from previous release flat open state keeps conversations closed without losing layout/splits/collapsed', () async {
+      await boot({
+        'raft.channelSide.open': '{"tasks":true,"files":true}',
+        'raft.channelSide.collapsed': '{"tasks":false,"files":true}',
+        'raft.channelSide.layout': jsonEncode(other.toJson()),
+        'raft.channelSide.splits': '{"tasks|files":[0.7,0.3]}',
+      });
+      final store = ChannelSideStore.of(w);
+      w.channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
+      expect(store.cardOpen(ChannelSideCard.tasks), isFalse);
+      expect(store.cardOpen(ChannelSideCard.files), isFalse);
+      expect(store.collapsed(ChannelSideCard.files), isTrue);
+      expect(shape(store.layout), shape(other.complete()));
+      expect(store.splitShares([S.tasks, S.files]), [0.7, 0.3]);
     });
 
     test(
@@ -562,6 +586,7 @@ void main() {
       () async {
         await boot();
         final store = ChannelSideStore.of(w);
+        w.channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
         var heard = 0;
         store.addListener(() => heard++);
         store.setCardOpen(ChannelSideCard.files, false);
@@ -579,10 +604,12 @@ void main() {
 
     test('a bad stored value reads as closed and expanded', () async {
       await boot({
-        'raft.channelSide.open': '{"tasks":"yes","files":true}',
+        'raft.channelSide.openByConversation':
+            '{"c1":{"tasks":"yes","files":true}}',
         'raft.channelSide.collapsed': '[1]',
       });
       final store = ChannelSideStore.of(w);
+      w.channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
       expect(store.cardOpen(ChannelSideCard.tasks), isFalse);
       expect(store.cardOpen(ChannelSideCard.files), isTrue);
       expect(store.collapsed(ChannelSideCard.tasks), isFalse);
@@ -591,6 +618,7 @@ void main() {
     test('the card opened or picked last is the one that shows where only one fits', () async {
       await boot();
       final store = ChannelSideStore.of(w);
+      w.channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
       store.setCardOpen(ChannelSideCard.tasks, true);
       store.setCardOpen(ChannelSideCard.files, true);
       expect(store.activeCard(['tasks', 'files']), 'files');

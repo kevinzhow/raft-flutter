@@ -11,6 +11,7 @@ import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_controller.dart';
 import 'channel_artifact_place.dart';
+import 'channel_side_area.dart' show insideChannelSideArea;
 import 'channel_side_flags.dart';
 import 'channel_side_layout.dart';
 import 'channel_side_store.dart';
@@ -79,10 +80,13 @@ abstract final class ChannelSideCards {
   static bool enabled(WorkspaceController w) =>
       conversation(w) != null && ChannelSideFlags.of(w).taskV2;
 
-  static bool isOpen(WorkspaceController w, ChannelSideCard card) =>
-      enabled(w) &&
-      (ChannelSideStore.of(w).cardOpen(card) ||
-          w.location.chatTab == card.name);
+  static bool isOpen(WorkspaceController w, ChannelSideCard card) {
+    final target = conversation(w);
+    return target != null &&
+        ChannelSideFlags.of(w).taskV2 &&
+        (ChannelSideStore.of(w).cardOpen(card, conversationId: target.id) ||
+            w.location.chatTab == card.name);
+  }
 
   static List<ChannelSideCard> open(WorkspaceController w) => [
     for (final card in ChannelSideCard.values)
@@ -90,7 +94,11 @@ abstract final class ChannelSideCards {
   ];
 
   static void close(WorkspaceController w, ChannelSideCard card) {
-    ChannelSideStore.of(w).setCardOpen(card, false);
+    ChannelSideStore.of(w).setCardOpen(
+      card,
+      false,
+      conversationId: conversation(w)?.id ?? w.channel?.id,
+    );
     if (w.server != null && w.location.chatTab == card.name) {
       w.navigation.navigate(
         w.location.withQuery({'chatTab': null}),
@@ -104,7 +112,11 @@ abstract final class ChannelSideCards {
     if (isOpen(w, card)) {
       close(w, card);
     } else {
-      ChannelSideStore.of(w).setCardOpen(card, true);
+      ChannelSideStore.of(w).setCardOpen(
+        card,
+        true,
+        conversationId: conversation(w)?.id ?? w.channel?.id,
+      );
     }
   }
 
@@ -118,7 +130,9 @@ abstract final class ChannelSideCards {
     if (shown) {
       close(w, card);
     } else {
-      ChannelSideStore.of(w).revealCard(card);
+      ChannelSideStore.of(
+        w,
+      ).revealCard(card, conversationId: conversation(w)?.id ?? w.channel?.id);
     }
   }
 
@@ -181,6 +195,16 @@ abstract final class ChannelSideCards {
 /// Task v2 or for a thread.
 List<Widget> channelSideToggles(BuildContext context, WorkspaceController w) {
   if (!ChannelSideCards.enabled(w)) return const [];
+  assert(() {
+    if (insideChannelSideArea(context, requireHost: false) &&
+        !insideChannelSideArea(context)) {
+      throw FlutterError(
+        'channelSideToggles built inside a ChannelSideArea that cannot place '
+        'cards for section "${w.section}" (route ${w.location.route.name}).',
+      );
+    }
+    return true;
+  }());
   final shown = ChannelSideStore.of(w).renderedShown;
   final tasks = shown != null
       ? shown.contains(ChannelSideSection.tasks)

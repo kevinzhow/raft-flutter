@@ -123,7 +123,9 @@ abstract final class RaftLayoutMetrics {
     return rail;
   }
 
-  static const double desktopBreakpoint = 768, threadOverlayBreakpoint = 1024;
+  static const double desktopBreakpoint = 768,
+      threadOverlayBreakpoint = 1024,
+      compactHeightBreakpoint = 480;
   // index.css900–940: actual thread-layout container + portrait xl rule.
   static const threadSplitContainerWidth = 680.0;
   static const threadPortraitSplitViewport = 1280.0;

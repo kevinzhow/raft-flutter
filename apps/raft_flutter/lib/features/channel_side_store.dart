@@ -1,13 +1,8 @@
-// The state of the cards beside a conversation (Web v1.24
-// `channelSideLayoutStore.ts`, `channelSideCardStore.ts`, the splits of
-// `ChannelSideArea.tsx` and `activeSideCard`): which of Tasks and Files are
-// open or folded, which one shows where only one fits, the Tasks filter, the
-// person's column layout and each stack's heights.
-//
-// One setting for the person, not one per channel: the cards follow them from
-// channel to channel. The column layout is saved on the server (the sidebar
-// order's `channelSideLayout`); this device keeps the last one for the first
-// frame and for a server where none is saved yet.
+// Open/collapsed state of the cards, column layout, and stack heights
+// (`ChannelSideStore`): open state is stored per conversation (default closed),
+// while collapsed state, column layout, and splits belong to the person/device.
+// The column layout is saved on the server (`channelSideLayout`), with a local
+// device copy for the first frame or offline startup.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -24,7 +19,8 @@ enum ChannelSideCard { tasks, files }
 
 enum ChannelTasksFilter { all, mine }
 
-const _openKey = 'raft.channelSide.open';
+const _openByConversationKey = 'raft.channelSide.openByConversation';
+const _maxOpenConversations = 200;
 const _collapsedKey = 'raft.channelSide.collapsed';
 const _layoutKey = 'raft.channelSide.layout';
 const _conversationWidthKey = 'raft.channelSide.conversationWidth';
@@ -46,7 +42,7 @@ typedef _DockWidths = ({ChannelSideLayout layout, int? conversationWidth});
 
 class ChannelSideStore extends ChangeNotifier {
   ChannelSideStore._(this.w) {
-    _open = _readCards(_openKey);
+    _openByConversation = _readOpenByConversation();
     _collapsed = _readCards(_collapsedKey);
     _splits = _readSplits();
     _layout = _readDeviceLayout();
@@ -69,8 +65,14 @@ class ChannelSideStore extends ChangeNotifier {
 
   // ---- the cards -----------------------------------------------------------
 
-  late Map<ChannelSideCard, bool> _open, _collapsed;
+  late Map<String, Map<ChannelSideCard, bool>> _openByConversation;
+  late Map<ChannelSideCard, bool> _collapsed;
   final _focusAt = <String, int>{};
+
+  String? _conversationId(String? override) {
+    final id = override ?? w.channel?.id;
+    return id == null || id.isEmpty ? null : id;
+  }
 
   /// When each open side section opened (see [openOrder]).
   final _openedAt = <ChannelSideSection, int>{};
@@ -121,13 +123,15 @@ class ChannelSideStore extends ChangeNotifier {
     });
   }
 
-  /// Opens [card] if closed and brings its section to the front of any switch
-  /// or side stack.
-  void revealCard(ChannelSideCard card) {
+  /// Opens [card] for [conversationId] (defaulting to the active channel) and
+  /// brings its section to the front of any switch or side stack.
+  void revealCard(ChannelSideCard card, {String? conversationId}) {
+    final id = _conversationId(conversationId);
+    if (id == null) return;
     final tick = ++_tick;
-    if (_open[card] != true) {
-      _open = {..._open, card: true};
-      _writeCards(_openKey, _open);
+    final current = _openByConversation[id];
+    if (current?[card] != true) {
+      _updateConversationOpen(id, card, true);
     }
     _focusAt[card.name] = tick;
     _openedAt[card == ChannelSideCard.tasks
@@ -137,7 +141,12 @@ class ChannelSideStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool cardOpen(ChannelSideCard card) => _open[card]!;
+  bool cardOpen(ChannelSideCard card, {String? conversationId}) {
+    final id = _conversationId(conversationId);
+    if (id == null) return false;
+    return _openByConversation[id]?[card] == true;
+  }
+
   bool collapsed(ChannelSideCard card) => _collapsed[card]!;
   ChannelTasksFilter get taskFilter => _taskFilter;
 
@@ -149,15 +158,44 @@ class ChannelSideStore extends ChangeNotifier {
   /// The card that shows where only one of [open] fits.
   String? activeCard(Iterable<String> open) => activeSideCard(open, _focusAt);
 
+  void _updateConversationOpen(
+    String conversationId,
+    ChannelSideCard card,
+    bool open,
+  ) {
+    final updated = Map<ChannelSideCard, bool>.from(
+      _openByConversation[conversationId] ?? const {},
+    );
+    if (open) {
+      updated[card] = true;
+    } else {
+      updated.remove(card);
+    }
+    _openByConversation = Map<String, Map<ChannelSideCard, bool>>.from(
+      _openByConversation,
+    );
+    if (updated.isEmpty) {
+      _openByConversation.remove(conversationId);
+    } else {
+      _openByConversation.remove(conversationId);
+      _openByConversation[conversationId] = updated;
+      while (_openByConversation.length > _maxOpenConversations) {
+        _openByConversation.remove(_openByConversation.keys.first);
+      }
+    }
+    _writeOpenByConversation();
+  }
+
   /// Opening a card also makes it the one that shows where only one fits; one
   /// already open is only picked.
-  void setCardOpen(ChannelSideCard card, bool open) {
-    if (_open[card] == open) {
+  void setCardOpen(ChannelSideCard card, bool open, {String? conversationId}) {
+    final id = _conversationId(conversationId);
+    if (id == null) return;
+    if (cardOpen(card, conversationId: id) == open) {
       if (open) focus(card.name);
       return;
     }
-    _open = {..._open, card: open};
-    _writeCards(_openKey, _open);
+    _updateConversationOpen(id, card, open);
     if (open) _focusAt[card.name] = ++_tick;
     notifyListeners();
   }
@@ -195,6 +233,32 @@ class ChannelSideStore extends ChangeNotifier {
     _taskFilter = filter;
     notifyListeners();
   }
+
+  static Map<String, Map<ChannelSideCard, bool>> _readOpenByConversation() {
+    Object? value;
+    try {
+      final raw = DevicePreferences.current?.getString(_openByConversationKey);
+      value = raw == null ? null : jsonDecode(raw);
+    } catch (_) {}
+    if (value is! Map) return {};
+    final parsed = <String, Map<ChannelSideCard, bool>>{};
+    for (final entry in value.entries) {
+      if (entry.key is! String || (entry.key as String).isEmpty) continue;
+      final cards = entry.value;
+      if (cards is! Map) continue;
+      final map = <ChannelSideCard, bool>{
+        for (final card in ChannelSideCard.values)
+          if (cards[card.name] == true) card: true,
+      };
+      if (map.isNotEmpty) parsed[entry.key as String] = map;
+    }
+    return parsed;
+  }
+
+  void _writeOpenByConversation() => _remember(_openByConversationKey, {
+    for (final entry in _openByConversation.entries)
+      entry.key: {for (final c in entry.value.entries) c.key.name: c.value},
+  });
 
   static Map<ChannelSideCard, bool> _readCards(String key) {
     Object? value;

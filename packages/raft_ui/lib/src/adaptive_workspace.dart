@@ -151,8 +151,11 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   /// desktop dialog or docked detail), history projection and dismissal logic
   /// must all use it rather than the platform, so a narrow desktop window gets
   /// the same pages as a phone and never mixes the two models.
-  static bool compactOf(BuildContext context) =>
-      MediaQuery.sizeOf(context).width < desktopMinWidth;
+  static bool compactOf(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return size.width < desktopMinWidth ||
+        size.height < RaftLayoutMetrics.compactHeightBreakpoint;
+  }
 
   /// Navigation placement inside the compact layout: true when the phone's
   /// root navigation is the left rail (wide foldable, landscape phone,
@@ -613,7 +616,10 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final width = constraints.maxWidth;
-      if (width < RaftAdaptiveWorkspace.desktopMinWidth) {
+      final short =
+          MediaQuery.sizeOf(context).height <
+          RaftLayoutMetrics.compactHeightBreakpoint;
+      if (width < RaftAdaptiveWorkspace.desktopMinWidth || short) {
         retainedSidebar = null;
         // Keep the content's parent chain stable when a detail hides the bar
         // or the theme switches between in-flow and floating navigation.

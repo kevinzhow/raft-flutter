@@ -26,11 +26,15 @@ class WorkspaceHostScope extends InheritedWidget {
           ?.browser ??
       kIsWeb;
 
-  static bool showsTopBar(BuildContext context) => raftShowsWorkspaceTopBar(
-    tokens: RaftTokens.of(context),
-    width: MediaQuery.sizeOf(context).width,
-    nativeWindowChrome: nativeDesktopOf(context),
-  );
+  static bool showsTopBar(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return raftShowsWorkspaceTopBar(
+      tokens: RaftTokens.of(context),
+      width: size.width,
+      height: size.height,
+      nativeWindowChrome: nativeDesktopOf(context),
+    );
+  }
 
   static bool nativeDesktopOf(BuildContext context) =>
       !browserOf(context) &&

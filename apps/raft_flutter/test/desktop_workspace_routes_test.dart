@@ -427,7 +427,7 @@ void main() {
           const Size(1024, 900),
           const Size(1023, 900),
           const Size(768, 900),
-          const Size(900, 390),
+          const Size(900, 480),
           const Size(1280, 900),
         ]) {
           // Below 768 the wide Activity slot becomes the phone conversation

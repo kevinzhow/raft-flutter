@@ -610,10 +610,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     // Stacked over another pane by its host (the channel side area): Back
     // replaces the close X and reveals the pane underneath.
     final stackedBack = chrome?.onBack;
+    final wideLayout = raftLayoutClassOf(context) != RaftLayoutClass.compact;
     final hasClose =
-        stackedBack == null &&
-        widget.actions.onClose != null &&
-        MediaQuery.sizeOf(context).width >= 768;
+        stackedBack == null && widget.actions.onClose != null && wideLayout;
     final foldMessage =
         showMessage &&
         (chrome?.foldsProfileMessage(
@@ -647,11 +646,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             profileHandle: true,
             profileBody: true,
             iconAlwaysVisible: true,
-            // `useMobileBack` renders the chevron below `md` only.
+            // `useMobileBack` renders the chevron below `md` (or phone landscape) only.
             onBack:
                 stackedBack ??
-                (MediaQuery.sizeOf(context).width >= 768 &&
-                        !widget.actions.backAlways
+                (wideLayout && !widget.actions.backAlways
                     ? null
                     : widget.actions.onBack),
             backTooltip: raftText(context, 'Back'),

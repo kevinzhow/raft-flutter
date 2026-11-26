@@ -41,10 +41,17 @@ RaftLayoutClass raftLayoutClassForWidth(double width) =>
     ? RaftLayoutClass.medium
     : RaftLayoutClass.wide;
 
-/// The layout class of the window [context] is in (the raw window width, not a
-/// breakpoint band: the cut must be exact).
+/// Layout class for [size]: short viewports (`height < 480`, phone landscape)
+/// take the compact phone layout regardless of width.
+RaftLayoutClass raftLayoutClassForSize(Size size) =>
+    size.height < RaftLayoutMetrics.compactHeightBreakpoint
+    ? RaftLayoutClass.compact
+    : raftLayoutClassForWidth(size.width);
+
+/// The layout class of the window [context] is in (exact width and phone
+/// landscape height cutoffs).
 RaftLayoutClass raftLayoutClassOf(BuildContext context) =>
-    raftLayoutClassForWidth(MediaQuery.sizeOf(context).width);
+    raftLayoutClassForSize(MediaQuery.sizeOf(context));
 
 /// What a floating window looks like.
 enum RaftSurfaceForm {

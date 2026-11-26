@@ -83,6 +83,21 @@ class _RaftDismissScopeState extends State<RaftDismissScope> {
   }
 
   @override
+  void deactivate() {
+    if (node.hasFocus) {
+      node.canRequestFocus = false;
+      node.unfocus();
+    }
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    node.canRequestFocus = true;
+  }
+
+  @override
   void dispose() {
     node.dispose();
     super.dispose();

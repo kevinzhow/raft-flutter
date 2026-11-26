@@ -425,15 +425,27 @@ void main() {
       },
     );
 
-    testWidgets('the cards follow the person to another channel', (t) async {
+    testWidgets('each channel remembers its own open cards cleanly', (t) async {
       final rig = await pumpArea(t, size: desktop);
+      final c1 = rig.w.channel!;
       rig.store.setCardOpen(ChannelSideCard.files, true);
       await t.pump();
+      expect(find.byKey(const Key('channel-side-card-files')), findsOne);
+
       rig.w.channel = RaftChannel({'id': 'c2', 'name': 'two', 'joined': true});
-      rig.w.channels = [rig.w.channel!];
+      rig.w.channels = [c1, rig.w.channel!];
+      rig.w.notifyListeners();
+      await t.pump();
+      expect(find.byKey(const Key('channel-side-card-files')), findsNothing);
+      rig.store.setCardOpen(ChannelSideCard.tasks, true);
+      await t.pump();
+      expect(find.byKey(const Key('channel-side-card-tasks')), findsOne);
+
+      rig.w.channel = c1;
       rig.w.notifyListeners();
       await t.pump();
       expect(find.byKey(const Key('channel-side-card-files')), findsOne);
+      expect(find.byKey(const Key('channel-side-card-tasks')), findsNothing);
     });
 
     testWidgets(

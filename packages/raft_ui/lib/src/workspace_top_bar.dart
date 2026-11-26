@@ -25,8 +25,10 @@ bool raftShowsWorkspaceTopBar({
   required RaftTokens tokens,
   required double width,
   required bool nativeWindowChrome,
+  double? height,
 }) =>
     width >= RaftLayoutMetrics.desktopBreakpoint &&
+    (height == null || height >= RaftLayoutMetrics.compactHeightBreakpoint) &&
     (nativeWindowChrome ||
         tokens.option('shell.browserTopBar', or: 'hidden') == 'shown');
 

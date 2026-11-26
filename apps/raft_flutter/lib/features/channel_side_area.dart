@@ -40,6 +40,10 @@ const channelSideChatMinWidth = 360.0;
 /// A column may be shrunk to this (Web's 160 clip) and no further.
 const channelSideColumnClip = 160.0;
 
+/// Minimum detail pane width for a side panel to stand beside Activity or
+/// Search chat instead of covering the detail pane.
+const channelSideDetailBesideMinWidth = 640.0;
+
 typedef PlacedChannelSideColumn = ({
   int column,
   List<ChannelSideSection> sections,
@@ -78,6 +82,7 @@ ChannelSidePlacement placeChannelSide(
   ChannelSideStack stack = ChannelSideStack.unordered,
   double? conversationWidth,
   Map<int, double> dockWidths = const {},
+  bool detailPane = false,
 }) {
   if (visible.isEmpty) {
     return const ChannelSidePlacement(ChannelSideMode.beside, []);
@@ -96,7 +101,9 @@ ChannelSidePlacement placeChannelSide(
   // reserving two chats' worth asked for room nothing rendered in. That is
   // why this function no longer needs to know about the thread at all.
   const chatFloor = channelSideChatMinWidth;
-  final shown = layout == RaftLayoutClass.medium
+  final shown =
+      layout == RaftLayoutClass.medium ||
+          (detailPane && width < channelSideDetailBesideMinWidth)
       ? const <VisibleChannelSideColumn>[]
       : stack.fitting(visible, width: width, chatFloor: chatFloor);
   if (shown.isEmpty) return _coverChannelSide(visible, stack, width);
@@ -272,11 +279,12 @@ List<double> _solveChannelSideWidths(
   ];
 }
 
-/// Whether [context] is inside a [ChannelSideArea] that hosts side sections
-/// for the current route.
-bool insideChannelSideArea(BuildContext context) =>
-    context.getInheritedWidgetOfExactType<_ChannelSideAreaScope>()?.hosts ??
-    false;
+/// Whether [context] is inside a [ChannelSideArea]; when [requireHost] is
+/// true, returns true only if that area can place sections for this route.
+bool insideChannelSideArea(BuildContext context, {bool requireHost = true}) {
+  final scope = context.getInheritedWidgetOfExactType<_ChannelSideAreaScope>();
+  return requireHost ? (scope?.hosts ?? false) : scope != null;
+}
 
 class _ChannelSideAreaScope extends InheritedWidget {
   const _ChannelSideAreaScope({required this.hosts, required super.child});
@@ -591,6 +599,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
       stack: stack,
       conversationWidth: live?.conversation ?? conversationWidth,
       dockWidths: live?.columns ?? const {},
+      detailPane: widget.detailPane,
     );
     final beside = placement.mode == ChannelSideMode.beside;
     final columns = placement.columns;
