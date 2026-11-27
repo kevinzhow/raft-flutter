@@ -1,5 +1,7 @@
 import 'package:markdown/markdown.dart' as md;
 
+final _quoteLineBreak = RegExp(r'^[ \t]*\n');
+
 class RaftLazyQuote extends md.Element {
   RaftLazyQuote(List<md.Node> blocks, this.source, this.boundary)
     : super('blockquote', blocks);
@@ -16,7 +18,7 @@ class RaftLazyQuote extends md.Element {
     final blocks = children!;
     blocks[blocks.length - 1] = md.Element('p', inside);
     if (outside.firstOrNull case final md.Text text) {
-      final tail = text.text.replaceFirst(RegExp(r'^[ \t]*\n'), '');
+      final tail = text.text.replaceFirst(_quoteLineBreak, '');
       if (tail.isEmpty) {
         outside.removeAt(0);
       } else {

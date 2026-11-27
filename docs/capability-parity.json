@@ -9135,11 +9135,11 @@
    "status": "covered",
    "webEntry": "MessageItem inline task-ref badge / link -> handleOpenTaskRef (also used by task chip in thread)",
    "gate": "Any member who can see the message",
-   "flutterEntry": "message_presentation.dart task reference tap -> task modal; task_surface_controller.dart also resolves by number",
+   "flutterEntry": "qualified_task_navigation.dart resolves task numbers for message and Activity links; task_surface_controller.dart also resolves by number",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/message_presentation.dart",
-     "needle": "/tasks/channel/$carrier/number/$number"
+     "file": "apps/raft_flutter/lib/features/qualified_task_navigation.dart",
+     "needle": "/tasks/channel/$channelId/number/$number"
     },
     {
      "file": "apps/raft_flutter/lib/features/task_surface_controller.dart",
@@ -11373,11 +11373,11 @@
    "status": "covered",
    "webEntry": "MessageItem renderTaskBadge + handleOpenTaskRef",
    "gate": "",
-   "flutterEntry": "message_presentation.dart task reference handling",
+   "flutterEntry": "message_presentation.dart opens the task through qualified_task_navigation.dart",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/message_presentation.dart",
-     "needle": "/tasks/channel/$carrier/number/$number"
+     "file": "apps/raft_flutter/lib/features/qualified_task_navigation.dart",
+     "needle": "/tasks/channel/$channelId/number/$number"
     },
     {
      "file": "apps/raft_flutter/lib/features/message_presentation.dart",

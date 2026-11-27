@@ -3,6 +3,11 @@ import 'dart:typed_data';
 import '../data/source_channel_files_store.dart';
 import 'attachment_image_loader.dart';
 
+final _svgUtf8Prefix = RegExp(
+  r'^data:image/svg\+xml;utf8,',
+  caseSensitive: false,
+);
+
 bool channelFileUsesRasterThumbnail(SourceChannelFileEntry file) =>
     attachmentNeedsRasterPreview(file.mimeType);
 
@@ -18,7 +23,7 @@ Uint8List? channelFileEmbeddedSvgThumbnail(SourceChannelFileEntry file) {
   final thumbnailUrl = file.metadata['thumbnailUrl'];
   if (thumbnailUrl is! String) return null;
   final encoded = thumbnailUrl.replaceFirst(
-    RegExp(r'^data:image/svg\+xml;utf8,', caseSensitive: false),
+    _svgUtf8Prefix,
     'data:image/svg+xml;charset=utf-8,',
   );
   final data = Uri.tryParse(encoded)?.data;

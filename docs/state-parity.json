@@ -5731,6 +5731,42 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/document_preview_download_fallback.dart#method:DocumentPreviewDownloadFallback.run": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-1",
+        "reason": "Shows the shared Raft warning toast before closing a refused document preview and downloading the original."
+      },
+      "apps/raft_flutter/lib/features/source_channel_files_view.dart#class:ChannelFileInlineActions": {
+        "role": "entry_composition",
+        "familyRefs": ["button"],
+        "owner": "WP-GAPS-1",
+        "reason": "Shares the jump and download buttons across the expanded and compact Files rows."
+      },
+      "apps/raft_flutter/lib/features/source_channel_files_view.dart#method:ChannelFileInlineActions.build": {
+        "role": "entry_composition",
+        "familyRefs": ["button"],
+        "owner": "WP-GAPS-1",
+        "reason": "Composes the two canonical RaftButton actions with the row's density."
+      },
+      "packages/raft_ui/lib/src/attachment_unavailable_thumbnail.dart#class:RaftAttachmentUnavailableThumbnail": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-1",
+        "reason": "Shares the unavailable thumbnail across attachment cards and image galleries."
+      },
+      "packages/raft_ui/lib/src/attachment_unavailable_thumbnail.dart#method:RaftAttachmentUnavailableThumbnail.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-1",
+        "reason": "Combines the muted fill token and the Raft image-off glyph for a failed thumbnail."
+      },
+      "packages/raft_ui/lib/src/attachment_unavailable_thumbnail.dart#function:previewAttachmentUnavailableThumbnail": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-GAPS-1",
+        "reason": "SDK Widget Preview for the unavailable image thumbnail."
+      },
       "apps/raft_flutter/lib/features/agent_apps_view.dart#method:_AgentAppsState._configureMcp": {
         "role": "entry_composition",
         "familyRefs": [
@@ -58872,6 +58908,15 @@
       }
     },
     "entries": {
+      "surface:apps/raft_flutter/lib/features/document_preview_download_fallback.dart#method:DocumentPreviewDownloadFallback.run": {
+        "owner": "WP-GAPS-1",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "AttachmentPreviewDialog calls the fallback when a document cannot be previewed. The shared toast host presents the warning.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/document_preview_download_fallback.dart#method:DocumentPreviewDownloadFallback.run"
+        ]
+      },
       "surface:apps/raft_flutter/lib/features/mcp_app_editor.dart#method:_McpAppEditorState.save": {
         "owner": "WP-MCP",
         "kind": "surface_factory",
@@ -63113,6 +63158,12 @@
       }
     },
     "requirements": {
+      "surface:apps/raft_flutter/lib/features/document_preview_download_fallback.dart#method:DocumentPreviewDownloadFallback.run:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/document_preview_download_fallback.dart#method:DocumentPreviewDownloadFallback.run",
+        "applicability": "required",
+        "owner": "WP-GAPS-1",
+        "reason": "Web DocumentPreviewHost displays this warning for preview refusals."
+      },
       "screen:settings.linux-dependencies:applicability": {
         "entryId": "screen:settings.linux-dependencies",
         "applicability": "unknown",

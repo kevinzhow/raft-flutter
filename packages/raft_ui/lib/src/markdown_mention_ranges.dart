@@ -12,6 +12,7 @@ final _escapedAngle = RegExp(
   unicode: true,
 );
 final _bareWebUrl = RegExp(r'https?://[^\s<>]+');
+final _mentionContinuation = RegExp('(?!$_cjk)[\\p{L}\\p{N}_-]', unicode: true);
 
 bool raftStructuredMentionAppears(String text, String name) =>
     raftStructuredMentionMatcher(text)(name);
@@ -19,17 +20,23 @@ bool raftStructuredMentionAppears(String text, String name) =>
 bool Function(String) raftStructuredMentionMatcher(String text) {
   late final nodes = raftParseMarkdown(text, RaftMarkdownMode.message);
   return (name) {
-    if (!text.contains('@$name') || !_handle.hasMatch(name)) return false;
-    final mention = RegExp(
-      '@${RegExp.escape(name)}(?!(?!$_cjk)[\\p{L}\\p{N}_-])',
-      unicode: true,
-    );
+    final mention = '@$name';
+    if (!text.contains(mention) || !_handle.hasMatch(name)) return false;
 
     bool appears(md.Node node) {
       if (node is md.Text) {
-        return mention.hasMatch(
-          node.text.replaceAll(_escapedAngle, '').replaceAll(_bareWebUrl, ' '),
-        );
+        final visible = node.text
+            .replaceAll(_escapedAngle, '')
+            .replaceAll(_bareWebUrl, ' ');
+        var start = visible.indexOf(mention);
+        while (start >= 0) {
+          final end = start + mention.length;
+          if (_mentionContinuation.matchAsPrefix(visible, end) == null) {
+            return true;
+          }
+          start = visible.indexOf(mention, end);
+        }
+        return false;
       }
       if (node is! md.Element) return false;
       switch (node.tag) {
