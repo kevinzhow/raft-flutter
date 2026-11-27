@@ -5,8 +5,10 @@ import 'package:flutter/scheduler.dart';
 
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/activity_object_rows.dart' show isArtifactActivityRow;
 import '../data/workspace_controller.dart';
 import 'activity_retap.dart';
+import 'artifacts/artifact_models.dart' show parseArtifactId;
 import 'desktop_navigation_policy.dart';
 import 'resource_list_updates.dart';
 import 'stale_counts_notice.dart';
@@ -156,6 +158,10 @@ class ActivityFirstUnread {
 /// its own message ID.
 bool activityRowOpen(DesktopContentTarget target, Map<String, dynamic> row) {
   final kind = row['kind'];
+  if (isArtifactActivityRow(row)) {
+    return target.kind == DesktopContentKind.artifact &&
+        parseArtifactId(target.id) == row['objectId'];
+  }
   if (kind == 'thread') {
     if (target.kind == DesktopContentKind.task) {
       return row['conversationKind'] == 'task' && target.id == row['taskId'];

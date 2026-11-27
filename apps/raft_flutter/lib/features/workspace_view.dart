@@ -90,6 +90,7 @@ import 'desktop_activity_flag.dart';
 import 'resource_search.dart';
 import 'quick_switcher_host.dart';
 import 'fleet_views.dart';
+import 'list_detail_slot.dart';
 import 'message_link_unavailable.dart';
 import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
@@ -1672,15 +1673,19 @@ class _WorkspaceViewState extends State<WorkspaceView>
               );
       }
       if (DesktopNavigationPolicy.forSection(route).contentMasterDetail) {
-        content = DesktopMasterDetail(
-          master: content,
-          detail: desktopContentDetail(),
-          compact: thread,
-          masterEdge: true,
-          wideWidth: masterWideWidth,
-          compactWidth: masterCompactWidth,
-          onWidthChanged: saveMasterPanel,
-        );
+        final detail = desktopContentDetail();
+        // A phone page of a detail slot (an Artifact's): the detail alone.
+        content = widget.mobileRoutePage && detail != null
+            ? detail
+            : DesktopMasterDetail(
+                master: ListDetailHost(child: content),
+                detail: detail,
+                compact: thread,
+                masterEdge: true,
+                wideWidth: masterWideWidth,
+                compactWidth: masterCompactWidth,
+                onWidthChanged: saveMasterPanel,
+              );
       }
       final showingConversation =
           (route == 'chat' || route == 'home' && wide) &&
@@ -2563,6 +2568,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final target = desktopNavigation.target;
     if (target == null) return null;
     if (target.kind == DesktopContentKind.task) return const TaskContentSlot();
+    final close = wide ? closeDesktopDetail : dismissPanel;
+    if (listDetailContent(w, target, close) case final slot?) return slot;
     final key = ValueKey(
       'desktop-detail-$mobileAuthority-${target.kind}-${target.id}',
     );

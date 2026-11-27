@@ -27,7 +27,20 @@ enum RaftMobileTab { chat, tasks, members, settings }
 
 /// `task`: a task conversation in a list's detail slot (Web TaskContentSlot,
 /// `?open=task:<taskId>` beside `?task=<channelId>:task:<taskId>`).
-enum RaftContentKind { channel, dm, thread, agent, human, machine, task }
+/// `artifact`: an Artifact's viewer there (Web ArtifactContentSlot): on
+/// Activity and Search its address `?artifact=<id>` with `&version=` and
+/// `&review=` (the retired `?open=artifact:<id>` read too); `msg=` the
+/// comment it lands on.
+enum RaftContentKind {
+  channel,
+  dm,
+  thread,
+  agent,
+  human,
+  machine,
+  task,
+  artifact,
+}
 
 enum RaftProfileKind { agent, human, computer, external }
 
@@ -87,6 +100,7 @@ class RaftContentLocation {
             RaftContentKind.dm,
             RaftContentKind.thread,
             RaftContentKind.task,
+            RaftContentKind.artifact,
           }.contains(kind)
           ? messageId
           : null,
@@ -313,7 +327,17 @@ class RaftLocation {
   String? query(String key) => uri.queryParametersAll[key]?.first;
   String? get messageId => query('msg');
   RaftContentLocation? get content =>
-      RaftContentLocation.parse(query('open'), messageId: messageId);
+      RaftContentLocation.parse(query('open'), messageId: messageId) ??
+      switch (query('artifact')) {
+        final id? when id.isNotEmpty && _artifactSlotRoutes.contains(route) =>
+          RaftContentLocation(
+            RaftContentKind.artifact,
+            id,
+            messageId: messageId,
+          ),
+        _ => null,
+      };
+  static const _artifactSlotRoutes = {RaftRoute.activity, RaftRoute.search};
   RaftAnchor? get thread => RaftAnchor.parse(query('thread'));
   String? get threadFocusedMessageId =>
       thread != null && messageId != thread!.itemId ? messageId : null;

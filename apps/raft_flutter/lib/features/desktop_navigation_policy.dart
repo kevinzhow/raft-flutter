@@ -1,4 +1,5 @@
 import '../data/navigation_registry.dart';
+import '../data/phone_stack.dart' show artifactSlotRemoval;
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_navigation.dart';
@@ -102,7 +103,15 @@ class DesktopNavigationPolicy {
 }
 
 /// Identifiers only. Private entity payloads remain owned by authorized loaders.
-enum DesktopContentKind { channel, thread, agent, human, computer, task }
+enum DesktopContentKind {
+  channel,
+  thread,
+  agent,
+  human,
+  computer,
+  task,
+  artifact,
+}
 
 class DesktopContentTarget {
   const DesktopContentTarget(
@@ -129,6 +138,7 @@ RaftLocation desktopContentLocation(
   'open': open,
   'msg': messageId,
   'thread': thread,
+  ...artifactSlotRemoval,
   if (clearProfile) 'profile': null,
   if (open != current.query('open') && taskSlotId(current) != null)
     'task': null,
@@ -192,6 +202,7 @@ class DesktopNavigationState {
       RaftContentKind.human => DesktopContentKind.human,
       RaftContentKind.machine => DesktopContentKind.computer,
       RaftContentKind.task => DesktopContentKind.task,
+      RaftContentKind.artifact => DesktopContentKind.artifact,
     };
     return DesktopContentTarget(
       kind,

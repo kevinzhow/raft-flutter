@@ -8,10 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/activity_object_rows.dart' show isArtifactActivityRow;
 import 'activity_inbox_row.dart';
 import 'activity_object_text.dart';
 import 'activity_row_host.dart';
 import 'activity_row_time.dart';
+import 'list_detail_slot.dart' show ListDetailRow, artifactRowSlot;
 import 'sender_avatar_projection.dart';
 
 /// The key of an object row: `activity-object-<objectId>`.
@@ -94,78 +96,84 @@ class ActivityObjectRow extends StatelessWidget {
         shownName,
       ),
     );
-    return ActivityRowTimeBuilder(
-      at: row['lastActivityAt'],
-      user: w.client.user?.json,
-      builder: (context, time) {
-        final bodyText = [
-          if (excerpt != null) '$shownName: $text' else text,
-          ...parts.news,
-          ?homeText,
-        ].join(' ');
-        return ActivityRowActivation(
-          host: host,
-          builder: (context, onOpen) => RaftInboxItem(
-            key: activityObjectRowKey(row),
-            semanticLabel: [
-              parts.title,
-              bodyText,
-              ?time?.words,
-            ].where((p) => p.isNotEmpty).join(' '),
-            leading: RaftIconTile(glyph: parts.glyph),
-            title: Text(
-              parts.title,
-              key: const ValueKey('conversation-card-primary'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            timestamp: time == null
-                ? null
-                : Text(
-                    time.shown,
-                    key: const ValueKey('conversation-card-timestamp'),
+    // Closing the Artifact beside the list puts focus back on this row.
+    return ListDetailRow(
+      slot: isArtifactActivityRow(row)
+          ? artifactRowSlot('${row['objectId']}')
+          : null,
+      child: ActivityRowTimeBuilder(
+        at: row['lastActivityAt'],
+        user: w.client.user?.json,
+        builder: (context, time) {
+          final bodyText = [
+            if (excerpt != null) '$shownName: $text' else text,
+            ...parts.news,
+            ?homeText,
+          ].join(' ');
+          return ActivityRowActivation(
+            host: host,
+            builder: (context, onOpen) => RaftInboxItem(
+              key: activityObjectRowKey(row),
+              semanticLabel: [
+                parts.title,
+                bodyText,
+                ?time?.words,
+              ].where((p) => p.isNotEmpty).join(' '),
+              leading: RaftIconTile(glyph: parts.glyph),
+              title: Text(
+                parts.title,
+                key: const ValueKey('conversation-card-primary'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              timestamp: time == null
+                  ? null
+                  : Text(
+                      time.shown,
+                      key: const ValueKey('conversation-card-timestamp'),
+                    ),
+              timestampAtRest: time != null && !time.older,
+              timestampTooltip: time?.words,
+              body: _ObjectLine(
+                key: const ValueKey('object-card-line'),
+                face: face,
+                actor: excerpt != null ? '$shownName: ' : null,
+                text: text,
+                news: parts.news,
+                home: homeText,
+                strong: unread > 0,
+              ),
+              marks: [
+                if (mention)
+                  RaftSidebarMentionMarker(
+                    key: const ValueKey('inbox-mention-badge'),
+                    label: raftText(context, 'Mentioned you'),
                   ),
-            timestampAtRest: time != null && !time.older,
-            timestampTooltip: time?.words,
-            body: _ObjectLine(
-              key: const ValueKey('object-card-line'),
-              face: face,
-              actor: excerpt != null ? '$shownName: ' : null,
-              text: text,
-              news: parts.news,
-              home: homeText,
-              strong: unread > 0,
+                if (unread > 0)
+                  KeyedSubtree(
+                    key: const ValueKey('conversation-card-new-badge'),
+                    child: RaftSidebarUnreadCount(count: unread),
+                  ),
+              ],
+              actions: done.actions,
+              semanticActions: done.semanticActions,
+              selected: host.selected,
+              unread: unread > 0,
+              located: host.located,
+              onOpen: () {
+                final open = host.onOpenObject;
+                if (open != null) {
+                  open(row);
+                } else {
+                  onOpen();
+                }
+              },
+              onLongPress: host.onLongPress ?? host.menu,
+              onSecondaryTap: host.onSecondaryTap ?? host.menu,
             ),
-            marks: [
-              if (mention)
-                RaftSidebarMentionMarker(
-                  key: const ValueKey('inbox-mention-badge'),
-                  label: raftText(context, 'Mentioned you'),
-                ),
-              if (unread > 0)
-                KeyedSubtree(
-                  key: const ValueKey('conversation-card-new-badge'),
-                  child: RaftSidebarUnreadCount(count: unread),
-                ),
-            ],
-            actions: done.actions,
-            semanticActions: done.semanticActions,
-            selected: host.selected,
-            unread: unread > 0,
-            located: host.located,
-            onOpen: () {
-              final open = host.onOpenObject;
-              if (open != null) {
-                open(row);
-              } else {
-                onOpen();
-              }
-            },
-            onLongPress: host.onLongPress ?? host.menu,
-            onSecondaryTap: host.onSecondaryTap ?? host.menu,
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

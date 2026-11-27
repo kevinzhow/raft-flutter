@@ -26,11 +26,19 @@ Map<String, String?> taskSlotRemoval(RaftLocation location) => {
   },
 };
 
+/// The keys an Artifact's detail slot adds to the list's address.
+const artifactSlotRemoval = <String, String?>{
+  'artifact': null,
+  'version': null,
+  'review': null,
+};
+
 RaftLocation contentList(RaftLocation location) => _tidy(
   location.withQuery({
     'open': null,
     'msg': null,
     'thread': null,
+    ...artifactSlotRemoval,
     if (location.content?.kind == RaftContentKind.task) ...{
       'task': null,
       'taskMsg': null,
@@ -91,6 +99,10 @@ RaftLocation locationForPhone(RaftLocation location) {
     case RaftContentKind.task:
       // Web TaskContentSlot on a phone: the task's page over the list.
       return _tidy(location.withQuery({'open': null, 'msg': null}));
+    case RaftContentKind.artifact:
+      // Web ArtifactContentSlot on a phone: the viewer's page over the list,
+      // at the same address.
+      return location;
   }
 }
 
@@ -144,6 +156,8 @@ RaftLocation? _withoutTopOverlay(RaftLocation location) {
       'profile': null,
       if (location.route != RaftRoute.agent) 'agentTab': null,
     };
+  } else if (location.content?.kind == RaftContentKind.artifact) {
+    removal = {...artifactSlotRemoval, 'open': null, 'msg': null};
   } else if (location.thread != null && !hasContentSlot(location)) {
     removal = {
       'thread': null,

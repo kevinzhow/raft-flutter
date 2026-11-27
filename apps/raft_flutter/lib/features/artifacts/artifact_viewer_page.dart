@@ -27,6 +27,7 @@ import '../channel_artifact_place.dart';
 import '../channel_side_area.dart' show insideChannelSideArea;
 import '../channel_side_cards.dart' show ChannelSideCards;
 import '../channel_side_web_preview.dart';
+import '../list_detail_slot.dart';
 import '../private_route_guard.dart'
     show channelSearchPageAuthority, workspaceAuthority;
 import 'artifact_api.dart';
@@ -34,6 +35,7 @@ import 'artifact_comment_composer.dart';
 import 'artifact_comment_store.dart';
 import 'artifact_comments_panel.dart';
 import 'artifact_content.dart';
+import 'artifact_content_slot.dart';
 import 'artifact_find_bar.dart';
 import 'artifact_forward_dialog.dart';
 import 'artifact_frame_bridge.dart';
@@ -52,7 +54,8 @@ import 'artifact_viewer_actions.dart';
 import 'artifact_viewer_panels.dart';
 import 'artifact_viewer_parts.dart';
 
-/// Opens the Artifact [target] names in the viewer: a page on narrow
+/// Opens the Artifact [target] names in the viewer: from a list, in its
+/// detail slot (with Artifacts off it shows nothing); else a page on narrow
 /// windows, a full-bleed window on wide ones.
 Future<void> openWorkspaceArtifact(
   BuildContext context,
@@ -74,6 +77,11 @@ Future<void> openWorkspaceArtifact(
         if (opener?.context != null) opener?.requestFocus();
       },
     );
+    return Future<void>.value();
+  }
+  if (ListDetailHost.hosts(context)) {
+    // Web: the slot opens at once; with Artifacts off it shows nothing.
+    openListDetail(context, w, artifactSlotQuery(target));
     return Future<void>.value();
   }
   final page = RaftAdaptiveWorkspace.compactOf(context);

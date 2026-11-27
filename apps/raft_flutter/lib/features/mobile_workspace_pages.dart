@@ -14,6 +14,7 @@ String mobilePageIdentity(RaftLocation location) {
   return [
     location.uri.path,
     location.query('open') ?? '',
+    location.query('artifact') ?? '',
     location.query('thread') ?? '',
     location.query('profile') ?? '',
     location.query('task') ?? '',
