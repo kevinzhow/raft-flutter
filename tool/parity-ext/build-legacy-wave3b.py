@@ -346,6 +346,15 @@ for platform in ('desktop', 'phone'):
         interactions=[{'type': 'wait', 'ms': 200}],
     )
     add_case(
+        'computer-agent-located',
+        platform,
+        'Computer detail agent after a bulk change',
+        'packages/web/src/components/machine/MachineAgentRow.tsx',
+        selector='[data-visual-case="{cid}"] [data-located]',
+        android_key='computer-agent-ca-1',
+        interactions=[{'type': 'wait', 'ms': 200}],
+    )
+    add_case(
         'channel-files',
         platform,
         'Channel Files panel (rows + actions)',
@@ -367,20 +376,15 @@ add_case(
     'packages/web/src/features/agent/EnvVarsSection.tsx',
     interactions=[{'type': 'wait', 'ms': 200}],
 )
-add_case(
-    'agent-reminders',
-    'desktop',
-    'Agent detail Reminders tab (populated)',
-    'packages/web/src/components/agent/AgentRemindersSection.tsx',
-    interactions=[{'type': 'wait', 'ms': 200}],
-)
-add_case(
-    'agent-reminders-empty',
-    'desktop',
-    'Agent detail Reminders tab (empty)',
-    'packages/web/src/components/agent/AgentRemindersSection.tsx',
-    interactions=[{'type': 'wait', 'ms': 200}],
-)
+for platform in ('desktop', 'phone'):
+    for state in ('populated', 'empty', 'error'):
+        add_case(
+            'agent-reminders' if state == 'populated' else f'agent-reminders-{state}',
+            platform,
+            f'Agent detail Reminders tab ({state})',
+            'packages/web/src/components/agent/AgentRemindersSection.tsx',
+            interactions=[{'type': 'wait', 'ms': 200}],
+        )
 add_case(
     'computer-workspaces',
     'desktop',

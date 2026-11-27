@@ -270,11 +270,10 @@ final _cases = <_Case>[
       status: MigrationStepStatus.process,
       semanticLabel: 'Progress',
     ),
-    // The numbered circle is a decorated 20px Container.
     () => find.byWidgetPredicate(
       (w) =>
-          w is Container &&
-          w.constraints == BoxConstraints.tightFor(width: 20, height: 20),
+          w.key is ValueKey<String> &&
+          (w.key as ValueKey<String>).value.startsWith('raft-step-indicator-'),
     ),
   ),
   _Case(

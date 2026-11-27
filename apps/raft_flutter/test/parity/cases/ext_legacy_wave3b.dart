@@ -158,50 +158,58 @@ ParityCase _agentEnvVars() => ParityCase(
   },
 );
 
-ParityCase _agentReminders({required bool empty}) => ParityCase(
-  widgets: const [
-    'raft_ui:RaftReminderListView',
-    'raft_ui:RaftProductEmptyState',
-    'raft_ui:RaftCard',
-    'raft_ui:RaftBadge',
-  ],
-  settle: const Duration(milliseconds: 200),
-  build: (ctx) {
-    final now = _fixtureNow(ctx);
-    final fmt = _timeFmt(ctx);
-    final reminders = empty
-        ? const <RaftReminderItem>[]
-        : [
-            for (final r in (_fixture['reminders'] as List).cast<Map>())
-              RaftReminderItem(
-                title: r['title'] as String,
-                relative: _relativeTimeEn(
-                  r['fireAt'] as String,
-                  shortUnit: false,
-                  now: now,
-                ),
-                dateTime: fmt.shortDateTime(r['fireAt'] as String),
-                recurrence:
-                    (r['recurrence'] as Map?)?['description'] as String?,
-                msgRef: r['msgRef'] as String?,
-                onOpenMessage: r['msgPermalink'] != null ? () {} : null,
+ParityCase _agentReminders({required bool mobile, required String state}) =>
+    ParityCase(
+      widgets: const [
+        'raft_ui:RaftReminderListView',
+        'raft_ui:RaftProductEmptyState',
+        'raft_ui:RaftCard',
+        'raft_ui:RaftBadge',
+      ],
+      settle: const Duration(milliseconds: 200),
+      build: (ctx) {
+        final now = _fixtureNow(ctx);
+        final fmt = _timeFmt(ctx);
+        final reminders = state != 'populated'
+            ? const <RaftReminderItem>[]
+            : [
+                for (final r in (_fixture['reminders'] as List).cast<Map>())
+                  RaftReminderItem(
+                    title: r['title'] as String,
+                    relative: _relativeTimeEn(
+                      r['fireAt'] as String,
+                      shortUnit: false,
+                      now: now,
+                    ),
+                    dateTime: fmt.shortDateTime(r['fireAt'] as String),
+                    recurrence:
+                        (r['recurrence'] as Map?)?['description'] as String?,
+                    msgRef: r['msgRef'] as String?,
+                    onOpenMessage: r['msgPermalink'] != null ? () {} : null,
+                  ),
+              ];
+        return _stage(
+          Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              key: const ValueKey('wave3b-frame'),
+              width: mobile ? 390 : 520,
+              height: 420,
+              child: RaftReminderListView(
+                reminders: reminders,
+                error: state == 'error' ? 'Failed to load reminders' : null,
+                onRetry: state == 'error' ? () {} : null,
               ),
-          ];
-    return _stage(
-      Align(
-        alignment: Alignment.topLeft,
-        child: SizedBox(
-          key: const ValueKey('wave3b-frame'),
-          width: 520,
-          height: 420,
-          child: RaftReminderListView(reminders: reminders),
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
-  },
-);
 
-RaftComputerDetailData _computerData({required bool canManage}) {
+RaftComputerDetailData _computerData({
+  required bool canManage,
+  Set<String> highlighted = const {},
+}) {
   const runtimeLabels = {'claude': 'Claude Code', 'codex': 'Codex CLI'};
   const modelLabels = {'gpt-5-codex': 'GPT-5 Codex'};
   final m = _fixture['machine'] as Map<String, dynamic>;
@@ -247,6 +255,7 @@ RaftComputerDetailData _computerData({required bool canManage}) {
       version: '1.0.58',
     ),
     agents: agents,
+    highlightedAgentIds: highlighted,
   );
 }
 
@@ -268,73 +277,80 @@ List<RaftComputerWorkspace> _workspaces() => [
     ),
 ];
 
-ParityCase _computerSection({required String surface, required bool mobile}) =>
-    ParityCase(
-      widgets: const [
-        'raft_ui:RaftComputerDetailView',
-        'raft_ui:RaftListRowGroup',
-        'raft_ui:RaftListRow',
-        'raft_ui:RaftCard',
-        'raft_ui:RaftBanner',
-        'raft_ui:RaftBadge',
-      ],
-      settle: const Duration(milliseconds: 250),
-      build: (ctx) {
-        final width = mobile ? 390.0 : 640.0;
-        final view = RaftComputerDetailView(
-          data: _computerData(
-            canManage:
-                surface == 'computer-workspaces' ||
-                surface == 'computer-service',
-          ),
-          actions: RaftComputerDetailActions(
-            rename: (_) async {},
-            describe: (_) async {},
-            scanWorkspaces: () async => _workspaces(),
-            deleteWorkspace: (_) async {},
-            restart: () async {},
-            deleteComputer: () async {},
-            bulk: (_, _) async => 0,
-          ),
-        );
-        return _stage(
-          Align(
-            alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: width,
-              height: 1600,
-              child: surface == 'computer-agent-rows'
-                  ? SingleChildScrollView(
-                      child: KeyedSubtree(
-                        key: const ValueKey('wave3b-frame'),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Builder(builder: _agentRowsPreview),
-                        ),
-                      ),
-                    )
-                  : view,
-            ),
-          ),
-        );
-      },
-      interact: switch (surface) {
-        'computer-workspaces' => (t, ctx) async {
-          await t.ensureVisible(
-            find.byKey(const ValueKey('computer-workspaces-scan')),
-          );
-          await t.tap(find.byKey(const ValueKey('computer-workspaces-scan')));
-          await t.pumpAndSettle();
-        },
-        'computer-service' => (t, ctx) async {
-          await t.ensureVisible(
-            find.byKey(const ValueKey('computer-section-service')),
-          );
-          await t.pumpAndSettle();
-        },
-        _ => null,
-      },
+ParityCase _computerSection({
+  required String surface,
+  required bool mobile,
+}) => ParityCase(
+  widgets: const [
+    'raft_ui:RaftComputerDetailView',
+    'raft_ui:RaftListRowGroup',
+    'raft_ui:RaftListRow',
+    'raft_ui:RaftCard',
+    'raft_ui:RaftBanner',
+    'raft_ui:RaftBadge',
+  ],
+  settle: const Duration(milliseconds: 250),
+  build: (ctx) {
+    final width = mobile ? 390.0 : 640.0;
+    final view = RaftComputerDetailView(
+      data: _computerData(
+        canManage:
+            surface == 'computer-workspaces' || surface == 'computer-service',
+        highlighted: surface == 'computer-agent-located'
+            ? const {'ca-1'}
+            : const {},
+      ),
+      actions: RaftComputerDetailActions(
+        rename: (_) async {},
+        describe: (_) async {},
+        scanWorkspaces: () async => _workspaces(),
+        deleteWorkspace: (_) async {},
+        restart: () async {},
+        deleteComputer: () async {},
+        bulk: (_, _) async => 0,
+      ),
     );
+    return _stage(
+      Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: width,
+          height: 1600,
+          child: surface == 'computer-agent-rows'
+              ? SingleChildScrollView(
+                  child: KeyedSubtree(
+                    key: const ValueKey('wave3b-frame'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Builder(builder: _agentRowsPreview),
+                    ),
+                  ),
+                )
+              : view,
+        ),
+      ),
+    );
+  },
+  interact: switch (surface) {
+    'computer-agent-located' => (t, ctx) async {
+      await t.ensureVisible(find.byKey(const ValueKey('computer-agent-ca-1')));
+    },
+    'computer-workspaces' => (t, ctx) async {
+      await t.ensureVisible(
+        find.byKey(const ValueKey('computer-workspaces-scan')),
+      );
+      await t.tap(find.byKey(const ValueKey('computer-workspaces-scan')));
+      await t.pumpAndSettle();
+    },
+    'computer-service' => (t, ctx) async {
+      await t.ensureVisible(
+        find.byKey(const ValueKey('computer-section-service')),
+      );
+      await t.pumpAndSettle();
+    },
+    _ => null,
+  },
+);
 
 Widget _agentRowsPreview(BuildContext context) {
   final t = RaftTokens.of(context);
@@ -546,17 +562,20 @@ final Map<String, ParityCase> extLegacyWave3bCases = {
           _agentChat(mobile: mobile, empty: true),
       'components.legacy-wave3b.computer-agent-rows.${mobile ? 'phone' : 'desktop'}.$theme':
           _computerSection(surface: 'computer-agent-rows', mobile: mobile),
+      'components.legacy-wave3b.computer-agent-located.${mobile ? 'phone' : 'desktop'}.$theme':
+          _computerSection(surface: 'computer-agent-located', mobile: mobile),
       'components.legacy-wave3b.channel-files.${mobile ? 'phone' : 'desktop'}.$theme':
           _channelFiles(mobile: mobile, empty: false),
       'components.legacy-wave3b.channel-files-raster.${mobile ? 'phone' : 'desktop'}.$theme':
           _channelFiles(mobile: mobile, empty: false, raster: true),
+      'components.legacy-wave3b.agent-reminders.${mobile ? 'phone' : 'desktop'}.$theme':
+          _agentReminders(mobile: mobile, state: 'populated'),
+      'components.legacy-wave3b.agent-reminders-empty.${mobile ? 'phone' : 'desktop'}.$theme':
+          _agentReminders(mobile: mobile, state: 'empty'),
+      'components.legacy-wave3b.agent-reminders-error.${mobile ? 'phone' : 'desktop'}.$theme':
+          _agentReminders(mobile: mobile, state: 'error'),
     },
     'components.legacy-wave3b.agent-env-vars.desktop.$theme': _agentEnvVars(),
-    'components.legacy-wave3b.agent-reminders.desktop.$theme': _agentReminders(
-      empty: false,
-    ),
-    'components.legacy-wave3b.agent-reminders-empty.desktop.$theme':
-        _agentReminders(empty: true),
     'components.legacy-wave3b.computer-workspaces.desktop.$theme':
         _computerSection(surface: 'computer-workspaces', mobile: false),
     'components.legacy-wave3b.computer-service.desktop.$theme':

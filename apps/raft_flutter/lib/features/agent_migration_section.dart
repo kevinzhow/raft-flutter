@@ -13,14 +13,17 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/agent_migration_status.dart';
 import '../platform/content_links.dart';
 import '../data/migration_error.dart';
+import '../data/raft_location.dart';
 import '../data/user_error.dart' show logUserError;
 import '../data/workspace_controller.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
 import 'agent_hosted_provider.dart';
+import 'agent_last_migration.dart';
 import 'agent_migration_hosted.dart';
 import 'agent_migration_hosted_review.dart';
 import 'agent_migration_panel.dart';
 import 'agent_migration_presentation.dart';
+import 'agent_migration_retry.dart';
 import 'agent_migration_start_dialog.dart';
 import 'billing_view.dart' show RaftBillingPlans;
 import 'management_support.dart';
@@ -216,6 +219,16 @@ class _AgentMigrationSectionState
   }
 
   bool get active => _status.active;
+
+  void _openLastMigrationEntity(RaftRoute route, String id) {
+    w.navigation.navigate(
+      RaftLocation.at(
+        serverSlug: w.location.serverSlug,
+        route: route,
+        entityId: id,
+      ),
+    );
+  }
 
   MigrationComputers _computers(Object? targetId) {
     String? name(Object? id) =>
@@ -454,10 +467,7 @@ class _AgentMigrationSectionState
                       {'source': source},
                     ),
                   ),
-                MigrationReference(
-                  migrationRef: '${current['migrationRef']}',
-                  dialog: true,
-                ),
+                MigrationReference(migrationRef: '${current['migrationRef']}'),
               ],
             ),
           );
@@ -482,6 +492,45 @@ class _AgentMigrationSectionState
       return const SizedBox.shrink();
     }
     final summary = hostedReviewSummary(migration);
+    final ended =
+        shown &&
+        !arrival &&
+        !isHostedMigration(migration) &&
+        migration['cancelNeedsAttention'] != true &&
+        (phase == 'completed' || phase == 'failed' || phase == 'canceled');
+    final agentName =
+        (widget.agent['displayName'] as String?)?.trim().isNotEmpty == true
+        ? widget.agent['displayName'] as String
+        : '${widget.agent['name'] ?? ''}';
+    final formatTimestamp = agentTimeFormatter(context, w).shortDateTime;
+    Widget progress() => MigrationProgressPanel(
+      migration: migration,
+      machines: widget.machines,
+      agentName: agentName,
+      currentUserId: w.client.user?.id,
+      now: (widget.now ?? DateTime.now)().toUtc(),
+      formatTimestamp: formatTimestamp,
+      onCancel: () => run(cancel, refresh: false),
+      review: summary == null
+          ? null
+          : AgentMigrationHostedReview(
+              key: ValueKey('hosted-review-${migration['migrationRef']}'),
+              controller: w,
+              migration: migration,
+              summary: summary,
+              source: MigrationText('{name}', {
+                'name': migrationComputerLabel(
+                  widget.machines,
+                  migration['sourceMachineId'],
+                ),
+              }).text(context),
+              deadline: migration['transferDeadlineAt'] is String
+                  ? formatTimestamp(migration['transferDeadlineAt'])
+                  : null,
+              onShowCancel: () => run(cancel, refresh: false),
+              onRefresh: _status.reload,
+            ),
+    );
     return RaftPanelSection(
       children: [
         Column(
@@ -524,36 +573,22 @@ class _AgentMigrationSectionState
             ],
           ],
         ),
-        if (shown)
-          MigrationProgressPanel(
+        if (ended && phase != 'canceled')
+          AgentLastMigration(
+            key: ValueKey('agent-last-migration-${migration['migrationRef']}'),
             migration: migration,
             machines: widget.machines,
-            now: (widget.now ?? DateTime.now)().toUtc(),
-            formatTimestamp: agentTimeFormatter(context, w).shortDateTime,
-            onCancel: () => run(cancel, refresh: false),
-            review: summary == null
-                ? null
-                : AgentMigrationHostedReview(
-                    key: ValueKey('hosted-review-${migration['migrationRef']}'),
-                    controller: w,
-                    migration: migration,
-                    summary: summary,
-                    source: MigrationText('{name}', {
-                      'name': migrationComputerLabel(
-                        widget.machines,
-                        migration['sourceMachineId'],
-                      ),
-                    }).text(context),
-                    deadline: migration['transferDeadlineAt'] is String
-                        ? agentTimeFormatter(
-                            context,
-                            w,
-                          ).shortDateTime(migration['transferDeadlineAt'])
-                        : null,
-                    onShowCancel: () => run(cancel, refresh: false),
-                    onRefresh: _status.reload,
-                  ),
-          ),
+            retry: isAgentMigrationRetry(migration)
+                ? MigrationRetryDetails(migration, agentName, w.client.user?.id)
+                : null,
+            formatTimestamp: formatTimestamp,
+            failurePanel: phase == 'failed' ? progress() : null,
+            openComputer: (id) =>
+                _openLastMigrationEntity(RaftRoute.computer, id),
+            openMember: (id) => _openLastMigrationEntity(RaftRoute.human, id),
+          )
+        else if (shown && !ended)
+          progress(),
         if (statusError != null && !arrival)
           RaftBanner(
             status: RaftBannerRecipeStatus.warning,

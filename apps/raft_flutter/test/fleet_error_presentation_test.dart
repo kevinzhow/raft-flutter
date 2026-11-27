@@ -194,23 +194,34 @@ void main() {
       expect(dismissed, 1);
     });
 
-    testWidgets('the reminders list shows a small bold banner with Retry', (
+    testWidgets('AgentRemindersSection retries inside the named region', (
       t,
     ) async {
-      var retried = 0;
-      await t.pumpWidget(
-        _host(
-          RaftReminderListView(
-            reminders: const [],
-            error: 'Failed to load reminders',
-            onRetry: () => retried++,
-          ),
-        ),
-      );
-      expect(find.byType(RaftErrorBanner), findsOneWidget);
-      expect(find.text('Failed to load reminders'), findsOneWidget);
-      await t.tap(find.text('Retry'));
-      expect(retried, 1);
+      final (workspace, api) = (await t.runAsync(() => fixture('owner')))!;
+      addTearDown(workspace.dispose);
+      final semantics = t.ensureSemantics();
+      api.routes['GET /reminders'] = (_) => throw StateError('fixture outage');
+      Widget tab() =>
+          _host(AgentRemindersTab(controller: workspace, agentId: 'a1'));
+      try {
+        await t.pumpWidget(tab());
+        await settle(t);
+        expect(find.bySemanticsLabel('Reminders'), findsOneWidget);
+        expect(find.text('Failed to load reminders'), findsOneWidget);
+        api.routes['GET /reminders'] = (_) => {'reminders': []};
+        await t.tap(find.text('Retry'));
+        await settle(t);
+        expect(find.text('Failed to load reminders'), findsNothing);
+        expect(find.text('No reminders yet'), findsOneWidget);
+        await t.pumpWidget(const SizedBox.shrink());
+        await t.pumpWidget(tab());
+        await settle(t);
+        expect(find.text('Failed to load reminders'), findsNothing);
+        expect(find.text('No reminders yet'), findsOneWidget);
+        expect(find.bySemanticsLabel('Reminders'), findsOneWidget);
+      } finally {
+        semantics.dispose();
+      }
     });
 
     testWidgets('the skills section failure is a load-error column', (t) async {

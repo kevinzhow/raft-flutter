@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/agent_migration_panel.dart';
 import 'package:raft_flutter/features/agent_migration_section.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -206,6 +207,10 @@ Widget _host(
   supportedLocales: const [Locale('en'), Locale('zh')],
   localizationsDelegates: GlobalMaterialLocalizations.delegates,
   theme: raftTheme(),
+  builder: (context, child) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(disableAnimations: true),
+    child: child!,
+  ),
   home: Scaffold(
     body: SingleChildScrollView(
       child: AgentMigrationSection(
@@ -283,7 +288,10 @@ void main() {
       t.state = 'completed';
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
-      expect(find.text('Migrated to Target'), findsOneWidget);
+      expect(
+        find.textContaining('Source → Target', findRichText: true),
+        findsOneWidget,
+      );
       final settled = t.count('GET /agents/a1/migration');
       await tester.pump(const Duration(seconds: 10));
       expect(t.count('GET /agents/a1/migration'), settled);
@@ -343,7 +351,10 @@ void main() {
         t.state = 'completed';
         await tester.pump(const Duration(seconds: 2));
         await tester.pumpAndSettle();
-        expect(find.text('Migrated to Target'), findsOneWidget);
+        expect(
+          find.textContaining('Source → Target', findRichText: true),
+          findsOneWidget,
+        );
         await tester.pump(const Duration(seconds: 1));
         await tester.runAsync(() => Future<void>.delayed(Duration.zero));
         expect(t.count('GET /agents'), greaterThan(reads));
@@ -547,24 +558,18 @@ void main() {
           },
         );
         expect(
-          find.text('Migration to Target needs attention'),
+          find.byKey(const ValueKey('agent-last-migration-body')),
           findsOneWidget,
         );
-        expect(find.text('Migration failed'), findsOneWidget);
         expect(
           find.text('The agent is still on Source and works as usual.'),
           findsOneWidget,
         );
         expect(
-          find.text('The transfer did not finish. Try again.'),
+          find.text('Something went wrong during the transfer. Try again.'),
           findsOneWidget,
         );
-        // Technical details are collapsed until opened.
-        expect(find.textContaining('MIGRATION_LEASE_EXPIRED'), findsNothing);
-        await tester.tap(find.text('Technical Details'));
-        await tester.pump();
-        expect(find.textContaining('MIGRATION_LEASE_EXPIRED'), findsOneWidget);
-        // The reference shows on a failure, with a copy action.
+        expect(find.text('Technical Details'), findsNothing);
         expect(find.text('Migration ID'), findsOneWidget);
         expect(find.text('fixture-ref'), findsOneWidget);
         expect(find.text('Try Migration Again'), findsOneWidget);
@@ -643,16 +648,11 @@ void main() {
       expect(find.text('Migration ID'), findsOneWidget);
     });
 
-    testWidgets('canceled and completed runs show no reference or cancel', (
+    testWidgets('a settled cancellation hides the progress and reference', (
       tester,
     ) async {
       await mount(tester, state: 'canceled_pre_flip');
-      expect(find.text('Migration to Target canceled'), findsOneWidget);
-      expect(find.text('Migration canceled'), findsNothing);
-      expect(
-        find.textContaining('canceled before the agent switched computers'),
-        findsOneWidget,
-      );
+      expect(find.byType(MigrationProgressPanel), findsNothing);
       expect(find.text('Migration ID'), findsNothing);
       expect(find.text('Move to Another Computer'), findsOneWidget);
     });

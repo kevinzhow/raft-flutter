@@ -275,7 +275,10 @@ void main() {
         n.placement!.english,
         'The agent is still on Studio Mac and works as usual.',
       );
-      expect(n.message.english, 'The transfer did not finish. Try again.');
+      expect(
+        n.message.english,
+        'Something went wrong during the transfer. Try again.',
+      );
       expect(n.technicalCode, 'MIGRATION_LEASE_EXPIRED');
     });
 

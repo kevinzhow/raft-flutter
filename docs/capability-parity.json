@@ -13495,7 +13495,7 @@
    "status": "covered",
    "webEntry": "components/layout/NotificationTrigger.tsx, NotificationCenter.tsx, useSystemNotifications.tsx (ids plan-downgrade, joint-over-limit:*, computer-attention, machine-offline, machine-disk-low, pwa-install, feedback-replies)",
    "gate": "",
-   "flutterEntry": "system_notification_center.dart SystemNotificationBell + data/system_notification_projection.dart (same ids except pwa-install)",
+   "flutterEntry": "system_notification_center.dart SystemNotificationBell + data/system_notification_projection.dart (same ids except pwa-install); feedback_unread.dart supplies the shared feedback reply count",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/system_notification_center.dart",
@@ -13700,20 +13700,20 @@
    "kind": "endpoint",
    "id": "GET /product-feedback/tickets",
    "area": "account-profile",
-   "capability": "List my feedback tickets (Active/Ended/All filter, unread dot, load more)",
+   "capability": "List my feedback tickets (Active/Ended/All filter, latest reply preview, unread dot, load more)",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > Feedback inbox | Feedback unread dot in settings nav (background poll)",
+   "webEntry": "Settings > Feedback inbox | feedbackUnreadState.ts (account push and recovery reads)",
    "gate": "any signed-in user",
-   "flutterEntry": "source_feedback_view.dart inbox; workspace_settings.dart loadFeedbackUnread dot",
+   "flutterEntry": "source_feedback_view.dart inbox; feedback_unread.dart supplies the account-scoped count to settings, the mobile server menu, and the notification bell",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/source_feedback_store.dart",
      "needle": "/product-feedback/tickets"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_settings.dart",
-     "needle": "loadFeedbackUnread"
+     "file": "apps/raft_flutter/lib/features/feedback_unread.dart",
+     "needle": "product_feedback:unread"
     }
    ],
    "justification": "",

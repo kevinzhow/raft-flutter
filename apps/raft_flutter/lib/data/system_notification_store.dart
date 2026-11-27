@@ -69,6 +69,7 @@ class SystemNotificationStore extends ChangeNotifier {
     this.entities,
     this.post,
     this.seatAddEnabled,
+    this.sharedFeedbackUnread,
   }) : storage = storage ?? PreferencesSearchMemoryStorage(),
        clock = clock ?? DateTime.now;
   final SystemNotificationGet get;
@@ -78,6 +79,7 @@ class SystemNotificationStore extends ChangeNotifier {
   /// When set, machines/agents come from the shared directory (which owns
   /// their revalidation) and [refresh] reads only the feedback count.
   final SystemNotificationEntities Function()? entities;
+  final int Function()? sharedFeedbackUnread;
 
   /// Usage-limit attention (`system-notifications-v2`) needs it: without it
   /// the feed stays off. Web 1.24 reads the feed for everyone
@@ -202,7 +204,7 @@ class SystemNotificationStore extends ChangeNotifier {
             machinesReady: shared?.ready ?? _machineReady,
             canViewMachines: c.canViewMachines,
             mobile: c.mobile,
-            feedbackUnread: feedbackUnread,
+            feedbackUnread: sharedFeedbackUnread?.call() ?? feedbackUnread,
             now: clock(),
           ),
           if (c.server != null && c.canViewMachines)
@@ -300,6 +302,12 @@ class SystemNotificationStore extends ChangeNotifier {
 
     final shared = entities;
     if (shared != null) {
+      if (sharedFeedbackUnread != null) {
+        failed = !shared().ready;
+        loading = false;
+        _publish();
+        return;
+      }
       final feedback = await safeRead(
         '/product-feedback/tickets',
         query: {'limit': 1},

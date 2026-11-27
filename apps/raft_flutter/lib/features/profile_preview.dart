@@ -19,6 +19,7 @@ import 'agent_trajectory_log.dart';
 import 'model_label_catalog.dart';
 import 'agent_metadata_projection.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
+import 'tool_display.dart';
 
 RaftActivityTone activityTone(Object? activity) => switch (activity) {
   'online' => RaftActivityTone.online,
@@ -27,93 +28,6 @@ RaftActivityTone activityTone(Object? activity) => switch (activity) {
   'error' => RaftActivityTone.error,
   _ => RaftActivityTone.offline,
 };
-
-/// shared toolDisplay.ts getToolLogLabel / shouldHideToolStartInActivityLog.
-const _toolLogLabels = <String, String>{
-  'send_message': 'Sending message',
-  'check_messages': 'Checking messages',
-  'wait_for_message': 'Waiting for messages',
-  'receive_message': 'Checking messages',
-  'read_history': 'Reading history',
-  'search_messages': 'Searching messages',
-  'list_server': 'Listing server',
-  'list_tasks': 'Listing tasks',
-  'create_tasks': 'Creating tasks',
-  'claim_tasks': 'Claiming tasks',
-  'unclaim_task': 'Unclaiming task',
-  'update_task_status': 'Updating task status',
-  'add_channel_member': 'Adding channel member',
-  'join_channel': 'Joining channel',
-  'leave_channel': 'Leaving channel',
-  'upload_file': 'Uploading file',
-  'view_file': 'Viewing file',
-  'read_file': 'Reading file',
-  'write_file': 'Writing file',
-  'edit_file': 'Editing file',
-  'bash': 'Running command',
-  'glob': 'Searching files',
-  'grep': 'Searching code',
-  'web_fetch': 'Fetching web',
-  'web_search': 'Searching web',
-  'todo_write': 'Updating tasks',
-  'schedule_reminder': 'Scheduling reminder',
-  'list_reminders': 'Listing reminders',
-  'cancel_reminder': 'Canceling reminder',
-  'collab_tool_call': 'Collaborating',
-};
-const _toolAliases = <String, String>{
-  'Read': 'read_file',
-  'ReadFile': 'read_file',
-  'file_read': 'read_file',
-  'Write': 'write_file',
-  'WriteFile': 'write_file',
-  'file_write': 'write_file',
-  'Edit': 'edit_file',
-  'EditFile': 'edit_file',
-  'file_change': 'edit_file',
-  'StrReplaceFile': 'edit_file',
-  'Bash': 'bash',
-  'shell': 'bash',
-  'Shell': 'bash',
-  'command_execution': 'bash',
-  'run_shell_command': 'bash',
-  'run_terminal_command': 'bash',
-  'Glob': 'glob',
-  'search_files': 'glob',
-  'Grep': 'grep',
-  'WebFetch': 'web_fetch',
-  'fetch_url': 'web_fetch',
-  'FetchURL': 'web_fetch',
-  'WebSearch': 'web_search',
-  'SearchWeb': 'web_search',
-  'TodoWrite': 'todo_write',
-  'SetTodoList': 'todo_write',
-};
-
-String? _toolSemantic(String name) {
-  var normalized = name;
-  for (final prefix in const ['mcp__chat__', 'mcp_chat_']) {
-    if (normalized.startsWith(prefix)) {
-      normalized = normalized.substring(prefix.length);
-      break;
-    }
-  }
-  final semantic = _toolAliases[normalized] ?? normalized;
-  return _toolLogLabels.containsKey(semantic) ? semantic : null;
-}
-
-String _toolLogLabel(String name) {
-  final semantic = _toolSemantic(name);
-  if (semantic != null) return _toolLogLabels[semantic]!;
-  var normalized = name;
-  for (final prefix in const ['mcp__chat__', 'mcp_chat_']) {
-    if (normalized.startsWith(prefix)) {
-      normalized = normalized.substring(prefix.length);
-      break;
-    }
-  }
-  return normalized.replaceFirst(RegExp(r'^mcp__\w+__'), '');
-}
 
 /// MentionHoverActivityPreview getRecentActivityPreviewRows: the last five
 /// visible trajectory entries, oldest first.
@@ -127,8 +41,9 @@ List<RaftProfilePreviewActivity> recentActivityRows(
     for (final row in entries)
       if (row['entry'] is Map &&
           !((row['entry'] as Map)['kind'] == 'tool_start' &&
-              _toolSemantic('${(row['entry'] as Map)['toolName']}') ==
-                  'send_message') &&
+              hideToolStartInActivityLog(
+                '${(row['entry'] as Map)['toolName']}',
+              )) &&
           // Web 1.24: a freshness hold arrives as a status row and an action
           // entry with the same label; show it once.
           !((row['entry'] as Map)['kind'] == 'status' &&
@@ -156,7 +71,7 @@ List<RaftProfilePreviewActivity> recentActivityRows(
           text: switch (kind) {
             'thinking' => text(entry['text'], 'Thinking'),
             // shared getToolLogLabel is locale-free on Web too.
-            'tool_start' => _toolLogLabel('${entry['toolName'] ?? ''}'),
+            'tool_start' => toolLogLabel('${entry['toolName'] ?? ''}'),
             'text' => text(entry['text'], 'Output'),
             'compaction_started' => raftText(
               context,

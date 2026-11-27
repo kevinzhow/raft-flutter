@@ -139,7 +139,8 @@ class WorkspaceSettings extends StatefulWidget {
 }
 
 class _WorkspaceSettingsState extends State<WorkspaceSettings> {
-  late int feedbackUnread = cachedFeedbackUnread(widget.controller);
+  late FeedbackUnreadState feedbackUnread;
+  late VoidCallback releaseFeedbackUnread;
 
   /// The navigation revision of the jump Enter in Search settings started:
   /// only that jump moves focus to the setting (the location can't say).
@@ -175,16 +176,6 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
     );
   }
 
-  void _setUnread(int count) {
-    final w = widget.controller;
-    writePageSnapshot(w, feedbackUnreadSnapshotKey, pageIdentity(w), {
-      'count': count,
-    });
-    if (mounted && count != feedbackUnread) {
-      setState(() => feedbackUnread = count);
-    }
-  }
-
   void _updateChanged() {
     if (mounted) setState(() {});
   }
@@ -212,7 +203,9 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
     if (canUseRaftBench(widget.controller.server?.string('role'))) {
       raftbench.refresh();
     }
-    loadFeedbackUnread();
+    feedbackUnread = FeedbackUnreadState.of(widget.controller)
+      ..addListener(_updateChanged);
+    releaseFeedbackUnread = feedbackUnread.retain();
   }
 
   @override
@@ -222,20 +215,22 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
       old.appUpdate?.removeListener(_updateChanged);
       widget.appUpdate?.addListener(_updateChanged);
     }
+    if (old.controller != widget.controller) {
+      feedbackUnread.removeListener(_updateChanged);
+      releaseFeedbackUnread();
+      feedbackUnread = FeedbackUnreadState.of(widget.controller)
+        ..addListener(_updateChanged);
+      releaseFeedbackUnread = feedbackUnread.retain();
+    }
   }
 
   @override
   void dispose() {
     widget.appUpdate?.removeListener(_updateChanged);
+    feedbackUnread.removeListener(_updateChanged);
+    releaseFeedbackUnread();
     raftbench.dispose();
     super.dispose();
-  }
-
-  Future<void> loadFeedbackUnread() async {
-    final count = await fetchFeedbackUnread(widget.controller);
-    if (mounted && count != null && count != feedbackUnread) {
-      setState(() => feedbackUnread = count);
-    }
   }
 
   @override
@@ -502,12 +497,11 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
             (_) => SourceFeedbackView(
               controller: w,
               initialTicketId: _feedbackTicketId(w.location.settingsPath),
-              onUnreadChanged: _setUnread,
             ),
             labelKey: 'settings.about.feedbackTitle',
             group: WorkspaceSettings.resources,
             scroll: false,
-            attention: feedbackUnread > 0,
+            attention: feedbackUnread.count > 0,
             ownHeader: true,
             contentColor: RaftSettingsPanelFrame.feedbackSurface,
           ),

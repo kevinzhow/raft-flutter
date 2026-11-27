@@ -1320,13 +1320,24 @@
         },
         {
           "state": "partial",
-          "variant": "destination join / forward failures",
+          "variant": "destination join failures",
           "web": "yes",
           "flutter": "missing",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web shows per-destination join failures (\"Couldn't join {target}. Try again.\", \"Destination unavailable\", forwardNone); none of these strings exist in Flutter.",
+          "justification": "Web shows per-destination join failures such as \"Couldn't join {target}. Try again.\" and \"Destination unavailable\".",
           "size": "M",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "partial",
+          "variant": "some destinations accepted the forward",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Both show confirmed and remaining counts in a top toast and retain the composer to retry. The existing forward toast case renders a single successful delivery.",
+          "size": "S",
           "gapKind": "case-missing"
         }
       ]
@@ -2484,7 +2495,8 @@
           "web": "yes",
           "flutter": "yes",
           "parityCase": [
-            "components.legacy-wave3b.agent-reminders-empty.desktop.*"
+            "components.legacy-wave3b.agent-reminders-empty.desktop.*",
+            "components.legacy-wave3b.agent-reminders-empty.phone.*"
           ],
           "status": "covered",
           "caseValidity": "react-checked"
@@ -2503,11 +2515,59 @@
           "state": "error",
           "web": "yes",
           "flutter": "yes",
-          "parityCase": [],
+          "parityCase": [
+            "components.legacy-wave3b.agent-reminders-error.desktop.*",
+            "components.legacy-wave3b.agent-reminders-error.phone.*"
+          ],
           "status": "gap",
-          "justification": "Web warning Banner with error text and outline Retry; Flutter RaftErrorBanner with Retry. No case.",
+          "justification": "Both use a warning banner and an outline Retry action. The phone banner inset differs.",
           "size": "S",
-          "gapKind": "case-missing"
+          "gapKind": "impl-diff",
+          "caseValidity": "react-checked"
+        }
+      ]
+    },
+    {
+      "id": "agent.last-migration",
+      "title": "Agent detail: Last migration disclosure",
+      "webEntry": "packages/web/src/components/agentMigration/LastMigration.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/agent_last_migration.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The disclosure mounts only after a settled migration has been loaded."
+        },
+        {
+          "state": "empty",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The disclosure is absent if there is no completed or failed computer transfer."
+        },
+        {
+          "state": "error",
+          "variant": "failed attempt with retry comparison",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.gaps2.migration.desktop.*",
+            "components.gaps2.migration.phone.*"
+          ],
+          "status": "covered",
+          "caseValidity": "react-checked"
+        },
+        {
+          "state": "partial",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The settled transfer supplies the summary. Both omit optional facts when absent."
         }
       ]
     },
@@ -8941,6 +9001,36 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/agent_last_migration.dart#class:AgentLastMigration": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Composes the shared disclosure and description list for the latest settled migration."
+      },
+      "apps/raft_flutter/lib/features/agent_last_migration.dart#class:_AgentLastMigrationState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Owns the last-migration disclosure state and passes its content to the shared components."
+      },
+      "apps/raft_flutter/lib/features/agent_last_migration.dart#local-function:CLASS:_AgentLastMigrationState/METHOD:build/FUNCTION:computerLink": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Uses the shared text link for computers available in the workspace directory."
+      },
+      "apps/raft_flutter/lib/features/agent_last_migration.dart#method:AgentLastMigration.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Creates the disclosure state for the last-migration entry."
+      },
+      "apps/raft_flutter/lib/features/agent_last_migration.dart#method:_AgentLastMigrationState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Builds the disclosure summary, retry details and workspace navigation links."
+      },
       "apps/raft_flutter/lib/features/agent_migration_panel.dart#class:MigrationErrorContent": {
         "role": "unresolved",
         "familyRefs": [],
@@ -9060,6 +9150,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_migration_section.dart#local-function:CLASS:_AgentMigrationSectionState/METHOD:build/FUNCTION:progress": {
+        "role": "entry_composition",
+        "familyRefs": ["steps", "banner"],
+        "owner": "WP-GAPS-2",
+        "reason": "Supplies migration state and actions to the panel that uses Steps and Banner."
       },
       "apps/raft_flutter/lib/features/agent_migration_section.dart#method:AgentMigrationSection.createState": {
         "role": "unresolved",
@@ -11407,6 +11503,18 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState._deliveryOpener": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Provides the forward notice action for an accepted delivery in the current workspace."
+      },
+      "apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState._showSuccess": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Uses the shared toast portal for successful forward deliveries."
       },
       "apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState.build": {
         "role": "unresolved",
@@ -22474,6 +22582,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#method:RaftReminderListView._body": {
+        "role": "entry_composition",
+        "familyRefs": ["banner", "button"],
+        "owner": "WP-GAPS-2",
+        "reason": "Composes reminder loading, empty, error and populated content using the shared controls."
       },
       "packages/raft_ui/lib/src/agent_profile.dart#method:RaftReminderListView._card": {
         "role": "unresolved",
@@ -59710,6 +59824,16 @@
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
       },
+      "screen:agent.last-migration": {
+        "owner": "WP-GAPS-2",
+        "kind": "route_or_panel",
+        "lifecycleScreenId": "agent.last-migration",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_last_migration.dart#class:AgentLastMigration"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The agent migration section mounts the disclosure for a completed or failed computer transfer."
+      },
       "screen:agent.workspace": {
         "owner": "design-system alignment",
         "kind": "route_or_panel_candidate",
@@ -60778,6 +60902,15 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState._showSuccess": {
+        "owner": "WP-GAPS-2",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "A completed forward shows a top toast. A single accepted local delivery can open its destination.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState._showSuccess"
+        ]
       },
       "surface:apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState.joinSelected": {
         "owner": "design-system alignment",
@@ -63680,6 +63813,12 @@
         "owner": "design-system alignment",
         "reason": "Review the real entry and applicable theme/input/state dimensions; historical case names do not establish current visual coverage."
       },
+      "screen:agent.last-migration:applicability": {
+        "entryId": "screen:agent.last-migration",
+        "applicability": "required",
+        "owner": "WP-GAPS-2",
+        "reason": "The disclosure mounts on desktop and phone and must support both the collapsed summary and open details."
+      },
       "screen:agent.workspace:applicability": {
         "entryId": "screen:agent.workspace",
         "applicability": "unknown",
@@ -64387,6 +64526,12 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState._showSuccess:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState._showSuccess",
+        "applicability": "required",
+        "owner": "WP-GAPS-2",
+        "reason": "Successful forwarding mounts the notice at desktop and phone widths. The action depends on the delivery receipt."
       },
       "surface:apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState.joinSelected:applicability": {
         "entryId": "surface:apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState.joinSelected",

@@ -19,6 +19,7 @@ import '../platform/file_selection.dart';
 import '../data/source_feedback_store.dart';
 import '../data/workspace_controller.dart';
 import 'feedback_attachment_preview.dart';
+import 'feedback_unread.dart';
 import 'feedback_ticket_link.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
@@ -206,11 +207,13 @@ class _SourceFeedbackViewState extends State<SourceFeedbackView> {
   }
 
   void bind() {
+    final unread = FeedbackUnreadState.of(widget.controller);
     store = SourceFeedbackStore(
       get: get,
       post: post,
       newId: widget.controller.client.newRandomId,
       authority: authority,
+      captureUnread: unread.capture,
       onUnreadChanged: (count) {
         if (mounted && store.authorized) widget.onUnreadChanged?.call(count);
       },
@@ -755,7 +758,8 @@ class _SourceFeedbackProjectionViewState
         id: ticket.id,
         // User content: first line only, never a dictionary lookup.
         title: ticket.title,
-        date: _date(context, ticket.updatedAt),
+        date: _date(context, ticket.activityAt),
+        replyPreview: _feedbackReplyPreview(context, ticket.latestComment),
         problem: ticket.kind != 'feedback',
         status: switch (_status(ticket.status, ticket.closureReason)) {
           'In progress' => RaftFeedbackStatus.inProgress,
@@ -774,6 +778,21 @@ class _SourceFeedbackProjectionViewState
             : _closeReason(SourceFeedbackCloseReason.defaultFor(ticket.status)),
       ),
   ];
+
+  String? _feedbackReplyPreview(
+    BuildContext context,
+    SourceFeedbackCommentPreview? comment,
+  ) {
+    if (comment == null) return null;
+    final text = comment.plainText;
+    if (text.isEmpty) return null;
+    final sender = raftText(context, switch (comment.authorType) {
+      'reporter' => 'You',
+      'staff' => 'Team',
+      _ => 'Update',
+    });
+    return '$sender: $text';
+  }
 
   Widget _create(BuildContext context) {
     final sending = store.newSending;

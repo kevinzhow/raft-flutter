@@ -245,8 +245,13 @@ class RaftToastHost extends StatefulWidget {
   final RaftToastController? controller;
 
   /// The host's controller, or null outside a host.
-  static RaftToastController? maybeOf(BuildContext context) =>
-      context.getInheritedWidgetOfExactType<_RaftToastScope>()?.controller;
+  static RaftToastController? maybeOf(
+    BuildContext context, {
+    RaftToastPlacement placement = RaftToastPlacement.bottom,
+  }) {
+    final scope = context.getInheritedWidgetOfExactType<_RaftToastScope>();
+    return placement == RaftToastPlacement.top ? scope?.top : scope?.controller;
+  }
 
   @override
   State<RaftToastHost> createState() => _RaftToastHostState();
@@ -254,13 +259,20 @@ class RaftToastHost extends StatefulWidget {
 
 class _RaftToastHostState extends State<RaftToastHost> {
   late final RaftToastController _own = RaftToastController();
+  final _top = RaftToastController();
   RaftToastController get controller => widget.controller ?? _own;
 
   /// One entry for the host's lifetime. `Overlay.initialEntries` is read once,
   /// so building a fresh entry per rebuild left every later one un-inserted
   /// and never disposed.
   late final OverlayEntry _portal = OverlayEntry(
-    builder: (_) => RaftToastPortal(controller: controller),
+    builder: (_) => Stack(
+      fit: StackFit.expand,
+      children: [
+        RaftToastPortal(controller: controller),
+        RaftToastPortal(controller: _top, placement: RaftToastPlacement.top),
+      ],
+    ),
   );
 
   @override
@@ -276,12 +288,14 @@ class _RaftToastHostState extends State<RaftToastHost> {
       ..remove()
       ..dispose();
     _own.dispose();
+    _top.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => _RaftToastScope(
     controller: controller,
+    top: _top,
     child: Stack(
       fit: StackFit.passthrough,
       children: [
@@ -295,8 +309,12 @@ class _RaftToastHostState extends State<RaftToastHost> {
 }
 
 class _RaftToastScope extends InheritedWidget {
-  const _RaftToastScope({required this.controller, required super.child});
-  final RaftToastController controller;
+  const _RaftToastScope({
+    required this.controller,
+    required this.top,
+    required super.child,
+  });
+  final RaftToastController controller, top;
   @override
   bool updateShouldNotify(_RaftToastScope old) => controller != old.controller;
 }
@@ -311,6 +329,7 @@ bool showRaftToast(
   String? description,
   String? actionLabel,
   VoidCallback? onAction,
+  RaftToastPlacement placement = RaftToastPlacement.bottom,
 }) =>
     showRaftToastHandle(
       context,
@@ -319,6 +338,7 @@ bool showRaftToast(
       description: description,
       actionLabel: actionLabel,
       onAction: onAction,
+      placement: placement,
     ) !=
     null;
 
@@ -332,13 +352,15 @@ RaftToastHandle? showRaftToastHandle(
   String? description,
   String? actionLabel,
   VoidCallback? onAction,
+  RaftToastPlacement placement = RaftToastPlacement.bottom,
   void Function(RaftToastCloseReason reason)? onClose,
-}) => RaftToastHost.maybeOf(context)?.show(
+}) => RaftToastHost.maybeOf(context, placement: placement)?.show(
   raftText(context, title),
   description: description == null ? null : raftText(context, description),
   tone: tone,
   actionLabel: actionLabel == null ? null : raftText(context, actionLabel),
   onAction: onAction,
+  icon: placement == RaftToastPlacement.top ? false : null,
   onClose: onClose,
 );
 

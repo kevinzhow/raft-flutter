@@ -190,6 +190,7 @@ class RaftListRow extends StatelessWidget {
     this.variant = RaftListRowVariant.standard,
     this.tone = RaftListRowTone.normal,
     this.selected = false,
+    this.located = false,
     this.interactive = true,
     this.disabled = false,
     this.onPressed,
@@ -204,6 +205,7 @@ class RaftListRow extends StatelessWidget {
   final RaftListRowVariant variant;
   final RaftListRowTone tone;
   final bool selected;
+  final bool located;
 
   /// `interactive={false}`: no hover wash, no button.
   final bool interactive;
@@ -231,6 +233,7 @@ class RaftListRow extends StatelessWidget {
     variant: variant,
     tone: tone,
     selected: selected,
+    located: located,
     interactive: interactive,
     disabled: disabled,
     onPressed: onPressed,
@@ -310,7 +313,7 @@ class RaftListRow extends StatelessWidget {
         ],
       ],
     );
-    final row = LayoutBuilder(
+    final content = LayoutBuilder(
       builder: (context, constraints) => RaftRecipeBox(
         style: recipe.root,
         tokens: tokens,
@@ -333,6 +336,25 @@ class RaftListRow extends StatelessWidget {
         ),
       ),
     );
+    final locatedFill = t.ui['info-soft'];
+    final reducedMotion = located && MediaQuery.disableAnimationsOf(context);
+    final row = located
+        ? TweenAnimationBuilder<Color?>(
+            tween: ColorTween(
+              begin: locatedFill,
+              end: reducedMotion
+                  ? locatedFill
+                  : locatedFill.withValues(alpha: 0),
+            ),
+            curve: const Interval(.6, 1, curve: Curves.easeOut),
+            duration: reducedMotion
+                ? Duration.zero
+                : const Duration(seconds: 2),
+            builder: (context, fill, child) =>
+                ColoredBox(color: fill ?? Colors.transparent, child: child!),
+            child: content,
+          )
+        : content;
     final before = recipe.root.before;
     if (!topRule ||
         before == null ||

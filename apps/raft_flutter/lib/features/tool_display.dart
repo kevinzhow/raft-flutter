@@ -60,6 +60,8 @@ const _aliases = <String, String>{
   'list_reminders': 'list_reminders',
   'cancel_reminder': 'cancel_reminder',
   'collab_tool_call': 'collab_tool_call',
+  'Agent': 'spawn_subagent',
+  'Task': 'spawn_subagent',
 };
 
 /// `TOOL_DISPLAY_METADATA[semantic].logLabel`.
@@ -70,7 +72,7 @@ const _logLabels = <String, String>{
   'receive_message': 'Checking messages',
   'read_history': 'Reading history',
   'search_messages': 'Searching messages',
-  'list_server': 'Listing server',
+  'list_server': 'Viewing server info',
   'list_tasks': 'Listing tasks',
   'create_tasks': 'Creating tasks',
   'claim_tasks': 'Claiming tasks',
@@ -94,6 +96,7 @@ const _logLabels = <String, String>{
   'list_reminders': 'Listing reminders',
   'cancel_reminder': 'Canceling reminder',
   'collab_tool_call': 'Collaborating',
+  'spawn_subagent': 'Starting sub-agent',
 };
 
 String _normalizeToolLookupName(String name) {

@@ -22,6 +22,7 @@ import '../data/workspace_entity_directory.dart';
 import '../data/workspace_navigation.dart';
 import 'account_security_recovery.dart';
 import 'app_permission_updates.dart';
+import 'feedback_unread.dart';
 import 'joint_invite_errors.dart';
 import 'source_feedback_view.dart';
 import 'workspace_web_billing.dart' show openWebBillingOrToast;
@@ -60,6 +61,8 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   late AppPermissionUpdates appPermissionUpdates;
   VoidCallback? releaseAppPermissionUpdates;
   StreamSubscription<RaftEvent>? events;
+  FeedbackUnreadState? feedbackUnread;
+  VoidCallback? releaseFeedbackUnread;
 
   /// Machines and agents the notices project from. Agent presence patches
   /// (activity, last seen) do not change them.
@@ -101,14 +104,19 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   }
 
   void attach() {
+    final unread = widget.store == null ? FeedbackUnreadState.of(w) : null;
+    feedbackUnread = unread;
     store =
         widget.store ??
         SystemNotificationStore(
           get: w.query,
           entities: directoryEntities,
+          sharedFeedbackUnread: unread == null ? null : () => unread.count,
           post: (path) => w.command('POST', path),
           seatAddEnabled: seatAddEnabled,
         );
+    unread?.addListener(feedbackChanged);
+    releaseFeedbackUnread = unread?.retain();
     unawaited(bind());
     appPermissionUpdates = AppPermissionUpdates.of(w);
     releaseAppPermissionUpdates = widget.store == null
@@ -281,6 +289,11 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   void appPermissionsChanged() =>
       store.setAppPermissionUpdates(appPermissionUpdates.summary.count);
 
+  void feedbackChanged() {
+    final scope = store.context?.scope;
+    if (scope != null) store.reconcileFeedback(scope, feedbackUnread!.count);
+  }
+
   void updated() {
     if (!disposed && mounted) setState(() {});
   }
@@ -305,6 +318,10 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     owner.controller.removeListener(changed);
     entities?.dispose();
     entities = null;
+    feedbackUnread?.removeListener(feedbackChanged);
+    feedbackUnread = null;
+    releaseFeedbackUnread?.call();
+    releaseFeedbackUnread = null;
     store.removeListener(updated);
     appPermissionUpdates.removeListener(appPermissionsChanged);
     releaseAppPermissionUpdates?.call();

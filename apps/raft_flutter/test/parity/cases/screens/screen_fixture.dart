@@ -41,7 +41,8 @@ class ScreenFixtureClient extends RaftClient {
   final _stream = StreamController<RaftEvent>.broadcast(sync: true);
 
   @override
-  Future<dynamic> getForAccount(String path) => request('GET', path);
+  Future<dynamic> getForAccount(String path, {Map<String, dynamic>? query}) =>
+      request('GET', path, query: query);
 
   /// Pushes a socket event, like the realtime server would.
   void emit(RaftEvent event) => _stream.add(event);

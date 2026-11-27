@@ -178,7 +178,7 @@ class BulkModelReceipt {
        skipped = List.unmodifiable(skipped),
        unfinished = Map.unmodifiable(unfinished),
        bannerUntil = now.add(const Duration(seconds: 5)),
-       highlightUntil = now.add(const Duration(seconds: 3)),
+       highlightUntil = now.add(const Duration(seconds: 2)),
        highlightNonce = changed.isEmpty ? null : ++_highlightSeq;
   final BulkModelTarget target;
   final int total;

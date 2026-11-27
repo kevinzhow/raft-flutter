@@ -1509,7 +1509,8 @@ class RaftClient {
   }
 
   /// Read an account-owned resource without attaching the active workspace.
-  Future<dynamic> getForAccount(String path) => _accountRequest('GET', path);
+  Future<dynamic> getForAccount(String path, {Map<String, dynamic>? query}) =>
+      _request('GET', path, query: query, workspaceScoped: false);
 
   /// Read a picker directory without changing the active workspace. Authentication
   /// changes still fence the response and refresh/retry preserves this server.

@@ -277,6 +277,9 @@ class SourceFeedbackTicket {
     required this.attachmentCount,
     required this.commentCount,
     this.closureReason,
+    this.duplicateOfTicketId,
+    this.latestComment,
+    this._latestCommentIncluded = false,
   });
   factory SourceFeedbackTicket.parse(dynamic raw) {
     final v = _map(raw), id = _string(_map(raw), 'id');
@@ -301,12 +304,23 @@ class SourceFeedbackTicket {
       closureReason: v['closure_reason'] is String
           ? v['closure_reason'] as String
           : null,
+      duplicateOfTicketId: v['duplicate_of_ticket_id'] is String
+          ? v['duplicate_of_ticket_id'] as String
+          : null,
+      latestComment: SourceFeedbackCommentPreview.parse(v['latest_comment']),
+      latestCommentIncluded: v.containsKey('latest_comment'),
     );
   }
   final String id, kind, status, message;
   final int createdAt, updatedAt, unreadCount, attachmentCount, commentCount;
   final bool unread;
-  final String? closureReason;
+  final String? closureReason, duplicateOfTicketId;
+  final SourceFeedbackCommentPreview? latestComment;
+  final bool _latestCommentIncluded;
+
+  int get activityAt =>
+      latestComment?.createdAt ??
+      (_latestCommentIncluded ? createdAt : updatedAt);
 
   /// Source components.js419: title and open aria-label use only the first line.
   String get title => message.split('\n').first;
@@ -314,19 +328,68 @@ class SourceFeedbackTicket {
   /// An unread flag always renders a badge, even with a zero projected count.
   int get badgeCount => unreadCount < 1 ? 1 : unreadCount;
   String get badgeLabel => unreadCount > 99 ? '99+' : '$badgeCount';
-  SourceFeedbackTicket read() => SourceFeedbackTicket(
+  SourceFeedbackTicket read({SourceFeedbackTicket? previous}) =>
+      _merge(previous, markRead: true);
+
+  SourceFeedbackTicket _merge(
+    SourceFeedbackTicket? previous, {
+    bool markRead = false,
+  }) => SourceFeedbackTicket(
     id: id,
     kind: kind,
     status: status,
     message: message,
     createdAt: createdAt,
     updatedAt: updatedAt,
-    unread: false,
-    unreadCount: 0,
+    unread: !markRead && unread,
+    unreadCount: markRead ? 0 : unreadCount,
     attachmentCount: attachmentCount,
     commentCount: commentCount,
     closureReason: closureReason,
+    duplicateOfTicketId: duplicateOfTicketId,
+    latestComment: _latestCommentIncluded
+        ? latestComment
+        : previous?.latestComment,
+    latestCommentIncluded:
+        _latestCommentIncluded || (previous?._latestCommentIncluded ?? false),
   );
+}
+
+@immutable
+class SourceFeedbackCommentPreview {
+  const SourceFeedbackCommentPreview(
+    this.authorType,
+    this.body,
+    this.createdAt,
+  );
+
+  static SourceFeedbackCommentPreview? parse(Object? value) => switch (value) {
+    {
+      'author_type': final String author,
+      'body_preview': final String body,
+      'created_at': final int createdAt,
+    }
+        when const {'reporter', 'staff', 'system'}.contains(author) =>
+      SourceFeedbackCommentPreview(author, body, createdAt),
+    _ => null,
+  };
+
+  final String authorType, body;
+  final int createdAt;
+
+  static final _code = RegExp(r'```[\s\S]*?```');
+  static final _image = RegExp(r'!\[[^\]]*\]\([^)]*\)');
+  static final _link = RegExp(r'\[([^\]]+)\]\([^)]*\)');
+  static final _markers = RegExp(r'[`*_~>#]+');
+  static final _space = RegExp(r'\s+');
+
+  String get plainText => body
+      .replaceAll(_code, ' ')
+      .replaceAll(_image, ' ')
+      .replaceAllMapped(_link, (match) => match[1]!)
+      .replaceAll(_markers, '')
+      .replaceAll(_space, ' ')
+      .trim();
 }
 
 @immutable
@@ -432,6 +495,7 @@ class SourceFeedbackStore extends ChangeNotifier {
     this.post,
     this.newId,
     this.onUnreadChanged,
+    this.captureUnread,
   }) : _authority = authority();
   final FeedbackGet get;
   final FeedbackPost? post;
@@ -440,6 +504,7 @@ class SourceFeedbackStore extends ChangeNotifier {
   final String Function()? newId;
   final String? Function() authority;
   final ValueChanged<int>? onUnreadChanged;
+  final ValueChanged<int> Function({required bool list})? captureUnread;
   String? _authority;
   bool _disposed = false;
   int _listRequest = 0, _detailRequest = 0, _readRevision = 0, _ids = 0;
@@ -597,8 +662,9 @@ class SourceFeedbackStore extends ChangeNotifier {
   SourceFeedbackError _error(Object e) =>
       e is SourceFeedbackFailure ? e.error : SourceFeedbackError.unavailable;
 
-  void _publishUnread(int count) {
+  void _publishUnread(int count, {ValueChanged<int>? accept}) {
     unreadTotal = count;
+    (accept ?? captureUnread?.call(list: false))?.call(count);
     onUnreadChanged?.call(count);
   }
 
@@ -620,6 +686,7 @@ class SourceFeedbackStore extends ChangeNotifier {
     final scope = _authority,
         request = ++_listRequest,
         readRevision = _readRevision;
+    final acceptUnread = captureUnread?.call(list: true);
     listLoading = true;
     listError = null;
     notifyListeners();
@@ -674,7 +741,7 @@ class SourceFeedbackStore extends ChangeNotifier {
       _tickets = merged.values.toList(growable: false);
       _nextCursor = next;
       _retryListCursor = null;
-      _publishUnread(unread);
+      _publishUnread(unread, accept: acceptUnread);
     } catch (e) {
       if (_accepts(scope) && request == _listRequest) {
         final error = _error(e);
@@ -754,10 +821,7 @@ class SourceFeedbackStore extends ChangeNotifier {
       final result = _Detail.parse(
         await get(
           '/product-feedback/tickets/${Uri.encodeComponent(id)}',
-          query: {
-            'comment_limit': 100,
-            'comment_cursor': ?cursor,
-          },
+          query: {'comment_limit': 100, 'comment_cursor': ?cursor},
         ),
         id,
         cursor,
@@ -800,7 +864,7 @@ class SourceFeedbackStore extends ChangeNotifier {
   /// onReadSuccess: the inbox row reads as read once a detail GET commits.
   void _markRead(String id, SourceFeedbackTicket ticket) {
     _tickets = _tickets
-        .map((t) => t.id == id ? ticket.read() : t)
+        .map((t) => t.id == id ? ticket.read(previous: t) : t)
         .toList(growable: false);
     _readRevision++;
   }
@@ -808,7 +872,11 @@ class SourceFeedbackStore extends ChangeNotifier {
   /// FeedbackInbox `upsertTicket`: a created or closed ticket moves to the
   /// top of the inbox without a list refetch.
   void _upsert(SourceFeedbackTicket ticket) {
-    _tickets = [ticket, ..._tickets.where((t) => t.id != ticket.id)];
+    final previous = _tickets.where((t) => t.id == ticket.id).firstOrNull;
+    _tickets = [
+      ticket._merge(previous),
+      ..._tickets.where((t) => t.id != ticket.id),
+    ];
   }
 
   void back() {
@@ -866,9 +934,7 @@ class SourceFeedbackStore extends ChangeNotifier {
   List<SourceFeedbackPending> _progress(
     List<SourceFeedbackPending> items,
     double value,
-  ) => [
-    for (final item in items) item.copyWith(progress: value.clamp(0, 1)),
-  ];
+  ) => [for (final item in items) item.copyWith(progress: value.clamp(0, 1))];
 
   /// Shared chooser check: the combined list must pass, else nothing is
   /// added and the banner explains why.
@@ -881,10 +947,13 @@ class SourceFeedbackStore extends ChangeNotifier {
       ...selected,
     ]);
     if (problem != null) return (current, problem);
-    return ([
-      ...current,
-      for (final file in selected) SourceFeedbackPending(_nextId(), file),
-    ], null);
+    return (
+      [
+        ...current,
+        for (final file in selected) SourceFeedbackPending(_nextId(), file),
+      ],
+      null,
+    );
   }
 
   // ------------------------------------------------------------ create
@@ -977,7 +1046,11 @@ class SourceFeedbackStore extends ChangeNotifier {
     final abort = _createAbort = SourceFeedbackAbort();
     final submission = _createSubmission = _stableSubmission(
       _createSubmission,
-      jsonEncode([newKind, message, for (final f in files) _fileFingerprint(f)]),
+      jsonEncode([
+        newKind,
+        message,
+        for (final f in files) _fileFingerprint(f),
+      ]),
     );
     notifyListeners();
     bool live() => !abort.aborted && _accepts(scope) && _createAbort == abort;
@@ -1194,7 +1267,7 @@ class SourceFeedbackStore extends ChangeNotifier {
         _actionAbort = null;
       } else {
         _tickets = [
-          for (final t in _tickets) t.id == id ? result.ticket : t,
+          for (final t in _tickets) t.id == id ? result.ticket._merge(t) : t,
         ];
         _inboxCloseAbort = null;
       }

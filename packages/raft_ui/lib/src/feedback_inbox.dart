@@ -51,8 +51,10 @@ class RaftFeedbackTicketRow {
     this.unreadLabel,
     this.unreadSemantics,
     this.closeReason,
+    this.replyPreview,
   });
   final String id, title, date;
+  final String? replyPreview;
 
   /// The Close ticket split's default reason; null once closed (no split).
   final RaftFeedbackCloseReason? closeReason;
@@ -472,6 +474,13 @@ class _RaftFeedbackTicketCardState extends State<RaftFeedbackTicketCard> {
                     style: title,
                   ),
                 ),
+                if (ticket.replyPreview case final preview?)
+                  Text(
+                    preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: date,
+                  ),
                 const SizedBox(height: 4),
                 _line(date, Text(ticket.date, maxLines: 1, style: date)),
                 // ds-allow: Web hands-feedback/styles.css .hands-feedback-ticket-meta `margin-top: 5px`

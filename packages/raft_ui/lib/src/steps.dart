@@ -4,21 +4,35 @@ import 'package:flutter/material.dart';
 
 import 'icons.dart';
 import 'localization.dart';
+import 'panel_layout.dart' show raftTextMetricsCache;
 import 'recipe_surface.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/steps_css.g.dart';
+import 'text_scaling.dart' show RaftChrome;
 import 'theme.dart';
 
 /// `status` of a step.
 enum RaftStepStatus { wait, process, finish, error }
 
+final _labelWidths =
+    raftTextMetricsCache<
+      (String, TextStyle?, TextDirection, TextScaler),
+      double
+    >();
+
 /// One `Step`: a [title] and an optional [description]; its own [status] overrides the one `Steps` derives.
 @immutable
 class RaftStep {
-  const RaftStep({required this.title, this.description, this.status});
+  const RaftStep({
+    required this.title,
+    this.description,
+    this.status,
+    this.icon,
+  });
   final String title;
   final String? description;
   final RaftStepStatus? status;
+  final Widget? icon;
 }
 
 /// raft-ui `Steps`. [current] is the 0-based index of the current step: earlier ones are finished, later ones wait and
@@ -30,12 +44,17 @@ class RaftSteps extends StatelessWidget {
     required this.current,
     this.status = RaftStepStatus.process,
     this.semanticLabel,
+    this.fitLabels = false,
+    this.finishLabel = 'Completed',
+    this.errorLabel = 'Failed',
   });
 
   final List<RaftStep> steps;
   final int current;
   final RaftStepStatus status;
   final String? semanticLabel;
+  final bool fitLabels;
+  final String finishLabel, errorLabel;
 
   /// Frozen-look breakpoint. Raft reads its responsive rule from published CSS.
   static const double wideBreakpoint = 640;
@@ -47,6 +66,42 @@ class RaftSteps extends StatelessWidget {
           : index > current
           ? RaftStepStatus.wait
           : status);
+
+  bool _fits(
+    BuildContext context,
+    double width,
+    Map<String, RaftSlotStyle> slots,
+    RaftTokenResolver tokens,
+  ) {
+    final indicator = slots['indicator']?.width ?? 20;
+    final gap = slots['main']?.columnGap ?? 8;
+    final columns = slots['item']?['grid-template-columns'];
+    final connectorWidth = switch (columns) {
+      CssSeq(items: [..., CssNum(:final value)]) => value,
+      _ => 32.0,
+    };
+    final title = slots['title']?.text(tokens);
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    var needed = (steps.length - 1) * connectorWidth;
+    for (final step in steps) {
+      final text = raftText(context, step.title);
+      needed +=
+          indicator +
+          gap +
+          _labelWidths.putIfAbsent((text, title, direction, scaler), () {
+            final painter = TextPainter(
+              text: TextSpan(text: text, style: title),
+              textDirection: direction,
+              textScaler: scaler,
+            )..layout();
+            final width = painter.width;
+            painter.dispose();
+            return width;
+          });
+    }
+    return needed <= width;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +127,26 @@ class RaftSteps extends StatelessWidget {
       containerWidth: containerWidth,
     );
     final rt = t.recipeTokens;
-    final slots = RaftStepsCssRecipe.resolve(states: states, tokens: rt);
+    final vertical =
+        fitLabels &&
+        containerWidth != null &&
+        !_fits(
+          context,
+          containerWidth,
+          RaftStepsCssRecipe.resolve(
+            states: states.copyWith(containerWidth: wideBreakpoint),
+            tokens: rt,
+          ),
+          rt,
+        );
+    final orientation = vertical
+        ? RaftStepsCssOrientation.vertical
+        : RaftStepsCssOrientation.horizontal;
+    final slots = RaftStepsCssRecipe.resolve(
+      orientation: orientation,
+      states: states,
+      tokens: rt,
+    );
     // ignore: raft_lints/avoid_render_index_assertion -- The generated Steps schema always emits all eleven slots; no async/server data participates.
     final root = slots['root']!;
     // Current CSS always wraps the root. Its container query instead changes
@@ -89,8 +163,12 @@ class RaftSteps extends StatelessWidget {
           status: _statusOf(i),
           isCurrent: i == current,
           wide: wide,
+          vertical: vertical,
+          finishLabel: finishLabel,
+          errorLabel: errorLabel,
           slots: RaftStepsCssRecipe.resolve(
             status: RaftStepsCssStatus.values[_statusOf(i).index],
+            orientation: orientation,
             last: i == steps.length - 1,
             states: states,
             tokens: rt,
@@ -105,7 +183,12 @@ class RaftSteps extends StatelessWidget {
         tokens: rt,
         // The source root's inline-size:100% establishes the query container.
         width: containerWidth,
-        child: wide
+        child: vertical
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: items,
+              )
+            : wide
             ? Wrap(runSpacing: root.rowGap ?? 0, children: items)
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,9 +199,6 @@ class RaftSteps extends StatelessWidget {
   }
 }
 
-/// Read-only horizontal Steps consumer. Other published library capabilities
-/// are retained in the CSS model; this API does not invent clickable/vertical
-/// behavior which the real Slack progress rail never mounts.
 class _PublishedStep extends StatelessWidget {
   const _PublishedStep({
     required this.step,
@@ -126,12 +206,16 @@ class _PublishedStep extends StatelessWidget {
     required this.status,
     required this.isCurrent,
     required this.wide,
+    required this.vertical,
     required this.slots,
+    required this.finishLabel,
+    required this.errorLabel,
   });
   final RaftStep step;
   final int index;
   final RaftStepStatus status;
-  final bool isCurrent, wide;
+  final bool isCurrent, wide, vertical;
+  final String finishLabel, errorLabel;
   final Map<String, RaftSlotStyle> slots;
 
   Widget box(
@@ -162,17 +246,23 @@ class _PublishedStep extends StatelessWidget {
     // ignore: raft_lints/avoid_render_index_assertion -- The generated Steps schema always emits all eleven slots; no async/server data participates.
     final icon = slots['icon']!;
     final marker = RaftRecipeBox(
+      key: ValueKey('raft-step-indicator-$index'),
       style: indicator,
       tokens: rt,
       alignment: Alignment.center,
-      child: switch (status) {
-        RaftStepStatus.finish || RaftStepStatus.error => RaftIcon(
-          status == RaftStepStatus.finish ? RaftGlyph.check : RaftGlyph.x,
-          size: icon.width!,
-          color: icon.color?.resolve(rt),
-        ),
-        _ => Text('$index'),
-      },
+      child:
+          step.icon ??
+          switch (status) {
+            RaftStepStatus.finish || RaftStepStatus.error => RaftIcon(
+              status == RaftStepStatus.finish ? RaftGlyph.check : RaftGlyph.x,
+              size: icon.width!,
+              color: icon.color?.resolve(rt),
+            ),
+            _ => Text(
+              '$index',
+              textScaler: RaftChrome.boundedScalerOf(context),
+            ),
+          },
     );
     final title = box(
       context,
@@ -189,7 +279,25 @@ class _PublishedStep extends StatelessWidget {
         (connector['display'] as CssKeyword).value != 'none';
     Widget line() => box(context, 'connector', width: double.infinity);
     Widget contents;
-    if (wide) {
+    if (vertical) {
+      contents = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          marker,
+          SizedBox(width: slots['main']?.columnGap),
+          Expanded(
+            child: box(
+              context,
+              'content',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [title, ?description],
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (wide) {
       // CSS's third grid column includes the connector and its inline margins.
       // ignore: raft_lints/avoid_render_index_assertion -- The generated Steps schema always emits all eleven slots; no async/server data participates.
       final columns = slots['item']!['grid-template-columns'] as CssSeq;
@@ -240,12 +348,28 @@ class _PublishedStep extends StatelessWidget {
         ],
       );
     }
+    final item = box(context, 'item', child: contents);
     return _semantic(
       context,
       step,
       status,
       isCurrent,
-      box(context, 'item', child: contents),
+      finishLabel,
+      errorLabel,
+      vertical && hasConnector
+          ? Stack(
+              children: [
+                item,
+                PositionedDirectional(
+                  start: connector.length('left'),
+                  top: connector.length('top'),
+                  bottom: connector.length('bottom'),
+                  width: connector.borderWidth.left,
+                  child: RaftRecipeBox(style: connector, tokens: rt),
+                ),
+              ],
+            )
+          : item,
     );
   }
 }
@@ -255,13 +379,15 @@ Widget _semantic(
   RaftStep step,
   RaftStepStatus status,
   bool isCurrent,
+  String finishLabel,
+  String errorLabel,
   Widget child,
 ) => Semantics(
   container: true,
   label: step.title,
   hint: switch (status) {
-    RaftStepStatus.finish => raftText(context, 'Completed'),
-    RaftStepStatus.error => raftText(context, 'Failed'),
+    RaftStepStatus.finish => raftText(context, finishLabel),
+    RaftStepStatus.error => raftText(context, errorLabel),
     _ => null,
   },
   // `aria-current="step"`.

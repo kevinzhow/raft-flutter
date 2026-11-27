@@ -101,6 +101,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQueryData.fromView(tester.view)
+              .copyWith(disableAnimations: true),
+          child: child!,
+        ),
         home: Scaffold(
           body: SingleChildScrollView(
             child: AgentMigrationSection(
@@ -315,6 +320,19 @@ void main() {
     );
     expect(
       find.widgetWithText(RaftButton, 'Try Migration Again'),
+      findsOneWidget,
+    );
+    final toggle = find.byKey(const ValueKey('agent-last-migration-toggle'));
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel('Copy migration ID fixture-ref'),
+      findsNothing,
+    );
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel('Copy migration ID fixture-ref'),
       findsOneWidget,
     );
     semantics.dispose();

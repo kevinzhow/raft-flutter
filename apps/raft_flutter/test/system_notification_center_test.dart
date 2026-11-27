@@ -28,6 +28,9 @@ class _Client extends RaftClient {
   @override
   Stream<RaftEvent> get events => stream.stream;
   @override
+  Future<dynamic> getForAccount(String path, {Map<String, dynamic>? query}) =>
+      get(path, query: query);
+  @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     calls.add(path);
     if (path == '/servers/s/machines') {

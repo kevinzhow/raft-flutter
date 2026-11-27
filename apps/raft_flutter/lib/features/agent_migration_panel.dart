@@ -2,6 +2,8 @@
 // MigrationReference}.tsx: the live progress of one migration and its
 // failure / attention content.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -9,6 +11,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/migration_error.dart';
 import 'agent_migration_hosted.dart';
 import 'agent_migration_presentation.dart';
+import 'agent_migration_retry.dart';
 
 extension MigrationTextResolve on MigrationText {
   /// The text in the current locale with its values filled in.
@@ -26,12 +29,16 @@ class MigrationProgressPanel extends StatelessWidget {
     required this.formatTimestamp,
     this.onCancel,
     this.review,
+    this.agentName = '',
+    this.currentUserId,
   });
   final Map<String, dynamic> migration;
   final List<Map<String, dynamic>> machines;
   final DateTime now;
   final String Function(String value) formatTimestamp;
   final VoidCallback? onCancel;
+  final String agentName;
+  final String? currentUserId;
 
   /// A move to the cloud waiting for the user's confirm: the review, whose own
   /// Cancel sits beside Confirm (so the panel shows none).
@@ -57,6 +64,27 @@ class MigrationProgressPanel extends StatelessWidget {
     final canceled = phase == 'canceled';
     final active = phase == 'active';
     final attention = migration['cancelNeedsAttention'] == true;
+    final endedFailure = !hosted && !attention && phase == 'failed';
+    final retry = isAgentMigrationRetry(migration)
+        ? MigrationRetryDetails(migration, agentName, currentUserId)
+        : null;
+    final migrationRef = '${migration['migrationRef']}';
+    final details = [
+      ...?retry?.entries(
+        context,
+        failed: phase == 'failed',
+        completed: completed,
+      ),
+      if (endedFailure)
+        RaftDescriptionEntry(
+          raftText(context, 'Migration ID'),
+          migrationRef,
+          detailsChild: MigrationReference(
+            migrationRef: migrationRef,
+            valueOnly: true,
+          ),
+        ),
+    ];
     final cancelRequested =
         state != null && state.startsWith('cancel_requested_');
     final target = MigrationText('{target}', {
@@ -78,17 +106,23 @@ class MigrationProgressPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            withTarget(migrationPanelHeader(migration)),
-            style: RaftTypography.heading(t, size: 14, line: 17.5),
-          ),
-          const SizedBox(height: RaftSpace.x3),
+          if (!endedFailure) ...[
+            Text(
+              withTarget(migrationPanelHeader(migration)),
+              style: RaftTypography.heading(t, size: 14, line: 17.5),
+            ),
+            const SizedBox(height: RaftSpace.x3),
+          ],
           MigrationSteps(
             labels: steps,
             current: completed
                 ? steps.length - 1
                 : migrationProgressStep(migration),
             status: status,
+            spinning:
+                active &&
+                review == null &&
+                status == MigrationStepStatus.process,
             semanticLabel: withTarget(
               hosted
                   ? 'Progress of the move to the cloud'
@@ -101,13 +135,33 @@ class MigrationProgressPanel extends StatelessWidget {
             RaftBanner(
               status: RaftBannerRecipeStatus.warning,
               size: RaftBannerRecipeSize.sm,
-              title: failed || cancelRequested
+              glyph: endedFailure ? RaftGlyph.triangleAlert : null,
+              live: !endedFailure,
+              title: !endedFailure && (failed || cancelRequested)
                   ? presentation.title.text(context)
                   : null,
-              descriptionBuilder: (style) => MigrationErrorContent(
-                presentation: presentation,
-                style: style,
-              ),
+              descriptionBuilder: (style) => endedFailure
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (presentation.placement case final placement?)
+                          Text(placement.text(context), style: style),
+                        Text(body.text(context), style: style),
+                        if (retry != null)
+                          Text(
+                            raftFormat(
+                              context,
+                              "This was {agent}'s one retry; a person needs to start the next migration.",
+                              {'agent': agentName},
+                            ),
+                            style: style,
+                          ),
+                      ],
+                    )
+                  : MigrationErrorContent(
+                      presentation: presentation,
+                      style: style,
+                    ),
             )
           else
             Semantics(
@@ -138,11 +192,23 @@ class MigrationProgressPanel extends StatelessWidget {
                 ),
               ),
             ),
-          // The reference is for support, so it only appears when something
-          // needs attention.
-          if (failed || attention) ...[
+          if (retry != null) ...[
             const SizedBox(height: RaftSpace.x3),
-            MigrationReference(migrationRef: '${migration['migrationRef']}'),
+            RaftCssText(
+              retry.note(context),
+              style: t.scale(
+                RaftTypeScale.callout,
+                color: t.ui.foregroundMuted,
+              ),
+            ),
+          ],
+          if (details.isNotEmpty) ...[
+            const SizedBox(height: RaftSpace.x3),
+            RaftDescriptionList(entries: details),
+          ],
+          if (!endedFailure && (failed || attention)) ...[
+            const SizedBox(height: RaftSpace.x3),
+            MigrationReference(migrationRef: migrationRef),
           ],
           if (review != null) ...[
             const SizedBox(height: RaftSpace.x3),
@@ -171,7 +237,7 @@ class MigrationProgressPanel extends StatelessWidget {
   }
 }
 
-enum MigrationStepStatus { wait, process, finish, error }
+typedef MigrationStepStatus = RaftStepStatus;
 
 /// raft-ui `Steps` (size sm) as the Web progress panel uses it: one row when
 /// every label fits beside the others, stacked otherwise. [current] is the
@@ -184,6 +250,7 @@ class MigrationSteps extends StatelessWidget {
     required this.status,
     required this.semanticLabel,
     this.labels = migrationProgressSteps,
+    this.spinning = false,
   });
 
   /// The step names (English source): the computer move's or the cloud's.
@@ -191,182 +258,26 @@ class MigrationSteps extends StatelessWidget {
   final int current;
   final MigrationStepStatus status;
   final String semanticLabel;
-
-  static const _indicator = 20.0, _gap = 8.0, _connectorMin = 16.0;
-  static const _connectorGap = 8.0;
-
-  MigrationStepStatus _statusOf(int index) => index < current
-      ? MigrationStepStatus.finish
-      : index == current
-      ? status
-      : MigrationStepStatus.wait;
+  final bool spinning;
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final labels = [for (final s in this.labels) raftText(context, s)];
-    final style = RaftTypography.body(
-      t,
-      size: 14,
-      line: 20,
-      weight: FontWeight.w500,
-    );
-    final scaler = MediaQuery.textScalerOf(context);
-    return Semantics(
-      container: true,
-      label: semanticLabel,
-      child: LayoutBuilder(
-        builder: (context, box) {
-          var needed =
-              (labels.length - 1) * (_connectorMin + 2 * _connectorGap);
-          for (final label in labels) {
-            final painter = TextPainter(
-              text: TextSpan(text: label, style: style),
-              textDirection: Directionality.of(context),
-              textScaler: scaler,
-            )..layout();
-            needed += _indicator + _gap + painter.width;
-            painter.dispose();
-          }
-          final row = needed <= box.maxWidth;
-          Widget step(int i) => _Step(
-            index: i,
-            label: labels[i],
-            status: _statusOf(i),
-            style: style,
-            doneLabel: raftText(context, 'done'),
-            failedLabel: raftText(context, 'failed'),
-          );
-          if (!row) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var i = 0; i < labels.length; i++) ...[
-                  if (i > 0) const SizedBox(height: RaftSpace.x2),
-                  step(i),
-                ],
-              ],
-            );
-          }
-          return Row(
-            children: [
-              for (var i = 0; i < labels.length; i++) ...[
-                if (i > 0)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: _connectorGap,
-                      ),
-                      child: Container(
-                        height: t.border,
-                        color: _statusOf(i - 1) == MigrationStepStatus.finish
-                            ? t.accent
-                            : t.line,
-                      ),
-                    ),
-                  ),
-                step(i),
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _Step extends StatelessWidget {
-  const _Step({
-    required this.index,
-    required this.label,
-    required this.status,
-    required this.style,
-    required this.doneLabel,
-    required this.failedLabel,
-  });
-  final int index;
-  final String label, doneLabel, failedLabel;
-  final MigrationStepStatus status;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final fill = switch (status) {
-      MigrationStepStatus.finish => t.colors['success'],
-      MigrationStepStatus.error => t.colors['danger'],
-      MigrationStepStatus.process => t.accent,
-      MigrationStepStatus.wait => null,
-    };
-    final mark = switch (status) {
-      MigrationStepStatus.finish => const RaftIcon(RaftGlyph.check, size: 12),
-      MigrationStepStatus.error => const RaftIcon(RaftGlyph.x, size: 12),
-      _ => null,
-    };
-    final suffix = switch (status) {
-      MigrationStepStatus.finish => doneLabel,
-      MigrationStepStatus.error => failedLabel,
-      _ => null,
-    };
-    return Semantics(
-      label: suffix == null ? label : '$label, $suffix',
-      excludeSemantics: true,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: MigrationSteps._indicator,
-            height: MigrationSteps._indicator,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: fill,
-              border: fill == null ? Border.all(color: t.line) : null,
-            ),
-            child: mark == null
-                ? Text(
-                    '${index + 1}',
-                    // The digit fills a fixed-size indicator: it grows with
-                    // the text size only up to the chrome bound.
-                    textScaler: RaftChrome.boundedScalerOf(context),
-                    style:
-                        RaftTypography.body(
-                          t,
-                          size: 12,
-                          // The line box is the font size so it always fits the 20px circle
-                          // (a taller one is clamped by the circle and slides down).
-                          line: 12,
-                          weight: FontWeight.w500,
-                          color: status == MigrationStepStatus.process
-                              ? t.canvas
-                              : t.muted,
-                        ).copyWith(
-                          // CSS half-leading, as the Web 20px line box does.
-                          leadingDistribution: TextLeadingDistribution.even,
-                        ),
-                  )
-                : IconTheme(
-                    data: IconThemeData(color: t.canvas),
-                    child: mark,
-                  ),
-          ),
-          const SizedBox(width: MigrationSteps._gap),
-          Flexible(
-            child: Text(
-              label,
-              style: style.copyWith(
-                color: status == MigrationStepStatus.wait
-                    ? t.muted
-                    : status == MigrationStepStatus.error
-                    ? t.colors['danger-strong']
-                    : t.strong,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => RaftSteps(
+    current: current,
+    status: status,
+    semanticLabel: semanticLabel,
+    fitLabels: true,
+    finishLabel: 'done',
+    errorLabel: 'failed',
+    steps: [
+      for (final (index, label) in labels.indexed)
+        RaftStep(
+          title: label,
+          icon: spinning && index == current
+              ? const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.xs)
+              : null,
+        ),
+    ],
+  );
 }
 
 /// [base] (the banner's inherited text style) in bold.
@@ -507,23 +418,39 @@ class MigrationReference extends StatefulWidget {
   const MigrationReference({
     super.key,
     required this.migrationRef,
-    this.dialog = false,
+    this.valueOnly = false,
   });
   final String migrationRef;
-  final bool dialog;
+  final bool valueOnly;
   @override
   State<MigrationReference> createState() => _MigrationReferenceState();
 }
 
 class _MigrationReferenceState extends State<MigrationReference> {
   bool copied = false;
+  Timer? resetCopyStatus;
 
   Future<void> copy() async {
-    await Clipboard.setData(ClipboardData(text: widget.migrationRef));
-    if (!mounted) return;
+    final reference = widget.migrationRef;
+    try {
+      await Clipboard.setData(ClipboardData(text: reference));
+    } on PlatformException {
+      if (mounted && copied) setState(() => copied = false);
+      return;
+    }
+    if (!mounted || reference != widget.migrationRef) return;
     setState(() => copied = true);
-    await Future<void>.delayed(const Duration(seconds: 2));
-    if (mounted) setState(() => copied = false);
+    resetCopyStatus?.cancel();
+    resetCopyStatus = Timer(
+      const Duration(seconds: 2),
+      () => setState(() => copied = false),
+    );
+  }
+
+  @override
+  void dispose() {
+    resetCopyStatus?.cancel();
+    super.dispose();
   }
 
   @override
@@ -538,49 +465,36 @@ class _MigrationReferenceState extends State<MigrationReference> {
           });
     return Row(
       children: [
-        Text(
-          raftText(context, 'Migration ID'),
-          style: RaftTypography.body(
-            t,
-            size: 11,
-            line: 16,
-            weight: FontWeight.w700,
-            color: t.muted,
+        if (!widget.valueOnly) ...[
+          Text(
+            raftText(context, 'Migration ID'),
+            style: RaftTypography.body(
+              t,
+              size: 11,
+              line: 16,
+              weight: FontWeight.w700,
+              color: t.muted,
+            ),
           ),
-        ),
-        const SizedBox(width: RaftSpace.x1_5),
+          const SizedBox(width: RaftSpace.x1_5),
+        ],
         Flexible(
           child: RaftSelectionArea(
             child: Text(
               widget.migrationRef,
-              style: RaftTypography.mono(
-                t,
-                size: 11,
-                line: 16,
-                color: widget.dialog ? t.ink : null,
-              ),
+              style: RaftTypography.mono(t, size: 11, line: 16, color: t.ink),
             ),
           ),
         ),
         const SizedBox(width: RaftSpace.x1_5),
-        if (widget.dialog)
-          RaftButton(
-            glyph: glyph,
-            uiVariant: RaftButtonVariant.ghost,
-            uiSize: RaftButtonSize.iconMd,
-            tooltip: raftText(context, label),
-            semanticLabel: semanticLabel,
-            onPressed: copy,
-          )
-        else
-          RaftIconButton(
-            glyph: glyph,
-            visualSize: 20,
-            glyphSize: 12,
-            tooltip: label,
-            semanticLabel: semanticLabel,
-            onPressed: copy,
-          ),
+        RaftButton(
+          glyph: glyph,
+          uiVariant: RaftButtonVariant.ghost,
+          uiSize: RaftButtonSize.iconMd,
+          tooltip: raftText(context, label),
+          semanticLabel: semanticLabel,
+          onPressed: copy,
+        ),
       ],
     );
   }

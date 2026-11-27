@@ -26,6 +26,7 @@ class ForwardAttempt {
   List<String> get destinations => payload['destinationChannelIds'];
   final Map<String, String> outcomes = {};
   final Map<String, String> errors = {};
+  final Map<String, RaftMessage> deliveries = {};
   void apply(dynamic response) {
     if (response is! Map || response['results'] is! List) {
       throw const RaftApiException(
@@ -53,6 +54,7 @@ class ForwardAttempt {
           (row['message']['id'] as String).isNotEmpty) {
         outcomes[id] = 'success';
         errors.remove(id);
+        deliveries[id] = RaftMessage(Map<String, dynamic>.from(row['message']));
       } else if (row['status'] == 'success' && outcomes[id] != 'success') {
         outcomes[id] = 'unknown';
         errors[id] = 'No conclusive receipt. Retry the same request.';

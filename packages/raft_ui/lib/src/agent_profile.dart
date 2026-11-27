@@ -8,9 +8,12 @@ import 'card.dart' show RaftCard;
 import 'follow_newest_list.dart' show RaftFollowNewestList;
 import 'hover_region.dart';
 import 'css_pixel_snap.dart';
-import 'error_presentation.dart';
+import 'banner.dart';
+import 'dialog_card.dart' show RaftRecipeButton;
+import 'error_presentation.dart' show RaftLoadError;
 
 import 'dart:math' as math;
+import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
 
@@ -22,6 +25,7 @@ import 'system_inset.dart';
 import 'avatar_content.dart';
 import 'human_avatar_recipe.dart' show isHumanAvatarUrl;
 import 'icons.dart';
+import 'interaction.dart';
 import 'profile_link.dart';
 import 'inline_badge_editor.dart';
 import 'localization.dart';
@@ -2046,9 +2050,18 @@ class RaftReminderListView extends StatelessWidget {
   final bool loading;
   final String? error;
   final VoidCallback? onRetry;
-  static const _msgRefLineMinHeight = 24.0;
   @override
   Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      role: SemanticsRole.region,
+      label: raftText(context, 'Reminders'),
+      explicitChildNodes: true,
+      child: _body(context),
+    );
+  }
+
+  Widget _body(BuildContext context) {
     final t = RaftTokens.of(context);
     final loadingStyle = raftCssText.merge(
       t.scale(
@@ -2104,27 +2117,33 @@ class RaftReminderListView extends StatelessWidget {
                 style: loadingStyle,
               ),
             ),
-          if (error != null)
-            // AgentRemindersSection: `<Banner intent="warning" density="sm"
-            // className="font-bold">` with the outline Retry below.
-            RaftErrorBanner(
-              error!,
-              small: true,
-              bold: true,
-              onRetry: onRetry,
-              retryLabel: 'Retry',
+          if (error case final message?)
+            RaftBanner(
+              status: RaftBannerRecipeStatus.warning,
+              size: RaftBannerRecipeSize.sm,
+              description: message,
+              action: onRetry == null
+                  ? null
+                  : RaftRecipeButton(
+                      label: raftText(context, 'Retry'),
+                      glyph: RaftGlyph.refreshCw,
+                      glyphSize: 16,
+                      variant: RaftButtonRecipeVariant.outline,
+                      size: RaftButtonRecipeSize.md,
+                      onPressed: onRetry,
+                    ),
             )
           else
             for (var i = 0; i < reminders.length; i++) ...[
               if (i > 0) const SizedBox(height: 12),
-              _card(t, reminders[i]),
+              _card(context, t, reminders[i]),
             ],
         ],
       ),
     );
   }
 
-  Widget _card(RaftTokens t, RaftReminderItem r) {
+  Widget _card(BuildContext context, RaftTokens t, RaftReminderItem r) {
     return RaftCard.item(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2187,14 +2206,9 @@ class RaftReminderListView extends StatelessWidget {
           if (r.msgRef != null && r.msgRef!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: _msgRefLineMinHeight,
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: _msgRef(t, r),
-                ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: _msgRef(context, t, r),
               ),
             ),
         ],
@@ -2203,12 +2217,14 @@ class RaftReminderListView extends StatelessWidget {
   }
 
   /// `inline-flex max-w-full items-center gap-1 truncate` reminder link chip.
-  Widget _msgRef(RaftTokens t, RaftReminderItem r) {
+  Widget _msgRef(BuildContext context, RaftTokens t, RaftReminderItem r) {
     final link = r.onOpenMessage != null;
     final stickerRadius = t.size('radius.sticker', fallback: 4);
     final chip = Container(
       key: const ValueKey('reminder-msg-ref'),
-      constraints: BoxConstraints(minHeight: t.desktop ? 20 : 22),
+      constraints: BoxConstraints(
+        minHeight: RaftInteraction.of(context).touch ? 22 : 20,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: link ? t.colors['info-soft'] : t.colors['inactive-soft'],
@@ -2217,11 +2233,7 @@ class RaftReminderListView extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          RaftIcon(
-            RaftGlyph.link2,
-            size: 14,
-            color: link ? t.ui.foreground : t.ui.foregroundMuted,
-          ),
+          RaftIcon(RaftGlyph.link, size: 14, color: t.ui.foregroundMuted),
           const SizedBox(width: 4),
           Flexible(
             child: RaftCssText(

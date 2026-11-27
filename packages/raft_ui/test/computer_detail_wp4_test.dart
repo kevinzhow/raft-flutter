@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'dart:ui' show Tristate;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -32,6 +35,7 @@ RaftComputerDetailData _data({
   RaftComputerUpgradeOutcome requestOutcome = RaftComputerUpgradeOutcome.none,
   RaftComputerVersionKind versionKind = RaftComputerVersionKind.current,
   List<RaftComputerAgent> agents = const [],
+  Set<String> highlightedAgentIds = const {},
 }) => RaftComputerDetailData(
   id: 'c1',
   name: 'Studio',
@@ -48,11 +52,13 @@ RaftComputerDetailData _data({
   service: service,
   requestOutcome: requestOutcome,
   agents: agents,
+  highlightedAgentIds: highlightedAgentIds,
 );
 
 RaftComputerDetailActions _actions({
   Future<List<RaftComputerWorkspace>> Function()? scan,
   Future<bool> Function(List<String>)? changeModel,
+  ValueChanged<String>? openAgent,
 }) => RaftComputerDetailActions(
   rename: (_) async {},
   describe: (_) async {},
@@ -62,6 +68,7 @@ RaftComputerDetailActions _actions({
   deleteComputer: () async {},
   bulk: (_, _) async => 0,
   changeModel: changeModel,
+  openAgent: openAgent,
 );
 
 Future<void> _mount(
@@ -253,6 +260,33 @@ void main() {
         activityText: '',
       ),
     ];
+
+    testWidgets('MachineAgentRow opens a located agent without selecting it', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      final opened = <String>[];
+      await _mount(
+        tester,
+        _data(agents: agents(), highlightedAgentIds: {'a1'}),
+        _actions(openAgent: opened.add),
+      );
+      final row = find.byKey(const ValueKey('computer-agent-a1'));
+      expect(
+        tester.getSemantics(row).getSemanticsData().flagsCollection.isSelected,
+        Tristate.isFalse,
+      );
+      await tester.tap(row);
+      expect(opened, ['a1']);
+      await tester.tap(find.byKey(const ValueKey('computer-agents-select')));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Select Ada'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Select Ada'));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Deselect Ada'), findsOneWidget);
+      expect(opened, ['a1']);
+      semantics.dispose();
+    });
 
     testWidgets('rows are named buttons and toggle with Select/Deselect', (
       tester,

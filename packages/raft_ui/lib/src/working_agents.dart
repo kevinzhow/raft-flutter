@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,9 +10,10 @@ import 'design_primitives.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
 import 'popover_surface.dart';
+import 'raft/ui_tokens.dart';
 import 'text_scaling.dart' show RaftChrome;
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftRadius;
+import 'tokens/tokens.dart' show RaftRadius, RaftTypeScale;
 
 /// Raft Design System "Working agents" (decision 0006): working agents are
 /// shown where they appear. These parts are presentation only; the caller owns
@@ -490,8 +492,11 @@ class RaftWorkingNow extends StatelessWidget {
           type: MaterialType.transparency,
           child: DefaultTextStyle.merge(
             style: TextStyle(color: t.strong),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
+            child: Semantics(
+              container: true,
+              explicitChildNodes: true,
+              role: SemanticsRole.dialog,
+              label: raftText(context, 'Working now'),
               child: Column(
                 key: const Key('working-now'),
                 mainAxisSize: MainAxisSize.min,
@@ -499,35 +504,44 @@ class RaftWorkingNow extends StatelessWidget {
                 children: [
                   Semantics(
                     header: true,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 44),
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: t.ui.lineSeam),
+                        ),
+                      ),
                       child: Text(
                         raftText(context, 'Working now'),
-                        style: RaftTypography.heading(
-                          t,
-                          size: 14,
-                          line: 20,
-                          weight: FontWeight.w700,
-                          color: t.strong,
-                        ),
+                        style: t.scale(RaftTypeScale.headline, color: t.strong),
                       ),
                     ),
                   ),
                   Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          for (final agent in agents)
-                            RaftWorkingNowRow(
-                              key: ValueKey('working-now-row-${agent.id}'),
-                              agent: agent,
-                              onPressed: onOpenAgent == null
-                                  ? null
-                                  : () => onOpenAgent!(agent.id),
-                            ),
-                        ],
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: math.min(
+                          420,
+                          MediaQuery.sizeOf(context).height * .6,
+                        ),
+                      ),
+                      child: ListView.builder(
+                        primary: false,
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        itemCount: agents.length,
+                        itemBuilder: (context, index) {
+                          final agent = agents[index];
+                          return RaftWorkingNowRow(
+                            key: ValueKey('working-now-row-${agent.id}'),
+                            agent: agent,
+                            onPressed: onOpenAgent == null
+                                ? null
+                                : () => onOpenAgent!(agent.id),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -555,18 +569,13 @@ class RaftWorkingNowRow extends StatelessWidget {
       onPressed: onPressed,
       semanticLabel: '${agent.name}, ${agent.text}',
       builder: (context, state) => Container(
-        constraints: const BoxConstraints(minHeight: 44),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: state.hovered || state.pressed
-              ? t.colors['fill-muted']
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-          border: state.focusVisible ? Border.all(color: t.strong) : null,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        color: state.hovered || state.focusVisible || state.pressed
+            ? t.colors['brand-soft']
+            : null,
         child: ExcludeSemantics(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               RaftMountedAvatarFrame(
                 name: agent.name,
@@ -579,7 +588,7 @@ class RaftWorkingNowRow extends StatelessWidget {
                 ),
                 child: agent.avatar,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,10 +598,8 @@ class RaftWorkingNowRow extends StatelessWidget {
                       agent.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: RaftTypography.heading(
-                        t,
-                        size: 14,
-                        line: 20,
+                      style: t.scale(
+                        RaftTypeScale.callout,
                         weight: FontWeight.w700,
                         color: t.strong,
                       ),
@@ -602,11 +609,8 @@ class RaftWorkingNowRow extends StatelessWidget {
                       key: const Key('working-now-text'),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: RaftTypography.heading(
-                        t,
-                        size: 12,
-                        line: 16,
-                        weight: FontWeight.w500,
+                      style: t.scale(
+                        RaftTypeScale.footnote,
                         color: t.colors['foreground-muted'],
                       ),
                     ),

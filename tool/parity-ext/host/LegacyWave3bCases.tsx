@@ -92,6 +92,13 @@ function parityExtWave3bPrime(surface: string) {
   }) as typeof parityExtWave3bApi.get;
 }
 
+function freezeLocatedAgentAtStart(root: HTMLDivElement | null) {
+  const row = root?.querySelector<HTMLElement>("[data-located]");
+  if (!row) return;
+  row.style.setProperty("--located-fill", "var(--located-tint, var(--info-soft))");
+  row.style.animation = "none";
+}
+
 function ParityExtWave3bHost({
   cid,
   surface,
@@ -127,17 +134,18 @@ function ParityExtWave3bHost({
         <ParityExtWave3bEnvVarsSection agent={fx.agent as never} canManageAgent={false} />
       </div>
     );
-  } else if (surface === "agent-reminders" || surface === "agent-reminders-empty") {
+  } else if (surface.startsWith("agent-reminders")) {
     body = (
       <div
         data-visual-case={cid}
         className="flex flex-col bg-layer-canvas"
-        style={{ width: 520, height: 420 }}
+        style={{ width: phone ? 390 : 520, height: 420 }}
       >
         <AgentRemindersSection
-          reminders={surface === "agent-reminders-empty" ? [] : (fx.reminders as never)}
+          reminders={surface === "agent-reminders" ? (fx.reminders as never) : []}
           loading={false}
-          error={null}
+          error={surface === "agent-reminders-error" ? "Failed to load reminders" : null}
+          onRetry={surface === "agent-reminders-error" ? () => undefined : undefined}
           variant="tab"
         />
       </div>
@@ -152,7 +160,7 @@ function ParityExtWave3bHost({
         <ParityExtWave3bWorkspacesSection machineId={fx.machine.id} canManageMachines={true} />
       </div>
     );
-  } else if (surface === "computer-agent-rows") {
+  } else if (surface === "computer-agent-rows" || surface === "computer-agent-located") {
     const compAgents = fx.computerAgents.map((ca) => {
       const ds = (activities as Record<string, { activity?: string; activityDetail?: string }>)[ca.id];
       return {
@@ -169,6 +177,7 @@ function ParityExtWave3bHost({
     body = (
       <div
         data-visual-case={cid}
+        ref={surface === "computer-agent-located" ? freezeLocatedAgentAtStart : undefined}
         className="bg-layer-canvas p-5"
         style={{ width: phone ? 390 : 640 }}
       >
@@ -183,6 +192,7 @@ function ParityExtWave3bHost({
                 selectionMode={false}
                 selected={false}
                 canManageMachines={false}
+                located={surface === "computer-agent-located" && agent.id === "ca-1"}
                 onToggleSelection={() => undefined}
                 onOpenAgent={() => undefined}
               />

@@ -235,7 +235,7 @@ SECTIONS = {
     'description': ('div.px-5.py-4:has(> div > button[aria-label="Edit computer description"]), '
                     'div.px-5.py-4:has(textarea)'),
     'info': 'div.px-5.py-4:has(> div.space-y-3)',
-    'agents': 'div.space-y-6 > div:has(> div.flex-wrap.gap-y-2)',
+    'agents': 'div:has(> div:has-text("Agents on this computer")):has(> div > [data-slot="list-row-group"])',
     'workspaces': 'div.mt-2:has(svg.lucide-folder-open)',
     'service': '[data-testid="computer-service-actions"]',
     'recovery-guide': '[data-testid="computer-recovery-guide"]',

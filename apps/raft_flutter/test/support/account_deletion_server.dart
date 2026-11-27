@@ -150,7 +150,8 @@ class AccountDeletionServerClient extends RaftClient {
   }) => answer(method, path, data, null);
 
   @override
-  Future<dynamic> getForAccount(String path) => answer('GET', path, null, null);
+  Future<dynamic> getForAccount(String path, {Map<String, dynamic>? query}) =>
+      answer('GET', path, null, null);
 
   @override
   Future<dynamic> getForServer(

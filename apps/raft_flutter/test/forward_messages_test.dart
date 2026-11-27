@@ -71,6 +71,13 @@ class _Transport implements HttpClientAdapter {
             },
         ],
       };
+    } else if (o.path == '/messages/context/forward-c1') {
+      value = {
+        'targetMessageId': 'forward-c1',
+        'messages': [
+          {'id': 'forward-c1', 'channelId': 'c1', 'messageType': 'chat'},
+        ],
+      };
     } else {
       value = {'channels': []};
     }
@@ -145,7 +152,7 @@ void main() {
     expect(() => a.apply({}), throwsA(isA<RaftApiException>()));
   });
   testWidgets(
-    'partial batch stays visible and retry reuses request and exact destinations',
+    'ForwardToastProvider keeps a bottom notice while the partial batch retries',
     (tester) async {
       final t = _Transport();
       final client = (await tester.runAsync(() async {
@@ -159,24 +166,28 @@ void main() {
       }))!;
       client.selectServer('s1');
       final w = WorkspaceController(client)
-        ..server = RaftRecord({'id': 's1', 'role': 'owner'});
+        ..server = RaftRecord({'id': 's1', 'slug': 'demo', 'role': 'owner'});
       addTearDown(w.dispose);
+      late BuildContext workspaceContext;
       await tester.pumpWidget(
         MaterialApp(
           builder: (context, child) => RaftToastHost(child: child!),
           theme: raftTheme(),
           home: Scaffold(
             body: Builder(
-              builder: (context) => TextButton(
-                onPressed: () => forwardMessages(context, w, [
-                  RaftMessage({
-                    'id': 'm1',
-                    'messageType': 'chat',
-                    'channelId': 'source',
-                  }),
-                ]),
-                child: const Text('Open'),
-              ),
+              builder: (context) {
+                workspaceContext = context;
+                return TextButton(
+                  onPressed: () => forwardMessages(context, w, [
+                    RaftMessage({
+                      'id': 'm1',
+                      'messageType': 'chat',
+                      'channelId': 'source',
+                    }),
+                  ]),
+                  child: const Text('Open'),
+                );
+              },
             ),
           ),
         ),
@@ -208,6 +219,7 @@ void main() {
       await tester.pump();
       expect(find.text('2 selected'), findsOneWidget);
       expect(send().onPressed, isNotNull);
+      showRaftToast(workspaceContext, 'Bottom notice');
       await tester.tap(find.byKey(const Key('composer-submit')));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(milliseconds: 500));
@@ -219,9 +231,17 @@ void main() {
         ),
         findsWidgets,
       );
-      // Web forwardToast.error: the same sentence also shows as a toast,
-      // without a close (v1.24 forwardToast.ts: hasClose only when dismissible).
-      expect(find.byType(RaftToast), findsOneWidget);
+      expect(find.byType(RaftToast), findsNWidgets(2));
+      final bottomNotice = find.ancestor(
+        of: find.text('Bottom notice'),
+        matching: find.byType(RaftToast),
+      );
+      final forwardNotice = find.ancestor(
+        of: find.textContaining('1 still needs attention'),
+        matching: find.byType(RaftToast),
+      );
+      expect(tester.getTopLeft(forwardNotice).dy, lessThan(100));
+      expect(tester.getTopLeft(bottomNotice).dy, greaterThan(100));
       expect(find.byKey(const Key('toast-close')), findsNothing);
       await tester.tap(find.byKey(const Key('composer-submit')));
       await tester.pump(const Duration(milliseconds: 500));
@@ -229,7 +249,31 @@ void main() {
       expect(t.writes.length, 2);
       expect(t.writes[1], t.writes[0]);
       expect(find.byType(ForwardComposerPage), findsNothing);
+      expect(find.text('Forwarded to 2 destinations'), findsOneWidget);
       expect(find.text('Open'), findsOneWidget);
+
+      w.channels = [
+        RaftChannel({'id': 'c1', 'name': 'c1', 'joined': true}),
+      ];
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('c1'));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('composer-submit')));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Forwarded to #c1.'), findsOneWidget);
+      final action = find.text('View in chat');
+      final toast = find.byKey(const ValueKey('raft-toast-top'));
+      expect(
+        tester.getTopRight(toast).dx - tester.getTopRight(action).dx,
+        closeTo(16, 1),
+      );
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+      expect(w.channel?.id, 'c1');
+      expect(w.location.messageId, 'forward-c1');
+      expect(w.messageDomain.state.highlightedMessageId, 'forward-c1');
     },
   );
   testWidgets('a newer search replaces the results of the previous one', (

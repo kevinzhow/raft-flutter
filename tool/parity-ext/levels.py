@@ -101,6 +101,7 @@ EXT_AREA_LEVEL = {
     'legacy-wave3b': COMPONENT,
     'legacy-wave4a': COMPONENT,
     'legacy-wave4b': COMPONENT,
+    'gaps2': COMPONENT,
     # the coverage families added by this audit name their level in the id: components.<area>.<level>.<...>
     'frame': FRAME, 'framework': FRAME, 'pages': PAGE, 'states': FRAME,
 }

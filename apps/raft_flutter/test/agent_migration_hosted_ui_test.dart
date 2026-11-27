@@ -176,6 +176,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQueryData.fromView(tester.view)
+              .copyWith(disableAnimations: true),
+          child: child!,
+        ),
         home: Scaffold(
           body: SingleChildScrollView(
             child: AgentMigrationSection(

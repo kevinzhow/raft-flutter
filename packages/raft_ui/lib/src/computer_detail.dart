@@ -1823,7 +1823,8 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       final item = RaftListRow(
         key: ValueKey('computer-agent-${a.id}'),
         variant: RaftListRowVariant.standard,
-        selected: (selectionMode && manage && isSelected) || located,
+        selected: selectionMode && manage && isSelected,
+        located: !selectionMode && located,
         onPressed: selectionMode
             ? () => setState(() {
                 if (!selected.remove(a.id)) selected.add(a.id);

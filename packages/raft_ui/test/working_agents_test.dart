@@ -103,6 +103,11 @@ void main() {
           lessThanOrEqualTo(300),
         );
         final panel = t.getRect(find.byType(RaftWorkingNow));
+        final firstRow = t.getRect(
+          find.byKey(const ValueKey('working-now-row-bugen')),
+        );
+        expect(firstRow.top - panel.top, 50);
+        expect(t.getTopLeft(find.text('Working now')).dx - panel.left, 16);
         expect(panel.width, 300);
         final summary = t.getRect(
           find.byKey(const Key('working-agents-summary')),

@@ -20,6 +20,7 @@ import 'forward_conversation_targets.dart';
 import 'forward_warnings.dart';
 import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
+import 'task_content_slot.dart' show openTaskFromList;
 
 /// One destination: a local channel/DM (`localTarget`) or a search row.
 class _Destination {
@@ -392,6 +393,93 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
     });
   }
 
+  VoidCallback? _deliveryOpener(
+    _Destination? destination,
+    RaftMessage message,
+  ) {
+    final server = message.json['serverId'];
+    if (server is String && server.isNotEmpty && server != w.server?.id) {
+      return null;
+    }
+    final channel = destination?.channelId;
+    if (channel == null) return null;
+    final controller = w;
+    final scope = authority;
+    final wide = !RaftAdaptiveWorkspace.compactOf(context);
+    bool live() => workspaceAuthority(controller) == scope;
+    return switch (message.json['conversationContext']) {
+      {
+        'channelType': 'thread',
+        'parentChannelId': final String parent,
+        'parentMessageId': final String parentMessage,
+      } =>
+        () {
+          if (!live()) return;
+          unawaited(
+            controller.openThreadIdentity(
+              parentChannelId: parent,
+              parentMessageId: parentMessage,
+              focusedMessageId: message.id,
+              initialThreadChannelId: channel,
+            ),
+          );
+        },
+      {
+        'channelType': 'task',
+        'parentChannelId': final String parent,
+        'taskId': final String task,
+      } =>
+        () {
+          if (!live()) return;
+          openTaskFromList(
+            controller,
+            {'kind': 'task', 'taskId': task, 'parentChannelId': parent},
+            wide: wide,
+            conversationId: channel,
+          );
+        },
+      {'channelType': 'thread' || 'task'} => null,
+      _
+          when destination?.search?['type'] == 'thread' ||
+              destination?.search?['type'] == 'task' =>
+        null,
+      _ => () {
+        if (live()) unawaited(controller.jumpToMessage(channel, message.id));
+      },
+    };
+  }
+
+  void _showSuccess(ForwardAttempt receipt) {
+    final deliveries = receipt.deliveries;
+    final single = deliveries.length == 1 ? deliveries.entries.single : null;
+    final destination = single == null
+        ? null
+        : selected.values
+              .where((item) => item.channelId == single.key)
+              .firstOrNull;
+    final target =
+        destination?.channel?.type == 'dm' ||
+            destination?.search?['type'] == 'user' ||
+            destination?.search?['type'] == 'agent'
+        ? raftText(context, 'DM')
+        : destination?.label;
+    final open = single == null
+        ? null
+        : _deliveryOpener(destination, single.value);
+    showRaftToast(
+      context,
+      target == null
+          ? raftFormat(context, 'Forwarded to {count} destinations', {
+              'count': deliveries.length,
+            })
+          : raftFormat(context, 'Forwarded to {target}.', {'target': target}),
+      tone: RaftToastRecipeTone.success,
+      actionLabel: open == null ? null : 'View in chat',
+      onAction: open,
+      placement: RaftToastPlacement.top,
+    );
+  }
+
   /// Opens a DM for search rows that need it, then forwards.
   Future<bool> send() async {
     if (!current || locked || selected.isEmpty || joinTargets.isNotEmpty) {
@@ -441,6 +529,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
       if (!current || !mounted) return false;
       attempt!.apply(response);
       if (attempt!.completed) {
+        _showSuccess(attempt!);
         Navigator.of(context).pop(true);
         return true;
       }
@@ -449,7 +538,41 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
       const retry =
           'Some destinations failed. Retry the remaining destinations.';
       setState(() => errorNotice.raise(retry));
-      showRaftToast(context, retry);
+      final delivered = attempt!.deliveries.length;
+      final failed = attempt!.destinations.length - delivered;
+      final sent = raftFormat(
+        context,
+        delivered == 1
+            ? 'Forwarded to {count} destination'
+            : 'Forwarded to {count} destinations',
+        {'count': delivered},
+      );
+      final remaining = raftFormat(
+        context,
+        failed == 1
+            ? '{count} still needs attention. Try the remaining destinations.'
+            : '{count} still need attention. Try the remaining destinations.',
+        {'count': failed},
+      );
+      showRaftToast(
+        context,
+        delivered == 0
+            ? raftFormat(
+                context,
+                failed == 1
+                    ? "Couldn't forward to {count} destination. Review the selection and try again."
+                    : "Couldn't forward to {count} destinations. Review the selection and try again.",
+                {'count': failed},
+              )
+            : raftFormat(context, '{sent}. {remaining}', {
+                'sent': sent,
+                'remaining': remaining,
+              }),
+        tone: delivered == 0
+            ? RaftToastRecipeTone.error
+            : RaftToastRecipeTone.warning,
+        placement: RaftToastPlacement.top,
+      );
     } catch (e) {
       if (current) {
         // Web ForwardComposerDialog: `forwardToast.error(message)` plus the
@@ -459,7 +582,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
             : forwardRequestFailureMessage(e);
         logUserError(e, where: 'forward messages');
         setState(() => errorNotice.raise(message));
-        showRaftToast(context, message);
+        showRaftToast(context, message, placement: RaftToastPlacement.top);
       }
     } finally {
       if (current) setState(() => busy = false);

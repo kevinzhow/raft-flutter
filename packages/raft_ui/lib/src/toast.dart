@@ -48,6 +48,7 @@ class RaftToast extends StatelessWidget {
     this.onClose,
     this.actionLabel,
     this.onAction,
+    this.placement = RaftToastPlacement.bottom,
   }) : assert(description == null || descriptionSpan == null);
   final String title;
 
@@ -55,6 +56,7 @@ class RaftToast extends StatelessWidget {
   /// action (the follower removal toast's "Undo").
   final String? actionLabel;
   final VoidCallback? onAction;
+  final RaftToastPlacement placement;
 
   /// `ToastDescription` under the title (stacked in the same body column).
   final String? description;
@@ -83,6 +85,7 @@ class RaftToast extends StatelessWidget {
     final hasClose = onClose != null;
     final hasAction = actionLabel != null;
     final hasDescription = description != null || descriptionSpan != null;
+    final top = placement == RaftToastPlacement.top;
     final s = RaftToastRecipe.resolve(
       layout: RaftToastRecipeLayout.inline,
       states: t.recipeStates(
@@ -181,9 +184,11 @@ class RaftToast extends StatelessWidget {
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(child: copy),
+        Flexible(fit: top ? FlexFit.tight : FlexFit.loose, child: copy),
         if (close != null || action != null) ...[
-          SizedBox(width: s.content.columnGap ?? 12),
+          SizedBox(
+            width: top ? s.actions.columnGap ?? 16 : s.content.columnGap ?? 12,
+          ),
           if (close != null) close,
           if (close != null && action != null)
             SizedBox(width: s.actions.columnGap ?? 16),
@@ -614,12 +619,16 @@ class RaftToastPortal extends StatefulWidget {
     super.key,
     required this.controller,
     this.child = const SizedBox.shrink(),
+    this.placement = RaftToastPlacement.bottom,
   });
   final RaftToastController controller;
   final Widget child;
+  final RaftToastPlacement placement;
   @override
   State<RaftToastPortal> createState() => _RaftToastPortalState();
 }
+
+enum RaftToastPlacement { bottom, top }
 
 /// What the portal paints; kept past `controller.clear()` so the exit motion
 /// has something to fade.
@@ -801,8 +810,10 @@ class _RaftToastPortalState extends State<RaftToastPortal>
 
   void _swipeEnd(DragEndDetails d) {
     final v = d.velocity.pixelsPerSecond;
+    final direction = widget.placement == RaftToastPlacement.top ? -1 : 1;
     final done =
-        math.max(_drag.dx, _drag.dy) >= 40 || math.max(v.dx, v.dy) >= 700;
+        math.max(_drag.dx, direction * _drag.dy) >= 40 ||
+        math.max(v.dx, direction * v.dy) >= 700;
     if (done) {
       widget.controller.clear();
     } else {
@@ -828,7 +839,10 @@ class _RaftToastPortalState extends State<RaftToastPortal>
       final content = _content;
       if (content == null) return const SizedBox.shrink();
       final touch = RaftInteraction.of(context).touch;
+      final top = widget.placement == RaftToastPlacement.top;
       Widget toast = RaftToast(
+        key: ValueKey('raft-toast-${widget.placement.name}'),
+        placement: widget.placement,
         title: content.title,
         description: content.description,
         descriptionSpan: content.descriptionSpan,
@@ -847,7 +861,9 @@ class _RaftToastPortalState extends State<RaftToastPortal>
           onPanUpdate: (d) => setState(
             () => _drag = Offset(
               math.max(0, _drag.dx + d.delta.dx),
-              math.max(0, _drag.dy + d.delta.dy),
+              top
+                  ? math.min(0, _drag.dy + d.delta.dy)
+                  : math.max(0, _drag.dy + d.delta.dy),
             ),
           ),
           onPanEnd: _swipeEnd,
@@ -856,16 +872,19 @@ class _RaftToastPortalState extends State<RaftToastPortal>
         );
       }
       return Positioned(
-        bottom: math.max(
-          16 + math.max(m.padding.bottom, m.viewInsets.bottom),
-          composerClearance(context),
-        ),
-        left: 16 + m.padding.left,
-        right: 16 + m.padding.right,
+        top: top ? 16 + m.padding.top : null,
+        bottom: top
+            ? null
+            : math.max(
+                16 + math.max(m.padding.bottom, m.viewInsets.bottom),
+                composerClearance(context),
+              ),
+        left: (top ? 8 : 16) + m.padding.left,
+        right: (top ? 8 : 16) + m.padding.right,
         child: Align(
-          alignment: Alignment.bottomCenter,
+          alignment: top ? Alignment.topCenter : Alignment.bottomCenter,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 384),
+            constraints: BoxConstraints(minWidth: top ? 384 : 0, maxWidth: 384),
             child: IgnorePointer(
               ignoring: _exiting,
               child: Focus(
@@ -895,13 +914,22 @@ class _RaftToastPortalState extends State<RaftToastPortal>
                     animation: curved,
                     builder: (context, child) => FadeTransition(
                       opacity: curved,
-                      child: Transform.translate(
-                        offset: _drag,
-                        child: Transform.scale(
-                          scale: _exiting
-                              ? .99 + .01 * curved.value
-                              : .97 + .03 * curved.value,
-                          child: child,
+                      child: FractionalTranslation(
+                        translation: Offset(
+                          0,
+                          top ? (curved.value - 1) * 1.2 : 0,
+                        ),
+                        child: Transform.translate(
+                          offset: _drag,
+                          child: Transform.scale(
+                            alignment: top
+                                ? Alignment.topCenter
+                                : Alignment.center,
+                            scale: _exiting
+                                ? .99 + .01 * curved.value
+                                : .97 + .03 * curved.value,
+                            child: child,
+                          ),
                         ),
                       ),
                     ),

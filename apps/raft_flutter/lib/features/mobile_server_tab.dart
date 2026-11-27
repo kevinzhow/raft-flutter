@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -135,20 +133,23 @@ class _ServerPopoverContent extends StatefulWidget {
 
 class _ServerPopoverContentState extends State<_ServerPopoverContent> {
   WorkspaceController get w => widget.tab.controller;
-  late int feedbackUnread = cachedFeedbackUnread(w);
+  late FeedbackUnreadState feedbackUnread;
+  late VoidCallback releaseFeedbackUnread;
 
   @override
   void initState() {
     super.initState();
-    unawaited(loadFeedback());
+    feedbackUnread = FeedbackUnreadState.of(w)..addListener(feedbackChanged);
+    releaseFeedbackUnread = feedbackUnread.retain();
   }
 
-  /// Settings' dot is the feedback unread count, read as the popover opens.
-  Future<void> loadFeedback() async {
-    final count = await fetchFeedbackUnread(w);
-    if (mounted && count != null && count != feedbackUnread) {
-      setState(() => feedbackUnread = count);
-    }
+  void feedbackChanged() => setState(() {});
+
+  @override
+  void dispose() {
+    feedbackUnread.removeListener(feedbackChanged);
+    releaseFeedbackUnread();
+    super.dispose();
   }
 
   VoidCallback? afterClose(VoidCallback? action) => action == null
@@ -217,7 +218,7 @@ class _ServerPopoverContentState extends State<_ServerPopoverContent> {
     final guest = w.server?.string('role') == 'guest';
     final computersDot = !guest && computerAttentionDotFor(w);
     final counts = computerAttentionCounts(w);
-    final settingsFeedback = feedbackUnread > 0;
+    final settingsFeedback = feedbackUnread.count > 0;
     final settingsDot = settingsFeedback || (appUpdate?.hasUnseen ?? false);
     Widget page({
       required ServerPage id,
