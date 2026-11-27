@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/usage_limit_attention.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
@@ -358,14 +359,16 @@ void main() {
 
   testWidgets('View opens the Computer', (t) async {
     final client = _Client();
-    await boot(t, client);
+    final w = await boot(t, client);
     await t.tap(find.byType(RaftMobileNotificationButton));
     await t.pump(const Duration(milliseconds: 200));
     await t.tap(find.text('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 600));
     expect(find.byType(RaftNotificationCenter), findsNothing);
-    expect(find.byType(FleetDetail), findsOneWidget);
+    expect(w.location.route, RaftRoute.computer);
+    expect(w.location.entityId, 'm1');
+    expect(find.byType(FleetDetail), findsNothing);
   });
 
   testWidgets('desktop hover opening marks seen as well', (t) async {

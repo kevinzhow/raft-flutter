@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
@@ -24,7 +25,6 @@ class _Client extends RaftClient {
   final stream = StreamController<RaftEvent>.broadcast(sync: true);
   final calls = <String>[];
   Completer<dynamic>? pending;
-  Map<String, dynamic>? agent;
   @override
   Stream<RaftEvent> get events => stream.stream;
   @override
@@ -43,8 +43,7 @@ class _Client extends RaftClient {
             ],
           };
     }
-    if (path == '/agents') return [if (agent != null) agent];
-    if (path == '/agents/a1') return agent;
+    if (path == '/agents') return [];
     if (path == '/product-feedback/tickets') return {'unread_total': 0};
     return [];
   }
@@ -141,64 +140,31 @@ void main() {
       await t.binding.setSurfaceSize(null);
     },
   );
-  testWidgets(
-    'computer notice opens its Agent and Back returns to the Computer',
-    (t) async {
-      addTearDown(() => t.binding.setSurfaceSize(null));
-      final client = _Client()
-        ..agent = {
-          'id': 'a1',
-          'name': 'sensor',
-          'displayName': 'Sensor Agent',
-          'status': 'active',
-          'runtime': 'claude',
-          'model': 'sonnet',
-          'machineId': 'm',
-        };
-      final w = WorkspaceController(client)
-        ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
-        ..section = 'home';
-      addTearDown(client.dispose);
-      addTearDown(w.dispose);
-      await frame(t, w);
-      await t.tap(find.byType(RaftMobileNotificationButton));
-      await t.pumpAndSettle();
-      expect(find.text('Computers need attention'), findsOneWidget);
-      await t.tap(find.text('View').hitTestable());
-      await t.pumpAndSettle();
+  testWidgets('computer notice opens the Computer in the workspace location', (
+    t,
+  ) async {
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final client = _Client();
+    final w = WorkspaceController(client)
+      ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
+      ..section = 'home';
+    addTearDown(client.dispose);
+    addTearDown(w.dispose);
+    await frame(t, w);
+    await t.tap(find.byType(RaftMobileNotificationButton));
+    await t.pumpAndSettle();
+    expect(find.text('Computers need attention'), findsOneWidget);
+    await t.tap(find.text('View').hitTestable());
+    await t.pumpAndSettle();
 
-      final computer = find.byWidgetPredicate(
-        (widget) => widget is FleetDetail && widget.computers,
-      );
-      final profile = find.byWidgetPredicate(
-        (widget) => widget is FleetDetail && !widget.computers,
-      );
-      expect(computer, findsOneWidget);
-      final agent = find.descendant(
-        of: computer,
-        matching: find.text('Sensor Agent'),
-      );
-      await t.ensureVisible(agent);
-      await t.tap(agent.hitTestable());
-      await t.pumpAndSettle();
-      expect(
-        find.descendant(of: profile, matching: find.text('Sensor Agent')),
-        findsWidgets,
-      );
-      final back = find.byTooltip('Back').hitTestable();
-      expect(back, findsOneWidget);
-      await t.pageBack();
-      await t.pumpAndSettle();
-      expect(profile, findsNothing);
-      expect(computer, findsOneWidget);
-      expect(find.byKey(const Key('computer-mobile-back')), findsOneWidget);
-      expect(back, findsOneWidget);
-      await t.pageBack();
-      await t.pumpAndSettle();
-      expect(find.byType(RaftMobileNotificationButton), findsOneWidget);
-      await t.pumpWidget(const SizedBox.shrink());
-    },
-  );
+    expect(find.byType(RaftNotificationCenter), findsNothing);
+    expect(w.location.route, RaftRoute.computer);
+    expect(w.location.entityId, 'm');
+    // The workspace renders the location; the bell pushes no page of its own.
+    expect(find.byType(FleetDetail), findsNothing);
+    expect(find.byType(RaftMobileNotificationButton), findsOneWidget);
+    await t.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets(
     'same-generation role change removes popup and rejects late private machine rows',
