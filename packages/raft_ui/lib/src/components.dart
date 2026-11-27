@@ -1091,10 +1091,16 @@ class RaftNavItem extends StatelessWidget {
                 : _titleColor(context, t),
           );
       final text = directoryRow
-          ? RaftNameDescriptionRow(
-              hasTag: tag != null,
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: RaftSpace.x1,
               children: [
-                _title(t, t.scale(RaftTypeScale.body, weight: FontWeight.w600)),
+                Flexible(
+                  child: _title(
+                    t,
+                    t.scale(RaftTypeScale.body, weight: FontWeight.w600),
+                  ),
+                ),
                 ?tag,
               ],
             )

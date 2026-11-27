@@ -468,7 +468,7 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
   );
 
   Widget _group(BuildContext context) {
-    if (widget.inFitToolbar) {
+    if (widget.inFitToolbar && !RaftScaled.grows(context)) {
       final desktop = RaftTokens.of(context).desktop;
       return SizedBox(
         height: desktop
