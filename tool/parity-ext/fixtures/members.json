@@ -1680,6 +1680,13 @@
    "GET /servers/visual-server/members": {
     "$status": 500
    }
+  },
+  "human-remove-confirm": {
+   "GET /servers/visual-server/members/visual-human-designer/removal-impact": {
+    "computers": 0,
+    "computerNames": [],
+    "othersAgents": 0
+   }
   }
  }
 }

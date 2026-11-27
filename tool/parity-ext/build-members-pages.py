@@ -253,8 +253,8 @@ def agent_main(platform, key, title, *, tab='profile', agent=AGENT_ID, selector=
 def human_main(platform, key, title, who=MEMBER, *, selector=None, android_key='auto', interactions=None,
                android_interactions=None, flutter=True, note=None, route_set=None):
     desktop = platform == 'desktop'
-    add(platform, key, title, 'main', selector=selector or (MAIN if desktop else VIEW),
-        android_key=(('desktop-content-detail' if desktop else None) if android_key == 'auto' else android_key), hint=HUMAN_HINT,
+    add(platform, key, title, 'main', selector=selector or (base.PROFILE_SEL if desktop else VIEW),
+        android_key=(base.PROFILE_KEY if desktop else None) if android_key == 'auto' else android_key, hint=HUMAN_HINT,
         props={'route': f'/human/{who}', **({'openRow': f'human:{who}'} if desktop else {})}, interactions=interactions,
         android_interactions=android_interactions, flutter=flutter, note=note, route_set=route_set)
 
@@ -526,7 +526,8 @@ for platform in ('desktop', 'mobile'):
          [{'type': 'hover', 'key': ROW_ID}, tap(f'{ROW_ID}-remove'), wait(400)], CONFIRM_SEL, CONFIRM_KEY, None),
         (platform, 'row-profile', 'Channel members page: a row opens the member profile', 'members-page',
          [{'type': 'click', 'target': f'{ROW} >> button.text-left'}, wait(600)],
-         [tap(f'{ROW_ID}-open'), wait(600)], '[data-testid="channel-overflow-sheet"]', 'channel-overflow-sheet', None),
+         [tap(f'{ROW_ID}-open'), wait(600)], '[data-testid="channel-details"] [data-testid="profile-panel"]',
+         f'member-page-profile-{MEMBER}', 'row-profile'),
         (platform, 'role-action', 'Channel members page: hover role action (Make admin) and remove', 'members-page',
          [{'type': 'hover', 'target': ROW}, wait(200)], [{'type': 'hover', 'key': ROW_ID}, wait(200)],
          None, None, 'role-actions'),
@@ -552,6 +553,9 @@ def build_channel_cases(manifest):
     for row in role_members['humans'][1:] + role_members['agents'][:1]:
         row['canChangeChannelRole'] = True
     CH_FIXTURE['routeSets']['role-actions'] = {members_route: role_members}
+    CH_FIXTURE['routeSets']['row-profile'] = {
+        f'GET /servers/{SID}/members/{MEMBER}/profile': base.PROFILES['member'],
+    }
     # Flutter evaluates the flag through the API (Web: the host seeds it).
     CH_FIXTURE['routes']['POST /feature-flags/evaluate'] = {
         'evaluations': [{'key': 'channel_manager_role_actions_v0', 'enabled': True}]}

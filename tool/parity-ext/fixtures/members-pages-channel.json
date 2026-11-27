@@ -3076,6 +3076,22 @@
     ],
     "externalMembers": []
    }
+  },
+  "row-profile": {
+   "GET /servers/visual-server/members/visual-human-designer/profile": {
+    "userId": "visual-human-designer",
+    "serverId": "visual-server",
+    "email": "designer@slock.ai",
+    "gravatarHash": "",
+    "name": "designer",
+    "displayName": "Designer",
+    "description": "Product design",
+    "avatarUrl": null,
+    "role": "member",
+    "joinedAt": "2026-06-18T00:00:00.000Z",
+    "membershipStatus": "active",
+    "createdAgents": []
+   }
   }
  }
 }

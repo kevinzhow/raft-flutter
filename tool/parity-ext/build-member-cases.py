@@ -229,6 +229,11 @@ FIXTURE = {
         'agent-log-loading': {f'GET /agents/{AGENT_ID_FX}/activity-log': {'$pending': True}},
         'agent-log-error': {f'GET /agents/{AGENT_ID_FX}/activity-log': {'$status': 500}},
         'list-error': {f'GET /servers/{SID}/members': {'$status': 500}},
+        'human-remove-confirm': {
+            f'GET /servers/{SID}/members/{PROFILES["member"]["userId"]}/removal-impact': {
+                'computers': 0, 'computerNames': [], 'othersAgents': 0,
+            },
+        },
     },
 }
 
@@ -291,6 +296,8 @@ add('list.humans-collapsed', 'Members list: Humans section collapsed', 'list', v
 
 
 HUMAN_HINT = SRC + 'member/HumanDetailPanel.tsx (HumanRoute in MainLayout, desktop shell)'
+PROFILE_SEL = '[data-testid="profile-panel"]'
+PROFILE_KEY = 'profile-panel'
 HUMAN_SEL = '[data-testid="thread-main-column"]'
 for key, title, who in [
     ('human.self', 'Human profile: own profile (owner)', 'self'),
@@ -299,7 +306,7 @@ for key, title, who in [
     ('human.guest', 'Human profile: guest', 'guest'),
     ('human.no-description', 'Human profile: no description', 'no-description'),
 ]:
-    add(key, title, 'main', selector=HUMAN_SEL, android_key='desktop-content-detail', hint=HUMAN_HINT,
+    add(key, title, 'main', selector=PROFILE_SEL, android_key=PROFILE_KEY, hint=HUMAN_HINT,
         props={'route': f'/human/{PROFILES[who]["userId"]}', 'openRow': f'human:{PROFILES[who]["userId"]}'})
 
 
@@ -369,12 +376,14 @@ for key, title, guest in [('invite.default', 'Invite human dialog', 'false'),
         props={'guest': guest}, route_set='invite-guest' if guest == 'true' else None)
 
 # Human profile dialogs / editing.
-add('human.remove-confirm', 'Human profile: remove member confirmation', 'main', selector=DLG,
+add('human.remove-confirm', 'Human profile: remove member confirmation', 'main',
+    selector='[role="dialog"]:has([data-testid="human-remove-member-confirm"])',
     android_key='agent-dialog', hint=HUMAN_HINT,
     props={'route': f'/human/{PROFILES["member"]["userId"]}', 'openRow': f'human:{PROFILES["member"]["userId"]}'},
-    interactions=[click('button:has-text("Remove Member")')], android_interactions=[tap('member-remove')])
-add('human.edit-role', 'Human profile: editing the role', 'main', selector=HUMAN_SEL,
-    android_key='desktop-content-detail', hint=HUMAN_HINT,
+    interactions=[click('button:has-text("Remove Member")')], android_interactions=[tap('member-remove')],
+    route_set='human-remove-confirm')
+add('human.edit-role', 'Human profile: editing the role', 'main', selector=PROFILE_SEL,
+    android_key=PROFILE_KEY, hint=HUMAN_HINT,
     props={'route': f'/human/{PROFILES["member"]["userId"]}', 'openRow': f'human:{PROFILES["member"]["userId"]}'},
     interactions=[click('button[aria-label="Edit role"]')], android_interactions=[tap('member-edit-role')])
 
