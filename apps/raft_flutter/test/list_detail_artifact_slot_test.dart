@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/artifacts/artifact_models.dart';
 import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
+import 'package:raft_flutter/features/quick_switcher.dart' show QuickSwitcher;
 import 'package:raft_ui/raft_ui.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
@@ -304,6 +305,39 @@ void main() {
     expect(_viewer, findsNothing);
     expect(w.location.query('artifact'), isNull);
     expect(hit.hitTestable(), findsOneWidget);
+    await fixture.close(t);
+  });
+  testWidgets('quick switcher wide: an Artifact hit opens on the Search page '
+      'beside its results', (t) async {
+    final fixture = _fixture(search: true);
+    await fixture.mount(t, 'light', 1280, uri: Uri.parse('/s/alpha/activity'));
+    final w = fixture.workspace(t);
+    await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await t.sendKeyEvent(LogicalKeyboardKey.keyK);
+    await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await fixture.flush(t);
+    expect(find.byType(QuickSwitcher), findsOneWidget);
+    await t.enterText(
+      find.descendant(
+        of: find.byType(QuickSwitcher),
+        matching: find.byType(TextField),
+      ),
+      'plan',
+    );
+    await t.pump(const Duration(milliseconds: 250));
+    await fixture.flush(t);
+    final hit = find.descendant(
+      of: find.byType(QuickSwitcher),
+      matching: find.byKey(const ValueKey('app:artifacts:$artifactId')),
+    );
+    expect(hit, findsOneWidget);
+    await t.tap(hit);
+    await fixture.flush(t);
+    await t.pumpAndSettle();
+    expect(find.byType(QuickSwitcher), findsNothing);
+    expect(w.location.route, RaftRoute.search);
+    expect(w.location.query('artifact'), artifactShort);
+    _beside(t, find.byKey(const ValueKey('app:artifacts:$artifactId')).first);
     await fixture.close(t);
   });
 }
