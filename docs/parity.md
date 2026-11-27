@@ -2264,7 +2264,7 @@ Not owner decisions yet; each is listed so a reviewer can accept or send it back
 
 ## Artifacts viewer vs Web v1.24.0 (WP-ART1): intended differences
 
-* **The viewer is a page or a full-bleed window, not a side column.** Web opens an Artifact beside the conversation; on a phone the viewer is a page, on wide layouts a full-bleed window over the workspace.
+* **Where the viewer opens follows Web's opening rule (#380).** From an Activity row, a Search hit or a quick switcher hit it opens in the list's detail slot at the Artifact address (`?artifact=<id>&version=&review=`): beside the list on wide windows, a page over it on a phone. Openings that still have no in-place host on wide windows are listed by the #380 report.
 * **Version history is a panel**, not Web's submenu; Files and Download all sit in the same ⋯ menu.
 * **Cards have no screenshot or cover image**, and a link in text does not become an inline Artifact chip; the card under the message carries title, version, facts, home and who updated it.
 * **The loading splash is not animated.**

@@ -4,10 +4,7 @@
 // Source: packages/web/src/apps/artifacts/{ArtifactViewer,ArtifactSurface,
 // ArtifactContent,ArtifactViewerMenu}.tsx and artifactSource.ts
 // (`useArtifactViewer`, `useArtifactNewerVersion`) at v1.24.0-source.1.
-// Web opens the viewer beside the conversation on wide windows and over it
-// on a phone; the app opens it as a full-screen page on a phone and a
-// full-bleed window on wide layouts (the attachment preview's split; see
-// docs/parity.md).
+// Where it opens: openWorkspaceArtifact (Web's opening rule; docs/parity.md).
 import 'dart:async';
 import 'dart:io' show Platform;
 
