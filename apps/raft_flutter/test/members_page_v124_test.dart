@@ -31,6 +31,12 @@ void main() {
       workspace.section = 'members';
       workspace.notifyListeners();
       await frames(tester);
+      if (size.width == 390) {
+        final create = find.byKey(const ValueKey('desktop-directory-add-agent'));
+        final options = find.byKey(const ValueKey('members-add-agent-options'));
+        expect(tester.getSize(create).width, 32);
+        expect(tester.getSize(options).width, 28);
+      }
       final row = find.byKey(const ValueKey('desktop-directory-agent-a1'));
       await tester.ensureVisible(row);
       if (platform == TargetPlatform.android) {

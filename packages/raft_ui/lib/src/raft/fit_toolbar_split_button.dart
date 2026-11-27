@@ -49,7 +49,7 @@ class RaftFitSplitButton extends RaftFitItem {
       tokens: recipeTokens,
     ).base;
     final full = form == RaftFitForm.full;
-    final fit = _fitStyle(context, extra: ['data-fit-plus']).splitMain;
+    final fit = _fitStyle(context, extra: ['ancestor:data-fit-plus']).splitMain;
     Widget menuButton(FocusNode? focus, VoidCallback? press) => RaftButton(
       uiVariant: RaftButtonVariant.primary,
       uiSize: RaftButtonSize.md,
