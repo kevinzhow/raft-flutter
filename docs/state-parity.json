@@ -45433,6 +45433,72 @@
         "owner": "WP-TASK2 v1.24 alignment",
         "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content_slot.dart#class:ArtifactContentSlot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content_slot.dart#method:ArtifactContentSlot.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#class:ListDetailHost": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#class:ListDetailRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#class:_ListDetailRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#function:listDetailContent": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#function:openListDetail": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#method:ListDetailHost.hosts": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#method:ListDetailHost.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#method:ListDetailRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/list_detail_slot.dart#method:_ListDetailRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 list detail slot",
+        "reason": "Source census candidate (#380: an Artifact opened from Activity, Search or the quick switcher shows in the list's detail slot, Web ArtifactContentSlot); no paint of its own, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
       "apps/raft_flutter/lib/features/task_content_slot.dart#class:TaskSlotScope": {
         "role": "unresolved",
         "familyRefs": [],
