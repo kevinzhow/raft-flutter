@@ -928,9 +928,11 @@ class _MembersPageState extends State<_MembersPage> {
                         children: [
                           const RaftSpinner(size: 14),
                           const SizedBox(width: 8),
-                          Text(
-                            raftText(context, 'Loading members…'),
-                            style: note(),
+                          Flexible(
+                            child: Text(
+                              raftText(context, 'Loading members…'),
+                              style: note(),
+                            ),
                           ),
                         ],
                       ),
@@ -1341,16 +1343,11 @@ class _MemberPageRowState extends State<_MemberPageRow> {
                                     child: RaftMemberNameLine(
                                       labels: r.serverBadges,
                                       name: _titleLine(
-                                        Text(
-                                          r.label,
-                                          maxLines: grows ? null : 1,
-                                          overflow: grows
-                                              ? TextOverflow.clip
-                                              : TextOverflow.ellipsis,
-                                          style: titleStyle,
-                                        ),
+                                        r.label,
                                         r.titleNote,
+                                        titleStyle,
                                         subStyle,
+                                        grows: grows,
                                       ),
                                     ),
                                   ),
@@ -1412,18 +1409,44 @@ class _MemberPageRowState extends State<_MemberPageRow> {
 }
 
 /// The name, then [note] on the same line (`flex min-w-0 items-baseline
-/// gap-1.5`): the name truncates, the note keeps its width.
-Widget _titleLine(Text name, String? note, TextStyle style) => note == null
-    ? name
-    : Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Flexible(child: name),
-          const SizedBox(width: 6),
-          Text(note, maxLines: 1, style: style),
-        ],
-      );
+/// gap-1.5`): the name truncates, the note keeps its width. Above the default
+/// text size a name alone wraps; one with a note stays one truncated line and
+/// the note goes under it, wrapping if it must.
+Widget _titleLine(
+  String name,
+  String? note,
+  TextStyle nameStyle,
+  TextStyle noteStyle, {
+  required bool grows,
+}) {
+  final wraps = grows && note == null;
+  final title = Text(
+    name,
+    maxLines: wraps ? null : 1,
+    overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
+    style: nameStyle,
+  );
+  if (note == null) return title;
+  if (grows) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        title,
+        Text(note, style: noteStyle),
+      ],
+    );
+  }
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.baseline,
+    textBaseline: TextBaseline.alphabetic,
+    children: [
+      Flexible(child: title),
+      const SizedBox(width: 6),
+      Text(note, maxLines: 1, style: noteStyle),
+    ],
+  );
+}
 
 /// `externalInvitesFailedBanner`: a warning Banner with an outline Retry.
 class _InvitesFailedBanner extends StatelessWidget {
