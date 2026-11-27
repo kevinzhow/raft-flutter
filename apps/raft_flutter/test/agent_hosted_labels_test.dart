@@ -1,6 +1,3 @@
-// Small cloud-agent labels: the sidebar's "cloud" group (Web Sidebar
-// `layout.sidebar.cloudAgentGroupLabel`) and the sender line's "Cloud agent ·
-// Free for a limited time" (Web MessageItem `message.agentModel.hosted`).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -56,7 +53,9 @@ class _Client extends RaftClient {
 }
 
 void main() {
-  testWidgets('a cloud agent has its own group, not "no computer"', (t) async {
+  testWidgets('computer grouping puts unmatched agents in External & cloud', (
+    t,
+  ) async {
     final client = _Client();
     final w = WorkspaceController(client)
       ..server = RaftRecord({'id': 's', 'role': 'owner'});
@@ -69,29 +68,31 @@ void main() {
       MaterialApp(
         theme: raftTheme(),
         home: Scaffold(
-          body: SizedBox(
-            width: 240,
-            child: DesktopDirectoryView(controller: w, onSelected: (_) {}),
-          ),
+          body: DesktopDirectoryView(controller: w, onSelected: (_) {}),
         ),
       ),
     );
     await t.pumpAndSettle();
-    final groups = t
-        .widgetList<RaftSidebarMachineGroup>(
-          find.byType(RaftSidebarMachineGroup),
-        )
-        .toList();
-    expect(groups.map((g) => g.name), [
-      'First computer',
-      'cloud',
-      'No computer',
-    ]);
-    expect(groups.map((g) => g.count), [1, 2, 1]);
+    await t.tap(find.byKey(const ValueKey('members-tab-agent')));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('members-group-select')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('By computer'));
+    await t.pumpAndSettle();
+    final computer = find.text('First computer  1');
+    final external = find.text('External & cloud  3');
+    expect(computer, findsOneWidget);
+    expect(external, findsOneWidget);
     expect(
-      find.byKey(const ValueKey('directory-machine-group-__cloud__')),
-      findsOneWidget,
+      t.getTopLeft(find.text('On-Mac')).dy,
+      lessThan(t.getTopLeft(external).dy),
     );
+    for (final name in ['Cloud-One', 'Cloud-Two', 'Loose-One']) {
+      expect(
+        t.getTopLeft(find.text(name)).dy,
+        greaterThan(t.getTopLeft(external).dy),
+      );
+    }
   });
 
   group('sender model line', () {

@@ -508,6 +508,12 @@ final auditSurfaces = <AuditSurface>[
     Size(200, 120),
   ),
   AuditSurface(
+    'fitToolbarSplitButtonPreview',
+    'Fit toolbar, primary split action',
+    fitToolbarSplitButtonPreview,
+    Size(430, 132),
+  ),
+  AuditSurface(
     'fitToolbarSelectPreview',
     'Fit toolbar, typed Select',
     fitToolbarSelectPreview,

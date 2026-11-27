@@ -134,7 +134,7 @@ void main() {
   });
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'mounted sidebar, detail and mention avatars share reconciliation $dark',
+      'mounted roster, detail and mention avatars share reconciliation $dark',
       (t) async {
         await t.binding.setSurfaceSize(const Size(1800, 1400));
         addTearDown(() => t.binding.setSurfaceSize(null));
@@ -219,11 +219,17 @@ void main() {
           ]) {
             final avatar = find.descendant(
               of: find.byKey(key),
-              matching: find.byType(RaftMountedAvatarFrame),
+              matching: key == const Key('presence-mentions')
+                  ? find.byType(RaftMountedAvatarFrame)
+                  : find.byType(RaftAvatar),
             );
             expect(avatar, findsOneWidget, reason: '$key agent avatar');
             expect(
-              t.widget<RaftMountedAvatarFrame>(avatar).presence?.activity,
+              switch (t.widget(avatar)) {
+                RaftAvatar(:final presence) => presence?.activity,
+                RaftMountedAvatarFrame(:final presence) => presence?.activity,
+                _ => null,
+              },
               expected,
               reason: '$key agent activity',
             );

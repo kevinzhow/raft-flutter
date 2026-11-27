@@ -88,12 +88,14 @@ class MemberProfileRoleChange {
                     return;
                   }
                   await _patch(previous);
-                  if (_samePrincipal)
+                  if (_samePrincipal) {
                     toast.show(restored, tone: RaftToastRecipeTone.success);
+                  }
                   await onRestored();
                 } catch (_) {
-                  if (_samePrincipal)
+                  if (_samePrincipal) {
                     toast.show(failed, tone: RaftToastRecipeTone.error);
+                  }
                 }
               }());
             },
@@ -128,9 +130,7 @@ Widget memberRoleConfirmation(
                 {'role': memberRoleLabel(context, change.next)},
               ),
             ),
-          if (impact != null)
-            if (ownComputersTransferNote(context, impact) case final note?)
-              note,
+          ?(impact == null ? null : ownComputersTransferNote(context, impact)),
         ],
       ),
     ),

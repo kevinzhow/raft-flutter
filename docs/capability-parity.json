@@ -3675,14 +3675,14 @@
    "status": "covered",
    "webEntry": "serverStore.loadMembers (bootstrap; Humans sidebar section; add-member and create-channel pickers)",
    "gate": "hideHumansFromMembers hides humans in #all for members",
-   "flutterEntry": "workspace_entity_directory.dart members kind; desktop_directory_view.dart Humans section",
+   "flutterEntry": "workspace_entity_directory.dart members kind; members_page.dart Humans tab and section",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/workspace_entity_directory.dart",
      "needle": "/members"
     },
     {
-     "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
+     "file": "apps/raft_flutter/lib/features/members_page.dart",
      "needle": "'Humans'"
     }
    ],
@@ -3745,13 +3745,13 @@
    "capability": "Change a member's server role (owner/admin/member/guest)",
    "background": false,
    "status": "covered",
-   "webEntry": "Human profile panel > Role row pencil > select > Save (with role help dialog) | Settings > Administration members",
+   "webEntry": "Human profile panel > Role row pencil > select (with role help, owner grant and self-demotion confirmations, and Undo) | Settings > Administration members",
    "gate": "changeMemberRoles capability + getEditableHumanServerRoles transition rules; not remote joint humans; guest role needs guest flag",
-   "flutterEntry": "member_profile_view.dart role editor (member_profile_rules.dart editableHumanServerRoles) | administration_view.dart | server_views.dart",
+   "flutterEntry": "member_profile_view.dart role editor and member_profile_role_change.dart command, confirmations and Undo | administration_view.dart | server_views.dart",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/member_profile_view.dart",
-     "needle": "'/servers/$server/members/$id'"
+     "file": "apps/raft_flutter/lib/features/member_profile_role_change.dart",
+     "needle": "'/servers/$server/members/$member'"
     },
     {
      "file": "apps/raft_flutter/lib/features/member_profile_rules.dart",
@@ -4009,11 +4009,11 @@
    "status": "covered",
    "webEntry": "features/members human directory row and DM handler",
    "gate": "",
-   "flutterEntry": "desktop_directory_view.dart: a mouse double-click on a human or agent row calls onOpenDm (messageDesktopProfile); touch keeps single-tap",
+   "flutterEntry": "members_page_entries.dart: a mouse double-click on a human or agent row calls onMessage; touch keeps single-tap",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "onDoubleClick: kind == DesktopContentKind.computer"
+     "file": "apps/raft_flutter/lib/features/members_page_entries.dart",
+     "needle": "onDoubleClick: onMessage"
     }
    ],
    "justification": "",
@@ -4024,15 +4024,15 @@
    "kind": "ui",
    "id": "ui:members-roles.sidebar-humans-invite-plus",
    "area": "members-roles",
-   "capability": "Humans section '+' (Invite human) opens the invite dialog",
+   "capability": "Members toolbar 'Invite human' opens the invite dialog",
    "background": false,
    "status": "covered",
    "webEntry": "features/members directory toolbar and InviteHumanDialog",
    "gate": "inviteMembers capability",
-   "flutterEntry": "desktop_directory_view.dart 'Invite human' action -> showWorkspaceMenuInvite",
+   "flutterEntry": "members_page.dart 'Invite human' action opens showWorkspaceMenuInvite",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
+     "file": "apps/raft_flutter/lib/features/members_page.dart",
      "needle": "desktop-directory-invite-human"
     }
    ],
@@ -7062,16 +7062,16 @@
    "kind": "ui",
    "id": "ui:agents-computers-runtimes.sidebar-agent-machine-groups",
    "area": "agents-computers-runtimes",
-   "capability": "Agents grouped by computer with a collapsible per-computer header (name + count)",
+   "capability": "Agents can be grouped by computer, with names and counts and an External & cloud group",
    "background": false,
    "status": "covered",
-   "webEntry": "features/members directory grouping and components/layout/sidebarMachineOrder.ts",
+   "webEntry": "features/members/membersPageModel.ts groupAgents",
    "gate": "",
-   "flutterEntry": "desktop_directory_view.dart agentMachineRows + collapsedMachineGroups",
+   "flutterEntry": "members_page.dart Group > By computer and _agentGroups",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "collapsedMachineGroups"
+     "file": "apps/raft_flutter/lib/features/members_page.dart",
+     "needle": "computer('By computer')"
     }
    ],
    "justification": "",
@@ -8543,11 +8543,11 @@
    "status": "covered",
    "webEntry": "features/members directory agent-creation menu",
    "gate": "createAgents capability; Handoff only in the Electron desktop shell (isHandoffAvailable)",
-   "flutterEntry": "desktop_directory_view.dart addAgentMenu: 'Create agent', 'Create external agent' (gate createAgents)",
+   "flutterEntry": "members_page.dart Create agent split action and Connect an external agent menu item (gate createAgents)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "Widget addAgentMenu()"
+     "file": "apps/raft_flutter/lib/features/members_page.dart",
+     "needle": "RaftFitSplitButton("
     },
     {
      "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",

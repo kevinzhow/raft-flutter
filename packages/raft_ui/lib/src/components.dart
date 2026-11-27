@@ -527,7 +527,7 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
 
 /// Mounted ChannelRow and DM unread counts are product variants, independent
 /// of the generic SidebarItemChannelIcon slot and management/navigation rows.
-enum RaftConversationNavKind { channel, directMessage, directory }
+enum RaftConversationNavKind { channel, directMessage, directory, memberRoster }
 
 /// ChannelKindIcon is the mounted product default. The generic component slot
 /// is retained explicitly for SDK compositions that actually mount that slot.
@@ -1001,7 +1001,7 @@ class RaftNavItem extends StatelessWidget {
                 style: style.copyWith(
                   color: t.colors['foreground-placeholder'],
                   fontWeight:
-                      conversationKind == RaftConversationNavKind.directory
+                      conversationKind == RaftConversationNavKind.memberRoster
                       ? FontWeight.w400
                       : null,
                 ),
@@ -1050,11 +1050,12 @@ class RaftNavItem extends StatelessWidget {
             kind: conversationKind!,
             channelGlyphVariant: channelGlyphVariant,
           );
+    final rosterRow = conversationKind == RaftConversationNavKind.memberRoster;
     final phoneConversation =
         conversation != null &&
+        !rosterRow &&
         conversationKind != RaftConversationNavKind.directory &&
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
-    final directoryRow = conversationKind == RaftConversationNavKind.directory;
     final leading =
         this.leading ??
         (glyph != null
@@ -1094,7 +1095,7 @@ class RaftNavItem extends StatelessWidget {
                 ? (DefaultTextStyle.of(context).style.color)
                 : _titleColor(context, t),
           );
-      final text = directoryRow
+      final text = rosterRow
           ? Row(
               mainAxisSize: MainAxisSize.min,
               spacing: RaftSpace.x1,
@@ -1102,7 +1103,11 @@ class RaftNavItem extends StatelessWidget {
                 Flexible(
                   child: _title(
                     t,
-                    t.scale(RaftTypeScale.body, weight: FontWeight.w600),
+                    t.scale(
+                      RaftTypeScale.body,
+                      weight: FontWeight.w600,
+                      color: selected ? _titleColor(context, t) : null,
+                    ),
                   ),
                 ),
                 ?tag,
@@ -1115,14 +1120,14 @@ class RaftNavItem extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           text,
-          if (!directoryRow) const SizedBox(height: 2),
+          if (!rosterRow) const SizedBox(height: 2),
           RaftSidebarText(
             description,
-            maxLines: directoryRow && !RaftScaled.grows(context) ? 1 : null,
-            overflow: directoryRow && !RaftScaled.grows(context)
+            maxLines: rosterRow && !RaftScaled.grows(context) ? 1 : null,
+            overflow: rosterRow && !RaftScaled.grows(context)
                 ? TextOverflow.ellipsis
                 : null,
-            style: directoryRow
+            style: rosterRow
                 ? t.scale(RaftTypeScale.footnote, color: t.ui.foregroundMuted)
                 : RaftTypography.heading(
                     t,
@@ -1135,7 +1140,7 @@ class RaftNavItem extends StatelessWidget {
       );
     }
 
-    Widget titleContent(BuildContext context) => wrap || directoryRow
+    Widget titleContent(BuildContext context) => wrap || rosterRow
         ? wrappedTitle(context)
         : description == null
         ? _title(
@@ -1463,10 +1468,10 @@ class RaftNavItem extends StatelessWidget {
             )
           : wrap
           ? EdgeInsets.symmetric(
-              horizontal: phoneConversation || directoryRow
+              horizontal: phoneConversation || rosterRow
                   ? RaftSpace.x3
                   : RaftSpace.x1_5,
-              vertical: directoryRow
+              vertical: rosterRow
                   ? RaftSpace.x2 + RaftSpace.hairline
                   : RaftSpace.x1_5,
             )

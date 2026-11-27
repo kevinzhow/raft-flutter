@@ -327,9 +327,11 @@ void main() {
     ) async {
       final (w, _) = await openRunning(t);
       w.onCommand = (m, p, d) async => {'outcome': 'interrupted'};
+      final beforeStop = w.calls.length;
       await stop(t);
-      expect(w.calls.single.$1, 'POST');
-      expect(w.calls.single.$2, '/agents/a/subagents/task-run/interrupt');
+      final command = w.calls.skip(beforeStop).single;
+      expect(command.$1, 'POST');
+      expect(command.$2, '/agents/a/subagents/task-run/interrupt');
       expect(find.text('Asked the subagent to stop.'), findsOneWidget);
     });
 

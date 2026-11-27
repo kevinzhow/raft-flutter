@@ -919,7 +919,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
               ),
             if (roleError != null)
               RaftCssText(
-                roleError!,
+                roleError,
                 style: t.scale(
                   RaftTypeScale.footnote,
                   color: t.ui['warning-strong'],

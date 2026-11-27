@@ -22,9 +22,10 @@ Widget directoryNavigationPreview() {
           ])
             RaftNavItem(
               label: name,
-              conversationKind: RaftConversationNavKind.directory,
+              conversationKind: RaftConversationNavKind.memberRoster,
               selected: selected == name,
               description: description.isEmpty ? null : description,
+              wrap: description.isNotEmpty,
               leading: RaftAvatar(
                 name: name,
                 kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,

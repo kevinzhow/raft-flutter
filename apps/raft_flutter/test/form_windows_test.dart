@@ -306,6 +306,7 @@ void registerFormWindowTests(TestPart part) {
         final handle = find.byKey(const ValueKey('raft-sheet-handle'));
         const headerCommitLabels = {
           'create channel': 'Create',
+          'invite human': 'Invite',
           'report issue': 'Report',
         };
         final headerCommitLabel = headerCommitLabels[form.id];

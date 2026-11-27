@@ -196,7 +196,7 @@ class MemberDirectoryEntry extends StatelessWidget {
                   color: tokens.ui.foregroundHint,
                 ),
               ),
-        conversationKind: RaftConversationNavKind.directory,
+        conversationKind: RaftConversationNavKind.memberRoster,
         selected: selected,
         onContextMenu: onMenu,
         onDoubleClick: onMessage,
