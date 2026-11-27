@@ -1000,6 +1000,10 @@ class RaftNavItem extends StatelessWidget {
                 text: ' $labelSuffix',
                 style: style.copyWith(
                   color: t.colors['foreground-placeholder'],
+                  fontWeight:
+                      conversationKind == RaftConversationNavKind.directory
+                      ? FontWeight.w400
+                      : null,
                 ),
               ),
             ],
@@ -1114,6 +1118,10 @@ class RaftNavItem extends StatelessWidget {
           if (!directoryRow) const SizedBox(height: 2),
           RaftSidebarText(
             description,
+            maxLines: directoryRow && !RaftScaled.grows(context) ? 1 : null,
+            overflow: directoryRow && !RaftScaled.grows(context)
+                ? TextOverflow.ellipsis
+                : null,
             style: directoryRow
                 ? t.scale(RaftTypeScale.footnote, color: t.ui.foregroundMuted)
                 : RaftTypography.heading(
@@ -1127,7 +1135,7 @@ class RaftNavItem extends StatelessWidget {
       );
     }
 
-    Widget titleContent(BuildContext context) => wrap
+    Widget titleContent(BuildContext context) => wrap || directoryRow
         ? wrappedTitle(context)
         : description == null
         ? _title(
@@ -1458,7 +1466,9 @@ class RaftNavItem extends StatelessWidget {
               horizontal: phoneConversation || directoryRow
                   ? RaftSpace.x3
                   : RaftSpace.x1_5,
-              vertical: directoryRow ? RaftSpace.x3 : RaftSpace.x1_5,
+              vertical: directoryRow
+                  ? RaftSpace.x2 + RaftSpace.hairline
+                  : RaftSpace.x1_5,
             )
           : null,
       variant: selected ? RaftControlVariant.surface : RaftControlVariant.ghost,

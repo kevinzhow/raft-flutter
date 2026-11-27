@@ -185,7 +185,17 @@ class MemberDirectoryEntry extends StatelessWidget {
       return RaftNavItem(
         label: entry.name,
         labelSuffix: self ? raftText(context, '(you)') : null,
-        tag: role == null ? null : RaftSidebarTag(role),
+        tag: role == null
+            ? null
+            : RaftCssText(
+                role,
+                maxLines: 1,
+                style: tokens.scale(
+                  RaftTypeScale.caption,
+                  weight: FontWeight.w500,
+                  color: tokens.ui.foregroundHint,
+                ),
+              ),
         conversationKind: RaftConversationNavKind.directory,
         selected: selected,
         onContextMenu: onMenu,
