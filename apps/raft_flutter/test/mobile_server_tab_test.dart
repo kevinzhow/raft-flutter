@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_flutter/platform/desktop_title_bar.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
@@ -42,6 +43,8 @@ Future<void> _settle(WidgetTester t) async {
 }
 
 void main() {
+  tearDownAll(() => DesktopTitleBarController.platform.state.dispose());
+
   testWidgets('the bar is four tabs and the server tab, named Primary', (
     t,
   ) async {
