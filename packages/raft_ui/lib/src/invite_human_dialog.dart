@@ -211,7 +211,9 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                                 child: RaftTextLink(
                                   label: raftText(context, 'View billing'),
                                   variant: RaftTextLinkVariant.strong,
-                                  typeStyle: style,
+                                  typeStyle: style.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                   onPressed: widget.onViewBilling,
                                 ),
                               ),

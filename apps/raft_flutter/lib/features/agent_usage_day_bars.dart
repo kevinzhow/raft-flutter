@@ -145,6 +145,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
   Widget build(BuildContext context) {
     final days = widget.days;
     if (days.isEmpty) return const SizedBox.shrink();
+    final dense = days.length > AgentUsagePeriod.week.days;
     final tokens = RaftTokens.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final weekday = DateFormat.E(locale);
@@ -289,7 +290,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     if (!day.noData &&
-                                        (days.length == 7 ||
+                                        (!dense ||
                                             shown == index ||
                                             (shown < 0 &&
                                                 totals[index] == peak)))
@@ -309,7 +310,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                                             width: math.min(
                                               _maxBarWidth,
                                               slot *
-                                                  (days.length > 7
+                                                  (dense
                                                       ? _denseSlotFill
                                                       : _slotFill),
                                             ),
