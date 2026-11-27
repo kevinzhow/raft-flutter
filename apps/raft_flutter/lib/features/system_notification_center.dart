@@ -668,6 +668,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         ),
       );
       w.closeThread(navigate: false);
+      // perf-allow: the location is the workspace's own state; opening or closing a slot re-lays out the shell
       w.notifyListeners();
       return;
     }

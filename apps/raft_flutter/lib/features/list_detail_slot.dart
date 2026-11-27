@@ -66,6 +66,7 @@ void showListDetail(
     w.location.withQuery({for (final key in _slotKeys) key: null, ...slot}),
     kind: push ? RaftNavigationKind.push : RaftNavigationKind.replace,
   );
+  // perf-allow: the location is the workspace's own state; opening or closing a slot re-lays out the shell
   w.notifyListeners();
 }
 

@@ -59,6 +59,7 @@ bool openShellArtifact(
     }),
     kind: RaftNavigationKind.replace,
   );
+  // perf-allow: the location is the workspace's own state; opening or closing a slot re-lays out the shell
   w.notifyListeners();
   return true;
 }
@@ -71,6 +72,7 @@ void closeShellArtifact(WorkspaceController w) {
     w.location.withQuery(artifactSlotRemoval),
     kind: RaftNavigationKind.replace,
   );
+  // perf-allow: the location is the workspace's own state; opening or closing a slot re-lays out the shell
   w.notifyListeners();
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (opener?.context != null) opener!.requestFocus();
