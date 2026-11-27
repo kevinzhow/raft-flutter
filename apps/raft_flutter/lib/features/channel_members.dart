@@ -1023,8 +1023,8 @@ class _ChannelMembersState extends State<ChannelMembers> {
     );
     final open = profile;
     if (!widget.page) return roster;
-    final content = open == null
-        ? roster
+    final profileView = open == null
+        ? null
         : open.kind == 'human'
         ? MemberProfileView(
             key: ValueKey('member-page-profile-${open.id}'),
@@ -1041,6 +1041,19 @@ class _ChannelMembersState extends State<ChannelMembers> {
             computers: false,
             initial: agentRows[open.id] ?? {'id': open.id},
             onClose: back,
+          );
+    // The profile is stacked over the roster: its head stands where the
+    // roster's did, so it takes the host's head frame (the side card's grip),
+    // and its Back returns to the roster.
+    final content = profileView == null
+        ? roster
+        : widget.headerWrapper == null
+        ? profileView
+        : RaftPanelHeaderChrome(
+            actions: const [],
+            onBack: back,
+            wrap: widget.headerWrapper,
+            child: profileView,
           );
     final canPop = open == null && !addView && !widget.embedded;
     return RaftDismissScope(
