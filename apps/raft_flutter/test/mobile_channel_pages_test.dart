@@ -189,6 +189,10 @@ void main() {
         FocusManager.instance.primaryFocus?.unfocus();
         await t.pumpAndSettle();
         // Both the button and Android system back guard an unsaved draft.
+        await t.ensureVisible(
+          find.byKey(const ValueKey('channel-details-edit')),
+        );
+        await t.pumpAndSettle();
         await t.tap(find.byKey(const ValueKey('channel-details-edit')));
         await t.pumpAndSettle();
         await t.enterText(
