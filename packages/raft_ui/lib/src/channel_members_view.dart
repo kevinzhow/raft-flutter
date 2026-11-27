@@ -85,8 +85,17 @@ class RaftMemberRowData {
     this.roleActionDisabled = false,
     this.serverBadges = const [],
     this.testId,
+    this.titleNote,
+    this.actions = const [],
   });
   final String label;
+
+  /// Words after the name on the title line, in caption hint ink (Web
+  /// ExternalInviteRow: an invite's "{n} days left" after the email).
+  final String? titleNote;
+
+  /// Icon actions after the role action and remove, revealed with them.
+  final List<RaftMemberRowAction> actions;
   final String? searchText;
 
   /// `JointServerBadges`: the servers a joint-channel member participates
@@ -122,6 +131,22 @@ class RaftMemberRowData {
   final bool human;
 }
 
+/// A member row's trailing icon action: `Button size="icon-md"
+/// variant="ghost"` (Web ExternalInviteRow Resend / Withdraw). A null
+/// [onPressed] shows it disabled; [tooltip] then names the reason.
+@immutable
+class RaftMemberRowAction {
+  const RaftMemberRowAction({
+    required this.glyph,
+    required this.tooltip,
+    required this.semanticLabel,
+    this.onPressed,
+  });
+  final RaftGlyph glyph;
+  final String tooltip, semanticLabel;
+  final VoidCallback? onPressed;
+}
+
 class RaftChannelMembersModal extends StatelessWidget {
   const RaftChannelMembersModal({
     super.key,
@@ -152,10 +177,23 @@ class RaftChannelMembersModal extends StatelessWidget {
     this.retryingJoin = false,
     this.onConfirm,
     this.page = false,
-    this.afterRoster,
+    this.invited = const [],
+    this.retryInvites,
+    this.inviteOutside,
   });
-  final Widget? afterRoster;
   final VoidCallback onClose;
+
+  /// Open external invites: the "Invited" group above Humans (Web
+  /// `ExternalInviteRows` in `MemberPageSection kind="invited"`).
+  final List<RaftMemberRowData> invited;
+
+  /// Non-null when the invites could not be read and none are known: the
+  /// "Couldn't load the invites." banner, whose Retry calls it.
+  final VoidCallback? retryInvites;
+
+  /// "Invite people outside {server}" under Add member; a null `onPressed`
+  /// shows it disabled (its dialog is opening).
+  final ({String server, VoidCallback? onPressed})? inviteOutside;
   final TextEditingController search;
   final String channelName;
   final bool addView, loading, adding, hasCandidates, canCreateAgent;
@@ -257,8 +295,19 @@ class RaftChannelMembersModal extends StatelessWidget {
               RaftErrorBanner(error!),
               const SizedBox(height: 12),
             ],
-            if (addView) ..._addView(context, t) else _roster(context, t),
-            if (addView) ?afterRoster,
+            if (addView)
+              ..._addView(context, t)
+            else ...[
+              if (retryInvites case final retry?) ...[
+                _InvitesFailedBanner(onRetry: retry),
+                const SizedBox(height: 12),
+              ],
+              _roster(context, t),
+              if (inviteOutside case final invite?) ...[
+                const SizedBox(height: 12),
+                _InviteOutsideButton(invite: invite),
+              ],
+            ],
           ],
         ),
       ),
@@ -283,6 +332,17 @@ class RaftChannelMembersModal extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (invited.isNotEmpty) ...[
+                RaftDialogSectionEyebrow(
+                  raftText(context, 'Invited'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  background: eyebrowFill,
+                ),
+                for (var i = 0; i < invited.length; i++) row(invited[i], i),
+              ],
               if (humans.isNotEmpty) ...[
                 RaftDialogSectionEyebrow(
                   'Humans',
@@ -305,7 +365,6 @@ class RaftChannelMembersModal extends StatelessWidget {
                 ),
                 for (var i = 0; i < agents.length; i++) row(agents[i], i),
               ],
-              ?afterRoster,
               if (humans.isEmpty && agents.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -807,6 +866,11 @@ class _MembersPageState extends State<_MembersPage> {
       for (final a in m.agents)
         if (matches(a)) a,
     ];
+    final invited = [
+      for (final i in m.invited)
+        if (matches(i)) i,
+    ];
+    final footer = !m.loading && (m.onAdd != null || m.inviteOutside != null);
     final total = m.humans.length + m.agents.length;
     final muted = t.colors['foreground-muted'];
     TextStyle note() => raftCssTextStyle(
@@ -840,9 +904,7 @@ class _MembersPageState extends State<_MembersPage> {
           child: SingleChildScrollView(
             // Without the pinned Add footer the last row must scroll clear
             // of the system bar; with it the footer pads itself.
-            padding: EdgeInsets.only(
-              bottom: !m.loading && m.onAdd != null ? 0 : bottomInset,
-            ),
+            padding: EdgeInsets.only(bottom: footer ? 0 : bottomInset),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -867,6 +929,19 @@ class _MembersPageState extends State<_MembersPage> {
                       ),
                     ),
                   ),
+                if (m.retryInvites case final retry?)
+                  // `p-3`
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: _InvitesFailedBanner(onRetry: retry),
+                  ),
+                if (!m.loading && invited.isNotEmpty)
+                  _MemberSection(
+                    key: const ValueKey('member-page-section-invited'),
+                    label: raftText(context, 'Invited'),
+                    count: invited.length,
+                    rows: invited,
+                  ),
                 if (!m.loading && humans.isNotEmpty)
                   _MemberSection(
                     key: const ValueKey('member-page-section-humans'),
@@ -881,7 +956,6 @@ class _MembersPageState extends State<_MembersPage> {
                     count: agents.length,
                     rows: agents,
                   ),
-                ?m.afterRoster,
                 if (!m.loading && total == 0)
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -894,7 +968,11 @@ class _MembersPageState extends State<_MembersPage> {
                       style: note(),
                     ),
                   ),
-                if (!m.loading && total > 0 && humans.isEmpty && agents.isEmpty)
+                if (!m.loading &&
+                    total > 0 &&
+                    humans.isEmpty &&
+                    agents.isEmpty &&
+                    invited.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -912,26 +990,35 @@ class _MembersPageState extends State<_MembersPage> {
             ),
           ),
         ),
-        if (!m.loading && m.onAdd != null)
+        if (footer)
           Container(
-            // `shrink-0 border-t border-line-seam p-3`;
-            // the system inset is added so the button clears the gesture bar.
+            // `flex shrink-0 flex-col gap-2 border-t border-line-seam p-3`;
+            // the system inset is added so the buttons clear the gesture bar.
             padding: EdgeInsets.fromLTRB(12, 12, 12, 12 + bottomInset),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(color: t.colors['line-seam']!, width: 1),
               ),
             ),
-            child: RaftButton(
-              key: const ValueKey('add-member-open'),
-              label: raftText(context, 'Add member'),
-              glyph: RaftGlyph.userPlus,
-              glyphSize: 14,
-              uiVariant: RaftButtonVariant.outline,
-              uiSize: RaftButtonSize.lg,
-              expand: true,
-              disabled: !m.hasCandidates,
-              onPressed: m.onAdd,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 8,
+              children: [
+                if (m.onAdd != null)
+                  RaftButton(
+                    key: const ValueKey('add-member-open'),
+                    label: raftText(context, 'Add member'),
+                    glyph: RaftGlyph.userPlus,
+                    glyphSize: 14,
+                    uiVariant: RaftButtonVariant.outline,
+                    uiSize: RaftButtonSize.lg,
+                    expand: true,
+                    disabled: !m.hasCandidates,
+                    onPressed: m.onAdd,
+                  ),
+                if (m.inviteOutside case final invite?)
+                  _InviteOutsideButton(invite: invite),
+              ],
             ),
           ),
       ],
@@ -1113,13 +1200,31 @@ class _MemberPageRowState extends State<_MemberPageRow> {
             label: r.label,
             onPressed: r.onRemove!,
           );
+    // ExternalInviteRow's icon actions: `flex items-center gap-1`.
+    final icons = r.actions.isEmpty
+        ? null
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 4,
+            children: [
+              for (final a in r.actions)
+                RaftButton(
+                  glyph: a.glyph,
+                  uiVariant: RaftButtonVariant.ghost,
+                  uiSize: RaftButtonSize.iconMd,
+                  tooltip: a.tooltip,
+                  semanticLabel: a.semanticLabel,
+                  onPressed: a.onPressed,
+                ),
+            ],
+          );
     // `ChannelMemberHoverActions`: `flex items-center gap-2`.
-    final actions = roleAction == null && remove == null
+    final actions = roleAction == null && remove == null && icons == null
         ? null
         : Row(
             mainAxisSize: MainAxisSize.min,
             spacing: 8,
-            children: [?roleAction, ?remove],
+            children: [?roleAction, ?remove, ?icons],
           );
     Widget? trailing;
     // Hover swaps the role tag for the actions: a pointer affordance. A finger
@@ -1228,13 +1333,17 @@ class _MemberPageRowState extends State<_MemberPageRow> {
                                   Expanded(
                                     child: RaftMemberNameLine(
                                       labels: r.serverBadges,
-                                      name: Text(
-                                        r.label,
-                                        maxLines: grows ? null : 1,
-                                        overflow: grows
-                                            ? TextOverflow.clip
-                                            : TextOverflow.ellipsis,
-                                        style: titleStyle,
+                                      name: _titleLine(
+                                        Text(
+                                          r.label,
+                                          maxLines: grows ? null : 1,
+                                          overflow: grows
+                                              ? TextOverflow.clip
+                                              : TextOverflow.ellipsis,
+                                          style: titleStyle,
+                                        ),
+                                        r.titleNote,
+                                        subStyle,
                                       ),
                                     ),
                                   ),
@@ -1293,6 +1402,59 @@ class _MemberPageRowState extends State<_MemberPageRow> {
       ),
     );
   }
+}
+
+/// The name, then [note] on the same line (`flex min-w-0 items-baseline
+/// gap-1.5`): the name truncates, the note keeps its width.
+Widget _titleLine(Text name, String? note, TextStyle style) => note == null
+    ? name
+    : Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Flexible(child: name),
+          const SizedBox(width: 6),
+          Text(note, maxLines: 1, style: style),
+        ],
+      );
+
+/// `externalInvitesFailedBanner`: a warning Banner with an outline Retry.
+class _InvitesFailedBanner extends StatelessWidget {
+  const _InvitesFailedBanner({required this.onRetry});
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) => RaftBanner(
+    key: const ValueKey('external-invites-load-failed'),
+    status: RaftBannerRecipeStatus.warning,
+    description: raftText(context, "Couldn't load the invites."),
+    action: RaftButton(
+      label: raftText(context, 'Retry'),
+      uiVariant: RaftButtonVariant.outline,
+      uiSize: RaftButtonSize.md,
+      onPressed: onRetry,
+    ),
+  );
+}
+
+/// "Invite people outside {server}": `Button size="lg" variant="outline"
+/// className="w-full"` with `Mail size={14}`.
+class _InviteOutsideButton extends StatelessWidget {
+  const _InviteOutsideButton({required this.invite});
+  final ({String server, VoidCallback? onPressed}) invite;
+  @override
+  Widget build(BuildContext context) => RaftButton(
+    key: const ValueKey('member-page-invite-outside'),
+    label: raftFormat(context, 'Invite people outside {server}', {
+      'server': invite.server,
+    }),
+    glyph: RaftGlyph.mail,
+    glyphSize: 14,
+    uiVariant: RaftButtonVariant.outline,
+    uiSize: RaftButtonSize.lg,
+    expand: true,
+    disabled: invite.onPressed == null,
+    onPressed: invite.onPressed,
+  );
 }
 
 /// `ChannelMemberRemoveButton` (member-management rows): ghost `icon-md` Button

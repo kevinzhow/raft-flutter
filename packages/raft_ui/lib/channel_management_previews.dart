@@ -78,6 +78,29 @@ class _ChannelPagesPreviewState extends State<_ChannelPagesPreview> {
               avatar: RaftAvatar(name: 'Alice'),
             ),
           ],
+          invited: [
+            RaftMemberRowData(
+              label: 'guest@example.com',
+              searchText: 'guest@example.com',
+              titleNote: '14 days left',
+              avatar: const RaftIconTile(glyph: RaftGlyph.mail),
+              actions: [
+                RaftMemberRowAction(
+                  glyph: RaftGlyph.mail,
+                  tooltip: 'Resend invite',
+                  semanticLabel: 'Resend the invite to guest@example.com',
+                  onPressed: () {},
+                ),
+                RaftMemberRowAction(
+                  glyph: RaftGlyph.x,
+                  tooltip: 'Withdraw invite',
+                  semanticLabel: 'Withdraw the invite to guest@example.com',
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ],
+          inviteOutside: (server: 'Acme', onPressed: () {}),
           isChecked: (_) => false,
           onToggle: (_) {},
           onConfirm: () => setState(() => adding = false),

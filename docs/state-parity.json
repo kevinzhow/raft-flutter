@@ -54037,150 +54037,7 @@
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:ChannelExternalInvites": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:_ChannelExternalInvites": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:_ChannelExternalInvitesState": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:_ExternalInviteRowLabel": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
       "apps/raft_flutter/lib/features/external_invite_channel_members.dart#function:showExternalConnectionOutcomes": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:_ChannelExternalInvitesState/METHOD:_manage/FUNCTION:run": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites.build": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvites.createState": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._build": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._inviteRow": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._manage": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._open": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState.build": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "button",
-          "dialog",
-          "checkbox",
-          "banner"
-        ],
-        "owner": "WP-EXT",
-        "reason": "Composes existing Raft controls for external-channel actions."
-      },
-      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ExternalInviteRowLabel.build": {
         "role": "entry_composition",
         "familyRefs": [
           "button",
@@ -58930,6 +58787,88 @@
         ],
         "owner": "Legacy UI Wave 4B",
         "reason": "Builds canonical RaftCard and RaftSkeleton layout matching Web v1.24 QuotedMessagePermalinkPreview loading state."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:ChannelExternalInvites/METHOD:_manage/FUNCTION:run": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites._manage": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites._open": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites._row": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#class:_InviteOutsideButton": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes the canonical Raft control for the members page external invites."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#method:_InviteOutsideButton.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes the canonical Raft control for the members page external invites."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#class:_InvitesFailedBanner": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes the canonical Raft control for the members page external invites."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#method:_InvitesFailedBanner.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes the canonical Raft control for the members page external invites."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#function:_titleLine": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Lays out the member row name and its inline note; no control of its own."
       }
     },
     "entries": {
@@ -62492,30 +62431,6 @@
         ],
         "mountStatus": "source_reviewed"
       },
-      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:_ChannelExternalInvitesState/METHOD:_manage/FUNCTION:run": {
-        "owner": "WP-EXT",
-        "kind": "surface_factory",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:_ChannelExternalInvitesState/METHOD:_manage/FUNCTION:run"
-        ],
-        "mountStatus": "source_reviewed"
-      },
-      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._manage": {
-        "owner": "WP-EXT",
-        "kind": "surface_factory",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._manage"
-        ],
-        "mountStatus": "source_reviewed"
-      },
-      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._open": {
-        "owner": "WP-EXT",
-        "kind": "surface_factory",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._open"
-        ],
-        "mountStatus": "source_reviewed"
-      },
       "factory:apps/raft_flutter/lib/features/external_invite_page.dart#method:_ExternalInvitePageState._cancel": {
         "owner": "WP-EXT",
         "kind": "surface_factory",
@@ -63171,6 +63086,30 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Opens the RaftDialog date and time picker for join link expiration."
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:ChannelExternalInvites/METHOD:_manage/FUNCTION:run": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:ChannelExternalInvites/METHOD:_manage/FUNCTION:run"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites._manage": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites._manage"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites._open": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites._open"
+        ],
+        "mountStatus": "source_reviewed"
       }
     },
     "requirements": {

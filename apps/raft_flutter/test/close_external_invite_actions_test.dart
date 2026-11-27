@@ -1,9 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/external_invite_api.dart';
 import 'package:raft_flutter/features/channel_joint_section_actions.dart';
-import 'package:raft_flutter/features/external_invite_channel_members.dart';
+import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/external_invite_page.dart';
 
 import 'close_dialogs_test.dart'
@@ -72,8 +73,21 @@ void main() {
           {'id': 'a', 'email': 'fixture@example.invalid'},
         ],
       };
+      api.routes['GET /channels/project/members'] = (_) => {
+        'humans': [],
+        'agents': [],
+      };
       await tester.pumpWidget(
-        host(ChannelExternalInvites(workspace: workspace, channel: _channel)),
+        host(
+          ChannelMembers(controller: workspace, channel: _channel, page: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // A pointer reveals the row's actions on hover; a finger sees them.
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(
+        tester.getCenter(find.byKey(const ValueKey('external-invite-a'))),
       );
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Withdraw invite'));

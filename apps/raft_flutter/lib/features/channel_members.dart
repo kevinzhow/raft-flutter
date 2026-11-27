@@ -284,6 +284,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
       widget.channel;
   List<Map<String, dynamic>> humans = [], agents = [], externalMembers = [];
   late ChannelCandidateFeed _feed = ChannelCandidateFeed(w, includeSelf: true);
+  late ChannelExternalInvites _invites;
   List<ChannelMemberCandidate> get candidates => [
     for (final c in _feed.value)
       if (!_inChannel.contains('${c.kind}:${c.id}')) c,
@@ -338,6 +339,8 @@ class _ChannelMembersState extends State<ChannelMembers> {
       rosterKnown = true;
     }
     _feed.addListener(_directoryChanged);
+    _invites = ChannelExternalInvites(w, widget.channel)
+      ..addListener(_directoryChanged);
     w.services.entityDirectory.addListener(_directoryChanged);
     // Source useChannelMembers: a member change in this channel re-reads the
     // roster in place, so a newly joined agent appears while the view is open.
@@ -367,6 +370,9 @@ class _ChannelMembersState extends State<ChannelMembers> {
     if (oldWidget.channel.id != widget.channel.id ||
         oldWidget.controller != widget.controller) {
       _reload?.cancel();
+      _invites.dispose();
+      _invites = ChannelExternalInvites(w, widget.channel)
+        ..addListener(_directoryChanged);
       rosterEpoch++;
       adding = false;
       profile = null;
@@ -417,6 +423,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
     _reload?.cancel();
     _feed.removeListener(_directoryChanged);
     _feed.dispose();
+    _invites.dispose();
     w.services.entityDirectory.removeListener(_directoryChanged);
     search.dispose();
     super.dispose();
@@ -952,11 +959,9 @@ class _ChannelMembersState extends State<ChannelMembers> {
       onClose: close,
       search: search,
       channelName: channel.name,
-      afterRoster: ChannelExternalInvites(
-        key: ValueKey('external-invites-${channel.id}'),
-        workspace: w,
-        channel: channel,
-      ),
+      invited: _invites.rows(context),
+      retryInvites: _invites.retry,
+      inviteOutside: _invites.inviteOutside(context),
       addView: addView,
       loading: loading,
       adding: adding,
