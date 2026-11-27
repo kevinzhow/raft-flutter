@@ -19,6 +19,14 @@ import '../integration_test/desktop_screens_test.dart'
     show DesktopFixtureClient;
 import 'support/app_services_fixture.dart';
 
+class _IdleFixtureClient extends DesktopFixtureClient {
+  _IdleFixtureClient(super.fixture);
+
+  @override
+  Future<dynamic> getForAccount(String path, {Map<String, dynamic>? query}) =>
+      request('GET', path, query: query);
+}
+
 /// Idle-frame guard. Once a screen has loaded and its transitions finished,
 /// nothing may keep asking for frames: no scheduled frame, no running ticker,
 /// even after every poll and expiry timer in the app has had time to fire.
@@ -39,9 +47,10 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await t.binding.setSurfaceSize(const Size(1440, 900));
     addTearDown(() => t.binding.setSurfaceSize(null));
-    final client = DesktopFixtureClient(
-      jsonDecode(fixtureText) as Map<String, dynamic>,
-    );
+    final fixture = jsonDecode(fixtureText) as Map<String, dynamic>;
+    final routes = fixture['routes'] as Map<String, dynamic>;
+    routes['GET /channels/joint-invites'] = {'invites': []};
+    final client = _IdleFixtureClient(fixture);
     final w = WorkspaceController(client);
     addTearDown(w.dispose);
     // This fixture creates the app-level service; WorkspaceView only borrows
@@ -170,6 +179,11 @@ void main() {
   testWidgets('a hidden or paused app does no frame or timer work', (t) async {
     final (_, client) = await boot(t);
     await t.pumpAndSettle(const Duration(milliseconds: 100));
+    const feedbackRead = 'GET /product-feedback/tickets';
+    expect(
+      client.served.where((request) => request.startsWith(feedbackRead)),
+      hasLength(1),
+    );
     final served = client.served.length;
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
@@ -188,11 +202,19 @@ void main() {
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await t.pumpAndSettle(const Duration(milliseconds: 100));
-    // Visible again: the bell polls once a minute.
+    final resumed = client.served.length;
     await t.pump(const Duration(seconds: 61));
     expect(
-      client.served.skip(served).where((r) => r.contains('product-feedback')),
+      client.served
+          .skip(resumed)
+          .where((request) => request == 'GET /channels/joint-invites'),
       isNotEmpty,
+    );
+    expect(
+      client.served
+          .skip(served)
+          .where((request) => request.startsWith(feedbackRead)),
+      isEmpty,
     );
   });
 }

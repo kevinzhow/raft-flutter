@@ -537,7 +537,7 @@ void main() {
     late WorkspaceController w;
     late MessageAdapter api;
 
-    Future<void> setup(WidgetTester tester) async {
+    Future<void> setup(WidgetTester tester, {int feedbackUnread = 0}) async {
       ignoreFontOverflow();
       SharedPreferences.setMockInitialValues({});
       tester.view.physicalSize = const Size(390, 844);
@@ -606,6 +606,10 @@ void main() {
       };
       api.routes['GET /agents'] = (_) => {'agents': []};
       api.routes['GET /servers/s1/members'] = (_) => {'members': []};
+      api.routes['GET /product-feedback/tickets'] = (_) => {
+        'unread_total': feedbackUnread,
+        'tickets': [],
+      };
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(),
@@ -767,39 +771,19 @@ void main() {
       }
     });
 
-    testWidgets('a feedback notice opens Settings > Feedback (Web toSettings)', (
-      tester,
-    ) async {
-      await setup(tester);
-      api.routes['GET /product-feedback/tickets'] = (_) => {
-        'unread_total': 2,
-        'tickets': [],
-      };
-      api.routes['GET /servers/s1/machines'] = (_) => {'machines': []};
-      // The bell reads on mount; rebuild the page so it sees the unread count.
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(),
-          home: withAppServices(
-            WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(),
-              onAppearance: (_) async {},
-              onLogout: () async {},
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(RaftMobileNotificationButton));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('View Feedback'));
-      await tester.pumpAndSettle();
-      expect(w.location.route, RaftRoute.settings);
-      expect(w.location.settingsPath, ['feedback']);
-      expect(find.byKey(const ValueKey('feedback')), findsOneWidget);
-    });
+    testWidgets(
+      'a feedback notice opens Settings > Feedback (Web toSettings)',
+      (tester) async {
+        await setup(tester, feedbackUnread: 2);
+        await tester.tap(find.byType(RaftMobileNotificationButton));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('View Feedback'));
+        await tester.pumpAndSettle();
+        expect(w.location.route, RaftRoute.settings);
+        expect(w.location.settingsPath, ['feedback']);
+        expect(find.byKey(const ValueKey('feedback')), findsOneWidget);
+      },
+    );
 
     testWidgets('Create Agent "Upgrade for more" closes and opens Billing', (
       tester,
