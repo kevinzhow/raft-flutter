@@ -128,6 +128,21 @@ void f(BuildContext c, Widget w) {
     );
   }
 
+  Future<void> test_a_web_page_citation_or_a_widget_preview_allows_it() async {
+    expect(
+      await run(r'''
+import 'package:flutter/widgets.dart';
+void f(Widget w) {
+  // ignore: raft_lints/avoid_window_cover_route -- web-page: App.tsx:1564 (Web also leaves the app for this page)
+  MaterialPageRoute<void>(builder: (_) => w);
+  // ignore: raft_lints/avoid_window_cover_route -- widget-preview: the preview harness's own navigator
+  PageRouteBuilder<void>(pageBuilder: (_, _, _) => w);
+}
+'''),
+      isEmpty,
+    );
+  }
+
   Future<void> test_a_bare_ignore_or_another_reason_still_reports() async {
     expect(
       await run(r'''
