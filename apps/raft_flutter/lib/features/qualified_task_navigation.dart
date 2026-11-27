@@ -65,7 +65,9 @@ RaftChannel? resolveMessageDmReference(
   return matches.take(2).length == 1 ? matches.first : null;
 }
 
-Future<Map<String, dynamic>> readTaskReference(
+/// Null when the response carries no task (Web `openTaskByChannelNumber`
+/// then opens nothing).
+Future<Map<String, dynamic>?> readTaskReference(
   WorkspaceController workspace,
   String channelId,
   int number,
@@ -73,7 +75,8 @@ Future<Map<String, dynamic>> readTaskReference(
   final result = await workspace.query(
     '/tasks/channel/$channelId/number/$number',
   );
-  return Map<String, dynamic>.from(result['task']);
+  final task = result is Map ? result['task'] : null;
+  return task is Map ? Map<String, dynamic>.from(task) : null;
 }
 
 void openQualifiedTaskSurface(

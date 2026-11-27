@@ -564,13 +564,13 @@ class MessagePresentation extends StatelessWidget {
         onOpenTask!(Map<String, dynamic>.from(local));
         return;
       }
-      Future<Map<String, dynamic>> fetch() =>
+      Future<Map<String, dynamic>?> fetch() =>
           readTaskReference(w, carrier, number);
 
       if (onOpenTask != null) {
         // No task row to open the task surface with yet.
         final task = await fetch();
-        if (current()) {
+        if (task != null && current()) {
           if (qualified) {
             openQualifiedTaskSurface(
               w,
@@ -610,7 +610,9 @@ class MessagePresentation extends StatelessWidget {
       var closed = false;
       unawaited(shown.whenComplete(() => closed = true));
       try {
-        data.value = await fetch();
+        data.value =
+            await fetch() ??
+            (throw const RaftApiException('This task is no longer available.'));
       } catch (e) {
         if (!closed && data.value == null && navigator.canPop()) {
           navigator.pop();

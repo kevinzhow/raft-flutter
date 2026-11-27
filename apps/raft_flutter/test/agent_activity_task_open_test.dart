@@ -65,4 +65,38 @@ void main() {
       expect('${w.location.task}', 'c-general:m7');
     });
   }
+
+  for (final (label, payload) in [
+    ('missing', <String, dynamic>{}),
+    ('null', <String, dynamic>{'task': null}),
+  ]) {
+    testWidgets('a task pill whose task is $label opens nothing', (
+      tester,
+    ) async {
+      final (w, _) = await pumpAgentPanel(
+        tester,
+        tab: AgentDetailTab.activity,
+        size: const Size(856, 944),
+        platform: TargetPlatform.android,
+        routes: {
+          '/agents/a/activity-log': _log,
+          '/tasks/channel/c-general/number/7': () => payload,
+        },
+        toastHost: true,
+      );
+      w.channels = [
+        RaftChannel({'id': 'c-general', 'type': 'channel', 'name': 'general'}),
+      ];
+      await tester.tap(find.byKey(const ValueKey('activity-view-raw')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('#general:#7'));
+      await tester.pumpAndSettle();
+      expect(
+        w.queries.map((q) => q.$1),
+        contains('/tasks/channel/c-general/number/7'),
+      );
+      expect(w.location.task, isNull);
+      expect(find.textContaining('Unable to open'), findsNothing);
+    });
+  }
 }

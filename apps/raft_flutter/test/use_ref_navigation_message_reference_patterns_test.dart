@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/message_presentation.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'message_presentation_test.dart' show fixture, host;
 
@@ -125,4 +126,78 @@ void main() {
     expect(workspace.location.chatTab, 'tasks');
     expect(workspace.location.legacyTask, isNull);
   });
+
+  for (final (label, payload) in [
+    ('missing', <String, dynamic>{}),
+    ('null', <String, dynamic>{'task': null}),
+  ]) {
+    testWidgets('a qualified task ref whose task is $label opens nothing', (
+      tester,
+    ) async {
+      final (workspace, api) = (await tester.runAsync(() => fixture('owner')))!;
+      addTearDown(workspace.dispose);
+      workspace.channels = [
+        workspace.channel!,
+        RaftChannel({'id': 'design-id', 'name': 'design', 'type': 'channel'}),
+      ];
+      api.routes['GET /tasks/channel/design-id/number/7'] = (_) => payload;
+      final opened = <Map<String, dynamic>>[];
+      final presentation = MessagePresentation(
+        controller: workspace,
+        message: RaftMessage({
+          'id': 'm1',
+          'channelId': 'c1',
+          'content': '#design:#7',
+        }),
+        onOpenTask: opened.add,
+        onExternalLink: (_) {},
+      );
+      await tester.pumpWidget(
+        host(
+          RaftToastHost(
+            child: Builder(builder: (context) => presentation.body(context)),
+          ),
+        ),
+      );
+      await tester.tap(find.text('#design:#7', findRichText: true));
+      await tester.pumpAndSettle();
+      expect(opened, isEmpty);
+      expect(find.textContaining('Unable to open'), findsNothing);
+    });
+
+    testWidgets('a task mention dialog whose task is $label closes', (
+      tester,
+    ) async {
+      final (workspace, api) = (await tester.runAsync(() => fixture('owner')))!;
+      addTearDown(workspace.dispose);
+      workspace.channels = [
+        workspace.channel!,
+        RaftChannel({'id': 'design-id', 'name': 'design', 'type': 'channel'}),
+      ];
+      api.routes['GET /tasks/channel/design-id/number/7'] = (_) => payload;
+      final presentation = MessagePresentation(
+        controller: workspace,
+        message: RaftMessage({
+          'id': 'm1',
+          'channelId': 'c1',
+          'content': '#design:#7',
+        }),
+        onExternalLink: (_) {},
+      );
+      await tester.pumpWidget(
+        host(
+          RaftToastHost(
+            child: Builder(builder: (context) => presentation.body(context)),
+          ),
+        ),
+      );
+      await tester.tap(find.text('#design:#7', findRichText: true));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('task #7'), findsNothing);
+      expect(
+        find.text('Unable to open source. It may be unavailable or deleted.'),
+        findsOneWidget,
+      );
+    });
+  }
 }

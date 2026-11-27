@@ -20,7 +20,7 @@ Future<void> openAgentActivityTask(
   int taskNumber,
 ) async {
   final row = await readTaskReference(w, channelId, taskNumber);
-  if (!context.mounted) return;
+  if (row == null || !context.mounted) return;
   final rowChannel = row['channelId'];
   final itemId = taskSurfaceItemFor(w, row);
   if (rowChannel is! String || itemId == null || itemId.isEmpty) return;
