@@ -11,6 +11,7 @@
 // does not have are NOT registered here (the builder lists them as
 // "Flutter page missing").
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
@@ -87,6 +88,9 @@ WorkspaceController _workspace(ParityContext ctx, {bool mobile = false}) {
     (method, path, query) => _answer(ctx, method, path, query),
     user: wire.me(),
     server: _serverId,
+    origin: ctx.props['extKind'] == 'invite'
+        ? 'http://127.0.0.1:${Platform.environment['PARITY_EXT_WEB_PORT'] ?? '4396'}'
+        : 'https://parity-fixture.invalid',
   );
   final w = WorkspaceController(client, mobileNavigation: mobile);
   final server = RaftRecord(wire.server());
