@@ -59681,6 +59681,89 @@
           "dialog"
         ],
         "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#function:_filterOptions": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "popover"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Projects usage responses into runtime, model, and agent picker groups."
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#local-function:CLASS:_AgentTokenUsagePaneState/METHOD:_sections/FUNCTION:<anonymous>/FUNCTION:band": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS",
+        "reason": "Places the two columns of the filtered single-agent card."
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#local-function:CLASS:_AgentTokenUsagePaneState/METHOD:_sections/FUNCTION:kindFact": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS",
+        "reason": "Composes a token-series swatch, amount, and explanatory text."
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:_AgentTokenUsagePaneState._emptyState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_usage_day_bars.dart#class:AgentUsageSwatch": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS",
+        "reason": "Shows the same token-series colors in charts and Usage summaries."
+      },
+      "apps/raft_flutter/lib/features/agent_usage_day_bars.dart#method:AgentUsageSwatch.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#local-function:CLASS:_MembersPageState/METHOD:build/FUNCTION:<anonymous>/FUNCTION:controls": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_entries.dart#function:usageAgentAvatar": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS",
+        "reason": "Adapts the agent identity for the Usage picker, row, and single-agent card."
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#class:_UsageTrend": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS",
+        "reason": "Paints the token usage time series and marks the partial day."
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#local-function:CLASS:_MembersUsageTableState/METHOD:build/FUNCTION:<anonymous>/FUNCTION:fixedLabel": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#local-function:CLASS:_MembersUsageTableState/METHOD:build/FUNCTION:<anonymous>/FUNCTION:sortHeading": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#local-function:CLASS:_MembersUsageTableState/METHOD:build/FUNCTION:<anonymous>/FUNCTION:tracks": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#method:_MembersUsageTableState._trend": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
       }
     },
     "entries": {
