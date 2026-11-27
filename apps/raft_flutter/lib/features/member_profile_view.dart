@@ -261,6 +261,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       (dialogContext) => RaftConfirmDialog(
         surfaceKey: const ValueKey('human-promote-guest-dialog'),
         confirmKey: const ValueKey('human-promote-guest-confirm'),
+        cssTitle: true,
         title: raftFormat(dialogContext, 'Make {name} a member of {server}?', {
           'name': name,
           'server': server.string('name'),
@@ -822,7 +823,10 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
           vertical: 12,
           gap: 4,
           children: [
-            RaftSectionEyebrow(raftTextZh(context, 'From', '来自')),
+            RaftSectionEyebrow(
+              raftTextZh(context, 'From', '来自'),
+              cssBaseline: true,
+            ),
             RaftCssText(
               source,
               style: raftCssText.merge(
@@ -896,7 +900,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         RaftPanelSection(
           hairline: true,
           children: [
-            RaftSectionEyebrow(raftText(context, 'Info')),
+            RaftSectionEyebrow(raftText(context, 'Info'), cssBaseline: true),
             if (departure != null)
               _statusField(context, t, departure)
             else if (role.isNotEmpty)
@@ -956,14 +960,12 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
             RaftSectionHeader(
               label: raftText(context, 'Created agents'),
               count: created.length,
+              cssBaseline: true,
             ),
             if (created.isEmpty)
               RaftCssText(
                 raftText(context, 'No agents created yet'),
-                style: t.scale(
-                  RaftTypeScale.callout,
-                  color: t.ui.foregroundHint,
-                ),
+                style: RaftPanelText.emptySection(t),
               )
             else
               RaftGapColumn(
@@ -1000,7 +1002,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         RaftPanelSection(
           hairline: true,
           children: [
-            RaftSectionEyebrow(raftText(context, 'Actions')),
+            RaftSectionEyebrow(raftText(context, 'Actions'), cssBaseline: true),
             if (canPromote)
               RaftButton(
                 key: const ValueKey('human-promote-guest'),

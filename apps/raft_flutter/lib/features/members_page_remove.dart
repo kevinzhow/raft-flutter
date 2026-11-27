@@ -49,11 +49,12 @@ class _RemoveMemberDialogState extends State<RemoveMemberDialog> {
   Widget build(BuildContext context) => RaftConfirmDialog(
     surfaceKey: const ValueKey('agent-dialog'),
     confirmKey: const ValueKey('human-remove-member-confirm'),
+    cssTitle: true,
     title: raftText(context, 'Remove member'),
     content: RaftGapColumn(
       gap: 8,
       children: [
-        Text(
+        RaftCssText(
           raftFormat(
             context,
             '{name} will be removed from every channel on this server. Their past messages will remain in history.',
@@ -80,7 +81,7 @@ class _RemoveMemberDialogState extends State<RemoveMemberDialog> {
             children: [
               const RaftSpinner(),
               Flexible(
-                child: Text(
+                child: RaftCssText(
                   raftText(
                     context,
                     'Checking which Computers this takes offline…',
@@ -92,7 +93,7 @@ class _RemoveMemberDialogState extends State<RemoveMemberDialog> {
         ];
       case MemberRemovalImpactKind.failed:
         return [
-          Text(
+          RaftCssText(
             raftText(
               context,
               "Couldn't check which Computers this takes offline.",
@@ -123,13 +124,21 @@ class _RemoveMemberDialogState extends State<RemoveMemberDialog> {
                 ),
               });
         return [
-          Text(details, key: const ValueKey('member-removal-impact')),
-          Text(
-            icuText(
-              context,
-              'To bring {computers, plural, one {it} other {them}} back, someone who stays in this server sets up that machine again. Its agents keep their settings.',
-              {'computers': impact.computers},
-            ),
+          RaftGapColumn(
+            gap: RaftSpace.x1,
+            children: [
+              RaftCssText(
+                details,
+                key: const ValueKey('member-removal-impact'),
+              ),
+              RaftCssText(
+                icuText(
+                  context,
+                  'To bring {computers, plural, one {it} other {them}} back, someone who stays in this server sets up that machine again. Its agents keep their settings.',
+                  {'computers': impact.computers},
+                ),
+              ),
+            ],
           ),
         ];
     }

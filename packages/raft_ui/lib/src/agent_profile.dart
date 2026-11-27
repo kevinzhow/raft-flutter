@@ -204,6 +204,21 @@ class RaftInlineBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (bodyLine) {
+      const line = RaftTypeScale.body;
+      final minHeight =
+          MediaQuery.textScalerOf(context).scale(line.fontSize) *
+          line.lineHeight /
+          line.fontSize;
+      return ConstrainedBox(
+        constraints: BoxConstraints(minHeight: minHeight),
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          heightFactor: 1,
+          child: badge,
+        ),
+      );
+    }
     final s = RaftBadgeRecipe.resolve(
       states: RaftRecipeStates({
         if (t.dark) RaftRecipeStates.dark,
@@ -211,11 +226,7 @@ class RaftInlineBadge extends StatelessWidget {
       tokens: RaftRecipeTokens(t),
     ).root;
     return RaftCssInlineBox(
-      lineText: bodyLine
-          ? raftCssText.merge(
-              RaftTypography.heading(t, weight: FontWeight.w400),
-            )
-          : RaftInfoRow.valueStyle(t),
+      lineText: RaftInfoRow.valueStyle(t),
       childText: t
           .scale(RaftTypeScale.label, weight: FontWeight.w700)
           .copyWith(
@@ -617,7 +628,7 @@ class RaftEditableEyebrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Flexible(child: RaftSectionEyebrow(label)),
+      Flexible(child: RaftSectionEyebrow(label, cssBaseline: profileAction)),
       if (onEdit != null) ...[
         const SizedBox(width: 8),
         if (profileAction)
@@ -643,6 +654,13 @@ class RaftEditableEyebrow extends StatelessWidget {
 abstract final class RaftPanelText {
   static TextStyle value(RaftTokens t) =>
       raftCssText.merge(t.scale(RaftTypeScale.callout, color: t.strong));
+
+  static TextStyle emptySection(RaftTokens t) {
+    final callout = t.typeSlot('callout');
+    return t
+        .scale(RaftTypeScale.callout, color: t.ui.foregroundHint)
+        .copyWith(height: RaftTypeScale.body.lineHeight / callout.fontSize);
+  }
 
   /// Web v1.21.12 profile value (`InfoRow` dd, `KeyValueRow` value, the
   /// description paragraph): `text-sm text-foreground-muted
@@ -3415,6 +3433,16 @@ class RaftDescriptionBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final empty = text.isEmpty;
+    final body = RaftCssText(
+      empty ? raftText(context, 'No description') : text,
+      style: switch ((human, empty)) {
+        (true, true) => RaftInfoRow.hintStyleOf(context),
+        (true, false) => RaftInfoRow.mutedStyleOf(context),
+        (false, true) => RaftPanelText.profilePlaceholder(t),
+        (false, false) => RaftPanelText.profileValue(t),
+      },
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3426,16 +3454,7 @@ class RaftDescriptionBlock extends StatelessWidget {
           profileAction: human,
         ),
         const SizedBox(height: 4),
-        text.isEmpty
-            ? RaftCssText(
-                raftText(context, 'No description'),
-                style: RaftPanelText.profilePlaceholder(t),
-              )
-            : selectable
-            ? RaftSelectionArea(
-                child: RaftCssText(text, style: RaftPanelText.profileValue(t)),
-              )
-            : RaftCssText(text, style: RaftPanelText.profileValue(t)),
+        selectable && !empty ? RaftSelectionArea(child: body) : body,
       ],
     );
   }

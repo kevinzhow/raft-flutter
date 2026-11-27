@@ -115,6 +115,7 @@ Widget memberRoleConfirmation(
   return RaftConfirmDialog(
     surfaceKey: ValueKey('$key-dialog'),
     confirmKey: ValueKey('$key-confirm'),
+    cssTitle: true,
     title: selfDemotion
         ? raftText(context, 'Change your role')
         : raftFormat(context, 'Make {name} an owner?', {'name': change.name}),

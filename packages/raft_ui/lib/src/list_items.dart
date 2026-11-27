@@ -244,9 +244,16 @@ class RaftAvatarListRow extends StatelessWidget {
 /// Web `SectionEyebrow`: `text-xs font-bold text-foreground-muted` (sentence
 /// case, no tracking: decision 0002).
 class RaftSectionEyebrow extends StatelessWidget {
-  const RaftSectionEyebrow(this.label, {super.key, this.color, this.trailing});
+  const RaftSectionEyebrow(
+    this.label, {
+    super.key,
+    this.color,
+    this.trailing,
+    this.cssBaseline = false,
+  });
 
   final String label;
+  final bool cssBaseline;
 
   /// Callsite colour override (e.g. `!text-black`).
   final Color? color;
@@ -263,10 +270,11 @@ class RaftSectionEyebrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Text.rich(
-      TextSpan(text: label, children: trailing),
-      style: style(t, color: color),
-    );
+    final span = TextSpan(text: label, children: trailing);
+    final textStyle = style(t, color: color);
+    return cssBaseline
+        ? RaftCssText.rich(span, style: textStyle)
+        : Text.rich(span, style: textStyle);
   }
 }
 
@@ -282,6 +290,7 @@ class RaftSectionHeader extends StatelessWidget {
     this.count,
     this.action,
     this.wrap = false,
+    this.cssBaseline = false,
   });
 
   final String label;
@@ -293,6 +302,7 @@ class RaftSectionHeader extends StatelessWidget {
   /// Callsite `flex-wrap gap-y-2`: the action drops under the label when the
   /// two do not fit on one line.
   final bool wrap;
+  final bool cssBaseline;
 
   @override
   Widget build(BuildContext context) {
@@ -310,6 +320,7 @@ class RaftSectionHeader extends StatelessWidget {
         Flexible(
           child: RaftSectionEyebrow(
             label,
+            cssBaseline: cssBaseline,
             trailing: count == null || count! < 0
                 ? null
                 : [
