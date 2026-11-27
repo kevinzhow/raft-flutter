@@ -32,7 +32,9 @@ void main() {
       workspace.notifyListeners();
       await frames(tester);
       if (size.width == 390) {
-        final create = find.byKey(const ValueKey('desktop-directory-add-agent'));
+        final create = find.byKey(
+          const ValueKey('desktop-directory-add-agent'),
+        );
         final options = find.byKey(const ValueKey('members-add-agent-options'));
         expect(tester.getSize(create).width, 32);
         expect(tester.getSize(options).width, 28);
