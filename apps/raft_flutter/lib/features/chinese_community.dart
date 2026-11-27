@@ -141,6 +141,7 @@ Future<Object?> _fetchJson(String url) async {
 /// Opens the QR page over the app (Web navigates to `/community/chinese`).
 Future<void> showChineseCommunityPage(BuildContext context, String apiOrigin) =>
     Navigator.of(context, rootNavigator: true).push(
+      // ignore: raft_lints/avoid_window_cover_route -- web-page: App.tsx:1564 (Web leaves the shell for this page)
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: chineseCommunityPagePath),
         // Web reads the fallback by a path relative to the app's own origin.

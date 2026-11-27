@@ -55,6 +55,7 @@ Future<void> openArtifactLink(
               );
             },
           )
+        // ignore: raft_lints/avoid_window_cover_route -- web-page: apps/artifacts/artifactLinks.ts:20 (a legacy link leaves the app on Web)
         : RaftFullBleedDialogRoute<void>(context: context, builder: viewer),
   );
 }

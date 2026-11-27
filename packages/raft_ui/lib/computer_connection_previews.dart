@@ -35,9 +35,11 @@ class _ConnectionPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Navigator(
     onGenerateInitialRoutes: (_, _) => [
+      // ignore: raft_lints/avoid_window_cover_route -- widget-preview: the preview's own navigator
       MaterialPageRoute<void>(builder: launcher),
       DialogRoute<void>(context: context, builder: dialog),
     ],
+    // ignore: raft_lints/avoid_window_cover_route -- widget-preview: the preview's own navigator
     onGenerateRoute: (_) => MaterialPageRoute<void>(builder: launcher),
   );
 }
