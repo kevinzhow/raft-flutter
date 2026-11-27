@@ -17,11 +17,11 @@ final frame = find.byKey(const ValueKey('task-thread-modal'));
 
 /// The matrix's chat at 1280 with its task's dialog open; the task's
 /// conversation links an Artifact.
-Future<Ctx> mountTaskDialog(WidgetTester t, [String host = 'chat-1280']) async {
+Future<Ctx> mountTaskDialog(WidgetTester t, [TapHost? host]) async {
   SharedPreferences.setMockInitialValues({});
   final c = await mount(
     t,
-    TapTargetRegistry.hosts.firstWhere((h) => h.id == host),
+    host ?? TapTargetRegistry.hosts.firstWhere((h) => h.id == 'chat-1280'),
   );
   c.api.routes['GET /messages/channel/task-thread'] = (_) => {
     'messages': [msg('tr1', 'task-thread', 1, 'The plan: $artifactLink')],

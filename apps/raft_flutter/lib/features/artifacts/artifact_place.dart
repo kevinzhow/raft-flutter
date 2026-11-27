@@ -16,6 +16,7 @@ import '../channel_side_cards.dart' show ChannelSideCards;
 import '../channel_side_web_preview.dart';
 import '../list_detail_slot.dart';
 import 'artifact_content_slot.dart';
+import 'artifact_dialog_cover.dart';
 import 'artifact_models.dart';
 import 'artifact_session.dart';
 import 'artifact_viewer_page.dart';
@@ -27,6 +28,9 @@ enum ArtifactPlace {
 
   /// In its list's detail slot (Activity, Search; list_detail_slot.dart).
   listDetail,
+
+  /// Over the dialog card it was clicked in (ArtifactDialogCover).
+  dialogCover,
 
   /// The shell's own column beside the main area (ShellArtifactColumn).
   shellColumn,
@@ -48,6 +52,7 @@ typedef ArtifactPlaceOpener = bool Function(
 final List<(ArtifactPlace, ArtifactPlaceOpener)> artifactPlaces = [
   (ArtifactPlace.channelColumn, _channelColumn),
   (ArtifactPlace.listDetail, _listDetail),
+  (ArtifactPlace.dialogCover, openArtifactDialogCover),
   (ArtifactPlace.shellColumn, (c, w, t, _) => openShellArtifact(c, w, t)),
 ];
 

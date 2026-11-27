@@ -175,8 +175,9 @@ const artifactDiscussionSurfaces = <CloseSurface>[
   ),
 ];
 
-/// The app shell's Artifact column (Web ShellArtifactHost).
-const shellArtifactSurfaces = <CloseSurface>[
+/// Where an Artifact opens in place: the app shell's column (Web
+/// ShellArtifactHost) and over a dialog's card (Web ArtifactCoverViewer).
+const artifactPlaceSurfaces = <CloseSurface>[
   CloseSurface(
     'shell-artifact-column',
     kind: SurfaceKind.panel,
@@ -187,5 +188,16 @@ const shellArtifactSurfaces = <CloseSurface>[
     fold: {Affordance.x, Affordance.esc, Affordance.systemBack},
     desktop: {Affordance.x, Affordance.esc, Affordance.systemBack},
     files: ['lib/features/artifacts/shell_artifact_column.dart'],
+  ),
+  CloseSurface(
+    'artifact-dialog-cover',
+    kind: SurfaceKind.viewer,
+    web: 'ShellArtifactHost.tsx ArtifactCoverViewer over the dialog card (artifactViewerStore.ts:22-23,233-238): X (artifact-viewer-close) and Esc (useArtifactSurfaceKeyDown); the dialog closing closes it',
+    none: {
+      'phone': 'A phone shows the task as a page and opens the Artifact as a page over it (workspace-artifact-viewer).',
+    },
+    fold: {Affordance.x, Affordance.esc, Affordance.systemBack},
+    desktop: {Affordance.x, Affordance.esc, Affordance.systemBack},
+    files: ['lib/features/artifacts/artifact_dialog_cover.dart'],
   ),
 ];

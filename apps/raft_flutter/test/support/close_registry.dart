@@ -61,7 +61,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...threadOutlineSurfaces,
   ...viewerSurfaces,
   ...artifactSurfaces,
-  ...shellArtifactSurfaces,
+  ...artifactPlaceSurfaces,
   ...artifactDiscussionSurfaces,
   ...artifactHomeSurfaces,
   ...webLinkChoiceSurfaces,

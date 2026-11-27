@@ -3,6 +3,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/source_time_formatter.dart';
+import 'artifacts/artifact_dialog_cover.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'chat_navigation.dart';
@@ -288,7 +289,9 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         onClose: close,
         panelBuilder: discussion == null || widget.inPlace
             ? null
-            : (conversation) => discussionWithProfile(discussion, conversation),
+            : (conversation) => ArtifactDialogCover(
+                child: discussionWithProfile(discussion, conversation),
+              ),
         onBack: widget.onBack,
         onViewInThread: widget.onViewInThread,
         onRetry: o.parentReady ? o.refresh : o.start,
