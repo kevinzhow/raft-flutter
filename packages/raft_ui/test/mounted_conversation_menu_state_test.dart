@@ -16,6 +16,9 @@ void main() {
         });
         final theme = raftTheme(dark: dark);
         final tokens = theme.extension<RaftTokens>()!;
+        final menuFill = kind == RaftConversationNavKind.memberRoster
+            ? tokens.colors['fill-cell-hover']
+            : tokens.colors['fill-pressed'];
         var menuOpen = false;
         var selected = false;
         var activations = 0;
@@ -70,7 +73,7 @@ void main() {
         expect(face().color, Colors.transparent);
         update(() => menuOpen = true);
         await tester.pumpAndSettle();
-        expect(face().color, tokens.colors['fill-pressed']);
+        expect(face().color, menuFill);
         expect(control().selected, isFalse);
         expect(face().border!.top.color, Colors.transparent);
         expect(face().boxShadow, isEmpty);
