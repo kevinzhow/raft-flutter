@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'design_primitives.dart';
+import 'combobox_panel.dart' show RaftComboboxGroupLabel;
 import 'focus_visible.dart';
 import 'form_controls.dart';
 import 'menu_action_row.dart';
@@ -797,6 +798,8 @@ class RaftSelectionOption {
     this.disabled = false,
     this.italic = false,
     this.leading,
+    this.group,
+    this.meta,
     this.reserveLeadingSlot = false,
     this.rowKey,
   });
@@ -807,6 +810,7 @@ class RaftSelectionOption {
   final Key? rowKey;
   final VoidCallback onTap;
   final Widget? leading;
+  final String? group, meta;
 }
 
 /// Web `ui/SelectionPopover`: raft-ui `Card` with the default className
@@ -958,8 +962,13 @@ class RaftSelectionPopover extends StatelessWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        for (final option in options)
+                        for (final (index, option) in options.indexed) ...[
+                          if (option.group != null &&
+                              (index == 0 ||
+                                  options[index - 1].group != option.group))
+                            RaftComboboxGroupLabel(option.group!),
                           _RaftSelectionRow(key: option.rowKey, option: option),
+                        ],
                       ],
                     ),
             ),
@@ -1530,10 +1539,35 @@ class _RaftSelectionRow extends StatelessWidget {
         );
         return RaftMenuSlotRow(
           label: o.label,
-          labelChild: Text(
-            o.label,
-            overflow: o.italic ? TextOverflow.visible : TextOverflow.ellipsis,
-          ),
+          labelChild: o.meta == null
+              ? Text(
+                  o.label,
+                  overflow: o.italic
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis,
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 8,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        o.label,
+                        overflow: o.italic
+                            ? TextOverflow.visible
+                            : TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      o.meta!,
+                      style: t.scale(
+                        RaftTypeScale.monoMeta,
+                        mono: true,
+                        color: t.ui.foregroundHint,
+                      ),
+                    ),
+                  ],
+                ),
           root: slots.root,
           tokens: rt,
           itemLeading: slots.leading,

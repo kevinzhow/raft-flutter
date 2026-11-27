@@ -177,6 +177,7 @@ class _MembersPageState extends State<MembersPage>
         : _grouping;
     final search = raftText(context, 'Search members');
     return RaftFitToolbar(
+      wrap: showUsage,
       semanticLabel: raftText(context, 'Members'),
       children: [
         RaftFitGroup(
@@ -211,8 +212,13 @@ class _MembersPageState extends State<MembersPage>
           onChanged: (value) => setState(() => _query = value.trim()),
         ),
         if (usageControls.length > 1)
-          RaftFitGroup(items: [RaftFitChild(child: usageControls.first)]),
+          RaftFitGroup(
+            wrapOrder: 70,
+            scroll: true,
+            items: [RaftFitChild(child: usageControls.first)],
+          ),
         RaftFitGroup(
+          firstLine: showUsage,
           moreOrder: 60,
           moreItem: [
             if (canSwitch)
@@ -321,8 +327,9 @@ class _MembersPageState extends State<MembersPage>
             if (widget.onCreate != null)
               RaftFitButton(
                 key: const ValueKey('desktop-directory-add-agent'),
-                label: raftText(context, 'Create Agent'),
-                glyph: RaftGlyph.plus,
+                label: raftText(context, 'Create agent'),
+                glyph: RaftGlyph.bot,
+                collapsedGlyph: RaftGlyph.plus,
                 variant: RaftButtonVariant.primary,
                 labelOrder: 45,
                 onPressed: widget.onCreate,
@@ -353,6 +360,7 @@ class _MembersPageState extends State<MembersPage>
           ? _Scope.all
           : _scope;
       final showUsage = scope == _Scope.agent && usageEnabled && _usage;
+      final tokens = RaftTokens.of(context);
       final scopes = [
         _Scope.all,
         if (widget.showHumans) _Scope.human,
@@ -384,13 +392,14 @@ class _MembersPageState extends State<MembersPage>
           ),
           if (widget.failed)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5),
-              child: RaftBanner(
-                description: raftText(context, 'Humans failed to load'),
-                action: RaftButton(
-                  label: 'Retry',
-                  uiVariant: RaftButtonVariant.standard,
-                  onPressed: () => unawaited(widget.onRefresh()),
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
+                  .copyWith(bottom: RaftSpace.x2),
+              child: Text(
+                raftText(context, 'Humans failed to load'),
+                style: tokens.scale(
+                  RaftTypeScale.footnote,
+                  weight: FontWeight.w600,
+                  color: tokens.ui['warning-strong'],
                 ),
               ),
             ),
@@ -404,7 +413,9 @@ class _MembersPageState extends State<MembersPage>
             backKey: const ValueKey('members-mobile-back'),
             onBack: widget.onBack,
             titleSuffix:
-                widget.loading || widget.mobile || bounds.maxWidth < 768
+                widget.loading ||
+                    widget.mobile ||
+                    MediaQuery.sizeOf(context).width < 768
                 ? null
                 : RaftCssText(
                     icuText(
@@ -422,7 +433,11 @@ class _MembersPageState extends State<MembersPage>
                             .length,
                       },
                     ),
-                    style: RaftPanelText.profileMono(RaftTokens.of(context)),
+                    style: tokens.scale(
+                      RaftTypeScale.monoMeta,
+                      mono: true,
+                      color: tokens.ui.foregroundHint,
+                    ),
                   ),
           ),
           if (!showUsage) controls(const []),
@@ -468,7 +483,24 @@ class _MembersPageState extends State<MembersPage>
     final columns = ((width - 40 + 12) / 252).floor().clamp(1, 8);
     final items = <WidgetBuilder>[
       if (groups.isEmpty && widget.loading)
-        (_) => const RaftSidebarRowsSkeleton()
+        (_) => const Padding(
+          padding: EdgeInsets.only(top: RaftSpace.x3),
+          child: Column(
+            spacing: RaftSpace.x2,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: RaftSpace.x5),
+                child: RaftSkeleton(
+                  width: 64,
+                  variant: RaftSkeletonVariant.line,
+                  fromRecipe: true,
+                ),
+              ),
+              RaftSidebarRowsSkeleton(rows: 8),
+            ],
+          ),
+        )
       else if (groups.isEmpty && (_query.isNotEmpty || !widget.failed))
         (_) => Padding(
           padding: const EdgeInsets.symmetric(

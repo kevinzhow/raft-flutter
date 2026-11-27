@@ -171,11 +171,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
     final gap = RaftInteraction.of(context).touch ? 16.0 : 12.0;
     final sendButton = RaftButton(
       key: const ValueKey('invite-send'),
-      label: sending
-          ? 'Sending…'
-          : sheet
-          ? 'Invite'
-          : 'Send invites',
+      label: sending ? 'Sending…' : 'Invite',
       glyph: RaftGlyph.mail,
       uiVariant: RaftButtonVariant.primary,
       uiSize: sheet ? RaftButtonSize.md : RaftButtonSize.lg,
@@ -422,7 +418,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
             ),
             RaftRecipeButton(
               key: const ValueKey('invite-link-apply'),
-              label: raftText(context, 'Update Link'),
+              label: raftText(context, 'Update link'),
               size: RaftButtonRecipeSize.sm,
               disabled: link.loading,
               onPressed: widget.onApplyLink == null

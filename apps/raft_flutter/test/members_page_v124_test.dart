@@ -49,6 +49,20 @@ void main() {
         api.calls.where((call) => call.path == '/servers/s1/agent-usage'),
         isEmpty,
       );
+      if (platform == TargetPlatform.android) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await frames(tester);
+        await tester.tap(row);
+        await frames(tester);
+        final list = find.byKey(const PageStorageKey('desktop-directory-list'));
+        final profile = find.byKey(const Key('profile-panel'));
+        expect(profile, findsOneWidget);
+        expect(list, findsOneWidget);
+        expect(
+          tester.getRect(list).right,
+          lessThanOrEqualTo(tester.getRect(profile).left),
+        );
+      }
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
@@ -136,9 +150,11 @@ void main() {
       'agent-usage-period',
       'members-view-usage',
     ]) {
+      final control = find.byKey(ValueKey(key));
+      expect(find.descendant(of: toolbar, matching: control), findsOneWidget);
       expect(
-        find.descendant(of: toolbar, matching: find.byKey(ValueKey(key))),
-        findsOneWidget,
+        tester.getCenter(control).dy,
+        closeTo(tester.getCenter(view).dy, 3),
       );
     }
     expect(

@@ -71,11 +71,18 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
   static const _plotHeight = 102.0;
   static const _maxBarWidth = 28.0;
   static const _slotFill = .56;
+  static const _denseSlotFill = .62;
   static const _stackHeight = 84.0;
-  static const _segmentGap = 2.0;
+  static const _segmentGap = RaftSpace.half;
   static const _segmentRadius = 3.0;
   static const _segmentStroke = RaftSpace.hairline * 1.5;
+  static const _minimumSegmentHeight = 3.0;
+  static const _captionMinHeight = 30.0;
   static const _captionLines = 2;
+  static const _weekdayFontSize = 11.0;
+  static const _dateFontSize = 10.0;
+  static const _amountFontSize = 11.0;
+  static const _labelLineHeight = 1.0;
 
   final _scroll = ScrollController();
   final _focus = List.generate(AgentUsagePeriod.month.days, (_) => FocusNode());
@@ -188,10 +195,13 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
       mono: true,
       color: tokens.ui.foregroundMuted,
     );
-    final label = style.copyWith(fontSize: 11, height: 1);
+    final label = style.copyWith(
+      fontSize: _weekdayFontSize,
+      height: _labelLineHeight,
+    );
     final dateLabel = mono.copyWith(
-      fontSize: 10,
-      height: 1,
+      fontSize: _dateFontSize,
+      height: _labelLineHeight,
       color: tokens.ui.foregroundHint,
     );
     return Column(
@@ -218,7 +228,10 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                 return SizedBox(
                   height:
                       _plotHeight +
-                      math.max(30, captionLine * _captionLines + 6),
+                      math.max(
+                        _captionMinHeight,
+                        captionLine * _captionLines + RaftSpace.x1_5,
+                      ),
                   child: ListView.builder(
                     controller: _scroll,
                     reverse: true,
@@ -283,7 +296,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                                       Text(
                                         widget.formatTokens(totals[index]),
                                         style: mono.copyWith(
-                                          fontSize: 11,
+                                          fontSize: _amountFontSize,
                                           color: tokens.ui.foreground,
                                         ),
                                         maxLines: 1,
@@ -297,12 +310,12 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                                               _maxBarWidth,
                                               slot *
                                                   (days.length > 7
-                                                      ? .62
+                                                      ? _denseSlotFill
                                                       : _slotFill),
                                             ),
                                             height:
                                                 math.max(
-                                                  3,
+                                                  _minimumSegmentHeight,
                                                   _stackHeight *
                                                       kind.amount(day.counts)! /
                                                       peak,
@@ -347,9 +360,11 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                                 index == picked ||
                                 (last - index) % 7 == 0)
                               Padding(
-                                padding: const EdgeInsets.only(top: 4),
+                                padding: const EdgeInsets.only(
+                                  top: RaftSpace.x1,
+                                ),
                                 child: Column(
-                                  spacing: 2,
+                                  spacing: RaftSpace.half,
                                   children: [
                                     if (days.length <= 14)
                                       Text(
@@ -395,7 +410,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
             for (final kind in series.reversed)
               Row(
                 mainAxisSize: MainAxisSize.min,
-                spacing: 6,
+                spacing: RaftSpace.x1_5,
                 children: [
                   AgentUsageSwatch(kind),
                   Text(raftText(context, kind.label), style: style),

@@ -1,4 +1,7 @@
 const Map<String, String> zhCatalogUpstream124Members = {
+  "By email": "邮箱邀请",
+  "By link": "邀请链接",
+  "Update link": "更新链接",
   "Time range": "时间范围",
   "{count, plural, one {# day} other {# days}}": "{count} 天",
   "Cache reads": "缓存读取",

@@ -9,7 +9,6 @@ import 'agent_runtime_labels.dart' show runtimeDisplayNameOf;
 import 'agent_runtime_models.dart' show runtimeModelLabel;
 import 'icu_message.dart';
 import 'members_page_entries.dart';
-import 'sender_avatar_projection.dart';
 
 enum MembersUsageColumn {
   agent('Agent', 0),
@@ -53,6 +52,9 @@ class MembersUsageTable extends StatefulWidget {
 }
 
 class _MembersUsageTableState extends State<MembersUsageTable> {
+  static const _statusWidth = 90.0;
+  static const _modelWidth = 176.0;
+  static const _trendWidth = 84.0;
   MembersUsageColumn _sort = MembersUsageColumn.tokens;
   var _ascending = false;
   late List<(String, List<(MemberPageEntry, AgentUsageFigures)>)> _groups;
@@ -194,9 +196,10 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
           ],
           if (width >= 470) MembersUsageColumn.change,
         ];
-        final headingStyle = RaftPanelText.caption(tokens).copyWith(
+        final headingStyle = tokens.scale(
+          RaftTypeScale.footnote,
           color: tokens.ui.foregroundHint,
-          fontWeight: FontWeight.w600,
+          weight: FontWeight.w700,
         );
         Widget fixedLabel(String text, double width) => SizedBox(
           width: width,
@@ -215,11 +218,11 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
           required Widget trend,
         }) => [
           Expanded(child: identity),
-          if (showStatus) SizedBox(width: 90, child: status),
-          if (wide) SizedBox(width: 176, child: model),
+          if (showStatus) SizedBox(width: _statusWidth, child: status),
+          if (wide) SizedBox(width: _modelWidth, child: model),
           for (final column in columns.skip(1))
             SizedBox(width: column.width, child: figure(column)),
-          if (wide) SizedBox(width: 84, child: trend),
+          if (wide) SizedBox(width: _trendWidth, child: trend),
         ];
         Widget sortHeading(MembersUsageColumn column) => RaftInteractive(
           key: ValueKey('members-usage-sort-${column.name}'),
@@ -232,7 +235,7 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
             _project();
           }),
           builder: (_, state) => Row(
-            spacing: 4,
+            spacing: RaftSpace.x1,
             mainAxisAlignment: column == MembersUsageColumn.agent
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.end,
@@ -267,13 +270,23 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 4, 16, 8),
+                  padding: const EdgeInsets.only(
+                    top: RaftSpace.x1,
+                    right: RaftSpace.x4,
+                    bottom: RaftSpace.x2,
+                  ),
                   child: Row(
-                    spacing: 12,
+                    spacing: RaftSpace.x3,
                     children: tracks(
                       identity: sortHeading(MembersUsageColumn.agent),
-                      status: fixedLabel(raftText(context, 'Status'), 90),
-                      model: fixedLabel(raftText(context, 'Model'), 176),
+                      status: fixedLabel(
+                        raftText(context, 'Status'),
+                        _statusWidth,
+                      ),
+                      model: fixedLabel(
+                        raftText(context, 'Model'),
+                        _modelWidth,
+                      ),
                       figure: sortHeading,
                       trend: fixedLabel(
                         icuText(
@@ -281,7 +294,7 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                           '{count, plural, one {# day} other {# days}}',
                           {'count': widget.period.days},
                         ),
-                        84,
+                        _trendWidth,
                       ),
                     ),
                   ),
@@ -314,13 +327,6 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                         'error' => (RaftActivityTone.error, 'Error'),
                         _ => (RaftActivityTone.online, 'Online'),
                       };
-                      final avatar = projectSenderAvatar(
-                        origin: widget.origin,
-                        senderId: agent.target.id,
-                        senderType: 'agent',
-                        agents: [record],
-                        members: const [],
-                      );
                       final model = modelName == null
                           ? '—'
                           : runtimeModelLabel(runtime ?? '', modelName);
@@ -329,22 +335,11 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                         onPressed: () => widget.onOpen(agent.target.id),
                         children: tracks(
                           identity: Row(
-                            spacing: 10,
+                            spacing: RaftSpace.x3,
                             children: [
-                              RaftAvatar(
-                                name: agent.name,
-                                size: 40,
-                                kind: RaftAvatarKind.agent,
-                                content: RaftAvatarContent(
-                                  name: agent.name,
-                                  kind: RaftAvatarContentKind.agent,
-                                  uploadedUrl: avatar.uploadedUrl,
-                                  pixelKey: avatar.pixelKey,
-                                ),
-                              ),
+                              usageAgentAvatar(agent, widget.origin, 35),
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: RaftListRowBody(
                                   children: [
                                     RaftListRowTitle(agent.name),
                                     if (description != null &&
@@ -366,7 +361,7 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                             ],
                           ),
                           status: Row(
-                            spacing: 6,
+                            spacing: RaftSpace.x2,
                             children: [
                               RaftStatusDot(
                                 activity: tone,
@@ -386,7 +381,7 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                           figure: (column) => Semantics(
                             label: raftText(context, column.label),
                             child: Row(
-                              spacing: 4,
+                              spacing: RaftSpace.x1,
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 if ((column == MembersUsageColumn.change
@@ -418,7 +413,7 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
               ],
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.only(top: RaftSpace.x3),
                   child: Text(
                     icuText(
                       context,
@@ -445,13 +440,13 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
       for (final day in figures.days)
         day.noData
             ? null
-            : day.counts.total(withCacheReads: widget.withCacheReads),
+            : day.counts.total(withCacheReads: widget.withCacheReads) ?? 0,
     ];
     return ExcludeSemantics(
       child: Align(
         alignment: AlignmentDirectional.centerStart,
         child: CustomPaint(
-          size: const Size(80, 20),
+          size: _UsageTrend.extent,
           painter: _UsageTrend(
             values: values,
             mark: widget.selectedDay == null
@@ -470,6 +465,8 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
 }
 
 class _UsageTrend extends CustomPainter {
+  static const extent = Size(80, 20);
+
   const _UsageTrend({
     required this.values,
     required this.mark,

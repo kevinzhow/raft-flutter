@@ -122,9 +122,16 @@ class AgentTokenUsagePane extends StatefulWidget {
 
 class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
   static const _days = '{count, plural, one {# day} other {# days}}';
-  static const _summaryDetailsWidth = 300.0;
+  static const _summaryDetailsWidth = 304.0;
   static const _summaryChartMinWidth = 280.0;
   static const _summaryGap = RaftSpace.x4 * 2;
+  static const _periodControlWidth = 136.0;
+  static const _factTermWidth = 116.0;
+  static const _factDetailsMinHeight = RaftSpace.x6 + RaftSpace.x1;
+  static const _modelShareWidth = RaftSpace.x6 * 2;
+  static const _singleAgentAsideWidth = 320.0;
+  static const _singleAgentColumnsBreakpoint = 720.0;
+  static const _singleAgentEmptyHeight = 240.0;
   AgentUsagePeriod _period = AgentUsagePeriod.week;
   String? _selectedDay;
   bool _includeCache = false;
@@ -176,7 +183,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           : widget.agents
                 .where((agent) => report.agentIds.contains(agent.target.id))
                 .toList();
-      final options = _filterOptions(listed);
+      final options = _filterOptions(listed, _workspace.client.origin);
       final active = options
           .where((entry) => _filters.contains(entry.id))
           .toList();
@@ -199,7 +206,12 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           for (final child in [
             if (widget.toolbar == null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                padding: const EdgeInsets.fromLTRB(
+                  RaftSpace.x5,
+                  RaftSpace.x4,
+                  RaftSpace.x5,
+                  RaftSpace.x1,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -213,9 +225,11 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                 children: [
                   RaftBanner(
                     description: raftText(context, 'Could not load usage'),
+                    size: RaftBannerRecipeSize.sm,
                     action: RaftButton(
                       label: 'Retry',
-                      uiVariant: RaftButtonVariant.standard,
+                      glyph: RaftGlyph.refreshCw,
+                      uiVariant: RaftButtonVariant.outline,
                       onPressed: () => setState(_load),
                     ),
                   ),
@@ -226,6 +240,11 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                 context,
                 report,
                 agentId: single,
+                filteredAgent: widget.agentId == null && single != null
+                    ? listed
+                          .where((entry) => entry.target.id == single)
+                          .firstOrNull
+                    : null,
                 listedIds: listedIds,
                 selectedIds: filtered ? keptIds : null,
               )
@@ -312,14 +331,23 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
         onClear: () => setState(_filters.clear),
       ),
     SizedBox(
-      width: 136,
+      width: _periodControlWidth,
       child: RaftSelectField<int>(
         key: const ValueKey('agent-usage-period'),
         label: raftText(context, 'Time range'),
         value: _selectedDay == report?.to && _selectedDay != null
             ? 0
+            : _selectedDay != null
+            ? -1
             : _period.days,
         items: [
+          if (_selectedDay case final picked? when picked != report?.to)
+            RaftSelectItem(
+              value: -1,
+              label: DateFormat.MEd(
+                Localizations.localeOf(context).toLanguageTag(),
+              ).format(DateTime.parse(picked)),
+            ),
           if (report != null)
             RaftSelectItem(value: 0, label: raftText(context, 'Today')),
           for (final period in AgentUsagePeriod.values)
@@ -329,7 +357,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
             ),
         ],
         onChanged: (value) {
-          if (value == null) return;
+          if (value == null || value == -1) return;
           final period = AgentUsagePeriod.values
               .where((period) => period.days == value)
               .firstOrNull;
@@ -383,6 +411,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
     BuildContext context,
     AgentUsageReport report, {
     required String? agentId,
+    required MemberPageEntry? filteredAgent,
     required Set<String> listedIds,
     required Set<String>? selectedIds,
   }) {
@@ -393,9 +422,6 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       selectedDay: _selectedDay,
       withCacheReads: _includeCache,
     );
-    if (agentId != null && (!figures.supported || figures.empty)) {
-      return [_emptyState(context, figures.supported)];
-    }
     final t = RaftTokens.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final numbers = NumberFormat.compact(locale: locale)
@@ -424,6 +450,11 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
         : dates.format(DateTime.parse(day));
     final hint = t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint);
     final muted = t.scale(RaftTypeScale.caption, color: t.ui.foregroundMuted);
+    final term = t.scale(
+      RaftTypeScale.footnote,
+      weight: FontWeight.w500,
+      color: t.ui.foregroundHint,
+    );
     final meta = t.scale(
       RaftTypeScale.monoMeta,
       mono: true,
@@ -432,6 +463,12 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
     final mono = t.scale(
       RaftTypeScale.callout,
       mono: true,
+      color: t.ui.foreground,
+    );
+    final strongMono = t.scale(
+      RaftTypeScale.callout,
+      mono: true,
+      weight: FontWeight.w700,
       color: t.ui.foreground,
     );
     final cacheShare = counts.cacheRead != null && input > 0
@@ -446,37 +483,49 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       String? suffix,
       String? note,
       Widget? child,
+      bool bold = false,
     }) => Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 12,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      spacing: RaftSpace.x3,
       children: [
         SizedBox(
-          width: 116,
+          width: _factTermWidth,
           child: Row(
-            spacing: 6,
+            spacing: RaftSpace.x1_5,
             children: [
               if (kind != null) AgentUsageSwatch(kind),
-              Flexible(child: Text(raftText(context, label), style: muted)),
+              Flexible(
+                child: RaftCssText(raftText(context, label), style: term),
+              ),
             ],
           ),
         ),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              child ??
-                  Text.rich(
-                    TextSpan(
-                      text: format(value),
-                      children: [
-                        if (suffix != null)
-                          TextSpan(text: ' · $suffix', style: muted),
-                      ],
-                    ),
-                    style: mono,
-                  ),
-              if (note != null) Text(note, style: hint),
-            ],
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: _factDetailsMinHeight),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: RaftSpace.x1_5,
+                children: [
+                  child ??
+                      Text.rich(
+                        TextSpan(
+                          text: format(value),
+                          children: [
+                            if (suffix != null)
+                              TextSpan(text: ' · $suffix', style: hint),
+                          ],
+                        ),
+                        style: bold ? strongMono : mono,
+                      ),
+                  if (note != null) Text(note, style: hint),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -504,29 +553,35 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       );
     }
 
-    Widget section(String title, List<Widget> body, {Widget? aside}) =>
-        RaftPanelSection(
+    Widget section(
+      String title,
+      List<Widget> body, {
+      Widget? aside,
+      bool topBorder = true,
+    }) => RaftPanelSection(
+      topBorder: topBorder,
+      horizontal: filteredAgent == null ? RaftSpace.x5 : RaftSpace.x4,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          spacing: RaftSpace.x2,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              spacing: 8,
-              children: [
-                Flexible(
-                  child: RaftSectionEyebrow(
-                    _selectedDay == null
-                        ? raftText(context, title)
-                        : raftFormat(context, '{day} · {heading}', {
-                            'day': dayName(_selectedDay!),
-                            'heading': raftText(context, title),
-                          }),
-                  ),
-                ),
-                ?aside,
-              ],
+            Flexible(
+              child: RaftSectionEyebrow(
+                _selectedDay == null
+                    ? raftText(context, title)
+                    : raftFormat(context, '{day} · {heading}', {
+                        'day': dayName(_selectedDay!),
+                        'heading': raftText(context, title),
+                      }),
+              ),
             ),
-            ...body,
+            ?aside,
           ],
-        );
+        ),
+        ...body,
+      ],
+    );
     final shownTotal = counts.total(withCacheReads: _includeCache);
     final base = figures.base;
     final compared = figures.compared;
@@ -550,9 +605,12 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
     final headline = Text(
       format(shownTotal),
       key: const ValueKey('agent-usage-headline'),
-      style: t
-          .scale(RaftTypeScale.title, color: t.ui.foreground)
-          .copyWith(fontFamily: t.monoFont),
+      style: t.scale(
+        RaftTypeScale.title,
+        mono: true,
+        weight: FontWeight.w700,
+        color: t.ui.foreground,
+      ),
     );
     final user = _workspace.client.user;
     final formatter = SourceTimeFormatter(
@@ -637,7 +695,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                       ],
                     ),
                     Column(
-                      spacing: 4,
+                      spacing: RaftSpace.x2,
                       children: [
                         kindFact(AgentUsageKind.inputNew),
                         if (counts.cacheWrite != null)
@@ -670,123 +728,243 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
         ),
       ];
     }
-    return [
-      section(
-        'Tokens',
-        [
-          if (widget.agentId == null) ...[heading, _cacheReadSwitch(context)],
-          Wrap(
-            spacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              headline,
-              comparison ?? Text('—', style: meta),
-            ],
-          ),
-          chart,
-        ],
-        aside: Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: freshness,
-          ),
+    final tokensSection = section(
+      filteredAgent == null
+          ? 'Tokens'
+          : icuText(context, _days, {'count': _period.days}),
+      [
+        Wrap(
+          spacing: RaftSpace.x3,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            headline,
+            if (filteredAgent != null)
+              Text(
+                raftText(
+                  context,
+                  _includeCache ? 'all tokens' : 'excl. cache reads',
+                ),
+                style: muted,
+              ),
+            comparison ?? Text('—', style: meta),
+          ],
+        ),
+        chart,
+      ],
+      aside: Flexible(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: freshness,
         ),
       ),
-      section('Token types', [
-        kindFact(AgentUsageKind.inputNew, breakdown: true),
-        if (counts.cacheWrite != null)
-          kindFact(AgentUsageKind.cacheWrite, breakdown: true),
-        kindFact(AgentUsageKind.cacheRead, breakdown: true),
-        kindFact(AgentUsageKind.output, breakdown: true),
-        fact('Total tokens', total),
-      ]),
-      section('Context', [
-        fact('Cache reads', null, child: Text(cacheShare, style: muted)),
-        fact(
-          'Per turn',
-          total == null || counts.turns == 0
-              ? null
-              : (total / counts.turns).round(),
-          child: total == null || counts.turns == 0
-              ? null
-              : Text(
-                  icuText(
-                    context,
-                    '{tokens} · {turns, plural, one {# turn} other {# turns}}',
-                    {
-                      'tokens': format((total / counts.turns).round()),
-                      'turns': counts.turns,
-                    },
-                  ),
-                  style: mono,
+      topBorder: filteredAgent == null,
+    );
+    final kindsSection = section('Token types', [
+      Column(
+        spacing: RaftSpace.x2,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          kindFact(AgentUsageKind.inputNew, breakdown: true),
+          if (counts.cacheWrite != null)
+            kindFact(AgentUsageKind.cacheWrite, breakdown: true),
+          kindFact(AgentUsageKind.cacheRead, breakdown: true),
+          kindFact(AgentUsageKind.output, breakdown: true),
+          fact('Total tokens', total, bold: true),
+        ],
+      ),
+    ], topBorder: filteredAgent == null);
+    final contextSection = section('Context', [
+      fact('Cache reads', null, child: Text(cacheShare, style: muted)),
+      fact(
+        'Per turn',
+        total == null || counts.turns == 0
+            ? null
+            : (total / counts.turns).round(),
+        child: total == null || counts.turns == 0
+            ? null
+            : Text(
+                icuText(
+                  context,
+                  '{tokens} · {turns, plural, one {# turn} other {# turns}}',
+                  {
+                    'tokens': format((total / counts.turns).round()),
+                    'turns': counts.turns,
+                  },
                 ),
-        ),
-        if (reading != null)
-          RaftMeter(
-            label: raftText(context, 'Context window'),
-            used: reading.used,
-            max: reading.window,
-            valueText: raftFormat(context, '{percent} used', {
-              'percent': NumberFormat.percentPattern(locale)
-                  .format(reading.used / reading.window),
-            }),
-          )
-        else
-          fact('Context window', null),
-      ]),
-      section('Models', [
-        if (figures.models.isEmpty) Text('—', style: mono),
-        for (final model in figures.models)
-          Row(
-            spacing: 12,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      model.model.model.isEmpty
-                          ? raftText(context, 'Unknown model')
-                          : runtimeModelLabel(
-                              model.model.runtime ?? '',
-                              model.model.model,
-                            ),
-                      style: t.scale(
-                        RaftTypeScale.callout,
-                        weight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                style: mono,
+              ),
+      ),
+      if (reading != null)
+        RaftMeter(
+          label: raftText(context, 'Context window'),
+          used: reading.used,
+          max: reading.window,
+          valueText: raftFormat(context, '{percent} used', {
+            'percent': NumberFormat.percentPattern(locale)
+                .format(reading.used / reading.window),
+          }),
+        )
+      else
+        fact('Context window', null),
+    ]);
+    final modelsSection = section('Models', [
+      if (figures.models.isEmpty) Text('—', style: mono),
+      for (final model in figures.models)
+        Row(
+          spacing: RaftSpace.x3,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    model.model.model.isEmpty
+                        ? raftText(context, 'Unknown model')
+                        : runtimeModelLabel(
+                            model.model.runtime ?? '',
+                            model.model.model,
+                          ),
+                    style: t.scale(
+                      RaftTypeScale.callout,
+                      weight: FontWeight.w600,
                     ),
-                    Text(
-                      model.model.runtime == null
-                          ? '—'
-                          : runtimeDisplayNameOf(model.model.runtime!),
-                      style: meta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    model.model.runtime == null
+                        ? '—'
+                        : runtimeDisplayNameOf(model.model.runtime!),
+                    style: meta,
+                  ),
+                ],
+              ),
+            ),
+            Text(format(model.tokens), style: meta),
+            SizedBox(
+              width: _modelShareWidth,
+              child: Text(
+                model.tokens == null || modelTotal <= 0
+                    ? '—'
+                    : NumberFormat.percentPattern(locale)
+                          .format(model.tokens! / modelTotal),
+                style: mono,
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ],
+        ),
+    ]);
+    if (filteredAgent == null) {
+      return [tokensSection, kindsSection, contextSection, modelsSection];
+    }
+    final runtime = filteredAgent.record['runtime'] as String?;
+    final model = filteredAgent.record['model'] as String?;
+    return [
+      Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x5,
+          vertical: RaftSpace.x3,
+        ),
+        child: RaftCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: RaftSpace.x4,
+                  vertical: RaftSpace.x3,
+                ),
+                child: RaftAutoMarginWrap(
+                  spacing: RaftSpace.x3,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: RaftSpace.x3,
+                      children: [
+                        usageAgentAvatar(
+                          filteredAgent,
+                          _workspace.client.origin,
+                          35,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RaftListRowTitle(filteredAgent.name),
+                            RaftListRowMeta(
+                              [
+                                '@${filteredAgent.handle}',
+                                if (model != null)
+                                  runtimeModelLabel(runtime ?? '', model),
+                                if (runtime != null)
+                                  runtimeDisplayNameOf(runtime),
+                              ].join(' · '),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    _cacheReadSwitch(context),
+                    RaftButton(
+                      label: 'All agents',
+                      semanticLabel: raftText(context, 'Back to all agents'),
+                      glyph: RaftGlyph.x,
+                      uiVariant: RaftButtonVariant.ghost,
+                      uiSize: RaftButtonSize.sm,
+                      onPressed: () => setState(_filters.clear),
                     ),
                   ],
                 ),
               ),
-              Text(format(model.tokens), style: meta),
-              SizedBox(
-                width: 48,
-                child: Text(
-                  model.tokens == null || modelTotal <= 0
-                      ? '—'
-                      : NumberFormat.percentPattern(locale)
-                            .format(model.tokens! / modelTotal),
-                  style: mono,
-                  textAlign: TextAlign.end,
+              if (!figures.supported || figures.empty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: _singleAgentEmptyHeight,
+                  ),
+                  child: _emptyState(context, figures.supported),
+                )
+              else
+                LayoutBuilder(
+                  builder: (context, bounds) {
+                    if (bounds.maxWidth < _singleAgentColumnsBreakpoint) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          tokensSection,
+                          kindsSection,
+                          contextSection,
+                          modelsSection,
+                        ],
+                      );
+                    }
+                    Widget band(Widget main, Widget aside) => Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: _summaryGap,
+                      children: [
+                        Expanded(child: main),
+                        SizedBox(width: _singleAgentAsideWidth, child: aside),
+                      ],
+                    );
+                    return Column(
+                      children: [
+                        band(tokensSection, kindsSection),
+                        band(contextSection, modelsSection),
+                      ],
+                    );
+                  },
                 ),
-              ),
             ],
           ),
-      ]),
+        ),
+      ),
     ];
   }
 }
 
-List<MembersUsagePick> _filterOptions(List<MemberPageEntry> agents) {
+List<MembersUsagePick> _filterOptions(
+  List<MemberPageEntry> agents,
+  String origin,
+) {
   final picks = <String, MembersUsagePick>{};
   for (final agent in agents) {
     final id = agent.target.id;
@@ -799,8 +977,15 @@ List<MembersUsagePick> _filterOptions(List<MemberPageEntry> agents) {
               key,
               () => (
                 id: key,
-                label: kind == 'runtime' ? runtimeDisplayNameOf(value) : value,
+                label: kind == 'runtime'
+                    ? runtimeDisplayNameOf(value)
+                    : runtimeModelLabel(
+                        agent.record['runtime'] as String? ?? '',
+                        value,
+                      ),
+                group: kind == 'runtime' ? 'Runtime' : 'Model',
                 agents: <String>{},
+                avatar: null,
               ),
             )
             .agents
@@ -809,12 +994,15 @@ List<MembersUsagePick> _filterOptions(List<MemberPageEntry> agents) {
     }
   }
   return [
-    ...picks.values,
+    ...picks.values.where((pick) => pick.group == 'Runtime'),
+    ...picks.values.where((pick) => pick.group == 'Model'),
     for (final agent in agents)
       (
         id: 'agent:${agent.target.id}',
         label: agent.name,
+        group: 'Agents',
         agents: {agent.target.id},
+        avatar: usageAgentAvatar(agent, origin, 20),
       ),
   ];
 }

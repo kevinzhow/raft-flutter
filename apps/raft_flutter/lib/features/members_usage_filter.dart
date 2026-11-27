@@ -1,7 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-typedef MembersUsagePick = ({String id, String label, Set<String> agents});
+typedef MembersUsagePick = ({
+  String id,
+  String label,
+  String group,
+  Set<String> agents,
+  Widget? avatar,
+});
 
 class MembersUsageFilter extends StatefulWidget {
   const MembersUsageFilter({
@@ -71,10 +77,7 @@ class _MembersUsageFilterState extends State<MembersUsageFilter> {
         title: title,
         searchController: _search,
         searchFocusNode: _searchFocus,
-        searchPlaceholder: raftText(
-          context,
-          'Search agents, runtimes and models',
-        ),
+        searchPlaceholder: raftText(context, 'Search…'),
         onSearchChanged: (value) =>
             setState(() => _query = value.trim().toLowerCase()),
         onClear: selected.isEmpty ? null : widget.onClear,
@@ -84,6 +87,9 @@ class _MembersUsageFilterState extends State<MembersUsageFilter> {
               RaftSelectionOption(
                 rowKey: ValueKey('members-usage-filter-option-${option.id}'),
                 label: option.label,
+                group: raftText(context, option.group),
+                leading: option.avatar,
+                meta: option.avatar == null ? '${option.agents.length}' : null,
                 checked: widget.selected.contains(option.id),
                 onTap: () => widget.onToggle(option.id),
               ),

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'desktop_navigation_policy.dart';
+import 'sender_avatar_projection.dart';
 
 enum MembersEntryLayout { list, table, cards }
 
@@ -13,6 +14,27 @@ typedef MemberPageEntry = ({
   String handle,
   bool Function(String) matches,
 });
+
+Widget usageAgentAvatar(MemberPageEntry agent, String origin, double size) {
+  final avatar = projectSenderAvatar(
+    origin: origin,
+    senderId: agent.target.id,
+    senderType: 'agent',
+    agents: [agent.record],
+    members: const [],
+  );
+  return RaftAvatar(
+    name: agent.name,
+    size: size,
+    kind: RaftAvatarKind.agent,
+    content: RaftAvatarContent(
+      name: agent.name,
+      kind: RaftAvatarContentKind.agent,
+      uploadedUrl: avatar.uploadedUrl,
+      pixelKey: avatar.pixelKey,
+    ),
+  );
+}
 
 List<MemberPageEntry> memberPageEntries(
   List<Map<String, dynamic>> rows,
@@ -168,6 +190,7 @@ class MemberDirectoryEntry extends StatelessWidget {
         leading: avatar,
         activityText: activity,
         description: description,
+        wrap: description != null,
       );
     }
     final label = raftFormat(context, "Open {name}'s profile", {
@@ -210,6 +233,12 @@ class MemberDirectoryEntry extends StatelessWidget {
             child: RaftCard.item(
               selected: selected || menuOpen,
               onTap: onOpen,
+              padding: EdgeInsets.symmetric(
+                horizontal: RaftSpace.x4,
+                vertical: RaftInteraction.of(context).touch
+                    ? RaftSpace.x2
+                    : RaftSpace.x3,
+              ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
                   minHeight: _cardIdentityMinHeight,
