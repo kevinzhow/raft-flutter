@@ -1703,7 +1703,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     ? currentContent
                     : hiddenConversation(conversation)
               : showingConversation
-              ? retainedSettingsContent ?? const SizedBox.expand()
+              // One shell column parent either way: Settings is retained.
+              ? ShellArtifactColumn(
+                  workspace: w,
+                  child: retainedSettingsContent ?? const SizedBox.expand(),
+                )
               : ShellArtifactColumn(workspace: w, child: currentContent),
         );
       }
