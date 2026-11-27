@@ -21,10 +21,29 @@ class _Client extends RaftClient {
         sessionStore: MemorySessionStore(),
       );
   @override
-  Future<dynamic> get(String path, {Map<String, dynamic>? query}) async =>
-      path.endsWith('/attachment-preview/enabled')
-      ? {'enabled': true}
-      : {'url': 'https://storage.example.invalid/private-signed-capability'};
+  Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
+    if (path.endsWith('/attachment-preview/enabled')) {
+      return {'enabled': true};
+    }
+    final document = switch (path) {
+      '/attachments/notes.txt/preview' => {'kind': 'text', 'text': 'Notes'},
+      '/attachments/readme.md/preview' => {
+        'kind': 'markdown',
+        'text': '# Readme',
+      },
+      '/attachments/table.csv/preview' => {
+        'kind': 'csv',
+        'rows': [
+          ['Name'],
+          ['Example'],
+        ],
+        'columnCount': 1,
+      },
+      _ => null,
+    };
+    if (document != null) return {'status': 'ok', 'data': document};
+    return {'url': 'https://storage.example.invalid/private-signed-capability'};
+  }
 }
 
 class _Files extends AttachmentFiles {

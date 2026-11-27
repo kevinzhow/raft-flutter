@@ -406,68 +406,66 @@ void main() {
     });
 
     testWidgets(
-      'a document the server refuses says why, not just "unavailable"',
+      'a document preview request failure explains the download once',
       (tester) async {
-        final client = _Client(storage)
-          ..previewFailure = RaftApiException.response(
+        final client = _Client(storage);
+        final w = WorkspaceController(client, attachmentImageStore: cache);
+        addTearDown(() async {
+          await tester.pumpWidget(const SizedBox());
+          w.dispose();
+          await client.dispose();
+        });
+        var downloads = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (_, child) => RaftToastHost(child: child!),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => RaftButton(
+                  label: 'Open report',
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (dialog) => AttachmentPreviewDialog(
+                      controller: w,
+                      metadata: const {
+                        'id': 'n',
+                        'channelId': 'c1',
+                        'filename': 'report.md',
+                      },
+                      channelId: 'c1',
+                      authorized: () => true,
+                      onClose: () => Navigator.of(dialog).pop(),
+                      onDownload: () async {
+                        downloads++;
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        for (final failure in [
+          RaftApiException.response(
             'Too many requests, please try again later.',
             status: 429,
             body: {'error': 'Too many requests, please try again later.'},
-          );
-        final w = WorkspaceController(client, attachmentImageStore: cache);
-        const metadata = {
-          'id': 'n',
-          'channelId': 'c1',
-          'filename': 'report.md',
-        };
-        await tester.pumpWidget(
-          MaterialApp(
-            home: AttachmentPreviewDialog(
-              controller: w,
-              metadata: metadata,
-              channelId: 'c1',
-              authorized: () => true,
-              onClose: () {},
-              onDownload: () async {},
-            ),
           ),
-        );
-        await settle(
-          tester,
-          () => find.textContaining('Too many requests').evaluate().isNotEmpty,
-        );
-        expect(find.textContaining('Too many requests'), findsOneWidget);
-        // Anything the server did not say in its own words stays the generic text.
-        client.previewFailure = const FormatException(
-          'The file cannot be previewed.',
-        );
-        await tester.pumpWidget(const SizedBox());
-        await tester.pumpWidget(
-          MaterialApp(
-            home: AttachmentPreviewDialog(
-              key: UniqueKey(),
-              controller: w,
-              metadata: metadata,
-              channelId: 'c1',
-              authorized: () => true,
-              onClose: () {},
-              onDownload: () async {},
-            ),
-          ),
-        );
-        await settle(
-          tester,
-          () =>
-              find.textContaining('Preview unavailable').evaluate().isNotEmpty,
-        );
-        expect(
-          find.text('Preview unavailable. Download the original file.'),
-          findsOneWidget,
-        );
-        await tester.pumpWidget(const SizedBox());
-        await tester.pump(const Duration(seconds: 5));
-        w.dispose();
-        await client.dispose();
+          const FormatException('The file cannot be previewed.'),
+        ]) {
+          client.previewFailure = failure;
+          final before = downloads;
+          await tester.tap(find.text('Open report'));
+          await settle(tester, () => downloads > before);
+          await tester.pumpAndSettle();
+          expect(find.text("report.md can't be previewed"), findsOneWidget);
+          expect(find.text('Downloading the file instead.'), findsOneWidget);
+          expect(find.byType(AttachmentPreviewDialog), findsNothing);
+          await tester.pump(const Duration(seconds: 10));
+          await tester.pumpAndSettle();
+          expect(find.text("report.md can't be previewed"), findsNothing);
+          expect(downloads, before + 1);
+        }
       },
     );
 
