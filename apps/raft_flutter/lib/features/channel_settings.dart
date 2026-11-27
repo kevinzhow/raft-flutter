@@ -59,6 +59,7 @@ class ChannelSettings extends StatefulWidget {
     this.onClose,
     this.onMembers,
     this.dmName,
+    this.members,
   });
   final WorkspaceController controller;
   final RaftChannel channel;
@@ -95,6 +96,9 @@ class ChannelSettings extends StatefulWidget {
   final bool details;
   final Widget Function(BuildContext, Widget)? headerWrapper;
   final VoidCallback? onClose, onMembers;
+
+  /// Web ChannelOverflowMenu `view: "members"` on mount (`add`: its add view).
+  final ({bool add})? members;
   @override
   State<ChannelSettings> createState() => _ChannelSettingsState();
 }
@@ -1695,7 +1699,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   /// Web `view: "root" | "members"` of the desktop drawer: the members page
   /// replaces the drawer content (`OverflowSheet bare`) while the root view
   /// stays mounted underneath, so an unsaved name/description draft survives.
-  bool membersOpen = false, membersAdd = false;
+  late bool membersOpen = widget.members != null,
+      membersAdd = widget.members?.add ?? false;
 
   void closeMembers() {
     if (!membersOpen) return;

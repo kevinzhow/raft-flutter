@@ -23,7 +23,13 @@ class ChannelDetailsStore extends ChangeNotifier {
     return created;
   }
 
-  ({RaftChannel channel, String? dmName, String authority})? _entry;
+  ({
+    RaftChannel channel,
+    String? dmName,
+    String authority,
+    ({bool add})? members,
+  })?
+  _entry;
   RaftChannel? get channel {
     final entry = _entry;
     if (entry == null || entry.authority != pageIdentity(w)) return null;
@@ -38,9 +44,22 @@ class ChannelDetailsStore extends ChangeNotifier {
 
   String? get dmName => _entry?.dmName;
 
-  void open(RaftChannel channel, {String? dmName}) {
-    if (_entry?.channel.id == channel.id && this.channel != null) return;
-    _entry = (channel: channel, dmName: dmName, authority: pageIdentity(w));
+  /// The card opens on its members page (a phone members page carried across
+  /// the breakpoint); null opens the root view.
+  ({bool add})? get members => _entry?.members;
+
+  void open(RaftChannel channel, {String? dmName, ({bool add})? members}) {
+    if (_entry?.channel.id == channel.id &&
+        this.channel != null &&
+        members == null) {
+      return;
+    }
+    _entry = (
+      channel: channel,
+      dmName: dmName,
+      authority: pageIdentity(w),
+      members: members,
+    );
     ChannelSideStore.of(w).focus('details');
     notifyListeners();
   }
@@ -126,10 +145,14 @@ class _ChannelDetailsHostState extends State<ChannelDetailsHost> {
     return FocusScope(
       node: scope,
       child: ChannelSettings(
-        key: ValueKey('channel-details-settings-${channel.id}'),
+        key: ValueKey(
+          'channel-details-settings-${channel.id}'
+          '${details.members == null ? '' : '-members'}',
+        ),
         controller: widget.controller,
         channel: channel,
         dmName: details.dmName,
+        members: details.members,
         isPanel: true,
         details: true,
         headerWrapper: widget.headerWrapper,

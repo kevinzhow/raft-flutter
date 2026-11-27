@@ -428,7 +428,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
 
   /// The translated location names a conversation the other layout had not
   /// loaded as its main channel (Activity detail was a content slot), and wide
-  /// shows channel management as a dialog.
+  /// shows a phone channel page in the details card (Web keeps
+  /// ChannelOverflowMenu and its members view mounted across the breakpoint).
   void hydrateTranslated(LayoutTranslation translation, bool compact) {
     if (compact) {
       final to = translation.to;
@@ -451,21 +452,13 @@ class _WorkspaceViewState extends State<WorkspaceView>
       ...w.dms,
     ].where((channel) => channel.id == page.channelId).firstOrNull;
     if (channel == null || !w.can('viewChannel', resource: channel)) return;
-    if (page.kind == RaftChannelPage.settings) {
-      ChannelDetailsStore.of(w).open(
-        channel,
-        dmName: channel.type == 'dm' ? dmPeer(channel).name : null,
-      );
-    } else {
-      unawaited(
-        ChannelMembers.show(
-          context,
-          controller: w,
-          channel: channel,
-          startInAdd: translation.from.query('channelPageAdd') == '1',
-        ),
-      );
-    }
+    ChannelDetailsStore.of(w).open(
+      channel,
+      dmName: channel.type == 'dm' ? dmPeer(channel).name : null,
+      members: page.kind == RaftChannelPage.settings
+          ? null
+          : (add: translation.from.query('channelPageAdd') == '1'),
+    );
   }
 
   void selectMobileTab(String tab, String scope) {
