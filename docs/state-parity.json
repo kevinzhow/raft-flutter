@@ -45115,12 +45115,6 @@
         "owner": "Artifact viewer",
         "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       },
-      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#function:openWorkspaceArtifact": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "Artifact viewer",
-        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
-      },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:ArtifactWorkspaceViewer.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -58971,6 +58965,156 @@
         "familyRefs": [],
         "owner": "WP-EXT",
         "reason": "Lays out the member row name and its inline note; no control of its own."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dialog_cover.dart#class:ArtifactDialogCover": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 dialog cover",
+        "reason": "Source census candidate (#380: an Artifact clicked in a task's dialog covers the dialog's card, Web ArtifactCoverViewer); no paint of its own beyond the panel surface, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dialog_cover.dart#class:_ArtifactDialogCoverState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 dialog cover",
+        "reason": "Source census candidate (#380: an Artifact clicked in a task's dialog covers the dialog's card, Web ArtifactCoverViewer); no paint of its own beyond the panel surface, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dialog_cover.dart#class:_CoverScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 dialog cover",
+        "reason": "Source census candidate (#380: an Artifact clicked in a task's dialog covers the dialog's card, Web ArtifactCoverViewer); no paint of its own beyond the panel surface, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dialog_cover.dart#function:openArtifactDialogCover": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 dialog cover",
+        "reason": "Source census candidate (#380: an Artifact clicked in a task's dialog covers the dialog's card, Web ArtifactCoverViewer); no paint of its own beyond the panel surface, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dialog_cover.dart#method:ArtifactDialogCover.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 dialog cover",
+        "reason": "Source census candidate (#380: an Artifact clicked in a task's dialog covers the dialog's card, Web ArtifactCoverViewer); no paint of its own beyond the panel surface, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dialog_cover.dart#method:_ArtifactDialogCoverState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 dialog cover",
+        "reason": "Source census candidate (#380: an Artifact clicked in a task's dialog covers the dialog's card, Web ArtifactCoverViewer); no paint of its own beyond the panel surface, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dialog_cover.dart#method:_CoverScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 dialog cover",
+        "reason": "Source census candidate (#380: an Artifact clicked in a task's dialog covers the dialog's card, Web ArtifactCoverViewer); no paint of its own beyond the panel surface, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_place.dart#function:_channelColumn": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 artifact place table",
+        "reason": "Source census candidate (#380: where an Artifact clicked inside the app opens, Web findArtifactPlace / openArtifactInPlace); the page fallback hosts ArtifactWorkspaceViewer, no paint of its own. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_place.dart#function:_listDetail": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 artifact place table",
+        "reason": "Source census candidate (#380: where an Artifact clicked inside the app opens, Web findArtifactPlace / openArtifactInPlace); the page fallback hosts ArtifactWorkspaceViewer, no paint of its own. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_place.dart#function:_page": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 artifact place table",
+        "reason": "Source census candidate (#380: where an Artifact clicked inside the app opens, Web findArtifactPlace / openArtifactInPlace); the page fallback hosts ArtifactWorkspaceViewer, no paint of its own. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#class:ShellArtifactColumn": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#class:_Column": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#class:_ColumnState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#class:_ShellArtifactColumnState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#class:_ShellScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#function:openShellArtifact": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#local-function:CLASS:_ShellArtifactColumnState/METHOD:layout/FUNCTION:column": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#method:ShellArtifactColumn.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#method:ShellArtifactColumn.hosts": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#method:_Column.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#method:_ColumnState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#method:_ShellArtifactColumnState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#method:_ShellArtifactColumnState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#method:_ShellArtifactColumnState.layout": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/shell_artifact_column.dart#method:_ShellScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "#380 shell artifact column",
+        "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -61766,12 +61910,12 @@
       },
       "surface:openWorkspaceArtifact": {
         "owner": "Artifact viewer",
-        "kind": "dialog",
+        "kind": "surface",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#function:openWorkspaceArtifact"
+          "apps/raft_flutter/lib/features/artifacts/artifact_place.dart#function:_page"
         ],
         "mountStatus": "unresolved",
-        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24); widget tests cover it, no real-entry capture acceptance is inferred."
+        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24): the page a phone, or a click outside the app shell, opens (#380: no window over a wide workspace); widget tests cover it, no real-entry capture acceptance is inferred."
       },
       "surface:_ArtifactWorkspaceViewerState._host": {
         "owner": "Artifact viewer",
