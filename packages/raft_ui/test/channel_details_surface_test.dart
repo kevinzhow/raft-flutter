@@ -50,7 +50,7 @@ void main() {
   }
 
   testWidgets(
-    'details description expands and subpage keeps its close header',
+    'details description expands and a subpage head replaces Details',
     (t) async {
       t.view.devicePixelRatio = 1;
       t.view.physicalSize = const Size(1280, 844);
@@ -82,7 +82,6 @@ void main() {
       await t.tap(find.text('Show less'));
       await t.pump();
       expect(t.getSize(description).height, before);
-      var closes = 0;
       await t.pumpWidget(
         MaterialApp(
           theme: raftTheme(),
@@ -91,17 +90,16 @@ void main() {
               width: 400,
               child: RaftOverflowBareSheet(
                 details: true,
-                onClose: () => closes++,
                 child: const Text('Members page'),
               ),
             ),
           ),
         ),
       );
-      expect(find.text('Details'), findsOneWidget);
       expect(find.text('Members page'), findsOneWidget);
-      await t.tap(find.byKey(const Key('channel-details-close')));
-      expect(closes, 1);
+      expect(find.text('Details'), findsNothing);
+      expect(find.byKey(const Key('channel-details-close')), findsNothing);
+      expect(find.byKey(const Key('channel-overflow-back')), findsNothing);
     },
   );
 }

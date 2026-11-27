@@ -2213,8 +2213,6 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                         RaftOverflowBareSheet(
                           page: widget.page,
                           details: widget.details,
-                          headerWrapper: widget.headerWrapper,
-                          onClose: guardedClose,
                           child: ChannelMembers(
                             key: ValueKey('channel-members-page-${c.id}'),
                             controller: w,
@@ -2223,6 +2221,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                             embedded: true,
                             startInAdd: membersAdd,
                             onClose: closeMembers,
+                            headerWrapper: widget.headerWrapper,
                           ),
                         ),
                       ],

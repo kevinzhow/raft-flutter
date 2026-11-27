@@ -464,20 +464,18 @@ class _ChannelDetailsIdentityState extends State<_ChannelDetailsIdentity> {
 }
 
 /// `OverflowSheet bare`: the same drawer popup without its header, holding a
-/// page that brings its own (the members page).
+/// page that brings its own (the members page). [details]: the Details
+/// surface's ground in a side column, where that page's head takes the place
+/// of the Details one.
 class RaftOverflowBareSheet extends StatelessWidget {
   const RaftOverflowBareSheet({
     super.key,
     required this.child,
     this.page = false,
     this.details = false,
-    this.onClose,
-    this.headerWrapper,
-  }) : assert(!details || onClose != null);
+  });
   final Widget child;
   final bool page, details;
-  final VoidCallback? onClose;
-  final Widget Function(BuildContext, Widget)? headerWrapper;
 
   @override
   Widget build(BuildContext context) {
@@ -487,17 +485,7 @@ class RaftOverflowBareSheet extends StatelessWidget {
       color: RaftTokens.of(context).ui.layerCanvas,
       child: SizedBox.expand(
         key: const ValueKey('channel-overflow-sheet'),
-        child: Column(
-          children: [
-            if (!page)
-              _ChannelDetailsHeader(
-                page: false,
-                onClose: onClose!,
-                headerWrapper: headerWrapper,
-              ),
-            Expanded(child: child),
-          ],
-        ),
+        child: child,
       ),
     );
   }

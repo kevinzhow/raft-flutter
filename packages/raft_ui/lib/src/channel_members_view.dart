@@ -180,8 +180,14 @@ class RaftChannelMembersModal extends StatelessWidget {
     this.invited = const [],
     this.retryInvites,
     this.inviteOutside,
+    this.headerWrapper,
   });
   final VoidCallback onClose;
+
+  /// Wraps the page's head where a host gives its heads a frame of its own
+  /// (the side card's drag grip): pushed over channel Details in a side pane,
+  /// this head stands in for the Details one.
+  final Widget Function(BuildContext, Widget)? headerWrapper;
 
   /// Open external invites: the "Invited" group above Humans (Web
   /// `ExternalInviteRows` in `MemberPageSection kind="invited"`).
@@ -759,7 +765,7 @@ class _MembersPageState extends State<_MembersPage> {
       t,
       MediaQuery.sizeOf(context).height,
     );
-    return RaftStatusBarSource(
+    final header = RaftStatusBarSource(
       color: headerColor,
       child: Container(
         height: headerHeight,
@@ -808,6 +814,7 @@ class _MembersPageState extends State<_MembersPage> {
         ),
       ),
     );
+    return m.headerWrapper?.call(context, header) ?? header;
   }
 
   @override

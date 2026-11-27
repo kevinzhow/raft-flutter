@@ -218,10 +218,14 @@ class ChannelMembers extends StatefulWidget {
     this.onClose,
     this.startInAdd = false,
     this.createAgentForm = showManagedAgentForm,
+    this.headerWrapper,
   });
   final WorkspaceController controller;
   final RaftChannel channel;
   final bool page;
+
+  /// The page's head frame from its host ([RaftChannelMembersModal.headerWrapper]).
+  final Widget Function(BuildContext, Widget)? headerWrapper;
 
   /// Opens the create-agent dialog (the existing one); returns the created
   /// agent row, or null when the dialog was dismissed.
@@ -956,6 +960,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
     final matching = searchChannelMemberCandidates(search.text, candidates);
     final roster = RaftChannelMembersModal(
       page: widget.page,
+      headerWrapper: widget.headerWrapper,
       onClose: close,
       search: search,
       channelName: channel.name,
