@@ -36,11 +36,12 @@ class RaftInviteLink {
     this.copied = false,
     this.hasLink = false,
     this.maxUses,
+    this.expiresAt,
     this.expiresOn,
     this.usedLabel,
   });
   final bool loading, copied, hasLink;
-  final String? url, usedLabel, expiresOn;
+  final String? url, usedLabel, expiresOn, expiresAt;
   final int? maxUses;
 }
 
@@ -81,8 +82,19 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
 
   /// The last send had no email: the prompt holds only while no row has one.
   bool emailRequired = false;
-  String maxUses = 'unlimited', expiry = 'never';
+  late String maxUses = widget.link.maxUses == null ? 'unlimited' : 'keep';
+  late String expiry = widget.link.expiresAt == null ? 'never' : 'keep';
   final _linkController = TextEditingController();
+
+  @override
+  void didUpdateWidget(RaftInviteHumanDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.link.url != oldWidget.link.url &&
+        (widget.link.hasLink || !widget.link.loading)) {
+      maxUses = widget.link.maxUses == null ? 'unlimited' : 'keep';
+      expiry = widget.link.expiresAt == null ? 'never' : 'keep';
+    }
+  }
 
   TextEditingController controllerFor(RaftInvitee i) =>
       controllers.putIfAbsent(i.id, () {
@@ -201,7 +213,11 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 label: raftText(context, 'Invite method'),
                 items: const [
                   RaftSegmentedOption(value: 'email', label: 'By Email'),
-                  RaftSegmentedOption(value: 'link', label: 'By Link'),
+                  RaftSegmentedOption(
+                    value: 'link',
+                    label: 'By Link',
+                    itemKey: ValueKey('invite-tab-link'),
+                  ),
                 ],
                 onChanged: (v) => setState(() => tab = v),
               ),
@@ -374,6 +390,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                     value: maxUses,
                     label: raftText(context, 'Uses'),
                     items: [
+                      if (link.maxUses != null) item('keep', 'Keep current'),
                       item('unlimited', 'Unlimited'),
                       item('1', '1 use'),
                       item('5', '5 uses'),
@@ -397,6 +414,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                     value: expiry,
                     label: raftText(context, 'Expires'),
                     items: [
+                      if (link.expiresAt != null) item('keep', 'Keep current'),
                       item('never', 'Never'),
                       item('1h', '1 hour'),
                       item('1d', '1 day'),

@@ -122,6 +122,32 @@ BILLING_SEAT_LIMIT = {'plan': 'free', 'displayName': 'Free', 'serverPlan': 'free
                       'usage': {'humans': 2, 'agents': 2, 'universalSeats': 0}}
 ROUTE_SETS['invite-seat-limit'] = {'GET /billing/subscription': BILLING_SEAT_LIMIT}
 
+USAGE_ROUTE = f'GET /servers/{SID}/agent-usage'
+USAGE_REPORT = {
+    'from': '2026-06-06', 'to': '2026-06-19', 'as_of': '2026-06-19T12:00:00Z',
+    'since': '2026-06-06', 'visible_agents': 1,
+    'agents': [{'agent_id': AGENT_ID, 'since': '2026-06-06', 'usage_reported': True}],
+    'context': [{'agent_id': AGENT_ID, 'context_used': 4800, 'context_window': 16000,
+                 'at': '2026-06-19T11:00:00Z'}],
+    'rows': [
+        {'agent_id': AGENT_ID, 'day': f'2026-06-{day:02}', 'runtime': 'codex',
+         'model': model, 'input_new': amount, 'cache_read': amount * 3,
+         'cache_write': None, 'output': amount // 4, 'reasoning_output': amount // 8, 'turns': 2}
+        for day, model, amount in [(14, 'gpt-5-codex', 3200), (16, 'gpt-5-codex', 6400),
+                                   (18, 'gpt-5-codex', 5600), (19, 'gpt-5-mini', 2800)]
+    ],
+}
+for _state, _usage in [
+    ('ready', USAGE_REPORT),
+    ('empty', {**USAGE_REPORT, 'rows': []}),
+    ('loading', {'$pending': True}),
+    ('error', {'$status': 503, '$body': {'error': 'Fixture usage unavailable'}}),
+]:
+    ROUTE_SETS[f'agent-usage-{_state}'] = {
+        'POST /feature-flags/evaluate': {'evaluations': [{'key': 'agent_usage_v0', 'enabled': True}]},
+        USAGE_ROUTE: _usage,
+    }
+
 # The skills the profile lists (the official provider answers the same two for every agent).
 SKILLS = {
     'global': [{'name': 'visual-testing', 'displayName': 'visual-testing',
@@ -155,10 +181,11 @@ AGENT_ROLE_HELP_BTN = 'dt:has-text("Role") >> button >> nth=0'
 
 
 def add(platform, key, title, kind, *, selector, android_key, hint, props=None, interactions=None,
-        android_interactions=None, route_set=None, flutter=True, note=None):
+        android_interactions=None, route_set=None, flutter=True, note=None, viewport=None):
     """One case in 3 themes. `flutter=False`: the Flutter app has no such page (React case only)."""
-    viewport = DESKTOP if platform == 'desktop' else PHONE
-    if platform == 'desktop' and key.startswith('external-profile.'):
+    if viewport is None:
+        viewport = DESKTOP if platform == 'desktop' else PHONE
+    if platform == 'desktop' and key.startswith(('external-profile.', 'directory.', 'agent.usage', 'window.members')):
         viewport = {**viewport, 'height': 900}
     base_props = {'extCase': f'{platform}.{key}', 'extKind': kind, 'platform': 'desktop' if platform == 'desktop' else 'mobile',
                   'extFixture': FIXTURE_NAME}
@@ -179,13 +206,17 @@ def add(platform, key, title, kind, *, selector, android_key, hint, props=None, 
                   'note': note})
 
 
-LIST_HINT = SRC + 'layout/Sidebar.tsx (members rail mode, mobileInline)'
+LIST_HINT = 'packages/web/src/features/members/MembersPage.tsx'
 HUMAN_HINT = SRC + 'member/HumanDetailPanel.tsx (HumanRoute in MainLayout)'
 AGENT_HINT = SRC + 'agent/AgentDetailPanel.tsx (AgentRoute in MainLayout)'
-WEB_TABS = {'profile': 'profile', 'activity': 'activity', 'chat': 'chat', 'reminders': 'reminders',
+WEB_TABS = {'profile': 'profile', 'activity': 'activity', 'usage': 'usage', 'chat': 'chat', 'reminders': 'reminders',
             'workspace': 'workspace', 'apps': 'integrations', 'mcp': 'mcp'}
 MEMBER = base.PROFILES['member']['userId']
 SELF = base.PROFILES['self']['userId']
+GUEST = base.PROFILES['guest']['userId']
+ROUTES[f'GET /servers/{SID}/members/{MEMBER}/removal-impact'] = {
+    'computers': 1, 'computerNames': ['Design Studio'], 'othersAgents': 2,
+}
 
 
 def agent_main(platform, key, title, *, tab='profile', agent=AGENT_ID, selector=None, android_key='auto', hint=AGENT_HINT,
@@ -220,8 +251,10 @@ for platform in ('desktop', 'phone'):
     phone = platform == 'phone'
     # ---- 7.02 members list empty / loading / error (phone; the desktop column cases exist)
     if phone:
-        add(platform, 'list.empty', 'Members page: nothing yet', 'main', selector=VIEW, android_key=None, hint=LIST_HINT,
-            props={'route': '/members', 'roster': 'empty', 'humans': 'none'}, route_set='list-empty')
+        add(platform, 'list.empty', 'Members page: no search matches', 'main', selector=VIEW, android_key=None, hint=LIST_HINT,
+            props={'route': '/members'},
+            interactions=[{'type': 'fill', 'target': 'input[aria-label="Search members"]', 'value': 'no-such-member'}],
+            android_interactions=[{'type': 'enterText', 'key': 'members-search', 'text': 'no-such-member'}])
         add(platform, 'list.loading', 'Members page: loading', 'main', selector=VIEW, android_key=None, hint=LIST_HINT,
             props={'route': '/members', 'roster': 'empty', 'humans': 'none', 'loading': 'true'}, route_set='list-loading')
         add(platform, 'list.error', 'Members page: humans failed to load', 'main', selector=VIEW, android_key=None,
@@ -232,6 +265,34 @@ for platform in ('desktop', 'phone'):
     # desktop cases above crop the content column; these are the same routes captured whole.
     add(platform, 'window.members', 'Members page, whole window', 'main', selector=VIEW, android_key=None, hint=LIST_HINT,
         props={'route': '/members'})
+    if not phone:
+        add(platform, 'directory.humans', 'Members › Humans cards', 'main', selector=VIEW,
+            android_key=None, hint=LIST_HINT, props={'route': '/members'},
+            interactions=[click('[data-testid="members-tab-humans"]')],
+            android_interactions=[tap('members-tab-human')])
+        add(platform, 'directory.details', 'Members › Agents details table', 'main', selector=VIEW,
+            android_key=None, hint=LIST_HINT, props={'route': '/members'},
+            interactions=[click('[data-testid="members-tab-agents"]')],
+            android_interactions=[tap('members-tab-agent')])
+        add(platform, 'directory.usage', 'Members › Agents usage', 'main', selector=VIEW,
+            android_key=None, hint=LIST_HINT, props={'route': '/members'}, route_set='agent-usage-ready',
+            interactions=[click('[data-testid="members-tab-agents"]'), click('[data-testid="members-view-usage"]')],
+            android_interactions=[tap('members-tab-agent'), tap('members-view-usage')])
+        add(platform, 'directory.usage-filter', 'Members agent usage filter open', 'main', selector=VIEW,
+            android_key=None, hint=LIST_HINT, props={'route': '/members'}, route_set='agent-usage-ready',
+            interactions=[click('[data-testid="members-tab-agents"]'), click('[data-testid="members-view-usage"]'),
+                          click('[data-testid="members-usage-filter"]')],
+            android_interactions=[tap('members-tab-agent'), tap('members-view-usage'), tap('members-usage-filter')])
+    add(platform, 'directory.agent-menu', 'Members agent menu', 'main', selector=VIEW,
+        android_key=None, hint=LIST_HINT, props={'route': '/members'},
+        interactions=[{'type': 'rightclick', 'target': f'[data-member-entry-id="{AGENT_ID}"]'}],
+        android_interactions=[{'type': 'longPress' if phone else 'secondaryTap',
+                               'key': f'desktop-directory-agent-{AGENT_ID}'}])
+    for usage_state in ('ready', 'empty', 'loading', 'error'):
+        agent_main(platform, f'agent.usage-{usage_state}', f'Agent Usage tab: {usage_state}',
+                   tab='usage', selector=VIEW, android_key=None,
+                   hint='packages/web/src/features/agent/AgentUsageTab.tsx',
+                   route_set=f'agent-usage-{usage_state}')
     human_main(platform, 'window.human', 'Human profile, whole window', selector=VIEW, android_key=None)
     agent_main(platform, 'window.agent', 'Agent profile, whole window', selector=VIEW, android_key=None)
 
@@ -239,8 +300,13 @@ for platform in ('desktop', 'phone'):
     if phone:
         human_main(platform, 'human.edit-role', 'Human profile: editing the role',
                    interactions=[click('button[aria-label="Edit role"]')], android_interactions=[tap('member-edit-role')])
-        human_main(platform, 'human.remove-confirm', 'Human profile: remove member confirmation',
-                   interactions=[click('button:has-text("Remove Member")')], android_interactions=[tap('member-remove')])
+    human_main(platform, 'human.remove-confirm', 'Human profile: remove member confirmation',
+               selector=VIEW, android_key=None,
+               interactions=[click('button:has-text("Remove member")')], android_interactions=[tap('member-remove')])
+    human_main(platform, 'human.promote-confirm', 'Guest profile: promote to member confirmation',
+               who=GUEST, selector=VIEW, android_key=None,
+               interactions=[click('[data-testid="human-promote-guest"]')],
+               android_interactions=[tap('human-promote-guest')])
     human_main(platform, 'human.role-help', 'Human profile: role permissions help dialog',
                selector=CARD_DLG if not phone else VIEW, android_key='role-help-dialog' if not phone else None,
                interactions=[click(ROLE_HELP_BTN)], android_interactions=[tap_here('member-role-help')])
@@ -353,26 +419,44 @@ for platform in ('desktop', 'phone'):
     agent_main(platform, 'agent.profile-fast-mode', 'Agent profile: Runtime Config rows with Fast mode (runtimeConfig.mode)',
                agent=FAST['id'], props={'roster': 'fast'}, route_set='roster-fast')
 
+for width, height in [(841, 701), (884, 1104), (1180, 820)]:
+    add('desktop', f'panel.human-{width}x{height}', 'Members with a human profile open', 'main',
+        selector=VIEW, android_key=None, hint=HUMAN_HINT,
+        props={'route': f'/human/{MEMBER}', 'openRow': f'human:{MEMBER}', 'touchInput': 'true'},
+        viewport={'width': width, 'height': height, 'density': 1, 'touch': True})
+
 
 # ---- 7.06 invite dialog states (both platforms; the dialog is mounted alone like the official host)
 INVITE_HINT = SRC + 'member/InviteHumanDialog.tsx'
 for platform in ('desktop', 'phone'):
-    box = {'desktop': (1280, 800), 'phone': (390, 844)}[platform]
-    sel = CARD_DLG if platform == 'desktop' else VIEW
-    akey = 'invite-dialog' if platform == 'desktop' else None
+    box = {'desktop': (1280, 900), 'phone': (390, 844)}[platform]
     common = {'boxW': str(box[0]), 'boxH': str(box[1])}
+    invite_viewport = {'width': box[0], 'height': box[1], 'density': 1 if platform == 'desktop' else 3}
+    add(platform, 'invite.default', 'Invite human dialog', 'invite', selector=VIEW, android_key=None, hint=INVITE_HINT,
+        props={**common, 'guest': 'false'}, viewport=invite_viewport)
     if platform == 'phone':
-        add(platform, 'invite.default', 'Invite human dialog', 'invite', selector=sel, android_key=akey, hint=INVITE_HINT,
-            props={**common, 'guest': 'false'})
-        add(platform, 'invite.guest', 'Invite human dialog: per-row role (guest invites on)', 'invite', selector=sel,
-            android_key=akey, hint=INVITE_HINT, props={**common, 'guest': 'true'}, route_set='invite-guest')
-    add(platform, 'invite.link', 'Invite human dialog: By link tab', 'invite', selector=sel, android_key=akey,
+        add(platform, 'invite.guest', 'Invite human dialog: guest flag on', 'invite', selector=VIEW,
+            android_key=None, hint=INVITE_HINT, props={**common, 'guest': 'true'}, route_set='invite-guest')
+    add(platform, 'invite.link', 'Invite human dialog: By link tab', 'invite', selector=VIEW, android_key=None,
         hint=INVITE_HINT, props={**common, 'guest': 'false'},
-        interactions=[click('[data-testid="invite-tab-link"]'), wait(300)], android_interactions=[tap_text('By Link')])
+        interactions=[click('[data-testid="invite-tab-link"]'), wait(300)],
+        android_interactions=[tap('invite-tab-link')], viewport=invite_viewport)
+    add(platform, 'invite.revoke-confirm', 'Invite human dialog: revoke link confirmation', 'invite', selector=VIEW,
+        android_key=None, hint=INVITE_HINT, props={**common, 'guest': 'false'},
+        interactions=[click('[data-testid="invite-tab-link"]'), click('[data-testid="invite-link-revoke"]')],
+        android_interactions=[tap('invite-tab-link'), tap('invite-link-revoke')],
+        viewport=invite_viewport)
+    add(platform, 'invite.update-confirm', 'Invite human dialog: update link confirmation', 'invite', selector=VIEW,
+        android_key=None, hint=INVITE_HINT, props={**common, 'guest': 'false'},
+        interactions=[click('[data-testid="invite-tab-link"]'), click('role=button[name="Update link"]'),
+                      {'type': 'reveal', 'target': '[data-testid="invite-link-update-confirm"]'}],
+        android_interactions=[tap('invite-tab-link'), tap('invite-link-apply')],
+        viewport=invite_viewport)
 
     # Seat limit: the Free plan's 2 human seats are used; typing an email trips the email path.
     add(platform, 'invite.seat-limit', 'Invite human dialog: human seat limit reached (email typed)', 'invite',
-        selector=sel, android_key=akey, hint=INVITE_HINT, props={**common, 'guest': 'false', 'seatLimit': 'true'},
+        selector=VIEW, android_key=None, hint=INVITE_HINT,
+        props={**common, 'boxH': '800' if platform == 'desktop' else '844', 'guest': 'false', 'seatLimit': 'true'},
         interactions=[{'type': 'fill', 'target': '[aria-label="Email address"]', 'value': 'new.teammate@company.com'},
                       wait(200)],
         android_interactions=[{'type': 'enterText', 'key': 'invite-email-0', 'text': 'new.teammate@company.com'}],

@@ -151,6 +151,12 @@ in `apps/raft_flutter`.
 | `managed-mcp-editor` | dialog | x esc sysback | x esc sysback | x esc sysback | McpAppEditor.tsx uses FormDialog with a Close app form button. | ok |  |
 | `managed-mcp-connection-menu` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | McpConnectionRow.tsx uses DropdownMenu for connection actions. | ok |  |
 | `managed-mcp-agent-access` | dialog | x esc scrim sysback | x esc scrim sysback | x esc scrim sysback | McpAgentConnectionDrawer.tsx closes the connection drawer via Cancel, Escape or outside press. | ok |  |
+| `members-directory-page` | page | back sysback | - (Members is the server route in the main column.) | - (Members is the server route in the main column.) | features/members/MembersPage.tsx, PanelHeader mobile back | ok |  |
+| `member-promote-guest` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/HumanProfileActions.tsx, ConfirmDialog | ok |  |
+| `member-removal-impact` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/HumanProfileActions.tsx, RemoveMemberConfirmDialog | ok |  |
+| `invite-link-update` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/InviteHumanDialog.tsx, update ConfirmDialog | ok |  |
+| `invite-link-revoke` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/InviteHumanDialog.tsx, revoke ConfirmDialog | ok |  |
+| `members-usage-filter` | popup | - (The Members Usage view is available at desktop widths.) | esc scrim sysback | esc scrim sysback | features/members/MembersAgentUsageFilter.tsx | ok |  |
 | `drafts-page` | page | back sysback | - (this is a root section; leave through navigation or history) | - (this is a root section; leave through navigation or history) | DraftsPanel.tsx: mobile Back; desktop uses sidebar and history | ok |  |
 | `add-external-member-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | AddExternalMemberDialog.tsx uses DialogCard with X and Escape | ok |  |
 | `external-invite-withdraw-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ExternalInviteRows.tsx uses ConfirmDialog with X and Escape | ok |  |

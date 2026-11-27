@@ -59,9 +59,8 @@ Object? _answer(
   if (method == 'GET' && answer == null && form) {
     return Map<String, dynamic>.from(msRuntimeForms['forms']['codex'] as Map);
   }
-  final source = RegExp(
-    r'/runtime-form(s/v2/codex)?/option-sources/([^/]+)$',
-  ).firstMatch(path);
+  final source = RegExp(r'/runtime-form(s/v2/codex)?/option-sources/([^/]+)$')
+      .firstMatch(path);
   if (method == 'GET' && answer == null && source != null) {
     final found =
         (msRuntimeForms['staticSources'] as Map)['codex.${source[2]}'];
@@ -142,13 +141,18 @@ class _ShellState extends State<_Shell> {
 
   @override
   Widget build(BuildContext context) => withAppServices(
-    WorkspaceView(
-      controller: w,
-      appearance: RaftAppearance(
-        mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+    RaftInteractionScope(
+      interaction: widget.ctx.props['touchInput'] == 'true'
+          ? RaftInteraction.touchMode
+          : RaftInteraction.of(context),
+      child: WorkspaceView(
+        controller: w,
+        appearance: RaftAppearance(
+          mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+        ),
+        onAppearance: (_) async {},
+        onLogout: () async {},
       ),
-      onAppearance: (_) async {},
-      onLogout: () async {},
     ),
   );
 }

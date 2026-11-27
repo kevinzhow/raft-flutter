@@ -63,6 +63,7 @@ class _InviteDialogState extends State<_InviteDialog> {
 
   bool copied = false, busy = false;
   late Map<String, dynamic>? link = _cachedLink;
+  late Map<String, dynamic>? linkLimits = link;
   late bool loading = link == null;
   Timer? copiedTimer;
 
@@ -91,7 +92,7 @@ class _InviteDialogState extends State<_InviteDialog> {
     final identity = pageIdentity(w);
     try {
       final value = await w.query('/billing/subscription');
-      if (mounted && value is Map) {
+      if (mounted && widget.current() && value is Map) {
         final next = Map<String, dynamic>.from(value);
         setState(() => billing = next);
         writePageSnapshot(w, _billingKey, identity, {'billing': next});
@@ -148,6 +149,7 @@ class _InviteDialogState extends State<_InviteDialog> {
     final identity = pageIdentity(w);
     try {
       final links = await w.query('/servers/${widget.serverId}/join-links');
+      if (!mounted || !widget.current()) return;
       var existing = links is List ? links.whereType<Map>().firstOrNull : null;
       if (existing == null) {
         final data = await w.command(
@@ -157,9 +159,11 @@ class _InviteDialogState extends State<_InviteDialog> {
         );
         existing = data is Map ? data['link'] as Map? : null;
       }
-      if (mounted) {
+      if (mounted && widget.current()) {
         setState(() {
-          link = existing == null ? null : Map<String, dynamic>.from(existing);
+          linkLimits = link = existing == null
+              ? null
+              : Map<String, dynamic>.from(existing);
           loading = false;
         });
         if (identity == pageIdentity(w)) _rememberLink();
@@ -191,22 +195,79 @@ class _InviteDialogState extends State<_InviteDialog> {
     });
   }
 
-  // Revoke the current link and create one with the chosen limits.
+  Future<void> confirmLinkChange({
+    required bool updating,
+    required Future<void> Function() onConfirm,
+  }) async {
+    if (busy || !widget.current()) return;
+    if (updating && link == null) {
+      try {
+        await onConfirm();
+      } catch (failure) {
+        if (mounted) linkFailed(failure);
+      }
+      return;
+    }
+    await showRaftDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      overModal: true,
+      builder: (context) => RaftConfirmDialog(
+        surfaceKey: ValueKey(
+          updating ? 'invite-link-update-dialog' : 'invite-link-revoke-dialog',
+        ),
+        confirmKey: ValueKey(
+          updating
+              ? 'invite-link-update-confirm'
+              : 'invite-link-revoke-confirm',
+        ),
+        title: raftText(
+          context,
+          updating ? 'Update invite link' : 'Revoke invite link',
+        ),
+        message: raftText(
+          context,
+          updating
+              ? 'Update this invite link? Anyone who still has the old URL will stop being able to join with it.'
+              : 'Revoke this invite link? Anyone who still has the URL will stop being able to join with it.',
+        ),
+        confirmLabel: raftText(
+          context,
+          updating ? 'Update Link' : 'Revoke link',
+        ),
+        loadingLabel: raftText(context, updating ? 'Updating…' : 'Revoking…'),
+        onConfirm: onConfirm,
+      ),
+    );
+  }
+
   Future<void> apply(String maxUses, String expiry) async {
-    if (busy) return;
+    if (busy || !widget.current()) {
+      throw const RaftUserError('This action is no longer available.');
+    }
     setState(() => busy = true);
     try {
       final id = link?['id'];
       if (id != null) {
         await w.command('DELETE', '/servers/${widget.serverId}/join-links/$id');
+        if (!mounted || !widget.current()) return;
+        setState(() {
+          link = null;
+          copied = false;
+        });
+        _rememberLink();
       }
       final days = const {'1h': 1 / 24, '1d': 1, '7d': 7, '30d': 30}[expiry];
       final data = await w.command(
         'POST',
         '/servers/${widget.serverId}/join-links',
         data: {
-          'maxUses': maxUses == 'unlimited' ? null : int.tryParse(maxUses),
-          'expiresAt': days == null
+          'maxUses': maxUses == 'keep'
+              ? (linkLimits?['maxUses'])
+              : int.tryParse(maxUses),
+          'expiresAt': expiry == 'keep'
+              ? (linkLimits?['expiresAt'])
+              : days == null
               ? null
               : DateTime.now()
                     .add(Duration(minutes: (days * 24 * 60).round()))
@@ -215,14 +276,24 @@ class _InviteDialogState extends State<_InviteDialog> {
         },
       );
       final next = data is Map ? data['link'] as Map? : null;
-      if (mounted) {
+      if (mounted && widget.current()) {
         setState(
-          () => link = next == null ? null : Map<String, dynamic>.from(next),
+          () => linkLimits = link = next == null
+              ? null
+              : Map<String, dynamic>.from(next),
         );
         _rememberLink();
       }
     } catch (e) {
-      if (mounted) linkFailed(e);
+      if (mounted) {
+        throw RaftUserError(
+          userErrorText(
+            e,
+            fallback: 'Failed to prepare join link',
+            where: 'join link',
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -230,16 +301,29 @@ class _InviteDialogState extends State<_InviteDialog> {
 
   Future<void> revoke() async {
     final id = link?['id'];
-    if (busy || id == null) return;
+    if (busy || id == null || !widget.current()) {
+      throw const RaftUserError('This action is no longer available.');
+    }
     setState(() => busy = true);
     try {
       await w.command('DELETE', '/servers/${widget.serverId}/join-links/$id');
-      if (mounted) {
-        setState(() => link = null);
+      if (mounted && widget.current()) {
+        setState(() {
+          linkLimits = link = null;
+          copied = false;
+        });
         _rememberLink();
       }
     } catch (e) {
-      if (mounted) linkFailed(e);
+      if (mounted) {
+        throw RaftUserError(
+          userErrorText(
+            e,
+            fallback: 'Failed to prepare join link',
+            where: 'join link',
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -286,10 +370,18 @@ class _InviteDialogState extends State<_InviteDialog> {
       url: url,
       copied: copied,
       hasLink: link != null,
+      maxUses: switch (linkLimits?['maxUses']) {
+        final int limit => limit,
+        _ => null,
+      },
+      expiresAt: linkLimits?['expiresAt'] as String?,
     ),
     onCopyLink: copy,
-    onApplyLink: apply,
-    onRevokeLink: revoke,
+    onApplyLink: (uses, expires) => confirmLinkChange(
+      updating: true,
+      onConfirm: () => apply(uses, expires),
+    ),
+    onRevokeLink: () => confirmLinkChange(updating: false, onConfirm: revoke),
   );
 }
 

@@ -681,8 +681,13 @@ class RaftListRowList extends StatelessWidget {
 
 /// `ListRowGroup`: rows wrapped in a card (`layer-card`, 1px `line-hairline`, `rounded-container`).
 class RaftListRowGroup extends StatelessWidget {
-  const RaftListRowGroup({super.key, required this.children});
+  const RaftListRowGroup({super.key, required this.children}) : _sliver = null;
+  const RaftListRowGroup.sliver({super.key, required Widget sliver})
+    : children = const [],
+      _sliver = sliver;
+
   final List<Widget> children;
+  final Widget? _sliver;
 
   @override
   Widget build(BuildContext context) {
@@ -691,6 +696,19 @@ class RaftListRowGroup extends StatelessWidget {
       states: t.recipeStates(),
       tokens: t.recipeTokens,
     ).group;
+    if (_sliver case final sliver?) {
+      final decoration = group.decoration(t.recipeTokens);
+      return DecoratedSliver(
+        decoration: decoration,
+        sliver: SliverPadding(
+          padding: decoration.padding,
+          sliver: RaftSurfaceBackgroundScope(
+            color: decoration.color,
+            child: sliver,
+          ),
+        ),
+      );
+    }
     return RaftRecipeBox(
       declareSurface: true,
       style: group,

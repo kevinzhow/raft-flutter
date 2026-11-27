@@ -33,6 +33,7 @@ import 'agent_hosted_model.dart';
 import 'agent_lounge_button.dart';
 import 'agent_identity_adoption.dart';
 import 'agent_hosted_usage.dart';
+import 'agent_token_usage_pane.dart';
 import 'agent_migration_section.dart';
 import 'agent_chat_peer.dart';
 import 'agent_computer_offline_card.dart';
@@ -59,6 +60,7 @@ import 'agent_status_state.dart';
 import 'agent_tool_stuck_notice.dart';
 import 'model_label_catalog.dart';
 import 'model_label_listener.dart';
+import 'management_support.dart' show pageIdentity;
 import 'panel_width_store.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
 import 'resource_cards.dart' show resourceRelativeTime;
@@ -115,7 +117,16 @@ String workspaceFileSize(int bytes) => bytes < 1024
     ? '${(bytes / 1024).toStringAsFixed(1)} KB'
     : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 
-enum AgentDetailTab { profile, activity, chat, reminders, workspace, apps, mcp }
+enum AgentDetailTab {
+  profile,
+  activity,
+  usage,
+  chat,
+  reminders,
+  workspace,
+  apps,
+  mcp,
+}
 
 /// Lifecycle and edit commands owned by FleetDetail.
 class AgentDetailActions {
@@ -271,7 +282,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     with
         ModelLabelCatalogListener<AgentDetailPanel>,
         RuntimeDeprecatedHereState<AgentDetailPanel>,
-        AgentLoungeListener<AgentDetailPanel> {
+        AgentLoungeListener<AgentDetailPanel>,
+        AgentUsageFlag<AgentDetailPanel> {
   @override
   WorkspaceController get runtimeCatalogWorkspace => widget.controller;
 
@@ -281,6 +293,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   @override
   WorkspaceController? get modelLabelWorkspace =>
       _bounded ? null : widget.controller;
+  @override
+  WorkspaceController get usageWorkspace => widget.controller;
+  @override
+  bool get mayReadUsage => _canViewPrivate && a['deletedAt'] == null;
   late AgentDetailTab tab = widget.initialTab == AgentDetailTab.mcp
       ? AgentDetailTab.apps
       : widget.initialTab;
@@ -341,6 +357,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             AgentDetailTab.profile,
             if (_canViewPrivate) ...[
               AgentDetailTab.activity,
+              if (usageEnabled) AgentDetailTab.usage,
               AgentDetailTab.chat,
               AgentDetailTab.reminders,
               AgentDetailTab.workspace,
@@ -396,6 +413,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   @override
   void initState() {
     super.initState();
+    checkUsageFlag();
     _adoptCachedExternalStatus();
     unawaited(loadExternalStatus());
     unawaited(loadArchivedMachine());
@@ -415,6 +433,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   @override
   void didUpdateWidget(AgentDetailPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    checkUsageFlag();
     if (oldWidget.agent['id'] != a['id'] ||
         oldWidget.agent['runtime'] != a['runtime'] ||
         oldWidget.agent['external'] != a['external']) {
@@ -786,6 +805,11 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
       raftText(context, 'Activity'),
       RaftGlyph.activity,
     ),
+    AgentDetailTab.usage => RaftPanelTab(
+      id,
+      raftText(context, 'Usage'),
+      RaftGlyph.chartColumn,
+    ),
     // raft-ui ChatIcon: a speech bubble with three dots.
     AgentDetailTab.chat => RaftPanelTab.custom(
       id,
@@ -815,6 +839,19 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     final agentId = a['id'] as String;
     return switch (id) {
       AgentDetailTab.profile => _profile(context),
+      AgentDetailTab.usage => AgentTokenUsagePane(
+        key: ValueKey(('usage', pageIdentity(w), agentId)),
+        workspace: w,
+        agentId: agentId,
+        clock: widget.clock,
+        onOpenComputer: switch ((
+          a['machineId'],
+          widget.actions.onOpenComputer,
+        )) {
+          (final String id, final void Function(String) open) => () => open(id),
+          _ => null,
+        },
+      ),
       AgentDetailTab.activity => AgentActivityPane(
         key: ValueKey('agent-activity-pane-$agentId'),
         controller: w,

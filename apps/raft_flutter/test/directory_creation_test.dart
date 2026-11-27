@@ -88,19 +88,15 @@ void main() {
               await t.pumpAndSettle();
             }
             if (!computer) {
-              final managed = find.widgetWithText(RaftMenuItem, 'Create Agent');
-              expect(managed, findsOneWidget);
-              await t.tap(managed);
-              await t.pumpAndSettle();
               expect(find.text('Connect a computer first'), findsOneWidget);
               await t.tap(find.byTooltip('Close'));
               await t.pumpAndSettle();
               await t.tap(
-                find.byKey(const ValueKey('desktop-directory-add-agent')),
+                find.byKey(const ValueKey('members-add-agent-options')),
               );
               await t.pumpAndSettle();
               await t.tap(
-                find.widgetWithText(RaftMenuItem, 'Create external agent'),
+                find.widgetWithText(RaftMenuItem, 'Connect an external agent'),
               );
               await t.pumpAndSettle();
             }
@@ -166,11 +162,11 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        final add = find.byKey(const ValueKey('desktop-directory-add-agent'));
+        final add = find.byKey(const ValueKey('members-add-agent-options'));
         await t.tap(add);
         await t.pumpAndSettle();
         expect(
-          find.widgetWithText(RaftMenuItem, 'Create external agent'),
+          find.widgetWithText(RaftMenuItem, 'Connect an external agent'),
           findsOneWidget,
         );
         w.server = RaftRecord({'id': 's', 'role': 'viewer'});
@@ -183,7 +179,9 @@ void main() {
         await t.pumpAndSettle();
         await t.tap(add);
         await t.pumpAndSettle();
-        await t.tap(find.widgetWithText(RaftMenuItem, 'Create external agent'));
+        await t.tap(
+          find.widgetWithText(RaftMenuItem, 'Connect an external agent'),
+        );
         await t.pumpAndSettle();
         await t.enterText(
           find.byKey(const ValueKey('create-external-agent-name')),

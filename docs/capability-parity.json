@@ -3917,12 +3917,12 @@
    "kind": "ui",
    "id": "ui:members-roles.profile-actions",
    "area": "members-roles",
-   "capability": "Human profile actions: Message, Close, Role edit pencil with permission help dialog, Remove Member (confirm)",
+   "capability": "Human profile actions: Message, Close, Role edit with permission help, promote Guest, and remove member with computer impact",
    "background": false,
    "status": "covered",
-   "webEntry": "HumanDetailPanel.tsx header actions, role editor + RolePermissionHelpDialog, Actions > Remove Member",
+   "webEntry": "HumanDetailPanel.tsx header actions and role editor, HumanProfileActions.tsx promote and remove confirmations",
    "gate": "changeMemberRoles / removeMembers + transition rules",
-   "flutterEntry": "member_profile_view.dart (Message, Close profile, role editor with showRaftRolePermissionHelp, Remove Member)",
+   "flutterEntry": "member_profile_view.dart actions and members_page_remove.dart impact confirmation",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/member_profile_view.dart",

@@ -2141,8 +2141,8 @@
     {
       "id": "members.list",
       "title": "Members list (agents and humans)",
-      "webEntry": "packages/web/src/components/layout/Sidebar.tsx",
-      "flutterEntry": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
+      "webEntry": "packages/web/src/features/members/MembersPage.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/members_page.dart",
       "states": [
         {
           "state": "loading",
@@ -2157,10 +2157,10 @@
         },
         {
           "state": "empty",
+          "variant": "No members match the search",
           "web": "yes",
           "flutter": "yes",
           "parityCase": [
-            "components.members-ext.list.empty",
             "components.members-pages.phone.list.empty"
           ],
           "status": "covered",
@@ -2177,6 +2177,104 @@
           ],
           "status": "covered",
           "caseValidity": "react-checked"
+        }
+      ]
+    },
+    {
+      "id": "members.usage",
+      "title": "Members Agent Usage",
+      "webEntry": "packages/web/src/features/members/MembersAgentUsage.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/agent_token_usage_pane.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "The aggregate Usage view renders its own skeleton while the server answers. The current loading capture opens the individual Agent tab.",
+          "size": "S",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "empty",
+          "variant": "No visible agents in the usage response",
+          "web": "no",
+          "flutter": "partial",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Web returns to Details and hides the Usage switch. Flutter keeps the empty aggregate view.",
+          "size": "S",
+          "gapKind": "impl-diff"
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "The Members route widget test retries the failed aggregate read. The current error capture opens the individual Agent tab.",
+          "size": "S",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "partial",
+          "variant": "Today is a partial UTC day",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.members-pages.desktop.directory.usage"
+          ],
+          "status": "covered"
+        }
+      ]
+    },
+    {
+      "id": "member.agent.usage",
+      "title": "Agent token usage",
+      "webEntry": "packages/web/src/features/agent/AgentUsageTab.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/agent_token_usage_pane.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.members-pages.desktop.agent.usage-loading",
+            "components.members-pages.phone.agent.usage-loading"
+          ],
+          "status": "covered"
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.members-pages.desktop.agent.usage-empty",
+            "components.members-pages.phone.agent.usage-empty"
+          ],
+          "status": "covered"
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.members-pages.desktop.agent.usage-error",
+            "components.members-pages.phone.agent.usage-error"
+          ],
+          "status": "covered"
+        },
+        {
+          "state": "partial",
+          "variant": "Today is a partial UTC day",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.members-pages.desktop.agent.usage-ready",
+            "components.members-pages.phone.agent.usage-ready"
+          ],
+          "status": "covered"
         }
       ]
     },
@@ -5660,6 +5758,7 @@
       ],
       "members": [
         "members.list",
+        "members.usage",
         "member.human"
       ],
       "computers": [
@@ -5799,13 +5898,17 @@
       },
       "apps/raft_flutter/lib/features/source_channel_files_view.dart#class:ChannelFileInlineActions": {
         "role": "entry_composition",
-        "familyRefs": ["button"],
+        "familyRefs": [
+          "button"
+        ],
         "owner": "WP-GAPS-1",
         "reason": "Shares the jump and download buttons across the expanded and compact Files rows."
       },
       "apps/raft_flutter/lib/features/source_channel_files_view.dart#method:ChannelFileInlineActions.build": {
         "role": "entry_composition",
-        "familyRefs": ["button"],
+        "familyRefs": [
+          "button"
+        ],
         "owner": "WP-GAPS-1",
         "reason": "Composes the two canonical RaftButton actions with the row's density."
       },
@@ -59241,6 +59344,343 @@
         "familyRefs": [],
         "owner": "#380 shell artifact column",
         "reason": "Source census candidate (#380: the app shell's own Artifact column beside the main area, Web ShellArtifactHost); no paint of its own beyond the panel surface and edge, the viewer is ArtifactWorkspaceViewer. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#class:AgentTokenUsagePane": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "switch",
+          "select",
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Composes usage for the Agent detail and Members routes."
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#class:_AgentTokenUsagePaneState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "switch",
+          "select",
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#local-function:CLASS:_AgentTokenUsagePaneState/METHOD:_sections/FUNCTION:fact": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#local-function:CLASS:_AgentTokenUsagePaneState/METHOD:_sections/FUNCTION:section": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:AgentTokenUsagePane.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:_AgentTokenUsagePaneState._cacheReadSwitch": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "switch"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:_AgentTokenUsagePaneState._controls": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "select",
+          "switch",
+          "popover"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:_AgentTokenUsagePaneState._sections": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button",
+          "switch"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:_AgentTokenUsagePaneState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button",
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_usage_day_bars.dart#class:AgentUsageDayBars": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS",
+        "reason": "The Usage feature composes token-series bars and day selection."
+      },
+      "apps/raft_flutter/lib/features/agent_usage_day_bars.dart#class:_AgentUsageDayBarsState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_usage_day_bars.dart#method:AgentUsageDayBars.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_usage_day_bars.dart#method:_AgentUsageDayBarsState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.promote": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Confirms promotion from the human profile before submitting the role mutation."
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#class:MembersPage": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "fit_toolbar",
+          "segmented",
+          "card",
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Mounts the Members toolbar, directory layouts and desktop Usage view."
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#class:_MembersPageState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "fit_toolbar",
+          "segmented",
+          "card",
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#method:MembersPage.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#method:_MembersPageState._agentTable": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#method:_MembersPageState._list": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#method:_MembersPageState._tileBand": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#method:_MembersPageState._toolbar": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar",
+          "segmented",
+          "select",
+          "menu"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#method:_MembersPageState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "panel-header",
+          "banner",
+          "button"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page.dart#method:_MembersPageState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_entries.dart#class:MemberDirectoryEntry": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "list_row",
+          "menu"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Composes a profile identity in the current directory layout and anchors the row menu."
+      },
+      "apps/raft_flutter/lib/features/members_page_entries.dart#class:MembersAgentColumns": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_entries.dart#local-function:CLASS:MemberDirectoryEntry/METHOD:build/FUNCTION:identity": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_entries.dart#method:MemberDirectoryEntry.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "list_row",
+          "menu"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_entries.dart#method:MembersAgentColumns.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_remove.dart#class:RemoveMemberDialog": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Shows the affected computers and agents before the removal action."
+      },
+      "apps/raft_flutter/lib/features/members_page_remove.dart#class:_RemoveMemberDialogState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_remove.dart#method:RemoveMemberDialog.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_remove.dart#method:_RemoveMemberDialogState._impact": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_remove.dart#method:_RemoveMemberDialogState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_filter.dart#class:MembersUsageFilter": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "picker_trigger",
+          "popover"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Mounts a searchable multi-select for the Members usage filter."
+      },
+      "apps/raft_flutter/lib/features/members_usage_filter.dart#class:_MembersUsageFilterState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "picker_trigger",
+          "popover"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_filter.dart#method:MembersUsageFilter.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_filter.dart#method:_MembersUsageFilterState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "picker_trigger",
+          "popover"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#class:MembersUsageTable": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Mounts sortable usage columns and grouped agent rows."
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#class:_MembersUsageTableState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#method:MembersUsageTable.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#method:_MembersUsageTableState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#method:_MembersUsageTableState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/workspace_menu_invite.dart#method:_InviteDialogState.confirmLinkChange": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Hosts the invite-link replacement and revocation confirmations."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#class:_ProfileInlineAction": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MEMBERS",
+        "reason": "Places the canonical ghost icon button beside a profile field label."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#method:_ProfileInlineAction.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "packages/raft_ui/lib/src/invite_human_dialog.dart#method:_RaftInviteHumanDialogState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MEMBERS"
       }
     },
     "entries": {
@@ -59757,12 +60197,14 @@
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
       },
       "screen:members.list": {
-        "owner": "design-system alignment",
+        "owner": "WP-MEMBERS",
         "kind": "route_or_panel_candidate",
         "lifecycleScreenId": "members.list",
-        "declarationRefs": [],
-        "mountStatus": "unresolved",
-        "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/members_page.dart#class:MembersPage"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The Members route mounts this page through the directory host."
       },
       "screen:member.human": {
         "owner": "design-system alignment",
@@ -63510,6 +63952,35 @@
           "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites._open"
         ],
         "mountStatus": "source_reviewed"
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_menu_invite.dart#method:_InviteDialogState.confirmLinkChange": {
+        "owner": "WP-MEMBERS",
+        "kind": "surface_factory",
+        "mountStatus": "source_reviewed",
+        "reason": "The mounted invite dialog uses this route for separate link rotation and revocation confirmations.",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_menu_invite.dart#method:_InviteDialogState.confirmLinkChange"
+        ]
+      },
+      "screen:members.usage": {
+        "owner": "WP-MEMBERS",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "members.usage",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#class:AgentTokenUsagePane"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The Members Agents scope mounts aggregate Usage while the feature flag and access gate allow it."
+      },
+      "screen:member.agent.usage": {
+        "owner": "WP-MEMBERS",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "member.agent.usage",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#class:AgentTokenUsagePane"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The Agent detail Usage tab mounts this pane with the selected agent ID."
       }
     },
     "requirements": {

@@ -6,10 +6,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/desktop_directory_view.dart';
+import 'package:raft_flutter/features/members_page_entries.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _GroupingClient extends RaftClient {
   _GroupingClient()
@@ -93,7 +96,10 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        expect(find.byType(RaftNavItem).evaluate().length, lessThan(30));
+        expect(
+          find.byType(MemberDirectoryEntry).evaluate().length,
+          lessThan(30),
+        );
         final name = find.text('Agent 0');
         expect(name, findsOneWidget);
         expect(
@@ -107,22 +113,25 @@ void main() {
           findsNothing,
         );
         final scrollable = find.descendant(
-          of: find.byKey(const Key('desktop-directory-list')),
+          of: find.byKey(const PageStorageKey('desktop-directory-list')),
           matching: find.byType(Scrollable),
         );
         await t.scrollUntilVisible(
           find.byKey(const ValueKey('desktop-directory-agent-long-999')),
           2000,
           scrollable: scrollable,
-          maxScrolls: 40,
+          maxScrolls: 80,
         );
         expect(find.text('Agent 999'), findsOneWidget);
         expect(t.takeException(), isNull);
       },
     );
     testWidgets(
-      'authorized grouped directory ${dark ? 'dark' : 'light'} preserves order and collapse',
+      'authorized grouped directory ${dark ? 'dark' : 'light'} sorts groups and clears private data',
       (t) async {
+        SharedPreferences.setMockInitialValues({'raft.mode': 'system'});
+        final preferences = await DevicePreferences.load();
+        addTearDown(DevicePreferences.reset);
         final client = _GroupingClient();
         final w = WorkspaceController(client)
           ..server = RaftRecord({'id': 's', 'role': 'owner'});
@@ -136,48 +145,43 @@ void main() {
             theme: raftTheme(dark: dark),
             home: Scaffold(
               body: SizedBox(
-                width: 240,
+                width: 800,
                 child: DesktopDirectoryView(controller: w, onSelected: (_) {}),
               ),
             ),
           ),
         );
         await t.pumpAndSettle();
-        final groups = t
-            .widgetList<RaftSidebarMachineGroup>(
-              find.byType(RaftSidebarMachineGroup),
-            )
-            .toList();
-        expect(groups.map((g) => g.name), [
-          'Second computer',
-          'First computer',
-          'No computer',
-        ]);
-        expect(groups.map((g) => g.count), [2, 1, 1]);
         final row = find.byKey(const ValueKey('desktop-directory-agent-a'));
         final avatar = t.widget<RaftAvatarContent>(
           find.descendant(of: row, matching: find.byType(RaftAvatarContent)),
         );
         expect(avatar.pixelKey, 'bot-1');
-        expect(find.text('Kevin (you)', findRichText: true), findsOneWidget);
+        expect(find.text('Kevin'), findsOneWidget);
+        expect(find.text('(you)'), findsOneWidget);
         expect(find.text('Product builder'), findsOneWidget);
         expect(find.byTooltip('Refresh'), findsNothing);
-        await t.tap(
-          find.byKey(const ValueKey('directory-machine-disclosure-second')),
-        );
+        await t.tap(find.byKey(const ValueKey('members-tab-agent')));
         await t.pumpAndSettle();
-        expect(find.text('First agent'), findsNothing);
-        expect(find.text('Third agent'), findsNothing);
-        expect(find.text('Second agent'), findsOneWidget);
+        expect(find.text('First computer  1'), findsNothing);
+        await t.tap(find.byKey(const ValueKey('members-group-select')));
+        await t.pumpAndSettle();
+        await t.tap(find.text('By computer'));
+        await t.pumpAndSettle();
+        final first = find.text('First computer  1');
+        final second = find.text('Second computer  2');
+        expect(t.getTopLeft(first).dy, lessThan(t.getTopLeft(second).dy));
+        expect(find.text('External & cloud  1'), findsOneWidget);
+        await preferences!.reload();
+        expect(preferences.getString('raft.mode'), 'system');
         client.stream.add(RaftEvent('agent:updated', {'id': 'b'}));
         await t.pumpAndSettle();
-        expect(find.text('First agent'), findsNothing);
-        // Revocation retires names, private projections and remembered folds.
+        expect(find.text('First agent'), findsOneWidget);
         w.server = RaftRecord({'id': 's', 'role': 'guest'});
         w.notifyListeners();
         await t.pumpAndSettle();
-        expect(find.byType(RaftSidebarMachineGroup), findsNothing);
-        expect(find.text('Kevin (you)', findRichText: true), findsNothing);
+        expect(first, findsNothing);
+        expect(find.text('Kevin'), findsNothing);
         final requestCount = client.requests.length;
         await t.pump(const Duration(seconds: 1));
         expect(client.requests.length, requestCount);
@@ -185,6 +189,9 @@ void main() {
         w.notifyListeners();
         await t.pumpAndSettle();
         expect(find.text('First agent'), findsOneWidget);
+        await t.tap(find.byKey(const ValueKey('members-tab-agent')));
+        await t.pumpAndSettle();
+        expect(first, findsOneWidget);
         expect(t.takeException(), isNull);
       },
     );
@@ -210,8 +217,8 @@ void main() {
     );
     await t.pumpAndSettle();
     expect(find.text('First agent'), findsOneWidget);
-    expect(find.text('Kevin (you)', findRichText: true), findsOneWidget);
-    expect(find.text('Directory could not be loaded.'), findsNothing);
+    expect(find.text('Kevin'), findsOneWidget);
+    expect(find.text('Humans failed to load'), findsNothing);
     expect(t.takeException(), isNull);
   });
 }

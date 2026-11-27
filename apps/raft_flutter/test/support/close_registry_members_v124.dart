@@ -1,0 +1,68 @@
+import 'close_surface.dart';
+
+const _back = Affordance.back;
+const _systemBack = Affordance.systemBack;
+const _dialogClose = {Affordance.x, Affordance.esc, _systemBack};
+
+const membersV124Surfaces = <CloseSurface>[
+  CloseSurface(
+    'members-directory-page',
+    kind: SurfaceKind.page,
+    web: 'features/members/MembersPage.tsx, PanelHeader mobile back',
+    phone: {_back, _systemBack},
+    none: {
+      'fold': 'Members is the server route in the main column.',
+      'desktop': 'Members is the server route in the main column.',
+    },
+    files: ['lib/features/members_page.dart'],
+  ),
+  CloseSurface(
+    'member-promote-guest',
+    kind: SurfaceKind.dialog,
+    web: 'components/member/HumanProfileActions.tsx, ConfirmDialog',
+    webOutside: WebOutside.stays,
+    phone: _dialogClose,
+    fold: _dialogClose,
+    desktop: _dialogClose,
+    files: ['lib/features/member_profile_view.dart'],
+  ),
+  CloseSurface(
+    'member-removal-impact',
+    kind: SurfaceKind.dialog,
+    web: 'components/member/HumanProfileActions.tsx, RemoveMemberConfirmDialog',
+    webOutside: WebOutside.stays,
+    phone: _dialogClose,
+    fold: _dialogClose,
+    desktop: _dialogClose,
+    files: ['lib/features/members_page_remove.dart'],
+  ),
+  CloseSurface(
+    'invite-link-update',
+    kind: SurfaceKind.dialog,
+    web: 'components/member/InviteHumanDialog.tsx, update ConfirmDialog',
+    webOutside: WebOutside.stays,
+    phone: _dialogClose,
+    fold: _dialogClose,
+    desktop: _dialogClose,
+    files: ['lib/features/workspace_menu_invite.dart'],
+  ),
+  CloseSurface(
+    'invite-link-revoke',
+    kind: SurfaceKind.dialog,
+    web: 'components/member/InviteHumanDialog.tsx, revoke ConfirmDialog',
+    webOutside: WebOutside.stays,
+    phone: _dialogClose,
+    fold: _dialogClose,
+    desktop: _dialogClose,
+    files: ['lib/features/workspace_menu_invite.dart'],
+  ),
+  CloseSurface(
+    'members-usage-filter',
+    kind: SurfaceKind.popup,
+    web: 'features/members/MembersAgentUsageFilter.tsx',
+    none: {'phone': 'The Members Usage view is available at desktop widths.'},
+    fold: {Affordance.esc, Affordance.scrim, _systemBack},
+    desktop: {Affordance.esc, Affordance.scrim, _systemBack},
+    files: ['lib/features/members_usage_filter.dart'],
+  ),
+];

@@ -601,23 +601,33 @@ class RaftEditableEyebrow extends StatelessWidget {
     this.onEdit,
     this.editLabel,
     this.editKey,
+    this.profileAction = false,
   });
   final String label;
   final VoidCallback? onEdit;
   final String? editLabel;
   final Key? editKey;
+  final bool profileAction;
   @override
   Widget build(BuildContext context) => Row(
     children: [
       Flexible(child: RaftSectionEyebrow(label)),
       if (onEdit != null) ...[
         const SizedBox(width: 8),
-        RaftInlineIconButton(
-          key: editKey,
-          glyph: RaftGlyph.pencil,
-          tooltip: editLabel ?? label,
-          onPressed: onEdit,
-        ),
+        if (profileAction)
+          _ProfileInlineAction(
+            key: editKey,
+            glyph: RaftGlyph.pencil,
+            label: editLabel ?? label,
+            onPressed: onEdit!,
+          )
+        else
+          RaftInlineIconButton(
+            key: editKey,
+            glyph: RaftGlyph.pencil,
+            tooltip: editLabel ?? label,
+            onPressed: onEdit,
+          ),
       ],
     ],
   );
@@ -824,15 +834,6 @@ class RaftProfileIdentity extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Web v1.21.12 `PanelTitle` (the detail-block name follows the
-                  // panel-title spec): 17 / semibold / heading family
-                  // in `text-foreground-muted`.
-                  // The recipe's `leading-tight` is a 22.5px line box;
-                  // Flutter rounds a paragraph's height to whole pixels, so
-                  // the line box is sized explicitly.
-                  // The row is 22.5px tall (measured on the Web render: the
-                  // handle starts there), the name at its top and the pencil
-                  // centred (`flex items-center gap-2`).
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -841,7 +842,11 @@ class RaftProfileIdentity extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: raftPanelTitleStyle(t),
+                          style: raftPanelTitleStyle(t).copyWith(
+                            color: agent
+                                ? t.ui.foregroundMuted
+                                : t.ui.foreground,
+                          ),
                         ),
                       ),
                       if (onEditName != null) ...[
@@ -863,41 +868,35 @@ class RaftProfileIdentity extends StatelessWidget {
                         const SizedBox(height: 22.5),
                     ],
                   ),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: RaftCssText(
-                          '@$handle',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: _handleStyle(
-                            t,
-                            brutal: agent
-                                ? t.colors['foreground-muted']!
-                                : raftPanelInk(
-                                    t,
-                                    .5,
-                                    t.colors['foreground-muted']!,
+                  Padding(
+                    padding: EdgeInsets.only(top: agent ? 0 : 2),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: RaftCssText(
+                            '@$handle',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: agent
+                                ? _handleStyle(t, brutal: t.ui.foregroundMuted)
+                                : t.scale(
+                                    RaftTypeScale.monoMeta,
+                                    mono: true,
+                                    color: t.ui.foregroundHint,
                                   ),
                           ),
                         ),
-                      ),
-                      if (youLabel != null) ...[
-                        const SizedBox(width: 8),
-                        RaftCssText(
-                          youLabel!,
-                          maxLines: 1,
-                          style: _handleStyle(
-                            t,
-                            brutal: raftPanelInk(
-                              t,
-                              .6,
-                              t.colors['foreground-muted']!,
-                            ),
+                        if (youLabel != null) ...[
+                          const SizedBox(width: 8),
+                          RaftRecipeBadge(
+                            youLabel!,
+                            appearance: RaftBadgeRecipeAppearance.outline,
+                            variant: RaftBadgeRecipeVariant.default_,
+                            mono: true,
                           ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                   if (statusRow != null)
                     // `mt-1.5 min-w-0`
@@ -1090,13 +1089,13 @@ class RaftKeyValueRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final style = mono
-        ? RaftPanelText.profileMono(t)
-        : RaftPanelText.profileValue(t);
+        ? t.scale(RaftTypeScale.monoMeta, mono: true, color: t.ui.foreground)
+        : RaftInfoRow.detailsStyleOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        RaftCssText(label, style: RaftPanelText.profileLabel(t)),
+        RaftCssText(label, style: RaftInfoRow.termStyleOf(context)),
         const SizedBox(height: 4),
         if (child case final node?)
           DefaultTextStyle.merge(style: style, child: node)
@@ -3372,11 +3371,13 @@ class RaftDescriptionBlock extends StatelessWidget {
     this.onEdit,
     this.editKey,
     this.selectable = true,
+    this.human = false,
   });
   final String text;
   final VoidCallback? onEdit;
   final Key? editKey;
   final bool selectable;
+  final bool human;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -3388,6 +3389,7 @@ class RaftDescriptionBlock extends StatelessWidget {
           onEdit: onEdit,
           editKey: editKey,
           editLabel: raftText(context, 'Edit Description'),
+          profileAction: human,
         ),
         const SizedBox(height: 4),
         text.isEmpty
@@ -3403,6 +3405,34 @@ class RaftDescriptionBlock extends StatelessWidget {
       ],
     );
   }
+}
+
+class _ProfileInlineAction extends StatelessWidget {
+  const _ProfileInlineAction({
+    super.key,
+    required this.glyph,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final RaftGlyph glyph;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    widthFactor: 1,
+    heightFactor: .75,
+    child: RaftButton(
+      uiVariant: RaftButtonVariant.ghost,
+      uiSize: RaftButtonSize.iconMd,
+      glyph: glyph,
+      tooltip: label,
+      semanticLabel: label,
+      foreground: RaftTokens.of(context).ui.foregroundHint,
+      onPressed: onPressed,
+    ),
+  );
 }
 
 /// HumanDetailPanel role field: label row (`mb-1 flex items-center gap-2`)
@@ -3432,27 +3462,28 @@ class RaftRoleField extends StatelessWidget {
   final Widget? editor;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            RaftCssText(label, style: RaftPanelText.profileLabel(t)),
-            const SizedBox(width: 8),
-            RaftInlineIconButton(
-              key: helpKey,
-              glyph: RaftGlyph.circleHelp,
-              tooltip: raftText(context, 'Human roles'),
-              onPressed: onHelp,
-            ),
-            if (onEdit != null && editor == null) ...[
+            RaftCssText(label, style: RaftInfoRow.termStyleOf(context)),
+            if (onHelp != null) ...[
               const SizedBox(width: 8),
-              RaftInlineIconButton(
+              _ProfileInlineAction(
+                key: helpKey,
+                glyph: RaftGlyph.circleHelp,
+                label: raftText(context, 'Human roles'),
+                onPressed: onHelp!,
+              ),
+            ],
+            if (onEdit != null && editor == null) ...[
+              SizedBox(width: onHelp == null ? 8 : 12),
+              _ProfileInlineAction(
                 key: editKey,
                 glyph: RaftGlyph.pencil,
-                tooltip: raftText(context, 'Edit Role'),
-                onPressed: onEdit,
+                label: raftText(context, 'Edit Role'),
+                onPressed: onEdit!,
               ),
             ],
           ],

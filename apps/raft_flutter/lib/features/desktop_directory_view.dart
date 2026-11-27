@@ -3,19 +3,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/raft_location.dart' show RaftProfileKind;
 import '../data/machine_order.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'desktop_navigation_policy.dart';
 import 'add_computer_dialog.dart';
 import 'agent_avatar_projection.dart';
+import 'agent_metadata_projection.dart' show agentRowAmbientDisplay;
+import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
+import 'agent_runtime_models.dart' show runtimeModelLabel;
 import 'chat_agent_presentation.dart';
 import 'computer_detail_view.dart'
     show computerAvailableVersion, computerDiskLow, computerRowStatus;
 import 'create_external_agent_dialog.dart';
-import 'fleet_views.dart' show showFleetRegistration;
 import 'managed_agent_launcher.dart';
 import 'member_row_menu.dart';
+import 'member_profile_rules.dart';
+import 'members_page.dart';
+import 'members_page_entries.dart';
 import 'pushed_server_page.dart';
 import 'sender_avatar_projection.dart';
 import 'workspace_menu_invite.dart';
@@ -51,12 +57,12 @@ class DesktopDirectoryView extends StatefulWidget {
 class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   WorkspaceController get w => widget.controller;
   WorkspaceEntityDirectory? _directory;
-  final agentMenu = RaftMenuController();
-  bool agentsExpanded = true, humansExpanded = true;
+  List<Map<String, dynamic>> _people = const [],
+      _agents = const [],
+      _computers = const [];
 
   /// The row whose context menu is open (it keeps its pressed fill).
   String? menuRow;
-  final collapsedMachineGroups = <String, bool>{};
   WorkspaceController? _listened;
   late String _authority;
 
@@ -96,6 +102,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     _directory?.removeListener(directoryChanged);
     _listened = w..addListener(workspaceChanged);
     _directory = w.services.entityDirectory..addListener(directoryChanged);
+    _readDirectory();
     w.services.entityDirectory.ensure(waitKinds, retryFailed: true);
   }
 
@@ -110,13 +117,25 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   /// remembered folds; the rows follow the directory's own fencing.
   void resetAuthority() {
     _authority = authority;
-    agentMenu.close();
-    collapsedMachineGroups.clear();
+    menuRow = null;
+    _readDirectory();
     w.services.entityDirectory.ensure(waitKinds);
   }
 
   void directoryChanged() {
-    if (mounted) setState(() {});
+    if (mounted) setState(_readDirectory);
+  }
+
+  void _readDirectory() {
+    _people = !widget.computers && showHumans
+        ? rows(WorkspaceEntityKind.members)
+        : const [];
+    _agents = !widget.computers && w.can('viewAgents')
+        ? rows(WorkspaceEntityKind.agents)
+        : const [];
+    _computers = w.can('viewMachines')
+        ? rows(WorkspaceEntityKind.computers)
+        : const [];
   }
 
   @override
@@ -134,7 +153,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   void dispose() {
     _listened?.removeListener(workspaceChanged);
     _directory?.removeListener(directoryChanged);
-    agentMenu.dispose();
     super.dispose();
   }
 
@@ -165,54 +183,17 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     );
   }
 
-  Future<void> register() async {
-    final captured = authority;
-    await showFleetRegistration(
-      context,
-      w,
-      onCreated: () => reload(WorkspaceEntityKind.computers),
-      authorized: () => mounted && captured == authority,
-    );
+  Future<void> invite() async {
+    await showWorkspaceMenuInvite(context, w);
   }
 
-  Widget addAgentMenu() => RaftDropdownMenu(
-    controller: agentMenu,
-    label: 'Add Agent',
-    tooltip: 'Add Agent',
-    width: 190,
-    align: RaftDropdownAlign.end,
-    sideOffset: 8,
-    entries: [
-      RaftMenuEntry(
-        label: raftText(context, 'Create Agent'),
-        glyph: RaftGlyph.bot,
-        onPressed: () async {
-          final captured = authority;
-          await showManagedAgentForm(context, w);
-          if (mounted && captured == authority) {
-            await reload(WorkspaceEntityKind.agents);
-          }
-        },
-      ),
-      RaftMenuEntry(
-        label: raftText(context, 'Create external agent'),
-        glyph: RaftGlyph.link2,
-        onPressed: () => unawaited(createExternalAgent()),
-      ),
-    ],
-    triggerBuilder: (context, focus, open) => RaftControl(
-      key: const ValueKey('desktop-directory-add-agent'),
-      semanticLabel: raftText(context, 'Add Agent'),
-      tooltip: raftText(context, 'Add Agent'),
-      focusNode: focus,
-      visualHeight: 24,
-      visualWidth: 24,
-      minimumTargetSize: 24,
-      recipe: RaftSidebarSectionActionRecipe(RaftTokens.of(context)),
-      onPressed: open,
-      child: const RaftIcon(RaftGlyph.plus, size: 14),
-    ),
-  );
+  Future<void> createAgent() async {
+    final captured = authority;
+    await showManagedAgentForm(context, w);
+    if (mounted && captured == authority) {
+      await reload(WorkspaceEntityKind.agents);
+    }
+  }
 
   /// Sidebar.tsx member-human / member-agent context menu (right click or
   /// long press): Message, and for a managed agent Start / Stop and
@@ -241,17 +222,15 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     );
   }
 
-  Widget row(Map<String, dynamic> value, DesktopContentKind kind) {
-    final id = kind == DesktopContentKind.human
-        ? value['userId'] ?? value['id']
-        : value['id'];
-    if (id is! String) {
-      return const SizedBox.shrink();
-    }
-    final displayName = '${value['displayName'] ?? ''}';
-    final name = displayName.isNotEmpty
-        ? displayName
-        : '${value['name'] ?? ''}';
+  Widget row(
+    MemberPageEntry entry,
+    MembersEntryLayout layout,
+    String? computer,
+  ) {
+    final target = entry.target;
+    final kind = target.kind, id = target.id;
+    final value = entry.record;
+    final name = entry.name;
     final agent = kind == DesktopContentKind.agent;
     final avatar = projectSenderAvatar(
       origin: w.client.origin,
@@ -261,61 +240,77 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       members: agent ? const [] : [value],
       currentUser: w.client.user?.json,
     );
-    final target = DesktopContentTarget(kind, id);
     final sourceAuthority = authority;
     final selected = widget.selected?.kind == kind && widget.selected?.id == id;
-    // Sidebar.tsx member rows use the same SidebarItem recipe as conversations.
-    return RaftNavItem(
+    final mayMessage =
+        agent ||
+        canMessageHuman(
+          membershipStatus: value['membershipStatus'] ?? 'active',
+          remoteJoint: false,
+          actorRole: w.server?.string('role'),
+          targetRole: value['role'] as String?,
+        );
+    final runtime = value['runtime'] as String?;
+    final model = value['model'] as String?;
+    final display = agent ? agentRowAmbientDisplay(value) : null;
+    return MemberDirectoryEntry(
       key: ValueKey('desktop-directory-${kind.name}-$id'),
-      label: name,
-      labelSuffix: kind == DesktopContentKind.human && id == w.client.user?.id
-          ? raftText(context, '(you)')
-          : null,
-      conversationKind: RaftConversationNavKind.directory,
+      layout: layout,
+      entry: entry,
+      self: !agent && id == w.client.user?.id,
       selected: selected,
       menuOpen: menuRow == '${kind.name}:$id',
-      onContextMenu: kind == DesktopContentKind.computer
-          ? null
-          : (at) => openMenu(at, target, value),
-      tag: kind == DesktopContentKind.human && value['role'] == 'guest'
-          ? RaftSidebarTag(raftText(context, 'Guest'))
-          : null,
-      activityText: agent ? widget.activities?.rowText(id) : null,
-      description:
-          kind != DesktopContentKind.computer &&
-              '${value['description'] ?? ''}'.isNotEmpty
-          ? '${value['description']}'
-          : null,
-      leading: kind == DesktopContentKind.computer
-          ? const RaftIcon(RaftGlyph.monitor, size: 18)
-          : RaftAvatar(
-              name: name,
-              presence: agent ? agentRowPresence(value) : null,
-              mountedContext: RaftMountedAvatarContext.sidebarList,
-              kind: kind == DesktopContentKind.agent
-                  ? RaftAvatarKind.agent
-                  : RaftAvatarKind.human,
-              content: RaftAvatarContent(
-                name: name,
-                kind: agent
-                    ? RaftAvatarContentKind.agent
-                    : RaftAvatarContentKind.human,
-                uploadedUrl: avatar.uploadedUrl,
-                pixelKey: avatar.pixelKey,
-                fallback: RaftMountedAvatarFallback(
-                  avatarContext: RaftMountedAvatarContext.sidebarList,
-                  identity: agent
-                      ? RaftMountedAvatarIdentity.agent
-                      : RaftMountedAvatarIdentity.human,
-                ),
-              ),
-            ),
-      onTap: () {
+      onMenu: mayMessage ? (at) => openMenu(at, target, value) : null,
+      activity: agent ? widget.activities?.rowText(id) : null,
+      facts: [
+        if (agent) ...[
+          raftText(
+            context,
+            display!.heldText ??
+                switch (display.activity) {
+                  'offline' => 'Offline',
+                  'working' => 'Working…',
+                  'thinking' => 'Thinking…',
+                  'error' => 'Error',
+                  _ => 'Online',
+                },
+          ),
+          runtime == null ? '—' : runtimeLabelWithStatus(context, runtime),
+          model == null ? '—' : runtimeModelLabel(runtime ?? '', model),
+          computer ?? '—',
+        ],
+      ],
+      avatar: RaftAvatar(
+        name: name,
+        size: 35,
+        presence: agent ? agentRowPresence(value) : null,
+        mountedContext: layout == MembersEntryLayout.list
+            ? RaftMountedAvatarContext.sidebarList
+            : null,
+        kind: kind == DesktopContentKind.agent
+            ? RaftAvatarKind.agent
+            : RaftAvatarKind.human,
+        content: RaftAvatarContent(
+          name: name,
+          kind: agent
+              ? RaftAvatarContentKind.agent
+              : RaftAvatarContentKind.human,
+          uploadedUrl: avatar.uploadedUrl,
+          pixelKey: avatar.pixelKey,
+          fallback: RaftMountedAvatarFallback(
+            avatarContext: RaftMountedAvatarContext.sidebarList,
+            identity: agent
+                ? RaftMountedAvatarIdentity.agent
+                : RaftMountedAvatarIdentity.human,
+          ),
+        ),
+      ),
+      onOpen: () {
         if (sourceAuthority == authority && mounted) {
           widget.onSelected(target);
         }
       },
-      onDoubleClick: kind == DesktopContentKind.computer
+      onMessage: !mayMessage
           ? null
           : () {
               if (sourceAuthority == authority && mounted) {
@@ -389,237 +384,47 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     );
   }
 
-  /// Builds machine headers and agent rows in first-seen order.
-  List<({String id, WidgetBuilder build})> agentMachineRows(
-    List<Map<String, dynamic>> rows,
-    List<Map<String, dynamic>> computers,
-  ) {
-    final groups = <String, List<Map<String, dynamic>>>{};
-    for (final value in rows) {
-      final machine = value['machineId'];
-      // A cloud agent has no computer by design: its own group instead of
-      // "no computer" (`hostedRuntime` reaches managers only).
-      final id = machine is String
-          ? machine
-          : value['hostedRuntime'] != null
-          ? '__cloud__'
-          : '__no_machine__';
-      groups.putIfAbsent(id, () => []).add(value);
-    }
-    final names = {
-      for (final computer in computers) computer['id']: computer['name'],
-    };
-    return [
-      for (final (index, entry) in groups.entries.indexed) ...[
-        (
-          id: 'directory-machine-group-${entry.key}',
-          build: (_) => RaftSidebarMachineGroup(
-            key: ValueKey('directory-machine-group-${entry.key}'),
-            topPadding: index == 0 ? 2 : 6 - (2),
-            disclosureKey: ValueKey(
-              'directory-machine-disclosure-${entry.key}',
-            ),
-            name:
-                '${names[entry.key] ?? raftText(context, entry.key == '__cloud__' ? 'cloud' : 'No computer')}',
-            count: entry.value.length,
-            expanded: collapsedMachineGroups[entry.key] != true,
-            onExpandedChanged: (expanded) =>
-                setState(() => collapsedMachineGroups[entry.key] = !expanded),
-            children: const [],
-          ),
-        ),
-        if (collapsedMachineGroups[entry.key] != true)
-          for (final value in entry.value)
-            (
-              id: 'desktop-directory-agent-${value['id']}',
-              build: (_) => row(value, DesktopContentKind.agent),
-            ),
-      ],
-    ];
-  }
-
-  /// Mobile elegant root: the floating tab bar's clearance (68 / 116 + inset)
-  /// arrives as MediaQuery padding from the adaptive workspace, so the recipe's
-  /// own 68 is dropped to avoid counting it twice.
-  EdgeInsets directoryPadding(RaftSidebarRecipe recipe) {
-    final inset = recipe
-        .contentInset(headerInFlow: true)
-        .resolve(Directionality.of(context));
-    final floatingBar = widget.mobileRoot;
-    return raftScrollPadding(
-      context,
-      floatingBar ? inset.copyWith(bottom: 0) : inset,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final directory = w.services.entityDirectory;
     final loading = waitKinds.any((kind) => !directory.settled(kind));
-    final computers = w.can('viewMachines')
-        ? rows(WorkspaceEntityKind.computers)
-        : const <Map<String, dynamic>>[];
-    final agents = !widget.computers && w.can('viewAgents')
-        ? rows(WorkspaceEntityKind.agents)
-        : const <Map<String, dynamic>>[];
-    final humans = !widget.computers && showHumans
-        ? rows(WorkspaceEntityKind.members)
-        : const <Map<String, dynamic>>[];
-    List<({String id, WidgetBuilder build})> section(
-      String label,
-      List<Map<String, dynamic>> rows,
-      DesktopContentKind kind, {
-      double? topInset,
-      bool loading = false,
-      bool hideRows = false,
-      bool failed = false,
-    }) => [
-      (
-        id: 'directory-section-${kind.name}',
-        build: (_) => RaftSidebarSectionHeader(
-          key: ValueKey('directory-section-${kind.name}'),
-          label: label,
-          disclosureKey: ValueKey('desktop-directory-toggle-${kind.name}'),
-          topInset: topInset,
-          expanded: kind == DesktopContentKind.agent
-              ? agentsExpanded
-              : humansExpanded,
-          onExpandedChanged: widget.computers
-              ? null
-              : (expanded) => setState(() {
-                  if (kind == DesktopContentKind.agent) {
-                    agentsExpanded = expanded;
-                  } else {
-                    humansExpanded = expanded;
-                  }
-                }),
-          count: rows.length,
-          trailing: kind == DesktopContentKind.agent && w.can('createAgents')
-              ? addAgentMenu()
-              : null,
-          actions:
-              kind == DesktopContentKind.computer && w.can('registerMachines')
-              ? [
-                  RaftSidebarSectionAction(
-                    label: raftText(context, 'Add computer'),
-                    key: const ValueKey('desktop-directory-add-computer'),
-                    glyph: RaftGlyph.plus,
-                    onPressed: () => register(),
-                  ),
-                ]
-              : kind == DesktopContentKind.human && w.can('inviteMembers')
-              ? [
-                  RaftSidebarSectionAction(
-                    label: raftText(context, 'Invite human'),
-                    key: const ValueKey('desktop-directory-invite-human'),
-                    glyph: RaftGlyph.plus,
-                    onPressed: () => showWorkspaceMenuInvite(context, w),
-                  ),
-                ]
-              : const [],
+    if (widget.computers) {
+      return KeyedSubtree(
+        key: const PageStorageKey('directory-computers'),
+        child: RaftMountedSidebarFrame(
+          header: widget.mobileRoot
+              ? RaftMobileRootHeader(
+                  title: 'Computers',
+                  onBack: pushedServerPageBack(context, w),
+                  backKey: pushedServerPageBackKey,
+                )
+              : const RaftChatSidebarHeading(label: 'Computers'),
+          body: computersList(t, _computers),
         ),
-      ),
-      if (widget.computers ||
-          (kind == DesktopContentKind.agent ? agentsExpanded : humansExpanded))
-        if (failed && rows.isEmpty)
-          (
-            id: 'directory-${kind.name}-error',
-            build: (_) => RaftSidebarSectionDescription(
-              raftText(context, 'Humans failed to load'),
-              error: raftSidebarErrorInk,
-            ),
-          )
-        else if (hideRows || rows.isEmpty)
-          (
-            id: 'directory-${kind.name}-hint',
-            build: (_) => loading
-                ? const RaftSidebarRowsSkeleton()
-                : RaftSidebarSectionDescription(
-                    raftText(
-                      context,
-                      kind == DesktopContentKind.agent
-                          ? 'No agents yet'
-                          : 'No humans',
-                    ),
-                  ),
-          )
-        else if (kind == DesktopContentKind.agent)
-          ...agentMachineRows(rows, computers)
-        else
-          for (final value in rows)
-            (
-              id: 'desktop-directory-${kind.name}-${value['id']}',
-              build: (_) => row(value, kind),
-            ),
-    ];
-    final items = <({String id, WidgetBuilder build})>[
-      if (w.can('viewAgents'))
-        ...section(
-          'Agents',
-          agents,
-          DesktopContentKind.agent,
-          loading: loading,
-          hideRows: loading,
-        ),
-      if (showHumans)
-        ...section(
-          'Humans',
-          humans,
-          DesktopContentKind.human,
-          topInset: !w.can('viewAgents')
-              ? null
-              : !agentsExpanded
-              ? 8
-              : agents.isEmpty || loading
-              ? 12
-              : 12 - (2),
-          failed: directory.state(WorkspaceEntityKind.members).error != null,
-        ),
-    ];
-    final indices = {for (var i = 0; i < items.length; i++) items[i].id: i};
-    final size = MediaQuery.sizeOf(context);
-    final recipe = RaftSidebarRecipe(
-      t,
-      viewportWidth: size.width,
-      viewportHeight: size.height,
-      variant: RaftSidebarVariant.mountedProduct,
-    );
-    // Web v1.24 Members / Agents are the row's main column, not a sidebar:
-    // no edge of their own; a profile opened beside them draws the seam.
-    final frame = RaftMountedSidebarFrame(
-      header: widget.mobileRoot
-          ? RaftMobileRootHeader(
-              title: widget.computers ? 'Computers' : 'Members',
-              onBack: pushedServerPageBack(context, w),
-              backKey: pushedServerPageBackKey,
-            )
-          : RaftChatSidebarHeading(
-              label: widget.computers ? 'Computers' : 'Members',
-            ),
-      body: widget.computers
-          ? computersList(t, computers)
-          : RaftPullToRefresh(
-              enabled: widget.mobileRoot || RaftInteraction.of(context).touch,
-              onRefresh: refreshDirectory,
-              child: ListView.builder(
-                key: const Key('desktop-directory-list'),
-                physics: widget.mobileRoot || RaftInteraction.of(context).touch
-                    ? const AlwaysScrollableScrollPhysics()
-                    : null,
-                padding: directoryPadding(recipe),
-                itemCount: items.length,
-                findChildIndexCallback: (key) =>
-                    key is ValueKey<String> ? indices[key.value] : null,
-                itemBuilder: (context, index) => items[index].build(context),
-              ),
-            ),
-    );
-    return KeyedSubtree(
-      key: PageStorageKey(
-        'directory-${widget.computers ? 'computers' : 'members'}',
-      ),
-      child: frame,
+      );
+    }
+    final create = w.can('createAgents');
+    return MembersPage(
+      key: ValueKey(authority),
+      workspace: w,
+      humans: _people,
+      agents: _agents,
+      computers: _computers,
+      showHumans: showHumans,
+      loading: loading,
+      failed:
+          showHumans &&
+          directory.state(WorkspaceEntityKind.members).error != null,
+      mobile: widget.mobileRoot,
+      onRefresh: refreshDirectory,
+      onBack: widget.mobileRoot ? pushedServerPageBack(context, w) : null,
+      onInvite: w.can('inviteMembers') ? invite : null,
+      onCreate: create ? createAgent : null,
+      onConnect: create ? createExternalAgent : null,
+      buildEntry: row,
+      onOpenAgent: (id) =>
+          w.openProfile(RaftProfileKind.agent, id, agentTab: 'usage'),
     );
   }
 }

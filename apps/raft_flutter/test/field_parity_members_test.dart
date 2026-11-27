@@ -129,7 +129,7 @@ void main() {
     });
 
     test(
-      'canRemove: admin only removes members; owner needs another owner',
+      'canRemove: admin removes members and guests; owner needs another owner',
       () {
         bool remove(String actor, String target, {int owners = 1}) =>
             canRemoveHuman(
@@ -143,7 +143,7 @@ void main() {
             );
         expect(remove('admin', 'member'), isTrue);
         expect(remove('admin', 'admin'), isFalse);
-        expect(remove('admin', 'guest'), isFalse);
+        expect(remove('admin', 'guest'), isTrue);
         expect(remove('admin', 'owner', owners: 2), isFalse);
         expect(remove('owner', 'admin'), isTrue);
         expect(remove('owner', 'guest'), isTrue);
@@ -167,26 +167,21 @@ void main() {
       expect(message('guest', 'member', dm: true), isTrue);
     });
 
-    test('editable roles: guest flag off leaves a guest target uneditable', () {
-      List<String> roles(String target, {required bool guest}) =>
-          editableHumanServerRoles(
-            actorRole: 'admin',
-            targetRole: target,
-            isSelf: false,
-            ownerCount: 1,
-            serverGuestEnabled: guest,
-          );
-      expect(roles('guest', guest: false), isEmpty);
-      expect(roles('guest', guest: true), ['admin', 'member']);
-      expect(roles('member', guest: false), ['admin']);
-      expect(roles('member', guest: true), ['admin', 'guest']);
+    test('editable roles promote guests to member or admin', () {
+      List<String> roles(String target) => editableHumanServerRoles(
+        actorRole: 'admin',
+        targetRole: target,
+        isSelf: false,
+        ownerCount: 1,
+      );
+      expect(roles('guest'), ['admin', 'member']);
+      expect(roles('member'), ['admin']);
       expect(
         editableHumanServerRoles(
           actorRole: 'owner',
           targetRole: 'member',
           isSelf: false,
           ownerCount: 1,
-          serverGuestEnabled: false,
         ),
         ['owner', 'admin'],
       );

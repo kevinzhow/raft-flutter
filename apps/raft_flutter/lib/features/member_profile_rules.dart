@@ -57,10 +57,8 @@ List<String> editableHumanServerRoles({
   required String? targetRole,
   required bool isSelf,
   required int ownerCount,
-  required bool serverGuestEnabled,
 }) {
   if (targetRole == null || targetRole.isEmpty) return const [];
-  if (!serverGuestEnabled && targetRole == 'guest') return const [];
   bool can(String next) {
     if (actorRole == null || actorRole.isEmpty || targetRole == next) {
       return false;
@@ -79,8 +77,8 @@ List<String> editableHumanServerRoles({
   }
 
   return [
-    for (final r in const ['owner', 'admin', 'member', 'guest'])
-      if ((serverGuestEnabled || r != 'guest') && can(r)) r,
+    for (final r in const ['owner', 'admin', 'member'])
+      if (can(r)) r,
   ];
 }
 
@@ -97,7 +95,7 @@ bool canEditHumanRole({
     editableRoles.isNotEmpty;
 
 /// `canRemove`: owners need another owner to be removable, an owner actor may
-/// remove anyone else, an admin only plain members.
+/// remove anyone else, an admin may remove members and guests.
 bool canRemoveHuman({
   required Object? membershipStatus,
   required bool remoteJoint,
@@ -113,7 +111,9 @@ bool canRemoveHuman({
     !isSelf &&
     (targetRole == 'owner'
         ? actorRole == 'owner' && ownerCount > 1
-        : actorRole == 'owner' || targetRole == 'member');
+        : actorRole == 'owner' ||
+              targetRole == 'member' ||
+              targetRole == 'guest');
 
 /// `canMessageHuman`: guests (either side) only reach an existing DM.
 bool canMessageHuman({

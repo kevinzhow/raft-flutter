@@ -5,6 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'agent_metadata_projection.dart';
+import 'agent_profile_rules.dart';
 import 'desktop_navigation_policy.dart';
 import 'fleet_views.dart';
 
@@ -26,8 +27,25 @@ Future<void> openMemberRowMenu(
   VoidCallback? onClosed,
 }) {
   final agent = target.kind == DesktopContentKind.agent;
-  final control = agent && memberAgentRuntimeControllable(w, value);
-  final online = agent && agentRowAmbientDisplay(value).activity != 'offline';
+  final access = agentRuntimePermissions(
+    agent: value,
+    currentUserId: w.client.user?.id,
+    controlAgentRuntime: w.can('controlAgentRuntime'),
+    stopAgents: w.can('stopAgents'),
+    resetAgentWorkspace: false,
+    external: value['external'] == true || value['runtime'] == 'external',
+    boundedPublic: !agent || isBoundedPublicAgent(value, w.server?.id),
+  );
+  final controls = agentRuntimeControls(
+    canControl: access.canControlAgentRuntime,
+    canStop: access.canStopAgent,
+    isOnline: agent && agentRowAmbientDisplay(value).activity != 'offline',
+    computerOffline: isAgentComputerOffline(value, [
+      if (value['machineId'] case final String id)
+        if (w.entityDirectory.computer(id) case final Map machine) machine,
+    ]),
+    stoppedByPerson: value['status'] == 'stopped',
+  );
   return showRaftMessageContextMenu<void>(
     context: context,
     anchor: at,
@@ -53,23 +71,29 @@ Future<void> openMemberRowMenu(
               );
             },
           ),
-          if (control) ...[
+          if (controls.start || controls.stop || controls.restartReset)
             const RaftSidebarMenuDivider(),
+          if (controls.start || controls.stop)
             RaftSidebarMenuItem(
               itemKey: const ValueKey('member-menu-runtime'),
-              label: raftText(menuContext, online ? 'Stop' : 'Start'),
-              glyph: online ? RaftGlyph.square : RaftGlyph.play,
+              label: raftText(
+                menuContext,
+                controls.stop ? 'Stop agent' : 'Start agent',
+              ),
+              glyph: controls.stop ? RaftGlyph.square : RaftGlyph.play,
               onPressed: () => command(
-                online ? MemberAgentCommand.stop : MemberAgentCommand.start,
+                controls.stop
+                    ? MemberAgentCommand.stop
+                    : MemberAgentCommand.start,
               ),
             ),
+          if (controls.restartReset)
             RaftSidebarMenuItem(
               itemKey: const ValueKey('member-menu-reset'),
               label: raftText(menuContext, 'Restart / reset'),
               glyph: RaftGlyph.rotateCcw,
               onPressed: () => command(MemberAgentCommand.restartReset),
             ),
-          ],
         ],
       );
     },

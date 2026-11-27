@@ -71,7 +71,9 @@ class _Client extends RaftClient {
     Duration? receiveTimeout,
   }) async {
     if (method == 'GET') return get(path, query: query);
-    commands.add('$method $path ${data ?? ''}'.trim());
+    if (path.startsWith('/agents/')) {
+      commands.add('$method $path ${data ?? ''}'.trim());
+    }
     return {};
   }
 }
@@ -100,7 +102,9 @@ void main() {
       });
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(dark: dark),
+          theme: raftTheme(dark: dark).copyWith(
+            platform: longPress ? TargetPlatform.android : TargetPlatform.linux,
+          ),
           home: Scaffold(
             body: SizedBox(
               width: 260,
@@ -130,8 +134,8 @@ void main() {
       final (_, client, opened) = await mount(t);
       await rightClick(t, 'desktop-directory-human-u2');
       expect(find.text('Message'), findsOneWidget);
-      expect(find.text('Start'), findsNothing);
-      expect(find.text('Stop'), findsNothing);
+      expect(find.text('Start agent'), findsNothing);
+      expect(find.text('Stop agent'), findsNothing);
       expect(find.text('Restart / reset'), findsNothing);
       await t.tap(find.text('Message'));
       await t.pumpAndSettle();
@@ -146,10 +150,10 @@ void main() {
       final (_, client, _) = await mount(t);
       await rightClick(t, 'desktop-directory-agent-on');
       expect(find.text('Message'), findsOneWidget);
-      expect(find.text('Stop'), findsOneWidget);
-      expect(find.text('Start'), findsNothing);
+      expect(find.text('Stop agent'), findsOneWidget);
+      expect(find.text('Start agent'), findsNothing);
       expect(find.text('Restart / reset'), findsOneWidget);
-      await t.tap(find.text('Stop'));
+      await t.tap(find.text('Stop agent'));
       await t.pumpAndSettle();
       // Web: a "Stop agent" confirmation, no request yet.
       expect(find.text('Stop agent'), findsWidgets);
@@ -163,9 +167,9 @@ void main() {
         'confirmation', (t) async {
       final (_, client, _) = await mount(t);
       await rightClick(t, 'desktop-directory-agent-off');
-      expect(find.text('Start'), findsOneWidget);
-      expect(find.text('Stop'), findsNothing);
-      await t.tap(find.text('Start'));
+      expect(find.text('Start agent'), findsOneWidget);
+      expect(find.text('Stop agent'), findsNothing);
+      await t.tap(find.text('Start agent'));
       await t.pumpAndSettle();
       expect(client.commands, ['POST /agents/off/start {}']);
     });
@@ -195,12 +199,12 @@ void main() {
       await mount(t);
       await rightClick(t, 'desktop-directory-agent-ext');
       expect(find.text('Message'), findsOneWidget);
-      expect(find.text('Start'), findsNothing);
+      expect(find.text('Start agent'), findsNothing);
       expect(find.text('Restart / reset'), findsNothing);
     });
 
     testWidgets('$family/$dark a long press opens the same menu', (t) async {
-      await mount(t);
+      await mount(t, longPress: true);
       await t.longPress(
         find.byKey(const ValueKey('desktop-directory-agent-on')),
       );

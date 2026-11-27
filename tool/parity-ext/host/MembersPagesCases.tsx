@@ -74,6 +74,9 @@ function parityExtMpPrimeStores(props: ParityExtMpProps) {
     loading: props.params.get("loading") === "true",
   });
   useServerStore.setState({ members: humanRows as never, membersLoadError: props.params.get("membersError") === "true" });
+  if (props.params.get("routeSet")?.startsWith("agent-usage-")) {
+    setServerFeatureFlagForTests(fxServer.id, "agent_usage_v0", true);
+  }
 }
 
 // The real app mounts these inside raft-ui AppShell, whose root sets

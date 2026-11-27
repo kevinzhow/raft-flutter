@@ -2411,7 +2411,14 @@
    ]
   },
   "POST /agents/agent-product-ux/stop": {},
-  "DELETE /agents/agent-product-ux": {}
+  "DELETE /agents/agent-product-ux": {},
+  "GET /servers/visual-server/members/visual-human-designer/removal-impact": {
+   "computers": 1,
+   "computerNames": [
+    "Design Studio"
+   ],
+   "othersAgents": 2
+  }
  },
  "routeSets": {
   "invite-guest": {
@@ -5151,6 +5158,150 @@
      "humans": 2,
      "agents": 2,
      "universalSeats": 0
+    }
+   }
+  },
+  "agent-usage-ready": {
+   "POST /feature-flags/evaluate": {
+    "evaluations": [
+     {
+      "key": "agent_usage_v0",
+      "enabled": true
+     }
+    ]
+   },
+   "GET /servers/visual-server/agent-usage": {
+    "from": "2026-06-06",
+    "to": "2026-06-19",
+    "as_of": "2026-06-19T12:00:00Z",
+    "since": "2026-06-06",
+    "visible_agents": 1,
+    "agents": [
+     {
+      "agent_id": "agent-product-ux",
+      "since": "2026-06-06",
+      "usage_reported": true
+     }
+    ],
+    "context": [
+     {
+      "agent_id": "agent-product-ux",
+      "context_used": 4800,
+      "context_window": 16000,
+      "at": "2026-06-19T11:00:00Z"
+     }
+    ],
+    "rows": [
+     {
+      "agent_id": "agent-product-ux",
+      "day": "2026-06-14",
+      "runtime": "codex",
+      "model": "gpt-5-codex",
+      "input_new": 3200,
+      "cache_read": 9600,
+      "cache_write": null,
+      "output": 800,
+      "reasoning_output": 400,
+      "turns": 2
+     },
+     {
+      "agent_id": "agent-product-ux",
+      "day": "2026-06-16",
+      "runtime": "codex",
+      "model": "gpt-5-codex",
+      "input_new": 6400,
+      "cache_read": 19200,
+      "cache_write": null,
+      "output": 1600,
+      "reasoning_output": 800,
+      "turns": 2
+     },
+     {
+      "agent_id": "agent-product-ux",
+      "day": "2026-06-18",
+      "runtime": "codex",
+      "model": "gpt-5-codex",
+      "input_new": 5600,
+      "cache_read": 16800,
+      "cache_write": null,
+      "output": 1400,
+      "reasoning_output": 700,
+      "turns": 2
+     },
+     {
+      "agent_id": "agent-product-ux",
+      "day": "2026-06-19",
+      "runtime": "codex",
+      "model": "gpt-5-mini",
+      "input_new": 2800,
+      "cache_read": 8400,
+      "cache_write": null,
+      "output": 700,
+      "reasoning_output": 350,
+      "turns": 2
+     }
+    ]
+   }
+  },
+  "agent-usage-empty": {
+   "POST /feature-flags/evaluate": {
+    "evaluations": [
+     {
+      "key": "agent_usage_v0",
+      "enabled": true
+     }
+    ]
+   },
+   "GET /servers/visual-server/agent-usage": {
+    "from": "2026-06-06",
+    "to": "2026-06-19",
+    "as_of": "2026-06-19T12:00:00Z",
+    "since": "2026-06-06",
+    "visible_agents": 1,
+    "agents": [
+     {
+      "agent_id": "agent-product-ux",
+      "since": "2026-06-06",
+      "usage_reported": true
+     }
+    ],
+    "context": [
+     {
+      "agent_id": "agent-product-ux",
+      "context_used": 4800,
+      "context_window": 16000,
+      "at": "2026-06-19T11:00:00Z"
+     }
+    ],
+    "rows": []
+   }
+  },
+  "agent-usage-loading": {
+   "POST /feature-flags/evaluate": {
+    "evaluations": [
+     {
+      "key": "agent_usage_v0",
+      "enabled": true
+     }
+    ]
+   },
+   "GET /servers/visual-server/agent-usage": {
+    "$pending": true
+   }
+  },
+  "agent-usage-error": {
+   "POST /feature-flags/evaluate": {
+    "evaluations": [
+     {
+      "key": "agent_usage_v0",
+      "enabled": true
+     }
+    ]
+   },
+   "GET /servers/visual-server/agent-usage": {
+    "$status": 503,
+    "$body": {
+     "error": "Fixture usage unavailable"
     }
    }
   }
