@@ -64,6 +64,7 @@ class _MembersUsageFilterState extends State<MembersUsageFilter> {
         searchPlaceholder: 'Search…',
         autofocus: RaftInteraction.of(context).pointer,
         highlightFirst: true,
+        highlightFirstOnOpen: false,
         onDismiss: _menu.close,
         onClear: selected.isEmpty ? null : widget.onClear,
         selectedIds: widget.selected,

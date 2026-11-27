@@ -286,8 +286,13 @@ for platform in ('desktop', 'phone'):
     add(platform, 'directory.agent-menu', 'Members agent menu', 'main', selector=VIEW,
         android_key=None, hint=LIST_HINT, props={'route': '/members'},
         interactions=[{'type': 'rightclick', 'target': f'[data-member-entry-id="{AGENT_ID}"]'}],
-        android_interactions=[{'type': 'longPress' if phone else 'secondaryTap',
-                               'key': f'desktop-directory-agent-{AGENT_ID}'}])
+        android_interactions=[
+            *([{'type': 'scroll', 'finder': {'pageStorageKey': 'desktop-directory-list'}, 'dy': 540},
+               {'type': 'reveal', 'key': f'desktop-directory-agent-{AGENT_ID}', 'scroll': 'if-needed'}]
+              if phone else []),
+            {'type': 'longPress' if phone else 'secondaryTap', 'key': f'desktop-directory-agent-{AGENT_ID}'},
+            {'type': 'wait', 'key': 'member-menu-message', 'ms': 0},
+        ])
     for usage_state in ('ready', 'empty', 'loading', 'error'):
         agent_main(platform, f'agent.usage-{usage_state}', f'Agent Usage tab: {usage_state}',
                    tab='usage', selector=VIEW, android_key=None,

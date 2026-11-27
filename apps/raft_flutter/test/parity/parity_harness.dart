@@ -1013,7 +1013,7 @@ Future<void> _revealIfClipped(WidgetTester tester, Finder target) async {
 }
 
 /// The widget a control-state interaction names without a ValueKey:
-/// `{text}`, `{tooltip}`, `{label}` (semantics label), `{key}`; `in` scopes it under a keyed
+/// `{text}`, `{tooltip}`, `{label}` (semantics label), `{key}`, `{pageStorageKey}`; `in` scopes it under a keyed
 /// ancestor, `nth` picks one of several matches.
 Finder parityFinder(Map spec, {bool skipOffstage = true}) {
   Finder base = spec['text'] != null
@@ -1023,6 +1023,11 @@ Finder parityFinder(Map spec, {bool skipOffstage = true}) {
       : spec['label'] != null
       ? find.bySemanticsLabel(
           spec['label'] as String,
+          skipOffstage: skipOffstage,
+        )
+      : spec['pageStorageKey'] != null
+      ? find.byKey(
+          PageStorageKey(spec['pageStorageKey'] as String),
           skipOffstage: skipOffstage,
         )
       : find.byKey(ValueKey(spec['key'] as String), skipOffstage: skipOffstage);

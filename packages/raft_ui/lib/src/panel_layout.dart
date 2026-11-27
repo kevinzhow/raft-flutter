@@ -1440,6 +1440,7 @@ class RaftPanelIconButton extends StatelessWidget {
     this.anchorKey,
     this.focusNode,
     this.onKeyboardActivate,
+    this.responsiveSize = false,
   });
   final RaftGlyph glyph;
 
@@ -1456,6 +1457,7 @@ class RaftPanelIconButton extends StatelessWidget {
   final GlobalKey? anchorKey;
   final FocusNode? focusNode;
   final VoidCallback? onKeyboardActivate;
+  final bool responsiveSize;
   @override
   Widget build(BuildContext context) {
     // Fixed chrome: at large text sizes a long press shows the icon and label
@@ -1476,10 +1478,13 @@ class RaftPanelIconButton extends StatelessWidget {
   Widget _button(BuildContext context) {
     final t = RaftTokens.of(context);
     final touch = RaftInteraction.of(context).touch;
-    final size = touch ? RaftButtonSize.iconLg : RaftButtonSize.iconMd;
+    final large = responsiveSize
+        ? MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint
+        : touch;
+    final size = large ? RaftButtonSize.iconLg : RaftButtonSize.iconMd;
     final source = RaftButtonMetrics.of(size, RaftButtonVariant.ghost, t);
     final extent = t.size(
-      'size.control.${touch ? 'lg' : 'md'}',
+      'size.control.${large ? 'lg' : 'md'}',
       fallback: source.height,
     );
     return RaftButton(

@@ -191,10 +191,16 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('members-usage-filter')));
     await frames(tester);
     final picker = find.byKey(const ValueKey('members-usage-filter-menu'));
-    await tester.enterText(
-      find.descendant(of: picker, matching: find.byType(EditableText)),
-      'cindy',
+    final search = find.descendant(
+      of: picker,
+      matching: find.byType(EditableText),
     );
+    await tester.showKeyboard(search);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await frames(tester);
+    expect(picker, findsOneWidget);
+    expect(find.text('Clear').hitTestable(), findsNothing);
+    await tester.enterText(search, 'cindy');
     final agentChoice = find.byKey(
       const ValueKey('members-usage-filter-option-agent:a1'),
     );

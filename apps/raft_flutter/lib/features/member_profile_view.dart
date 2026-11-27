@@ -683,6 +683,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                 actions: [
                   if (showMessage && !foldMessage)
                     RaftPanelIconButton(
+                      responsiveSize: true,
                       icon: (size, color) =>
                           RaftDirectMessageIcon(size: size, color: color),
                       tooltip: messageLabel,
@@ -704,6 +705,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                     ),
                   if (hasClose)
                     RaftPanelIconButton(
+                      responsiveSize: true,
                       glyph: RaftGlyph.x,
                       tooltip: raftText(context, 'Close Profile'),
                       onPressed: widget.onClose,

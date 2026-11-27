@@ -131,6 +131,7 @@ class RaftComboboxPanel extends StatefulWidget {
        currentId = null,
        autofocus = false,
        highlightFirst = false,
+       highlightFirstOnOpen = true,
        filterLocally = true,
        separateGroups = false,
        selectedIds = const {},
@@ -152,6 +153,7 @@ class RaftComboboxPanel extends StatefulWidget {
     this.currentId,
     this.autofocus = false,
     this.highlightFirst = false,
+    this.highlightFirstOnOpen = true,
     this.filterLocally = true,
     this.separateGroups = false,
     this.selectedIds = const {},
@@ -194,6 +196,7 @@ class RaftComboboxPanel extends StatefulWidget {
 
   /// Whether Enter commits the first enabled row as soon as results appear.
   final bool highlightFirst;
+  final bool highlightFirstOnOpen;
 
   /// Disable local matching when the results already come from a search API.
   final bool filterLocally;
@@ -303,7 +306,9 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
   }
 
   int activeIndex(List<RaftComboboxItem> choices) =>
-      highlighted < 0 && widget.highlightFirst
+      highlighted < 0 &&
+          widget.highlightFirst &&
+          (widget.highlightFirstOnOpen || query.text.trim().isNotEmpty)
       ? choices.indexWhere((row) => row.enabled)
       : highlighted;
 
