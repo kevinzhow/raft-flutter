@@ -20,7 +20,6 @@ import '../data/workspace_entity_directory.dart';
 import '../platform/system_bars.dart';
 import 'create_external_agent_dialog.dart';
 import 'managed_agent_launcher.dart';
-import 'agent_scopes_view.dart';
 import 'agent_detail_view.dart';
 import 'agent_profile_rules.dart';
 import 'quoted_message_preview.dart' show openRaftPermalink;
@@ -470,6 +469,7 @@ class _FleetViewState extends State<FleetView> {
       widget.onOpenDetail!(Map.of(row));
     } else {
       Navigator.of(context, rootNavigator: true).push(
+        // ignore: raft_lints/avoid_window_cover_route -- web-page: components/layout/MainLayout.tsx:2594 (a host with no workspace detail: the Computer's own page)
         MaterialPageRoute<void>(
           // ds-allow: Standalone native route supplies the Material host and system insets; workspace routes already own them.
           builder: (context) => Scaffold(
@@ -588,6 +588,7 @@ class _FleetViewState extends State<FleetView> {
                       // The detail edits the shared directory, so the list is
                       // already current when the route pops.
                       await Navigator.of(context, rootNavigator: true).push(
+                        // ignore: raft_lints/avoid_window_cover_route -- web-page: components/layout/MainLayout.tsx:2594 (a host with no workspace detail: the row's own page)
                         MaterialPageRoute(
                           builder: (_) => FleetDetail(
                             controller: w,
@@ -1288,20 +1289,6 @@ class _FleetDetailState extends State<FleetDetail> {
     if (removed) closeProfile();
   }
 
-  Future<void> inspect(String kind) async {
-    require(widget.computers ? 'editMachines' : 'editAgents');
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (_) => FleetInspection(
-          controller: w,
-          base: base,
-          kind: kind,
-          computers: widget.computers,
-        ),
-      ),
-    );
-  }
-
   Future<void> resetRuntime(String mode) async {
     final capability = mode == 'full'
         ? 'resetAgentWorkspace'
@@ -1604,13 +1591,6 @@ class _FleetDetailState extends State<FleetDetail> {
                 ) &&
                 row['deletedAt'] == null
             ? reportIssue
-            : null,
-        onPermissions: access.canManage
-            ? () => Navigator.of(context, rootNavigator: true).push(
-                MaterialPageRoute(
-                  builder: (_) => AgentScopesView(controller: w, agentId: id),
-                ),
-              )
             : null,
       ),
     );

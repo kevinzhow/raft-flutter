@@ -140,7 +140,6 @@ class AgentDetailActions {
     this.onMessage,
     this.canMigrate = false,
     this.canShowCloudArrival = false,
-    this.onPermissions,
     this.onReportIssue,
   });
 
@@ -180,7 +179,6 @@ class AgentDetailActions {
       onStopHostedTurn,
       onDelete,
       onMessage,
-      onPermissions,
       /// Report Issue (offered only when the build names a feedback export
       /// worker, Web `FEEDBACK_EXPORT_ENABLED`).
       onReportIssue;

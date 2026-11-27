@@ -673,6 +673,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     }
     close();
     if (!current(captured)) return;
+    // ignore: raft_lints/avoid_window_cover_route -- web-page: components/layout/useSystemNotifications.tsx:683 (Settings > Feedback; only a host without onFeedback, the phone bell)
     final route = MaterialPageRoute<void>(
       builder: (context) => Scaffold(
         appBar: raftPageAppBar(context, title: raftText(context, 'Feedback')),
