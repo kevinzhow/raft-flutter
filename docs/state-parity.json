@@ -15493,6 +15493,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/sidebar_reorder.dart#function:_insetSidebarCell": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Applies the shared sidebar inset to group headers and rows that keep inset hit bounds."
+      },
       "apps/raft_flutter/lib/features/sidebar_reorder.dart#function:sidebarCustomGroupSliver": {
         "role": "unresolved",
         "familyRefs": [],
@@ -55758,6 +55764,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart#method:_SidebarWorkspaceGroups.sidebarInsetSliver": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-GAPS-2",
+        "reason": "Applies the shared sidebar inset to the mounted shortcuts and Search slivers."
       },
       "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart#method:_SidebarWorkspaceGroups.sidebarGroupSliver": {
         "role": "unresolved",
