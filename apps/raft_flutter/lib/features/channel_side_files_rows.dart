@@ -143,19 +143,16 @@ class ChannelFilesCompactRow extends StatelessWidget {
       dimension: CompactRowMetrics.mark,
       child: image && thumbnail != null
           // Web: the img's translucent hairline border over `image-gallery-bg`
-          // (white), the picture inside the border.
-          ? DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(RaftSpace.x1),
-                border: Border.all(color: t.colors['line-hairline']!),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(1),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(RaftSpace.x1 - 1),
-                  child: thumbnail,
+          // (white); the Container insets the picture by the border.
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(RaftSpace.x1),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: RaftPrimitiveColors.white,
+                  borderRadius: BorderRadius.circular(RaftSpace.x1),
+                  border: Border.all(color: t.colors['line-hairline']!),
                 ),
+                child: thumbnail,
               ),
             )
           : Center(
