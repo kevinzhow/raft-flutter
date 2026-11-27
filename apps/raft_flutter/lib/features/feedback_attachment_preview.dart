@@ -42,6 +42,7 @@ Future<void> showFeedbackImage(
     }
   }
 
+  // ignore: raft_lints/avoid_window_cover_route -- web-modal: packages/web/src/components/settings/AboutFeedbackDialog.tsx:314 (attachment Lightbox)
   route = RaftFullBleedDialogRoute<void>(
     context: context,
     builder: (context) => RaftAttachmentLightbox(

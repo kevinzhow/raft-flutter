@@ -1449,6 +1449,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       if (route.isActive) route.navigator?.removeRoute(route);
     }
 
+    // ignore: raft_lints/avoid_window_cover_route -- web-modal: packages/web/src/features/composer/MessageInput.tsx:1357 (draft image opens the shared ImageLightbox)
     route = RaftFullBleedDialogRoute<void>(
       context: context,
       builder: (_) => RaftAttachmentLightbox(

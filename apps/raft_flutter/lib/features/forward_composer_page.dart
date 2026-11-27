@@ -164,6 +164,7 @@ Future<bool> showForwardComposerPage(
   List<RaftMessage> messages,
 ) async =>
     await Navigator.of(context, rootNavigator: true).push<bool>(
+      // ignore: raft_lints/avoid_window_cover_route -- web-modal: packages/web/src/components/message/ForwardComposerDialog.tsx:697 (below md, ForwardComposerMobile full-screen dialog)
       MaterialPageRoute<bool>(
         fullscreenDialog: true,
         builder: (_) =>

@@ -232,6 +232,7 @@ Future<T?> showRaftMessageContextMenu<T>({
   Size? placementSize,
 }) {
   return Navigator.of(context).push<T>(
+    // ignore: raft_lints/avoid_window_cover_route -- web-modal: packages/web/src/components/message/MessageItem.tsx:4779 (context menu over a full-window DismissBackdrop)
     PageRouteBuilder<T>(
       opaque: false,
       barrierDismissible: true,

@@ -213,6 +213,7 @@ class SourceChannelFilesActions {
         final imageKey = GlobalKey();
         final width = (file.metadata['width'] as num?)?.toDouble();
         final height = (file.metadata['height'] as num?)?.toDouble();
+        // ignore: raft_lints/avoid_window_cover_route -- web-modal: packages/web/src/components/message/ChannelFilesPanel.tsx:240 (Files image opens the shared ImageLightbox)
         route = RaftFullBleedDialogRoute<void>(
           context: context(),
           builder: (_) => RaftAttachmentLightbox(

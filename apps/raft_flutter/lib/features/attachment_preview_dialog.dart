@@ -189,6 +189,7 @@ ModalRoute<void> attachmentPreviewRoute(
           );
         },
       )
+    // ignore: raft_lints/avoid_window_cover_route -- web-modal: packages/web/src/components/message/attachmentPreviewSurfaces.tsx:357 (document preview in FileViewerShell, a raft-ui Lightbox)
     : RaftFullBleedDialogRoute<void>(context: context, builder: builder);
 
 class AttachmentPreviewDialog extends StatefulWidget {
