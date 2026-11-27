@@ -45,9 +45,7 @@ void main() {
       final viewer = find.byKey(const ValueKey('artifact-workspace-viewer'));
       return SurfaceProbe(
         isOpen: () => viewer.evaluate().isNotEmpty,
-        x: find.descendant(of: find.byType(RaftLightboxHeader), matching: anyX),
         back: find.byKey(const ValueKey('artifact-viewer-close')),
-        scrim: size.width < 768 ? null : const Offset(6, 6),
       );
     },
     'artifact-delete-confirm': (t, size) async {

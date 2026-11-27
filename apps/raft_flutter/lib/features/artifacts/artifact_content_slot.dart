@@ -36,7 +36,17 @@ ArtifactLinkTarget? artifactSlotTarget(
 ]) {
   final content = location.content;
   if (content?.kind != RaftContentKind.artifact) return null;
-  final id = parseArtifactId(content!.id);
+  return artifactAddressTarget(location, content!.id, w);
+}
+
+/// The Artifact [address] names with [location]'s `&version=` and
+/// `&review=`; [w]'s last opening of it lands on its comment.
+ArtifactLinkTarget? artifactAddressTarget(
+  RaftLocation location,
+  String address, [
+  WorkspaceController? w,
+]) {
+  final id = parseArtifactId(address);
   if (id == null) return null;
   final version = int.tryParse(location.query('version') ?? '');
   final pinned = version != null && version > 0 ? version : null;

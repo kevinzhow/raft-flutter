@@ -1704,7 +1704,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     : hiddenConversation(conversation)
               : showingConversation
               ? retainedSettingsContent ?? const SizedBox.expand()
-              : currentContent,
+              : ShellArtifactColumn(workspace: w, child: currentContent),
         );
       }
       Widget workspace(

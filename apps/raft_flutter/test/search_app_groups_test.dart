@@ -152,11 +152,11 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
     await tester.testTextInput.receiveAction(TextInputAction.search);
-    await tester.pump();
-    expect(find.byType(ArtifactWorkspaceViewer), findsOneWidget);
     await tester.pumpAndSettle();
+    expect(find.byType(ArtifactWorkspaceViewer), findsOneWidget);
 
-    final close = find.bySemanticsLabel('Close');
+    // Outside the app shell (no list slot here) it is the Artifact's page.
+    final close = find.byKey(const ValueKey('artifact-viewer-close'));
     await tester.tap(close.hitTestable());
     await tester.pumpAndSettle();
     expect(find.byType(ArtifactWorkspaceViewer), findsNothing);

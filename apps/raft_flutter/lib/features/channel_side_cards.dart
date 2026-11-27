@@ -29,9 +29,7 @@ abstract final class ChannelSideCards {
 
   static int latestDesktopOpen(WorkspaceController w) {
     final browser = _browser(w);
-    final artifact = ChannelArtifactPlace.of(
-      w,
-    ).forConversation(w.channel?.id);
+    final artifact = ChannelArtifactPlace.of(w).forConversation(w.channel?.id);
     final browserOpened = browser?.frontAt ?? 0;
     final artifactOpened = artifact?.openedAt ?? 0;
     return browserOpened > artifactOpened ? browserOpened : artifactOpened;
@@ -42,9 +40,7 @@ abstract final class ChannelSideCards {
   /// device (Web openArtifactInPlace).
   static int desktopPlaceOpenedAt(WorkspaceController w) {
     final browser = _browser(w);
-    final artifact = ChannelArtifactPlace.of(
-      w,
-    ).forConversation(w.channel?.id);
+    final artifact = ChannelArtifactPlace.of(w).forConversation(w.channel?.id);
     return browser != null &&
             (artifact == null || browser.inFrontOf(artifact.openedAt))
         ? browser.frontAt
@@ -65,9 +61,7 @@ abstract final class ChannelSideCards {
 
   static String desktopPlaceTitle(BuildContext context, WorkspaceController w) {
     final browser = _browser(w);
-    final artifact = ChannelArtifactPlace.of(
-      w,
-    ).forConversation(w.channel?.id);
+    final artifact = ChannelArtifactPlace.of(w).forConversation(w.channel?.id);
     return browser != null &&
             (artifact == null || browser.inFrontOf(artifact.openedAt))
         ? raftText(context, 'Browser')

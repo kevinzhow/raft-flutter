@@ -19,12 +19,6 @@ import 'package:webview_flutter_platform_interface/webview_flutter_platform_inte
 import '../../data/raft_location.dart';
 import '../../data/workspace_controller.dart';
 import '../../platform/macos_voice_over.dart';
-import '../../platform/system_bars.dart';
-import '../channel_artifact_place.dart';
-import '../channel_side_area.dart' show insideChannelSideArea;
-import '../channel_side_cards.dart' show ChannelSideCards;
-import '../channel_side_web_preview.dart';
-import '../list_detail_slot.dart';
 import '../private_route_guard.dart'
     show channelSearchPageAuthority, workspaceAuthority;
 import 'artifact_api.dart';
@@ -32,7 +26,6 @@ import 'artifact_comment_composer.dart';
 import 'artifact_comment_store.dart';
 import 'artifact_comments_panel.dart';
 import 'artifact_content.dart';
-import 'artifact_content_slot.dart';
 import 'artifact_find_bar.dart';
 import 'artifact_forward_dialog.dart';
 import 'artifact_frame_bridge.dart';
@@ -51,68 +44,7 @@ import 'artifact_viewer_actions.dart';
 import 'artifact_viewer_panels.dart';
 import 'artifact_viewer_parts.dart';
 
-/// Opens the Artifact [target] names in the viewer: from a list, in its
-/// detail slot (with Artifacts off it shows nothing); else a page on narrow
-/// windows, a full-bleed window on wide ones.
-Future<void> openWorkspaceArtifact(
-  BuildContext context,
-  WorkspaceController w,
-  ArtifactLinkTarget target, {
-  ArtifactCard? seed,
-}) {
-  final channel = ChannelSideCards.conversation(w);
-  // Beside the conversation on every wide window; a phone's page, unless the
-  // built-in browser's place already holds it there.
-  if (channel != null &&
-      insideChannelSideArea(context) &&
-      (!RaftAdaptiveWorkspace.compactOf(context) ||
-          desktopBrowserAvailable(w))) {
-    final opener = FocusManager.instance.primaryFocus;
-    WebPreviewStore.of(w).browserTabs.park(channel.id);
-    ChannelArtifactPlace.of(w).show(
-      channel.id,
-      target,
-      seed: seed,
-      returnFocus: () {
-        if (opener?.context != null) opener?.requestFocus();
-      },
-    );
-    return Future<void>.value();
-  }
-  if (ListDetailHost.hosts(context)) {
-    // Web: the slot opens at once; with Artifacts off it shows nothing.
-    rememberArtifactLanding(w, target);
-    openListDetail(context, w, artifactSlotQuery(target));
-    return Future<void>.value();
-  }
-  final page = RaftAdaptiveWorkspace.compactOf(context);
-  Widget viewer(BuildContext context) => ArtifactWorkspaceViewer(
-    session: ArtifactSession.of(w),
-    target: target,
-    seed: seed,
-    page: page,
-    onClose: () => Navigator.of(context).pop(),
-  );
-  final navigator = Navigator.of(context, rootNavigator: true);
-  return navigator.push<void>(
-    page
-        ? RaftPreviewPageRoute<void>(
-            settings: const RouteSettings(name: '/workspace-artifact'),
-            builder: (context) {
-              final surface = RaftTokens.of(context).panel;
-              // ds-allow: Native route owns keyboard insets and system bars; raft_ui owns the header.
-              return Scaffold(
-                backgroundColor: surface,
-                body: RaftSystemBarSurface(
-                  statusBarFallback: surface,
-                  child: viewer(context),
-                ),
-              );
-            },
-          )
-        : RaftFullBleedDialogRoute<void>(context: context, builder: viewer),
-  );
-}
+export 'artifact_place.dart' show openWorkspaceArtifact;
 
 enum _Panel { none, files, versions, comments }
 

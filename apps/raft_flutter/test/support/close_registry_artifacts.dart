@@ -84,13 +84,13 @@ const artifactSurfaces = <CloseSurface>[
   CloseSurface(
     'workspace-artifact-viewer',
     kind: SurfaceKind.viewer,
-    web: 'ArtifactViewer.tsx ViewerFrame: X (artifact-viewer-close) beside the conversation, Back when it covers the conversation on a phone; Esc (useArtifactSurfaceKeyDown). The app shows it as a page below 768 and a full-bleed window above (docs/parity.md)',
+    web: 'openArtifactInPlace.ts:26-33: outside the app shell an Artifact link is followed to its own page (browser Back); ArtifactViewer.tsx Back on a phone, Esc (useArtifactSurfaceKeyDown). Inside the shell it opens in place (shell-artifact-column, the channel column, the list slot)',
     phone: {Affordance.back, Affordance.esc, Affordance.systemBack},
-    fold: {Affordance.x, Affordance.esc, Affordance.systemBack},
-    desktop: {Affordance.x, Affordance.esc, Affordance.systemBack},
-    files: ['lib/features/artifacts/artifact_viewer_page.dart'],
-    status: 'approved',
-    fix: 'page / full-bleed window instead of the side column (docs/parity.md)',
+    fold: {Affordance.back, Affordance.esc, Affordance.systemBack},
+    desktop: {Affordance.back, Affordance.esc, Affordance.systemBack},
+    files: ['lib/features/artifacts/artifact_place.dart'],
+    status: 'fixed',
+    fix: 'a page at every width (the full-bleed window over a wide workspace is gone, #380)',
   ),
   CloseSurface(
     'artifact-delete-confirm',
@@ -172,5 +172,20 @@ const artifactDiscussionSurfaces = <CloseSurface>[
       Affordance.systemBack,
     },
     files: ['lib/features/artifacts/artifact_review_batch_bar.dart'],
+  ),
+];
+
+/// The app shell's Artifact column (Web ShellArtifactHost).
+const shellArtifactSurfaces = <CloseSurface>[
+  CloseSurface(
+    'shell-artifact-column',
+    kind: SurfaceKind.panel,
+    web: 'ShellArtifactHost.tsx:9-24 with ArtifactViewer.tsx: X (artifact-viewer-close) and Esc (useArtifactSurfaceKeyDown); the address change closes it (useArtifactShell)',
+    none: {
+      'phone': 'A phone opens the Artifact as a page (workspace-artifact-viewer), as Web covers the main area with Back.',
+    },
+    fold: {Affordance.x, Affordance.esc, Affordance.systemBack},
+    desktop: {Affordance.x, Affordance.esc, Affordance.systemBack},
+    files: ['lib/features/artifacts/shell_artifact_column.dart'],
   ),
 ];
