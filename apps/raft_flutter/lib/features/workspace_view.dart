@@ -428,8 +428,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
 
   /// The translated location names a conversation the other layout had not
   /// loaded as its main channel (Activity detail was a content slot), and wide
-  /// shows a phone channel page in the details card (Web keeps
-  /// ChannelOverflowMenu and its members view mounted across the breakpoint).
+  /// shows a phone channel page in the details card (Web ChannelOverflowMenu).
   void hydrateTranslated(LayoutTranslation translation, bool compact) {
     if (compact) {
       final to = translation.to;
@@ -1667,7 +1666,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
       }
       if (DesktopNavigationPolicy.forSection(route).contentMasterDetail) {
         final detail = desktopContentDetail();
-        // A phone page of a detail slot (an Artifact's): the detail alone.
         content = widget.mobileRoutePage && detail != null
             ? detail
             : DesktopMasterDetail(
@@ -1702,13 +1700,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
               ? showingConversation
                     ? currentContent
                     : hiddenConversation(conversation)
-              : showingConversation
-              // One shell column parent either way: Settings is retained.
-              ? ShellArtifactColumn(
+              : ShellArtifactColumn(
                   workspace: w,
-                  child: retainedSettingsContent ?? const SizedBox.expand(),
-                )
-              : ShellArtifactColumn(workspace: w, child: currentContent),
+                  child: showingConversation
+                      ? retainedSettingsContent ?? const SizedBox.expand()
+                      : currentContent,
+                ),
         );
       }
       Widget workspace(
