@@ -470,6 +470,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final identity = pageIdentity(w);
     final target = key == 'activityMuted' ? notification : display;
     final before = Map<String, dynamic>.of(target);
+    // What the switch showed: the read's value, or the channel row's when
+    // the read failed.
+    final shown = target[key] ?? c.json[key];
+    final prior = key == 'activityMuted' ? shown == true : shown != false;
     void project(Map<String, dynamic> fields) {
       if (key == 'activityMuted') {
         w.setActivityMuteState(c.id, fields);
@@ -513,7 +517,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         target
           ..clear()
           ..addAll(before);
-        project(before);
+        project({...before, key: prior});
         if (mounted) {
           setState(
             () => error = failText(
