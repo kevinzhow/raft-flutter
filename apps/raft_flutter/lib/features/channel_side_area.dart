@@ -858,7 +858,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
     ChannelSideSection.details: raftText(context, 'Details'),
     ChannelSideSection.profile: raftText(context, 'Profile'),
     ChannelSideSection.thread: raftText(context, 'Thread'),
-    if (ChannelSideCards.hasDesktopPlace(w))
+    if (ChannelSideCards.desktopPlaceInFront(w))
       ChannelSideSection.artifact: ChannelSideCards.desktopPlaceTitle(
         context,
         w,
@@ -1093,7 +1093,7 @@ class ChannelSideAreaState extends State<ChannelSideArea> {
           child:
               body == null &&
                   !MobileRouteGate.coveredReader(context)() &&
-                  ChannelSideCards.hasDesktopPlace(w)
+                  ChannelSideCards.desktopPlaceInFront(w)
               ? ChannelBrowserPlace(
                   key: ValueKey('channel-browser-place-$channelId'),
                   workspace: w,

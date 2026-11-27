@@ -136,7 +136,9 @@ class ChannelBrowserPlace extends StatelessWidget {
       builder: (context, _) => ListenableBuilder(
         listenable: artifacts,
         builder: (context, _) {
-          final browser = tabs.forConversation(conversation);
+          final browser = desktopBrowserAvailable(workspace)
+              ? tabs.forConversation(conversation)
+              : null;
           final artifact = artifacts.forConversation(conversation);
           final browserInFront =
               browser != null &&

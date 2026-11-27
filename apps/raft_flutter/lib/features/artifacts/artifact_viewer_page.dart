@@ -61,9 +61,12 @@ Future<void> openWorkspaceArtifact(
   ArtifactCard? seed,
 }) {
   final channel = ChannelSideCards.conversation(w);
+  // Beside the conversation on every wide window; a phone's page, unless the
+  // built-in browser's place already holds it there.
   if (channel != null &&
       insideChannelSideArea(context) &&
-      desktopBrowserAvailable(w)) {
+      (!RaftAdaptiveWorkspace.compactOf(context) ||
+          desktopBrowserAvailable(w))) {
     final opener = FocusManager.instance.primaryFocus;
     WebPreviewStore.of(w).browserTabs.park(channel.id);
     ChannelArtifactPlace.of(w).show(

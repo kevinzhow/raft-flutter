@@ -16,26 +16,35 @@ import 'channel_side_flags.dart';
 import 'channel_side_layout.dart';
 import 'channel_side_store.dart';
 import 'channel_side_web_preview.dart';
+import 'desktop_browser_tabs.dart' show DesktopBrowser;
 import 'workspace_channel_access.dart';
 
 abstract final class ChannelSideCards {
+  /// The built-in browser of the conversation on screen: only where Raft
+  /// Desktop has one (desktop_web_preview_view_v0, no macOS VoiceOver).
+  static DesktopBrowser? _browser(WorkspaceController w) =>
+      desktopBrowserAvailable(w)
+      ? WebPreviewStore.of(w).browserTabs.forConversation(w.channel?.id)
+      : null;
+
   static int latestDesktopOpen(WorkspaceController w) {
-    if (!desktopBrowserAvailable(w)) return 0;
-    final conversation = w.channel?.id;
-    final browser = WebPreviewStore.of(w).browserTabs
-        .forConversation(conversation);
-    final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
+    final browser = _browser(w);
+    final artifact = ChannelArtifactPlace.of(
+      w,
+    ).forConversation(w.channel?.id);
     final browserOpened = browser?.frontAt ?? 0;
     final artifactOpened = artifact?.openedAt ?? 0;
     return browserOpened > artifactOpened ? browserOpened : artifactOpened;
   }
 
+  /// When the Artifact or the browser in front of the other came there (0:
+  /// neither is open). The Artifact's place needs no browser: it is on every
+  /// device (Web openArtifactInPlace).
   static int desktopPlaceOpenedAt(WorkspaceController w) {
-    if (!desktopBrowserAvailable(w)) return 0;
-    final conversation = w.channel?.id;
-    final browser = WebPreviewStore.of(w).browserTabs
-        .forConversation(conversation);
-    final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
+    final browser = _browser(w);
+    final artifact = ChannelArtifactPlace.of(
+      w,
+    ).forConversation(w.channel?.id);
     return browser != null &&
             (artifact == null || browser.inFrontOf(artifact.openedAt))
         ? browser.frontAt
@@ -45,11 +54,20 @@ abstract final class ChannelSideCards {
   static bool hasDesktopPlace(WorkspaceController w) =>
       desktopPlaceOpenedAt(w) != 0;
 
+  /// The Artifact (or browser) shows in the place rather than a web page:
+  /// of the two, the one opened last (Web useArtifactPlaceCard).
+  static bool desktopPlaceInFront(WorkspaceController w) {
+    final opened = desktopPlaceOpenedAt(w);
+    if (opened == 0) return false;
+    final preview = WebPreviewStore.of(w);
+    return preview.pageFor(w.channel?.id) == null || opened > preview.openedAt;
+  }
+
   static String desktopPlaceTitle(BuildContext context, WorkspaceController w) {
-    final conversation = w.channel?.id;
-    final browser = WebPreviewStore.of(w).browserTabs
-        .forConversation(conversation);
-    final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
+    final browser = _browser(w);
+    final artifact = ChannelArtifactPlace.of(
+      w,
+    ).forConversation(w.channel?.id);
     return browser != null &&
             (artifact == null || browser.inFrontOf(artifact.openedAt))
         ? raftText(context, 'Browser')
@@ -171,12 +189,12 @@ abstract final class ChannelSideCards {
   /// stack can close the Artifact without taking Tasks and Files with it.
   static void closeArtifact(WorkspaceController w) {
     final preview = WebPreviewStore.of(w);
-    if (!hasDesktopPlace(w)) {
+    if (!desktopPlaceInFront(w)) {
       preview.close();
       return;
     }
     final conversation = w.channel!.id;
-    final browser = preview.browserTabs.forConversation(conversation);
+    final browser = _browser(w);
     final artifact = ChannelArtifactPlace.of(w).forConversation(conversation);
     if (browser != null &&
         (artifact == null || browser.inFrontOf(artifact.openedAt))) {
