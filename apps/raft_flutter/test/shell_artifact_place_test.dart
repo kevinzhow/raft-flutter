@@ -36,6 +36,15 @@ Future<Ctx> mountArtifactThread(
     t,
     TapTargetRegistry.hosts.firstWhere((h) => h.id == host),
   );
+  serveArtifact(c);
+  ArtifactSession.of(c.w).debugSetEnabled(true);
+  await flush(t);
+  await t.pumpAndSettle();
+  return c;
+}
+
+/// The fixture Artifact's summary and viewer, as the server answers them.
+void serveArtifact(Ctx c) {
   c.api.routes['POST /objects/summaries'] = (_) => {
     'kind': 'artifact',
     'summaries': [
@@ -55,10 +64,6 @@ Future<Ctx> mountArtifactThread(
   );
   c.api.routes['GET /artifacts/$artifactId/files/plan.txt?version=1'] = (_) =>
       'The plan';
-  ArtifactSession.of(c.w).debugSetEnabled(true);
-  await flush(t);
-  await t.pumpAndSettle();
-  return c;
 }
 
 final card = find.byKey(const ValueKey('artifact-card-title'));

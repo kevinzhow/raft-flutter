@@ -46,7 +46,7 @@ Map<String, Object?> _row(
   'doneFrontierSeq': '9',
 };
 
-RootFixture _fixture({bool artifacts = true, bool search = false}) {
+RootFixture artifactListFixture({bool artifacts = true, bool search = false}) {
   final fixture = RootFixture();
   fixture.overrides['POST /feature-flags/evaluate'] = (_) => {
     'evaluations': [
@@ -150,7 +150,7 @@ void main() {
   for (final escape in [false, true]) {
     testWidgets('Activity wide: an Artifact row opens beside the list, '
         '${escape ? 'Escape' : '×'} closes it back to its row', (t) async {
-      final fixture = _fixture();
+      final fixture = artifactListFixture();
       await fixture.mount(
         t,
         'light',
@@ -193,7 +193,7 @@ void main() {
 
   testWidgets('Activity wide: another row replaces the viewer; leaving '
       'Activity closes it', (t) async {
-    final fixture = _fixture();
+    final fixture = artifactListFixture();
     await fixture.mount(t, 'dark', 1280, uri: Uri.parse('/s/alpha/activity'));
     final w = fixture.workspace(t);
     await t.tap(_row1());
@@ -232,7 +232,7 @@ void main() {
   testWidgets('Activity wide with Artifacts off: a row opens nothing', (
     t,
   ) async {
-    final fixture = _fixture(artifacts: false);
+    final fixture = artifactListFixture(artifacts: false);
     await fixture.mount(t, 'light', 1280, uri: Uri.parse('/s/alpha/activity'));
     if (_row1().evaluate().isNotEmpty) {
       await t.tap(_row1());
@@ -245,7 +245,7 @@ void main() {
 
   testWidgets('Activity phone: an Artifact row is a page over the list at '
       'its address; Back returns to the list', (t) async {
-    final fixture = _fixture();
+    final fixture = artifactListFixture();
     await fixture.mount(t, 'light', 390, uri: Uri.parse('/s/alpha/activity'));
     final w = fixture.workspace(t);
     await t.tap(_row1());
@@ -275,7 +275,7 @@ void main() {
     testWidgets('an Artifact address opens it on a cold start at $width', (
       t,
     ) async {
-      final fixture = _fixture();
+      final fixture = artifactListFixture();
       await fixture.mount(
         t,
         'light',
@@ -295,7 +295,7 @@ void main() {
 
   testWidgets('Search wide: an Artifact hit opens beside the results and '
       'stays selected', (t) async {
-    final fixture = _fixture(search: true);
+    final fixture = artifactListFixture(search: true);
     await fixture.mount(
       t,
       'light',
@@ -325,7 +325,7 @@ void main() {
   });
   testWidgets('quick switcher wide: an Artifact hit opens on the Search page '
       'beside its results', (t) async {
-    final fixture = _fixture(search: true);
+    final fixture = artifactListFixture(search: true);
     await fixture.mount(t, 'light', 1280, uri: Uri.parse('/s/alpha/activity'));
     final w = fixture.workspace(t);
     await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);

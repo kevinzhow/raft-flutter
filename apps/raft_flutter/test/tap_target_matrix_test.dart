@@ -437,6 +437,8 @@ void main() {
             expect(after.sameAs(before), isTrue, reason: why);
           case TapEffect.absent:
             break;
+          case TapEffect.besideList:
+            fail('in-place openers are tap_target_in_place_test.dart cells');
         }
         expect(t.takeException(), isNull);
       });

@@ -92,6 +92,12 @@ enum TapEffect {
   /// A dialog / page route was pushed.
   route,
 
+  /// Opened in the layout it was tapped in, never over the window (Web
+  /// openArtifactInPlace, #proj-workspace:#104): beside the list or the
+  /// conversation, which stays on screen and tappable, and the location
+  /// carries `?artifact=` where that place is addressed.
+  besideList,
+
   /// Web does nothing either; the cell asserts nothing changed.
   documentedNoop,
 
@@ -110,6 +116,24 @@ class TapExpectation {
 
   /// Web behaviour in plain words, for docs/tap-targets.md.
   final String web;
+}
+
+/// A tap that opens something in place, outside the message matrix (a list
+/// row, a search hit, a message's Artifact card), at one window width.
+class TapOpener {
+  const TapOpener(
+    this.id,
+    this.label,
+    this.width,
+    this.expectation, {
+    required this.addressed,
+  });
+  final String id, label;
+  final double width;
+  final TapExpectation expectation;
+
+  /// The place it opens in is the page's address (`?artifact=`).
+  final bool addressed;
 }
 
 class TapContainer {
@@ -178,6 +202,71 @@ abstract final class TapTargetRegistry {
   ];
 
   static const _absent = TapExpectation(TapEffect.absent);
+
+  /// Where an Artifact tapped at a wide size opens: walked by
+  /// `test/tap_target_in_place_test.dart`.
+  static const inPlaceOpeners = <TapOpener>[
+    TapOpener(
+      'activity-artifact-row',
+      'Activity Artifact object row',
+      1280,
+      TapExpectation(
+        TapEffect.besideList,
+        'ArtifactContentSlot beside the list (useThreadsInboxOpen.ts:117)',
+      ),
+      addressed: true,
+    ),
+    TapOpener(
+      'search-artifact-hit',
+      'Search app hit (Artifacts group)',
+      1280,
+      TapExpectation(
+        TapEffect.besideList,
+        'Beside the results (useSearchResultActions.ts:429)',
+      ),
+      addressed: true,
+    ),
+    TapOpener(
+      'quick-switcher-artifact-hit',
+      'Quick switcher Artifact hit',
+      1280,
+      TapExpectation(
+        TapEffect.besideList,
+        'Search page beside its results (useSearchResultActions.ts:395-427)',
+      ),
+      addressed: true,
+    ),
+    TapOpener(
+      'message-artifact-card',
+      'Message Artifact card, channel chat',
+      1280,
+      TapExpectation(
+        TapEffect.besideList,
+        'Beside the conversation (openArtifactInPlace.ts:26-33)',
+      ),
+      addressed: false,
+    ),
+    TapOpener(
+      'message-artifact-chip',
+      'Artifact link in the message text, channel chat',
+      1280,
+      TapExpectation(
+        TapEffect.besideList,
+        'Beside the conversation (openArtifactOnPlainClick)',
+      ),
+      addressed: false,
+    ),
+    TapOpener(
+      'thread-artifact-card',
+      'Message Artifact card, thread Activity opened',
+      1280,
+      TapExpectation(
+        TapEffect.besideList,
+        "The shell's column beside the main area (ShellArtifactHost.tsx)",
+      ),
+      addressed: true,
+    ),
+  ];
 
   /// Web column 4 beside a channel detail; `ThreadPanel` replaces the
   /// conversation below `lg`.
@@ -302,6 +391,7 @@ abstract final class TapTargetRegistry {
     TapEffect.taskSlot => 'task slot',
     TapEffect.request => 'request',
     TapEffect.route => 'dialog',
+    TapEffect.besideList => 'beside',
     TapEffect.documentedNoop => 'no-op (as Web)',
     TapEffect.knownGap => 'GAP: no-op',
     TapEffect.absent => '-',
@@ -325,6 +415,17 @@ abstract final class TapTargetRegistry {
       ..writeln('|---|---|---|');
     for (final host in hosts) {
       out.writeln('| `${host.id}` | ${host.label} | ${host.width.toInt()} |');
+    }
+    out
+      ..writeln()
+      ..writeln('| In-place opener | Width | Opens | Address | Web |')
+      ..writeln('|---|---|---|---|---|');
+    for (final o in inPlaceOpeners) {
+      out.writeln(
+        '| ${o.label} (`${o.id}`) | ${o.width.toInt()} | '
+        '${_cell(o.expectation)} | ${o.addressed ? '`?artifact=`' : '-'} | '
+        '${o.expectation.web} |',
+      );
     }
     out
       ..writeln()

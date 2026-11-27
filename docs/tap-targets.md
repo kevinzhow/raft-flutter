@@ -261,6 +261,15 @@ chips). The rest are OK or SAME.
 | `search-1280` | Search channel preview, desktop 1280 | 1280 |
 | `search-816` | Search channel preview, foldable 816 (touch) | 816 |
 
+| In-place opener | Width | Opens | Address | Web |
+|---|---|---|---|---|
+| Activity Artifact object row (`activity-artifact-row`) | 1280 | beside | `?artifact=` | ArtifactContentSlot beside the list (useThreadsInboxOpen.ts:117) |
+| Search app hit (Artifacts group) (`search-artifact-hit`) | 1280 | beside | `?artifact=` | Beside the results (useSearchResultActions.ts:429) |
+| Quick switcher Artifact hit (`quick-switcher-artifact-hit`) | 1280 | beside | `?artifact=` | Search page beside its results (useSearchResultActions.ts:395-427) |
+| Message Artifact card, channel chat (`message-artifact-card`) | 1280 | beside | - | Beside the conversation (openArtifactInPlace.ts:26-33) |
+| Artifact link in the message text, channel chat (`message-artifact-chip`) | 1280 | beside | - | Beside the conversation (openArtifactOnPlainClick) |
+| Message Artifact card, thread Activity opened (`thread-artifact-card`) | 1280 | beside | `?artifact=` | The shell's column beside the main area (ShellArtifactHost.tsx) |
+
 | Container | File | Builds | Taps asserted in |
 |---|---|---|---|
 | message-timeline | `lib/features/chat_view.dart` | RaftMessageTile, RaftInlineThreadSurface, RaftThreadRepliesBadge | tap_target_matrix_test.dart (every host) |

@@ -5,11 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/tap_target_registry.dart';
 import 'package:raft_flutter/features/artifacts/artifact_session.dart';
-import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'shell_artifact_place_test.dart' show artifactLink, card, viewer;
-import 'support/artifact_fake_client.dart';
+import 'shell_artifact_place_test.dart'
+    show artifactLink, card, serveArtifact, viewer;
 import 'tap_target_matrix_test.dart' show Ctx, mount, msg;
 import 'task_surface_test.dart' show flush;
 
@@ -26,25 +25,7 @@ Future<Ctx> mountTaskDialog(WidgetTester t, [TapHost? host]) async {
   c.api.routes['GET /messages/channel/task-thread'] = (_) => {
     'messages': [msg('tr1', 'task-thread', 1, 'The plan: $artifactLink')],
   };
-  c.api.routes['POST /objects/summaries'] = (_) => {
-    'kind': 'artifact',
-    'summaries': [
-      {
-        'ref': {'id': artifactId},
-        'ok': true,
-        'summary': artifactCardJson(kind: 'text', title: 'Launch plan'),
-      },
-    ],
-  };
-  c.api.routes['GET /artifacts/$artifactId'] = (_) => artifactViewerJson(
-    card: artifactCardJson(kind: 'text', title: 'Launch plan'),
-    files: [
-      {'path': 'plan.txt', 'kind': 'text', 'entry': true},
-    ],
-    frame: false,
-  );
-  c.api.routes['GET /artifacts/$artifactId/files/plan.txt?version=1'] = (_) =>
-      'The plan';
+  serveArtifact(c);
   // The task's conversation has a session of its own: it asks the server.
   c.api.routes['POST /feature-flags/evaluate'] = (_) => {
     'evaluations': [
