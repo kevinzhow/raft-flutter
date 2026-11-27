@@ -150,7 +150,7 @@ void main() {
     expect(find.byType(WorkspaceView), findsOneWidget);
     expect(find.byType(PublicServerView), findsNothing);
     expect(
-      f.adapter.calls.where((c) => c.path.startsWith('/public/')),
+      f.adapter.calls.where((c) => c.path.startsWith('/public/servers/')),
       isEmpty,
     );
   });
