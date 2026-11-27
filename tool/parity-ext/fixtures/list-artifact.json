@@ -1,0 +1,503 @@
+{
+ "name": "raft-flutter parity extension: an Artifact opened from a list (#380)",
+ "firstId": "pt_00000000-0000-4000-8000-000000000001",
+ "routes": {
+  "POST /feature-flags/evaluate": {
+   "evaluations": [
+    {
+     "key": "workspace_artifacts_v0",
+     "enabled": true
+    }
+   ]
+  },
+  "GET /channels/inbox": {
+   "items": [
+    {
+     "kind": "object",
+     "objectKind": "artifact",
+     "objectId": "pt_00000000-0000-4000-8000-000000000001",
+     "summary": {
+      "title": "Launch plan",
+      "kind": "text",
+      "latestVersion": 1
+     },
+     "home": {
+      "kind": "channel",
+      "label": "design",
+      "channelId": "channel-design"
+     },
+     "latestEvent": {
+      "eventKind": "comment",
+      "reason": "following",
+      "actor": {
+       "type": "agent",
+       "id": "agent-cindy",
+       "name": "Cindy",
+       "displayName": "Cindy",
+       "avatarUrl": null
+      },
+      "at": "2026-06-19T11:20:00.000Z"
+     },
+     "preview": {
+      "text": "Can we freeze the branch on Thursday?",
+      "truncated": false
+     },
+     "target": null,
+     "unreadCount": 0,
+     "hasMention": false,
+     "isFollowing": true,
+     "lastActivityAt": "2026-06-19T11:20:00.000Z",
+     "doneFrontierSeq": "9"
+    },
+    {
+     "kind": "object",
+     "objectKind": "artifact",
+     "objectId": "pt_00000000-0000-4000-8000-000000000002",
+     "summary": {
+      "title": "Release notes draft",
+      "kind": "text",
+      "latestVersion": 1
+     },
+     "home": {
+      "kind": "channel",
+      "label": "design",
+      "channelId": "channel-design"
+     },
+     "latestEvent": {
+      "eventKind": "comment",
+      "reason": "following",
+      "actor": {
+       "type": "user",
+       "id": "visual-user",
+       "name": "artin",
+       "displayName": "artin",
+       "avatarUrl": null
+      },
+      "at": "2026-06-19T11:20:00.000Z"
+     },
+     "preview": {
+      "text": "Added the Android section.",
+      "truncated": false
+     },
+     "target": null,
+     "unreadCount": 0,
+     "hasMention": false,
+     "isFollowing": true,
+     "lastActivityAt": "2026-06-19T11:20:00.000Z",
+     "doneFrontierSeq": "9"
+    }
+   ],
+   "hasMore": false,
+   "totalCount": 2,
+   "totalUnreadCount": 0,
+   "objectCount": 2
+  },
+  "GET /search": {
+   "groups": [
+    {
+     "app": "artifacts",
+     "nextCursor": null,
+     "items": [
+      {
+       "card": {
+        "id": "pt_00000000-0000-4000-8000-000000000001",
+        "url": "/artifacts/pt_00000000-0000-4000-8000-000000000001",
+        "title": "Launch plan",
+        "kind": "text",
+        "facts": {
+         "sizeBytes": 145,
+         "fileCount": 1
+        },
+        "preview": {
+         "kind": "none"
+        },
+        "version": 1,
+        "latestVersion": 1,
+        "pinned": false,
+        "author": {
+         "type": "agent",
+         "id": "agent-cindy",
+         "name": "Cindy",
+         "displayName": "Cindy",
+         "avatarUrl": null
+        },
+        "createdAt": "2026-06-18T14:30:00.000Z",
+        "updatedAt": "2026-06-19T11:20:00.000Z",
+        "commentCount": 0,
+        "home": {
+         "kind": "conversation",
+         "conversation": {
+          "id": "channel-design",
+          "name": "design",
+          "type": "channel"
+         }
+        }
+       },
+       "matches": []
+      }
+     ]
+    }
+   ]
+  },
+  "GET /messages/search": {
+   "results": [],
+   "hasMore": false
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000001": {
+   "card": {
+    "id": "pt_00000000-0000-4000-8000-000000000001",
+    "url": "/artifacts/pt_00000000-0000-4000-8000-000000000001",
+    "title": "Launch plan",
+    "kind": "text",
+    "facts": {
+     "sizeBytes": 145,
+     "fileCount": 1
+    },
+    "preview": {
+     "kind": "none"
+    },
+    "version": 1,
+    "latestVersion": 1,
+    "pinned": false,
+    "author": {
+     "type": "agent",
+     "id": "agent-cindy",
+     "name": "Cindy",
+     "displayName": "Cindy",
+     "avatarUrl": null
+    },
+    "createdAt": "2026-06-18T14:30:00.000Z",
+    "updatedAt": "2026-06-19T11:20:00.000Z",
+    "commentCount": 0,
+    "home": {
+     "kind": "conversation",
+     "conversation": {
+      "id": "channel-design",
+      "name": "design",
+      "type": "channel"
+     }
+    }
+   },
+   "files": [
+    {
+     "path": "plan.txt",
+     "kind": "text",
+     "sizeBytes": 145,
+     "entry": true
+    }
+   ],
+   "versions": [
+    {
+     "number": 1,
+     "publisher": {
+      "type": "agent",
+      "id": "agent-cindy",
+      "name": "Cindy",
+      "displayName": "Cindy",
+      "avatarUrl": null
+     },
+     "createdAt": "2026-06-18T14:30:00.000Z",
+     "note": null,
+     "changedPaths": [
+      "plan.txt"
+     ]
+    }
+   ],
+   "viewer": {
+    "type": "user",
+    "id": "visual-user",
+    "name": "artin",
+    "displayName": "artin",
+    "avatarUrl": null
+   },
+   "following": true,
+   "savedFrom": null,
+   "origin": null,
+   "capabilities": {
+    "publish": true,
+    "comment": true,
+    "changeHome": true,
+    "unpublish": false,
+    "narrowHome": false,
+    "delete": true
+   }
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000001/details": {
+   "card": {
+    "id": "pt_00000000-0000-4000-8000-000000000001",
+    "url": "/artifacts/pt_00000000-0000-4000-8000-000000000001",
+    "title": "Launch plan",
+    "kind": "text",
+    "facts": {
+     "sizeBytes": 145,
+     "fileCount": 1
+    },
+    "preview": {
+     "kind": "none"
+    },
+    "version": 1,
+    "latestVersion": 1,
+    "pinned": false,
+    "author": {
+     "type": "agent",
+     "id": "agent-cindy",
+     "name": "Cindy",
+     "displayName": "Cindy",
+     "avatarUrl": null
+    },
+    "createdAt": "2026-06-18T14:30:00.000Z",
+    "updatedAt": "2026-06-19T11:20:00.000Z",
+    "commentCount": 0,
+    "home": {
+     "kind": "conversation",
+     "conversation": {
+      "id": "channel-design",
+      "name": "design",
+      "type": "channel"
+     }
+    }
+   },
+   "files": [
+    {
+     "path": "plan.txt",
+     "kind": "text",
+     "sizeBytes": 145,
+     "entry": true
+    }
+   ],
+   "versions": [
+    {
+     "number": 1,
+     "publisher": {
+      "type": "agent",
+      "id": "agent-cindy",
+      "name": "Cindy",
+      "displayName": "Cindy",
+      "avatarUrl": null
+     },
+     "createdAt": "2026-06-18T14:30:00.000Z",
+     "note": null,
+     "changedPaths": [
+      "plan.txt"
+     ]
+    }
+   ],
+   "viewer": {
+    "type": "user",
+    "id": "visual-user",
+    "name": "artin",
+    "displayName": "artin",
+    "avatarUrl": null
+   },
+   "following": true,
+   "savedFrom": null,
+   "origin": null,
+   "capabilities": {
+    "publish": true,
+    "comment": true,
+    "changeHome": true,
+    "unpublish": false,
+    "narrowHome": false,
+    "delete": true
+   }
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000001/files/plan.txt/content": {
+   "kind": "text",
+   "content": "Launch plan\n\nShip the Android build on Friday after the visual checks pass.\n\nFreeze the release branch.\nRun the parity suite.\nPublish the notes.\n"
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000001/comments": {
+   "comments": [],
+   "olderCursor": null
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000001/will-notify": {
+   "recipients": []
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000001/review/drafts": {
+   "drafts": []
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000001/presence": {
+   "viewing": [],
+   "readCurrentVersion": [],
+   "readOtherVersion": [],
+   "ownRead": null
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000002": {
+   "card": {
+    "id": "pt_00000000-0000-4000-8000-000000000002",
+    "url": "/artifacts/pt_00000000-0000-4000-8000-000000000002",
+    "title": "Release notes draft",
+    "kind": "text",
+    "facts": {
+     "sizeBytes": 145,
+     "fileCount": 1
+    },
+    "preview": {
+     "kind": "none"
+    },
+    "version": 1,
+    "latestVersion": 1,
+    "pinned": false,
+    "author": {
+     "type": "agent",
+     "id": "agent-cindy",
+     "name": "Cindy",
+     "displayName": "Cindy",
+     "avatarUrl": null
+    },
+    "createdAt": "2026-06-18T14:30:00.000Z",
+    "updatedAt": "2026-06-19T11:20:00.000Z",
+    "commentCount": 0,
+    "home": {
+     "kind": "conversation",
+     "conversation": {
+      "id": "channel-design",
+      "name": "design",
+      "type": "channel"
+     }
+    }
+   },
+   "files": [
+    {
+     "path": "plan.txt",
+     "kind": "text",
+     "sizeBytes": 145,
+     "entry": true
+    }
+   ],
+   "versions": [
+    {
+     "number": 1,
+     "publisher": {
+      "type": "agent",
+      "id": "agent-cindy",
+      "name": "Cindy",
+      "displayName": "Cindy",
+      "avatarUrl": null
+     },
+     "createdAt": "2026-06-18T14:30:00.000Z",
+     "note": null,
+     "changedPaths": [
+      "plan.txt"
+     ]
+    }
+   ],
+   "viewer": {
+    "type": "user",
+    "id": "visual-user",
+    "name": "artin",
+    "displayName": "artin",
+    "avatarUrl": null
+   },
+   "following": true,
+   "savedFrom": null,
+   "origin": null,
+   "capabilities": {
+    "publish": true,
+    "comment": true,
+    "changeHome": true,
+    "unpublish": false,
+    "narrowHome": false,
+    "delete": true
+   }
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000002/details": {
+   "card": {
+    "id": "pt_00000000-0000-4000-8000-000000000002",
+    "url": "/artifacts/pt_00000000-0000-4000-8000-000000000002",
+    "title": "Release notes draft",
+    "kind": "text",
+    "facts": {
+     "sizeBytes": 145,
+     "fileCount": 1
+    },
+    "preview": {
+     "kind": "none"
+    },
+    "version": 1,
+    "latestVersion": 1,
+    "pinned": false,
+    "author": {
+     "type": "agent",
+     "id": "agent-cindy",
+     "name": "Cindy",
+     "displayName": "Cindy",
+     "avatarUrl": null
+    },
+    "createdAt": "2026-06-18T14:30:00.000Z",
+    "updatedAt": "2026-06-19T11:20:00.000Z",
+    "commentCount": 0,
+    "home": {
+     "kind": "conversation",
+     "conversation": {
+      "id": "channel-design",
+      "name": "design",
+      "type": "channel"
+     }
+    }
+   },
+   "files": [
+    {
+     "path": "plan.txt",
+     "kind": "text",
+     "sizeBytes": 145,
+     "entry": true
+    }
+   ],
+   "versions": [
+    {
+     "number": 1,
+     "publisher": {
+      "type": "agent",
+      "id": "agent-cindy",
+      "name": "Cindy",
+      "displayName": "Cindy",
+      "avatarUrl": null
+     },
+     "createdAt": "2026-06-18T14:30:00.000Z",
+     "note": null,
+     "changedPaths": [
+      "plan.txt"
+     ]
+    }
+   ],
+   "viewer": {
+    "type": "user",
+    "id": "visual-user",
+    "name": "artin",
+    "displayName": "artin",
+    "avatarUrl": null
+   },
+   "following": true,
+   "savedFrom": null,
+   "origin": null,
+   "capabilities": {
+    "publish": true,
+    "comment": true,
+    "changeHome": true,
+    "unpublish": false,
+    "narrowHome": false,
+    "delete": true
+   }
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000002/files/plan.txt/content": {
+   "kind": "text",
+   "content": "Launch plan\n\nShip the Android build on Friday after the visual checks pass.\n\nFreeze the release branch.\nRun the parity suite.\nPublish the notes.\n"
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000002/comments": {
+   "comments": [],
+   "olderCursor": null
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000002/will-notify": {
+   "recipients": []
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000002/review/drafts": {
+   "drafts": []
+  },
+  "GET /artifacts/pt_00000000-0000-4000-8000-000000000002/presence": {
+   "viewing": [],
+   "readCurrentVersion": [],
+   "readOtherVersion": [],
+   "ownRead": null
+  }
+ }
+}
