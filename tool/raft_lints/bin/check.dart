@@ -112,7 +112,7 @@ Future<void> main(List<String> args) async {
             : null,
         (rule, node) {
           final loc = result.lineInfo.getLocation(node.offset);
-          if (ignores.isIgnored(rule, loc.lineNumber)) return;
+          if (isSuppressed(ignores, rule, loc.lineNumber)) return;
           findings.add(
             '${p.relative(path, from: repo)}:${loc.lineNumber}:${loc.columnNumber} '
             '- ${_message(rule)} ($rule)',
@@ -141,7 +141,7 @@ Future<void> main(List<String> args) async {
 final _mayMatch = RegExp(
   r'\]\s*\)*\s*!|\.single\b|\b(?:first|last|single)Where\b|'
   r'Controller|FocusNode|ValueNotifier|\.listen\b|Observer|addListener|Timer|[eE]rror|[nN]otice|[wW]arning|[fF]ailure|\bcatch\b|catchError|onError|SnackBar|MaterialBanner|ScaffoldMessenger|'
-  r'Scheduler|Timer|Future|scheduleMicrotask|repeat|Ticker|addPostFrame|\bTimer\b|Client|Dio\b|HttpClient|WebSocket|\bio\b|findProxy|Image|Slider|underline|'
+  r'Scheduler|Timer|Future|scheduleMicrotask|repeat|Ticker|addPostFrame|\bTimer\b|Client|Dio\b|HttpClient|WebSocket|\bio\b|findProxy|Image|Slider|underline|Route|'
   r'textScaleFactor|SizedBox|Container|ConstrainedBox|TextStyle|EdgeInsets|[sS]pacing|\bgap\b|[rR]owGap|columnGap',
 );
 

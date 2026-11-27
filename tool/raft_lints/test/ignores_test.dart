@@ -44,6 +44,27 @@ void f() {
     expect(i.isIgnored('avoid_render_single', 5), isFalse);
   });
 
+  test('the reason after " -- " is kept per rule and line', () {
+    final i = parse('''
+void f() {
+  // ignore: raft_lints/avoid_render_single, raft_lints/avoid_window_cover_route -- web-modal: A.tsx:3 -- more
+  a;
+  b; // ignore: raft_lints/avoid_window_cover_route
+  c;
+}
+''');
+    expect(
+      i.lineReason('avoid_window_cover_route', 3),
+      'web-modal: A.tsx:3 -- more',
+    );
+    expect(
+      i.lineReason('avoid_render_single', 3),
+      'web-modal: A.tsx:3 -- more',
+    );
+    expect(i.lineReason('avoid_window_cover_route', 4), '');
+    expect(i.lineReason('avoid_window_cover_route', 5), isNull);
+  });
+
   test('ignore_for_file covers the whole file', () {
     final i = parse('''
 // ignore_for_file: raft_lints/avoid_render_single

@@ -2,6 +2,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 
 import 'checks.dart';
+import 'ignores.dart';
 
 /// A reference to an API: a class (`member == null`), or a member of a class.
 /// [library] is a URI prefix such as `package:flutter/` or `dart:io`; [owner]
@@ -57,6 +58,7 @@ class BannedApi {
     this.typeReferences = false,
     this.namedArguments = const [],
     this.custom,
+    this.ignoreReason,
   });
   final String rule;
   final String message;
@@ -70,6 +72,10 @@ class BannedApi {
   /// A syntactic check on a hooked node, for shapes a reference cannot express
   /// (a zero-delay argument, a callback passed by name).
   final bool Function(AstNode node)? custom;
+
+  /// When set, only a line-level `// ignore:` whose reason matches silences
+  /// the rule; a bare ignore, another reason or `ignore_for_file` does not.
+  final RegExp? ignoreReason;
 
   bool matches(Element? element) =>
       element != null && refs.any((r) => r.matches(element));
@@ -88,11 +94,30 @@ const idleRule = 'avoid_unreviewed_idle_work';
 const selectionRule = 'avoid_bare_selection_area';
 const sheetRule = 'avoid_raw_bottom_sheet';
 const viewDisplayRule = 'avoid_view_display';
+const windowCoverRule = 'avoid_window_cover_route';
 
 String _ignore(String rule) =>
     "add '// ignore: raft_lints/$rule -- <why this site is exempt>'";
 
 final bannedApis = <BannedApi>[
+  BannedApi(
+    rule: windowCoverRule,
+    message:
+        'Opens a route that covers the whole window. On a wide window '
+        'something opened from a list opens beside the list, as on Web '
+        'v1.24; only what Web shows as a modal, lightbox, sheet or dialog may '
+        'cover the window.',
+    correction:
+        'Open it beside the list (the detail slot or side column), or, where '
+        "Web is modal, add '// ignore: raft_lints/$windowCoverRule -- "
+        "web-modal: <web path>:<line>' naming the Web modal.",
+    refs: const [
+      ApiRef('package:raft_ui/', 'RaftFullBleedDialogRoute'),
+      ApiRef('package:flutter/', 'MaterialPageRoute'),
+      ApiRef('package:flutter/', 'PageRouteBuilder'),
+    ],
+    ignoreReason: RegExp(r'^web-modal:\s*[^\s:]+\.\w+:\d+'),
+  ),
   BannedApi(
     rule: viewDisplayRule,
     message:
@@ -268,6 +293,18 @@ final bannedApis = <BannedApi>[
     ],
   ),
 ];
+
+/// Whether [ignores] silence [rule] on [line] in the command-line runner.
+/// A rule with an [BannedApi.ignoreReason] needs a matching reason.
+bool isSuppressed(Ignores ignores, String rule, int line) {
+  final pattern = bannedApis
+      .where((a) => a.rule == rule)
+      .firstOrNull
+      ?.ignoreReason;
+  if (pattern == null) return ignores.isIgnored(rule, line);
+  final reason = ignores.lineReason(rule, line);
+  return reason != null && pattern.hasMatch(reason);
+}
 
 /// Runs the banned-API checks on one node. [element] is what the node
 /// resolves to (a constructor for a creation, the method for an invocation, the

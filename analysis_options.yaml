@@ -27,3 +27,4 @@ plugins:
       avoid_pixel_text_height: error
       off_grid_spacing: error
       avoid_view_display: error
+      avoid_window_cover_route: error
