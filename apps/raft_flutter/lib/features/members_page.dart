@@ -155,6 +155,7 @@ class _MembersPageState extends State<MembersPage>
     List<_Scope> scopes,
     bool showUsage,
     bool compact,
+    List<Widget> usageControls,
   ) {
     final scopeOptions = [
       for (final value in scopes)
@@ -209,6 +210,8 @@ class _MembersPageState extends State<MembersPage>
           collapseOrder: 100,
           onChanged: (value) => setState(() => _query = value.trim()),
         ),
+        if (usageControls.length > 1)
+          RaftFitGroup(items: [RaftFitChild(child: usageControls.first)]),
         RaftFitGroup(
           moreOrder: 60,
           moreItem: [
@@ -251,6 +254,7 @@ class _MembersPageState extends State<MembersPage>
               RaftFitChild(
                 child: RaftSegmentedControl<bool>(
                   label: raftText(context, 'Agents view'),
+                  iconsOnly: true,
                   value: showUsage,
                   items: [
                     RaftSegmentedOption(
@@ -269,7 +273,30 @@ class _MembersPageState extends State<MembersPage>
                   onChanged: (value) => setState(() => _usage = value),
                 ),
               ),
-            if (scope == _Scope.agent)
+            if (usageControls.isNotEmpty)
+              RaftFitChild(child: usageControls.last),
+            if (scope == _Scope.agent && showUsage)
+              RaftFitChild(
+                child: RaftSelectField<_Grouping>(
+                  key: const ValueKey('members-group-select'),
+                  label: raftText(context, 'Group'),
+                  value: grouping,
+                  items: groupChoices,
+                  onChanged: (value) {
+                    if (value != null) _setGrouping(value);
+                  },
+                  triggerBuilder: (context, focus, press) =>
+                      RaftPickerTriggerButton(
+                        label: raftText(context, 'Group'),
+                        glyph: RaftGlyph.tableProperties,
+                        labelHidden: true,
+                        selected: grouping != _Grouping.none,
+                        focusNode: focus,
+                        onPressed: press,
+                      ),
+                ),
+              ),
+            if (scope == _Scope.agent && !showUsage)
               RaftFitSelect(
                 key: const ValueKey('members-group-select'),
                 label: raftText(context, 'Group'),
@@ -336,6 +363,39 @@ class _MembersPageState extends State<MembersPage>
           : scope == _Scope.agent
           ? MembersEntryLayout.table
           : MembersEntryLayout.cards;
+      Widget controls(List<Widget> usageControls) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              RaftSpace.x5,
+              RaftSpace.x1,
+              RaftSpace.x5,
+              RaftSpace.x2,
+            ),
+            child: _toolbar(
+              context,
+              scope,
+              scopes,
+              showUsage,
+              bounds.maxWidth < 720,
+              usageControls,
+            ),
+          ),
+          if (widget.failed)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5),
+              child: RaftBanner(
+                description: raftText(context, 'Humans failed to load'),
+                action: RaftButton(
+                  label: 'Retry',
+                  uiVariant: RaftButtonVariant.standard,
+                  onPressed: () => unawaited(widget.onRefresh()),
+                ),
+              ),
+            ),
+        ],
+      );
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -365,39 +425,14 @@ class _MembersPageState extends State<MembersPage>
                     style: RaftPanelText.profileMono(RaftTokens.of(context)),
                   ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              RaftSpace.x5,
-              RaftSpace.x1,
-              RaftSpace.x5,
-              RaftSpace.x2,
-            ),
-            child: _toolbar(
-              context,
-              scope,
-              scopes,
-              showUsage,
-              bounds.maxWidth < 720,
-            ),
-          ),
-          if (widget.failed)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5),
-              child: RaftBanner(
-                description: raftText(context, 'Humans failed to load'),
-                action: RaftButton(
-                  label: 'Retry',
-                  uiVariant: RaftButtonVariant.standard,
-                  onPressed: () => unawaited(widget.onRefresh()),
-                ),
-              ),
-            ),
+          if (!showUsage) controls(const []),
           Expanded(
             child: showUsage
                 ? AgentTokenUsagePane(
                     key: ValueKey(pageIdentity(usageWorkspace)),
                     workspace: usageWorkspace,
                     agents: agents,
+                    toolbar: controls,
                     agentGroups: _agentGroups(
                       context,
                       agents.where((entry) => entry.matches(_query)).toList(),

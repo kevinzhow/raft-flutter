@@ -142,7 +142,7 @@ void main() {
 
     await openInvite();
     await frames(t, 20);
-    await t.tap(find.text('By Link'));
+    await t.tap(find.byKey(const ValueKey('invite-tab-link')));
     await frames(t, 4);
     expect(find.textContaining('tok123'), findsWidgets);
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -150,7 +150,7 @@ void main() {
     api.hangAll = true;
     await openInvite();
     await frames(t, 4);
-    await t.tap(find.text('By Link'));
+    await t.tap(find.byKey(const ValueKey('invite-tab-link')));
     await frames(t, 4);
     expect(
       find.textContaining('tok123'),

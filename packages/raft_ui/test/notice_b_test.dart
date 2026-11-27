@@ -99,7 +99,7 @@ void main() {
     await tester.pumpWidget(
       _app(RaftInviteHumanDialog(onClose: () {}, onSend: (_) async {})),
     );
-    await tester.tap(find.text('Send Invites'));
+    await tester.tap(find.byKey(const ValueKey('invite-send')));
     await tester.pump();
     const prompt = 'Enter at least one email, or copy the invite link above.';
     expect(find.text(prompt), findsOneWidget);

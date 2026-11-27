@@ -233,7 +233,7 @@ class _InviteDialogState extends State<_InviteDialog> {
         ),
         confirmLabel: raftText(
           context,
-          updating ? 'Update Link' : 'Revoke link',
+          updating ? 'Update link' : 'Revoke link',
         ),
         loadingLabel: raftText(context, updating ? 'Updating…' : 'Revoking…'),
         onConfirm: onConfirm,

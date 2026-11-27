@@ -888,11 +888,9 @@ class RaftProfileIdentity extends StatelessWidget {
                         ),
                         if (youLabel != null) ...[
                           const SizedBox(width: 8),
-                          RaftRecipeBadge(
-                            youLabel!,
+                          RaftBadge(
+                            label: youLabel!,
                             appearance: RaftBadgeRecipeAppearance.outline,
-                            variant: RaftBadgeRecipeVariant.default_,
-                            mono: true,
                           ),
                         ],
                       ],

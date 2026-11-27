@@ -685,13 +685,20 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
       final splitMin = sideFloor > 0
           ? chatMin + threadMin + sideFloor
           : RaftLayoutMetrics.threadSplitContainerWidth;
+      final profileContentFloor = widget.profileWidthBounds.contentFloor;
+      final canDockProfile =
+          conversationWidth >=
+          RaftAdaptiveWorkspace.profileMinWidth + profileContentFloor;
+      final hasCompactMaster =
+          profileContentFloor <
+          RaftAdaptiveWorkspace.defaultProfileWidthBounds.contentFloor;
       // index.css thread-layout: real container680 + landscape or viewport xl.
       final sideThread =
           hasThread &&
           (widget.thread == null
-              ? width >= RaftLayoutMetrics.threadOverlayBreakpoint &&
-                    conversationWidth >=
-                        RaftAdaptiveWorkspace.profileMinWidth + 320
+              ? (hasCompactMaster ||
+                        width >= RaftLayoutMetrics.threadOverlayBreakpoint) &&
+                    canDockProfile
               : conversationWidth >= splitMin &&
                     (width >= RaftLayoutMetrics.threadPortraitSplitViewport ||
                         width > MediaQuery.sizeOf(context).height));

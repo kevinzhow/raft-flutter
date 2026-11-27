@@ -121,7 +121,7 @@ void main() {
     );
     await tester.enterText(find.byType(TextField).first, 'a@b.co');
     await tester.pump();
-    await tester.tap(find.text('Send Invites'));
+    await tester.tap(find.byKey(const ValueKey('invite-send')));
     await tester.pumpAndSettle();
     expect(find.text('Failed to send invites'), findsOneWidget);
     expect(find.textContaining('boom'), findsNothing);

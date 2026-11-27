@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_ui/raft_ui.dart' show RaftFitToolbar;
 
 import 'support/close_support.dart';
 
@@ -129,6 +130,21 @@ void main() {
     await tester.tap(find.text('Retry'));
     await frames(tester);
     expect(find.text('Could not load usage'), findsNothing);
+    final toolbar = find.byType(RaftFitToolbar);
+    for (final key in [
+      'members-usage-filter',
+      'agent-usage-period',
+      'members-view-usage',
+    ]) {
+      expect(
+        find.descendant(of: toolbar, matching: find.byKey(ValueKey(key))),
+        findsOneWidget,
+      );
+    }
+    expect(
+      find.text('Share of total counts the 1 agent you can see.'),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('members-group-select')));
     await frames(tester);
     await tester.tap(find.text('By computer'));

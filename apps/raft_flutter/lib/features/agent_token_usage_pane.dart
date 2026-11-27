@@ -7,8 +7,10 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/agent_token_usage.dart';
 import '../data/feature_flag_client_facts.dart';
+import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import 'agent_runtime_labels.dart';
+import 'agent_runtime_models.dart' show runtimeModelLabel;
 import 'agent_usage_day_bars.dart';
 import 'icu_message.dart';
 import 'management_support.dart';
@@ -102,6 +104,7 @@ class AgentTokenUsagePane extends StatefulWidget {
     this.clock,
     this.onOpenComputer,
     this.onOpenAgent,
+    this.toolbar,
   });
 
   final WorkspaceController workspace;
@@ -111,6 +114,7 @@ class AgentTokenUsagePane extends StatefulWidget {
   final DateTime Function()? clock;
   final VoidCallback? onOpenComputer;
   final ValueChanged<String>? onOpenAgent;
+  final Widget Function(List<Widget>)? toolbar;
 
   @override
   State<AgentTokenUsagePane> createState() => _AgentTokenUsagePaneState();
@@ -118,7 +122,6 @@ class AgentTokenUsagePane extends StatefulWidget {
 
 class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
   static const _days = '{count, plural, one {# day} other {# days}}';
-  static const _rangePickerWidth = 144.0;
   static const _summaryDetailsWidth = 300.0;
   static const _summaryChartMinWidth = 280.0;
   static const _summaryGap = RaftSpace.x4 * 2;
@@ -184,14 +187,27 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           : widget.agentId;
       final listedIds = listed.map((entry) => entry.target.id).toSet();
       final visibleIds = filtered ? keptIds : listedIds;
-      return CustomScrollView(
+      final noFigures = report == null || widget.agentId == null
+          ? null
+          : report.figures(_period, agentId: widget.agentId);
+      final emptyDetail =
+          noFigures != null && (!noFigures.supported || noFigures.empty);
+      final controls = _controls(context, report, options);
+      final scroll = CustomScrollView(
         key: const ValueKey('agent-usage-tab'),
         slivers: [
           for (final child in [
-            RaftPanelSection(
-              topBorder: false,
-              children: [_controls(context, report, options)],
-            ),
+            if (widget.toolbar == null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(child: controls.last),
+                    _cacheReadSwitch(context),
+                  ],
+                ),
+              ),
             if (ready && snapshot.hasError)
               RaftPanelSection(
                 children: [
@@ -205,7 +221,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                   ),
                 ],
               ),
-            if (report != null)
+            if (report != null && !emptyDetail)
               ..._sections(
                 context,
                 report,
@@ -214,9 +230,28 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                 selectedIds: filtered ? keptIds : null,
               )
             else if (!ready)
-              const RaftPanelSection(children: [RaftSidebarRowsSkeleton()]),
+              if (report == null)
+                const RaftPanelSection(
+                  topBorder: false,
+                  children: [
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: RaftSkeleton(
+                        variant: RaftSkeletonVariant.line,
+                        width: 96,
+                        fromRecipe: true,
+                      ),
+                    ),
+                    RaftSkeleton(height: 132, fromRecipe: true),
+                  ],
+                ),
           ])
             SliverToBoxAdapter(child: child),
+          if (emptyDetail)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _emptyState(context, noFigures.supported),
+            ),
           if (report != null && single == null && widget.onOpenAgent != null)
             MembersUsageTable(
               groups: [
@@ -232,6 +267,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
               period: _period,
               selectedDay: _selectedDay,
               withCacheReads: _includeCache,
+              visibleCount: listedIds.length,
               total: report
                   .figures(
                     _period,
@@ -241,67 +277,72 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                   )
                   .counts
                   .total(withCacheReads: _includeCache),
+              origin: _workspace.client.origin,
               onOpen: widget.onOpenAgent!,
             ),
           SliverPadding(padding: raftScrollPadding(context, EdgeInsets.zero)),
         ],
       );
+      final toolbar = widget.toolbar;
+      return toolbar == null
+          ? scroll
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                toolbar(controls),
+                Expanded(child: scroll),
+              ],
+            );
     },
   );
 
-  Widget _controls(
+  List<Widget> _controls(
     BuildContext context,
     AgentUsageReport? report,
     List<MembersUsagePick> options,
-  ) => Wrap(
-    spacing: RaftSpace.x3,
-    runSpacing: RaftSpace.x2,
-    crossAxisAlignment: WrapCrossAlignment.center,
-    children: [
-      if (options.isNotEmpty)
-        MembersUsageFilter(
-          key: const ValueKey('members-usage-filter'),
-          options: options,
-          selected: _filters,
-          onToggle: (id) => setState(() {
-            if (!_filters.remove(id)) _filters.add(id);
-          }),
-          onClear: () => setState(_filters.clear),
-        ),
-      ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _rangePickerWidth),
-        child: RaftSelectField<int>(
-          key: const ValueKey('agent-usage-period'),
-          label: raftText(context, 'Time range'),
-          value: _selectedDay == report?.to && _selectedDay != null
-              ? 0
-              : _period.days,
-          items: [
-            if (report != null)
-              RaftSelectItem(value: 0, label: raftText(context, 'Today')),
-            for (final period in AgentUsagePeriod.values)
-              RaftSelectItem(
-                value: period.days,
-                label: icuText(context, _days, {'count': period.days}),
-              ),
-          ],
-          onChanged: (value) {
-            if (value == null) return;
-            final period = AgentUsagePeriod.values
-                .where((period) => period.days == value)
-                .firstOrNull;
-            setState(() {
-              _selectedDay = value == 0 ? report?.to : null;
-              if (period == null || period == _period) return;
-              _period = period;
-              _load();
-            });
-          },
-        ),
+  ) => [
+    if (options.isNotEmpty)
+      MembersUsageFilter(
+        key: const ValueKey('members-usage-filter'),
+        options: options,
+        selected: _filters,
+        onToggle: (id) => setState(() {
+          if (!_filters.remove(id)) _filters.add(id);
+        }),
+        onClear: () => setState(_filters.clear),
       ),
-      if (widget.agentId != null) _cacheReadSwitch(context),
-    ],
-  );
+    SizedBox(
+      width: 136,
+      child: RaftSelectField<int>(
+        key: const ValueKey('agent-usage-period'),
+        label: raftText(context, 'Time range'),
+        value: _selectedDay == report?.to && _selectedDay != null
+            ? 0
+            : _period.days,
+        items: [
+          if (report != null)
+            RaftSelectItem(value: 0, label: raftText(context, 'Today')),
+          for (final period in AgentUsagePeriod.values)
+            RaftSelectItem(
+              value: period.days,
+              label: icuText(context, _days, {'count': period.days}),
+            ),
+        ],
+        onChanged: (value) {
+          if (value == null) return;
+          final period = AgentUsagePeriod.values
+              .where((period) => period.days == value)
+              .firstOrNull;
+          setState(() {
+            _selectedDay = value == 0 ? report?.to : null;
+            if (period == null || period == _period) return;
+            _period = period;
+            _load();
+          });
+        },
+      ),
+    ),
+  ];
 
   Widget _cacheReadSwitch(BuildContext context) => RaftGapRow(
     shrinkWrap: true,
@@ -320,6 +361,24 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
     ],
   );
 
+  Widget _emptyState(BuildContext context, bool supported) => RaftEmptyState(
+    title: supported
+        ? icuText(
+            context,
+            'No usage in the last {count, plural, one {day} other {# days}}',
+            {'count': _period.days},
+          )
+        : raftText(context, 'Update Raft Computer to see usage.'),
+    glyph: RaftGlyph.chartColumn,
+    action: !supported && widget.onOpenComputer != null
+        ? RaftButton(
+            label: 'Open computer',
+            uiVariant: RaftButtonVariant.outline,
+            onPressed: widget.onOpenComputer,
+          )
+        : null,
+  );
+
   List<Widget> _sections(
     BuildContext context,
     AgentUsageReport report, {
@@ -335,72 +394,139 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       withCacheReads: _includeCache,
     );
     if (agentId != null && (!figures.supported || figures.empty)) {
-      return [
-        RaftPanelSection(
-          children: [
-            Text(
-              !figures.supported
-                  ? raftText(context, 'Update Raft Computer to see usage.')
-                  : icuText(
-                      context,
-                      'No usage in the last {count, plural, one {day} other {# days}}',
-                      {'count': _period.days},
-                    ),
-            ),
-            if (!figures.supported && widget.onOpenComputer != null)
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: RaftButton(
-                  label: 'Open computer',
-                  uiVariant: RaftButtonVariant.standard,
-                  onPressed: widget.onOpenComputer,
-                ),
-              ),
-          ],
-        ),
-      ];
+      return [_emptyState(context, figures.supported)];
     }
     final t = RaftTokens.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final numbers = NumberFormat.compact(locale: locale);
-    final dates = DateFormat.MMMd(locale);
+    final numbers = NumberFormat.compact(locale: locale)
+      ..maximumFractionDigits = 1;
+    final largeNumbers = NumberFormat.compact(locale: locale)
+      ..maximumFractionDigits = 2;
+    final percentages = NumberFormat.percentPattern(locale)
+      ..maximumFractionDigits = 1;
+    final dates = DateFormat.MEd(locale);
     final counts = figures.counts;
+    final modelTotal = figures.models.fold<int>(
+      0,
+      (sum, model) => sum + (model.tokens ?? 0),
+    );
     final total = counts.total();
     final input =
         (counts.inputNew ?? 0) +
         (counts.cacheRead ?? 0) +
         (counts.cacheWrite ?? 0);
     final reading = figures.context;
-    String format(num? number) => number == null ? '—' : numbers.format(number);
+    String format(num? number) => number == null
+        ? '—'
+        : (number >= 1e9 ? largeNumbers : numbers).format(number);
     String dayName(String day) => day == report.to
         ? raftText(context, 'Today')
         : dates.format(DateTime.parse(day));
-    Widget fact(String label, num? value, {bool share = false}) => RaftInfoRow(
-      label: raftText(context, label),
-      child: Text(
-        share && value != null && total != null && total > 0
-            ? raftFormat(context, '{tokens} · {percent}', {
-                'tokens': format(value),
-                'percent': NumberFormat.percentPattern(locale)
-                    .format(value / total),
-              })
-            : format(value),
-        style: RaftPanelText.profileMono(t),
-      ),
+    final hint = t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint);
+    final muted = t.scale(RaftTypeScale.caption, color: t.ui.foregroundMuted);
+    final meta = t.scale(
+      RaftTypeScale.monoMeta,
+      mono: true,
+      color: t.ui.foregroundHint,
     );
-    Widget section(String title, List<Widget> body) => RaftPanelSection(
+    final mono = t.scale(
+      RaftTypeScale.callout,
+      mono: true,
+      color: t.ui.foreground,
+    );
+    final cacheShare = counts.cacheRead != null && input > 0
+        ? raftFormat(context, '{percent} of input', {
+            'percent': percentages.format(counts.cacheRead! / input),
+          })
+        : '—';
+    Widget fact(
+      String label,
+      num? value, {
+      AgentUsageKind? kind,
+      String? suffix,
+      String? note,
+      Widget? child,
+    }) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 12,
       children: [
-        RaftSectionEyebrow(
-          _selectedDay == null
-              ? raftText(context, title)
-              : raftFormat(context, '{day} · {heading}', {
-                  'day': dayName(_selectedDay!),
-                  'heading': raftText(context, title),
-                }),
+        SizedBox(
+          width: 116,
+          child: Row(
+            spacing: 6,
+            children: [
+              if (kind != null) AgentUsageSwatch(kind),
+              Flexible(child: Text(raftText(context, label), style: muted)),
+            ],
+          ),
         ),
-        ...body,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              child ??
+                  Text.rich(
+                    TextSpan(
+                      text: format(value),
+                      children: [
+                        if (suffix != null)
+                          TextSpan(text: ' · $suffix', style: muted),
+                      ],
+                    ),
+                    style: mono,
+                  ),
+              if (note != null) Text(note, style: hint),
+            ],
+          ),
+        ),
       ],
     );
+    Widget kindFact(AgentUsageKind kind, {bool breakdown = false}) {
+      final amount = kind.amount(counts);
+      return fact(
+        kind.label,
+        amount,
+        kind: kind,
+        suffix: amount == null
+            ? null
+            : breakdown
+            ? percentages.format(
+                total == null || total == 0 ? 0 : amount / total,
+              )
+            : kind == AgentUsageKind.cacheRead
+            ? cacheShare
+            : null,
+        note: kind == AgentUsageKind.output && counts.reasoning != null
+            ? raftFormat(context, 'Includes {tokens} reasoning', {
+                'tokens': format(counts.reasoning),
+              })
+            : null,
+      );
+    }
+
+    Widget section(String title, List<Widget> body, {Widget? aside}) =>
+        RaftPanelSection(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 8,
+              children: [
+                Flexible(
+                  child: RaftSectionEyebrow(
+                    _selectedDay == null
+                        ? raftText(context, title)
+                        : raftFormat(context, '{day} · {heading}', {
+                            'day': dayName(_selectedDay!),
+                            'heading': raftText(context, title),
+                          }),
+                  ),
+                ),
+                ?aside,
+              ],
+            ),
+            ...body,
+          ],
+        );
     final shownTotal = counts.total(withCacheReads: _includeCache);
     final base = figures.base;
     final compared = figures.compared;
@@ -428,21 +554,29 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           .scale(RaftTypeScale.title, color: t.ui.foreground)
           .copyWith(fontFamily: t.monoFont),
     );
+    final user = _workspace.client.user;
+    final formatter = SourceTimeFormatter(
+      locale: locale,
+      preferredTimezone:
+          user?.string('preferredTimezone') ?? user?.string('timezone'),
+      preferredTimeFormat: sourceTimeFormatPreference(
+        user?.string('preferredTimeFormat') ?? user?.string('timeFormat'),
+      ),
+      systemTimeFormat: SourceTimeFormat.twentyFourHour,
+    );
     final freshness = [
       if (_selectedDay == null || _selectedDay == report.to)
         Text(
           raftFormat(context, 'As of {time}', {
-            'time': DateFormat.MMMd(locale)
-                .add_jm()
-                .format(report.asOf.toLocal()),
+            'time': formatter.shortDateTime(report.asOf),
           }),
-          style: RaftPanelText.caption(t),
+          style: meta,
         ),
       if (figures.since case final String since
           when figures.days.first.day.compareTo(since) < 0)
         Text(
           raftFormat(context, 'Usage since {date}', {'date': dayName(since)}),
-          style: RaftPanelText.caption(t),
+          style: meta,
         ),
     ];
     final comparison = change == null
@@ -459,6 +593,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                 'day': figures.baseDay == null ? '' : dayName(figures.baseDay!),
               },
             ),
+            style: meta,
           );
     final chart = AgentUsageDayBars(
       days: figures.days,
@@ -471,14 +606,14 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       return [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
-              .copyWith(bottom: RaftSpace.x3),
+              .copyWith(top: RaftSpace.x3, bottom: RaftSpace.x3),
           child: RaftCard(
             key: const ValueKey('members-usage-summary'),
             padding: const EdgeInsets.all(RaftSpace.x4),
             child: LayoutBuilder(
               builder: (context, bounds) {
                 final details = RaftGapColumn(
-                  gap: 8,
+                  gap: 12,
                   children: [
                     Wrap(
                       spacing: RaftSpace.x3,
@@ -496,23 +631,22 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                             context,
                             _includeCache ? 'all tokens' : 'excl. cache reads',
                           ),
+                          style: muted,
                         ),
-                        ?comparison,
+                        comparison ?? Text('—', style: meta),
                       ],
                     ),
-                    fact('New input', counts.inputNew),
-                    if (counts.cacheWrite != null)
-                      fact('Cache write', counts.cacheWrite),
-                    fact('Output', counts.output),
-                    if (counts.reasoning case final int reasoning)
-                      Text(
-                        raftFormat(context, 'Includes {tokens} reasoning', {
-                          'tokens': format(reasoning),
-                        }),
-                        style: RaftPanelText.caption(t),
-                      ),
-                    fact('Cache reads', counts.cacheRead),
-                    fact('Agents reporting', figures.reporting),
+                    Column(
+                      spacing: 4,
+                      children: [
+                        kindFact(AgentUsageKind.inputNew),
+                        if (counts.cacheWrite != null)
+                          kindFact(AgentUsageKind.cacheWrite),
+                        kindFact(AgentUsageKind.output),
+                        kindFact(AgentUsageKind.cacheRead),
+                        fact('Agents reporting', figures.reporting),
+                      ],
+                    ),
                     ...freshness,
                   ],
                 );
@@ -537,62 +671,115 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       ];
     }
     return [
-      section('Tokens', [
-        if (widget.agentId == null) ...[heading, _cacheReadSwitch(context)],
-        headline,
-        ?comparison,
-        ...freshness,
-        chart,
-      ]),
-      section('Token types', [
-        fact('New input', counts.inputNew, share: true),
-        if (counts.cacheWrite != null)
-          fact('Cache write', counts.cacheWrite, share: true),
-        fact('Cache reads', counts.cacheRead, share: true),
-        fact('Output', counts.output, share: true),
-        if (counts.reasoning case final int reasoning)
-          Text(
-            raftFormat(context, 'Includes {tokens} reasoning', {
-              'tokens': format(reasoning),
-            }),
+      section(
+        'Tokens',
+        [
+          if (widget.agentId == null) ...[heading, _cacheReadSwitch(context)],
+          Wrap(
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              headline,
+              comparison ?? Text('—', style: meta),
+            ],
           ),
+          chart,
+        ],
+        aside: Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: freshness,
+          ),
+        ),
+      ),
+      section('Token types', [
+        kindFact(AgentUsageKind.inputNew, breakdown: true),
+        if (counts.cacheWrite != null)
+          kindFact(AgentUsageKind.cacheWrite, breakdown: true),
+        kindFact(AgentUsageKind.cacheRead, breakdown: true),
+        kindFact(AgentUsageKind.output, breakdown: true),
         fact('Total tokens', total),
       ]),
       section('Context', [
-        if (counts.cacheRead != null && input > 0)
-          RaftInfoRow(
-            label: raftText(context, 'Cache reads'),
-            child: Text(
-              raftFormat(context, '{percent} of input', {
-                'percent': NumberFormat.percentPattern(locale)
-                    .format(counts.cacheRead! / input),
-              }),
-            ),
-          ),
+        fact('Cache reads', null, child: Text(cacheShare, style: muted)),
         fact(
           'Per turn',
           total == null || counts.turns == 0
               ? null
               : (total / counts.turns).round(),
+          child: total == null || counts.turns == 0
+              ? null
+              : Text(
+                  icuText(
+                    context,
+                    '{tokens} · {turns, plural, one {# turn} other {# turns}}',
+                    {
+                      'tokens': format((total / counts.turns).round()),
+                      'turns': counts.turns,
+                    },
+                  ),
+                  style: mono,
+                ),
         ),
         if (reading != null)
           RaftMeter(
             label: raftText(context, 'Context window'),
             used: reading.used,
             max: reading.window,
-            valueText: raftFormat(context, '{used} of {window}', {
-              'used': format(reading.used),
-              'window': format(reading.window),
+            valueText: raftFormat(context, '{percent} used', {
+              'percent': NumberFormat.percentPattern(locale)
+                  .format(reading.used / reading.window),
             }),
           )
         else
           fact('Context window', null),
       ]),
       section('Models', [
+        if (figures.models.isEmpty) Text('—', style: mono),
         for (final model in figures.models)
-          fact(
-            model.model.model.isEmpty ? 'Unknown model' : model.model.model,
-            model.tokens,
+          Row(
+            spacing: 12,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      model.model.model.isEmpty
+                          ? raftText(context, 'Unknown model')
+                          : runtimeModelLabel(
+                              model.model.runtime ?? '',
+                              model.model.model,
+                            ),
+                      style: t.scale(
+                        RaftTypeScale.callout,
+                        weight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      model.model.runtime == null
+                          ? '—'
+                          : runtimeDisplayNameOf(model.model.runtime!),
+                      style: meta,
+                    ),
+                  ],
+                ),
+              ),
+              Text(format(model.tokens), style: meta),
+              SizedBox(
+                width: 48,
+                child: Text(
+                  model.tokens == null || modelTotal <= 0
+                      ? '—'
+                      : NumberFormat.percentPattern(locale)
+                            .format(model.tokens! / modelTotal),
+                  style: mono,
+                  textAlign: TextAlign.end,
+                ),
+              ),
+            ],
           ),
       ]),
     ];

@@ -6,6 +6,8 @@ import 'overlays/dialog.dart' show RaftDialog;
 // requests, billing gates and navigation.
 import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption;
+import 'raft/button.dart';
+import 'interaction.dart';
 import 'label.dart';
 
 import 'package:flutter/material.dart';
@@ -165,6 +167,20 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 'Enter at least one email, or copy the invite link above.',
               )
             : null);
+    final sheet = RaftFormFrame.sheetOf(context);
+    final gap = RaftInteraction.of(context).touch ? 16.0 : 12.0;
+    final sendButton = RaftButton(
+      key: const ValueKey('invite-send'),
+      label: sending
+          ? 'Sending…'
+          : sheet
+          ? 'Invite'
+          : 'Send invites',
+      glyph: RaftGlyph.mail,
+      uiVariant: RaftButtonVariant.primary,
+      uiSize: sheet ? RaftButtonSize.md : RaftButtonSize.lg,
+      onPressed: sending || seatReached ? null : send,
+    );
     // Web `Modal`: full-window backdrop, `p-4` frame, centred column.
     return RaftModalBackdrop(
       child: Material(
@@ -174,18 +190,18 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
           title: 'Invite human',
           maxWidth: 512,
           onClose: widget.onClose,
+          sheetCommit: tab == 'email' ? sendButton : const SizedBox.shrink(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // `space-y-4`
               if (shownError != null && !seatReached) ...[
                 RaftErrorBanner(shownError, bold: true),
-                const SizedBox(height: 16),
+                SizedBox(height: gap),
               ],
               if (seatReached) ...[
                 RaftBanner(
                   description: widget.seatLimitMessage!,
-                  descriptionWeight: FontWeight.w700,
                   descriptionTail: widget.onViewBilling == null
                       ? null
                       : (
@@ -193,7 +209,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                           onPressed: widget.onViewBilling!,
                         ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: gap),
               ],
               // `member.invite.agentReachHint`: any member can DM and direct
               // every agent in the server, so the dialog says so up front.
@@ -206,62 +222,40 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                   'Everyone in this server can message and work with every agent here. For agents that are just for you, use a server of your own.',
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: gap),
               RaftSegmentedControl<String>(
                 expand: true,
                 value: tab,
                 label: raftText(context, 'Invite method'),
                 items: const [
-                  RaftSegmentedOption(value: 'email', label: 'By Email'),
+                  RaftSegmentedOption(value: 'email', label: 'By email'),
                   RaftSegmentedOption(
                     value: 'link',
-                    label: 'By Link',
+                    label: 'By link',
                     itemKey: ValueKey('invite-tab-link'),
                   ),
                 ],
                 onChanged: (v) => setState(() => tab = v),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: gap),
               if (tab == 'email') _email(context, t) else _link(context, t),
             ],
           ),
-          footer: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              RaftRecipeButton(
-                label: raftText(context, 'Cancel'),
-                variant: RaftButtonRecipeVariant.outline,
-                size: RaftButtonRecipeSize.sm,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+          footer: sheet
+              ? null
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  spacing: 12,
+                  children: [
+                    RaftButton(
+                      label: 'Cancel',
+                      uiVariant: RaftButtonVariant.ghost,
+                      uiSize: RaftButtonSize.lg,
+                      onPressed: raftExplicitClose(context, widget.onClose),
+                    ),
+                    if (tab == 'email') sendButton,
+                  ],
                 ),
-                textStep: RaftTextSteps.sm,
-                onPressed: raftExplicitClose(context, widget.onClose),
-              ),
-              if (tab == 'email') ...[
-                const SizedBox(width: 12),
-                RaftRecipeButton(
-                  key: const ValueKey('invite-send'),
-                  label: sending
-                      ? raftText(context, 'Sending…')
-                      : raftText(context, 'Send Invites'),
-                  glyph: RaftGlyph.mail,
-                  glyphSize: 14,
-                  variant: RaftButtonRecipeVariant.accent,
-                  size: RaftButtonRecipeSize.sm,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  textStep: RaftTextSteps.sm,
-                  gap: 6,
-                  disabled: sending || seatReached,
-                  onPressed: send,
-                ),
-              ],
-            ],
-          ),
         ),
       ),
     );

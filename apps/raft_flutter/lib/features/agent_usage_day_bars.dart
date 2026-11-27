@@ -7,6 +7,45 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/agent_token_usage.dart';
 
+enum AgentUsageKind {
+  cacheRead('Cache read', 'palette-stone-400'),
+  inputNew('New input', 'palette-lavender-600'),
+  cacheWrite('Cache write', 'palette-lavender-300'),
+  output('Output', 'palette-cyan-500');
+
+  const AgentUsageKind(this.label, this.palette);
+  final String label;
+  final String palette;
+
+  int? amount(AgentTokenCounts counts) => switch (this) {
+    cacheRead => counts.cacheRead,
+    inputNew => counts.inputNew,
+    cacheWrite => counts.cacheWrite,
+    output => counts.output,
+  };
+
+  Color color(RaftTokens tokens) => tokens.colors[palette]!;
+}
+
+class AgentUsageSwatch extends StatelessWidget {
+  const AgentUsageSwatch(this.kind, {super.key});
+
+  final AgentUsageKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    return RaftCssBox(
+      width: 10,
+      height: 10,
+      radius: 3,
+      fill: kind.color(tokens),
+      borderWidth: 1.5,
+      borderColor: tokens.ui.stickerInk,
+    );
+  }
+}
+
 class AgentUsageDayBars extends StatefulWidget {
   const AgentUsageDayBars({
     super.key,
@@ -29,12 +68,12 @@ class AgentUsageDayBars extends StatefulWidget {
 
 class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
   static const _minDayWidth = 18.0;
-  static const _plotHeight = 96.0;
+  static const _plotHeight = 102.0;
   static const _maxBarWidth = 28.0;
   static const _slotFill = .56;
   static const _stackHeight = 84.0;
-  static const _segmentGap = RaftSpace.half;
-  static const _segmentRadius = RaftRadius.chip / 2;
+  static const _segmentGap = 2.0;
+  static const _segmentRadius = 3.0;
   static const _segmentStroke = RaftSpace.hairline * 1.5;
   static const _captionLines = 2;
 
@@ -102,34 +141,12 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final weekday = DateFormat.E(locale);
     final date = DateFormat.Md(locale);
-    final series =
-        [
-              if (widget.withCacheReads)
-                (
-                  'Cache reads',
-                  'palette-stone-400',
-                  (AgentTokenCounts counts) => counts.cacheRead,
-                ),
-              (
-                'New input',
-                'palette-lavender-600',
-                (AgentTokenCounts counts) => counts.inputNew,
-              ),
-              (
-                'Cache write',
-                'palette-lavender-300',
-                (AgentTokenCounts counts) => counts.cacheWrite,
-              ),
-              (
-                'Output',
-                'palette-cyan-500',
-                (AgentTokenCounts counts) => counts.output,
-              ),
-            ]
-            .where(
-              (series) => days.any((day) => (series.$3(day.counts) ?? 0) > 0),
-            )
-            .toList();
+    final series = [
+      for (final kind in AgentUsageKind.values)
+        if ((kind != AgentUsageKind.cacheRead || widget.withCacheReads) &&
+            days.any((day) => (kind.amount(day.counts) ?? 0) > 0))
+          kind,
+    ];
     final totals = [
       for (final day in days)
         day.counts.total(withCacheReads: widget.withCacheReads) ?? 0,
@@ -141,16 +158,16 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
         : picked;
     final current = shown < 0 ? null : days[shown];
     final values = [
-      for (final (label, _, amount) in series)
+      for (final kind in series)
         raftFormat(context, '{kind} {tokens}', {
-          'kind': raftText(context, label),
+          'kind': raftText(context, kind.label),
           'tokens': widget.formatTokens(
             current == null
                 ? days.fold<int>(
                     0,
-                    (sum, day) => sum + (amount(day.counts) ?? 0),
+                    (sum, day) => sum + (kind.amount(day.counts) ?? 0),
                   )
-                : amount(current.counts) ?? 0,
+                : kind.amount(current.counts) ?? 0,
           ),
         }),
     ].join(' · ');
@@ -166,14 +183,29 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
     final captionLine =
         MediaQuery.textScalerOf(context).scale(RaftTypeScale.caption.fontSize) *
         (style.height ?? 1);
-    final plotAndLabels = _plotHeight + captionLine;
+    final mono = tokens.scale(
+      RaftTypeScale.monoMeta,
+      mono: true,
+      color: tokens.ui.foregroundMuted,
+    );
+    final label = style.copyWith(fontSize: 11, height: 1);
+    final dateLabel = mono.copyWith(
+      fontSize: 10,
+      height: 1,
+      color: tokens.ui.foregroundHint,
+    );
     return Column(
       spacing: RaftSpace.x2,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Semantics(
           liveRegion: true,
-          child: Text(readout, style: RaftPanelText.profileMono(tokens)),
+          child: Text(
+            readout,
+            style: mono,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         Semantics(
           label: raftText(context, 'Tokens per day'),
@@ -185,9 +217,8 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                 final slot = _slotWidth(bounds.maxWidth);
                 return SizedBox(
                   height:
-                      plotAndLabels +
-                      captionLine * _captionLines +
-                      RaftSpace.hairline,
+                      _plotHeight +
+                      math.max(30, captionLine * _captionLines + 6),
                   child: ListView.builder(
                     controller: _scroll,
                     reverse: true,
@@ -228,7 +259,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                         builder: (_, state) => Column(
                           children: [
                             SizedBox(
-                              height: plotAndLabels,
+                              height: _plotHeight,
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
                                   color: picked == index
@@ -251,40 +282,45 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                                                 totals[index] == peak)))
                                       Text(
                                         widget.formatTokens(totals[index]),
-                                        style: style,
+                                        style: mono.copyWith(
+                                          fontSize: 11,
+                                          color: tokens.ui.foreground,
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     if (!day.noData)
-                                      for (final (_, color, amount)
-                                          in series.reversed)
-                                        if ((amount(day.counts) ?? 0) > 0)
+                                      for (final kind in series.reversed)
+                                        if ((kind.amount(day.counts) ?? 0) > 0)
                                           Container(
                                             width: math.min(
                                               _maxBarWidth,
-                                              slot * _slotFill,
+                                              slot *
+                                                  (days.length > 7
+                                                      ? .62
+                                                      : _slotFill),
                                             ),
-                                            height: math.max(
-                                              _segmentGap,
-                                              _stackHeight *
-                                                      amount(day.counts)! /
-                                                      peak -
-                                                  _segmentGap,
-                                            ),
+                                            height:
+                                                math.max(
+                                                  3,
+                                                  _stackHeight *
+                                                      kind.amount(day.counts)! /
+                                                      peak,
+                                                ) -
+                                                _segmentGap,
                                             margin: const EdgeInsets.only(
                                               bottom: _segmentGap,
                                             ),
                                             decoration: BoxDecoration(
-                                              color:
-                                                  (tokens.colors[color] ??
-                                                          tokens.ui.info)
-                                                      .withValues(
-                                                        alpha:
-                                                            shown < 0 ||
-                                                                shown == index
-                                                            ? 1
-                                                            : .32,
-                                                      ),
+                                              color: kind
+                                                  .color(tokens)
+                                                  .withValues(
+                                                    alpha:
+                                                        shown < 0 ||
+                                                            shown == index
+                                                        ? 1
+                                                        : .32,
+                                                  ),
                                               borderRadius:
                                                   BorderRadius.circular(
                                                     _segmentRadius,
@@ -310,14 +346,37 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                             if (days.length <= 14 ||
                                 index == picked ||
                                 (last - index) % 7 == 0)
-                              Text(
-                                days.length == 7 && index == last
-                                    ? '${raftText(context, 'Today')}${day.partial ? '*' : ''}'
-                                    : date.format(DateTime.parse(day.day)),
-                                style: style,
-                                textAlign: TextAlign.center,
-                                maxLines: _captionLines,
-                                overflow: TextOverflow.ellipsis,
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Column(
+                                  spacing: 2,
+                                  children: [
+                                    if (days.length <= 14)
+                                      Text(
+                                        days.length == 7 && index == last
+                                            ? '${raftText(context, 'Today')}${day.partial ? '*' : ''}'
+                                            : days.length == 7
+                                            ? weekday.format(
+                                                DateTime.parse(day.day),
+                                              )
+                                            : DateFormat.EEEEE(
+                                                locale,
+                                              ).format(DateTime.parse(day.day)),
+                                        style: label,
+                                        maxLines: 1,
+                                      ),
+                                    Text(
+                                      days.length == 14
+                                          ? DateFormat.d(locale)
+                                                .format(DateTime.parse(day.day))
+                                          : date.format(
+                                              DateTime.parse(day.day),
+                                            ),
+                                      style: dateLabel,
+                                      maxLines: 1,
+                                    ),
+                                  ],
+                                ),
                               ),
                           ],
                         ),
@@ -329,8 +388,26 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
             ),
           ),
         ),
-        if (days.any((day) => day.partial))
-          Text(raftText(context, '* Partial day'), style: style),
+        Wrap(
+          spacing: RaftSpace.x3,
+          runSpacing: RaftSpace.x1,
+          children: [
+            for (final kind in series.reversed)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 6,
+                children: [
+                  AgentUsageSwatch(kind),
+                  Text(raftText(context, kind.label), style: style),
+                ],
+              ),
+            if (days.any((day) => day.partial))
+              Text(
+                raftText(context, '* Partial day'),
+                style: style.copyWith(color: tokens.ui.foregroundHint),
+              ),
+          ],
+        ),
       ],
     );
   }

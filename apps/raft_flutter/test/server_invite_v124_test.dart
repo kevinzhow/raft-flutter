@@ -47,7 +47,7 @@ void main() {
       find.byKey(const ValueKey('invite-email-0')),
       ' person@example.com ',
     );
-    await tester.tap(find.text('Send Invites'));
+    await tester.tap(find.byKey(const ValueKey('invite-send')));
     await frames(tester, 20);
     expect(invites, [
       {'email': 'person@example.com', 'role': 'member'},
