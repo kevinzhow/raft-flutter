@@ -1,4 +1,6 @@
 // Web features/channel/ChannelMembers.tsx modal and members-page presentation.
+import 'dart:math' as math;
+
 import 'card.dart' show RaftCard;
 import 'interaction.dart';
 import 'hover_region.dart';
@@ -1409,9 +1411,9 @@ class _MemberPageRowState extends State<_MemberPageRow> {
 }
 
 /// The name, then [note] on the same line (`flex min-w-0 items-baseline
-/// gap-1.5`): the name truncates, the note keeps its width. Above the default
-/// text size a name alone wraps; one with a note stays one truncated line and
-/// the note goes under it, wrapping if it must.
+/// gap-1.5`): the name truncates, the note keeps its width up to the whole
+/// line. Above the default text size a name alone wraps; one with a note
+/// stays one truncated line and the note goes under it, wrapping if it must.
 Widget _titleLine(
   String name,
   String? note,
@@ -1437,14 +1439,29 @@ Widget _titleLine(
       ],
     );
   }
-  return Row(
-    crossAxisAlignment: CrossAxisAlignment.baseline,
-    textBaseline: TextBaseline.alphabetic,
-    children: [
-      Flexible(child: title),
-      const SizedBox(width: 6),
-      Text(note, maxLines: 1, style: noteStyle),
-    ],
+  const gap = 6.0;
+  return LayoutBuilder(
+    builder: (context, box) => Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Flexible(child: title),
+        const SizedBox(width: gap),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: box.hasBoundedWidth
+                ? math.max(0, box.maxWidth - gap)
+                : double.infinity,
+          ),
+          child: Text(
+            note,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: noteStyle,
+          ),
+        ),
+      ],
+    ),
   );
 }
 
