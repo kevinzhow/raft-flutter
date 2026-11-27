@@ -120,10 +120,12 @@ Widget memberRoleConfirmation(
         : raftFormat(context, 'Make {name} an owner?', {'name': change.name}),
     content: ListenableBuilder(
       listenable: changes,
-      builder: (context, _) => RaftGapColumn(
+      builder: (context, _) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (selfDemotion)
-            Text(
+            RaftCssText(
               raftFormat(
                 context,
                 "You'll become {role}, and may no longer be able to change roles, including changing yours back.",

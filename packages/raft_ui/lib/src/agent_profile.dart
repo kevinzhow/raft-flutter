@@ -47,8 +47,9 @@ import 'recipe_surface.dart'
     show RaftCssBoxDecoration, RaftCssOverflowY, RaftRecipeBox, raftCssText;
 import 'split_pane.dart';
 import 'surface_background_scope.dart';
+import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftTypeScale;
+import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeScale;
 import 'tooltip.dart';
 import 'status_bar.dart';
 import 'viewport_breakpoints.dart';
@@ -558,9 +559,11 @@ class RaftPanelSection extends StatelessWidget {
     this.vertical = 16,
     this.horizontal = 20,
     this.gap = 12,
+    this.hairline = false,
   });
   final List<Widget> children;
   final bool topBorder;
+  final bool hairline;
   final double vertical, horizontal, gap;
   @override
   Widget build(BuildContext context) {
@@ -583,7 +586,10 @@ class RaftPanelSection extends StatelessWidget {
       ),
     );
     if (!topBorder) return content;
-    return RaftCssTopBorder(color: raftPanelRuleColor(t), child: content);
+    return RaftCssTopBorder(
+      color: hairline ? t.ui.lineHairline : raftPanelRuleColor(t),
+      child: content,
+    );
   }
 }
 
@@ -790,6 +796,14 @@ class RaftProfileIdentity extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
+    final wrapHumanName = !agent && RaftScaled.grows(context);
+    final inset =
+        !agent &&
+            raftBreakpointWidth(context) >=
+                RaftLayoutMetrics.desktopBreakpoint &&
+            RaftInteraction.of(context).pointer
+        ? RaftDesktopMetrics.pageInset
+        : 20.0;
     Widget avatar = RaftAvatarSlot(
       name: name,
       agent: agent,
@@ -824,7 +838,7 @@ class RaftProfileIdentity extends StatelessWidget {
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: minHeight),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.symmetric(horizontal: inset, vertical: 20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -840,8 +854,10 @@ class RaftProfileIdentity extends StatelessWidget {
                       Flexible(
                         child: RaftCssText(
                           name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: wrapHumanName ? null : 1,
+                          overflow: wrapHumanName
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
                           style: raftPanelTitleStyle(t).copyWith(
                             color: agent
                                 ? t.ui.foregroundMuted

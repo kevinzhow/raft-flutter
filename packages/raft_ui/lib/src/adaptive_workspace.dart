@@ -42,7 +42,7 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
     required this.rail,
     this.thread,
     this.profile,
-    this.profileWidth = 380,
+    this.profileWidth = profileDefaultWidth,
     this.profileWidthBounds = defaultProfileWidthBounds,
     this.onProfileWidthChanged,
     this.profileResizeLabel = 'Resize profile',
@@ -120,10 +120,25 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   final ValueChanged<double>? onProfileWidthChanged;
   final String profileResizeLabel;
   static const profileMinWidth = 300.0, profileMaxWidth = 600.0;
+  static const profileDefaultWidth = 400.0;
   static const defaultProfileWidthBounds = (
     contentFloor: 320.0,
     maxWidth: profileMaxWidth,
   );
+
+  static double fitDefaultProfileWidth({
+    required double available,
+    required double preferred,
+  }) {
+    if (preferred != profileDefaultWidth) return preferred;
+    const masterRoom = profileDefaultWidth - 360;
+    final profileRoom =
+        profileDefaultWidth - defaultProfileWidthBounds.contentFloor;
+    final totalRoom = masterRoom + profileRoom;
+    final deficit = (profileDefaultWidth * 2 - available).clamp(0.0, totalRoom);
+    return (preferred - deficit * profileRoom / totalRoom).roundToDouble();
+  }
+
   final void Function(bool mainVisible, bool threadVisible)?
   onPresentationChanged;
 
@@ -717,7 +732,15 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
       final profileSize = profileExpanded
           ? conversationWidth - 160
           : widget.thread == null
-          ? math.min(profileWidth, profileMax)
+          ? math.min(
+              hasCompactMaster
+                  ? RaftAdaptiveWorkspace.fitDefaultProfileWidth(
+                      available: conversationWidth,
+                      preferred: profileWidth,
+                    )
+                  : profileWidth,
+              profileMax,
+            )
           : profileWidth;
       // Keep the main conversation usable while resizing a narrow window.
       final standaloneMax =

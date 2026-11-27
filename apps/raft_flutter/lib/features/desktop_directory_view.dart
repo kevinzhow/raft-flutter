@@ -62,6 +62,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       _computers = const [];
 
   /// The row whose context menu is open (it keeps its pressed fill).
+  DesktopContentTarget? _menuTarget;
   WorkspaceController? _listened;
   late String _authority;
 
@@ -116,6 +117,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   /// remembered folds; the rows follow the directory's own fencing.
   void resetAuthority() {
     _authority = authority;
+    _menuTarget = null;
     _readDirectory();
     w.services.entityDirectory.ensure(waitKinds);
   }
@@ -202,12 +204,18 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     Map<String, dynamic> value,
   ) {
     final captured = authority;
+    setState(() => _menuTarget = target);
     return openMemberRowMenu(
       context,
       at: at,
       w: w,
       target: target,
       value: value,
+      onClosed: () {
+        if (mounted && identical(_menuTarget, target)) {
+          setState(() => _menuTarget = null);
+        }
+      },
       onMessage: (target) async {
         if (captured == authority && mounted) {
           await widget.onOpenDm?.call(target);
@@ -247,20 +255,41 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     final runtime = value['runtime'] as String?;
     final model = value['model'] as String?;
     final display = agent ? agentRowAmbientDisplay(value) : null;
+    final machine = value['machineId'] is String
+        ? w.entityDirectory.computer(value['machineId'] as String)
+        : null;
+    final computerOffline = machine?['status'] == 'offline';
+    final tone = switch (display?.activity) {
+      _ when computerOffline => RaftActivityTone.offline,
+      'working' => RaftActivityTone.working,
+      'thinking' => RaftActivityTone.thinking,
+      'error' => RaftActivityTone.error,
+      'offline' => RaftActivityTone.offline,
+      _ => RaftActivityTone.online,
+    };
     return MemberDirectoryEntry(
       key: ValueKey('desktop-directory-${kind.name}-$id'),
       layout: layout,
       entry: entry,
       self: !agent && id == w.client.user?.id,
       selected: selected,
+      menuOpen: _menuTarget?.kind == kind && _menuTarget?.id == id,
       onMenu: mayMessage ? (at) => openMenu(at, target, value) : null,
       activity: agent ? widget.activities?.rowText(id) : null,
+      statusDot: agent ? RaftStatusDot(activity: tone) : null,
+      computerDot: machine == null
+          ? null
+          : RaftStatusDot(
+              activity: computerOffline
+                  ? RaftActivityTone.offline
+                  : RaftActivityTone.online,
+            ),
       facts: [
         if (agent) ...[
           raftText(
             context,
-            display!.heldText ??
-                switch (display.activity) {
+            (computerOffline ? 'Computer offline' : display!.heldText) ??
+                switch (display?.activity) {
                   'offline' => 'Offline',
                   'working' => 'Working…',
                   'thinking' => 'Thinking…',

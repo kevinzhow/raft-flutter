@@ -231,12 +231,15 @@ class RaftFitGroupSpec extends RaftFitNodeSpec {
     this.scroll = false,
     this.wrapOrder = 0,
     this.moreOrder,
+    this.collapseOrder,
+    this.collapsedWidth,
     this.endWidth = 0,
   });
   final List<RaftFitLeafSpec> leaves;
   final bool firstLine, scroll;
   final int wrapOrder;
-  final int? moreOrder;
+  final int? moreOrder, collapseOrder;
+  final double? collapsedWidth;
   final double endWidth;
 }
 
@@ -294,6 +297,7 @@ RaftFitLayout raftFitLayout(
       if (!has(l.id, RaftFitStep.more) && (!l.isMore || moreShown)) l,
   ];
   double rowWidth(RaftFitGroupSpec g) {
+    if (has(g.id, RaftFitStep.collapse)) return g.collapsedWidth!;
     final leaves = visible(g);
     var sum = 0.0;
     for (final l in leaves) {
@@ -539,6 +543,8 @@ RaftFitResult raftFit(
             steps: {
               RaftFitStep.wrap: node.wrapOrder,
               if (node.moreOrder != null) RaftFitStep.more: node.moreOrder!,
+              if (node.collapseOrder != null && node.collapsedWidth != null)
+                RaftFitStep.collapse: node.collapseOrder!,
             },
           ),
         );

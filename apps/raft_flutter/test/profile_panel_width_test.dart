@@ -18,10 +18,10 @@ void main() {
   tearDown(DevicePreferences.reset);
 
   group('store (Web slock:profilePanelWidth)', () {
-    test('380 until saved; under 300 is the default', () async {
+    test('400 until saved; under 300 is the default', () async {
       SharedPreferences.setMockInitialValues({});
       DevicePreferences.adopt(await SharedPreferences.getInstance());
-      expect(profilePanelWidth.value, 380);
+      expect(profilePanelWidth.value, 400);
       profilePanelWidth.save(450);
       expect(profilePanelWidth.value, 450);
       // Beside the Members list the column may be wider than 600 (each host
@@ -33,7 +33,7 @@ void main() {
       expect(profilePanelWidth.value, 900);
       SharedPreferences.setMockInitialValues({profilePanelWidth.key: 120.0});
       DevicePreferences.adopt(await SharedPreferences.getInstance());
-      expect(profilePanelWidth.value, 380);
+      expect(profilePanelWidth.value, 400);
     });
 
     test('the agent file tree: 256 by default, 160 to 600', () async {
@@ -46,14 +46,14 @@ void main() {
       workspaceTreeWidth.save(700);
       expect(workspaceTreeWidth.value, 320);
       // The two panels keep their own widths.
-      expect(profilePanelWidth.value, 380);
+      expect(profilePanelWidth.value, 400);
     });
 
     test('without preferences it is the default and saving is harmless', () {
       DevicePreferences.reset();
-      expect(profilePanelWidth.value, 380);
+      expect(profilePanelWidth.value, 400);
       profilePanelWidth.save(500);
-      expect(profilePanelWidth.value, 380);
+      expect(profilePanelWidth.value, 400);
     });
   });
 

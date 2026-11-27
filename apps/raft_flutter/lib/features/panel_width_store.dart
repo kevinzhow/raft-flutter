@@ -1,3 +1,5 @@
+import 'package:raft_ui/raft_ui.dart' show RaftAdaptiveWorkspace;
+
 import '../data/device_preferences.dart';
 
 /// A drag-resizable panel's width kept as a device preference (Web
@@ -23,7 +25,7 @@ class PanelWidthStore {
   }
 }
 
-/// Web `ProfilePanel` (`slock:profilePanelWidth`): at least 300, 380 by
+/// Web `ProfilePanel` (`slock:profilePanelWidth`): at least 300, 400 by
 /// default. The upper bound is Web's safety clamp (`COLUMN_BOUNDS.detail`
 /// GROWS_TO_MAIN_MIN_SAFETY_MAX): beside the Members list the column grows
 /// until the list is at its floor (`DesktopMasterDetail.listFloor`), and every
@@ -32,7 +34,7 @@ const profilePanelWidth = PanelWidthStore(
   'raft.layout.profileWidth',
   300,
   8192,
-  380,
+  RaftAdaptiveWorkspace.profileDefaultWidth,
 );
 
 /// Web `AgentWorkspace` (`slock:workspaceTreeWidth`): the file tree column,

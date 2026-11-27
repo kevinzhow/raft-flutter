@@ -131,9 +131,9 @@ void main() {
   ) async {
     w.machines = [computer('alpha')];
     await open(t);
-    expect(panelWidth(t), 380);
+    expect(panelWidth(t), 400);
     await dragHandle(t, -100);
-    expect(panelWidth(t), 480);
+    expect(panelWidth(t), 500);
     await dragHandle(t, -400);
     expect(panelWidth(t), 600, reason: 'the widest the panel can be');
     await dragHandle(t, 700);
@@ -144,7 +144,7 @@ void main() {
     w.machines = [computer('alpha')];
     await open(t);
     await dragHandle(t, -60);
-    expect(profilePanelWidth.value, 440);
+    expect(profilePanelWidth.value, 460);
   });
 
   testWidgets('keys and double click work as Web ColumnResizeHandle', (
@@ -165,14 +165,14 @@ void main() {
     await t.pump();
     expect(
       panelWidth(t),
-      396,
+      416,
       reason: 'the panel is on the right: left grows it by 16',
     );
     await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await t.pump();
     await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await t.pump();
-    expect(panelWidth(t), 364);
+    expect(panelWidth(t), 384);
     await t.sendKeyEvent(LogicalKeyboardKey.home);
     await t.pump();
     expect(panelWidth(t), 300);
@@ -184,6 +184,6 @@ void main() {
     await t.pump(const Duration(milliseconds: 50));
     await t.tap(handle);
     await t.pump(const Duration(milliseconds: 400));
-    expect(panelWidth(t), 380);
+    expect(panelWidth(t), 400);
   });
 }

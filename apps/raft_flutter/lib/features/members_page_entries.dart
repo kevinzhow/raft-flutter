@@ -83,21 +83,64 @@ class MembersAgentColumns extends StatelessWidget {
     this.name,
     this.subtitle,
     this.header = false,
+    this.statusDot,
+    this.computerDot,
   });
 
   final List<String> labels;
   final Widget? name;
   final Widget? subtitle;
   final bool header;
+  final RaftStatusDot? statusDot, computerDot;
 
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
+    Widget cell(int index) {
+      final label = labels[index];
+      if (header) {
+        return RaftCssText(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: tokens.scale(
+            RaftTypeScale.footnote,
+            color: tokens.ui.foregroundHint,
+            weight: FontWeight.w700,
+          ),
+        );
+      }
+      final dot = switch (index) {
+        0 => statusDot,
+        3 => computerDot,
+        _ => null,
+      };
+      final content = index == 0
+          ? RaftCssText(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RaftPanelText.caption(tokens),
+            )
+          : RaftListRowMeta(label);
+      return dot == null
+          ? content
+          : Row(
+              spacing: RaftSpace.x2,
+              children: [
+                dot,
+                Flexible(child: content),
+              ],
+            );
+    }
+
     return Padding(
       padding: header
-          ? const EdgeInsets.symmetric(
-              horizontal: RaftSpace.x5 + RaftSpace.x3 + RaftSpace.half,
-              vertical: RaftSpace.x1_5,
+          ? const EdgeInsets.fromLTRB(
+              RaftSpace.x5 + RaftSpace.hairline,
+              RaftSpace.x4,
+              RaftSpace.x5 + RaftSpace.x4 + RaftSpace.hairline,
+              RaftSpace.x2,
             )
           : EdgeInsets.zero,
       child: LayoutBuilder(
@@ -118,21 +161,7 @@ class MembersAgentColumns extends StatelessWidget {
                 136.0,
               ].indexed)
                 if (index == 0 || expanded)
-                  SizedBox(
-                    width: width,
-                    child: header || index == 0
-                        ? Text(
-                            labels[index],
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: RaftPanelText.caption(tokens).copyWith(
-                              color: header
-                                  ? tokens.ui.foregroundHint
-                                  : tokens.ui.foregroundMuted,
-                            ),
-                          )
-                        : RaftListRowMeta(labels[index]),
-                  ),
+                  SizedBox(width: width, child: cell(index)),
             ],
           );
         },
@@ -153,8 +182,11 @@ class MemberDirectoryEntry extends StatelessWidget {
     required this.selected,
     this.onMenu,
     this.onMessage,
+    this.menuOpen = false,
     this.self = false,
     this.facts = const [],
+    this.statusDot,
+    this.computerDot,
     this.activity,
   });
 
@@ -164,8 +196,9 @@ class MemberDirectoryEntry extends StatelessWidget {
   final VoidCallback onOpen;
   final ValueChanged<Offset>? onMenu;
   final VoidCallback? onMessage;
-  final bool selected, self;
+  final bool selected, self, menuOpen;
   final List<String> facts;
+  final RaftStatusDot? statusDot, computerDot;
   final ValueListenable<String?>? activity;
 
   @override
@@ -198,6 +231,7 @@ class MemberDirectoryEntry extends StatelessWidget {
               ),
         conversationKind: RaftConversationNavKind.memberRoster,
         selected: selected,
+        menuOpen: menuOpen,
         onContextMenu: onMenu,
         onDoubleClick: onMessage,
         onTap: onOpen,
@@ -220,6 +254,7 @@ class MemberDirectoryEntry extends StatelessWidget {
             children: [
               RaftGapRow(
                 gap: 8,
+                baseline: true,
                 children: [
                   Flexible(
                     child: layout == MembersEntryLayout.cards
@@ -235,7 +270,7 @@ class MemberDirectoryEntry extends StatelessWidget {
                         : RaftListRowTitle(entry.name),
                   ),
                   if (self)
-                    Text(
+                    RaftCssText(
                       raftText(context, '(you)'),
                       style: tokens.scale(
                         RaftTypeScale.body,
@@ -243,7 +278,7 @@ class MemberDirectoryEntry extends StatelessWidget {
                       ),
                     ),
                   if (role != null)
-                    Text(
+                    RaftCssText(
                       role,
                       style: tokens.scale(
                         RaftTypeScale.caption,
@@ -301,6 +336,8 @@ class MemberDirectoryEntry extends StatelessWidget {
               Expanded(
                 child: MembersAgentColumns(
                   labels: facts,
+                  statusDot: statusDot,
+                  computerDot: computerDot,
                   name: identity(),
                   subtitle: identity(folded: true),
                 ),

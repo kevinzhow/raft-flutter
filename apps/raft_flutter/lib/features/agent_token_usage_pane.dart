@@ -114,7 +114,7 @@ class AgentTokenUsagePane extends StatefulWidget {
   final DateTime Function()? clock;
   final VoidCallback? onOpenComputer;
   final ValueChanged<String>? onOpenAgent;
-  final Widget Function(List<Widget>)? toolbar;
+  final Widget Function(RaftFitItem? filter, Widget range)? toolbar;
 
   @override
   State<AgentTokenUsagePane> createState() => _AgentTokenUsagePaneState();
@@ -199,41 +199,52 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           : report.figures(_period, agentId: widget.agentId);
       final emptyDetail =
           noFigures != null && (!noFigures.supported || noFigures.empty);
-      final controls = _controls(context, report, options);
+      final range = _rangeControl(context, report);
+      final detailInset =
+          raftBreakpointWidth(context) >= RaftLayoutMetrics.desktopBreakpoint &&
+              RaftInteraction.of(context).pointer
+          ? RaftDesktopMetrics.pageInset
+          : RaftSpace.x5;
       final scroll = CustomScrollView(
         key: const ValueKey('agent-usage-tab'),
         slivers: [
           for (final child in [
             if (widget.toolbar == null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  RaftSpace.x5,
+                padding: EdgeInsets.fromLTRB(
+                  detailInset,
                   RaftSpace.x4,
-                  RaftSpace.x5,
+                  detailInset,
                   RaftSpace.x1,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Flexible(child: controls.last),
+                    Flexible(child: range),
                     _cacheReadSwitch(context),
                   ],
                 ),
               ),
             if (ready && snapshot.hasError)
-              RaftPanelSection(
-                children: [
-                  RaftBanner(
-                    description: raftText(context, 'Could not load usage'),
-                    size: RaftBannerRecipeSize.sm,
-                    action: RaftButton(
-                      label: 'Retry',
-                      glyph: RaftGlyph.refreshCw,
-                      uiVariant: RaftButtonVariant.outline,
-                      onPressed: () => setState(_load),
-                    ),
+              Padding(
+                padding: widget.toolbar == null
+                    ? EdgeInsets.symmetric(
+                        horizontal: detailInset,
+                        vertical: RaftSpace.x4,
+                      )
+                    : const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
+                          .copyWith(top: RaftSpace.x3),
+                child: RaftBanner(
+                  description: raftText(context, 'Could not load usage'),
+                  size: RaftBannerRecipeSize.sm,
+                  action: RaftButton(
+                    label: 'Retry',
+                    glyph: RaftGlyph.refreshCw,
+                    uiSize: RaftButtonSize.md,
+                    uiVariant: RaftButtonVariant.outline,
+                    onPressed: () => setState(_load),
                   ),
-                ],
+                ),
               ),
             if (report != null && !emptyDetail)
               ..._sections(
@@ -308,69 +319,68 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                toolbar(controls),
+                toolbar(
+                  options.isEmpty
+                      ? null
+                      : MembersUsageFilter(
+                          key: const ValueKey('members-usage-filter'),
+                          label: raftText(context, 'Agents'),
+                          options: options,
+                          selected: _filters,
+                          onToggle: (id) => setState(() {
+                            if (!_filters.remove(id)) _filters.add(id);
+                          }),
+                          onClear: () => setState(_filters.clear),
+                        ),
+                  range,
+                ),
                 Expanded(child: scroll),
               ],
             );
     },
   );
 
-  List<Widget> _controls(
-    BuildContext context,
-    AgentUsageReport? report,
-    List<MembersUsagePick> options,
-  ) => [
-    if (options.isNotEmpty)
-      MembersUsageFilter(
-        key: const ValueKey('members-usage-filter'),
-        options: options,
-        selected: _filters,
-        onToggle: (id) => setState(() {
-          if (!_filters.remove(id)) _filters.add(id);
-        }),
-        onClear: () => setState(_filters.clear),
-      ),
-    SizedBox(
-      width: _periodControlWidth,
-      child: RaftSelectField<int>(
-        key: const ValueKey('agent-usage-period'),
-        label: raftText(context, 'Time range'),
-        value: _selectedDay == report?.to && _selectedDay != null
-            ? 0
-            : _selectedDay != null
-            ? -1
-            : _period.days,
-        items: [
-          if (_selectedDay case final picked? when picked != report?.to)
-            RaftSelectItem(
-              value: -1,
-              label: DateFormat.MEd(
-                Localizations.localeOf(context).toLanguageTag(),
-              ).format(DateTime.parse(picked)),
-            ),
-          if (report != null)
-            RaftSelectItem(value: 0, label: raftText(context, 'Today')),
-          for (final period in AgentUsagePeriod.values)
-            RaftSelectItem(
-              value: period.days,
-              label: icuText(context, _days, {'count': period.days}),
-            ),
-        ],
-        onChanged: (value) {
-          if (value == null || value == -1) return;
-          final period = AgentUsagePeriod.values
-              .where((period) => period.days == value)
-              .firstOrNull;
-          setState(() {
-            _selectedDay = value == 0 ? report?.to : null;
-            if (period == null || period == _period) return;
-            _period = period;
-            _load();
-          });
-        },
-      ),
-    ),
-  ];
+  Widget _rangeControl(BuildContext context, AgentUsageReport? report) =>
+      SizedBox(
+        width: _periodControlWidth,
+        child: RaftSelectField<int>(
+          key: const ValueKey('agent-usage-period'),
+          label: raftText(context, 'Time range'),
+          value: _selectedDay == report?.to && _selectedDay != null
+              ? 0
+              : _selectedDay != null
+              ? -1
+              : _period.days,
+          items: [
+            if (_selectedDay case final picked? when picked != report?.to)
+              RaftSelectItem(
+                value: -1,
+                label: DateFormat.MEd(
+                  Localizations.localeOf(context).toLanguageTag(),
+                ).format(DateTime.parse(picked)),
+              ),
+            if (report != null)
+              RaftSelectItem(value: 0, label: raftText(context, 'Today')),
+            for (final period in AgentUsagePeriod.values)
+              RaftSelectItem(
+                value: period.days,
+                label: icuText(context, _days, {'count': period.days}),
+              ),
+          ],
+          onChanged: (value) {
+            if (value == null || value == -1) return;
+            final period = AgentUsagePeriod.values
+                .where((period) => period.days == value)
+                .firstOrNull;
+            setState(() {
+              _selectedDay = value == 0 ? report?.to : null;
+              if (period == null || period == _period) return;
+              _period = period;
+              _load();
+            });
+          },
+        ),
+      );
 
   Widget _cacheReadSwitch(BuildContext context) => RaftGapRow(
     shrinkWrap: true,
@@ -665,7 +675,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       return [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
-              .copyWith(top: RaftSpace.x3, bottom: RaftSpace.x2),
+              .copyWith(top: RaftSpace.x3),
           child: RaftCard(
             key: const ValueKey('members-usage-summary'),
             padding: const EdgeInsets.all(RaftSpace.x4),

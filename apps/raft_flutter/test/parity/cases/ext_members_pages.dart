@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/data/workspace_entity_directory.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_flutter/features/workspace_menu_invite.dart';
@@ -97,6 +98,9 @@ WorkspaceController _workspace(ParityContext ctx, {bool mobile = false}) {
   // resolve against them.
   if ('${ctx.props['routeSet']}'.startsWith('act-')) {
     unawaited(w.refreshChannels());
+  }
+  if (mobile && ctx.props['routeSet'] == 'self-demote') {
+    unawaited(w.entityDirectory.refresh(WorkspaceEntityKind.members));
   }
   return w;
 }

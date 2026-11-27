@@ -79,7 +79,9 @@ void main() {
     expect(t.getSize(detail).width, 420);
     await mount(t, pane: 600, detailPanelWidth: 380);
     expect(t.getSize(master).width, 220);
-    expect(t.getSize(detail).width, 380);
+    final panel = find.byKey(const ValueKey('desktop-profile-detail'));
+    expect(t.getSize(panel).width, 380);
+    expect(t.getRect(detail).left, t.getRect(panel).left + 1);
   });
 
   testWidgets('the classic directory keeps the sidebar floor or folds', (

@@ -8,24 +8,24 @@ import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption;
 import 'raft/button.dart';
 import 'interaction.dart';
-import 'label.dart';
 
 import 'package:flutter/material.dart';
 
 import 'form_presentation.dart';
 
 import 'banner.dart';
-import 'design_primitives.dart' show RaftTextLink, RaftTextLinkVariant;
+import 'design_primitives.dart'
+    show RaftLayoutMetrics, RaftTextLink, RaftTextLinkVariant;
 import 'dialog_card.dart';
 import 'error_presentation.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'raft/ui_tokens.dart';
-import 'recipes/button_variants.g.dart';
 import 'select_field.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftTypeScale;
+import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeScale;
+import 'viewport_breakpoints.dart';
 
 class RaftInvitee {
   RaftInvitee({this.email = ''}) : id = _next++;
@@ -172,11 +172,15 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
               )
             : null);
     final sheet = RaftFormFrame.sheetOf(context);
-    final gap = RaftInteraction.of(context).touch ? 16.0 : 12.0;
+    final fineWide =
+        raftBreakpointWidth(context) >= RaftLayoutMetrics.desktopBreakpoint &&
+        !RaftInteraction.of(context).touch;
+    final gap = fineWide ? 12.0 : 16.0;
     final sendButton = RaftButton(
       key: const ValueKey('invite-send'),
       label: sending ? 'Sending…' : 'Invite',
       glyph: RaftGlyph.mail,
+      glyphSize: 18,
       uiVariant: RaftButtonVariant.primary,
       uiSize: sheet ? RaftButtonSize.md : RaftButtonSize.lg,
       onPressed: sending || seatReached ? null : send,
@@ -190,6 +194,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
           title: 'Invite human',
           maxWidth: 512,
           onClose: widget.onClose,
+          footerGap: gap,
           sheetCommit: tab == 'email' ? sendButton : const SizedBox.shrink(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -204,7 +209,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                   description: widget.seatLimitMessage!,
                   descriptionBuilder: widget.onViewBilling == null
                       ? null
-                      : (style) => Text.rich(
+                      : (style) => RaftCssText.rich(
                           TextSpan(
                             text: '${widget.seatLimitMessage!} ',
                             children: [
@@ -241,6 +246,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
               SizedBox(height: gap),
               RaftSegmentedControl<String>(
                 expand: true,
+                visualHeight: fineWide ? RaftDesktopMetrics.controlHeight : 32,
                 value: tab,
                 label: raftText(context, 'Invite method'),
                 items: const [
@@ -254,7 +260,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 onChanged: (v) => setState(() => tab = v),
               ),
               SizedBox(height: gap),
-              if (tab == 'email') _email(context, t) else _link(context, t),
+              if (tab == 'email') _email(context) else _link(context, t),
             ],
           ),
           footer: sheet
@@ -277,19 +283,23 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
     );
   }
 
-  /// The Web's `FIELD_LABEL_CLASS` label (13/18 600 ink-2) is a [RaftLabel].
-  Widget _fieldLabel(BuildContext context, RaftTokens t, String text) {
-    // `mb-1.5` under the label.
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: RaftLabel(text),
+  Widget _label(BuildContext context, String text) {
+    final tokens = RaftTokens.of(context);
+    return RaftCssText(
+      raftText(context, text),
+      style: tokens.scale(
+        RaftTypeScale.footnote,
+        weight: FontWeight.w600,
+        color: tokens.ui.foregroundMuted,
+      ),
     );
   }
 
-  Widget _email(BuildContext context, RaftTokens t) => Column(
+  Widget _email(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _fieldLabel(context, t, 'Invite by email'),
+      _label(context, 'Invite by email'),
+      const SizedBox(height: 6),
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -302,15 +312,16 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                     fieldKey: ValueKey('invite-email-$index'),
                     controller: controllerFor(invitee),
                     placeholder: 'name@company.com',
+                    semanticLabel: 'Email address',
                   ),
                 ),
                 if (invitees.length > 1) ...[
                   const SizedBox(width: 8),
-                  RaftRecipeButton(
+                  RaftButton(
                     glyph: RaftGlyph.trash2,
-                    glyphSize: 14,
-                    variant: RaftButtonRecipeVariant.danger,
-                    size: RaftButtonRecipeSize.iconXs,
+                    glyphSize: 18,
+                    uiVariant: RaftButtonVariant.ghost,
+                    uiSize: RaftButtonSize.iconLg,
                     tooltip: raftFormat(context, 'Remove Invitee {index}', {
                       'index': index + 1,
                     }),
@@ -345,19 +356,15 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
     _linkController.text = urlText;
     RaftSelectItem<String> item(String v, String label) =>
         RaftSelectItem(value: v, label: raftText(context, label));
-    final muted = t.colors['foreground-muted'];
-    Widget labelText(String text) => RaftCssText(
-      raftText(context, text),
-      style: t.scale(
-        RaftTypeScale.footnote,
-        weight: FontWeight.w600,
-        color: muted,
-      ),
+    final captionStyle = t.scale(
+      RaftTypeScale.caption,
+      color: t.ui.foregroundHint,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel(context, t, 'Invite link'),
+        _label(context, 'Invite link'),
+        const SizedBox(height: 6),
         Row(
           children: [
             Expanded(
@@ -366,6 +373,11 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 controller: _linkController,
                 readOnly: true,
                 mono: true,
+                textStep: (
+                  RaftTypeScale.monoCode.fontSize,
+                  RaftTypeScale.monoCode.lineHeight,
+                ),
+                semanticLabel: 'Invite link',
               ),
             ),
             const SizedBox(width: 8),
@@ -390,7 +402,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                labelText('Uses'),
+                _label(context, 'Uses'),
                 const SizedBox(width: 6),
                 SizedBox(
                   width: 128,
@@ -414,7 +426,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                labelText('Expires'),
+                _label(context, 'Expires'),
                 const SizedBox(width: 6),
                 SizedBox(
                   width: 128,
@@ -449,7 +461,8 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 key: const ValueKey('invite-link-revoke'),
                 onPressed: widget.onRevokeLink,
                 label: raftText(context, 'Revoke link'),
-                typeStyle: t.scale(RaftTypeScale.footnote),
+                variant: RaftTextLinkVariant.muted,
+                scale: RaftTypeScale.footnote,
               ),
           ],
         ),
@@ -460,7 +473,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
               context,
               'Updating replaces the current link — the old one stops working.',
             ),
-            style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
+            style: captionStyle,
           ),
         ],
         if (link.usedLabel != null || link.expiresOn != null) ...[
@@ -468,28 +481,23 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
           RaftCssText(
             [?link.usedLabel, ?link.expiresOn].join(' · '),
             key: const ValueKey('invite-link-status'),
-            style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
+            style: captionStyle,
           ),
         ],
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Row(
           children: [
-            RaftIcon(RaftGlyph.link2, size: 12, color: muted),
-            const SizedBox(width: 4),
+            RaftIcon(RaftGlyph.link, size: 14, color: t.ui.foregroundHint),
+            const SizedBox(width: 6),
             Flexible(
-              child: Text(
+              child: RaftCssText(
                 raftText(
                   context,
                   widget.seatLimitMessage != null
                       ? 'This link will show a seat-limit message until you add a human seat.'
                       : 'Send this link to your teammates to join the server.',
                 ),
-                style: TextStyle(
-                  fontFamily: t.headingFont,
-                  fontSize: 12,
-                  height: 16 / 12,
-                  color: muted,
-                ),
+                style: captionStyle,
               ),
             ),
           ],

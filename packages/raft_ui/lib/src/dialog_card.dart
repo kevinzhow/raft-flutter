@@ -582,6 +582,7 @@ class RaftDialogTextInput extends StatelessWidget {
     this.obscure = false,
     this.readOnly = false,
     this.mono = false,
+    this.textStep,
     this.focusRingFollowsInputModality = false,
   });
   final TextEditingController controller;
@@ -589,6 +590,7 @@ class RaftDialogTextInput extends StatelessWidget {
 
   /// Web `readOnly` Input; [mono] is `font-mono text-xs`.
   final bool multiline, autofocus, enabled, obscure, readOnly, mono;
+  final (double, double)? textStep;
 
   /// Use keyboard-modality focus paint on the single-line recipe input.
   final bool focusRingFollowsInputModality;
@@ -614,7 +616,7 @@ class RaftDialogTextInput extends StatelessWidget {
             readOnly: readOnly,
             onChanged: onChanged,
             mono: mono,
-            textStep: mono ? RaftTextSteps.xs : null,
+            textStep: textStep ?? (mono ? RaftTextSteps.xs : null),
             growsWithScale: true,
           )
         : RaftTextInput(
@@ -631,7 +633,7 @@ class RaftDialogTextInput extends StatelessWidget {
             onSubmitted: onSubmitted,
             mono: mono,
             focusRingFollowsInputModality: focusRingFollowsInputModality,
-            textStep: mono ? RaftTextSteps.xs : null,
+            textStep: textStep ?? (mono ? RaftTextSteps.xs : null),
           );
     return TextSelectionTheme(
       data: TextSelectionTheme.of(context).copyWith(

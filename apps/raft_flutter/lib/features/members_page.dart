@@ -154,8 +154,9 @@ class _MembersPageState extends State<MembersPage>
     _Scope scope,
     List<_Scope> scopes,
     bool showUsage,
-    bool compact,
-    List<Widget> usageControls,
+    double segmentHeight,
+    RaftFitItem? usageFilter,
+    Widget? usageRange,
   ) {
     final scopeOptions = [
       for (final value in scopes)
@@ -182,28 +183,28 @@ class _MembersPageState extends State<MembersPage>
       children: [
         RaftFitGroup(
           firstLine: true,
+          collapseOrder: 50,
+          collapsed: RaftFitSelect(
+            key: const ValueKey('members-scope-select'),
+            label: raftText(context, scope.label),
+            selection: scope,
+            items: [
+              for (final item in scopeOptions)
+                RaftSelectItem(value: item.value, label: item.label),
+            ],
+            onChanged: (value) => setState(() => _scope = value),
+          ),
           items: [
-            if (compact)
-              RaftFitSelect(
-                key: const ValueKey('members-scope-select'),
-                label: raftText(context, scope.label),
-                selection: scope,
-                items: [
-                  for (final item in scopeOptions)
-                    RaftSelectItem(value: item.value, label: item.label),
-                ],
+            RaftFitChild(
+              child: RaftSegmentedControl(
+                key: const ValueKey('members-tabs'),
+                inFitToolbar: true,
+                visualHeight: segmentHeight,
+                value: scope,
+                items: scopeOptions,
                 onChanged: (value) => setState(() => _scope = value),
-              )
-            else
-              RaftFitChild(
-                child: RaftSegmentedControl(
-                  key: const ValueKey('members-tabs'),
-                  inFitToolbar: true,
-                  value: scope,
-                  items: scopeOptions,
-                  onChanged: (value) => setState(() => _scope = value),
-                ),
               ),
+            ),
           ],
         ),
         RaftFitSearch(
@@ -213,12 +214,8 @@ class _MembersPageState extends State<MembersPage>
           collapseOrder: 70,
           onChanged: (value) => setState(() => _query = value.trim()),
         ),
-        if (usageControls.length > 1)
-          RaftFitGroup(
-            wrapOrder: 70,
-            scroll: true,
-            items: [RaftFitChild(child: usageControls.first)],
-          ),
+        if (usageFilter != null)
+          RaftFitGroup(wrapOrder: 80, scroll: true, items: [usageFilter]),
         RaftFitGroup(
           firstLine: showUsage,
           moreOrder: 60,
@@ -254,6 +251,7 @@ class _MembersPageState extends State<MembersPage>
                   label: raftText(context, 'Agents view'),
                   iconsOnly: true,
                   inFitToolbar: true,
+                  visualHeight: segmentHeight,
                   value: showUsage,
                   items: [
                     RaftSegmentedOption(
@@ -272,33 +270,14 @@ class _MembersPageState extends State<MembersPage>
                   onChanged: (value) => setState(() => _usage = value),
                 ),
               ),
-            if (usageControls.isNotEmpty)
-              RaftFitChild(child: usageControls.last),
-            if (scope == _Scope.agent && showUsage)
-              RaftFitChild(
-                child: RaftSelectField<_Grouping>(
-                  key: const ValueKey('members-group-select'),
-                  label: raftText(context, 'Group'),
-                  value: grouping,
-                  items: groupChoices,
-                  onChanged: (value) {
-                    if (value != null) _setGrouping(value);
-                  },
-                  triggerBuilder: (context, focus, press) =>
-                      RaftPickerTriggerButton(
-                        label: raftText(context, 'Group'),
-                        glyph: RaftGlyph.tableProperties,
-                        labelHidden: true,
-                        selected: grouping != _Grouping.none,
-                        focusNode: focus,
-                        onPressed: press,
-                      ),
-                ),
-              ),
-            if (scope == _Scope.agent && !showUsage)
+            if (usageRange != null) RaftFitChild(child: usageRange),
+            if (scope == _Scope.agent)
               RaftFitSelect(
                 key: const ValueKey('members-group-select'),
-                label: raftText(context, 'Group'),
+                label: raftText(context, grouping.label),
+                glyph: RaftGlyph.tableProperties,
+                labelOrder: 10,
+                applied: grouping != _Grouping.none,
                 selection: grouping,
                 items: groupChoices,
                 onChanged: _setGrouping,
@@ -373,7 +352,8 @@ class _MembersPageState extends State<MembersPage>
       final showUsage = scope == _Scope.agent && usageEnabled && _usage;
       final tokens = RaftTokens.of(context);
       final desktopToolbar =
-          bounds.maxWidth >= 768 && RaftInteraction.of(context).pointer;
+          raftBreakpointWidth(context) >= RaftLayoutMetrics.desktopBreakpoint &&
+          RaftInteraction.of(context).pointer;
       final toolbarAir = desktopToolbar
           ? RaftDesktopMetrics.headerAir
           : RaftSpace.x2;
@@ -387,7 +367,7 @@ class _MembersPageState extends State<MembersPage>
           : scope == _Scope.agent
           ? MembersEntryLayout.table
           : MembersEntryLayout.cards;
-      Widget controls(List<Widget> usageControls) => Column(
+      Widget controls(RaftFitItem? usageFilter, Widget? usageRange) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
@@ -407,8 +387,9 @@ class _MembersPageState extends State<MembersPage>
                 scope,
                 scopes,
                 showUsage,
-                bounds.maxWidth < 720,
-                usageControls,
+                desktopToolbar ? RaftDesktopMetrics.controlHeight : 32,
+                usageFilter,
+                usageRange,
               ),
             ),
           ),
@@ -416,7 +397,7 @@ class _MembersPageState extends State<MembersPage>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
                   .copyWith(bottom: RaftSpace.x2),
-              child: Text(
+              child: RaftCssText(
                 raftText(context, 'Humans failed to load'),
                 style: tokens.scale(
                   RaftTypeScale.footnote,
@@ -463,7 +444,7 @@ class _MembersPageState extends State<MembersPage>
                     ),
                   ),
           ),
-          if (!showUsage) controls(const []),
+          if (!showUsage) controls(null, null),
           Expanded(
             child: showUsage
                 ? AgentTokenUsagePane(
@@ -560,6 +541,7 @@ class _MembersPageState extends State<MembersPage>
                 ),
             child: RaftSectionHeader(label: heading, count: entries.length),
           ),
+        if (heading.isEmpty) (_) => const SizedBox(height: RaftSpace.x2),
         if (layout == MembersEntryLayout.cards)
           for (var start = 0; start < entries.length; start += columns)
             _tileBand(entries, start, columns)
@@ -573,6 +555,8 @@ class _MembersPageState extends State<MembersPage>
                 computers[entry.record['machineId']]?['name'] as String?,
               ),
             ),
+        if (layout == MembersEntryLayout.list)
+          (_) => const SizedBox(height: RaftSpace.x2),
       ],
     ];
     return RaftPullToRefresh(

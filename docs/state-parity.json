@@ -29746,12 +29746,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/invite_human_dialog.dart#method:_RaftInviteHumanDialogState._fieldLabel": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "packages/raft_ui/lib/src/invite_human_dialog.dart#method:_RaftInviteHumanDialogState._link": {
         "role": "unresolved",
         "familyRefs": [],
@@ -59388,15 +59382,6 @@
         ],
         "owner": "WP-MEMBERS"
       },
-      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:_AgentTokenUsagePaneState._controls": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "select",
-          "switch",
-          "popover"
-        ],
-        "owner": "WP-MEMBERS"
-      },
       "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:_AgentTokenUsagePaneState._sections": {
         "role": "entry_composition",
         "familyRefs": [
@@ -59606,11 +59591,6 @@
           "picker_trigger",
           "popover"
         ],
-        "owner": "WP-MEMBERS"
-      },
-      "apps/raft_flutter/lib/features/members_usage_filter.dart#method:MembersUsageFilter.createState": {
-        "role": "entry_composition",
-        "familyRefs": [],
         "owner": "WP-MEMBERS"
       },
       "apps/raft_flutter/lib/features/members_usage_filter.dart#method:_MembersUsageFilterState.build": {
@@ -59824,6 +59804,53 @@
           "combobox"
         ],
         "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/agent_token_usage_pane.dart#method:_AgentTokenUsagePaneState._rangeControl": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "select"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_page_entries.dart#local-function:CLASS:MembersAgentColumns/METHOD:build/FUNCTION:cell": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_filter.dart#class:_MembersUsageFilterPopup": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "picker_trigger",
+          "popover"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_filter.dart#method:MembersUsageFilter.buildPopup": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "popover"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_filter.dart#method:_MembersUsageFilterPopup.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#local-function:CLASS:_MembersUsageTableState/METHOD:build/FUNCTION:<anonymous>/FUNCTION:sortArrow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "packages/raft_ui/lib/src/invite_human_dialog.dart#method:_RaftInviteHumanDialogState._label": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS",
+        "reason": "Paints the responsive footnote labels for invite fields and link settings."
       }
     },
     "entries": {

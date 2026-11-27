@@ -217,6 +217,18 @@ GUEST = base.PROFILES['guest']['userId']
 ROUTES[f'GET /servers/{SID}/members/{MEMBER}/removal-impact'] = {
     'computers': 1, 'computerNames': ['Design Studio'], 'othersAgents': 2,
 }
+ROUTE_SETS['owner-grant'] = {
+    f'GET /servers/{SID}/members/{SELF}/removal-impact': {
+        'computers': 1, 'computerNames': ['Studio workstation'], 'othersAgents': 0,
+    },
+}
+ROUTE_SETS['self-demote'] = {
+    **ROUTE_SETS['owner-grant'],
+    f'GET /servers/{SID}/members': [
+        {**human, 'role': 'owner'} if human['userId'] == MEMBER else human
+        for human in FIXTURE['humans']
+    ],
+}
 
 
 def agent_main(platform, key, title, *, tab='profile', agent=AGENT_ID, selector=None, android_key='auto', hint=AGENT_HINT,
@@ -239,12 +251,12 @@ def agent_main(platform, key, title, *, tab='profile', agent=AGENT_ID, selector=
 
 
 def human_main(platform, key, title, who=MEMBER, *, selector=None, android_key='auto', interactions=None,
-               android_interactions=None, flutter=True, note=None):
+               android_interactions=None, flutter=True, note=None, route_set=None):
     desktop = platform == 'desktop'
     add(platform, key, title, 'main', selector=selector or (MAIN if desktop else VIEW),
         android_key=(('desktop-content-detail' if desktop else None) if android_key == 'auto' else android_key), hint=HUMAN_HINT,
         props={'route': f'/human/{who}', **({'openRow': f'human:{who}'} if desktop else {})}, interactions=interactions,
-        android_interactions=android_interactions, flutter=flutter, note=note)
+        android_interactions=android_interactions, flutter=flutter, note=note, route_set=route_set)
 
 
 for platform in ('desktop', 'phone'):
@@ -288,7 +300,7 @@ for platform in ('desktop', 'phone'):
         interactions=[{'type': 'rightclick', 'target': f'[data-member-entry-id="{AGENT_ID}"]'}],
         android_interactions=[
             *([{'type': 'scroll', 'finder': {'pageStorageKey': 'desktop-directory-list'}, 'dy': 540},
-               {'type': 'reveal', 'key': f'desktop-directory-agent-{AGENT_ID}', 'scroll': 'if-needed'}]
+               {'type': 'reveal', 'key': f'desktop-directory-agent-{AGENT_ID}', 'scroll': 'fully-visible'}]
               if phone else []),
             {'type': 'longPress' if phone else 'secondaryTap', 'key': f'desktop-directory-agent-{AGENT_ID}'},
             {'type': 'wait', 'key': 'member-menu-message', 'ms': 0},
@@ -312,6 +324,22 @@ for platform in ('desktop', 'phone'):
                who=GUEST, selector=VIEW, android_key=None,
                interactions=[click('[data-testid="human-promote-guest"]')],
                android_interactions=[tap('human-promote-guest')])
+    for action, who, role, title in [
+        ('owner-grant', MEMBER, 'Owner', 'Human profile: grant owner confirmation'),
+        ('self-demote', SELF, 'Member', 'Human profile: self-demotion confirmation'),
+    ]:
+        confirm = f'human-{action}-confirm'
+        human_main(platform, f'human.{action}-confirm', title, who=who,
+                   selector=f'body:has([data-testid="{confirm}"]) {VIEW}',
+                   android_key=None, route_set=action,
+                   interactions=[
+                       click('button[aria-label="Edit role"]'),
+                       click(f'role=button[name="{role}"s]'),
+                   ],
+                   android_interactions=[
+                       tap('member-edit-role'), tap(role.lower()),
+                       {'type': 'wait', 'key': confirm, 'ms': 0},
+                   ])
     human_main(platform, 'human.role-help', 'Human profile: role permissions help dialog',
                selector=CARD_DLG if not phone else VIEW, android_key='role-help-dialog' if not phone else None,
                interactions=[click(ROLE_HELP_BTN)], android_interactions=[tap_here('member-role-help')])

@@ -71,7 +71,7 @@ void main() {
       expect(find.byType(MemberProfileView), findsOneWidget);
       // The profile column at its default width; the list keeps the rest.
       expect(t.getRect(list).left, page.left);
-      expect(t.getSize(list).width, page.width - 380);
+      expect(t.getSize(list).width, page.width - 400);
 
       // Drag the seam all the way left: the list gives way down to 160.
       final handle = find.byKey(const Key('profile-resize-handle'));

@@ -542,6 +542,7 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
     super.selected,
     this.pointerPressed = false,
     this.menuOpen = false,
+    this.menuOpenColor,
     this.phone = false,
     this.borderWidth,
   }) : super(kind: RaftControlKind.sidebar);
@@ -552,6 +553,7 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   /// Sidebar.tsx `menuOpen`: an unselected Raft row keeps `bg-fill-pressed`
   /// while its context menu is open.
   final bool menuOpen;
+  final Color? menuOpenColor;
   @override
   bool get transformsOnInteraction => false;
   @override
@@ -585,7 +587,9 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
       : foreground;
   @override
   Color get background => !selected
-      ? (menuOpen ? tokens.colors['fill-pressed']! : Colors.transparent)
+      ? (menuOpen
+            ? menuOpenColor ?? tokens.colors['fill-pressed']!
+            : Colors.transparent)
       : tokens.colors['layer-sidebar-item-active']!;
   @override
   Color backgroundFor({bool hovered = false}) {
@@ -1098,6 +1102,8 @@ class RaftNavItem extends StatelessWidget {
       final text = rosterRow
           ? Row(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               spacing: RaftSpace.x1,
               children: [
                 Flexible(
@@ -1248,6 +1254,18 @@ class RaftNavItem extends StatelessWidget {
           SizedBox.square(
             dimension: slot,
             child: Center(child: leading),
+          )
+        else if (rosterRow && wrap)
+          Padding(
+            padding: EdgeInsets.only(
+              top:
+                  (MediaQuery.textScalerOf(context)
+                              .scale(RaftTypeScale.body.fontSize) *
+                          RaftTypeScale.body.height -
+                      19) /
+                  2,
+            ),
+            child: leading,
           )
         else
           leading,
@@ -1435,6 +1453,7 @@ class RaftNavItem extends StatelessWidget {
               selected: selected,
               pointerPressed: pointerPressed,
               menuOpen: menuOpen,
+              menuOpenColor: rosterRow ? t.colors['fill-cell-hover'] : null,
               phone: phoneConversation,
               borderWidth: cellBorder,
             ),
@@ -1466,12 +1485,12 @@ class RaftNavItem extends StatelessWidget {
               horizontal: phoneConversation ? 12 : 8 - cellBorder,
               vertical: wrap ? 6 : 0,
             )
-          : wrap
+          : wrap || rosterRow
           ? EdgeInsets.symmetric(
               horizontal: phoneConversation || rosterRow
                   ? RaftSpace.x3
                   : RaftSpace.x1_5,
-              vertical: rosterRow
+              vertical: rosterRow && wrap
                   ? RaftSpace.x2 + RaftSpace.hairline
                   : RaftSpace.x1_5,
             )

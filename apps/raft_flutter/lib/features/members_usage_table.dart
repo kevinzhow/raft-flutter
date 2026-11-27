@@ -184,13 +184,13 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
     return SliverLayoutBuilder(
       builder: (context, bounds) {
         final width = bounds.crossAxisExtent - 2 * RaftSpace.x5;
-        final wide = width >= 1040;
+        final wide = bounds.crossAxisExtent >= 1040;
         final showStatus = width >= 360;
         final columns = [
           MembersUsageColumn.agent,
           if (width >= 240) MembersUsageColumn.tokens,
           if (width >= 470) MembersUsageColumn.share,
-          if (width >= 760) ...[
+          if (bounds.crossAxisExtent >= 760) ...[
             MembersUsageColumn.perTurn,
             MembersUsageColumn.context,
           ],
@@ -203,7 +203,7 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
         );
         Widget fixedLabel(String text, double width) => SizedBox(
           width: width,
-          child: Text(
+          child: RaftCssText(
             text,
             style: headingStyle,
             maxLines: 1,
@@ -224,6 +224,15 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
             SizedBox(width: column.width, child: figure(column)),
           if (wide) SizedBox(width: _trendWidth, child: trend),
         ];
+        Widget sortArrow(MembersUsageColumn column) => SizedBox.square(
+          dimension: RaftMetrics.iconXs,
+          child: _sort == column
+              ? RaftIcon(
+                  _ascending ? RaftGlyph.arrowUp : RaftGlyph.arrowDown,
+                  size: RaftMetrics.iconXs,
+                )
+              : null,
+        );
         Widget sortHeading(MembersUsageColumn column) => RaftInteractive(
           key: ValueKey('members-usage-sort-${column.name}'),
           selected: _sort == column,
@@ -240,13 +249,9 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.end,
             children: [
-              if (_sort == column)
-                RaftIcon(
-                  _ascending ? RaftGlyph.arrowUp : RaftGlyph.arrowDown,
-                  size: 12,
-                ),
+              if (column != MembersUsageColumn.agent) sortArrow(column),
               Flexible(
-                child: Text(
+                child: RaftCssText(
                   raftText(
                     context,
                     column == MembersUsageColumn.change &&
@@ -261,6 +266,7 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                       : headingStyle,
                 ),
               ),
+              if (column == MembersUsageColumn.agent) sortArrow(column),
             ],
           ),
         );
@@ -271,8 +277,9 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.only(
-                    top: RaftSpace.x1,
-                    right: RaftSpace.x4,
+                    top: RaftSpace.x4,
+                    left: RaftSpace.hairline,
+                    right: RaftSpace.x4 + RaftSpace.hairline,
                     bottom: RaftSpace.x2,
                   ),
                   child: Row(

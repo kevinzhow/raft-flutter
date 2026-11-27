@@ -882,6 +882,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         ),
       if (detailSettled || profile['description'] is String)
         RaftPanelSection(
+          hairline: true,
           children: [
             RaftDescriptionBlock(
               text: '${profile['description'] ?? ''}',
@@ -893,6 +894,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         ),
       if (!summaryOnly)
         RaftPanelSection(
+          hairline: true,
           children: [
             RaftSectionEyebrow(raftText(context, 'Info')),
             if (departure != null)
@@ -949,6 +951,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         ),
       if (detailSettled && !summaryOnly)
         RaftPanelSection(
+          hairline: true,
           children: [
             RaftSectionHeader(
               label: raftText(context, 'Created agents'),
@@ -957,7 +960,10 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
             if (created.isEmpty)
               RaftCssText(
                 raftText(context, 'No agents created yet'),
-                style: RaftInfoRow.hintStyleOf(context),
+                style: t.scale(
+                  RaftTypeScale.callout,
+                  color: t.ui.foregroundHint,
+                ),
               )
             else
               RaftGapColumn(
@@ -992,6 +998,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         ),
       if (canRemove || canPromote)
         RaftPanelSection(
+          hairline: true,
           children: [
             RaftSectionEyebrow(raftText(context, 'Actions')),
             if (canPromote)

@@ -5304,6 +5304,91 @@
      "error": "Fixture usage unavailable"
     }
    }
+  },
+  "owner-grant": {
+   "GET /servers/visual-server/members/visual-user/removal-impact": {
+    "computers": 1,
+    "computerNames": [
+     "Studio workstation"
+    ],
+    "othersAgents": 0
+   }
+  },
+  "self-demote": {
+   "GET /servers/visual-server/members/visual-user/removal-impact": {
+    "computers": 1,
+    "computerNames": [
+     "Studio workstation"
+    ],
+    "othersAgents": 0
+   },
+   "GET /servers/visual-server/members": [
+    {
+     "userId": "visual-user",
+     "serverId": "visual-server",
+     "email": "artin@slock.ai",
+     "gravatarHash": "",
+     "name": "artin",
+     "displayName": "artin",
+     "description": "Owner",
+     "avatarUrl": null,
+     "role": "owner",
+     "joinedAt": "2026-06-18T00:00:00.000Z",
+     "membershipStatus": "active"
+    },
+    {
+     "userId": "visual-human-designer",
+     "serverId": "visual-server",
+     "email": "designer@slock.ai",
+     "gravatarHash": "",
+     "name": "designer",
+     "displayName": "Designer",
+     "description": "Product design",
+     "avatarUrl": null,
+     "role": "owner",
+     "joinedAt": "2026-06-18T00:00:00.000Z",
+     "membershipStatus": "active"
+    },
+    {
+     "userId": "visual-human-jiacheng",
+     "serverId": "visual-server",
+     "email": "jiacheng@slock.ai",
+     "gravatarHash": "",
+     "name": "jiacheng",
+     "displayName": "Jiacheng",
+     "description": "Android",
+     "avatarUrl": null,
+     "role": "member",
+     "joinedAt": "2026-06-18T00:00:00.000Z",
+     "membershipStatus": "active"
+    },
+    {
+     "userId": "visual-human-guest",
+     "serverId": "visual-server",
+     "email": "reviewer@slock.ai",
+     "gravatarHash": "",
+     "name": "reviewer",
+     "displayName": "Guest Reviewer",
+     "description": "External reviewer",
+     "avatarUrl": null,
+     "role": "guest",
+     "joinedAt": "2026-06-18T00:00:00.000Z",
+     "membershipStatus": "active"
+    },
+    {
+     "userId": "visual-human-admin",
+     "serverId": "visual-server",
+     "email": "maya@slock.ai",
+     "gravatarHash": "",
+     "name": "maya",
+     "displayName": "Maya Admin",
+     "description": "Runs the design ops rota",
+     "avatarUrl": null,
+     "role": "admin",
+     "joinedAt": "2026-06-18T00:00:00.000Z",
+     "membershipStatus": "active"
+    }
+   ]
   }
  }
 }

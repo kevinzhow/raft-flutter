@@ -63,7 +63,10 @@ function parityExtMpPrimeStores(props: ParityExtMpProps) {
   const rosterKey = props.params.get("roster") ?? "default";
   const agents = ((parityExtMpFixture.rosters as Record<string, ParityExtMpAgent[]>)[rosterKey] ?? []);
   const humans = parityExtMpFixture.humans as Record<string, unknown>[];
-  const humanRows = props.params.get("humans") === "none" ? [] : humans;
+  const routeSet = props.params.get("routeSet") ?? "";
+  const routes = (parityExtMpFixture.routeSets as Record<string, Record<string, unknown>>)[routeSet];
+  const roleRoster = routeSet === "self-demote" ? routes?.[`GET /servers/${fxServer.id}/members`] : null;
+  const humanRows = props.params.get("humans") === "none" ? [] : (roleRoster ?? humans);
   useAgentStore.setState({
     agents: agents as never,
     agentActivities: Object.fromEntries(agents.map((a) => [a.id, {

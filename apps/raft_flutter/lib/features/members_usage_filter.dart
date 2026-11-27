@@ -9,14 +9,27 @@ typedef MembersUsagePick = ({
   Widget? avatar,
 });
 
-class MembersUsageFilter extends StatefulWidget {
-  const MembersUsageFilter({
+class MembersUsageFilter extends RaftFitPicker {
+  MembersUsageFilter({
     super.key,
+    required super.label,
     required this.options,
     required this.selected,
     required this.onToggle,
     required this.onClear,
-  });
+  }) : super(
+         glyph: RaftGlyph.bot,
+         labelOrder: 20,
+         value: switch (selected.length) {
+           0 => null,
+           1 =>
+             options
+                 .where((option) => selected.contains(option.id))
+                 .firstOrNull
+                 ?.label,
+           final count => '$count',
+         },
+       );
 
   final List<MembersUsagePick> options;
   final Set<String> selected;
@@ -24,10 +37,33 @@ class MembersUsageFilter extends StatefulWidget {
   final VoidCallback onClear;
 
   @override
-  State<MembersUsageFilter> createState() => _MembersUsageFilterState();
+  bool get hasPopup => true;
+
+  @override
+  Widget buildPopup(
+    Widget Function(BuildContext, FocusNode, VoidCallback?) triggerBuilder,
+  ) => _MembersUsageFilterPopup(
+    key: key,
+    filter: this,
+    triggerBuilder: triggerBuilder,
+  );
 }
 
-class _MembersUsageFilterState extends State<MembersUsageFilter> {
+class _MembersUsageFilterPopup extends StatefulWidget {
+  const _MembersUsageFilterPopup({
+    super.key,
+    required this.filter,
+    required this.triggerBuilder,
+  });
+
+  final MembersUsageFilter filter;
+  final Widget Function(BuildContext, FocusNode, VoidCallback?) triggerBuilder;
+
+  @override
+  State<_MembersUsageFilterPopup> createState() => _MembersUsageFilterState();
+}
+
+class _MembersUsageFilterState extends State<_MembersUsageFilterPopup> {
   final _menu = MenuController();
   final _anchor = GlobalKey();
   final _trigger = FocusNode();
@@ -40,37 +76,30 @@ class _MembersUsageFilterState extends State<MembersUsageFilter> {
 
   @override
   Widget build(BuildContext context) {
-    final title = raftText(context, 'Agents');
-    final selected = widget.options
-        .where((option) => widget.selected.contains(option.id))
-        .toList();
-    final value = switch (selected.length) {
-      0 => null,
-      1 => selected.firstOrNull?.label,
-      final count => '$count',
-    };
+    final filter = widget.filter;
     return RaftPopoverAnchor(
       controller: _menu,
       anchorKey: _anchor,
       childFocusNode: _trigger,
       collisionPadding: 16,
       flipVertically: false,
+      snapToDevicePixels: true,
       popup: RaftComboboxPanel.items(
         key: const ValueKey('members-usage-filter-menu'),
         width: (MediaQuery.sizeOf(context).width - 32)
             .clamp(0.0, 260.0)
             .toDouble(),
-        label: title,
+        label: filter.label,
         searchPlaceholder: 'Search…',
         autofocus: RaftInteraction.of(context).pointer,
         highlightFirst: true,
         highlightFirstOnOpen: false,
         onDismiss: _menu.close,
-        onClear: selected.isEmpty ? null : widget.onClear,
-        selectedIds: widget.selected,
-        onSelected: widget.onToggle,
+        onClear: filter.selected.isEmpty ? null : filter.onClear,
+        selectedIds: filter.selected,
+        onSelected: filter.onToggle,
         items: [
-          for (final option in widget.options)
+          for (final option in filter.options)
             RaftComboboxItem(
               option.id,
               option.label,
@@ -81,15 +110,11 @@ class _MembersUsageFilterState extends State<MembersUsageFilter> {
             ),
         ],
       ),
-      builder: (context, controller, _) => RaftPickerTriggerButton(
+      builder: (context, controller, _) => KeyedSubtree(
         key: _anchor,
-        focusNode: _trigger,
-        label: title,
-        value: value,
-        selected: value != null,
-        glyph: RaftGlyph.bot,
-        onPressed: () =>
-            controller.isOpen ? controller.close() : controller.open(),
+        child: widget.triggerBuilder(context, _trigger, () {
+          controller.isOpen ? controller.close() : controller.open();
+        }),
       ),
     );
   }

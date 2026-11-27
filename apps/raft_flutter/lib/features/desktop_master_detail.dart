@@ -82,7 +82,8 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
   late double wideWidth = widget.wideWidth;
   late double compactWidth = widget.compactWidth;
   late double? directoryWidth = widget.directoryWidth;
-  late double panel = widget.detailPanelWidth ?? 380;
+  late double panel =
+      widget.detailPanelWidth ?? RaftAdaptiveWorkspace.profileDefaultWidth;
 
   // While a detail covers the folded master (phones), the framework is handed
   // the master widget it last built when it was visible, so the hidden list is
@@ -138,10 +139,17 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
         DesktopMasterPanelBounds.profileMin,
         double.infinity,
       );
-      final panelWidth = panel.clamp(
+      final desiredPanelWidth = RaftAdaptiveWorkspace.fitDefaultProfileWidth(
+        available: size.maxWidth,
+        preferred: panel,
+      );
+      final panelWidth = desiredPanelWidth.clamp(
         DesktopMasterPanelBounds.profileMin,
         panelMax,
       );
+      final detailEdge = panelMode && !folded
+          ? RaftPanelEdge.left(context)
+          : null;
       final width = panelMode && split
           ? (size.maxWidth - panelWidth).clamp(0.0, size.maxWidth)
           : split && directoryWidth != null
@@ -237,12 +245,9 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
                         // draws the seam on its own left edge, over its
                         // opaque page.
                         child: panelMode
-                            ? DecoratedBox(
+                            ? Container(
                                 key: const ValueKey('desktop-profile-detail'),
-                                position: DecorationPosition.foreground,
-                                decoration: BoxDecoration(
-                                  border: RaftPanelEdge.left(context),
-                                ),
+                                decoration: BoxDecoration(border: detailEdge),
                                 child: widget.detail,
                               )
                             : widget.detail!,
@@ -273,7 +278,9 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
                   reversed: panelMode,
                   min: panelMode ? DesktopMasterPanelBounds.profileMin : null,
                   max: panelMode ? panelMax : null,
-                  defaultValue: panelMode ? 380 : null,
+                  defaultValue: panelMode
+                      ? RaftAdaptiveWorkspace.profileDefaultWidth
+                      : null,
                   onChanged: panelMode
                       ? (next) => setState(
                           () => panel = next.clamp(

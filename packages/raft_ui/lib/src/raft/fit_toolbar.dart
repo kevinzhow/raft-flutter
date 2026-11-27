@@ -400,15 +400,18 @@ class RaftFitGroup extends RaftFitNode {
     this.wrapOrder = 0,
     this.moreOrder,
     this.moreItem,
+    this.collapseOrder,
+    this.collapsed,
     this.scroll = false,
     this.showScrollbar = false,
     this.end,
-  });
+  }) : assert(collapsed == null || !scroll);
   final List<RaftFitItem> items;
   final bool firstLine, scroll, showScrollbar;
   final int wrapOrder;
-  final int? moreOrder;
+  final int? moreOrder, collapseOrder;
   final List<RaftMenuEntry>? moreItem;
+  final RaftFitItem? collapsed;
   final Widget? end;
 }
 
@@ -672,6 +675,12 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
           }
         }
         if (node.end != null) probe('n$i|end', node.end!);
+        if (node.collapsed case final item?) {
+          probe(
+            'n$i|collapsed',
+            item.buildForm(context, RaftFitForm.full, probe: true),
+          );
+        }
       }
     }
     // The text each search holds decides whether it may collapse; a field
@@ -803,6 +812,10 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
             scroll: node.scroll,
             wrapOrder: node.wrapOrder,
             moreOrder: node.moreOrder,
+            collapseOrder: node.collapseOrder,
+            collapsedWidth: node.collapsed == null
+                ? null
+                : _size('$id|collapsed').width,
             endWidth: node.end == null ? 0 : _size('$id|end').width,
           ),
         );
@@ -884,6 +897,9 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
         );
       }
       final group = node as RaftFitGroup;
+      if (plan.has(id, RaftFitStep.collapse)) {
+        return leafWidget(group.collapsed!, '$id|collapsed');
+      }
       final visibleItems = [
         for (var index = 0; index < group.items.length; index++)
           if (!plan.has('$id.$index', RaftFitStep.more) &&
