@@ -865,21 +865,21 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                     : null,
               ),
             if (profile['email'] is String)
-              RaftKeyValueRow(
+              RaftKeyValueRow.humanProfile(
                 label: raftText(context, 'Email'),
                 value: '${profile['email']}',
                 breakAll: true,
               ),
             if (profile['guestChannel'] case {'name': final String channel}
                 when role == 'guest')
-              RaftKeyValueRow(
+              RaftKeyValueRow.humanProfile(
                 label: raftText(context, 'Channel'),
                 value: raftFormat(context, 'Guest in #{channel}', {
                   'channel': channel,
                 }),
               ),
             if (joined != null)
-              RaftKeyValueRow(
+              RaftKeyValueRow.humanProfile(
                 label: raftText(context, 'Joined'),
                 value: joined,
                 mono: true,

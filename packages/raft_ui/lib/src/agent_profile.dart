@@ -1073,36 +1073,56 @@ class RaftKeyValueRow extends StatelessWidget {
     required String this.value,
     this.mono = false,
     this.breakAll = false,
-  }) : child = null;
+  }) : child = null,
+       _humanProfile = false;
+  const RaftKeyValueRow.humanProfile({
+    super.key,
+    required this.label,
+    required String this.value,
+    this.mono = false,
+    this.breakAll = false,
+  }) : child = null,
+       _humanProfile = true;
   const RaftKeyValueRow.child({
     super.key,
     required this.label,
     required Widget this.child,
     this.mono = false,
   }) : value = null,
-       breakAll = false;
+       breakAll = false,
+       _humanProfile = false;
   final String label;
   final String? value;
   final Widget? child;
-  final bool mono, breakAll;
+  final bool mono, breakAll, _humanProfile;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final style = mono
-        ? t.scale(RaftTypeScale.monoMeta, mono: true, color: t.ui.foreground)
-        : RaftInfoRow.detailsStyleOf(context);
+    final labelStyle = _humanProfile
+        ? RaftInfoRow.termStyleOf(context)
+        : RaftPanelText.profileLabel(t);
+    final valueStyle = switch ((_humanProfile, mono)) {
+      (true, true) => t.scale(
+        RaftTypeScale.monoMeta,
+        mono: true,
+        color: t.ui.foreground,
+      ),
+      (true, false) => RaftInfoRow.detailsStyleOf(context),
+      (false, true) => RaftPanelText.profileMono(t),
+      (false, false) => RaftPanelText.profileValue(t),
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        RaftCssText(label, style: RaftInfoRow.termStyleOf(context)),
+        RaftCssText(label, style: labelStyle),
         const SizedBox(height: 4),
         if (child case final node?)
-          DefaultTextStyle.merge(style: style, child: node)
+          DefaultTextStyle.merge(style: valueStyle, child: node)
         else
           RaftCssText(
             breakAll ? value!.characters.join('\u200b') : value!,
-            style: style,
+            style: valueStyle,
           ),
       ],
     );
