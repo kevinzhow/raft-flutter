@@ -5,6 +5,7 @@ import '../data/source_channel_files_store.dart';
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import '../platform/attachment_files.dart';
+import 'channel_file_preview_image.dart';
 import 'source_channel_files_actions.dart';
 
 /// What the channel Files list needs besides its rows: the time format of the
@@ -37,8 +38,7 @@ class ChannelFilesMedia {
     return thumbnail is String &&
         thumbnail.isNotEmpty &&
         (rendition == SourceChannelImageRendition.thumbnail ||
-            file.mimeType.toLowerCase().split(';').first.trim() ==
-                'image/svg+xml');
+            channelFileUsesRasterThumbnail(file));
   }
 
   AttachmentImageKey _imageKey(
@@ -93,7 +93,9 @@ class ChannelFilesMedia {
       authorized: authorized,
       // The 56px row tile takes whichever version is already on disk; a
       // preview (no decode target) needs its own full-size rendition.
-      bestAvailable: rendition == SourceChannelImageRendition.thumbnail,
+      bestAvailable:
+          rendition == SourceChannelImageRendition.thumbnail &&
+          !channelFileUsesRasterThumbnail(file),
       load: (cancel) async {
         String url;
         if (usesThumbnail) {

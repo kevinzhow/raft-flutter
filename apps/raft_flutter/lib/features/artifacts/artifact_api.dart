@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../../platform/content_links.dart';
+import '../../platform/raft_deployment_links.dart';
 import 'artifact_models.dart';
 
 /// The Artifact routes, as Web's `artifactWebPaths` builds them (the client
@@ -226,12 +227,10 @@ class ArtifactDeployment {
     defaultValue: 'https://api.raft.build',
   );
 
-  static final _configs = Expando<Future<RaftClientConfig>>('client config');
-
   /// The deployment of [client]'s server: the client config is read once per
   /// client (it is the same for everyone on a deployment).
   static Future<ArtifactDeployment> of(RaftClient client) async {
-    final config = await (_configs[client] ??= client.clientConfig());
+    final config = await RaftDeploymentLinks.of(client).load();
     return resolve(
       client.origin,
       config.appHosts,

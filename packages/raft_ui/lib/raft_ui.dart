@@ -44,6 +44,14 @@ export 'src/panel_edge.dart';
 export 'src/side_panel_frame.dart';
 export 'src/localization.dart';
 export 'src/message_body.dart';
+export 'src/markdown_quote_links.dart';
+export 'src/qualified_task_reference.dart'
+    show
+        raftDmPeerPattern,
+        raftQualifiedTaskPattern,
+        raftQualifiedTaskReferences,
+        raftReferenceNamePattern,
+        raftTaskReferenceSeparator;
 export 'src/message_card.dart';
 export 'src/math_formula.dart';
 export 'src/raft_underline.dart';

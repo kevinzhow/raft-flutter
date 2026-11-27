@@ -1,3 +1,5 @@
+import 'package:raft_ui/raft_ui.dart' show raftMarkdownQuoteLinks;
+
 /// Web `ParsedRaftPermalink` (packages/shared raftPermalinks.ts).
 class RaftPermalink {
   const RaftPermalink({
@@ -60,10 +62,11 @@ String? _leadingId(String value) => _leadingMessageId.firstMatch(value)?[1];
 RaftPermalink? parseRaftPermalink(
   String href, {
   Iterable<String?> hostnames = const [],
+  Uri? webOrigin,
 }) {
   final Uri url;
   try {
-    url = Uri.parse(href);
+    url = Uri.parse(_webHref(href, webOrigin));
   } catch (_) {
     return null;
   }
@@ -104,32 +107,37 @@ RaftPermalink? parseRaftPermalink(
   );
 }
 
-const _cjkBoundary = '，。、；：！？）》」』】》〉”’（《「『【〈“‘';
-final _urlPattern = RegExp('https?://[^\\s<>"\'$_cjkBoundary]+');
-final _trailingPunctuation = RegExp(r'[),.!?;:，。！？；：]+$');
-final _fencedCode = RegExp(r'```[\s\S]*?```');
-final _inlineCode = RegExp(r'``[^`]+``|`[^`]+`');
+String _webHref(String href, Uri? webOrigin) {
+  final route = href.startsWith('raft:///s/')
+      ? href.substring(7)
+      : href.startsWith('raft://s/')
+      ? '/${href.substring(7)}'
+      : null;
+  return (route == null
+          ? href
+          : '${webOrigin?.origin ?? 'https://app.raft.build'}$route')
+      .replaceAll('&amp;', '&');
+}
 
 /// Web `extractFirstQuotedMessagePermalink`: the first permalink of this
 /// server in [content] outside code and outside markdown `(…)` links.
 ({String rawUrl, RaftPermalink parsed})? extractFirstQuotedPermalink(
   String content, {
   String? hostname,
+  Iterable<String?> hostnames = const [],
+  Uri? webOrigin,
   String? serverSlug,
 }) {
-  if (!content.contains('http') || serverSlug == null) return null;
-  // Protect code with same-length placeholders so offsets stay valid.
-  final text = content
-      .replaceAllMapped(_fencedCode, (m) => '\u0000' * m[0]!.length)
-      .replaceAllMapped(_inlineCode, (m) => '\u0000' * m[0]!.length);
-  for (final match in _urlPattern.allMatches(text)) {
-    final raw = match[0]!;
-    if (match.start > 0 && text[match.start - 1] == '(') continue;
-    final trailing = _trailingPunctuation.firstMatch(raw)?[0] ?? '';
-    final candidate = trailing.isEmpty
-        ? raw
-        : raw.substring(0, raw.length - trailing.length);
-    final parsed = parseRaftPermalink(candidate, hostnames: [hostname]);
+  if (serverSlug == null ||
+      !(content.contains('http') || content.contains('raft://'))) {
+    return null;
+  }
+  for (final href in raftMarkdownQuoteLinks(content)) {
+    final candidate = _webHref(href, webOrigin);
+    final parsed = parseRaftPermalink(
+      candidate,
+      hostnames: [hostname, ...hostnames],
+    );
     if (parsed == null || parsed.serverSlug != serverSlug) continue;
     return (rawUrl: candidate, parsed: parsed);
   }

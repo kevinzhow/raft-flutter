@@ -101,7 +101,11 @@ int _bracketKind(int c) => switch (c) {
 /// `http://` and `https://` link wherever they appear; `www.` only at a
 /// start, after whitespace or after punctuation (so `见：www.example.com`
 /// links and `awww.example.com` does not), as remark-gfm does.
-RaftBareUrl? raftBareUrlAt(String source, int index) {
+RaftBareUrl? raftBareUrlAt(
+  String source,
+  int index, {
+  bool desktopRoutes = false,
+}) {
   if (index < 0 || index >= source.length) return null;
   final first = source.codeUnitAt(index) | 0x20;
   int schemeEnd;
@@ -116,6 +120,15 @@ RaftBareUrl? raftBareUrlAt(String source, int index) {
   } else if (first == 0x77 && _startsWithFold(source, index, 'www.')) {
     if (index > 0 && _isWordBefore(source, index - 1)) return null;
     schemeEnd = index + 4;
+  } else if (desktopRoutes &&
+      first == 0x72 &&
+      (source.startsWith('raft:///s/', index) ||
+          source.startsWith('raft://s/', index))) {
+    if (index > 0 &&
+        (_isWordBefore(source, index - 1) || source[index - 1] == '_')) {
+      return null;
+    }
+    schemeEnd = index + 7;
   } else {
     return null;
   }
@@ -338,12 +351,15 @@ List<RaftBareUrl> raftBareUrls(String source) {
 /// Inline syntax for [raftBareUrlAt]. Registered as a custom syntax it runs
 /// before the GFM autolink, so a URL is decided here wherever it starts.
 class RaftBareUrlSyntax extends md.InlineSyntax {
-  RaftBareUrlSyntax() : super(r'(?:https?://|www\.)', caseSensitive: false);
+  RaftBareUrlSyntax({this.desktopRoutes = false})
+    : super(r'(?:https?://|www\.|raft://)', caseSensitive: false);
+
+  final bool desktopRoutes;
 
   @override
   bool tryMatch(md.InlineParser parser, [int? startMatchPos]) {
     final pos = startMatchPos ?? parser.pos;
-    final url = raftBareUrlAt(parser.source, pos);
+    final url = raftBareUrlAt(parser.source, pos, desktopRoutes: desktopRoutes);
     if (url == null) return false;
     parser
       ..writeText()

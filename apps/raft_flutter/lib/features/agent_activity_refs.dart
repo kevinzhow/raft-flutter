@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'qualified_task_navigation.dart';
 
 /// Web `AgentActivityLog` `RefText` (components/agent/RefText.tsx): the
 /// `#channel`, `#channel:shortid`, `#channel:#7`, `dm:@peer`,
@@ -17,18 +18,11 @@ import '../data/workspace_controller.dart';
 /// `#c:shortid` are not shadowed by `#c`): channel-task, dm-task,
 /// channel-thread, dm-thread, channel, dm. The grammar is raft-shared's
 /// `raftRefs` (the task separator is `:#`).
-const _channelName = r'[\p{L}\p{N}_-]+';
-const _dmPeer = r'[\w.-]+(?:~(?:agent|human))?(?![\w.~-])';
 const _shortId = r'[\da-f]{6,8}';
-const _taskNumber = r'[1-9]\d*';
-const _taskEnd = r'(?![\p{L}\p{N}_/-]|:#)';
 final _scan = RegExp(
-  '#($_channelName):#($_taskNumber)$_taskEnd'
-  '|dm:@($_dmPeer):#($_taskNumber)$_taskEnd'
-  '|#($_channelName):($_shortId)'
-  '|dm:@($_dmPeer):($_shortId)'
-  '|#($_channelName)'
-  '|dm:@($_dmPeer)',
+  '$raftQualifiedTaskPattern'
+  '|#(?<channel>$raftReferenceNamePattern)(?::(?<channelThread>$_shortId))?'
+  '|dm:@(?<peer>$raftDmPeerPattern)(?::(?<dmThread>$_shortId))?',
   unicode: true,
   caseSensitive: false,
 );
@@ -41,54 +35,29 @@ class _Ref {
 }
 
 _Ref _partsOf(RegExpMatch m) {
-  if (m[1] != null) {
-    return _Ref(channelName: m[1], taskNumber: int.parse(m[2]!));
+  final task = m[3];
+  if (task != null) {
+    final number = int.tryParse(task);
+    return number == null
+        ? const _Ref()
+        : _Ref(channelName: m[1], dmPeer: m[2], taskNumber: number);
   }
-  if (m[3] != null) return _Ref(dmPeer: m[3], taskNumber: int.parse(m[4]!));
-  if (m[5] != null) return _Ref(channelName: m[5], shortId: m[6]);
-  if (m[7] != null) return _Ref(dmPeer: m[7], shortId: m[8]);
-  if (m[9] != null) return _Ref(channelName: m[9]);
-  return _Ref(dmPeer: m[10]);
+  return _Ref(
+    channelName: m.namedGroup('channel'),
+    dmPeer: m.namedGroup('peer'),
+    shortId: m.namedGroup('channelThread') ?? m.namedGroup('dmThread'),
+  );
 }
 
-/// Web `findChannelByName`: channel / private / joint, case-insensitive.
-RaftChannel? _channelOf(WorkspaceController w, String? name) => name == null
-    ? null
-    : w.channels
-          .where(
-            (c) =>
-                const {
-                  'channel',
-                  'private',
-                  'joint',
-                }.contains(c.string('type')) &&
-                c.string('name').toLowerCase() == name.toLowerCase(),
-          )
-          .firstOrNull;
-
-/// Web `findDmByPeer`: `name~agent` / `name~human` pins the peer's kind; an
-/// unknown kind matches nothing. The name is a handle, matched case-sensitively.
-RaftChannel? _dmOf(WorkspaceController w, String? peer) {
-  if (peer == null || peer.isEmpty) return null;
-  final split = peer.indexOf('~');
-  final name = split < 0 ? peer : peer.substring(0, split);
-  final kind = split < 0 ? null : peer.substring(split + 1);
-  if (name.isEmpty || (kind != null && kind != 'agent' && kind != 'human')) {
-    return null;
+RaftChannel? _conversationOf(WorkspaceController w, _Ref ref) {
+  if (ref.dmPeer case final peer?) {
+    return resolveMessageDmReference(w.dms, peer, requireUnique: false);
   }
-  final want = kind == null ? null : (kind == 'human' ? 'user' : 'agent');
-  return w.dms
-      .where(
-        (c) =>
-            (c.string('peerName') == name || c.string('name') == name) &&
-            (want == null || c.string('peerType') == want),
-      )
-      .firstOrNull;
+  if (ref.channelName case final name?) {
+    return resolveMessageChannelReference(w.channels, name);
+  }
+  return null;
 }
-
-/// The conversation a ref names, in the reader's local lists.
-RaftChannel? _conversationOf(WorkspaceController w, _Ref ref) =>
-    ref.dmPeer != null ? _dmOf(w, ref.dmPeer) : _channelOf(w, ref.channelName);
 
 /// Whether [text] holds a ref that resolves for this reader (a pill, not
 /// plain text).

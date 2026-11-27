@@ -4,6 +4,7 @@ import 'package:markdown/markdown.dart' as md;
 
 import 'markdown_autolink.dart';
 import 'markdown_cjk_emphasis.dart';
+import 'markdown_lazy_quote.dart';
 import 'markdown_math.dart';
 import 'message_ref_target.dart';
 
@@ -42,6 +43,7 @@ class RaftClaimedText extends md.Text {
 /// Attribute set on a link written as `[label](<target>)` or `<scheme:target>`:
 /// only these forms are refs (`[x](#general)` is not).
 const raftAngleLinkAttribute = 'raft-angle';
+const raftLabelledLinkAttribute = 'raft-labelled';
 
 /// Web 1.24 `isRetiredResourceRef`: `<computer:…>` / `<app:…>` belonged to the
 /// dropped composer resource references. Such text, well-formed or not, is
@@ -51,8 +53,6 @@ bool raftIsRetiredResourceRef(String target) =>
 
 /// Attribute set on `del` written with a single tilde.
 const raftSingleTildeAttribute = 'raft-single-tilde';
-
-const _splitTag = 'raft-split';
 
 class _RaftEscapeSyntax extends md.InlineSyntax {
   _RaftEscapeSyntax() : super(r'\\([!-/:-@\[-`{-~])', startCharacter: 0x5c);
@@ -109,9 +109,10 @@ class _RaftLinkSyntax extends md.LinkSyntax {
     if (nodes == null) return null;
     final end = (parser.pos + 1).clamp(0, parser.source.length);
     final raw = parser.source.substring(opener.endPos, end);
-    if (_labelledAngle.hasMatch(raw)) {
-      for (final node in nodes) {
-        if (node is md.Element && node.tag == 'a') {
+    for (final node in nodes) {
+      if (node is md.Element && node.tag == 'a') {
+        node.attributes[raftLabelledLinkAttribute] = '1';
+        if (_labelledAngle.hasMatch(raw)) {
           node.attributes[raftAngleLinkAttribute] = '1';
         }
       }
@@ -151,7 +152,7 @@ class _RaftBlockquoteSyntax extends md.BlockSyntax {
   @override
   md.Node parse(md.BlockParser parser) {
     final childLines = <md.Line>[];
-    int? lazyStart;
+    final lazyLines = <int>[];
     var lazyTail = false;
     while (!parser.isDone) {
       final line = parser.current;
@@ -173,7 +174,7 @@ class _RaftBlockquoteSyntax extends md.BlockSyntax {
       if (other is md.ParagraphSyntax &&
           !last.isBlankLine &&
           !_fenceLine.hasMatch(last.content)) {
-        lazyStart ??= childLines.length;
+        lazyLines.add(childLines.length);
         lazyTail = true;
         childLines.add(line);
         parser.advance();
@@ -181,27 +182,29 @@ class _RaftBlockquoteSyntax extends md.BlockSyntax {
         break;
       }
     }
-    if (lazyStart != null) {
-      final before = md.BlockParser(
-        childLines.sublist(0, lazyStart),
-        parser.document,
-      ).parseLines(parentSyntax: this);
-      final last = before.isEmpty ? null : before.last;
-      if (last is md.Element && last.tag == 'p') {
-        final after = md.BlockParser(
-          childLines.sublist(lazyStart),
-          parser.document,
-        ).parseLines();
-        return md.Element(_splitTag, [
-          md.Element('blockquote', before),
-          ...after,
-        ]);
-      }
-    }
     final children = md.BlockParser(
       childLines,
       parser.document,
     ).parseLines(disabledSetextHeading: lazyTail, parentSyntax: this);
+    final last = children.lastOrNull;
+    if (lazyLines.isNotEmpty &&
+        parser.parentSyntax is! _RaftBlockquoteSyntax &&
+        last is md.Element &&
+        last.tag == 'p' &&
+        last.children?.singleOrNull is md.UnparsedContent) {
+      final source = last.textContent;
+      final lineCount = '\n'.allMatches(source).length + 1;
+      final firstLine = childLines.length - lineCount;
+      final lazyLine = lazyLines.where((line) => line > firstLine).firstOrNull;
+      if (lazyLine != null) {
+        final boundary = '\n'
+            .allMatches(source)
+            .elementAt(lazyLine - firstLine - 1)
+            .end;
+        children[children.length - 1] = md.Element.empty('p');
+        return RaftLazyQuote(children, source, boundary);
+      }
+    }
     return md.Element('blockquote', children);
   }
 }
@@ -218,7 +221,7 @@ md.ExtensionSet _extensions(RaftMarkdownMode mode) {
     // Web 1.24 remarkRaftMath and remark-cjk-friendly, in every mode.
     RaftMathTextSyntax(),
     ...raftCjkEmphasisSyntaxes(),
-    RaftBareUrlSyntax(),
+    RaftBareUrlSyntax(desktopRoutes: mode == RaftMarkdownMode.message),
     ...gfm.inlineSyntaxes,
   ];
   if (mode == RaftMarkdownMode.document) {
@@ -250,15 +253,19 @@ md.ExtensionSet _extensions(RaftMarkdownMode mode) {
 
 /// Parses [source] into the base tree: before any ref or search pass.
 List<md.Node> raftParseMarkdown(String source, RaftMarkdownMode mode) {
-  final nodes = md.Document(
+  final document = md.Document(
     extensionSet: _extensions(mode),
     withDefaultBlockSyntaxes: mode == RaftMarkdownMode.document,
     encodeHtml: false,
-  ).parseLines(const LineSplitter().convert(source));
+  );
+  final parsed = document.parseLines(const LineSplitter().convert(source));
+  final nodes = mode == RaftMarkdownMode.message
+      ? _splitLazyQuotes(parsed, document)
+      : parsed;
   raftFlattenNestedLinks(nodes);
   if (mode == RaftMarkdownMode.document) return nodes;
   if (mode == RaftMarkdownMode.compact) return _dedentProse(nodes);
-  return _htmlAsParagraphs(_unwrapSplits(_dedentProse(nodes)), true);
+  return _htmlAsParagraphs(_dedentProse(nodes), true);
 }
 
 /// An element with the same tag and attributes over [children].
@@ -272,22 +279,17 @@ md.Element raftCopyElement(md.Element element, List<md.Node> children) =>
           : md.Element(element.tag, children))
       ..attributes.addAll(element.attributes);
 
-List<md.Node> _unwrapSplits(List<md.Node> nodes) {
-  final out = <md.Node>[];
-  for (final node in nodes) {
-    if (node is md.Element && node.children != null) {
-      final children = _unwrapSplits(node.children!);
-      if (node.tag == _splitTag) {
-        out.addAll(children);
-      } else {
-        out.add(raftCopyElement(node, children));
-      }
-    } else {
-      out.add(node);
-    }
-  }
-  return out;
-}
+List<md.Node> _splitLazyQuotes(List<md.Node> nodes, md.Document document) => [
+  for (final node in nodes)
+    if (node is RaftLazyQuote)
+      ...node.split(document)
+    else if (node is md.Element &&
+        node.tag != 'blockquote' &&
+        node.children != null)
+      raftCopyElement(node, _splitLazyQuotes(node.children!, document))
+    else
+      node,
+];
 
 /// Raw HTML a user typed is shown as the text they typed (Web
 /// `remarkRawHtmlAsText`); a block of HTML becomes a paragraph.

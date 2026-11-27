@@ -1,3 +1,5 @@
+import 'qualified_task_reference.dart';
+
 /// Port of Web `parseRaftRefTarget` / `formatRaftRefTarget`
 /// (`packages/shared/src/raftRefs.ts`): the targets that `<target>` and
 /// `[label](<target>)` can name.
@@ -16,8 +18,8 @@ enum RaftRefKind {
 
 typedef RaftRefTarget = ({RaftRefKind kind, String text, int? taskNumber});
 
-const _name = r'[\p{L}\p{N}_-]+';
-const _peer = r'[\w.-]+(?:~(?:agent|human))?(?![\w.~-])';
+const _name = raftReferenceNamePattern;
+const _peer = raftDmPeerPattern;
 const _short = r'[\da-f]{6,8}';
 const _messageId = r'[A-Za-z0-9][A-Za-z0-9-]{1,63}';
 
@@ -66,6 +68,16 @@ RaftRefTarget? raftParseRefTarget(String raw) {
   m = _task.firstMatch(target);
   if (m != null) {
     return make(RaftRefKind.task, 'task #${m[1]}', int.parse(m[1]!));
+  }
+  final qualified = raftQualifiedTaskReferences(target).firstOrNull;
+  if (qualified != null &&
+      qualified.start == 0 &&
+      qualified.end == target.length) {
+    return make(
+      RaftRefKind.task,
+      '${qualified.dm ? 'dm:@' : '#'}${qualified.conversation}$raftTaskReferenceSeparator${qualified.number}',
+      qualified.number,
+    );
   }
   m = _computer.firstMatch(target);
   if (m != null) {

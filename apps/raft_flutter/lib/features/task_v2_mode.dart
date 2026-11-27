@@ -4,7 +4,7 @@
 // the message it was created from (`sourceMessageId`). Such a task keeps
 // working the v2 way whatever the `task_v2_conversations_v0` flag says now.
 import 'package:flutter/widgets.dart';
-import 'package:raft_ui/raft_ui.dart' show raftText;
+import 'package:raft_ui/raft_ui.dart' show raftTaskReferenceSeparator, raftText;
 
 /// Web ThreadPanelComposer: the composer's placeholder, "Message this task"
 /// in a task's own conversation (`hideParentMessage`), else "Message thread".
@@ -110,11 +110,11 @@ String formatTaskConversationRef(
   final number = task['taskNumber'];
   if (task['channelType'] == 'dm') {
     return dmPeerName != null && dmPeerName.isNotEmpty
-        ? 'dm:@$dmPeerName:#$number'
+        ? 'dm:@$dmPeerName$raftTaskReferenceSeparator$number'
         : '#$number';
   }
   final name = '${task['channelName'] ?? ''}'.replaceFirst(RegExp('^#'), '');
-  return name.isEmpty ? '#$number' : '#$name:#$number';
+  return name.isEmpty ? '#$number' : '#$name$raftTaskReferenceSeparator$number';
 }
 
 /// Web `getTaskStatusOptions`: every status from any status (the server has

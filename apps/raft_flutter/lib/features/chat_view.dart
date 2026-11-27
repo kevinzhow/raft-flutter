@@ -37,7 +37,7 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_messages.dart';
 import '../data/message_translation_store.dart';
 import '../data/source_time_formatter.dart';
-import '../platform/content_links.dart';
+import '../platform/raft_deployment_links.dart';
 import '../data/personal_presentation.dart';
 import '../platform/file_selection.dart';
 import 'attachment_preview_dialog.dart' show attachmentPreviewKind;
@@ -2430,11 +2430,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         m.json['sourceServerId'] != w.server?.id) {
       return null;
     }
-    return extractFirstQuotedPermalink(
-      m.content,
-      hostname: ContentLinks.originFor(w.client.origin).host,
-      serverSlug: w.server?.string('slug'),
-    );
+    return RaftDeploymentLinks.of(w.client)
+        .quote(m.content, w.server?.string('slug'));
   }
 
   /// Raw URL of a row's permalink whose preview could not be read.

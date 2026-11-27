@@ -188,7 +188,8 @@ class RaftToast extends StatelessWidget {
           if (close != null && action != null)
             SizedBox(width: s.actions.columnGap ?? 16),
           if (action != null) action,
-        ],
+        ] else if (icon)
+          SizedBox(width: s.content.columnGap ?? 12),
       ],
     );
     Widget root = RaftRecipeBox(

@@ -185,6 +185,7 @@ same way (including "inert").
 | Chat main | `#channel` link | Opens the channel | `nav.toChannel` | OK (matrix) |
 | Chat main | Message / thread link, permalink chip, quoted card | `jumpToMessage` / `openThreadIdentity` (leaves Activity / Search, as Web) | `toMessage` + `openThread` | OK (`message_presentation_test`, `quoted_message_preview_test`) |
 | Chat main | Inline `#N` task reference | Task slot (`?task=`) | `onOpenTaskRef` -> task modal | FIXED (was a read-only dialog with "Open message") |
+| Chat main and agent Activity | `#channel:#N` and `dm:@peer:#N` | Resolves the task number in the named conversation, closes the profile, and opens the task slot. A legacy task closes the thread and opens in its conversation's Tasks tab. Back from the legacy task returns to that Tasks tab. | `openTaskByChannelNumber` | Covered by `use_ref_navigation_message_reference_patterns_test` and `agent_activity_task_open_test`. |
 | Chat main | Linked task chip | Task slot | task modal | OK (matrix); FIXED for hosts without a task slot (opened the thread, wrong target; now painted disabled) |
 | Chat main | Reaction chip | Toggles the reaction | same | OK (matrix) |
 | Chat main | Attachment chip | Preview dialog / lightbox | same | OK (matrix) |

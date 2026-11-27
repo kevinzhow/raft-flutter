@@ -1,5 +1,8 @@
 import 'package:flutter/widgets.dart';
 
+export 'markdown_mention_ranges.dart'
+    show raftStructuredMentionAppears, raftStructuredMentionMatcher;
+
 /// A suggestion is supplied by the application after current server/channel
 /// authority checks. The pure composer does not fetch directories.
 class RaftComposerSuggestion {
@@ -47,24 +50,6 @@ class RaftComposerSuggestion {
   String get insertion =>
       referenceText ?? '${type == 'channel' ? '#' : '@'}$name';
   Map<String, dynamic> get mention => {'type': type, 'id': id, 'name': name};
-}
-
-/// Selected identities remain bound to exact visible handles, including a
-/// handle inserted next to Chinese text. Code and resource labels do not send
-/// notifications, matching the source structured-mention contract.
-bool raftStructuredMentionAppears(String text, String name) {
-  if (!RegExp(r'^[\p{L}\p{N}_-]+$', unicode: true).hasMatch(name)) return false;
-  final prose = text.replaceAll(
-    RegExp(
-      r'```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)|`[^`]*(?:`|$)|\\<@[\p{L}\p{N}_-]+>|\[(?:\\.|[^\]\\])*\]\(<(?:raft-ref://(?:computer|app)|computer:|app:)[^<>\n]*>\)',
-      unicode: true,
-    ),
-    '',
-  );
-  return RegExp(
-    '@${RegExp.escape(name)}(?![\\p{L}\\p{N}_-])',
-    unicode: true,
-  ).hasMatch(prose);
 }
 
 class RaftComposerTrigger {

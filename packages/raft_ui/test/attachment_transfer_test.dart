@@ -209,7 +209,7 @@ void main() {
       });
 
       testWidgets(
-        'card: a pending image shows only the placeholder; a failed one a retry band',
+        'card: a pending image shows a placeholder and a failed one opens the original',
         (tester) async {
           var retries = 0, opens = 0;
           await tester.pumpWidget(
@@ -236,32 +236,22 @@ void main() {
               ),
             ),
           );
-          // List tiles never show transfer text or a bar while loading: the
-          // neutral placeholder only (Web's tinted image box).
-          expect(find.byType(RaftTransferPlaceholder), findsNWidgets(2));
+          expect(find.byType(RaftTransferPlaceholder), findsOneWidget);
           expect(find.text('Connecting…'), findsNothing);
-          expect(
-            find.byType(RaftTransferBar),
-            findsOneWidget,
-            reason: 'failed tile only',
-          );
-          expect(find.byType(RaftTransferChip), findsOneWidget);
-          expect(find.text('Download failed · tap to retry'), findsOneWidget);
-          // The chip band retries; the rest of the failed tile still opens.
-          await tester.tap(find.byKey(const ValueKey('attachment-retry')));
-          expect(retries, 1);
-          expect(opens, 0);
-          final failed = find.byType(RaftAttachmentCard).last;
-          await tester.tapAt(tester.getTopLeft(failed) + const Offset(150, 40));
+          expect(find.byType(RaftTransferBar), findsNothing);
+          expect(find.byType(RaftTransferChip), findsNothing);
+          final unavailable = find.byType(RaftAttachmentUnavailableThumbnail);
+          expect(unavailable, findsOneWidget);
+          await tester.tap(unavailable);
           expect(opens, 1);
-          expect(retries, 1);
+          expect(retries, 0);
         },
       );
 
-      testWidgets('card: the failed retry is reachable by keyboard', (
+      testWidgets('card: the original is reachable by keyboard after failure', (
         tester,
       ) async {
-        var retries = 0;
+        var opens = 0;
         await tester.pumpWidget(
           host(
             dark,
@@ -270,44 +260,15 @@ void main() {
               mimeType: 'image/jpeg',
               imageExtent: const Size(300, 200),
               error: 'x',
-              onRetry: () => retries++,
-              onOpen: () {},
+              onOpen: () => opens++,
             ),
           ),
         );
-        // Tab order: the tile, then the retry band.
-        bool onRetry() {
-          var inside = false;
-          FocusManager.instance.primaryFocus?.context?.visitAncestorElements((
-            element,
-          ) {
-            inside = element.widget.key == const ValueKey('attachment-retry');
-            return !inside;
-          });
-          return inside;
-        }
-
-        for (var i = 0; i < 6 && !onRetry(); i++) {
-          await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-          await tester.pump();
-        }
-        expect(onRetry(), isTrue);
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
         await tester.sendKeyEvent(LogicalKeyboardKey.enter);
         await tester.pump();
-        expect(retries, 1);
-        expect(
-          tester.getSemantics(find.byKey(const ValueKey('attachment-retry'))),
-          matchesSemantics(
-            isButton: true,
-            hasEnabledState: true,
-            isEnabled: true,
-            isFocusable: true,
-            hasTapAction: true,
-            hasFocusAction: true,
-            isFocused: true,
-            label: 'Download failed · tap to retry',
-          ),
-        );
+        expect(opens, 1);
       });
 
       testWidgets('file panel: progress text, cancel, retry', (tester) async {

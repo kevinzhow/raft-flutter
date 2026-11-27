@@ -31,6 +31,7 @@ import '../data/attachment_transfer.dart';
 import 'attachment_comments_view.dart';
 import 'attachment_video_comments.dart';
 import 'attachment_transfer_view.dart';
+import 'document_preview_download_fallback.dart';
 
 String? attachmentPreviewKind(Map<String, dynamic> metadata) {
   final name = '${metadata['filename'] ?? ''}'.toLowerCase();
@@ -200,6 +201,7 @@ class AttachmentPreviewDialog extends StatefulWidget {
     required this.authorized,
     required this.onClose,
     required this.onDownload,
+    this.allowFallbackDownload,
     this.onShare,
     this.onNetworkSettings,
     this.files,
@@ -216,6 +218,7 @@ class AttachmentPreviewDialog extends StatefulWidget {
   final bool Function() authorized;
   final VoidCallback onClose;
   final Future<void> Function() onDownload;
+  final Future<bool> Function()? allowFallbackDownload;
 
   /// The system share sheet; null where the platform has none.
   final Future<void> Function()? onShare;
@@ -241,6 +244,7 @@ class AttachmentPreviewDialog extends StatefulWidget {
 class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     with WidgetsBindingObserver {
   final cancel = CancelToken();
+  final documentFallback = DocumentPreviewDownloadFallback();
   SharedFileLease? lease;
   LinuxDependencyMissing? dependency;
 
@@ -514,6 +518,15 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
           unavailableRetry = retry;
         });
       } else if (current && ticket == request) {
+        if (kind == 'document' &&
+            (failure is! RaftApiException ||
+                ![401, 403].contains(failure.status))) {
+          await downloadUnavailableDocument(
+            ticket,
+            DocumentPreviewUnavailableReason.unsupported,
+          );
+          return;
+        }
         setState(() {
           // The server's own reason when it sent one (rate limited, not found,
           // too large); otherwise the generic text, with the cause logged.
@@ -630,6 +643,19 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     return size != null && size > AttachmentPreviewFiles.maxBytes;
   }
 
+  Future<void> downloadUnavailableDocument(
+    int ticket,
+    DocumentPreviewUnavailableReason reason,
+  ) => documentFallback.run(
+    context: context,
+    filename: '${widget.metadata['filename'] ?? ''}',
+    reason: reason,
+    current: () => current && ticket == request,
+    allowed: widget.allowFallbackDownload,
+    close: widget.onClose,
+    download: widget.onDownload,
+  );
+
   /// The server gave no preview ([reason] is its refusal code, or `unknown`):
   /// read the original here when the app renders this kind, in the same
   /// renderer as a server preview; otherwise say why and offer the system app
@@ -637,11 +663,18 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
   Future<void> showLocally(int ticket, String reason) async {
     localReason = reason;
     final localKind = localDocumentKind(widget.metadata);
-    if (localKind == null || reason == 'unreadable' || tooLargeToFetch) {
+    if (tooLargeToFetch || (localKind == null && !canOpenWithSystem)) {
+      await downloadUnavailableDocument(
+        ticket,
+        tooLargeToFetch
+            ? DocumentPreviewUnavailableReason.tooLarge
+            : DocumentPreviewUnavailableReason.fromServer(reason),
+      );
+      return;
+    }
+    if (localKind == null || reason == 'unreadable') {
       setState(() {
-        unavailable = tooLargeToFetch
-            ? 'This file is too large to open here. Download it instead.'
-            : refusalMessage(reason);
+        unavailable = refusalMessage(reason);
         unavailableRetry = null;
       });
       return;

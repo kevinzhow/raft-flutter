@@ -237,7 +237,7 @@ void main() {
     await tick(tester);
     expectPlaceholderOnly();
     // The bytes complete (the fixture is not an image, so decoding fails):
-    // the transfer is over and the failed tile offers a retry.
+    // the transfer is over and the failed tile stays available to open.
     route.chunk(mib);
     route.finish();
     await hop(tester, 10);
@@ -245,7 +245,8 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );
     await hop(tester, 4);
-    expect(find.text('Download failed · tap to retry'), findsOneWidget);
+    expect(find.byType(RaftAttachmentUnavailableThumbnail), findsOneWidget);
+    expect(find.byTooltip('Preview image.png'), findsOneWidget);
   });
 
   testWidgets('a thumbnail loads directly: placeholder only, no URL lookup', (
@@ -300,28 +301,34 @@ void main() {
     expect(server2.routes['/original']!.requests, 0);
   });
 
-  testWidgets('failure shows the retry chip; retry refetches', (tester) async {
+  testWidgets('failed thumbnail opens the original in the viewer', (
+    tester,
+  ) async {
     final server = FakeServer()
-      ..routes['/original'] = FakeRoute(length: 4 * mib);
-    server.routes['/original']!.failNext = true;
-    await mount(tester, server: server);
+      ..routes['/original'] = FakeRoute(length: 4 * mib)
+      ..routes['/thumb.webp'] = (FakeRoute()..failNext = true);
+    await mount(
+      tester,
+      server: server,
+      metadata: {
+        'sizeBytes': 4 * mib,
+        'thumbnailUrl': 'https://cdn.example.invalid/thumb.webp',
+      },
+    );
     await hop(tester);
     await tick(tester);
-    expect(find.text('Download failed · tap to retry'), findsOneWidget);
-    expect(find.byKey(const ValueKey('attachment-retry')), findsOneWidget);
-    expect(server.routes['/original']!.requests, 1);
-    await tester.tap(find.byKey(const ValueKey('attachment-retry')));
+    expect(find.byType(RaftAttachmentUnavailableThumbnail), findsOneWidget);
+    expect(server.routes['/original']!.requests, 0);
+    await tester.tap(find.byTooltip('Preview image.png'));
     await hop(tester);
-    expect(server.routes['/original']!.requests, 2);
-    // The second attempt is live again: connecting, then bytes.
-    expect(find.text('Download failed · tap to retry'), findsNothing);
-    expect(find.text('Connecting…'), findsNothing);
-    expect(find.byType(RaftTransferPlaceholder), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byTooltip('Close Preview'), findsOneWidget);
+    expect(server.routes['/original']!.requests, 1);
     server.routes['/original']!.chunk(mib);
     await hop(tester);
     await tick(tester);
-    expect(find.text('1.0 / 4.0 MB'), findsNothing);
-    expect(bars, findsNothing);
+    expect(find.text('1.0 / 4.0 MB'), findsOneWidget);
+    expect(bars, findsOneWidget);
   });
 
   testWidgets('viewer opened mid-download shares the timeline download', (

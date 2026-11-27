@@ -25,6 +25,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/attachment_comments_view.dart';
 import 'package:raft_flutter/features/attachment_html_preview.dart';
+import 'package:raft_flutter/features/attachment_view.dart';
 import 'package:raft_flutter/features/media_image_page.dart';
 import 'package:raft_flutter/features/media_browser.dart';
 import 'package:raft_flutter/features/media_items.dart';
@@ -33,7 +34,14 @@ import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_flutter/features/attachment_preview_dialog.dart';
 import 'package:raft_flutter/platform/attachment_html.dart';
 import 'package:raft_ui/raft_ui.dart'
-    show RaftGlyph, RaftLightboxIconAction, RaftSpinner;
+    show
+        RaftAttachmentUnavailableThumbnail,
+        RaftGlyph,
+        RaftLightboxIconAction,
+        RaftSpinner,
+        RaftToastHost,
+        RaftTokens,
+        RaftTokensUi;
 
 import 'package:raft_ui/src/raft/pixel_spinner.dart' show RaftPixelSpinner;
 
@@ -328,6 +336,61 @@ class _NeverHtmlLoader extends AttachmentHtmlLoader {
   }) => Completer<String?>().future;
 }
 
+class _BrokenThumbnailFiles extends AttachmentFiles {
+  @override
+  Future<Uint8List> image(
+    String url, {
+    required CancelToken cancel,
+    void Function(int, int)? onProgress,
+  }) async => throw const FormatException('Fixture thumbnail unavailable');
+}
+
+Widget _failedGallery(ParityContext ctx) {
+  final workspace = _workspace(ctx);
+  ctx.onDispose(workspace.dispose);
+  return Align(
+    alignment: Alignment.topLeft,
+    child: ctx.target(
+      AttachmentView(
+        controller: workspace,
+        metadata: _map(_fx(ctx)['failedThumbnail']),
+        files: _BrokenThumbnailFiles(),
+      ),
+    ),
+  );
+}
+
+Widget _documentRefusal(ParityContext ctx) {
+  final workspace = _workspace(ctx);
+  final open = ValueNotifier(true);
+  ctx.onDispose(workspace.dispose);
+  ctx.onDispose(open.dispose);
+  return _viewport(
+    ctx,
+    RaftToastHost(
+      child: Builder(
+        builder: (context) => ColoredBox(
+          color: RaftTokens.of(context).ui.layerCanvas,
+          child: ValueListenableBuilder(
+            valueListenable: open,
+            builder: (context, visible, _) => visible
+                ? AttachmentPreviewDialog(
+                    controller: workspace,
+                    metadata: _map(_fx(ctx)['unavailableDocument']),
+                    authorized: () => true,
+                    onClose: () => open.value = false,
+                    onDownload: () async {
+                      ctx.captureEvidence['downloads'] = 1;
+                    },
+                  )
+                : const SizedBox.expand(),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 Widget _surface(ParityContext ctx) {
   if (ctx.props['pendingSpinner'] == '1') return _pendingAddressSurface(ctx);
   final host = ctx.props['host'] as String;
@@ -337,6 +400,10 @@ Widget _surface(ParityContext ctx) {
       ? _clip(ctx, Size(ctx.width, _headerHeight(ctx)), child)
       : _viewport(ctx, child);
   switch (host) {
+    case 'gallery':
+      return _failedGallery(ctx);
+    case 'unavailable':
+      return _documentRefusal(ctx);
     case 'image':
       final images = (fx['images'] as List)
           .take(int.parse('${ctx.props['images'] ?? 1}'))
@@ -437,6 +504,15 @@ final ParityCase _case = ParityCase(
   // Decoding a MemoryImage needs the real event loop, not the fake clock.
   interact: (t, ctx) async {
     final fx = _fx(ctx);
+    if (ctx.props['host'] == 'gallery') {
+      await t.pump();
+      expect(find.byType(RaftAttachmentUnavailableThumbnail), findsOneWidget);
+    }
+    if (ctx.props['host'] == 'unavailable') {
+      await t.pump(const Duration(milliseconds: 250));
+      expect(find.text('Downloading the file instead.'), findsOneWidget);
+      expect(ctx.captureEvidence['downloads'], 1);
+    }
     if (ctx.props['host'] != 'image') return;
     if (ctx.props['pendingSpinner'] == '1') {
       // Real page -> image lease -> production loader -> pending address
@@ -502,6 +578,7 @@ const _desktop = [
   'image.loading',
   'image.pending-address-no-preview',
   'image.error',
+  'gallery.unavailable',
   'doc.text',
   'doc.csv',
   'doc.xlsx',
@@ -510,6 +587,7 @@ const _desktop = [
   'doc.header-long',
   'doc.header-pdf',
   'doc.comments',
+  'doc.unavailable',
   'html.preparing',
   'html.header',
   'comments.list',
@@ -521,8 +599,10 @@ const _desktop = [
 const _mobile = [
   'image.single',
   'image.gallery',
+  'gallery.unavailable',
   'doc.text',
   'doc.csv',
+  'doc.unavailable',
   'html.preparing',
   'comments.list',
 ];

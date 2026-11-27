@@ -11,6 +11,7 @@ import '../data/workspace_controller.dart';
 import '../platform/attachment_files.dart';
 import 'attachment_html_preview.dart';
 import 'attachment_preview_gate.dart';
+import 'channel_file_preview_image.dart';
 import 'attachment_preview_dialog.dart';
 
 /// Optional adapter to the controller-owned bounded image lease repository.
@@ -135,15 +136,13 @@ class SourceChannelFilesActions {
   Future<void> preview(SourceChannelFileEntry file) async {
     if (!current(file)) return;
     final mime = file.mimeType.toLowerCase().split(';').first.trim();
-    final raster = mime.startsWith('image/') && mime != 'image/svg+xml';
-    final svgRaster =
-        mime == 'image/svg+xml' && file.metadata['thumbnailUrl'] is String;
+    final image = channelFileHasImagePreview(file);
     final html =
         mime == 'text/html' ||
         RegExp(r'\.html?$', caseSensitive: false).hasMatch(file.filename);
     final kind = attachmentPreviewKind(file.metadata);
     try {
-      if (!raster && !svgRaster && (html || kind != null)) {
+      if (!image && (html || kind != null)) {
         // Same mounted gate/error boundary as AttachmentView.openCurrent: a
         // gate this device has seen opens the preview at once (re-read behind
         // it); only a gate never seen is read while the preview is on screen.
@@ -183,6 +182,9 @@ class SourceChannelFilesActions {
                   authorized: () => current(file),
                   onClose: () => _close(route),
                   onDownload: () => download(file),
+                  allowFallbackDownload: known == null
+                      ? () async => await gate == AttachmentPreviewGate.enabled
+                      : null,
                 ),
         );
         if (known == null) {
@@ -201,7 +203,7 @@ class SourceChannelFilesActions {
         await _show(route, file);
         return;
       }
-      if (raster || svgRaster) {
+      if (image) {
         if (file.sizeBytes > 50 * 1024 * 1024) {
           await download(file);
           return;
@@ -230,7 +232,7 @@ class SourceChannelFilesActions {
               size: width != null && height != null && width > 0 && height > 0
                   ? Size(width, height)
                   : null,
-              load: (cancel) => _loadImage(file, cancel, svgRaster),
+              load: (cancel) => _loadImage(file, cancel),
             ),
           ),
         );
@@ -256,7 +258,6 @@ class SourceChannelFilesActions {
   Future<_LoadedFileImage?> _loadImage(
     SourceChannelFileEntry file,
     CancelToken cancel,
-    bool svgRaster,
   ) async {
     if (acquireImage != null) {
       final lease = await acquireImage!(
@@ -279,7 +280,7 @@ class SourceChannelFilesActions {
     _transfers[cancel] = file;
     Uint8List? image;
     try {
-      final url = svgRaster
+      final url = channelFileUsesRasterThumbnail(file)
           ? file.metadata['thumbnailUrl'] as String
           : await resolve(file);
       if (url == null || !current(file) || cancel.isCancelled) return null;

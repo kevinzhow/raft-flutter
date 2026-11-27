@@ -229,5 +229,56 @@
     "parentMessageShortId": null
    }
   }
- ]
+ ],
+ "rasterFiles": [
+  {
+   "id": "cf-1",
+   "messageId": "msg-1",
+   "channelId": "ch-files",
+   "filename": "design.heic",
+   "mimeType": "image/heic",
+   "sizeBytes": 245760,
+   "createdAt": "2026-10-12T10:30:00.000Z",
+   "uploader": {
+    "type": "user",
+    "id": "user-wave3b",
+    "name": "alexchen",
+    "displayName": "Alex Chen"
+   },
+   "source": {
+    "type": "channel",
+    "channelId": "ch-files",
+    "parentMessageId": null,
+    "parentMessageShortId": null
+   },
+   "thumbnailUrl": "https://storage.example.invalid/api/gaps1-raster.png"
+  },
+  {
+   "id": "cf-2",
+   "messageId": "msg-2",
+   "channelId": "ch-files",
+   "filename": "wordmark.svg",
+   "mimeType": "image/svg+xml",
+   "sizeBytes": 1572864,
+   "createdAt": "2026-10-14T16:45:00.000Z",
+   "uploader": {
+    "type": "agent",
+    "id": "agent-wave3b",
+    "name": "martin",
+    "displayName": "Martin"
+   },
+   "source": {
+    "type": "channel",
+    "channelId": "ch-files",
+    "parentMessageId": null,
+    "parentMessageShortId": null
+   }
+  }
+ ],
+ "routes": {
+  "GET /gaps1-raster.png": {
+   "$file": "announcement-picture.png",
+   "$contentType": "image/png"
+  }
+ }
 }

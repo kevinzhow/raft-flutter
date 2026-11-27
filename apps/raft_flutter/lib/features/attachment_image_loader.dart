@@ -13,6 +13,14 @@ bool attachmentIsSvg(Map<String, dynamic> metadata) =>
     '${metadata['mimeType'] ?? ''}'.toLowerCase().split(';').first.trim() ==
     'image/svg+xml';
 
+bool attachmentNeedsRasterPreview(String mime) => const {
+  'image/svg+xml',
+  'image/heic',
+  'image/heif',
+  'image/heic-sequence',
+  'image/heif-sequence',
+}.contains(mime.toLowerCase().split(';').first.trim());
+
 /// Server-generated 320px WebP (Web's inline `thumbnailUrl` source).
 String? attachmentThumbnailUrl(Map<String, dynamic> metadata) {
   final value = metadata['thumbnailUrl'];

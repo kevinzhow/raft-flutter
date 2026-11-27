@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -11,6 +10,7 @@ import '../data/workspace_controller.dart';
 import 'artifacts/artifact_models.dart';
 import 'artifacts/artifact_session.dart';
 import 'artifacts/artifact_viewer_page.dart' show openWorkspaceArtifact;
+import 'channel_file_preview_image.dart';
 import 'channel_side_files_artifacts.dart';
 import 'channel_side_files_rows.dart';
 import 'source_channel_file_glyph.dart';
@@ -840,6 +840,59 @@ class ChannelFileOverflowMenu extends StatelessWidget {
   }
 }
 
+class ChannelFileInlineActions extends StatelessWidget {
+  const ChannelFileInlineActions({
+    super.key,
+    required this.file,
+    required this.onOpenSource,
+    required this.onDownload,
+    this.compact = false,
+  });
+
+  final SourceChannelFileEntry file;
+  final VoidCallback onOpenSource, onDownload;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final jump = raftText(context, 'Jump to original message');
+    final download = raftText(context, 'Download file');
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RaftButton(
+          key: ValueKey('channel-file-jump-${file.id}'),
+          uiSize: compact ? RaftButtonSize.iconSm : RaftButtonSize.iconMd,
+          uiVariant: RaftButtonVariant.ghost,
+          layoutTouchTarget: !compact,
+          expandTouchTarget: compact,
+          tooltip: jump,
+          semanticLabel: jump,
+          onPressed: onOpenSource,
+          iconBuilder: (_, color) => ChannelFileGlyph(
+            SourceChannelFileGlyph.jump,
+            size: 14,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: RaftSpace.x1_5),
+        RaftButton(
+          key: ValueKey('channel-file-download-${file.id}'),
+          uiSize: compact ? RaftButtonSize.iconSm : RaftButtonSize.iconMd,
+          uiVariant: RaftButtonVariant.ghost,
+          layoutTouchTarget: !compact,
+          expandTouchTarget: compact,
+          glyph: RaftGlyph.download,
+          glyphSize: 14,
+          tooltip: download,
+          semanticLabel: download,
+          onPressed: onDownload,
+        ),
+      ],
+    );
+  }
+}
+
 class SourceChannelFileRow extends StatefulWidget {
   const SourceChannelFileRow({
     super.key,
@@ -990,34 +1043,10 @@ class _FileRowState extends State<SourceChannelFileRow> {
           if (recipe.collapsedActions(width, hovered: hovered))
             _overflowMenu(context)
           else
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RaftButton(
-                  key: ValueKey('channel-file-jump-${widget.file.id}'),
-                  uiSize: RaftButtonSize.iconSm,
-                  uiVariant: RaftButtonVariant.ghost,
-                  tooltip: raftText(context, 'Jump to original message'),
-                  semanticLabel: raftText(context, 'Jump to original message'),
-                  onPressed: widget.onOpenSource,
-                  iconBuilder: (size, color) => ChannelFileGlyph(
-                    SourceChannelFileGlyph.jump,
-                    size: 14,
-                    color: color,
-                  ),
-                ),
-                SizedBox(width: recipe.actionGap),
-                RaftButton(
-                  key: ValueKey('channel-file-download-${widget.file.id}'),
-                  uiSize: RaftButtonSize.iconSm,
-                  uiVariant: RaftButtonVariant.ghost,
-                  glyph: RaftGlyph.download,
-                  glyphSize: 14,
-                  tooltip: raftText(context, 'Download file'),
-                  semanticLabel: raftText(context, 'Download file'),
-                  onPressed: widget.onDownload,
-                ),
-              ],
+            ChannelFileInlineActions(
+              file: widget.file,
+              onOpenSource: widget.onOpenSource,
+              onDownload: widget.onDownload,
             ),
         ],
       ),
@@ -1049,7 +1078,6 @@ class SourceChannelFileThumbnail extends StatefulWidget {
 
 class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
   SourceChannelImageLease? lease;
-  Uint8List? inlineSvg;
   var ticket = 0;
   bool get current => mounted && widget.authorized();
   @override
@@ -1062,8 +1090,7 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
   bool adoptReady() {
     final peek = widget.peekImage;
     if (peek == null) return false;
-    final type = widget.file.mimeType.toLowerCase().split(';').first.trim();
-    if (!type.startsWith('image/') || type == 'image/svg+xml') return false;
+    if (!channelFileHasImagePreview(widget.file)) return false;
     final attempt = ++ticket;
     final ready = peek(
       widget.file,
@@ -1083,42 +1110,15 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
       ticket++;
       final old = lease;
       lease = null;
-      inlineSvg = null;
       if (old != null) unawaited(old.release());
       if (!adoptReady()) unawaited(load());
     }
   }
 
   Future<void> load() async {
-    final type = widget.file.mimeType.toLowerCase().split(';').first.trim();
-    if (!type.startsWith('image/') ||
-        (type == 'image/svg+xml' &&
-            widget.file.metadata['thumbnailUrl'] == null)) {
-      return;
-    }
+    if (!channelFileHasImagePreview(widget.file)) return;
     final attempt = ++ticket;
     try {
-      // Source's <img> accepts inline SVG thumbnails as well as raster URLs.
-      // Render the same authorized metadata; it never enters the HTTP loader
-      // or the controller's shared raster leases.
-      final thumbnail = widget.file.metadata['thumbnailUrl'];
-      // Browsers also accept the common `;utf8` SVG data-URL shorthand.
-      // Uri.data requires the formal charset parameter; only normalize this
-      // encoding spelling for decoding, without changing stored metadata.
-      final uri = thumbnail is String
-          ? Uri.tryParse(
-              thumbnail.replaceFirst(
-                RegExp(r'^data:image/svg\+xml;utf8,', caseSensitive: false),
-                'data:image/svg+xml;charset=utf-8,',
-              ),
-            )
-          : null;
-      if (current &&
-          uri?.scheme == 'data' &&
-          uri!.data?.mimeType == 'image/svg+xml') {
-        inlineSvg = uri.data!.contentAsBytes();
-        return;
-      }
       final acquire = widget.acquireImage;
       if (acquire == null) return;
       final next = await acquire(
@@ -1148,7 +1148,7 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
   @override
   Widget build(BuildContext context) {
     final currentLease = lease;
-    if (!current || (currentLease == null && inlineSvg == null)) {
+    if (!current || currentLease == null) {
       return Center(child: ChannelFileGlyph(channelFileType(widget.file)));
     }
     final width = widget.file.metadata['width'],
@@ -1159,18 +1159,9 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
     final fit = ratio != null && (ratio >= 2.2 || ratio <= .55)
         ? BoxFit.contain
         : BoxFit.cover;
-    if (inlineSvg != null) {
-      return SvgPicture.memory(
-        inlineSvg!,
-        fit: fit,
-        excludeFromSemantics: true,
-        errorBuilder: (_, _, _) =>
-            Center(child: ChannelFileGlyph(channelFileType(widget.file))),
-      );
-    }
     // ignore: raft_lints/avoid_raw_image_decode -- The provider comes from an AttachmentImageRepository lease: already decoded at the target size and shared with the message bubble.
     return Image(
-      image: currentLease!.provider,
+      image: currentLease.provider,
       fit: fit,
       errorBuilder: (_, _, _) =>
           Center(child: ChannelFileGlyph(channelFileType(widget.file))),

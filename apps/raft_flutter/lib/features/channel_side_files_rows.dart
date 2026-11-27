@@ -12,6 +12,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/source_channel_files_store.dart';
 import 'artifacts/artifact_models.dart';
 import 'artifacts/artifact_text.dart';
+import 'channel_file_preview_image.dart';
 import 'channel_side_files_artifacts.dart';
 import 'source_channel_file_glyph.dart';
 import 'source_channel_files_view.dart';
@@ -33,7 +34,7 @@ class CompactRowMetrics {
 
   /// The trailing group's room (compact time and the ⋯ box); under that and
   /// the title's 160px it wraps, whole, under the title.
-  static const titleRoom = 160.0, trailingRoom = 112.0;
+  static const titleRoom = 160.0, trailingRoom = 88.0;
 
   bool wraps(double width) =>
       width - 2 * inset - mark - gap - titleRoom < trailingRoom;
@@ -137,7 +138,7 @@ class ChannelFilesCompactRow extends StatelessWidget {
   final bool divider;
 
   Widget _mark(RaftTokens t) {
-    final image = file.mimeType.toLowerCase().startsWith('image/');
+    final image = channelFileHasImagePreview(file);
     return SizedBox.square(
       dimension: CompactRowMetrics.mark,
       child: image && thumbnail != null
@@ -183,6 +184,8 @@ class ChannelFilesCompactRow extends StatelessWidget {
         Text(sourceChannelFileSize(file.sizeBytes), style: _meta(t)),
       ],
     );
+    final inline =
+        width - 2 * m.inset > SourceChannelFilesRecipe(t).actionBreakpoint;
     final trailing = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -190,12 +193,20 @@ class ChannelFilesCompactRow extends StatelessWidget {
         const SizedBox(width: CompactRowMetrics.gap),
         // The last icon box ends on the row's margin, its hit area hanging
         // outward (raft-design foundations/alignment.md).
-        ChannelFileOverflowMenu(
-          compact: true,
-          file: file,
-          onOpenSource: onOpenSource,
-          onDownload: onDownload,
-        ),
+        if (inline)
+          ChannelFileInlineActions(
+            compact: true,
+            file: file,
+            onOpenSource: onOpenSource,
+            onDownload: onDownload,
+          )
+        else
+          ChannelFileOverflowMenu(
+            compact: true,
+            file: file,
+            onOpenSource: onOpenSource,
+            onDownload: onDownload,
+          ),
       ],
     );
     final wrapped = m.wraps(width);
@@ -219,12 +230,14 @@ class ChannelFilesCompactRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   main,
+                  const SizedBox(height: RaftSpace.x1),
                   Align(alignment: Alignment.centerRight, child: trailing),
                 ],
               )
             : Row(
                 children: [
                   Expanded(child: main),
+                  const SizedBox(width: CompactRowMetrics.gap),
                   trailing,
                 ],
               ),

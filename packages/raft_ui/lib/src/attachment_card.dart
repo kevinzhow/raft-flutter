@@ -14,9 +14,14 @@ import 'recipes/spinner.g.dart' show RaftSpinnerRecipeSize;
 import 'attachment_lightbox.dart' show RaftFileTypeBadge;
 import 'attachment_tokens.dart';
 import 'attachment_transfer.dart';
+import 'attachment_unavailable_thumbnail.dart';
 import 'localization.dart';
+import 'raft/ui_tokens.dart';
 import 'text_scaling.dart';
 import 'tooltip.dart';
+
+export 'attachment_unavailable_thumbnail.dart'
+    show RaftAttachmentUnavailableThumbnail;
 
 class RaftAttachmentCard extends StatelessWidget {
   const RaftAttachmentCard({
@@ -291,7 +296,7 @@ class RaftAttachmentCard extends StatelessWidget {
                 color: t.panel,
                 clipBehavior: Clip.antiAlias,
                 shape: RoundedRectangleBorder(
-                  side: BorderSide(color: t.strong, width: 0),
+                  side: BorderSide(color: t.ui.lineHairline),
                   borderRadius: recipe.radius,
                 ),
                 child: Stack(
@@ -303,8 +308,9 @@ class RaftAttachmentCard extends StatelessWidget {
                       onPressed: exportMode ? null : onOpen,
                       child:
                           preview ??
-                          (previewPending && error == null ||
-                                  error != null && onRetry != null
+                          (error != null
+                              ? const RaftAttachmentUnavailableThumbnail()
+                              : previewPending
                               ? const RaftTransferPlaceholder()
                               : null) ??
                           Center(
@@ -312,21 +318,9 @@ class RaftAttachmentCard extends StatelessWidget {
                                 ? const RaftSpinner(
                                     recipeSize: RaftSpinnerRecipeSize.md,
                                   )
-                                : Text(error ?? filename, style: recipe.title),
+                                : Text(filename, style: recipe.title),
                           ),
                     ),
-                    if (!exportMode &&
-                        preview == null &&
-                        error != null &&
-                        onRetry != null)
-                      // Option A: tap the failed chip's band to retry;
-                      // the rest of the tile still opens the viewer,
-                      // which fetches the original itself.
-                      Positioned.fill(
-                        child: RaftImageTransferOverlay.failed(
-                          onRetry: onRetry,
-                        ),
-                      ),
                   ],
                 ),
               ),

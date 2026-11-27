@@ -18,6 +18,10 @@
 import ParityExtAttImageLightbox from "../src/components/ImageLightbox";
 import ParityExtAttDocumentPreviewHost from "../src/components/message/DocumentPreviewHost";
 import ParityExtAttMediaPreviewHost from "../src/components/message/MediaPreviewHost";
+import ParityExtAttToasts from "../src/components/LocalizedToastProvider";
+import { GalleryImageItem as ParityExtAttGalleryItem } from "../src/components/message/GalleryImageItem";
+import { openDocumentPreview as parityExtAttOpenDocument } from "../src/components/message/openDocumentPreview";
+import { buildMessageImageGalleryRows as parityExtAttGalleryRows, MessageImageGalleryRow as ParityExtAttGalleryRow } from "@botiverse/raft-ui";
 import { useImageLightboxStore as parityExtAttImageStore } from "../src/store/imageLightboxStore";
 import { useDocumentPreviewStore as parityExtAttDocumentStore } from "../src/store/documentPreviewStore";
 import { useMediaPreviewStore as parityExtAttMediaStore } from "../src/store/mediaPreviewStore";
@@ -25,7 +29,7 @@ import parityExtAttFixture from "virtual:parity-ext/threadattachments";
 
 type ParityExtAttProps = {
   raw: string;
-  host: "image" | "document" | "html" | "panel";
+  host: "image" | "document" | "html" | "panel" | "gallery" | "unavailable";
   platform: "desktop" | "mobile";
   images: number;
   index: number;
@@ -101,6 +105,38 @@ function parityExtAttPrime(p: ParityExtAttProps) {
 
 function ParityExtAttView({ p }: { p: ParityExtAttProps }) {
   useMemo(() => parityExtAttPrime(p), [p]);
+  if (p.host === "gallery") {
+    const image = (parityExtAttFixture as any).failedThumbnail;
+    const [row] = parityExtAttGalleryRows([image]);
+    return (
+      <ParityExtAttGalleryRow row={row}>
+        <ParityExtAttGalleryItem
+          att={image}
+          previewSrc={image.thumbnailUrl}
+          isOptimistic={false}
+          imageIndex={0}
+          lightboxImages={[image]}
+          layout={row.items[0]}
+          onDownload={() => {}}
+        />
+      </ParityExtAttGalleryRow>
+    );
+  }
+  if (p.host === "unavailable") {
+    const document = (parityExtAttFixture as any).unavailableDocument;
+    return (
+      <ParityExtAttToasts>
+        <button
+          data-testid="attachment-open-document"
+          style={{ opacity: 0 }}
+          onClick={() => void parityExtAttOpenDocument(document, { onFallbackDownload: () => {} })}
+        >
+          Open document
+        </button>
+        <ParityExtAttDocumentPreviewHost />
+      </ParityExtAttToasts>
+    );
+  }
   if (p.host === "panel") {
     const mobile = p.platform === "mobile";
     return (

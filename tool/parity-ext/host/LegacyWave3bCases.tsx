@@ -20,6 +20,7 @@ function parityExtWave3bPrime(surface: string) {
   const fx = parityExtWave3bFixture;
   const emptyChat = surface === "agent-chat-empty";
   const emptyFiles = surface === "channel-files-empty";
+  const rasterFiles = surface === "channel-files-raster";
 
   useAuthStore.setState({
     initialized: true,
@@ -78,7 +79,7 @@ function parityExtWave3bPrime(surface: string) {
     if (path === `/channels/${fx.channel.id}/files`) {
       return Promise.resolve({
         data: {
-          files: emptyFiles ? [] : fx.channelFiles,
+          files: emptyFiles ? [] : rasterFiles ? fx.rasterFiles : fx.channelFiles,
           nextCursor: null,
           historyLimited: false,
         },
@@ -223,14 +224,14 @@ function ParityExtWave3bHost({
         />
       </div>
     );
-  } else if (surface === "channel-files" || surface === "channel-files-empty") {
+  } else if (surface === "channel-files" || surface === "channel-files-empty" || surface === "channel-files-raster") {
     body = (
       <div
         data-visual-case={cid}
         className="flex flex-col bg-layer-canvas"
         style={{ width: phone ? 390 : 640, height: 360, overflow: "hidden" }}
       >
-        <ChannelFilesPanel channel={fx.channel as never} />
+        <ChannelFilesPanel channel={fx.channel as never} variant={surface === "channel-files-raster" ? "compact" : "card"} />
       </div>
     );
   }

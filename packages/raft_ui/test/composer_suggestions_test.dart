@@ -103,7 +103,7 @@ void main() {
   test('structured identity appears only in visible exact handle, including adjacent Chinese text', () {
     expect(raftStructuredMentionAppears('草案@Mona', 'Mona'), isTrue);
     expect(raftStructuredMentionAppears('draft@Mona', 'Mona'), isTrue);
-    expect(raftStructuredMentionAppears('草案@Mona继续', 'Mona'), isFalse);
+    expect(raftStructuredMentionAppears('草案@Mona继续', 'Mona'), isTrue);
     expect(raftStructuredMentionAppears('`@Mona`', 'Mona'), isFalse);
     expect(raftStructuredMentionAppears('```\n@Mona\n```', 'Mona'), isFalse);
     expect(
@@ -203,18 +203,22 @@ void main() {
       await tester.sendKeyEvent(key);
       await tester.pump();
     }
-    return tester.widget<EditableText>(find.byType(EditableText)).controller.text;
+    return tester
+        .widget<EditableText>(find.byType(EditableText))
+        .controller
+        .text;
   }
 
-  List<RaftComposerSuggestion> people(int count, {int? Function(int)? rank}) => [
-    for (var i = 0; i < count; i++)
-      RaftComposerSuggestion(
-        type: 'agent',
-        id: 'a$i',
-        name: 'agent$i',
-        threadRank: rank?.call(i),
-      ),
-  ];
+  List<RaftComposerSuggestion> people(int count, {int? Function(int)? rank}) =>
+      [
+        for (var i = 0; i < count; i++)
+          RaftComposerSuggestion(
+            type: 'agent',
+            id: 'a$i',
+            name: 'agent$i',
+            threadRank: rank?.call(i),
+          ),
+      ];
 
   // Web rankComposerSuggestions: a blank query lists every candidate and a
   // typed query keeps the 30 best; the popup is a scroll list, so a roster
@@ -250,10 +254,7 @@ void main() {
     ];
     // Recent speakers first (agent3, agent2), then roster order; a
     // not-in-channel speaker stays in its own later group.
-    expect(
-      await pick(t, list, '@', [LogicalKeyboardKey.enter]),
-      '@agent3 ',
-    );
+    expect(await pick(t, list, '@', [LogicalKeyboardKey.enter]), '@agent3 ');
     expect(
       await pick(t, list, '@', [
         LogicalKeyboardKey.arrowDown,

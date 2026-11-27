@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SelectedContent;
 import 'package:flutter/services.dart';
 
-import 'design_primitives.dart';
+import 'interaction.dart';
+import 'message_selection_focus_line.dart';
 import 'selected_text_quote.dart';
 import 'text_selection_toolbar.dart';
 
@@ -56,7 +57,7 @@ class RaftSelectionArea extends StatefulWidget {
     SelectableRegionState state,
   ) {
     // The density scope falls back to the platform (phones are touch).
-    return RaftDensityScope.of(context) == RaftDensity.touch
+    return RaftInteraction.of(context).touch
         ? _platformToolbar(context, state)
         : const SizedBox.shrink();
   }
@@ -69,6 +70,7 @@ class _RaftSelectionAreaState extends State<RaftSelectionArea> {
   /// Context inside the area: its [SelectableRegionState] is the nearest
   /// ancestor state (no per-row GlobalKey).
   BuildContext? inside;
+  SelectionContainerDelegate? selection;
 
   Timer? shortcutTimer;
   String selected = '';
@@ -120,13 +122,19 @@ class _RaftSelectionAreaState extends State<RaftSelectionArea> {
         state == null ||
         context == null ||
         !context.mounted ||
-        RaftDensityScope.of(context) == RaftDensity.touch) {
+        RaftInteraction.of(context).touch) {
       return;
     }
     final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
     shortcut.text = selected;
-    final anchors = state.contextMenuAnchors;
+    final delegate = selection;
+    final box = overlay.context.findRenderObject();
+    final anchors =
+        (delegate != null && box is RenderBox
+            ? raftMessageSelectionFocusLine(delegate, box)
+            : null) ??
+        state.contextMenuAnchors;
     shortcutEntry = OverlayEntry(
       builder: (overlayContext) => TapRegion(
         groupId: SelectableRegion,
@@ -201,6 +209,12 @@ class _RaftSelectionAreaState extends State<RaftSelectionArea> {
         child: Builder(
           builder: (context) {
             inside = context;
+            final registrar = widget.shortcut == null
+                ? null
+                : SelectionContainer.maybeOf(context);
+            selection = registrar is SelectionContainerDelegate
+                ? registrar
+                : null;
             return widget.child;
           },
         ),

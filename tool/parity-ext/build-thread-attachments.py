@@ -217,6 +217,13 @@ PENDING_SPINNER = {
                  width=640, height=400),
     'queryPath': '/attachments/att-spinner-address-289/url',
 }
+FAILED_THUMBNAIL = att(
+    'att-gallery-unavailable', 'design.png', 'image/png', 48211,
+    width=240, height=150, thumbnailUrl='https://storage.example.invalid/api/gaps1-broken.png',
+)
+UNAVAILABLE_DOCUMENT = att(
+    'att-doc-unavailable', 'release-notes.md', 'text/markdown', 52_428_801,
+)
 
 route_sets = {
     'comments-empty': {f'GET /attachments/{aid}/comments': comments_body([]) for aid in ATTACHMENT_IDS},
@@ -226,6 +233,12 @@ route_sets = {
     'comments-error': {f'GET /attachments/{aid}/comments': {'$status': 500} for aid in ATTACHMENT_IDS},
     'image-pending': {f'GET /attachments/{i["id"]}/url': {'$pending': True} for i in IMAGES},
     'image-error': {f'GET /attachments/{i["id"]}/url': {'$status': 500} for i in IMAGES},
+    'document-unavailable': {
+        f'GET /attachments/{UNAVAILABLE_DOCUMENT["id"]}/preview': {
+            'status': 'unsupported', 'reason': 'too_large',
+        },
+    },
+    'gallery-unavailable': {'GET /gaps1-broken.png': {'$status': 404}},
 }
 
 fixture = {
@@ -240,6 +253,8 @@ fixture = {
     'routes': routes,
     'routeSets': route_sets,
     'pendingSpinner': PENDING_SPINNER,
+    'failedThumbnail': FAILED_THUMBNAIL,
+    'unavailableDocument': UNAVAILABLE_DOCUMENT,
 }
 
 # ------------------------------------------------------------------- the cases
@@ -247,8 +262,9 @@ cases = []
 
 
 def add(surface, title, props, *, platform='desktop', selector=ROOT, crop='viewport', contract='viewport-with-portal',
-        interactions=(), android=(), notes=None, hint='packages/web/src/components/message/attachmentPreviewSurfaces.tsx'):
-    viewport = DESKTOP if platform == 'desktop' else MOBILE
+        interactions=(), android=(), notes=None, hint='packages/web/src/components/message/attachmentPreviewSurfaces.tsx',
+        desktop=DESKTOP):
+    viewport = desktop if platform == 'desktop' else MOBILE
     suffix_platform = '' if platform == 'desktop' else '.mobile'
     for suffix, theme in THEMES.items():
         cid = f'{PREFIX}{surface}{suffix_platform}.{suffix}'
@@ -318,6 +334,19 @@ add('doc.comments', 'text preview with the comments panel', {'host': 'document',
     interactions=OPEN_PREVIEW_COMMENTS, android=OPEN_PREVIEW_COMMENTS_ANDROID, hint=DOC)
 add('doc.text', 'text preview', {'host': 'document', 'doc': 'text'}, platform='mobile', hint=DOC)
 add('doc.csv', 'csv preview', {'host': 'document', 'doc': 'csv'}, platform='mobile', hint=DOC)
+
+for platform in ('desktop', 'mobile'):
+    desktop = {**DESKTOP, 'height': 900}
+    add('gallery.unavailable', 'failed thumbnail',
+        {'host': 'gallery', 'routeSet': 'gallery-unavailable'},
+        platform=platform, selector='div:has(> [data-testid="gallery-image-placeholder"])',
+        crop='element', contract='component-bounds', interactions=[WAIT], desktop=desktop,
+        hint='packages/web/src/components/message/GalleryImageItem.tsx')
+    add('doc.unavailable', 'preview refusal and download notice',
+        {'host': 'unavailable', 'routeSet': 'document-unavailable'},
+        platform=platform, selector='[data-testid="localized-toast-row"]',
+        interactions=[{'type': 'click', 'target': '[data-testid="attachment-open-document"]'}, WAIT],
+        desktop=desktop, hint=DOC)
 
 # html host (MediaPreviewHost) --------------------------------------------------
 HTML_HINT = 'packages/web/src/components/message/MediaPreviewHost.tsx + attachmentPreviewSurfaces.tsx'

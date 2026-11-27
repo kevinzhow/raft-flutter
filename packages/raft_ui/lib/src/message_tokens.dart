@@ -4,6 +4,7 @@ import 'package:markdown/markdown.dart' as md;
 
 import 'message_markdown.dart';
 import 'message_ref_target.dart';
+import 'qualified_task_reference.dart';
 
 /// A reference is interactive only when its identity is supplied by the
 /// current workspace projection. User text never supplies a target identity.
@@ -62,11 +63,19 @@ List<_Match> _referenceMatches(
       if (r.text.startsWith('@') && r.text.length > 1) r.text.substring(1),
   };
   final matches = <_Match>[];
+  final qualified = raftQualifiedTaskReferences(text).toList();
+  bool overlapsQualified(int start, int end) => qualified.any(
+    (task) =>
+        start < task.end &&
+        task.start < end &&
+        (start != task.start || end != task.end),
+  );
 
   for (final ref in references) {
     if (ref.text.isEmpty || (inQuote && ref.text.startsWith('@'))) continue;
     final pattern = RegExp(RegExp.escape(ref.text));
     for (final m in pattern.allMatches(text)) {
+      if (overlapsQualified(m.start, m.end)) continue;
       final left = m.start == 0 ? '' : text.substring(m.start - 1, m.start);
       final right = m.end == text.length
           ? ''
@@ -139,6 +148,7 @@ List<_Match> _referenceMatches(
         continue;
       }
       final start = m.end - m[2]!.length - 1;
+      if (overlapsQualified(start, m.end)) continue;
       matches.add((
         start: start,
         end: m.end,
@@ -275,7 +285,7 @@ class _TokenPass {
 
   /// The link and label for [target], or null (Web renders a plain span).
   (String, String)? refFor(RaftRefTarget target) {
-    if (target.kind == RaftRefKind.task) {
+    if (target.kind == RaftRefKind.task && target.text.startsWith('task #')) {
       final href = ctx.taskHref?.call(target.taskNumber!);
       return href == null ? null : (href, target.text);
     }

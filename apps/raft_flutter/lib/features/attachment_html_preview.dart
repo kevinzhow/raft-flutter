@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/attachment_image_store.dart';
 import '../data/workspace_controller.dart';
 import '../platform/attachment_html.dart';
+import '../platform/raft_deployment_links.dart';
 import '../platform/attachment_html_webview.dart';
 import 'attachment_comments_view.dart';
 import 'management_support.dart' show pageIdentity;
@@ -95,6 +96,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   void initState() {
     super.initState();
     widget.controller.addListener(scopeChanged);
+    unawaited(RaftDeploymentLinks.of(widget.controller.client).load());
     unawaited(load());
   }
 
@@ -380,12 +382,16 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
 
   Future<void> link(String value) async {
     if (!current) return;
+    final deployment = RaftDeploymentLinks.of(widget.controller.client);
+    await deployment.load();
+    if (!current) return;
     // A new attempt replaces the previous link's failure: it shows again only
     // if this one fails too.
     if (error != null) setState(() => error = null);
     final uri = attachmentHtmlExternalLink(
       value,
       widget.controller.client.origin,
+      appHosts: deployment.hosts,
     );
     if (uri == null) {
       setState(() => error = 'This link is unavailable in the HTML preview.');

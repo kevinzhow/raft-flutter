@@ -4,6 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_controller.dart';
 import 'message_task_actions.dart' show taskSurfaceItemFor;
+import 'qualified_task_navigation.dart';
 import 'task_content_slot.dart' show taskOpenLocation;
 
 /// Web `useRefNavigation().openTask(channelId, number)` for a task ref in an
@@ -18,14 +19,24 @@ Future<void> openAgentActivityTask(
   String channelId,
   int taskNumber,
 ) async {
-  final out = await w.query('/tasks/channel/$channelId/number/$taskNumber');
-  final task = out is Map ? out['task'] : null;
-  if (task is! Map || !context.mounted) return;
-  final row = Map<String, dynamic>.from(task);
+  final row = await readTaskReference(w, channelId, taskNumber);
+  if (!context.mounted) return;
   final rowChannel = row['channelId'];
   final itemId = taskSurfaceItemFor(w, row);
   if (rowChannel is! String || itemId == null || itemId.isEmpty) return;
   final wide = !RaftAdaptiveWorkspace.compactOf(context);
+  openQualifiedTaskSurface(w, row, (task) {
+    _presentTask(w, task, rowChannel, itemId, wide);
+  });
+}
+
+void _presentTask(
+  WorkspaceController w,
+  Map<String, dynamic> row,
+  String rowChannel,
+  String itemId,
+  bool wide,
+) {
   final legacy = row['isLegacy'] == true;
   final next = taskOpenLocation(w, row, false, wide).withQuery({
     if (legacy) 'legacyTask': '$rowChannel:$itemId',

@@ -2496,9 +2496,8 @@ class _RaftComposerState extends State<RaftComposer> {
       );
     }
     queueDeferredDraftFlush();
-    mentions.removeWhere(
-      (name, _) => !raftStructuredMentionAppears(controller.text, name),
-    );
+    final appears = raftStructuredMentionMatcher(controller.text);
+    mentions.removeWhere((name, _) => !appears(name));
     final next = composing || dismissedValue == controller.text
         ? null
         : raftComposerTrigger(controller.text, controller.selection.baseOffset);
@@ -2893,8 +2892,9 @@ class _RaftComposerState extends State<RaftComposer> {
     setState(() => sending = true);
     updateSuggestionPortal();
     try {
+      final appears = raftStructuredMentionMatcher(text);
       final selected = mentions.values
-          .where((m) => raftStructuredMentionAppears(text, m['name'] as String))
+          .where((m) => appears(m['name'] as String))
           .map((m) => Map<String, dynamic>.from(m))
           .toList();
       final submit = forceTask
@@ -2922,8 +2922,9 @@ class _RaftComposerState extends State<RaftComposer> {
 
   Future<void> handOff(String draft, String text, bool forceTask) async {
     final submitted = Map.of(mentions);
+    final appears = raftStructuredMentionMatcher(text);
     final selected = submitted.values
-        .where((m) => raftStructuredMentionAppears(text, m['name'] as String))
+        .where((m) => appears(m['name'] as String))
         .map((m) => Map<String, dynamic>.from(m))
         .toList();
     final submit = forceTask

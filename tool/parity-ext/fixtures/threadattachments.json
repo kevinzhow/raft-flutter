@@ -1724,6 +1724,17 @@
    "GET /attachments/att-img-3/url": {
     "$status": 500
    }
+  },
+  "document-unavailable": {
+   "GET /attachments/att-doc-unavailable/preview": {
+    "status": "unsupported",
+    "reason": "too_large"
+   }
+  },
+  "gallery-unavailable": {
+   "GET /gaps1-broken.png": {
+    "$status": 404
+   }
   }
  },
  "pendingSpinner": {
@@ -1737,5 +1748,22 @@
    "height": 400
   },
   "queryPath": "/attachments/att-spinner-address-289/url"
+ },
+ "failedThumbnail": {
+  "id": "att-gallery-unavailable",
+  "filename": "design.png",
+  "mimeType": "image/png",
+  "sizeBytes": 48211,
+  "commentCount": 0,
+  "width": 240,
+  "height": 150,
+  "thumbnailUrl": "https://storage.example.invalid/api/gaps1-broken.png"
+ },
+ "unavailableDocument": {
+  "id": "att-doc-unavailable",
+  "filename": "release-notes.md",
+  "mimeType": "text/markdown",
+  "sizeBytes": 52428801,
+  "commentCount": 0
  }
 }

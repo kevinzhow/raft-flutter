@@ -254,6 +254,23 @@ FIXTURE = {
     ],
 }
 
+FIXTURE['rasterFiles'] = [
+    {
+        **FIXTURE['channelFiles'][0],
+        'filename': 'design.heic',
+        'mimeType': 'image/heic',
+        'thumbnailUrl': 'https://storage.example.invalid/api/gaps1-raster.png',
+    },
+    {
+        **FIXTURE['channelFiles'][1],
+        'filename': 'wordmark.svg',
+        'mimeType': 'image/svg+xml',
+    },
+]
+FIXTURE['routes'] = {
+    'GET /gaps1-raster.png': {'$file': 'announcement-picture.png', '$contentType': 'image/png'},
+}
+
 (here / 'fixtures/legacy-wave3b.json').write_text(
     json.dumps(FIXTURE, indent=1, ensure_ascii=False) + '\n'
 )
@@ -333,6 +350,13 @@ for platform in ('desktop', 'phone'):
         platform,
         'Channel Files panel (rows + actions)',
         'packages/web/src/components/message/ChannelFilesPanel.tsx',
+        interactions=[{'type': 'wait', 'ms': 300}],
+    )
+    add_case(
+        'channel-files-raster',
+        platform,
+        'Compact channel Files rows with HEIC thumbnail and SVG file glyph',
+        'packages/web/src/components/message/ChannelFilesPanelFileRow.tsx',
         interactions=[{'type': 'wait', 'ms': 300}],
     )
 

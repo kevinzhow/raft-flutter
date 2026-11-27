@@ -448,48 +448,66 @@ Widget _agentRowsPreview(BuildContext context) {
   );
 }
 
-ParityCase _channelFiles({required bool mobile, required bool empty}) =>
-    ParityCase(
-      widgets: const [
-        'raft_flutter:SourceChannelFilesProjectionView',
-        'raft_flutter:SourceChannelFileRow',
-        'raft_flutter:ChannelFileGlyph',
-        'raft_ui:RaftCard',
-        'raft_ui:RaftProductEmptyState',
-        'raft_ui:RaftButton',
-      ],
-      settle: const Duration(milliseconds: 300),
-      build: (ctx) {
-        final ch = _fixture['channel'] as Map<String, dynamic>;
-        final chId = ch['id'] as String;
-        final files = empty ? const [] : (_fixture['channelFiles'] as List);
-        final store = SourceChannelFilesStore(
-          channelId: chId,
-          authority: () => 'wave3b',
-          get: (_, {query}) async => {'files': files, 'nextCursor': null},
-        );
-        ctx.onDispose(store.dispose);
-        unawaited(store.load());
-        return _stage(
-          Align(
-            alignment: Alignment.topLeft,
-            child: SizedBox(
-              key: const ValueKey('wave3b-frame'),
-              width: mobile ? 390 : 640,
-              height: 360,
-              child: SourceChannelFilesProjectionView(
-                store: store,
-                formatCreatedAt: _timeFmt(ctx).shortDateTime,
-                formatCompactDate: _timeFmt(ctx).compactDate,
-                onPreview: (_) async {},
-                onDownload: (_) async {},
-                onOpenSource: (_) async {},
-              ),
-            ),
-          ),
-        );
-      },
+ParityCase _channelFiles({
+  required bool mobile,
+  required bool empty,
+  bool raster = false,
+}) => ParityCase(
+  widgets: const [
+    'raft_flutter:SourceChannelFilesProjectionView',
+    'raft_flutter:SourceChannelFileRow',
+    'raft_flutter:ChannelFileGlyph',
+    'raft_ui:RaftCard',
+    'raft_ui:RaftProductEmptyState',
+    'raft_ui:RaftButton',
+  ],
+  settle: const Duration(milliseconds: 300),
+  build: (ctx) {
+    final ch = _fixture['channel'] as Map<String, dynamic>;
+    final chId = ch['id'] as String;
+    final files = empty
+        ? const []
+        : (_fixture[raster ? 'rasterFiles' : 'channelFiles'] as List);
+    final store = SourceChannelFilesStore(
+      channelId: chId,
+      authority: () => 'wave3b',
+      get: (_, {query}) async => {'files': files, 'nextCursor': null},
     );
+    ctx.onDispose(store.dispose);
+    unawaited(store.load());
+    return _stage(
+      Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          key: const ValueKey('wave3b-frame'),
+          width: mobile ? 390 : 640,
+          height: 360,
+          child: SourceChannelFilesProjectionView(
+            store: store,
+            compact: raster,
+            thumbnailBuilder: raster
+                ? (file, _) => file.metadata['thumbnailUrl'] == null
+                      ? const SizedBox.shrink()
+                      : Image(
+                          fit: BoxFit.cover,
+                          image: FileImage(
+                            File(
+                              '../../tool/parity-ext/fixtures/announcement-picture.png',
+                            ),
+                          ),
+                        )
+                : null,
+            formatCreatedAt: _timeFmt(ctx).shortDateTime,
+            formatCompactDate: _timeFmt(ctx).compactDate,
+            onPreview: (_) async {},
+            onDownload: (_) async {},
+            onOpenSource: (_) async {},
+          ),
+        ),
+      ),
+    );
+  },
+);
 
 final Map<String, ParityCase> extLegacyWave3bCases = {
   for (final theme in const ['brutal', 'elegant-dark']) ...{
@@ -502,6 +520,8 @@ final Map<String, ParityCase> extLegacyWave3bCases = {
           _computerSection(surface: 'computer-agent-rows', mobile: mobile),
       'components.legacy-wave3b.channel-files.${mobile ? 'phone' : 'desktop'}.$theme':
           _channelFiles(mobile: mobile, empty: false),
+      'components.legacy-wave3b.channel-files-raster.${mobile ? 'phone' : 'desktop'}.$theme':
+          _channelFiles(mobile: mobile, empty: false, raster: true),
     },
     'components.legacy-wave3b.agent-env-vars.desktop.$theme': _agentEnvVars(),
     'components.legacy-wave3b.agent-reminders.desktop.$theme': _agentReminders(

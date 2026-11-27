@@ -753,6 +753,9 @@ class _AttachmentViewState extends State<AttachmentView> {
                 authorized: current,
                 onClose: close,
                 onDownload: download,
+                allowFallbackDownload: known == null
+                    ? () async => await gate == AttachmentPreviewGate.enabled
+                    : null,
                 onShare: sharing.supported ? shareAttachment : null,
                 onNetworkSettings: kIsWeb
                     ? null
@@ -798,9 +801,6 @@ class _AttachmentViewState extends State<AttachmentView> {
     required bool page,
     required bool Function() current,
   }) async {
-    // Source opens the image lightbox at intent, independently of thumbnail
-    // readiness. A pending thumbnail load must not consume the user's click.
-    if (isImage && imageProvider == null && !loading) unawaited(loadImage());
     final siblings =
         widget.messageId != null && (widget.galleryItems?.length ?? 0) > 1
         ? widget.galleryItems!
@@ -1088,10 +1088,7 @@ class _AttachmentViewState extends State<AttachmentView> {
       opacity: opacity,
       fit: widget.imageFit,
       gaplessPlayback: true,
-      errorBuilder: (_, _, _) => const RaftLoadError(
-        'Preview unavailable. Download the original file.',
-        expand: false,
-      ),
+      errorBuilder: (_, _, _) => const RaftAttachmentUnavailableThumbnail(),
     );
     // The Hero is always mounted and switched on with `heroActive`: the card's
     // picture is not rebuilt (and never re-decoded) for the flight.

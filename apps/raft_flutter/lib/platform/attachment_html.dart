@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:raft_ui/raft_ui.dart' show raftStaticHtmlMaxChars;
 
+import '../data/raft_permalink.dart';
 import 'attachment_http.dart';
+import 'content_links.dart';
 
 /// Preview capabilities belong to one attachment and one server. Normal
 /// presigned download URLs never authorize execution of HTML in a browser.
@@ -196,7 +198,11 @@ class AttachmentHtmlLoader {
 
 /// Source-equivalent parent-owned link policy. Uploaded relative links,
 /// application links, private-network targets and credential URLs stay inert.
-Uri? attachmentHtmlExternalLink(String raw, String origin) {
+Uri? attachmentHtmlExternalLink(
+  String raw,
+  String origin, {
+  Set<String> appHosts = const {},
+}) {
   if (raw.length > 4096) return null;
   final uri = Uri.tryParse(raw.trim());
   if (uri == null ||
@@ -221,12 +227,12 @@ Uri? attachmentHtmlExternalLink(String raw, String origin) {
         '.test',
       ].any(host.endsWith) ||
       host == Uri.tryParse(origin)?.host.toLowerCase() ||
+      host == ContentLinks.originFor(origin).host ||
+      appHosts.contains(host) ||
       {
+        ...defaultRaftPermalinkHostnames,
         'api.raft.build',
         'api.slock.ai',
-        'app.raft.build',
-        'app.slock.ai',
-        'staging.slock.ai',
         'botiverse.dev',
       }.contains(host) ||
       host.endsWith('.botiverse.dev')) {

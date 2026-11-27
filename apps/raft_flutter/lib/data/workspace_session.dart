@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
+import '../platform/raft_deployment_links.dart';
 import 'attachment_image_repository.dart';
 import 'burst_reads.dart';
 import 'channel_revocation.dart';
@@ -243,10 +244,14 @@ class WorkspaceSession
   Future<bool> loadServerDirectory({
     bool cachedFirst = false,
     void Function()? onCacheMiss,
-  }) => _serverDirectory.loadServerDirectory(
-    cachedFirst: cachedFirst,
-    onCacheMiss: onCacheMiss,
-  );
+  }) {
+    final links = RaftDeploymentLinks.of(client);
+    links.prefetch(context.changed, () => !context.disposed);
+    return _serverDirectory.loadServerDirectory(
+      cachedFirst: cachedFirst,
+      onCacheMiss: onCacheMiss,
+    );
+  }
 
   Future<List<RaftChannel>?> cachedChannelDirectory(String serverId) =>
       _serverDirectory.cachedChannelDirectory(serverId);

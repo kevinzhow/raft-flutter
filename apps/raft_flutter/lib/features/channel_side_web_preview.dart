@@ -4,10 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 import 'package:webview_flutter/webview_flutter.dart' show WebViewPlatform;
 
-import '../data/raft_permalink.dart';
 import '../data/workspace_controller.dart';
-import '../platform/content_links.dart';
 import '../platform/macos_voice_over.dart';
+import '../platform/raft_deployment_links.dart';
 import 'artifacts/artifact_frame_bridge.dart';
 import 'channel_side_flags.dart';
 import 'desktop_browser_session.dart';
@@ -63,10 +62,8 @@ Uri? webPreviewUrl(String? href) {
 /// Raft's own app hosts (Web `useRaftPermalinkHostnames`: the page's and the
 /// deployment's, plus the fixed defaults): a link there is Raft's and routes
 /// in the app, never in a preview.
-Set<String> raftAppHostnames(WorkspaceController w) => {
-  ContentLinks.originFor(w.client.origin).host,
-  ...defaultRaftPermalinkHostnames,
-};
+Set<String> raftAppHostnames(WorkspaceController w) =>
+    RaftDeploymentLinks.of(w.client).hosts;
 
 final _trailingDots = RegExp(r'\.+$');
 

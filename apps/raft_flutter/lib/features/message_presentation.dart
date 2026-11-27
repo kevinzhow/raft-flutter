@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../data/raft_location.dart';
-import '../data/raft_permalink.dart';
 import '../data/source_time_formatter.dart';
 import '../data/user_error.dart';
 
@@ -19,13 +18,14 @@ import 'resource_cards.dart' show resourceRelativeTime;
 
 import '../data/workspace_controller.dart';
 import '../platform/attachment_files.dart';
-import '../platform/content_links.dart';
+import '../platform/raft_deployment_links.dart';
 import 'foreign_permalink.dart';
 import 'chat_navigation.dart';
 import 'message_action_card.dart';
 import 'attachment_view.dart';
 import 'private_route_guard.dart';
 import 'profile_preview.dart';
+import 'qualified_task_navigation.dart';
 import 'composer_directory.dart' show cachedExternalMembers;
 import 'external_mentions.dart';
 import 'agent_read_badge.dart';
@@ -305,32 +305,11 @@ class MessagePresentation extends StatelessWidget {
         refs[ref.text] = ref;
       }
     }
-    RaftChannel? dm(String token) {
-      final parts = token.split('~');
-      if (parts.length > 2 ||
-          (parts.length == 2 && !['agent', 'human'].contains(parts[1]))) {
-        return null;
-      }
-      final type = parts.length == 2
-          ? parts[1] == 'human'
-                ? 'user'
-                : 'agent'
-          : null;
-      final matches = controller.dms
-          .where(
-            (c) =>
-                (c.string('peerName', c.string('name')) == parts[0]) &&
-                (type == null || c.string('peerType') == type),
-          )
-          .toList();
-      return matches.length == 1 ? matches.single : null;
-    }
-
     for (final m
         in content.contains('dm:@')
             ? _dmReference.allMatches(content)
             : const <RegExpMatch>[]) {
-      final c = dm(m[1]!);
+      final c = resolveMessageDmReference(controller.dms, m[1]!);
       if (c == null) continue;
       refs[m[0]!] = RaftTextReference(
         text: m[0]!,
@@ -381,6 +360,9 @@ class MessagePresentation extends StatelessWidget {
               ?.label,
         );
       }
+    }
+    for (final task in qualifiedTaskLinks(controller, content)) {
+      refs[task.text] = task;
     }
     return refs.values.toList();
   }
@@ -445,7 +427,7 @@ class MessagePresentation extends StatelessWidget {
     if (uri?.scheme != 'raft-ref') {
       // Web handleOpenPermalink: a message link of this server opens in the
       // app, any other link opens externally.
-      final link = parseRaftPermalink(href, hostnames: [permalinkHostname]);
+      final link = permalinkDeployment.parse(href);
       if (link != null &&
           localAuthority &&
           !exportMode &&
@@ -564,30 +546,42 @@ class MessagePresentation extends StatelessWidget {
         return;
       }
       if (uri.host != 'task' ||
-          parts.length != 1 ||
+          (parts.length != 1 && parts.length != 2) ||
           message.channelId.isEmpty) {
         return;
       }
-      final number = int.tryParse(parts[0]);
+      final qualified = parts.length == 2;
+      final number = int.tryParse(parts.last);
       if (number == null) return;
-      final carrier = messageParentChannelId(message.json) ?? w.channel?.id;
+      final carrier = qualified
+          ? w.channelById(parts.first)?.id
+          : messageParentChannelId(message.json) ?? w.channel?.id;
       if (carrier == null) return;
       // The loaded channel tasks already know this task: open it from them
       // (the task surface revalidates its own copy).
-      final local = taskByNumber?.call(number);
+      final local = qualified ? null : taskByNumber?.call(number);
       if (local != null && onOpenTask != null) {
         onOpenTask!(Map<String, dynamic>.from(local));
         return;
       }
-      Future<Map<String, dynamic>> fetch() async {
-        final out = await w.query('/tasks/channel/$carrier/number/$number');
-        return Map<String, dynamic>.from(out['task']);
-      }
+      Future<Map<String, dynamic>> fetch() =>
+          readTaskReference(w, carrier, number);
 
       if (onOpenTask != null) {
         // No task row to open the task surface with yet.
         final task = await fetch();
-        if (context.mounted && current()) onOpenTask!(task);
+        if (current()) {
+          if (qualified) {
+            openQualifiedTaskSurface(
+              w,
+              task,
+              onOpenTask!,
+              navigation: navigation,
+            );
+          } else {
+            onOpenTask!(task);
+          }
+        }
         return;
       }
       // The dialog opens at once with what is loaded (or a skeleton) and fills
@@ -1034,8 +1028,8 @@ class MessagePresentation extends StatelessWidget {
         }
       : null;
 
-  String get permalinkHostname =>
-      ContentLinks.originFor(controller.client.origin).host;
+  RaftDeploymentLinks get permalinkDeployment =>
+      RaftDeploymentLinks.of(controller.client);
 
   /// Web MessageItem markdown `a` renderer for Raft permalinks: a Link chip
   /// labelled with the channel (or "linked message"), inert once unavailable.
@@ -1044,17 +1038,11 @@ class MessagePresentation extends StatelessWidget {
     String href,
   ) {
     if (exportMode || !localAuthority) return null;
-    final link = parseRaftPermalink(
-      href.replaceAll('&amp;', '&'),
-      hostnames: [permalinkHostname],
-    );
+    final link = permalinkDeployment.parse(href);
     if (link == null) return null;
     final raw = unavailablePermalink == null
         ? null
-        : parseRaftPermalink(
-            unavailablePermalink!,
-            hostnames: [permalinkHostname],
-          );
+        : permalinkDeployment.parse(unavailablePermalink!);
     if (raw != null && raw == link) {
       return RaftReferenceAppearance(
         RaftReferenceKind.permalinkUnavailable,
@@ -1155,6 +1143,8 @@ class MessagePresentation extends StatelessWidget {
                 RaftReferenceKind.task,
                 taskStatus: status,
               );
+      case 'task' when parts.length == 2:
+        return const RaftReferenceAppearance(RaftReferenceKind.unknownTask);
     }
     return null;
   }
