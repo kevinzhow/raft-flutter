@@ -142,15 +142,20 @@ class ChannelFilesCompactRow extends StatelessWidget {
     return SizedBox.square(
       dimension: CompactRowMetrics.mark,
       child: image && thumbnail != null
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(RaftSpace.x1),
-              child: DecoratedBox(
-                position: DecorationPosition.foreground,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(RaftSpace.x1),
-                  border: Border.all(color: t.colors['line-hairline']!),
+          // Web: the img's translucent hairline border over `image-gallery-bg`
+          // (white), the picture inside the border.
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(RaftSpace.x1),
+                border: Border.all(color: t.colors['line-hairline']!),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(1),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(RaftSpace.x1 - 1),
+                  child: thumbnail,
                 ),
-                child: thumbnail,
               ),
             )
           : Center(

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/source_channel_files_store.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
+import 'package:raft_flutter/features/source_channel_files_actions.dart';
 import 'package:raft_flutter/features/source_channel_files_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -448,20 +449,52 @@ Widget _agentRowsPreview(BuildContext context) {
   );
 }
 
+/// The raster thumbnail the fixture serves at `design.heic`'s `thumbnailUrl`.
+final _rasterThumbnail = MemoryImage(
+  File('../../tool/parity-ext/fixtures/announcement-picture.png')
+      .readAsBytesSync(),
+);
+
+/// The fixture serves only raster thumbnail URLs; any other image read fails,
+/// as in the Web host, and the row keeps its file glyph.
+Future<SourceChannelImageLease?> _acquireRasterThumbnail(
+  SourceChannelFileEntry file,
+  bool Function() authorized,
+  SourceChannelImageRendition rendition,
+) async => file.metadata['thumbnailUrl'] == null
+    ? null
+    : SourceChannelImageLease(provider: _rasterThumbnail, release: () async {});
+
 ParityCase _channelFiles({
   required bool mobile,
   required bool empty,
   bool raster = false,
 }) => ParityCase(
-  widgets: const [
+  widgets: [
     'raft_flutter:SourceChannelFilesProjectionView',
     'raft_flutter:SourceChannelFileRow',
+    if (raster) 'raft_flutter:SourceChannelFileThumbnail',
     'raft_flutter:ChannelFileGlyph',
     'raft_ui:RaftCard',
     'raft_ui:RaftProductEmptyState',
     'raft_ui:RaftButton',
   ],
   settle: const Duration(milliseconds: 300),
+  interact: raster
+      ? (t, ctx) async {
+          final thumbnail = find.byType(SourceChannelFileThumbnail);
+          await t.runAsync(
+            () => precacheImage(_rasterThumbnail, t.element(thumbnail.first)),
+          );
+          await t.pump();
+          final painted = t
+              .widgetList<RawImage>(
+                find.descendant(of: thumbnail, matching: find.byType(RawImage)),
+              )
+              .where((image) => image.image != null);
+          expect(painted, hasLength(1), reason: 'design.heic thumbnail');
+        }
+      : null,
   build: (ctx) {
     final ch = _fixture['channel'] as Map<String, dynamic>;
     final chId = ch['id'] as String;
@@ -486,16 +519,11 @@ ParityCase _channelFiles({
             store: store,
             compact: raster,
             thumbnailBuilder: raster
-                ? (file, _) => file.metadata['thumbnailUrl'] == null
-                      ? const SizedBox.shrink()
-                      : Image(
-                          fit: BoxFit.cover,
-                          image: FileImage(
-                            File(
-                              '../../tool/parity-ext/fixtures/announcement-picture.png',
-                            ),
-                          ),
-                        )
+                ? (file, authorized) => SourceChannelFileThumbnail(
+                    file: file,
+                    authorized: authorized,
+                    acquireImage: _acquireRasterThumbnail,
+                  )
                 : null,
             formatCreatedAt: _timeFmt(ctx).shortDateTime,
             formatCompactDate: _timeFmt(ctx).compactDate,
