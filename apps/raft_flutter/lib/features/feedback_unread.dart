@@ -13,7 +13,6 @@ class FeedbackUnreadState extends ChangeNotifier {
   FeedbackUnreadState._(this.workspace) {
     workspace.addListener(_syncAccount);
     workspace.resumes.addListener(_onShow);
-    _lifecycle = AppLifecycleListener(onShow: _onShow);
     _events = workspace.client.events.listen(_onEvent);
     _syncAccount();
   }
@@ -33,7 +32,6 @@ class FeedbackUnreadState extends ChangeNotifier {
   }
 
   final WorkspaceController workspace;
-  late final AppLifecycleListener _lifecycle;
   late final StreamSubscription<RaftEvent> _events;
   final _retry = RaftIdleTimer(yieldToAnimation: false);
   DateTime? _freshAt, _notBefore;
@@ -213,7 +211,6 @@ class FeedbackUnreadState extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _cancelRetry();
-    _lifecycle.dispose();
     unawaited(_events.cancel());
     workspace.resumes.removeListener(_onShow);
     workspace.removeListener(_syncAccount);
