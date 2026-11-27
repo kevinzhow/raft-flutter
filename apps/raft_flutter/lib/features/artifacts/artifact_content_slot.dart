@@ -2,8 +2,9 @@
 // an Artifact opened from its Activity row or a Search hit, its viewer in the
 // detail area beside the list (`expanded`, not covering, its own close); on a
 // phone its page over the list. Its address is the Artifact address
-// (`?artifact=<short id>`, `&version=`, `&review=`; artifactOpenAddress.ts)
-// with the comment it lands on in `msg=`.
+// (`?artifact=<short id>`, `&version=`, `&review=`; artifactOpenAddress.ts).
+// The comment a row lands on is the opening's, not the address's (Web
+// searchContentStore.ts:36-37): a reload opens the Artifact without it.
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart' show RaftAdaptiveWorkspace;
 
@@ -18,21 +19,39 @@ Map<String, String> artifactSlotQuery(ArtifactLinkTarget target) => {
   'artifact': artifactLinkId(target.id),
   if (target.version case final version?) 'version': '$version',
   'review': ?target.reviewId,
-  'msg': ?target.commentId,
 };
 
-/// The Artifact [location]'s detail slot shows, if any.
-ArtifactLinkTarget? artifactSlotTarget(RaftLocation location) {
+final _landings = Expando<ArtifactLinkTarget>('artifact slot landing');
+
+/// [target]'s opening: the comment it lands on, for the slot it opens.
+void rememberArtifactLanding(WorkspaceController w, ArtifactLinkTarget target) {
+  _landings[w] = target;
+}
+
+/// The Artifact [location]'s detail slot shows, if any; [w]'s last opening
+/// of it lands on its comment.
+ArtifactLinkTarget? artifactSlotTarget(
+  RaftLocation location, [
+  WorkspaceController? w,
+]) {
   final content = location.content;
   if (content?.kind != RaftContentKind.artifact) return null;
   final id = parseArtifactId(content!.id);
   if (id == null) return null;
   final version = int.tryParse(location.query('version') ?? '');
+  final pinned = version != null && version > 0 ? version : null;
+  final review = location.query('review');
+  final landing = w == null ? null : _landings[w];
   return ArtifactLinkTarget.activity(
     id,
-    version != null && version > 0 ? version : null,
-    reviewId: location.query('review'),
-    commentId: content.messageId,
+    pinned,
+    reviewId: review,
+    commentId:
+        landing?.id == id &&
+            landing?.version == pinned &&
+            landing?.reviewId == review
+        ? landing?.commentId
+        : null,
   );
 }
 
@@ -52,7 +71,7 @@ class ArtifactContentSlot extends StatelessWidget {
     return ListenableBuilder(
       listenable: session,
       builder: (context, _) {
-        final target = artifactSlotTarget(workspace.location);
+        final target = artifactSlotTarget(workspace.location, workspace);
         // workspace_artifacts_v0 off: an address naming one opens nothing.
         if (target == null || !session.enabled) return const SizedBox.expand();
         return ArtifactWorkspaceViewer(

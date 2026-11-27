@@ -78,6 +78,7 @@ Future<void> openWorkspaceArtifact(
   }
   if (ListDetailHost.hosts(context)) {
     // Web: the slot opens at once; with Artifacts off it shows nothing.
+    rememberArtifactLanding(w, target);
     openListDetail(context, w, artifactSlotQuery(target));
     return Future<void>.value();
   }
@@ -282,15 +283,17 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   /// nothing about the room the discussion has.
   double? _paneWidth;
 
-  /// Web keeps the discussion beside the artifact only where both fit; in a
-  /// narrower pane it is a sheet over the artifact, as it is on a phone.
+  /// Web ArtifactSurface `fit`: the discussion is beside the artifact where
+  /// both fit; in a narrower pane it is over the artifact, full height
+  /// (`measure`); on a phone it is a bottom sheet (`sheet`).
   bool get _commentsBeside =>
       (_paneWidth ?? double.infinity) >= RaftLayoutMetrics.desktopBreakpoint;
+  bool get _commentsInSheet =>
+      _regularCommentsOpen && !_commentsBeside && widget.page;
 
   void _syncRegularCommentsRoute() {
     if (!mounted) return;
-    final needsSheet = _regularCommentsOpen && !_commentsBeside;
-    if (!needsSheet) {
+    if (!_commentsInSheet) {
       _removeRegularCommentsRoute();
     } else if (_regularCommentsRoute == null) {
       unawaited(_presentRegularComments());
@@ -377,7 +380,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   void _showSentDrafts() {
     if (!current || discussion?.current != true || report != null) return;
     if (!_regularCommentsOpen) _toggleComments();
-    if (_commentsBeside) _focusCommentsEntry();
+    if (!_commentsInSheet) _focusCommentsEntry();
   }
 
   void _toggleComments({bool fromMore = false}) {
@@ -1664,7 +1667,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       ),
       _Panel.comments =>
         discussion == null ||
-                report == null && (!_regularCommentsOpen || !_commentsBeside)
+                report == null && (!_regularCommentsOpen || _commentsInSheet)
             ? null
             : _commentsPanel(data, onClose: _closeComments),
       _Panel.none => null,
@@ -1767,7 +1770,11 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         ),
       ],
     );
-    if (widget.page && (side == null || !_regularCommentsOpen)) {
+    // A pane too narrow for both: the discussion over the artifact.
+    final commentsOver =
+        side != null && panel == _Panel.comments && !_commentsBeside;
+    if (commentsOver ||
+        widget.page && (side == null || !_regularCommentsOpen)) {
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -1844,8 +1851,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     _paneWidth = constraints.maxWidth;
-                    final needsSheet = _regularCommentsOpen && !_commentsBeside;
-                    if (needsSheet != (_regularCommentsRoute != null)) {
+                    if (_commentsInSheet != (_regularCommentsRoute != null)) {
                       WidgetsBinding.instance.addPostFrameCallback(
                         (_) => _syncRegularCommentsRoute(),
                       );

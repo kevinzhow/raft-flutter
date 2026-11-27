@@ -29,8 +29,7 @@ enum RaftMobileTab { chat, tasks, members, settings }
 /// `?open=task:<taskId>` beside `?task=<channelId>:task:<taskId>`).
 /// `artifact`: an Artifact's viewer there (Web ArtifactContentSlot): on
 /// Activity and Search its address `?artifact=<id>` with `&version=` and
-/// `&review=` (the retired `?open=artifact:<id>` read too); `msg=` the
-/// comment it lands on.
+/// `&review=` (the retired `?open=artifact:<id>` read too).
 enum RaftContentKind {
   channel,
   dm,
@@ -100,7 +99,6 @@ class RaftContentLocation {
             RaftContentKind.dm,
             RaftContentKind.thread,
             RaftContentKind.task,
-            RaftContentKind.artifact,
           }.contains(kind)
           ? messageId
           : null,
@@ -330,11 +328,7 @@ class RaftLocation {
       RaftContentLocation.parse(query('open'), messageId: messageId) ??
       switch (query('artifact')) {
         final id? when id.isNotEmpty && _artifactSlotRoutes.contains(route) =>
-          RaftContentLocation(
-            RaftContentKind.artifact,
-            id,
-            messageId: messageId,
-          ),
+          RaftContentLocation(RaftContentKind.artifact, id),
         _ => null,
       };
   static const _artifactSlotRoutes = {RaftRoute.activity, RaftRoute.search};
