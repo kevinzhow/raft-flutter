@@ -21,8 +21,14 @@ final _channel = RaftChannel({
   'channelCapabilities': {'addChannelMembers': true},
 });
 
-Future<dynamic> _mount(WidgetTester t, {bool invitesFail = false}) async {
-  t.view.physicalSize = _size;
+Future<dynamic> _mount(
+  WidgetTester t, {
+  bool invitesFail = false,
+  Size size = _size,
+  double scale = 1,
+  List<Map<String, dynamic>>? invites,
+}) async {
+  t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
   final (w, api) = (await t.runAsync(fixture))!;
@@ -51,18 +57,25 @@ Future<dynamic> _mount(WidgetTester t, {bool invitesFail = false}) async {
     const Duration(days: 13, hours: 23),
   );
   api.routes['GET /channels/c1/external-invites'] = (_) => {
-    'invites': [
-      {
-        'id': 'i1',
-        'email': 'guest@example.invalid',
-        'expiresAt': expires.toIso8601String(),
-      },
-    ],
+    'invites':
+        invites ??
+        [
+          {
+            'id': 'i1',
+            'email': 'guest@example.invalid',
+            'expiresAt': expires.toIso8601String(),
+          },
+        ],
   };
   if (invitesFail) api.statuses['GET /channels/c1/external-invites'] = 500;
   await t.pumpWidget(
     MaterialApp(
       theme: raftTheme().copyWith(platform: TargetPlatform.android),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(scale)),
+        child: child!,
+      ),
       home: Scaffold(
         body: ChannelMembers(controller: w, channel: _channel, page: true),
       ),
@@ -172,4 +185,38 @@ void main() {
     expect(find.text('guest@example.invalid'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
   });
+
+  // Web ExternalInviteRow: the email is one truncated line and the state keeps
+  // its width after it. Text too large for both on one line puts the state
+  // under the email instead of wrapping the email a few letters at a time.
+  for (final (size, scale) in [
+    (const Size(360, 800), 1.3),
+    (const Size(360, 800), 2.0),
+    (const Size(390, 844), 3.1),
+  ]) {
+    testWidgets('at ${scale}x the state goes under a one-line email', (
+      t,
+    ) async {
+      const address = 'a-very-long-guest-address@subdomain.example.invalid';
+      await _mount(
+        t,
+        size: size,
+        scale: scale,
+        invites: [
+          {'id': 'i1', 'email': address, 'awaitingApproval': true},
+        ],
+      );
+      expect(t.takeException(), isNull);
+      final row = t.getRect(find.byKey(const ValueKey('external-invite-i1')));
+      final email = t.getRect(find.text(address));
+      final state = t.getRect(find.text('Waiting for approval'));
+      // One line: as tall as a member's one-line name in the same style.
+      expect(email.height, t.getSize(find.text('Alice')).height);
+      expect(state.top, greaterThanOrEqualTo(email.bottom));
+      expect(state.left, email.left);
+      expect(state.right, lessThanOrEqualTo(row.right));
+      expect(state.bottom, lessThanOrEqualTo(row.bottom));
+      await t.pumpWidget(const SizedBox());
+    });
+  }
 }
