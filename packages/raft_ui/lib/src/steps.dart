@@ -20,6 +20,14 @@ final _labelWidths =
       double
     >();
 
+RaftSlotStyle _stepsTitleStyle(RaftSlotStyle style, RaftTokens tokens) =>
+    style.copyWith(
+      properties: {
+        ...style.properties,
+        'font-size': CssNum(tokens.typeSlot('footnote').fontSize, 'px'),
+      },
+    );
+
 /// One `Step`: a [title] and an optional [description]; its own [status] overrides the one `Steps` derives.
 @immutable
 class RaftStep {
@@ -71,7 +79,7 @@ class RaftSteps extends StatelessWidget {
     BuildContext context,
     double width,
     Map<String, RaftSlotStyle> slots,
-    RaftTokenResolver tokens,
+    RaftTokens tokens,
   ) {
     final indicator = slots['indicator']?.width ?? 20;
     final gap = slots['main']?.columnGap ?? 8;
@@ -80,7 +88,10 @@ class RaftSteps extends StatelessWidget {
       CssSeq(items: [..., CssNum(:final value)]) => value,
       _ => 32.0,
     };
-    final title = slots['title']?.text(tokens);
+    final titleSlot = slots['title'];
+    final title = titleSlot == null
+        ? null
+        : _stepsTitleStyle(titleSlot, tokens).text(tokens.recipeTokens);
     final scaler = MediaQuery.textScalerOf(context);
     final direction = Directionality.of(context);
     var needed = (steps.length - 1) * connectorWidth;
@@ -137,7 +148,7 @@ class RaftSteps extends StatelessWidget {
             states: states.copyWith(containerWidth: wideBreakpoint),
             tokens: rt,
           ),
-          rt,
+          t,
         );
     final orientation = vertical
         ? RaftStepsCssOrientation.vertical
@@ -229,7 +240,9 @@ class _PublishedStep extends StatelessWidget {
     return Padding(
       padding: style.margin,
       child: RaftRecipeBox(
-        style: style,
+        style: name == 'title'
+            ? _stepsTitleStyle(style, RaftTokens.of(context))
+            : style,
         tokens: RaftTokens.of(context).recipeTokens,
         width: width,
         child: child,
@@ -247,7 +260,7 @@ class _PublishedStep extends StatelessWidget {
     final icon = slots['icon']!;
     final marker = RaftRecipeBox(
       key: ValueKey('raft-step-indicator-$index'),
-      style: indicator,
+      style: indicator.withCssUsedBorderWidths(),
       tokens: rt,
       alignment: Alignment.center,
       child:

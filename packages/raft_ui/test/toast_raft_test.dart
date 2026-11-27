@@ -207,10 +207,39 @@ void main() {
     await t.tap(find.byKey(const Key('toast-close')));
     await _motion(t);
     expect(find.byType(RaftToast), findsNothing);
-    controller.show('Copied', dismissible: false);
+    controller.show('Copied', dismissible: false, icon: true);
     await _motion(t);
     expect(find.byKey(const Key('toast-close')), findsNothing);
+    expect(
+      t.getRect(find.byType(RaftToast)).right -
+          t.getRect(find.text('Copied')).right,
+      closeTo(28, 1),
+    );
     controller.clear();
+  });
+
+  testWidgets('an iconless bottom toast keeps both gaps before its action', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: Center(
+            child: RaftToast(
+              title: 'Archived',
+              icon: false,
+              actionLabel: 'Undo',
+              onAction: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    final title = t.getRect(find.text('Archived'));
+    final action = t.getRect(find.text('Undo'));
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(action.left - title.right, 24);
   });
 
   testWidgets(

@@ -1836,7 +1836,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           avatar,
           RaftListRowBody(
             children: [
-              RaftListRowTitle(name),
+              RaftListRowTitle(name, cssLineBox: true),
               if (subtitle.isNotEmpty) RaftListRowMeta(subtitle),
               if (!wide && !plainPresence && activityText.isNotEmpty)
                 Padding(

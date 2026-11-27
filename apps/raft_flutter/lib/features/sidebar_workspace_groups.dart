@@ -1,6 +1,11 @@
 part of 'workspace_view.dart';
 
 extension _SidebarWorkspaceGroups on _WorkspaceViewState {
+  Widget sidebarInsetSliver({required Widget child}) => SliverPadding(
+    padding: RaftLayoutMetrics.sidebarCellPadding,
+    sliver: SliverToBoxAdapter(child: child),
+  );
+
   WorkspaceSidebarMenus get sidebarMenus => WorkspaceSidebarMenus(
     context: context,
     w: w,

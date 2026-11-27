@@ -489,17 +489,29 @@ class RaftListRowBottom extends StatelessWidget {
 
 /// `ListRowTitle`: 16/24 semibold on one line (bold on an unread row).
 class RaftListRowTitle extends StatelessWidget {
-  const RaftListRowTitle(this.text, {super.key});
+  const RaftListRowTitle(this.text, {super.key, this.cssLineBox = false});
   final String text;
+  final bool cssLineBox;
 
   @override
   Widget build(BuildContext context) {
+    final title = raftText(context, text);
+    final style = _partText(context, _part(context, (recipe) => recipe.title));
+    if (cssLineBox) {
+      return RaftCssText(
+        title,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      );
+    }
     return Text(
-      raftText(context, text),
+      title,
       maxLines: 1,
       softWrap: false,
       overflow: TextOverflow.ellipsis,
-      style: _partText(context, _part(context, (recipe) => recipe.title)),
+      style: style,
     );
   }
 }

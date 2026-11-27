@@ -664,23 +664,28 @@ class RaftConversationNavigationRecipe {
     required bool loudUnread,
     double viewportWidth = 1280,
     bool selected = false,
+    bool fullWidthCell = false,
   }) =>
       (kind == RaftConversationNavKind.directMessage ||
           channelGlyphVariant == RaftChannelGlyphVariant.mountedProduct)
       ? RaftTypography.heading(
           tokens,
-          size: tokens.size(
-            viewportWidth < 768
-                ? 'type.sidebarItemPhone.size'
-                : 'type.sidebarItem.size',
-            fallback: 14,
-          ),
-          line: tokens.size(
-            viewportWidth < 768
-                ? 'type.sidebarItemPhone.line'
-                : 'type.sidebarItem.line',
-            fallback: 20,
-          ),
+          size: fullWidthCell && viewportWidth >= 768
+              ? tokens.typeSlot('callout').fontSize
+              : tokens.size(
+                  viewportWidth < 768
+                      ? 'type.sidebarItemPhone.size'
+                      : 'type.sidebarItem.size',
+                  fallback: 14,
+                ),
+          line: fullWidthCell && viewportWidth >= 768
+              ? tokens.typeSlot('callout').lineHeight
+              : tokens.size(
+                  viewportWidth < 768
+                      ? 'type.sidebarItemPhone.line'
+                      : 'type.sidebarItem.line',
+                  fallback: 20,
+                ),
           weight: loudUnread
               ? FontWeight.w700
               : selected
@@ -861,6 +866,7 @@ class RaftNavItem extends StatelessWidget {
     this.menuOpen = false,
     this.activityText,
     this.metaText,
+    this.fullWidthCell = false,
   }) : assert(icon != null || glyph != null || leading != null),
        assert(conversationKind == null || role == RaftNavItemRole.generic);
   final String label;
@@ -891,6 +897,7 @@ class RaftNavItem extends StatelessWidget {
   /// unchanged. DM avatars must be supplied by the product, not inferred here.
   final RaftConversationNavKind? conversationKind;
   final RaftChannelGlyphVariant channelGlyphVariant;
+  final bool fullWidthCell;
 
   /// Mounted channel membership and accepted notification preference. They
   /// change emphasis and count appearance; they never disable navigation.
@@ -1017,6 +1024,11 @@ class RaftNavItem extends StatelessWidget {
         child: _mounted(context, t),
       );
     }
+    final cellBorder = raftControlBorderPx(
+      context,
+      t.size('stroke.sidebarItem', fallback: 1),
+    );
+    final itemGap = t.size('space.sidebarItemGap', fallback: 6);
     final activity = unread == 0 && (activityValue?.isNotEmpty ?? false)
         ? activityValue
         : null;
@@ -1107,6 +1119,7 @@ class RaftNavItem extends StatelessWidget {
                       loudUnread: _loudUnread || _markedTone,
                       selected: selected,
                       viewportWidth: MediaQuery.sizeOf(context).width,
+                      fullWidthCell: fullWidthCell,
                     ) ??
                     RaftTypography.body(
                       t,
@@ -1134,6 +1147,7 @@ class RaftNavItem extends StatelessWidget {
                           loudUnread: unread > 0,
                           selected: selected,
                           viewportWidth: MediaQuery.sizeOf(context).width,
+                          fullWidthCell: fullWidthCell,
                         ) ??
                         RaftTypography.heading(
                           t,
@@ -1207,7 +1221,11 @@ class RaftNavItem extends StatelessWidget {
           )
         else
           leading,
-        SizedBox(width: t.size('space.sidebarItemGap', fallback: 6)),
+        SizedBox(
+          width: fullWidthCell && !phoneConversation
+              ? itemGap - cellBorder
+              : itemGap,
+        ),
         Expanded(
           child: activity != null && !uniform
               ? LayoutBuilder(
@@ -1379,7 +1397,7 @@ class RaftNavItem extends StatelessWidget {
               : const RaftSidebarDraftIcon(),
       ],
     );
-    Widget row(bool pointerPressed) => RaftControl(
+    Widget row(bool pointerPressed, {double? paintWidth}) => RaftControl(
       recipe: conversationKind == null
           ? null
           : RaftMountedConversationControlRecipe(
@@ -1388,10 +1406,7 @@ class RaftNavItem extends StatelessWidget {
               pointerPressed: pointerPressed,
               menuOpen: menuOpen,
               phone: phoneConversation,
-              borderWidth: raftControlBorderPx(
-                context,
-                t.size('stroke.sidebarItem', fallback: 1),
-              ),
+              borderWidth: cellBorder,
             ),
       onPressed: _tap,
       selected: selected,
@@ -1406,6 +1421,7 @@ class RaftNavItem extends StatelessWidget {
                 (wrap ? 2 : 0)
           : null,
       kind: RaftControlKind.sidebar,
+      visualWidth: paintWidth,
       visualHeight: conversationKind != null
           ? conversation!.rowHeight(
                   viewportWidth: MediaQuery.sizeOf(context).width,
@@ -1415,7 +1431,12 @@ class RaftNavItem extends StatelessWidget {
                 (wrap ? 2 : 0)
           : 32,
       flexibleHeight: wrap,
-      padding: wrap
+      padding: fullWidthCell
+          ? EdgeInsets.symmetric(
+              horizontal: phoneConversation ? 12 : 8 - cellBorder,
+              vertical: wrap ? 6 : 0,
+            )
+          : wrap
           ? EdgeInsets.symmetric(
               horizontal: phoneConversation ? RaftSpace.x3 : 6,
               vertical: 6,
@@ -1448,8 +1469,24 @@ class RaftNavItem extends StatelessWidget {
           conversationKind != null)
         raftText(context, 'Draft'),
     ].join(', ');
-    const halfRowGap = RaftLayoutMetrics.sidebarRowGap / 2;
-    final geometry = t.themeOverrides?.geometry;
+    final pointerSurface = _MountedNavigationPointerSurface(
+      builder: (pressed) {
+        final control = fullWidthCell
+            ? LayoutBuilder(
+                builder: (_, box) => row(
+                  pressed,
+                  paintWidth:
+                      (box.maxWidth -
+                              RaftLayoutMetrics.sidebarCellPadding.horizontal)
+                          .clamp(0, double.infinity),
+                ),
+              )
+            : row(pressed);
+        return RaftDensityScope.of(context) == RaftDensity.touch
+            ? RaftTouchTarget(child: control)
+            : control;
+      },
+    );
     final item = Semantics(
       selected: selected,
       onTap: _tap,
@@ -1458,19 +1495,11 @@ class RaftNavItem extends StatelessWidget {
       excludeSemantics: true,
       child: conversationKind == null
           ? row(false)
+          : fullWidthCell
+          ? pointerSurface
           : Padding(
-              padding: EdgeInsets.only(
-                top: geometry?['space.sidebarItemMarginTop'] ?? halfRowGap,
-                bottom:
-                    geometry?['space.sidebarItemMarginBottom'] ?? halfRowGap,
-              ),
-              child: _MountedNavigationPointerSurface(
-                // Touch density expands the hit and semantic area to 48dp.
-                builder: (pressed) =>
-                    RaftDensityScope.of(context) == RaftDensity.touch
-                    ? RaftTouchTarget(child: row(pressed))
-                    : row(pressed),
-              ),
+              padding: RaftLayoutMetrics.sidebarRowSpacing(t),
+              child: pointerSurface,
             ),
     );
     if (onContextMenu == null) {

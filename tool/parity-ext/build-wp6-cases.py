@@ -251,7 +251,7 @@ ACTIVE_INSTALL = {'state': 'active', 'epochs': EPOCHS}
 
 def raw_health(**kw):
     base = {'install': ACTIVE_INSTALL, 'credential': {'state': 'active'}, 'bindings': [], 'audiences': [],
-            'lastVerifiedAt': None, 'failingSurface': None}
+            'lastVerifiedAt': None, 'agentMentionSync': None, 'failingSurface': None}
     base.update(kw)
     return base
 

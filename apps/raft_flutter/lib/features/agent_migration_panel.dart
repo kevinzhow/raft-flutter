@@ -482,7 +482,7 @@ class _MigrationReferenceState extends State<MigrationReference> {
           child: RaftSelectionArea(
             child: Text(
               widget.migrationRef,
-              style: RaftTypography.mono(t, size: 11, line: 16, color: t.ink),
+              style: t.scale(RaftTypeScale.monoMeta, mono: true),
             ),
           ),
         ),

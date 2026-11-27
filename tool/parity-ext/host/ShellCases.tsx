@@ -334,7 +334,7 @@ type ParityExtShPrimitives = {
   confirms: Record<string, { title: string; message: string; confirmLabel: string; variant?: string; hideCancel?: boolean }>;
   banners: { intent: "destructive" | "warning" | "info" | "success"; density?: "sm" | "md" | "lg"; title?: string; text: string; icon?: boolean; action?: string }[];
   empties: Record<string, { icon: string; title: string; description?: string; action?: string }>;
-  toasts: Record<string, { kind: "success" | "error" | "info" | "warning"; title: string; description?: string; plain?: boolean; action?: string }>;
+  toasts: Record<string, { kind: "success" | "error" | "info" | "warning"; title: string; description?: string; plain?: boolean; dismissible?: boolean; action?: string }>;
 };
 
 function parityExtShPrimitives(): ParityExtShPrimitives {
@@ -356,7 +356,8 @@ function ParityExtShPrimitiveView({ p }: { p: ParityExtShProps }) {
     const t = prim.toasts[toastKey];
     const options = {
       description: t.description,
-      ...(t.plain ? { icon: false, dismissible: false } : {}),
+      ...(t.plain ? { icon: false } : {}),
+      dismissible: t.dismissible ?? false,
       ...(t.action ? { actionProps: { children: t.action, onClick: () => undefined } } : {}),
     } as never;
     parityExtShToast[t.kind](t.title, options);

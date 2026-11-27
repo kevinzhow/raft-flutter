@@ -160,6 +160,10 @@ class RaftToast extends StatelessWidget {
     final cell = s.icon.width ?? 20;
     final titleOnly = !icon && !hasAction && !hasClose && !hasDescription;
     final padding = s.content.padding;
+    final columnGap = s.content.columnGap ?? 12;
+    final bodyToActionsGap = top
+        ? s.actions.columnGap ?? 16
+        : columnGap * (icon ? 1 : 2);
     final copy = Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: cross,
@@ -176,7 +180,7 @@ class RaftToast extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(width: s.content.columnGap ?? 12),
+          SizedBox(width: columnGap),
         ],
         Flexible(child: body),
       ],
@@ -185,16 +189,11 @@ class RaftToast extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Flexible(fit: top ? FlexFit.tight : FlexFit.loose, child: copy),
-        if (close != null || action != null) ...[
-          SizedBox(
-            width: top ? s.actions.columnGap ?? 16 : s.content.columnGap ?? 12,
-          ),
-          if (close != null) close,
-          if (close != null && action != null)
-            SizedBox(width: s.actions.columnGap ?? 16),
-          if (action != null) action,
-        ] else if (icon)
-          SizedBox(width: s.content.columnGap ?? 12),
+        SizedBox(width: bodyToActionsGap),
+        if (close != null) close,
+        if (close != null && action != null)
+          SizedBox(width: s.actions.columnGap ?? 16),
+        if (action != null) action,
       ],
     );
     Widget root = RaftRecipeBox(
@@ -210,22 +209,7 @@ class RaftToast extends StatelessWidget {
                 ? math.max(0, (s.content.minWidth ?? 112) - padding.horizontal)
                 : 0,
           ),
-          // LocalizedToastProvider's `grid-cols-[auto_minmax(0,1fr)_auto]
-          // gap-x-3` keeps three tracks: a title-only body sits in the first
-          // (auto) one at the start, the two empty tracks leave their 12px
-          // gaps on the right (text 16 from the left, 40 from the right), and
-          // the 7rem minimum widens the `1fr` track.
-          child: _ToastSnapWidth(
-            child: titleOnly
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(child: body),
-                      SizedBox(width: (s.content.columnGap ?? 12) * 2),
-                    ],
-                  )
-                : row,
-          ),
+          child: _ToastSnapWidth(child: row),
         ),
       ),
     );

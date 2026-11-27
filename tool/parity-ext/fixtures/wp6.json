@@ -266,6 +266,7 @@
       "bindings": [],
       "audiences": [],
       "lastVerifiedAt": null,
+      "agentMentionSync": null,
       "failingSurface": null
      }
     },
@@ -328,6 +329,7 @@
       "bindings": [],
       "audiences": [],
       "lastVerifiedAt": null,
+      "agentMentionSync": null,
       "failingSurface": null
      }
     },
@@ -396,6 +398,7 @@
       "bindings": [],
       "audiences": [],
       "lastVerifiedAt": null,
+      "agentMentionSync": null,
       "failingSurface": null
      }
     },
@@ -465,6 +468,7 @@
       "bindings": [],
       "audiences": [],
       "lastVerifiedAt": null,
+      "agentMentionSync": null,
       "failingSurface": null
      }
     },
@@ -560,6 +564,7 @@
       "bindings": [],
       "audiences": [],
       "lastVerifiedAt": null,
+      "agentMentionSync": null,
       "failingSurface": null
      }
     },
@@ -655,6 +660,7 @@
       "bindings": [],
       "audiences": [],
       "lastVerifiedAt": null,
+      "agentMentionSync": null,
       "failingSurface": null
      }
     },
@@ -754,6 +760,7 @@
        }
       ],
       "lastVerifiedAt": "2026-06-20T08:30:00.000Z",
+      "agentMentionSync": null,
       "failingSurface": null
      }
     },
@@ -853,6 +860,7 @@
        }
       ],
       "lastVerifiedAt": "2026-06-20T08:30:00.000Z",
+      "agentMentionSync": null,
       "failingSurface": "audience"
      }
     },
@@ -943,6 +951,7 @@
       ],
       "audiences": [],
       "lastVerifiedAt": null,
+      "agentMentionSync": null,
       "failingSurface": null
      }
     },

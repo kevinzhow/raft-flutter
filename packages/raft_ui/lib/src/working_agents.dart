@@ -8,6 +8,7 @@ import 'dismiss_scope.dart';
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 import 'design_primitives.dart';
 import 'localization.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'mounted_avatar_recipe.dart';
 import 'popover_surface.dart';
 import 'raft/ui_tokens.dart';
@@ -513,9 +514,9 @@ class RaftWorkingNow extends StatelessWidget {
                           bottom: BorderSide(color: t.ui.lineSeam),
                         ),
                       ),
-                      child: Text(
+                      child: RaftCssText(
                         raftText(context, 'Working now'),
-                        style: t.scale(RaftTypeScale.headline, color: t.strong),
+                        style: t.scale(RaftTypeScale.headline),
                       ),
                     ),
                   ),
@@ -579,9 +580,8 @@ class RaftWorkingNowRow extends StatelessWidget {
             children: [
               RaftMountedAvatarFrame(
                 name: agent.name,
-                avatarContext: RaftMountedAvatarContext.compactList,
+                avatarContext: RaftMountedAvatarContext.compactRow,
                 identity: RaftMountedAvatarIdentity.agent,
-                extent: 27,
                 presence: const RaftAvatarPresence(
                   activity: RaftAvatarActivity.working,
                   online: true,
@@ -594,17 +594,16 @@ class RaftWorkingNowRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+                    RaftCssText(
                       agent.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: t.scale(
                         RaftTypeScale.callout,
                         weight: FontWeight.w700,
-                        color: t.strong,
                       ),
                     ),
-                    Text(
+                    RaftCssText(
                       agent.text,
                       key: const Key('working-now-text'),
                       maxLines: 2,

@@ -695,7 +695,9 @@ Widget _toast(ParityContext ctx) {
           title: t['title'] as String,
           description: t['description'] as String?,
           icon: t['plain'] != true,
-          onClose: t['plain'] == true ? null : () {},
+          onClose: t['dismissible'] == true ? () {} : null,
+          actionLabel: t['action'] as String?,
+          onAction: t['action'] == null ? null : () {},
           tone: switch (t['kind']) {
             'error' => RaftToastRecipeTone.error,
             'info' => RaftToastRecipeTone.info,

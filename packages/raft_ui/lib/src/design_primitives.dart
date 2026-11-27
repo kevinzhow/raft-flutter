@@ -109,6 +109,18 @@ abstract final class RaftLayoutMetrics {
 
   static const double desktopControl = 34;
   static const double sidebarRowGap = 2;
+  static const double sidebarCellInset = 8;
+  static const sidebarCellPadding = EdgeInsetsDirectional.symmetric(
+    horizontal: sidebarCellInset,
+  );
+
+  static EdgeInsets sidebarRowSpacing(RaftTokens tokens) {
+    final geometry = tokens.themeOverrides?.geometry;
+    return EdgeInsets.only(
+      top: geometry?['space.sidebarItemMarginTop'] ?? sidebarRowGap / 2,
+      bottom: geometry?['space.sidebarItemMarginBottom'] ?? sidebarRowGap / 2,
+    );
+  }
 
   static double sidebarRowHeight(RaftTokens tokens, double width) =>
       width < desktopBreakpoint ? 44 : (tokens.desktop ? desktopControl : 38);
@@ -177,18 +189,19 @@ class RaftSidebarRecipe {
   EdgeInsetsDirectional contentInset({
     bool headerInFlow = false,
     double bottomInset = 0,
+    bool insetCells = true,
 
     /// False when the phone's navigation is the side rail: nothing floats at
     /// the bottom, so the list reserves no capsule clearance.
     bool bottomBar = true,
   }) => EdgeInsetsDirectional.only(
     start: product
-        ? 8
+        ? (insetCells ? RaftLayoutMetrics.sidebarCellInset : 0)
         : desktop
         ? 26
         : 28,
     end: product
-        ? 8
+        ? (insetCells ? RaftLayoutMetrics.sidebarCellInset : 0)
         : desktop
         ? 18
         : 28,

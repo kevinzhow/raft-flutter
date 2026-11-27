@@ -3311,6 +3311,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       key: ValueKey('sidebar-${entry.key}'),
       label: entry.label,
       conversationKind: RaftConversationNavKind.directMessage,
+      fullWidthCell: true,
       leading: mountedPeerAvatar(
         entry.label,
         true,
@@ -3435,6 +3436,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       conversationKind: c.type == 'dm'
           ? RaftConversationNavKind.directMessage
           : RaftConversationNavKind.channel,
+      fullWidthCell: c.type == 'dm',
       selected: w.section == 'chat' && w.channel?.id == c.id,
       unread: reads.unread,
       joined: c.joined,
@@ -3528,6 +3530,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                       slivers: [
                         SliverPadding(
                           padding: recipe.contentInset(
+                            insetCells: false,
                             headerInFlow: !showWorkspaceTopBar,
                             bottomBar: !railNavigation,
                             bottomInset: edgeToEdgeHome
@@ -3538,7 +3541,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                             slivers: [
                               if (mobileHome &&
                                   !mobileTabIds.contains(MobileTabs.search))
-                                SliverToBoxAdapter(
+                                sidebarInsetSliver(
                                   child: RaftNavItem(
                                     key: const Key('nav-search'),
                                     role: RaftNavItemRole.search,
@@ -3550,7 +3553,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                     onTap: () => select('search'),
                                   ),
                                 ),
-                              SliverToBoxAdapter(
+                              sidebarInsetSliver(
                                 child: WorkspaceHomeShortcuts(
                                   controller: w,
                                   mobileHome: mobileHome,

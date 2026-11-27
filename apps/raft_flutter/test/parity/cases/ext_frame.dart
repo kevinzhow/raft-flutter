@@ -78,6 +78,7 @@ WorkspaceController _workspace(ParityContext ctx) {
   final ids = ParityIdentities(ctx);
   final scenes = (ctx.fixtures['ext:screens'] as Map)['scenes'] as Map;
   final frame = ctx.fixtures['ext:frame'] as Map;
+  final frameRoutes = (frame['routeSets'] as Map)[ctx.props['routeSet']];
   final avatarResetRoutes = ctx.props['avatarReset'] == true
       ? (frame['routeSets'] as Map)['fr-avatar-reset'] as Map
       : null;
@@ -89,10 +90,8 @@ WorkspaceController _workspace(ParityContext ctx) {
           ? ids.agents
           : avatarResetRoutes['GET /agents'] as List,
       'GET /servers/visual-server/members': ids.members,
-      if (ctx.props['routeSet'] == 'fr-bell')
-        ...Map<String, dynamic>.from(
-          (frame['routeSets'] as Map)['fr-bell'] as Map,
-        ),
+      if (ctx.props['routeSet'] case 'fr-bell' || 'fr-topbar-drag')
+        ...Map<String, dynamic>.from(frameRoutes as Map),
       if (selected != null)
         'GET /tasks/channel/$selected': {'tasks': <dynamic>[]},
       if (selected != null)
@@ -418,6 +417,12 @@ final ParityCase _case = ParityCase(
         t.widget<RaftMountedAvatarFrame>(frame).presence?.light,
         RaftPresence.offline,
       );
+      final sidebar = find.byKey(const Key('workspace-sidebar'));
+      expect(t.getSize(row).width, t.getSize(sidebar).width);
+      ctx.captureEvidence['rowSize'] = {
+        'width': t.getSize(row).width,
+        'height': t.getSize(row).height,
+      };
     }
     if (ctx.props['extCase'] == 'desktop.topbar-drag') {
       final origin = find.byKey(
@@ -426,12 +431,16 @@ final ParityCase _case = ParityCase(
       final destination = find.byKey(
         const ValueKey('topbar-strip-item-shell-server-side'),
       );
+      final search = find.byKey(const Key('topbar-search'));
+      expect(t.getSize(search).width, 520);
+      expect(find.byType(RaftNotificationAttention), findsOneWidget);
+      final destinationCenter = t.getCenter(destination);
       final pointer = await t.startGesture(
         t.getCenter(origin),
         kind: PointerDeviceKind.mouse,
       );
       addTearDown(pointer.cancel);
-      await pointer.moveTo(t.getCenter(destination));
+      await pointer.moveTo(destinationCenter);
       await t.pump();
       expect(
         find.descendant(
@@ -442,6 +451,8 @@ final ParityCase _case = ParityCase(
         ),
         findsOneWidget,
       );
+      expect(t.getCenter(destination).dx < t.getCenter(origin).dx, isTrue);
+      ctx.captureEvidence['searchWidth'] = t.getSize(search).width;
     }
     if ((ctx.props['extCase'] as String?)?.endsWith('.bell-open') == true) {
       expect(find.byType(RaftNotificationCenter), findsOneWidget);

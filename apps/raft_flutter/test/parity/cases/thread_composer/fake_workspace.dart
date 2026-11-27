@@ -26,6 +26,11 @@ class ParityFakeClient extends RaftClient {
 
   @override
   Stream<RaftEvent> get events => stream.stream;
+
+  @override
+  Future<dynamic> getForAccount(String path, {Map<String, dynamic>? query}) =>
+      request('GET', path, query: query);
+
   @override
   void joinChannel(String id) {}
   @override

@@ -145,6 +145,20 @@ void main() {
             ),
           );
           expect(find.text('No reminders yet'), findsOneWidget);
+          final reminder = find.ancestor(
+            of: find.text('Follow up on deployment'),
+            matching: find.byType(RaftCard),
+          );
+          final chip = find.byKey(const ValueKey('reminder-msg-ref'));
+          final list = find.byType(RaftReminderListView).first;
+          expect(
+            t.getTopLeft(reminder).dx - t.getTopLeft(list).dx,
+            platform == TargetPlatform.android ? 20 : 16,
+          );
+          expect(
+            t.getBottomLeft(reminder).dy - t.getBottomLeft(chip).dy,
+            platform == TargetPlatform.android ? 16 : 17,
+          );
           expect(t.takeException(), isNull);
 
           await t.pumpWidget(

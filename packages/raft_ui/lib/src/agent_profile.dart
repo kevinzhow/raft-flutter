@@ -51,6 +51,7 @@ import 'theme.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
 import 'tooltip.dart';
 import 'status_bar.dart';
+import 'viewport_breakpoints.dart';
 
 /// utils/activity.ts getActivityDotClass mapped to v1.24 presence tokens.
 Color raftActivityDotColor(RaftTokens t, String? activity) =>
@@ -2063,6 +2064,9 @@ class RaftReminderListView extends StatelessWidget {
 
   Widget _body(BuildContext context) {
     final t = RaftTokens.of(context);
+    final compact = raftBreakpointWidth(context) < 768;
+    final inset = compact || RaftInteraction.of(context).touch ? 20.0 : 16.0;
+    final padding = EdgeInsets.symmetric(horizontal: inset, vertical: 20);
     final loadingStyle = raftCssText.merge(
       t.scale(
         RaftTypeScale.footnote,
@@ -2075,10 +2079,7 @@ class RaftReminderListView extends StatelessWidget {
         color: t.ui.layerCanvas,
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
-            padding: raftScrollPadding(
-              context,
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            ),
+            padding: raftScrollPadding(context, padding),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: math.max(0, constraints.maxHeight - 40),
@@ -2102,10 +2103,7 @@ class RaftReminderListView extends StatelessWidget {
     return ColoredBox(
       color: t.ui.layerCanvas,
       child: ListView(
-        padding: raftScrollPadding(
-          context,
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        ),
+        padding: raftScrollPadding(context, padding),
         children: [
           // Only an empty list waits on a first read; a refresh of rows already
           // shown never inserts a line above them.
@@ -2144,6 +2142,8 @@ class RaftReminderListView extends StatelessWidget {
   }
 
   Widget _card(BuildContext context, RaftTokens t, RaftReminderItem r) {
+    final touchChip =
+        raftBreakpointWidth(context) < 768 || RaftInteraction.of(context).touch;
     return RaftCard.item(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2178,7 +2178,7 @@ class RaftReminderListView extends StatelessWidget {
                     style: raftCssText.merge(
                       t.scale(
                         RaftTypeScale.caption,
-                        weight: FontWeight.w400,
+                        weight: FontWeight.w500,
                         color: t.ui.foregroundMuted,
                       ),
                     ),
@@ -2191,6 +2191,7 @@ class RaftReminderListView extends StatelessWidget {
                   t.scale(
                     RaftTypeScale.monoMeta,
                     mono: true,
+                    weight: FontWeight.w500,
                     color: t.ui.foregroundHint,
                   ),
                 ),
@@ -2206,9 +2207,19 @@ class RaftReminderListView extends StatelessWidget {
           if (r.msgRef != null && r.msgRef!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: _msgRef(context, t, r),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight:
+                      MediaQuery.textScalerOf(context)
+                              .scale(RaftTypeScale.body.fontSize) *
+                          RaftTypeScale.body.height +
+                      (touchChip ? 1 : 0),
+                ),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  heightFactor: 1,
+                  child: _msgRef(context, t, r, touchChip: touchChip),
+                ),
               ),
             ),
         ],
@@ -2217,14 +2228,17 @@ class RaftReminderListView extends StatelessWidget {
   }
 
   /// `inline-flex max-w-full items-center gap-1 truncate` reminder link chip.
-  Widget _msgRef(BuildContext context, RaftTokens t, RaftReminderItem r) {
+  Widget _msgRef(
+    BuildContext context,
+    RaftTokens t,
+    RaftReminderItem r, {
+    required bool touchChip,
+  }) {
     final link = r.onOpenMessage != null;
     final stickerRadius = t.size('radius.sticker', fallback: 4);
     final chip = Container(
       key: const ValueKey('reminder-msg-ref'),
-      constraints: BoxConstraints(
-        minHeight: RaftInteraction.of(context).touch ? 22 : 20,
-      ),
+      constraints: BoxConstraints(minHeight: touchChip ? 22 : 20),
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: link ? t.colors['info-soft'] : t.colors['inactive-soft'],

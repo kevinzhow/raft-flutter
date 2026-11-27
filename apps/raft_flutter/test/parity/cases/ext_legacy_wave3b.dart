@@ -277,80 +277,89 @@ List<RaftComputerWorkspace> _workspaces() => [
     ),
 ];
 
-ParityCase _computerSection({
-  required String surface,
-  required bool mobile,
-}) => ParityCase(
-  widgets: const [
-    'raft_ui:RaftComputerDetailView',
-    'raft_ui:RaftListRowGroup',
-    'raft_ui:RaftListRow',
-    'raft_ui:RaftCard',
-    'raft_ui:RaftBanner',
-    'raft_ui:RaftBadge',
-  ],
-  settle: const Duration(milliseconds: 250),
-  build: (ctx) {
-    final width = mobile ? 390.0 : 640.0;
-    final view = RaftComputerDetailView(
-      data: _computerData(
-        canManage:
-            surface == 'computer-workspaces' || surface == 'computer-service',
-        highlighted: surface == 'computer-agent-located'
-            ? const {'ca-1'}
-            : const {},
-      ),
-      actions: RaftComputerDetailActions(
-        rename: (_) async {},
-        describe: (_) async {},
-        scanWorkspaces: () async => _workspaces(),
-        deleteWorkspace: (_) async {},
-        restart: () async {},
-        deleteComputer: () async {},
-        bulk: (_, _) async => 0,
-      ),
+ParityCase _computerSection({required String surface, required bool mobile}) =>
+    ParityCase(
+      widgets: const [
+        'raft_ui:RaftComputerDetailView',
+        'raft_ui:RaftListRowGroup',
+        'raft_ui:RaftListRow',
+        'raft_ui:RaftCard',
+        'raft_ui:RaftBanner',
+        'raft_ui:RaftBadge',
+      ],
+      roundKeyedElementCrop: surface == 'computer-agent-located',
+      settle: const Duration(milliseconds: 250),
+      build: (ctx) {
+        final width = mobile ? 390.0 : 640.0;
+        final view = RaftComputerDetailView(
+          data: _computerData(
+            canManage:
+                surface == 'computer-workspaces' ||
+                surface == 'computer-service',
+            highlighted: surface == 'computer-agent-located'
+                ? const {'ca-1'}
+                : const {},
+          ),
+          actions: RaftComputerDetailActions(
+            rename: (_) async {},
+            describe: (_) async {},
+            scanWorkspaces: () async => _workspaces(),
+            deleteWorkspace: (_) async {},
+            restart: () async {},
+            deleteComputer: () async {},
+            bulk: (_, _) async => 0,
+          ),
+        );
+        return _stage(
+          Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: width,
+              height: 1600,
+              child: surface == 'computer-agent-rows'
+                  ? SingleChildScrollView(
+                      child: KeyedSubtree(
+                        key: const ValueKey('wave3b-frame'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Builder(builder: _agentRowsPreview),
+                        ),
+                      ),
+                    )
+                  : view,
+            ),
+          ),
+        );
+      },
+      interact: switch (surface) {
+        'computer-agent-located' => (t, ctx) async {
+          final row = find.byKey(const ValueKey('computer-agent-ca-1'));
+          await t.ensureVisible(row);
+          final height = t.getSize(row).height;
+          expect(height, mobile ? 78 : 66);
+          ctx.captureEvidence['rowHeight'] = height;
+          final title = find.descendant(
+            of: row,
+            matching: find.byType(RaftListRowTitle),
+          );
+          ctx.captureEvidence['titleHeight'] = t.getSize(title).height;
+        },
+        'computer-workspaces' => (t, ctx) async {
+          await t.ensureVisible(
+            find.byKey(const ValueKey('computer-workspaces-scan')),
+          );
+          await t.tap(find.byKey(const ValueKey('computer-workspaces-scan')));
+          await t.pumpAndSettle();
+        },
+        'computer-service' => (t, ctx) async {
+          await t.ensureVisible(
+            find.byKey(const ValueKey('computer-section-service')),
+          );
+          await t.pumpAndSettle();
+        },
+        _ => null,
+      },
     );
-    return _stage(
-      Align(
-        alignment: Alignment.topLeft,
-        child: SizedBox(
-          width: width,
-          height: 1600,
-          child: surface == 'computer-agent-rows'
-              ? SingleChildScrollView(
-                  child: KeyedSubtree(
-                    key: const ValueKey('wave3b-frame'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Builder(builder: _agentRowsPreview),
-                    ),
-                  ),
-                )
-              : view,
-        ),
-      ),
-    );
-  },
-  interact: switch (surface) {
-    'computer-agent-located' => (t, ctx) async {
-      await t.ensureVisible(find.byKey(const ValueKey('computer-agent-ca-1')));
-    },
-    'computer-workspaces' => (t, ctx) async {
-      await t.ensureVisible(
-        find.byKey(const ValueKey('computer-workspaces-scan')),
-      );
-      await t.tap(find.byKey(const ValueKey('computer-workspaces-scan')));
-      await t.pumpAndSettle();
-    },
-    'computer-service' => (t, ctx) async {
-      await t.ensureVisible(
-        find.byKey(const ValueKey('computer-section-service')),
-      );
-      await t.pumpAndSettle();
-    },
-    _ => null,
-  },
-);
 
 Widget _agentRowsPreview(BuildContext context) {
   final t = RaftTokens.of(context);
@@ -387,7 +396,7 @@ Widget _agentRowsPreview(BuildContext context) {
                       ),
                       RaftListRowBody(
                         children: [
-                          RaftListRowTitle(a.name),
+                          RaftListRowTitle(a.name, cssLineBox: true),
                           if (a.subtitle.isNotEmpty)
                             RaftListRowMeta(a.subtitle),
                           if (!wide &&

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -25,6 +26,9 @@ void main() {
     });
     workspace.dms = [dm];
     api.routes['GET /channels/dm'] = (_) => [dm.json];
+    api.routes['GET /messages/channel/reset-dm'] = (_) => {'messages': []};
+    api.routes['GET /tasks/channel/reset-dm'] = (_) => [];
+    api.routes['GET /channels/reset-dm/members'] = (_) => [];
     api.routes['GET /agents'] = (_) => [];
     api.routes['GET /announcements/active'] = (_) => null;
     await mountShell(tester, workspace, false);
@@ -38,6 +42,13 @@ void main() {
       matching: find.byType(RaftMountedAvatarFrame),
     );
     try {
+      final sidebar = tester.getRect(
+        find.byKey(const Key('workspace-sidebar')),
+      );
+      final button = tester.getRect(row);
+      expect(button.left, sidebar.left);
+      expect(button.width, sidebar.width);
+      expect(button.height, 34);
       expect(
         find.descendant(
           of: row,
@@ -78,6 +89,11 @@ void main() {
         tester.widget<RaftMountedAvatarFrame>(frame).presence?.light,
         RaftPresence.busy,
       );
+      final currentButton = tester.getRect(row);
+      final edge = Offset(currentButton.left + 1, currentButton.center.dy);
+      await tester.tapAt(edge, kind: PointerDeviceKind.mouse);
+      await frames(tester, () {});
+      expect(workspace.channel?.id, dm.id);
     } finally {
       await retire(tester);
     }

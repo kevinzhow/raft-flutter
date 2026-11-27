@@ -46,6 +46,7 @@ class ParityCase {
     this.fullLengthHeight,
     this.settle = const Duration(milliseconds: 400),
     this.encloseElementCrop = false,
+    this.roundKeyedElementCrop = false,
     this.scrollContentCrop = false,
     this.emulatedDeviceScaleFactor = true,
   });
@@ -60,6 +61,9 @@ class ParityCase {
 
   /// Enclose the element's bounds in whole CSS pixels before applying density.
   final bool encloseElementCrop;
+
+  /// Round a keyed target at device density when the Web crop is CSS-aligned.
+  final bool roundKeyedElementCrop;
 
   /// Capture the element through its actual scroll viewport when it extends
   /// under pinned native chrome.
@@ -553,7 +557,9 @@ Future<Map<String, dynamic>> captureParityCase(
     }
     // Playwright encloses fractional element bounds in CSS pixels before
     // applying density. Use that crop for keyed extensions and opted-in cases.
-    final enclose = keyed != null || mapping.encloseElementCrop;
+    final enclose =
+        mapping.encloseElementCrop ||
+        (keyed != null && !mapping.roundKeyedElementCrop);
     final d = ctx.density;
     final pixelRect = enclose
         ? Rect.fromLTRB(

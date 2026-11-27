@@ -431,6 +431,16 @@ Widget sidebarListRow(
   required WorkspaceController w,
 }) {
   final entry = entries[index], item = row(entry, !entries[index].isLounge);
+  final cell = item.fullWidthCell
+      ? Builder(
+          builder: (context) => Padding(
+            padding: RaftLayoutMetrics.sidebarRowSpacing(
+              RaftTokens.of(context),
+            ),
+            child: item,
+          ),
+        )
+      : _insetSidebarCell(item);
   final dropZone = SidebarDropZone(
     group: group,
     shown: entries,
@@ -441,10 +451,10 @@ Widget sidebarListRow(
         ? Builder(
             builder: (context) => Padding(
               padding: RaftSidebarSectionRecipe.listEndInset(context),
-              child: item,
+              child: cell,
             ),
           )
-        : item,
+        : cell,
   );
   if (entry.isLounge) return dropZone;
   return SidebarDragRow(
@@ -456,7 +466,7 @@ Widget sidebarListRow(
       shown: entries,
     ),
     onHeldInPlace: item.onContextMenu,
-    feedback: item,
+    feedback: cell,
     child: dropZone,
   );
 }
@@ -531,20 +541,23 @@ Widget sidebarCustomGroupSliver({
     final shown = SidebarDrag.project(group, group.entries);
     return SliverMainAxisGroup(
       slivers: [
-        SliverToBoxAdapter(child: header),
+        SliverToBoxAdapter(child: _insetSidebarCell(header)),
         if (expanded) sidebarRowsSliver(shown, row: row, group: group, w: w),
         if (expanded && shown.isEmpty)
           SliverToBoxAdapter(
             child: SidebarDropZone(
               group: group,
               shown: shown,
-              child: RaftSidebarSectionEmptyHint(emptyLabel),
+              child: _insetSidebarCell(RaftSidebarSectionEmptyHint(emptyLabel)),
             ),
           ),
       ],
     );
   },
 );
+
+Widget _insetSidebarCell(Widget child) =>
+    Padding(padding: RaftLayoutMetrics.sidebarCellPadding, child: child);
 
 /// [header] wrapped as a draggable section when [group] is present. A header
 /// with no group stays as the shell built it.
@@ -607,16 +620,21 @@ Widget sidebarSystemGroupSliver({
         actions: actions,
         onContextMenu: onOpenMenu,
         contextMenuOnLongPress: false,
-        wrapHeader: (header) => sidebarSectionDragHeader(
-          group: group,
-          w: w,
-          label: label,
-          header: header,
-          count: shown.length,
-          onHeldInPlace: onOpenMenu,
+        wrapHeader: (header) => _insetSidebarCell(
+          sidebarSectionDragHeader(
+            group: group,
+            w: w,
+            label: label,
+            header: header,
+            count: shown.length,
+            onHeldInPlace: onOpenMenu,
+          ),
         ),
-        wrapEmpty: (empty) =>
-            SidebarDropZone(group: group, shown: shown, child: empty),
+        wrapEmpty: (empty) => SidebarDropZone(
+          group: group,
+          shown: shown,
+          child: _insetSidebarCell(empty),
+        ),
         itemBuilder: (context, index) =>
             sidebarListRow(shown, index, row, group: group, w: w),
         findChildIndexCallback: (key) => sidebarEntryIndex(shown, key),

@@ -83,7 +83,9 @@ def build_fixture():
     }
     route_sets['fr-topbar-drag'] = {
         **route_sets['fr-mobile'],
-        'GET /servers': shell['servers'],
+        'GET /product-feedback/tickets': {
+            'tickets': [], 'unread_total': 1, 'next_cursor': None,
+        },
     }
     doc = {'name': 'frame cases', 'scope': 'tool/parity-ext/build-frame-cases.py (generated; derived from shell.json and screens.json)',
            'routes': shell['routes'], 'routeSets': route_sets}
@@ -153,8 +155,10 @@ def build_cases():
     cases = []
     for s in SPECS:
         vp = VIEWPORTS[s['platform']]
-        if s['platform'] == 'desktop' and s['key'] in ('topbar-drag', 'agent-avatar-reset'):
+        if s['platform'] == 'desktop' and s['key'] == 'agent-avatar-reset':
             vp = {**vp, 'height': 900}
+        if s['key'] == 'topbar-drag':
+            vp = {**vp, 'width': 1440, 'height': 900}
         for suffix, theme in THEMES.items():
             props = {'extCase': f'{s["platform"]}.{s["key"]}', 'extKind': 'frame', 'parityTheme': theme,
                      'platform': 'mobile' if s['platform'] == 'phone' else 'desktop', 'frameWidth': s['platform'], 'scene': s['scene'], 'route': s['route'], 'preset': s['preset'],
@@ -162,7 +166,7 @@ def build_cases():
             capture = {'selector': '[data-visual-case]', 'crop': 'element', 'contract': 'component-bounds'}
             if s['crop']:
                 x, y, w, h = s['crop']
-                props.update({'cx': x, 'cy': y, 'cw': w, 'ch': h})
+                props.update({'cx': x, 'cy': y, 'cw': vp['width'] if s['key'] == 'topbar-drag' else w, 'ch': h})
                 capture = {'selector': '[data-testid="frame-crop"]', 'crop': 'element', 'contract': 'component-bounds',
                            'androidKey': 'frame-crop'}
             capture['interactions'] = [{'type': 'wait', 'ms': 1200}]
@@ -178,7 +182,7 @@ def build_cases():
                 destination = f'{strip} [data-workspace-id="shell-server-side"]'
                 capture['interactions'] += [
                     {'type': 'hold', 'target': origin},
-                    {'type': 'hover', 'target': destination},
+                    {'type': 'hover', 'target': destination, 'steps': 8},
                     {'type': 'reveal', 'target': f'{origin}[data-drag-origin]'},
                 ]
             ds4 = next((item for item in DS4 if item[:2] == (s['platform'], s['key'])), None)
