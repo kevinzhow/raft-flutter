@@ -457,11 +457,12 @@ class _ChannelMembersState extends State<ChannelMembers> {
       );
     } catch (e) {
       if (mounted && version == _loadVersion) {
+        // Only the server's own words: Web shows nothing for a read that got
+        // no answer (useChannelMembers logs it), so neither does this page.
+        final shown = userErrorText(e, fallback: '', where: 'channel members');
         setState(() {
           rosterKnown = true;
-          loadError.raise(
-            raftText(context, userErrorText(e, where: 'channel members')),
-          );
+          if (shown.isNotEmpty) loadError.raise(raftText(context, shown));
         });
       }
     }

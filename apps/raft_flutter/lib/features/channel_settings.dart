@@ -117,6 +117,11 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   /// Parts of [load] accepted for this channel (from its snapshot or a
   /// response). A row whose part is unknown reserves its final geometry.
   final known = <String>{};
+
+  /// Parts whose last read failed: their rows keep a usable control on the
+  /// accepted value (Web leaves the control enabled once loading ends).
+  final unread = <String>{};
+  bool settled(String part) => known.contains(part) || unread.contains(part);
   bool busy = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when an action starts, a load succeeds, the draft is reset or the name or description is edited; the drawer state is dropped on close.
   String? error;
@@ -125,6 +130,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   final _queued = <String>{};
   String get snapshotKey => 'channel-settings:${widget.channel.id}';
   static const _parts = {'members', 'sidebar', 'display', 'notification'};
+  static const _readFailures = {
+    'display': 'Failed to load message display settings.',
+    'notification': 'Failed to load Activity mute setting.',
+  };
   late final activity = ChannelActivitySession.of(w);
 
   /// The Slack channel this channel is paired with (Web
@@ -291,12 +300,11 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       // Each part settles on its own: one failed read never holds the others
       // back (a failed roster shows the accepted or empty roster, as
       // useChannelMembers does; a failed preference keeps its accepted value).
-      Object? failure;
       final failed = <String>{};
       final values = await Future.wait([
         for (final part in wanted)
           Future<dynamic>.sync(() => fetch(part)).catchError((Object e) {
-            failure ??= e;
+            logUserError(e, where: 'channel settings $part');
             failed.add(part);
             return null;
           }),
@@ -309,8 +317,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           if (_tickets[part] != tickets[part]) continue;
           if (failed.contains(part)) {
             if (part == 'members') known.add(part);
+            unread.add(part);
             continue;
           }
+          unread.remove(part);
           switch (part) {
             case 'members':
               members = stable(
@@ -342,9 +352,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           }
           known.add(part);
         }
-        error = failure == null
-            ? null
-            : failText(failure!, raftGenericErrorText);
+        // Web ChatPanel names the preference read that failed; a failed
+        // roster or sidebar read shows nothing (the accepted values stay).
+        final notice = _readFailures.entries
+            .where((e) => unread.contains(e.key))
+            .firstOrNull
+            ?.value;
+        error = notice == null ? null : raftText(context, notice);
       });
       // The member roster is not shown here and is never cached.
       writePageSnapshot(w, snapshotKey, identity, {
@@ -379,12 +393,15 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         serverId: serverId,
         channelId: c.id,
         serverRow: w.server,
-        disabled: busy || canMute && !known.contains('notification'),
+        disabled: busy || canMute && !settled('notification'),
         label: raftText(context, 'Notifications'),
         onFailed: (message) => showRaftToast(context, message),
         mute: canMute
             ? NotificationMuteControl(
-                muted: notification['activityMuted'] == true,
+                muted:
+                    (notification['activityMuted'] ??
+                        c.json['activityMuted']) ==
+                    true,
                 setMuted: (value) async {
                   final fresh = [
                     ...w.channels,
@@ -849,7 +866,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             title: 'Pin channel',
             description: 'Keep this channel pinned to the top of your sidebar.',
             value: pinned,
-            pending: !known.contains('sidebar'),
+            pending: !settled('sidebar'),
             onChanged: pin,
           ),
           // ChannelPreferencesSection: the channel's level and its mute are
@@ -862,8 +879,11 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             RaftSheetSwitchRow(
               title: 'Collapse long messages',
               description: 'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
-              value: display['collapseLongMessages'] != false,
-              pending: !known.contains('display'),
+              value:
+                  (display['collapseLongMessages'] ??
+                      c.json['collapseLongMessages']) !=
+                  false,
+              pending: !settled('display'),
               onChanged: (v) => run(() async {
                 await w.command(
                   'PATCH',
@@ -1802,7 +1822,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             title: 'Pin channel',
             description: 'Keep this channel pinned to the top of your sidebar.',
             value: pinned,
-            pending: !known.contains('sidebar'),
+            pending: !settled('sidebar'),
             onChanged: pin,
           ),
         if (!dm &&
@@ -1819,8 +1839,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             key: const Key('channel-overflow-mute-switch'),
             title: 'Mute',
             description: 'Nothing in this conversation notifies you, not even @mentions.',
-            value: notification['activityMuted'] == true,
-            pending: !known.contains('notification'),
+            value:
+                (notification['activityMuted'] ?? c.json['activityMuted']) ==
+                true,
+            pending: !settled('notification'),
             onChanged: (value) => writePreference(
               c,
               'notification-settings',
@@ -1841,8 +1863,11 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             key: const ValueKey('channel-settings-collapse-switch'),
             title: 'Collapse long messages',
             description: widget.details ? '' : 'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
-            value: display['collapseLongMessages'] != false,
-            pending: !known.contains('display'),
+            value:
+                (display['collapseLongMessages'] ??
+                    c.json['collapseLongMessages']) !=
+                false,
+            pending: !settled('display'),
             onChanged: (v) => widget.details
                 ? writePreference(
                     c,
