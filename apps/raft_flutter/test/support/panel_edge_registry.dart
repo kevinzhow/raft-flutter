@@ -142,6 +142,13 @@ const panelEdgeSurfaces = <PanelEdgeSurface>[
     style: RaftPanelEdgeStyle.attachedPanel,
     pixels: true,
   ),
+  PanelEdgeSurface(
+    'shell-artifact-column',
+    web: 'ShellArtifactHost: ChannelSideArea card beside the main area',
+    files: ['lib/features/artifacts/shell_artifact_column.dart'],
+    style: RaftPanelEdgeStyle.attachedPanel,
+    pixels: true,
+  ),
 ];
 
 /// Left-edge borders that are intentionally NOT the shared rule, with the

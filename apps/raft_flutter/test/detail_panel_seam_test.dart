@@ -19,7 +19,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
+import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/artifacts/artifact_session.dart';
+import 'package:raft_flutter/features/artifacts/shell_artifact_column.dart';
 import 'package:raft_flutter/features/desktop_master_detail.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_flutter/features/message_task_actions.dart';
@@ -30,6 +34,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'support/app_services_fixture.dart';
+import 'support/artifact_fake_client.dart' show artifactShort;
 import 'support/panel_edge_registry.dart';
 import 'task_content_slot_test.dart' show v2Task, card, settle;
 import 'task_surface_test.dart' show taskRoutes, flush;
@@ -196,7 +201,12 @@ void main() {
         for (final s in panelEdgeSurfaces)
           if (s.pixels) s.id,
       },
-      {'list-profile-detail', 'computers-rack-panel', 'tasks-route-slot'},
+      {
+        'list-profile-detail',
+        'computers-rack-panel',
+        'tasks-route-slot',
+        'shell-artifact-column',
+      },
       reason: 'a new pixels surface needs its case in this file',
     );
   });
@@ -334,6 +344,41 @@ void main() {
         );
       });
     }
+
+    testWidgets('$mode: Saved, the shell Artifact column draws its seam', (
+      t,
+    ) async {
+      size(t);
+      final (w, _) = await pageFixture(t, section: 'saved');
+      ArtifactSession.of(w).debugSetEnabled(true);
+      w.navigation.navigate(
+        RaftLocation.parse('/s/demo/saved?artifact=$artifactShort'),
+        kind: RaftNavigationKind.replace,
+      );
+      await t.pumpWidget(
+        frame(
+          Scaffold(
+            body: ShellArtifactColumn(
+              workspace: w,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          dark,
+        ),
+      );
+      await t.pump();
+      final column = find.byKey(const ValueKey('shell-artifact-column'));
+      expect(column, findsOneWidget);
+      expectSeam(
+        await shoot(t),
+        t.getRect(column).left.round(),
+        const [300, 500, 700],
+        tokensOf(t, column).ui.lineSeam,
+        host: 'shell',
+      );
+      await t.pumpWidget(const SizedBox());
+      await t.pump(const Duration(seconds: 3));
+    });
 
     testWidgets('$mode: Tasks, the task slot beside the list draws its seam', (
       t,
