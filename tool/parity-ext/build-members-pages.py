@@ -299,7 +299,7 @@ for platform in ('desktop', 'phone'):
         android_key=None, hint=LIST_HINT, props={'route': '/members'},
         interactions=[{'type': 'rightclick', 'target': f'[data-member-entry-id="{AGENT_ID}"]'}],
         android_interactions=[
-            *([{'type': 'scroll', 'finder': {'pageStorageKey': 'desktop-directory-list'}, 'dy': 540},
+            *([{'type': 'scroll', 'finder': {'pageStorageKey': 'desktop-directory-list'}, 'dy': 117},
                {'type': 'reveal', 'key': f'desktop-directory-agent-{AGENT_ID}', 'scroll': 'fully-visible'}]
               if phone else []),
             {'type': 'longPress' if phone else 'secondaryTap', 'key': f'desktop-directory-agent-{AGENT_ID}'},
