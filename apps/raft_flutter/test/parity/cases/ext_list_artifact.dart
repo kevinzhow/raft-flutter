@@ -14,7 +14,6 @@ import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
-import 'package:raft_flutter/features/workspace_host_scope.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
