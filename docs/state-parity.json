@@ -59764,6 +59764,50 @@
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/member_profile_role_change.dart#function:memberRoleConfirmation": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/member_profile_role_change.dart#method:MemberProfileRoleChange.showReceipt": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-MEMBERS"
+      },
+      "apps/raft_flutter/lib/features/member_profile_view.dart#method:_MemberProfileViewState.saveRole": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "packages/raft_ui/lib/fit_toolbar_previews.dart#function:fitToolbarSplitButtonPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "fit_toolbar",
+          "button"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar_split_button.dart#local-function:CLASS:RaftFitSplitButton/METHOD:buildForm/FUNCTION:menuButton": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar",
+          "button"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar_split_button.dart#method:RaftFitSplitButton.buildForm": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "fit_toolbar",
+          "button",
+          "menu"
+        ],
+        "owner": "WP-MEMBERS"
       }
     },
     "entries": {
@@ -64064,6 +64108,15 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "The Agent detail Usage tab mounts this pane with the selected agent ID."
+      },
+      "surface:apps/raft_flutter/lib/features/member_profile_role_change.dart#method:MemberProfileRoleChange.showReceipt": {
+        "owner": "WP-MEMBERS",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/member_profile_role_change.dart#method:MemberProfileRoleChange.showReceipt"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Shows the result of a role change and offers Undo for eligible changes."
       }
     },
     "requirements": {
@@ -69006,6 +69059,31 @@
         "applicability": "unknown",
         "owner": "WP-DS2 overlay family",
         "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar_split_button.dart#method:RaftFitSplitButton.buildForm|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-MEMBERS",
+        "reason": "Resolves split-button metrics for the toolbar."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar_split_button.dart#method:RaftFitSplitButton.buildForm|state:data-sticker-edge": {
+        "applicability": "unknown",
+        "owner": "WP-MEMBERS",
+        "reason": "Uses the split button recipe's shared edge."
+      },
+      "packages/raft_ui/lib/src/sidebar_menus.dart#method:_RaftSidebarContextMenuState._menu|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "applicability": "unknown",
+        "owner": "WP-MEMBERS",
+        "reason": "Context menu items respond to keyboard focus."
+      },
+      "packages/raft_ui/lib/src/sidebar_menus.dart#method:_RaftSidebarContextMenuState._menu|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "WP-MEMBERS",
+        "reason": "Context menu items respond to pointer hover."
+      },
+      "packages/raft_ui/lib/src/sidebar_menus.dart#method:_RaftSidebarContextMenuState._menu|state:data-highlighted": {
+        "applicability": "unknown",
+        "owner": "WP-MEMBERS",
+        "reason": "Applies the active context menu item state."
       },
       "packages/raft_ui/lib/src/sidebar_menus.dart#method:_RaftSidebarContextMenuState._menu|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "unknown",

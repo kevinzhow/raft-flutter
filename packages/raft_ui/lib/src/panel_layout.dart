@@ -752,7 +752,9 @@ class RaftPanelHeaderBar extends StatelessWidget {
         if (titleSuffix != null) ...[const SizedBox(width: 8), titleSuffix!],
       ],
     );
-    final fill = background ?? t.colors['layer-panel-header']!;
+    final fill =
+        background ??
+        (profileHandle ? t.ui.layerCanvas : t.colors['layer-panel-header']!);
     const contentInset = RaftDesktopMetrics.pageInset;
     const actionInset =
         (RaftDesktopMetrics.barButtonSize -
@@ -812,6 +814,34 @@ class RaftPanelHeaderBar extends StatelessWidget {
             Expanded(
               child:
                   titleSlot ??
+                  (inline && profileHandle && subtitle != null
+                      ? LayoutBuilder(
+                          builder: (context, bounds) => Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            spacing: RaftSpace.x2,
+                            children: [
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: math.max(
+                                    0,
+                                    bounds.maxWidth - RaftSpace.x2,
+                                  ),
+                                ),
+                                child: heading,
+                              ),
+                              Expanded(
+                                child: RaftCssText(
+                                  subtitle!,
+                                  style: metaStyle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : null) ??
                   (inline && subtitle != null
                       ? Row(
                           crossAxisAlignment: CrossAxisAlignment.baseline,

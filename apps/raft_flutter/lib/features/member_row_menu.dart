@@ -58,11 +58,12 @@ Future<void> openMemberRowMenu(
 
       return RaftSidebarContextMenu(
         width: 192,
+        contextItems: true,
         onDismiss: close,
         entries: [
           RaftSidebarMenuItem(
             itemKey: const ValueKey('member-menu-message'),
-            label: raftText(menuContext, 'Message'),
+            label: raftText(menuContext, agent ? 'Direct message' : 'Message'),
             glyph: RaftGlyph.messageSquare,
             onPressed: () {
               close();

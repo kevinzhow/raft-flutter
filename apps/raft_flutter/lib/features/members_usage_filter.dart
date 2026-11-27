@@ -78,6 +78,7 @@ class _MembersUsageFilterState extends State<MembersUsageFilter> {
         searchController: _search,
         searchFocusNode: _searchFocus,
         searchPlaceholder: raftText(context, 'Search…'),
+        searchIcon: false,
         onSearchChanged: (value) =>
             setState(() => _query = value.trim().toLowerCase()),
         onClear: selected.isEmpty ? null : widget.onClear,

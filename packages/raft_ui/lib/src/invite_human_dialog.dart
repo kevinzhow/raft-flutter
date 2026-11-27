@@ -20,9 +20,12 @@ import 'dialog_card.dart';
 import 'error_presentation.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'panel_layout.dart' show RaftCssText;
+import 'raft/ui_tokens.dart';
 import 'recipes/button_variants.g.dart';
 import 'select_field.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 class RaftInvitee {
   RaftInvitee({this.email = ''}) : id = _next++;
@@ -320,13 +323,12 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
-            child: RaftRecipeButton(
+            child: RaftButton(
               key: const ValueKey('invite-add'),
               label: raftText(context, 'Add another'),
               glyph: RaftGlyph.plus,
-              glyphSize: 14,
-              variant: RaftButtonRecipeVariant.ghost,
-              size: RaftButtonRecipeSize.sm,
+              uiVariant: RaftButtonVariant.ghost,
+              uiSize: RaftButtonSize.md,
               onPressed: () => setState(() => invitees.add(RaftInvitee())),
             ),
           ),
@@ -344,13 +346,11 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
     RaftSelectItem<String> item(String v, String label) =>
         RaftSelectItem(value: v, label: raftText(context, label));
     final muted = t.colors['foreground-muted'];
-    Widget labelText(String text) => Text(
+    Widget labelText(String text) => RaftCssText(
       raftText(context, text),
-      style: TextStyle(
-        fontFamily: t.headingFont,
-        fontSize: 12,
-        height: 16 / 12,
-        fontWeight: FontWeight.w700,
+      style: t.scale(
+        RaftTypeScale.footnote,
+        weight: FontWeight.w600,
         color: muted,
       ),
     );
@@ -369,11 +369,12 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
               ),
             ),
             const SizedBox(width: 8),
-            RaftRecipeButton(
+            RaftButton(
               key: const ValueKey('invite-link-copy'),
               glyph: link.copied ? RaftGlyph.check : RaftGlyph.copy,
-              glyphSize: 14,
-              size: RaftButtonRecipeSize.iconMd,
+              glyphSize: 20,
+              uiSize: RaftButtonSize.iconLg,
+              uiVariant: RaftButtonVariant.outline,
               tooltip: raftText(context, 'Copy invite link'),
               disabled: link.url == null || link.loading,
               onPressed: widget.onCopyLink,
@@ -433,58 +434,41 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 ),
               ],
             ),
-            RaftRecipeButton(
+            RaftButton(
               key: const ValueKey('invite-link-apply'),
               label: raftText(context, 'Update link'),
-              size: RaftButtonRecipeSize.sm,
+              uiSize: RaftButtonSize.md,
+              uiVariant: RaftButtonVariant.outline,
               disabled: link.loading,
               onPressed: widget.onApplyLink == null
                   ? null
                   : () => widget.onApplyLink!(maxUses, expiry),
             ),
             if (link.hasLink)
-              GestureDetector(
+              RaftTextLink(
                 key: const ValueKey('invite-link-revoke'),
-                onTap: widget.onRevokeLink,
-                child: Text(
-                  raftText(context, 'Revoke link'),
-                  style: TextStyle(
-                    fontFamily: t.headingFont,
-                    fontSize: 12,
-                    height: 16 / 12,
-                    fontWeight: FontWeight.w700,
-                    color: t.colors['accent-strong'],
-                  ),
-                ),
+                onPressed: widget.onRevokeLink,
+                label: raftText(context, 'Revoke link'),
+                typeStyle: t.scale(RaftTypeScale.footnote),
               ),
           ],
         ),
         if (link.hasLink) ...[
-          const SizedBox(height: 4),
-          Text(
+          const SizedBox(height: 6),
+          RaftCssText(
             raftText(
               context,
               'Updating replaces the current link — the old one stops working.',
             ),
-            style: TextStyle(
-              fontFamily: t.headingFont,
-              fontSize: 11,
-              height: 16.5 / 11,
-              color: muted?.withValues(alpha: .8),
-            ),
+            style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
           ),
         ],
         if (link.usedLabel != null || link.expiresOn != null) ...[
-          const SizedBox(height: 4),
-          Text(
+          const SizedBox(height: 6),
+          RaftCssText(
             [?link.usedLabel, ?link.expiresOn].join(' · '),
             key: const ValueKey('invite-link-status'),
-            style: TextStyle(
-              fontFamily: t.headingFont,
-              fontSize: 12,
-              height: 16 / 12,
-              color: muted,
-            ),
+            style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
           ),
         ],
         const SizedBox(height: 4),

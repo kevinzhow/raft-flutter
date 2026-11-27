@@ -7,6 +7,7 @@ import 'package:raft_flutter/features/workspace_menu_invite.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 
 import 'close_dialogs_test.dart' show anyX;
+import 'member_profile_self_edit_test.dart' show openRoleConfirmation;
 import 'support/close_registry_members_v124.dart';
 import 'support/close_runner.dart';
 import 'support/close_support.dart';
@@ -34,6 +35,10 @@ void main() {
     ),
     'member-removal-impact': (tester, size) =>
         _open(tester, size, action: 'member-remove', dialog: 'agent-dialog'),
+    'member-owner-grant': (tester, size) =>
+        openRoleConfirmation(tester, size, self: false),
+    'member-self-demote': (tester, size) =>
+        openRoleConfirmation(tester, size, self: true),
     'invite-link-update': (tester, size) => _inviteLink(tester, size, 'update'),
     'invite-link-revoke': (tester, size) => _inviteLink(tester, size, 'revoke'),
     'members-usage-filter': _usageFilter,

@@ -10,8 +10,7 @@
 // of each item is built on screen. There is no state to settle, so nothing
 // flickers and nothing runs while idle.
 //
-// Left out on purpose (nothing Flutter mounts needs them): SplitButton,
-// `wrapLine`, a collapsing group (`collapseOrder` + `collapsed`).
+// Left out on purpose: `wrapLine` and a collapsing group.
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -25,11 +24,16 @@ import '../recipe_surface.dart';
 import '../select_field.dart';
 import '../tooltip.dart' show RaftTooltip;
 import '../recipes/fit_toolbar.g.dart';
+import '../recipes/button_split.g.dart';
+import '../recipes/button_split_main.g.dart';
+import '../recipes/button_split_menu.g.dart';
 import '../input_group_size.dart' show RaftInputGroupRecipeSize;
 import '../recipes/recipe_runtime.dart';
 import '../theme.dart';
 import 'button.dart';
 import 'fit_toolbar_plan.dart';
+
+part 'fit_toolbar_split_button.dart';
 
 /// `FIT_SEARCH_MAX_LEAST`: the most the search keeps before the other steps
 /// are taken, in px (its icon and "Search…", the same at every width).

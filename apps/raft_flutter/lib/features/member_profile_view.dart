@@ -15,6 +15,8 @@ import 'agent_runtime_labels.dart'
     show RuntimeDeprecatedHereState, runtimeLabelWithStatus;
 import 'channel_member_servers.dart' show withPrimedServers;
 import 'member_profile_rules.dart';
+import 'member_profile_role_change.dart';
+import 'member_removal_impact.dart';
 import 'members_page_remove.dart';
 import 'human_avatar_edit_menu.dart';
 import 'member_profile_self_edit.dart';
@@ -116,6 +118,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
   void didUpdateWidget(MemberProfileView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != w) {
+      ownRoleImpact.sync(null, null);
+      ownRoleImpact = _makeRoleImpactRead();
       oldWidget.controller.services.entityDirectory.removeListener(
         directoryChanged,
       );
@@ -157,6 +161,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
 
   @override
   void dispose() {
+    ownRoleImpact.sync(null, null);
+    roleImpactChanges.dispose();
     w.services.entityDirectory.removeListener(directoryChanged);
     super.dispose();
   }
@@ -167,7 +173,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     detailLoaded = false;
     // The role editor and its error belong to the member they were opened for.
     roleError = null;
-    editingRole = rolePickerOpen = false;
+    editingRole = roleSaving = false;
+    ownRoleImpact.sync(null, null);
     avatarSaving = false;
     avatarError = null;
   }
@@ -374,8 +381,13 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       .where((m) => m['role'] == 'owner')
       .length;
 
-  bool editingRole = false, rolePickerOpen = false, roleSaving = false;
-  String roleValue = 'member';
+  bool editingRole = false, roleSaving = false;
+  final roleImpactChanges = ValueNotifier(0);
+  late MemberRemovalImpactRead ownRoleImpact = _makeRoleImpactRead();
+
+  MemberRemovalImpactRead _makeRoleImpactRead() =>
+      MemberRemovalImpactRead(w, () => roleImpactChanges.value++);
+
   // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the role editor is opened or cancelled, when a save starts, and when the viewed member or server/account changes (clearData); a late failure for another member is ignored.
   String? roleError;
 
@@ -398,29 +410,78 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       showRaftToast(context, 'This action is no longer available.');
       return;
     }
+    if (w.server?.string('role') == 'owner') {
+      ownRoleImpact.sync(w.server?.id, w.client.user?.id);
+    }
     setState(() {
       profile = {...profile, 'role': role};
-      roleValue = role;
-      rolePickerOpen = true;
       roleError = null;
       editingRole = true;
     });
   }
 
-  Future<void> saveRole() async {
-    final server = w.server!.id, id = widget.userId, source = authority;
+  Future<void> saveRole(String next) async {
+    final server = w.server?.id, previous = profile['role'];
+    if (server == null || previous is! String || roleSaving) return;
+    final id = widget.userId, source = authority;
+    final self = id == w.client.user?.id;
+    final selfDemotion =
+        self && (humanRoleRanks[next] ?? 0) < (humanRoleRanks[previous] ?? 0);
+    final change = MemberProfileRoleChange(
+      workspace: w,
+      server: server,
+      member: id,
+      name: humanDisplayName(profile),
+      previous: previous,
+      next: next,
+    );
+    final grant =
+        !self &&
+        next == 'owner' &&
+        w.server?.string('role') == 'owner' &&
+        (ownRoleImpact.kind == MemberRemovalImpactKind.loading ||
+            (ownRoleImpact.impact?.computers ?? 0) > 0);
     setState(() {
       roleSaving = true;
+      editingRole = false;
       roleError = null;
     });
+
+    Future<void> apply() async {
+      if (!mounted ||
+          source != authority ||
+          profile['role'] != previous ||
+          !editableRoles(self: self, role: previous).contains(next)) {
+        throw const RaftUserError('This action is no longer available.');
+      }
+      await change.apply();
+    }
+
     try {
-      await w.command(
-        'PATCH',
-        '/servers/$server/members/$id',
-        data: {'role': roleValue},
+      if (selfDemotion || grant) {
+        final accepted = await scopedDialog<bool>(
+          (context) => memberRoleConfirmation(
+            context,
+            change: change,
+            selfDemotion: selfDemotion,
+            impact: w.server?.string('role') == 'owner' ? ownRoleImpact : null,
+            changes: roleImpactChanges,
+            onConfirm: apply,
+          ),
+        );
+        if (accepted != true) return;
+      } else {
+        await apply();
+      }
+      if (!mounted || source != authority) return;
+      change.showReceipt(
+        context,
+        allowUndo: !selfDemotion,
+        onRestored: () async {
+          if (mounted && source == authority) await reload();
+        },
       );
       await reload();
-      if (mounted) setState(() => editingRole = false);
     } catch (e) {
       // A failure for a member the page no longer shows is not this page's.
       if (mounted && source == authority) {
@@ -436,40 +497,26 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         );
       }
     } finally {
-      if (mounted) setState(() => roleSaving = false);
+      if (mounted && source == authority) setState(() => roleSaving = false);
     }
   }
 
-  /// InlineBadgeEditor + Save / Cancel.
   Widget _roleEditor(BuildContext context, RaftTokens t, List<String> roles) {
-    String name(String r) =>
-        raftText(context, '${r[0].toUpperCase()}${r.substring(1)}');
-    return RaftInlineRoleEditor(
-      saveKey: const ValueKey('member-edit-role-save'),
-      label: name(roleValue),
-      selectedId: roleValue,
+    final role = profile['role'] as String;
+    return RaftInlineBadgeEditor(
+      label: memberRoleLabel(context, role),
+      selectedId: role,
       options: [
-        for (final r in roles) RaftInlineBadgeOption(id: r, label: name(r)),
+        for (final r in roles)
+          RaftInlineBadgeOption(id: r, label: memberRoleLabel(context, r)),
       ],
-      onSelect: (id) => setState(() {
-        roleValue = id;
-        rolePickerOpen = false;
-      }),
-      open: rolePickerOpen,
-      onOpenChanged: (open) => setState(() => rolePickerOpen = open),
-      background: roleColor(t, roleValue),
-      foreground: roleInk(t, roleValue),
-      saveLabel: raftText(context, 'Save'),
-      cancelLabel: raftText(context, 'Cancel'),
-      canSave: !roleSaving && roleValue != profile['role'],
-      canCancel: !roleSaving,
-      onSave: saveRole,
-      onCancel: () => setState(() {
-        rolePickerOpen = false;
-        roleError = null;
-        editingRole = false;
-      }),
-      error: roleError,
+      onSelect: (id) => unawaited(saveRole(id)),
+      open: true,
+      onOpenChanged: (open) {
+        if (!open && mounted) setState(() => editingRole = false);
+      },
+      background: roleColor(t, role),
+      foreground: roleInk(t, role),
     );
   }
 
@@ -619,8 +666,12 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                           name: name,
                           uploadedUrl: avatar.uploadedUrl,
                           pixelKey: avatar.pixelKey,
-                          fallback: const Center(
-                            child: RaftIcon(RaftGlyph.user, size: 18),
+                          fallback: Center(
+                            child: RaftIcon(
+                              RaftGlyph.user,
+                              size: 18,
+                              color: RaftTokens.of(context).ui.stickerInk,
+                            ),
                           ),
                         ),
                       )
@@ -859,10 +910,18 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                 editKey: const ValueKey('member-edit-role'),
                 helpKey: const ValueKey('member-role-help'),
                 onHelp: () => showRaftRolePermissionHelp(context, agent: false),
-                onEdit: canRole ? editRole : null,
+                onEdit: canRole && !roleSaving ? editRole : null,
                 editor: canRole && editingRole
                     ? _roleEditor(context, t, roles)
                     : null,
+              ),
+            if (roleError != null)
+              RaftCssText(
+                roleError!,
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  color: t.ui['warning-strong'],
+                ),
               ),
             if (profile['email'] is String)
               RaftKeyValueRow.humanProfile(

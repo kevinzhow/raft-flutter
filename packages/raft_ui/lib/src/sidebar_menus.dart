@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 
 import 'icons.dart';
 import 'list_items.dart';
+import 'design_primitives.dart' show RaftInteractive;
+import 'menu_action_row.dart';
 import 'recipe_surface.dart';
 import 'popover_surface.dart';
 import 'recipes/context_menu.g.dart';
@@ -87,6 +89,7 @@ class RaftSidebarContextMenu extends StatefulWidget {
     this.submenuEntries,
     this.submenuWidth = 224,
     this.submenuLabel,
+    this.contextItems = false,
   }) : _sidebarSourceWidth = false;
 
   /// Sidebar.tsx mounts row, section, surface and submenu popups at `w-60`.
@@ -104,11 +107,13 @@ class RaftSidebarContextMenu extends StatefulWidget {
     this.submenuLabel,
   }) : width = legacyWidth,
        submenuWidth = legacySubmenuWidth,
-       _sidebarSourceWidth = true;
+       _sidebarSourceWidth = true,
+       contextItems = false;
 
   final List<RaftSidebarMenuEntry> entries;
   final double width;
   final bool _sidebarSourceWidth;
+  final bool contextItems;
   final VoidCallback? onDismiss;
   final String? label;
 
@@ -243,7 +248,9 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
     final requestedWidth = widget._sidebarSourceWidth
         ? content.width ?? content.minWidth ?? width
         : width;
-    final usedWidth = math.max(requestedWidth, content.minWidth ?? 0);
+    final usedWidth = widget.contextItems
+        ? width
+        : math.max(requestedWidth, content.minWidth ?? 0);
     Widget divider() {
       final w = separator.borderWidth.top;
       final m = separator.margin;
@@ -290,28 +297,52 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
               if (primary) setOpen(entry.submenu, entry);
               entry.onHover?.call();
             },
-            child: RaftMenuButtonItem(
-              key: entry.itemKey,
-              label: entry.label,
-              icon: entry.glyph == null
-                  ? null
-                  : SizedBox.square(
-                      dimension: 14,
-                      child: RaftIcon(
-                        entry.glyph!,
-                        size: 14,
-                        color: IconTheme.of(context).color,
+            child: widget.contextItems
+                ? Semantics(
+                    role: SemanticsRole.menuItem,
+                    child: RaftInteractive(
+                      key: entry.itemKey,
+                      onPressed: entry.onPressed,
+                      builder: (context, state) => RaftMenuSlotRow(
+                        label: entry.label,
+                        root: RaftContextMenuRecipe.resolve(
+                          states: t.recipeStates(
+                            responsive: true,
+                            hovered: state.hovered,
+                            focusVisible: state.focusVisible,
+                            extra: [if (state.focusVisible) 'data-highlighted'],
+                          ),
+                          tokens: resolver,
+                        ).item,
+                        tokens: resolver,
+                        leading: entry.glyph == null
+                            ? null
+                            : RaftIcon(entry.glyph!, size: 16),
                       ),
                     ),
-              trailing: entry.checked
-                  ? const RaftIcon(RaftGlyph.check, size: 14)
-                  : entry.submenu
-                  ? const RaftIcon(RaftGlyph.chevronRight, size: 14)
-                  : null,
-              onPressed: entry.submenu
-                  ? () => setOpen(true, entry)
-                  : (entry.onPressed ?? () {}),
-            ),
+                  )
+                : RaftMenuButtonItem(
+                    key: entry.itemKey,
+                    label: entry.label,
+                    icon: entry.glyph == null
+                        ? null
+                        : SizedBox.square(
+                            dimension: 14,
+                            child: RaftIcon(
+                              entry.glyph!,
+                              size: 14,
+                              color: IconTheme.of(context).color,
+                            ),
+                          ),
+                    trailing: entry.checked
+                        ? const RaftIcon(RaftGlyph.check, size: 14)
+                        : entry.submenu
+                        ? const RaftIcon(RaftGlyph.chevronRight, size: 14)
+                        : null,
+                    onPressed: entry.submenu
+                        ? () => setOpen(true, entry)
+                        : (entry.onPressed ?? () {}),
+                  ),
           ),
         },
     ];

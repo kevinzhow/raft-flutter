@@ -109,27 +109,24 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('member-edit-role')));
       await t.pumpAndSettle();
-      final state = t.state(find.byType(MemberProfileView)) as dynamic;
-      await state.saveRole();
+      await t.tap(find.text('Admin').last);
       await t.pumpAndSettle();
       expect(find.text('Role change refused'), findsOneWidget);
 
       await t.pumpWidget(view('carol'));
       await t.pumpAndSettle();
       expect(find.text('Role change refused'), findsNothing);
-      expect(find.byKey(const ValueKey('member-edit-role-save')), findsNothing);
+      expect(find.byType(RaftInlineBadgeEditor), findsNothing);
 
       // A save started for carol that fails after the page moved on.
       hold = true;
       await t.tap(find.byKey(const ValueKey('member-edit-role')));
       await t.pumpAndSettle();
-      final pending = (t.state(find.byType(MemberProfileView)) as dynamic)
-          .saveRole();
+      await t.tap(find.text('Admin').last);
       await t.pump();
       await t.pumpWidget(view('dave'));
       await t.pumpAndSettle();
       gate.complete();
-      await pending;
       await t.pumpAndSettle();
       expect(find.text('Role change refused'), findsNothing);
     });

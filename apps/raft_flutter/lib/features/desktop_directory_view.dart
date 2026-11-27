@@ -62,7 +62,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       _computers = const [];
 
   /// The row whose context menu is open (it keeps its pressed fill).
-  String? menuRow;
   WorkspaceController? _listened;
   late String _authority;
 
@@ -117,7 +116,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   /// remembered folds; the rows follow the directory's own fencing.
   void resetAuthority() {
     _authority = authority;
-    menuRow = null;
     _readDirectory();
     w.services.entityDirectory.ensure(waitKinds);
   }
@@ -203,8 +201,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     DesktopContentTarget target,
     Map<String, dynamic> value,
   ) {
-    final captured = authority, key = '${target.kind.name}:${target.id}';
-    setState(() => menuRow = key);
+    final captured = authority;
     return openMemberRowMenu(
       context,
       at: at,
@@ -215,9 +212,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
         if (captured == authority && mounted) {
           await widget.onOpenDm?.call(target);
         }
-      },
-      onClosed: () {
-        if (mounted && menuRow == key) setState(() => menuRow = null);
       },
     );
   }
@@ -259,7 +253,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       entry: entry,
       self: !agent && id == w.client.user?.id,
       selected: selected,
-      menuOpen: menuRow == '${kind.name}:$id',
       onMenu: mayMessage ? (at) => openMenu(at, target, value) : null,
       activity: agent ? widget.activities?.rowText(id) : null,
       facts: [

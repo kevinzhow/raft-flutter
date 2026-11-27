@@ -154,6 +154,8 @@ in `apps/raft_flutter`.
 | `members-directory-page` | page | back sysback | - (Members is the server route in the main column.) | - (Members is the server route in the main column.) | features/members/MembersPage.tsx, PanelHeader mobile back | ok |  |
 | `member-promote-guest` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/HumanProfileActions.tsx, ConfirmDialog | ok |  |
 | `member-removal-impact` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/HumanProfileActions.tsx, RemoveMemberConfirmDialog | ok |  |
+| `member-owner-grant` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/HumanDetailPanel.tsx, owner grant ConfirmDialog | ok |  |
+| `member-self-demote` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/HumanDetailPanel.tsx, self-demotion ConfirmDialog | ok |  |
 | `invite-link-update` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/InviteHumanDialog.tsx, update ConfirmDialog | ok |  |
 | `invite-link-revoke` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/InviteHumanDialog.tsx, revoke ConfirmDialog | ok |  |
 | `members-usage-filter` | popup | - (The Members Usage view is available at desktop widths.) | esc scrim sysback | esc scrim sysback | features/members/MembersAgentUsageFilter.tsx | ok |  |

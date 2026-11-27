@@ -337,7 +337,15 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                           identity: Row(
                             spacing: RaftSpace.x3,
                             children: [
-                              usageAgentAvatar(agent, widget.origin, 35),
+                              usageAgentAvatar(
+                                agent,
+                                widget.origin,
+                                35,
+                                badge: RaftStatusDot(
+                                  activity: tone,
+                                  size: RaftStatusDotSize.sm,
+                                ),
+                              ),
                               Expanded(
                                 child: RaftListRowBody(
                                   children: [
@@ -368,10 +376,16 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                                 size: RaftStatusDotSize.sm,
                               ),
                               Expanded(
-                                child: RaftListRowSubtitle(
+                                child: RaftCssText(
                                   raftText(
                                     context,
                                     ambient.heldText ?? statusLabel,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: tokens.scale(
+                                    RaftTypeScale.caption,
+                                    color: tokens.ui.foregroundMuted,
                                   ),
                                 ),
                               ),
@@ -395,9 +409,20 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                                     size: 12,
                                   ),
                                 Flexible(
-                                  child: RaftListRowMeta(
-                                    display(figures, column),
-                                  ),
+                                  child: column == MembersUsageColumn.tokens
+                                      ? RaftCssText(
+                                          display(figures, column),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: tokens.scale(
+                                            RaftTypeScale.monoMeta,
+                                            mono: true,
+                                            color: tokens.ui.foreground,
+                                          ),
+                                        )
+                                      : RaftListRowMeta(
+                                          display(figures, column),
+                                        ),
                                 ),
                               ],
                             ),

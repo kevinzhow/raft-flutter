@@ -15,7 +15,12 @@ typedef MemberPageEntry = ({
   bool Function(String) matches,
 });
 
-Widget usageAgentAvatar(MemberPageEntry agent, String origin, double size) {
+Widget usageAgentAvatar(
+  MemberPageEntry agent,
+  String origin,
+  double size, {
+  Widget? badge,
+}) {
   final avatar = projectSenderAvatar(
     origin: origin,
     senderId: agent.target.id,
@@ -26,6 +31,7 @@ Widget usageAgentAvatar(MemberPageEntry agent, String origin, double size) {
   return RaftAvatar(
     name: agent.name,
     size: size,
+    corner: badge,
     kind: RaftAvatarKind.agent,
     content: RaftAvatarContent(
       name: agent.name,
@@ -147,7 +153,6 @@ class MemberDirectoryEntry extends StatelessWidget {
     required this.selected,
     this.onMenu,
     this.onMessage,
-    this.menuOpen = false,
     this.self = false,
     this.facts = const [],
     this.activity,
@@ -159,7 +164,7 @@ class MemberDirectoryEntry extends StatelessWidget {
   final VoidCallback onOpen;
   final ValueChanged<Offset>? onMenu;
   final VoidCallback? onMessage;
-  final bool selected, menuOpen, self;
+  final bool selected, self;
   final List<String> facts;
   final ValueListenable<String?>? activity;
 
@@ -183,7 +188,6 @@ class MemberDirectoryEntry extends StatelessWidget {
         tag: role == null ? null : RaftSidebarTag(role),
         conversationKind: RaftConversationNavKind.directory,
         selected: selected,
-        menuOpen: menuOpen,
         onContextMenu: onMenu,
         onDoubleClick: onMessage,
         onTap: onOpen,
@@ -231,7 +235,7 @@ class MemberDirectoryEntry extends StatelessWidget {
         ? Semantics(
             label: label,
             child: RaftCard.item(
-              selected: selected || menuOpen,
+              selected: selected,
               onTap: onOpen,
               padding: EdgeInsets.symmetric(
                 horizontal: RaftSpace.x4,
@@ -248,7 +252,7 @@ class MemberDirectoryEntry extends StatelessWidget {
             ),
           )
         : RaftListRow(
-            selected: selected || menuOpen,
+            selected: selected,
             semanticLabel: label,
             interactive: true,
             onPressed: onOpen,

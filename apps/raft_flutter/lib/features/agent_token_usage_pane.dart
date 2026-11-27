@@ -665,7 +665,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       return [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
-              .copyWith(top: RaftSpace.x3, bottom: RaftSpace.x3),
+              .copyWith(top: RaftSpace.x3, bottom: RaftSpace.x2),
           child: RaftCard(
             key: const ValueKey('members-usage-summary'),
             padding: const EdgeInsets.all(RaftSpace.x4),
@@ -675,13 +675,13 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                   gap: 12,
                   children: [
                     Wrap(
-                      spacing: RaftSpace.x3,
-                      runSpacing: RaftSpace.x2,
+                      spacing: RaftSpace.x4,
+                      runSpacing: RaftSpace.x1,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [heading, _cacheReadSwitch(context)],
                     ),
                     Wrap(
-                      spacing: RaftSpace.x2,
+                      spacing: RaftSpace.x3,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         headline,

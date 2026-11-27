@@ -186,7 +186,7 @@ class _MembersPageState extends State<MembersPage>
             if (compact)
               RaftFitSelect(
                 key: const ValueKey('members-scope-select'),
-                label: raftText(context, 'Show'),
+                label: raftText(context, scope.label),
                 selection: scope,
                 items: [
                   for (final item in scopeOptions)
@@ -209,7 +209,7 @@ class _MembersPageState extends State<MembersPage>
           semanticLabel: search,
           hintText: search,
           fieldKey: const ValueKey('members-search'),
-          collapseOrder: 100,
+          collapseOrder: 70,
           onChanged: (value) => setState(() => _query = value.trim()),
         ),
         if (usageControls.length > 1)
@@ -244,16 +244,6 @@ class _MembersPageState extends State<MembersPage>
                 label: raftText(context, 'Invite human'),
                 glyph: RaftGlyph.userPlus,
                 onPressed: widget.onInvite,
-              ),
-            if (widget.onCreate != null)
-              RaftMenuEntry(
-                label: raftText(context, 'Create Agent'),
-                onPressed: widget.onCreate,
-              ),
-            if (widget.onConnect != null)
-              RaftMenuEntry(
-                label: raftText(context, 'Connect an external agent'),
-                onPressed: widget.onConnect,
               ),
           ],
           items: [
@@ -326,7 +316,24 @@ class _MembersPageState extends State<MembersPage>
           firstLine: true,
           items: [
             const RaftFitMore(key: ValueKey('members-toolbar-more')),
-            if (widget.onCreate != null)
+            if (widget.onCreate != null && widget.onConnect != null)
+              RaftFitSplitButton(
+                mainKey: const ValueKey('desktop-directory-add-agent'),
+                menuKey: const ValueKey('members-add-agent-options'),
+                label: raftText(context, 'Create agent'),
+                menuLabel: raftText(context, 'More ways to add an agent'),
+                glyph: RaftGlyph.bot,
+                plusOrder: 40,
+                onPressed: widget.onCreate!,
+                entries: [
+                  RaftMenuEntry(
+                    label: raftText(context, 'Connect an external agent'),
+                    glyph: RaftGlyph.plug,
+                    onPressed: widget.onConnect,
+                  ),
+                ],
+              )
+            else if (widget.onCreate != null)
               RaftFitButton(
                 key: const ValueKey('desktop-directory-add-agent'),
                 label: raftText(context, 'Create agent'),
@@ -335,8 +342,8 @@ class _MembersPageState extends State<MembersPage>
                 variant: RaftButtonVariant.primary,
                 labelOrder: 45,
                 onPressed: widget.onCreate,
-              ),
-            if (widget.onConnect != null)
+              )
+            else if (widget.onConnect != null)
               RaftFitButton(
                 key: const ValueKey('members-add-agent-options'),
                 label: raftText(context, 'More ways to add an agent'),
@@ -363,6 +370,11 @@ class _MembersPageState extends State<MembersPage>
           : _scope;
       final showUsage = scope == _Scope.agent && usageEnabled && _usage;
       final tokens = RaftTokens.of(context);
+      final desktopToolbar =
+          bounds.maxWidth >= 768 && RaftInteraction.of(context).pointer;
+      final toolbarAir = desktopToolbar
+          ? RaftDesktopMetrics.headerAir
+          : RaftSpace.x2;
       final scopes = [
         _Scope.all,
         if (widget.showHumans) _Scope.human,
@@ -376,20 +388,26 @@ class _MembersPageState extends State<MembersPage>
       Widget controls(List<Widget> usageControls) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              RaftSpace.x5,
-              RaftSpace.x1,
-              RaftSpace.x5,
-              RaftSpace.x2,
+          Container(
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: tokens.ui.lineSeam)),
             ),
-            child: _toolbar(
-              context,
-              scope,
-              scopes,
-              showUsage,
-              bounds.maxWidth < 720,
-              usageControls,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
+                  .copyWith(
+                    top: toolbarAir,
+                    bottom: desktopToolbar
+                        ? toolbarAir - RaftSpace.hairline
+                        : toolbarAir,
+                  ),
+              child: _toolbar(
+                context,
+                scope,
+                scopes,
+                showUsage,
+                bounds.maxWidth < 720,
+                usageControls,
+              ),
             ),
           ),
           if (widget.failed)
@@ -417,6 +435,7 @@ class _MembersPageState extends State<MembersPage>
             titleSuffix:
                 widget.loading ||
                     widget.mobile ||
+                    bounds.maxWidth < 360 ||
                     MediaQuery.sizeOf(context).width < 768
                 ? null
                 : RaftCssText(
@@ -499,7 +518,10 @@ class _MembersPageState extends State<MembersPage>
                   fromRecipe: true,
                 ),
               ),
-              RaftSidebarRowsSkeleton(rows: 8),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: RaftSpace.x2),
+                child: RaftSidebarRowsSkeleton(rows: 8),
+              ),
             ],
           ),
         )

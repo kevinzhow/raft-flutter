@@ -149,7 +149,7 @@ void main() {
         'posts /stop', (t) async {
       final (_, client, _) = await mount(t);
       await rightClick(t, 'desktop-directory-agent-on');
-      expect(find.text('Message'), findsOneWidget);
+      expect(find.text('Direct message'), findsOneWidget);
       expect(find.text('Stop agent'), findsOneWidget);
       expect(find.text('Start agent'), findsNothing);
       expect(find.text('Restart / reset'), findsOneWidget);
@@ -198,7 +198,7 @@ void main() {
     ) async {
       await mount(t);
       await rightClick(t, 'desktop-directory-agent-ext');
-      expect(find.text('Message'), findsOneWidget);
+      expect(find.text('Direct message'), findsOneWidget);
       expect(find.text('Start agent'), findsNothing);
       expect(find.text('Restart / reset'), findsNothing);
     });

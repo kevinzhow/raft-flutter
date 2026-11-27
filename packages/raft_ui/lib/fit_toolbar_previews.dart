@@ -94,6 +94,32 @@ Widget fitToolbarNarrowPreview() => _rack(280);
 @RaftPreviews('Fit toolbar, rack, search collapsed', size: Size(200, 120))
 Widget fitToolbarCollapsedPreview() => _rack(190);
 
+@RaftPreviews('Fit toolbar, primary split action', size: Size(430, 132))
+Widget fitToolbarSplitButtonPreview() => RaftFitToolbar(
+  semanticLabel: 'Members',
+  children: [
+    const RaftFitSearch(
+      semanticLabel: 'Search members',
+      hintText: 'Search members',
+      collapseOrder: 70,
+    ),
+    RaftFitGroup(
+      items: [
+        RaftFitSplitButton(
+          label: 'Create agent',
+          menuLabel: 'More ways to add an agent',
+          glyph: RaftGlyph.bot,
+          plusOrder: 40,
+          onPressed: () {},
+          entries: [
+            RaftMenuEntry(label: 'Connect an external agent', onPressed: () {}),
+          ],
+        ),
+      ],
+    ),
+  ],
+);
+
 @RaftPreviews('Fit toolbar, typed Select', size: Size(340, 260))
 Widget fitToolbarSelectPreview() {
   var selection = 'all';
