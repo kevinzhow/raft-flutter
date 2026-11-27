@@ -13,8 +13,9 @@ import '../data/search_memory.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'artifacts/artifact_models.dart';
-import 'artifacts/artifact_viewer_page.dart' show openWorkspaceArtifact;
+import 'artifacts/artifact_content_slot.dart' show artifactSlotQuery;
 import 'conversation_finder_model.dart';
+import 'list_detail_slot.dart' show showListDetail;
 import 'private_route_guard.dart';
 import 'quick_switcher.dart';
 import 'quick_switcher_model.dart';
@@ -304,17 +305,11 @@ class QuickSwitcherHost {
           onUpgrade: () =>
               openWebBillingOrToast(context, w, gate: WebBillingGate.history),
           appSearchWorkspace: w,
+          // Web openAppHit from the overlay: the Search page, the hit open
+          // beside its results at its address.
           onOpenArtifact: (card, query) {
-            close();
-            unawaited(remember(query: query));
-            unawaited(
-              openWorkspaceArtifact(
-                context,
-                w,
-                ArtifactLinkTarget(card.id),
-                seed: card,
-              ),
-            );
+            searchAll(query);
+            showListDetail(w, artifactSlotQuery(ArtifactLinkTarget(card.id)));
           },
         ),
       ),

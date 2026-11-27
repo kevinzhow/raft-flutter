@@ -49,11 +49,19 @@ void openListDetail(
   WorkspaceController w,
   Map<String, String> slot,
 ) {
-  final phone = RaftAdaptiveWorkspace.compactOf(context);
+  showListDetail(w, slot, push: RaftAdaptiveWorkspace.compactOf(context));
+}
+
+/// [openListDetail] on the list the workspace shows now; [push] as a phone.
+void showListDetail(
+  WorkspaceController w,
+  Map<String, String> slot, {
+  bool push = false,
+}) {
   w.closeThread(navigate: false);
   w.navigation.navigate(
     w.location.withQuery({for (final key in _slotKeys) key: null, ...slot}),
-    kind: phone ? RaftNavigationKind.push : RaftNavigationKind.replace,
+    kind: push ? RaftNavigationKind.push : RaftNavigationKind.replace,
   );
   w.notifyListeners();
 }
