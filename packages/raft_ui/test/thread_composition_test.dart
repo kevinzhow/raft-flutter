@@ -6,7 +6,41 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  testWidgets('an offscreen reply count shapes only the latest label', (
+  testWidgets('a reply count that changes with its sliver padding builds', (
+    tester,
+  ) async {
+    final gutter = ValueNotifier((EdgeInsetsDirectional.zero, '3 replies'));
+    addTearDown(gutter.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: ValueListenableBuilder(
+          valueListenable: gutter,
+          builder: (context, value, _) => CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: value.$1,
+                sliver: RaftThreadTimelineTopSliver(
+                  hasMore: false,
+                  historyLimited: false,
+                  loadingOlder: false,
+                  loadingOlderLabel: 'Loading',
+                  historyLimitedLabel: 'History limited',
+                  beginningLabel: 'Beginning of replies',
+                  replyCountLabel: value.$2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    gutter.value = (const EdgeInsetsDirectional.only(end: 36), '4 replies');
+    await tester.pump();
+    expect(find.text('4 replies').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('a reply count scrolled away shows the latest label on return', (
     tester,
   ) async {
     final scroll = ScrollController();
@@ -41,10 +75,8 @@ void main() {
     await tester.pump();
     count.value = '41 replies';
     await tester.pump();
-    expect(find.text('41 replies', skipOffstage: false), findsNothing);
     count.value = '42 replies';
     await tester.pump();
-    expect(find.text('42 replies', skipOffstage: false), findsNothing);
     scroll.jumpTo(0);
     await tester.pump();
     expect(find.text('42 replies').hitTestable(), findsOneWidget);

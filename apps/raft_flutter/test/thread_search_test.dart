@@ -183,6 +183,35 @@ void main() {
     },
   );
 
+  testWidgets('a live reply that opens the outline rail updates the count', (
+    tester,
+  ) async {
+    final (w, _) = await mountThread(tester);
+    final outline = threadOutlineFor(w)!;
+    await tester.runAsync(outline.load);
+    await tester.pumpAndSettle();
+    expect(outline.hasReplies('parent'), isFalse);
+    expect(find.text('3 replies'), findsOneWidget);
+
+    final reply = {
+      ...row('reply-3', 'thread-1', 4),
+      'senderType': 'user',
+      'senderName': 'Alice',
+    };
+    outline.note(RaftEvent('message:new', reply));
+    w.messageDomain.ledger.ingest([
+      reply,
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['thread-1']!.add('reply-3');
+    w.notifyListeners();
+    await tester.pump();
+
+    expect(outline.hasReplies('parent'), isTrue);
+    expect(find.text('4 replies').hitTestable(), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
   testWidgets('desktop search paints through the outline rail gutter', (
     tester,
   ) async {
