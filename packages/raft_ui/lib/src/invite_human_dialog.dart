@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'form_presentation.dart';
 
 import 'banner.dart';
+import 'design_primitives.dart' show RaftTextLink, RaftTextLinkVariant;
 import 'dialog_card.dart';
 import 'error_presentation.dart';
 import 'icons.dart';
@@ -198,11 +199,25 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
               if (seatReached) ...[
                 RaftBanner(
                   description: widget.seatLimitMessage!,
-                  descriptionTail: widget.onViewBilling == null
+                  descriptionBuilder: widget.onViewBilling == null
                       ? null
-                      : (
-                          label: raftText(context, 'View billing'),
-                          onPressed: widget.onViewBilling!,
+                      : (style) => Text.rich(
+                          TextSpan(
+                            text: '${widget.seatLimitMessage!} ',
+                            children: [
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.baseline,
+                                baseline: TextBaseline.alphabetic,
+                                child: RaftTextLink(
+                                  label: raftText(context, 'View billing'),
+                                  variant: RaftTextLinkVariant.strong,
+                                  typeStyle: style,
+                                  onPressed: widget.onViewBilling,
+                                ),
+                              ),
+                            ],
+                          ),
+                          style: style,
                         ),
                 ),
                 SizedBox(height: gap),

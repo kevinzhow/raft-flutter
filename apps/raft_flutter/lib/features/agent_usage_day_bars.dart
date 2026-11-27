@@ -78,9 +78,10 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
   static const _segmentStroke = RaftSpace.hairline * 1.5;
   static const _minimumSegmentHeight = 3.0;
   static const _captionMinHeight = 30.0;
-  static const _captionLines = 2;
   static const _weekdayFontSize = 11.0;
   static const _dateFontSize = 10.0;
+  static const _captionPadding =
+      _captionMinHeight - _weekdayFontSize - _dateFontSize;
   static const _amountFontSize = 11.0;
   static const _labelLineHeight = 1.0;
 
@@ -187,9 +188,13 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
           });
     final last = days.length - 1;
     final style = RaftPanelText.caption(tokens);
-    final captionLine =
-        MediaQuery.textScalerOf(context).scale(RaftTypeScale.caption.fontSize) *
-        (style.height ?? 1);
+    final scaler = MediaQuery.textScalerOf(context);
+    final captionHeight = math.max(
+      _captionMinHeight,
+      scaler.scale(_weekdayFontSize) +
+          scaler.scale(_dateFontSize) +
+          _captionPadding,
+    );
     final mono = tokens.scale(
       RaftTypeScale.monoMeta,
       mono: true,
@@ -226,12 +231,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
               builder: (context, bounds) {
                 final slot = _slotWidth(bounds.maxWidth);
                 return SizedBox(
-                  height:
-                      _plotHeight +
-                      math.max(
-                        _captionMinHeight,
-                        captionLine * _captionLines + RaftSpace.x1_5,
-                      ),
+                  height: _plotHeight + captionHeight,
                   child: ListView.builder(
                     controller: _scroll,
                     reverse: true,

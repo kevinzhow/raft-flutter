@@ -450,6 +450,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
         : dates.format(DateTime.parse(day));
     final hint = t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint);
     final muted = t.scale(RaftTypeScale.caption, color: t.ui.foregroundMuted);
+    final factValue = t.scale(RaftTypeScale.callout, color: t.ui.foreground);
     final term = t.scale(
       RaftTypeScale.footnote,
       weight: FontWeight.w500,
@@ -773,26 +774,31 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
         ],
       ),
     ], topBorder: filteredAgent == null);
+    final perTurn = total == null || counts.turns == 0
+        ? null
+        : (total / counts.turns).round();
     final contextSection = section('Context', [
-      fact('Cache reads', null, child: Text(cacheShare, style: muted)),
-      fact(
-        'Per turn',
-        total == null || counts.turns == 0
-            ? null
-            : (total / counts.turns).round(),
-        child: total == null || counts.turns == 0
-            ? null
-            : Text(
-                icuText(
-                  context,
-                  '{tokens} · {turns, plural, one {# turn} other {# turns}}',
-                  {
-                    'tokens': format((total / counts.turns).round()),
-                    'turns': counts.turns,
-                  },
-                ),
-                style: mono,
-              ),
+      Column(
+        spacing: RaftSpace.x2,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          fact('Cache reads', null, child: Text(cacheShare, style: factValue)),
+          fact(
+            'Per turn',
+            perTurn,
+            child: perTurn == null
+                ? null
+                : Text(
+                    icuText(
+                      context,
+                      '{tokens} · {turns, plural, one {# turn} other {# turns}}',
+                      {'tokens': format(perTurn), 'turns': counts.turns},
+                    ),
+                    style: factValue,
+                  ),
+          ),
+          if (reading == null) fact('Context window', null),
+        ],
       ),
       if (reading != null)
         RaftMeter(
@@ -803,9 +809,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
             'percent': NumberFormat.percentPattern(locale)
                 .format(reading.used / reading.window),
           }),
-        )
-      else
-        fact('Context window', null),
+        ),
     ]);
     final modelsSection = section('Models', [
       if (figures.models.isEmpty) Text('—', style: mono),

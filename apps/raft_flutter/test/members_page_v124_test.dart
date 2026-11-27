@@ -149,6 +149,8 @@ void main() {
       'members-usage-filter',
       'agent-usage-period',
       'members-view-usage',
+      'desktop-directory-add-agent',
+      'members-add-agent-options',
     ]) {
       final control = find.byKey(ValueKey(key));
       expect(find.descendant(of: toolbar, matching: control), findsOneWidget);

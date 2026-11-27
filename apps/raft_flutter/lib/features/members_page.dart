@@ -181,6 +181,7 @@ class _MembersPageState extends State<MembersPage>
       semanticLabel: raftText(context, 'Members'),
       children: [
         RaftFitGroup(
+          firstLine: true,
           items: [
             if (compact)
               RaftFitSelect(
@@ -322,6 +323,7 @@ class _MembersPageState extends State<MembersPage>
           ],
         ),
         RaftFitGroup(
+          firstLine: true,
           items: [
             const RaftFitMore(key: ValueKey('members-toolbar-more')),
             if (widget.onCreate != null)
