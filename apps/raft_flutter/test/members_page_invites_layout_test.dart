@@ -219,4 +219,24 @@ void main() {
       await t.pumpWidget(const SizedBox());
     });
   }
+
+  // At the default text size the state stays on the email's line. A line too
+  // narrow for the whole state shortens the state instead of overflowing.
+  testWidgets('at 1.0x a state wider than the line stays inside it', (t) async {
+    const address = 'guest@example.invalid';
+    await _mount(
+      t,
+      size: const Size(240, 800),
+      invites: [
+        {'id': 'i1', 'email': address, 'awaitingApproval': true},
+      ],
+    );
+    expect(t.takeException(), isNull);
+    final row = t.getRect(find.byKey(const ValueKey('external-invite-i1')));
+    final email = t.getRect(find.text(address));
+    final state = t.getRect(find.text('Waiting for approval'));
+    expect((state.center.dy - email.center.dy).abs(), lessThan(3));
+    expect(state.right, lessThanOrEqualTo(row.right));
+    await t.pumpWidget(const SizedBox());
+  });
 }
