@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_flutter/features/artifacts/artifact_comments_panel.dart'
+    show ArtifactCommentsPanel;
 import 'package:raft_flutter/features/artifacts/artifact_models.dart';
 import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
 import 'package:raft_flutter/features/quick_switcher.dart' show QuickSwitcher;
@@ -54,7 +56,7 @@ RootFixture _fixture({bool artifacts = true, bool search = false}) {
   fixture.overrides['GET /channels/inbox'] = (_) => {
     'items': [
       _row(artifactId, 'Launch plan', target: {'version': 2}),
-      _row(_second, 'Second plan'),
+      _row(_second, 'Second plan', target: {'comment': 'comment-1'}),
     ],
     'hasMore': false,
     'totalUnreadCount': 0,
@@ -202,7 +204,21 @@ void main() {
     expect(w.location.query('artifact'), isNot(artifactShort));
     expect(w.location.query('artifact'), isNotNull);
     expect(w.location.query('version'), isNull);
-    expect(t.widget<ArtifactWorkspaceViewer>(_viewer).target.id, _second);
+    // The comment the row is about is the opening's, not the address's.
+    expect(
+      t.widget<ArtifactWorkspaceViewer>(_viewer).target,
+      const ArtifactLinkTarget.activity(_second, null, commentId: 'comment-1'),
+    );
+    expect(w.location.query('msg'), isNull);
+    // Web `fit="measure"`: the list it lands in is over the Artifact inside
+    // the slot, not a sheet over the window.
+    expect(
+      find.descendant(
+        of: _viewer,
+        matching: find.byType(ArtifactCommentsPanel),
+      ),
+      findsOneWidget,
+    );
     expect(_selected(t, _row1()), isFalse);
     expect(_selected(t, _row2()), isTrue);
 

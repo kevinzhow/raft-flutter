@@ -92,15 +92,18 @@ void main() {
     await t.pumpAndSettle();
   }
 
-  testWidgets('a side column too narrow for both shows the discussion as a '
-      'sheet, not as a column inside it', (t) async {
+  testWidgets('a side column too narrow for both shows the discussion over '
+      'the artifact inside it, not as a sheet over the window', (t) async {
+    // Web ArtifactSurface `fit="measure"` (ArtifactViewer.tsx:226): beside
+    // where both fit, else over the content, full height; a sheet only on a
+    // phone.
     await mount(t, pane: 560);
     await t.tap(trigger.hitTestable());
     await t.pumpAndSettle();
     expect(panel.hitTestable(), findsOneWidget);
-    expect(sheetHandle, findsOneWidget);
-    // The sheet is a route, so it is as wide as the window, not the pane.
-    expect(t.getSize(panel).width, greaterThan(560));
+    expect(sheetHandle, findsNothing);
+    expect(t.getRect(panel).left, 0);
+    expect(t.getRect(panel).right, 560);
   });
 
   testWidgets('a pane wide enough keeps the discussion beside the artifact', (
