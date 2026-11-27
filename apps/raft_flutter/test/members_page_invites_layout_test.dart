@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -21,9 +22,12 @@ final _channel = RaftChannel({
   'channelCapabilities': {'addChannelMembers': true},
 });
 
+late WorkspaceController _workspace;
+
 Future<dynamic> _mount(
   WidgetTester t, {
   bool invitesFail = false,
+  bool flag = true,
   Size size = _size,
   double scale = 1,
   List<Map<String, dynamic>>? invites,
@@ -33,6 +37,7 @@ Future<dynamic> _mount(
   addTearDown(t.view.reset);
   final (w, api) = (await t.runAsync(fixture))!;
   addTearDown(w.dispose);
+  _workspace = w;
   w.channels = [_channel];
   w.server = RaftRecord({
     'id': 's1',
@@ -43,7 +48,7 @@ Future<dynamic> _mount(
   });
   api.routes['POST /feature-flags/evaluate'] = (_) => {
     'evaluations': [
-      {'key': 'external_channels_v1', 'enabled': true},
+      {'key': 'external_channels_v1', 'enabled': flag},
     ],
   };
   api.routes['GET /channels/c1/members'] = (_) => {
@@ -237,6 +242,29 @@ void main() {
     final state = t.getRect(find.text('Waiting for approval'));
     expect((state.center.dy - email.center.dy).abs(), lessThan(3));
     expect(state.right, lessThanOrEqualTo(row.right));
+    await t.pumpWidget(const SizedBox());
+  });
+
+  // Web useExternalInviteManagement: with the flag off, the Invited group
+  // appears once the channel gains an external relation, and its invites
+  // load then.
+  testWidgets('a channel that gains an external relation loads its invites', (
+    t,
+  ) async {
+    final api = await _mount(t, flag: false);
+    bool read() => (api.calls as List).any(
+      (c) => c.method == 'GET' && c.path == '/channels/c1/external-invites',
+    );
+    expect(read(), isFalse);
+    expect(find.text('Invited'), findsNothing);
+
+    _workspace.channels = [
+      RaftChannel({..._channel.json, 'hasExternalRelation': true}),
+    ];
+    _workspace.notifyListeners();
+    await t.pumpAndSettle();
+    expect(read(), isTrue);
+    expect(find.text('guest@example.invalid'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
   });
 }
