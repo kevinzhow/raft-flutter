@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -1078,6 +1079,7 @@ class SourceChannelFileThumbnail extends StatefulWidget {
 
 class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
   SourceChannelImageLease? lease;
+  Uint8List? embeddedSvg;
   var ticket = 0;
   bool get current => mounted && widget.authorized();
   @override
@@ -1110,6 +1112,7 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
       ticket++;
       final old = lease;
       lease = null;
+      embeddedSvg = null;
       if (old != null) unawaited(old.release());
       if (!adoptReady()) unawaited(load());
     }
@@ -1119,6 +1122,10 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
     if (!channelFileHasImagePreview(widget.file)) return;
     final attempt = ++ticket;
     try {
+      if (current) {
+        embeddedSvg = channelFileEmbeddedSvgThumbnail(widget.file);
+        if (embeddedSvg != null) return;
+      }
       final acquire = widget.acquireImage;
       if (acquire == null) return;
       final next = await acquire(
@@ -1148,7 +1155,8 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
   @override
   Widget build(BuildContext context) {
     final currentLease = lease;
-    if (!current || currentLease == null) {
+    final svg = embeddedSvg;
+    if (!current || (currentLease == null && svg == null)) {
       return Center(child: ChannelFileGlyph(channelFileType(widget.file)));
     }
     final width = widget.file.metadata['width'],
@@ -1159,9 +1167,18 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
     final fit = ratio != null && (ratio >= 2.2 || ratio <= .55)
         ? BoxFit.contain
         : BoxFit.cover;
+    if (svg != null) {
+      return SvgPicture.memory(
+        svg,
+        fit: fit,
+        excludeFromSemantics: true,
+        errorBuilder: (_, _, _) =>
+            Center(child: ChannelFileGlyph(channelFileType(widget.file))),
+      );
+    }
     // ignore: raft_lints/avoid_raw_image_decode -- The provider comes from an AttachmentImageRepository lease: already decoded at the target size and shared with the message bubble.
     return Image(
-      image: currentLease.provider,
+      image: currentLease!.provider,
       fit: fit,
       errorBuilder: (_, _, _) =>
           Center(child: ChannelFileGlyph(channelFileType(widget.file))),

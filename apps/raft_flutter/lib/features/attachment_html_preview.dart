@@ -96,7 +96,6 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   void initState() {
     super.initState();
     widget.controller.addListener(scopeChanged);
-    unawaited(RaftDeploymentLinks.of(widget.controller.client).load());
     unawaited(load());
   }
 

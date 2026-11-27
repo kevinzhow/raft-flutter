@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../data/source_channel_files_store.dart';
 import 'attachment_image_loader.dart';
 
@@ -9,4 +11,18 @@ bool channelFileHasImagePreview(SourceChannelFileEntry file) {
   return mime.startsWith('image/') &&
       (!channelFileUsesRasterThumbnail(file) ||
           attachmentThumbnailUrl(file.metadata) != null);
+}
+
+Uint8List? channelFileEmbeddedSvgThumbnail(SourceChannelFileEntry file) {
+  if (channelFileUsesRasterThumbnail(file)) return null;
+  final thumbnailUrl = file.metadata['thumbnailUrl'];
+  if (thumbnailUrl is! String) return null;
+  final encoded = thumbnailUrl.replaceFirst(
+    RegExp(r'^data:image/svg\+xml;utf8,', caseSensitive: false),
+    'data:image/svg+xml;charset=utf-8,',
+  );
+  final data = Uri.tryParse(encoded)?.data;
+  return data != null && data.mimeType == 'image/svg+xml'
+      ? data.contentAsBytes()
+      : null;
 }
