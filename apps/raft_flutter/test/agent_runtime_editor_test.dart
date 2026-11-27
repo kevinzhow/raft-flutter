@@ -215,6 +215,13 @@ void main() {
   });
 
   group('Move to Another Computer', () {
+    final lastMigration = find.byKey(
+      const ValueKey('agent-last-migration-toggle'),
+    );
+    final migrationDetails = find.byKey(
+      const ValueKey('agent-last-migration-body'),
+    );
+
     Future<_Client> profile(
       WidgetTester tester, {
       Map<String, dynamic>? migration,
@@ -235,6 +242,11 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQueryData.fromView(tester.view)
+                .copyWith(disableAnimations: true),
+            child: child!,
+          ),
           home: Scaffold(
             body: FleetDetail(
               key: UniqueKey(),
@@ -291,14 +303,15 @@ void main() {
       expect(moveEnabled(tester), isTrue);
     });
 
-    testWidgets('an ended migration stays visible and Move comes back', (
+    testWidgets('a failed migration opens its details and offers retry', (
       tester,
     ) async {
       await profile(
         tester,
         migration: {...active, 'state': 'failed', 'failureReason': 'x'},
       );
-      expect(find.text('Migration to m2 needs attention'), findsOneWidget);
+      expect(lastMigration, findsOneWidget);
+      expect(migrationDetails, findsOneWidget);
       expect(
         find.textContaining('The agent is still on Box and works as usual.'),
         findsOneWidget,
@@ -334,8 +347,19 @@ void main() {
           const RaftEvent('agent:migration-updated', {'agentId': 'a1'}),
         );
         await tester.pumpAndSettle();
-        expect(find.text('Migrated to m2'), findsOneWidget);
+        expect(lastMigration, findsOneWidget);
+        expect(
+          find.descendant(
+            of: lastMigration,
+            matching: find.textContaining('Completed', findRichText: true),
+          ),
+          findsOneWidget,
+        );
+        expect(migrationDetails, findsNothing);
         expect(moveEnabled(tester), isTrue);
+        await tester.tap(lastMigration);
+        await tester.pumpAndSettle();
+        expect(migrationDetails, findsOneWidget);
         // Ended: no more polling.
         final settled = reads();
         await tester.pump(const Duration(seconds: 10));
