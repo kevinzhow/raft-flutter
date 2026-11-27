@@ -11,10 +11,10 @@ Total capabilities: 855 (405 endpoint/network keys, 450 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 724 |
+| ✅ covered | 723 |
 | ⚠️ partial | 32 |
 | ❌ missing | 2 |
-| ➖ na | 97 |
+| ➖ na | 98 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
@@ -25,7 +25,7 @@ Total capabilities: 855 (405 endpoint/network keys, 450 client-side).
 | Members and roles | 20 | 0 | 0 | 3 |
 | Server settings and admin | 59 | 0 | 0 | 2 |
 | Billing | 4 | 4 | 0 | 1 |
-| Agents, computers, runtimes | 132 | 1 | 1 | 9 |
+| Agents, computers, runtimes | 131 | 1 | 1 | 10 |
 | Integrations, apps, MCP | 77 | 7 | 0 | 7 |
 | Tasks | 42 | 0 | 0 | 5 |
 | Files and attachments | 25 | 3 | 0 | 2 |
@@ -455,7 +455,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Runtime Config rows: Runtime (with usage chip), Model, Reasoning, Mode, Provider URL and Command (Claude), deprecated-runtime warning, env var chips | `ui:agents.runtime-config-display` | Profile > Runtime Config description list[gate: non-external agents] | agent_detail_view.dart Runtime Config section (Runtime w/ usage chip and deprecated-runtime banner, Model, Reasoning, Mode, Provider URL and Command for Claude, env vars) |  |
 | ✅ | Edit runtime config modal: Runtime select over the server-described form (model, reasoning, mode, provider, command, env vars under Advanced); a runtime without a form shows the unavailable notice; save applies when idle, a stopped agent's runtime switch is confirmed | `ui:agents.runtime-config-edit` | Profile > Runtime Config pencil -> RuntimeConfigFields modal (protocol v2 form under the Runtime select)[gate: canManageAgent] | agent_runtime_editor.dart showAgentRuntimeEditor + runtime_form_dialog.dart (v2) |  |
 | ✅ | Runtime error banner on the profile (the error code's sentence for members and managers, scrubbed two-line detail, typed root-privileges and billing banners, 'Copy info' diagnostics button, 'View logs' jump to Activity tab) | `ui:agents.runtime-error-banner` | features/agent/AgentRuntimeErrorNotice.tsx (rendered by features/agent/AgentDetailPanel.tsx hasRuntimeError): error text + Copy info + View logs; billing banner with View model settings[gate: text and billing banner for all viewers (code sentence or generic fallback); detail, Copy info and View logs need canViewAgentPrivateSurfaces; View model settings needs canManageAgent] | agent_detail_view.dart _runtimeErrorBanner -> agent_runtime_error_state.dart resolveRuntimeErrorBanner -> raft_ui RaftRuntimeErrorBanner (headline, detail, billing, Copy info, View logs) |  |
-| ✅ | Agent permissions/scopes page (Flutter-only extra reachable from profile) | `ui:agents.scopes-permissions` | No dedicated Web agent-scopes screen in the agent profile | agent_scopes_view.dart opened via onPermissions | Flutter extra, not a Web capability. |
+| ➖ | Agent permissions/scopes page (Flutter-only extra reachable from profile) | `ui:agents.scopes-permissions` | No dedicated Web agent-scopes screen in the agent profile |  | N/A: Flutter extra with no Web screen and no entry: AgentDetailView never read onPermissions, so nothing opened AgentScopesView; the unreachable full-window push was removed in #380. |
 | ✅ | Skills list (global / workspace groups with /commands), collapsed to its header by default | `ui:agents.skills-section` | Profile > Skills (AgentSkills embedded)[gate: canViewAgentPrivateSurfaces; active agent without an owning app] | agent_detail_view.dart AgentSkillsSection | Owner decision (2026-10-18): the list starts collapsed and its header toggles visibility. Flutter omits this section for an external agent without an assigned Computer because the mounted skills route requires a Computer. |
 | ✅ | Agent status chip under the handle: activity text with details, Computer offline / update required / access revoked (the chip opens the Computer), Likely online, invalid-credential reasons, the error code's title, Retry and Change model links, external presence (Set up / Online / Last active ...), delivery-unconsumed / wake-crash-loop details | `ui:agents.status-badge` | features/agent/AgentStatusBadge.tsx in features/agent/AgentDetailPanel.tsx profile header (store/agentStore.ts resolveAgentDisplayState, utils/agentBlockedState.ts, utils/activity.ts)[gate: detail text only for canViewAgentPrivateSurfaces; Retry for whoever may restart the agent (not while its Computer is offline); Change model for whoever may open the model setting] | agent_detail_view.dart _statusChip -> agent_status_state.dart resolveAgentStatusChip / resolveExternalStatusChip -> agent_status_chip_view.dart AgentStatusChipView -> raft_ui RaftAgentStatusRow |  |
 | ✅ | Stop All Agents / Resume All with guidance prompt (SOS dialog) from a channel | `ui:agents.stop-all-resume-all` | ChatPanel overflow > Stop All Agents (SOSDialog)[gate: joined channel + controlAgentRuntime] | channel_settings.dart channel-overflow-stop-agents |  |

@@ -7978,21 +7978,12 @@
    "area": "agents-computers-runtimes",
    "capability": "Agent permissions/scopes page (Flutter-only extra reachable from profile)",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "No dedicated Web agent-scopes screen in the agent profile",
    "gate": "",
-   "flutterEntry": "agent_scopes_view.dart opened via onPermissions",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/agent_scopes_view.dart",
-     "needle": "/scopes"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/fleet_views.dart",
-     "needle": "AgentScopesView("
-    }
-   ],
-   "justification": "Flutter extra, not a Web capability.",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Flutter extra with no Web screen and no entry: AgentDetailView never read onPermissions, so nothing opened AgentScopesView; the unreachable full-window push was removed in #380.",
    "impact": "",
    "size": ""
   },
