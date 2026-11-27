@@ -39,6 +39,7 @@ void main() {
       api.routes['GET /servers'] = (_) => [
         {'id': 's1', 'slug': 'lab', 'name': 'Lab', 'role': 'owner'},
       ];
+      api.routes['GET /public/client-config'] = (_) => <String, dynamic>{};
       api.routes['GET /channels/inbox'] = (_) => {'items': []};
       api.routes['GET /channels/public'] = (_) => [];
       api.routes['GET /announcements/active'] = (_) => {'announcements': []};
