@@ -122,6 +122,21 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   /// accepted value (Web leaves the control enabled once loading ends).
   final unread = <String>{};
   bool settled(String part) => known.contains(part) || unread.contains(part);
+
+  /// Web ChatPanel's per-read notices (`messageDisplayPrefsError`,
+  /// `activityMuteError`): one for each preference read that failed, until
+  /// that read or a write of that preference succeeds.
+  List<String> readNotices(BuildContext context) => [
+    for (final e in _readFailures.entries)
+      if (unread.contains(e.key)) raftText(context, e.value),
+  ];
+
+  /// A preference write the server accepted settles its part.
+  void accepted(String part) {
+    unread.remove(part);
+    known.add(part);
+  }
+
   bool busy = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when an action starts, a load succeeds, the draft is reset or the name or description is edited; the drawer state is dropped on close.
   String? error;
@@ -352,13 +367,6 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           }
           known.add(part);
         }
-        // Web ChatPanel names the preference read that failed; a failed
-        // roster or sidebar read shows nothing (the accepted values stay).
-        final notice = _readFailures.entries
-            .where((e) => unread.contains(e.key))
-            .firstOrNull
-            ?.value;
-        error = notice == null ? null : raftText(context, notice);
       });
       // The member roster is not shown here and is never cached.
       writePageSnapshot(w, snapshotKey, identity, {
@@ -435,6 +443,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                         '/channels/${c.id}/notification-settings',
                         data: {'activityMuted': value},
                       );
+                      notification['activityMuted'] = value;
+                      accepted('notification');
                     } catch (_) {
                       ok = false;
                       rethrow;
@@ -492,6 +502,11 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       }
       target.addAll(Map<String, dynamic>.from(result));
       project(target);
+      if (mounted) {
+        setState(
+          () => accepted(key == 'activityMuted' ? 'notification' : 'display'),
+        );
+      }
       return true;
     } catch (e) {
       if (identity == pageIdentity(w)) {
@@ -822,6 +837,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         !archived &&
         (canEdit || !all) &&
         w.can('controlAgentRuntime');
+    final shownError = [?error, ...readNotices(context)].join('\n');
     return RaftChannelSettingsSheet(
       channelName: c.name,
       channelLabel: dm
@@ -843,7 +859,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       // the panel opens final, reserving rows whose values are in flight.
       loading: !flagsKnown,
       busy: busy,
-      error: error,
+      error: shownError.isEmpty ? null : shownError,
       // ChannelConversionSection hides itself unless conversion applies.
       lead: info
           ? ChannelConversionSection(
@@ -890,6 +906,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                   '/channels/${c.id}/message-display-settings',
                   data: {'collapseLongMessages': v},
                 );
+                display['collapseLongMessages'] = v;
+                accepted('display');
               }),
             ),
         ]),
@@ -1881,6 +1899,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                       '/channels/${c.id}/message-display-settings',
                       data: {'collapseLongMessages': v},
                     );
+                    display['collapseLongMessages'] = v;
+                    accepted('display');
                   }),
           ),
       ],
@@ -2013,6 +2033,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                             'Name and description shown across the server.',
                       ),
                     if (error != null) RaftOverflowFormError(error!),
+                    for (final notice in readNotices(context))
+                      RaftOverflowFormError(notice),
                     if (!widget.details && info)
                       RaftChannelInfoForm(
                         nameController: name,
@@ -2142,8 +2164,9 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           ),
         // Without the settings panel (a DM, a left channel) the failure of a
         // preference write still has to be visible.
-        if (error != null && (dm || !settingsPresent || !flagsKnown))
-          RaftOverflowNotice(error!),
+        if (dm || !settingsPresent || !flagsKnown)
+          for (final notice in [?error, ...readNotices(context)])
+            RaftOverflowNotice(notice),
         body,
       ],
     );
