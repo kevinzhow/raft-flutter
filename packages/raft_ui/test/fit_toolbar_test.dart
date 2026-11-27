@@ -66,55 +66,58 @@ bool inField() =>
 
 void main() {
   for (final dark in [false, true]) {
-    testWidgets('split action exposes both parts to the keyboard (dark=$dark)', (
-      tester,
-    ) async {
-      final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
-      var created = 0, connected = 0;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(dark: dark).copyWith(platform: TargetPlatform.linux),
-          home: Scaffold(
-            body: RaftFitToolbar(
-              semanticLabel: 'Members',
-              children: [
-                RaftFitGroup(
-                  items: [
-                    RaftFitSplitButton(
-                      label: 'Create agent',
-                      menuLabel: 'More ways to add an agent',
-                      glyph: RaftGlyph.bot,
-                      onPressed: () => created++,
-                      entries: [
-                        RaftMenuEntry(
-                          label: 'Connect an external agent',
-                          onPressed: () => connected++,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+    testWidgets(
+      'split action exposes both parts to the keyboard (dark=$dark)',
+      (tester) async {
+        var created = 0, connected = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(dark: dark)
+                .copyWith(platform: TargetPlatform.linux),
+            home: Scaffold(
+              body: RaftFitToolbar(
+                semanticLabel: 'Members',
+                children: [
+                  RaftFitGroup(
+                    items: [
+                      RaftFitSplitButton(
+                        label: 'Create agent',
+                        menuLabel: 'More ways to add an agent',
+                        glyph: RaftGlyph.bot,
+                        onPressed: () => created++,
+                        entries: [
+                          RaftMenuEntry(
+                            label: 'Connect an external agent',
+                            onPressed: () => connected++,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.bySemanticsLabel('Create agent'), findsOneWidget);
-      expect(find.bySemanticsLabel('More ways to add an agent'), findsOneWidget);
-      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pumpAndSettle();
-      expect(created, 1);
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Connect an external agent'));
-      await tester.pumpAndSettle();
-      expect(connected, 1);
-      expect(find.text('Connect an external agent'), findsNothing);
-    });
+        );
+        await tester.pumpAndSettle();
+        expect(find.bySemanticsLabel('Create agent'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel('More ways to add an agent'),
+          findsOneWidget,
+        );
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        expect(created, 1);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Connect an external agent'));
+        await tester.pumpAndSettle();
+        expect(connected, 1);
+        expect(find.text('Connect an external agent'), findsNothing);
+      },
+    );
   }
 
   group('raftFitPlan', () {

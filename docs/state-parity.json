@@ -59594,6 +59594,7 @@
         "role": "entry_composition",
         "familyRefs": [
           "picker_trigger",
+          "combobox",
           "popover"
         ],
         "owner": "WP-MEMBERS",
@@ -59616,6 +59617,7 @@
         "role": "entry_composition",
         "familyRefs": [
           "picker_trigger",
+          "combobox",
           "popover"
         ],
         "owner": "WP-MEMBERS"
@@ -59806,6 +59808,20 @@
           "fit_toolbar",
           "button",
           "menu"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "packages/raft_ui/lib/src/combobox_panel.dart#class:_ComboboxOptionLabel": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "combobox"
+        ],
+        "owner": "WP-MEMBERS"
+      },
+      "packages/raft_ui/lib/src/combobox_panel.dart#method:_ComboboxOptionLabel.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "combobox"
         ],
         "owner": "WP-MEMBERS"
       }

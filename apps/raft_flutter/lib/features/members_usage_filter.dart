@@ -31,15 +31,10 @@ class _MembersUsageFilterState extends State<MembersUsageFilter> {
   final _menu = MenuController();
   final _anchor = GlobalKey();
   final _trigger = FocusNode();
-  final _search = TextEditingController();
-  final _searchFocus = FocusNode();
-  String _query = '';
 
   @override
   void dispose() {
     _trigger.dispose();
-    _search.dispose();
-    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -60,40 +55,29 @@ class _MembersUsageFilterState extends State<MembersUsageFilter> {
       childFocusNode: _trigger,
       collisionPadding: 16,
       flipVertically: false,
-      onOpen: () {
-        _search.clear();
-        setState(() => _query = '');
-        if (RaftInteraction.of(context).pointer) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && _menu.isOpen) _searchFocus.requestFocus();
-          });
-        }
-      },
-      popup: RaftSelectionPopover(
+      popup: RaftComboboxPanel.items(
         key: const ValueKey('members-usage-filter-menu'),
         width: (MediaQuery.sizeOf(context).width - 32)
             .clamp(0.0, 260.0)
             .toDouble(),
-        title: title,
-        searchController: _search,
-        searchFocusNode: _searchFocus,
-        searchPlaceholder: raftText(context, 'Search…'),
-        searchIcon: false,
-        onSearchChanged: (value) =>
-            setState(() => _query = value.trim().toLowerCase()),
+        label: title,
+        searchPlaceholder: 'Search…',
+        autofocus: RaftInteraction.of(context).pointer,
+        highlightFirst: true,
+        onDismiss: _menu.close,
         onClear: selected.isEmpty ? null : widget.onClear,
-        options: [
+        selectedIds: widget.selected,
+        onSelected: widget.onToggle,
+        items: [
           for (final option in widget.options)
-            if (option.label.toLowerCase().contains(_query))
-              RaftSelectionOption(
-                rowKey: ValueKey('members-usage-filter-option-${option.id}'),
-                label: option.label,
-                group: raftText(context, option.group),
-                leading: option.avatar,
-                meta: option.avatar == null ? '${option.agents.length}' : null,
-                checked: widget.selected.contains(option.id),
-                onTap: () => widget.onToggle(option.id),
-              ),
+            RaftComboboxItem(
+              option.id,
+              option.label,
+              rowKey: ValueKey('members-usage-filter-option-${option.id}'),
+              group: raftText(context, option.group),
+              leading: option.avatar,
+              meta: option.avatar == null ? '${option.agents.length}' : null,
+            ),
         ],
       ),
       builder: (context, controller, _) => RaftPickerTriggerButton(

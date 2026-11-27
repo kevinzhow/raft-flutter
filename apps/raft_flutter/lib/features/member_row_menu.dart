@@ -49,6 +49,7 @@ Future<void> openMemberRowMenu(
   return showRaftMessageContextMenu<void>(
     context: context,
     anchor: at,
+    shiftInsideViewport: true,
     builder: (menuContext) {
       void close() => Navigator.of(menuContext).pop();
       void command(MemberAgentCommand next) {
@@ -64,7 +65,7 @@ Future<void> openMemberRowMenu(
           RaftSidebarMenuItem(
             itemKey: const ValueKey('member-menu-message'),
             label: raftText(menuContext, agent ? 'Direct message' : 'Message'),
-            glyph: RaftGlyph.messageSquare,
+            leading: const RaftDirectMessageIcon(size: 16),
             onPressed: () {
               close();
               unawaited(

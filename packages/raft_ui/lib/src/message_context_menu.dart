@@ -230,6 +230,7 @@ Future<T?> showRaftMessageContextMenu<T>({
   required Offset anchor,
   required Widget Function(BuildContext context) builder,
   Size? placementSize,
+  bool shiftInsideViewport = false,
 }) {
   return Navigator.of(context).push<T>(
     // ignore: raft_lints/avoid_window_cover_route -- web-modal: packages/web/src/components/message/MessageItem.tsx:4779 (context menu over a full-window DismissBackdrop)
@@ -241,7 +242,11 @@ Future<T?> showRaftMessageContextMenu<T>({
       transitionDuration: Duration.zero,
       reverseTransitionDuration: Duration.zero,
       pageBuilder: (routeContext, _, _) => CustomSingleChildLayout(
-        delegate: _RaftContextMenuLayout(anchor, placementSize),
+        delegate: _RaftContextMenuLayout(
+          anchor,
+          placementSize,
+          shiftInsideViewport,
+        ),
         child: Material(
           type: MaterialType.transparency,
           child: builder(routeContext),
@@ -252,9 +257,14 @@ Future<T?> showRaftMessageContextMenu<T>({
 }
 
 class _RaftContextMenuLayout extends SingleChildLayoutDelegate {
-  const _RaftContextMenuLayout(this.anchor, this.placementSize);
+  const _RaftContextMenuLayout(
+    this.anchor,
+    this.placementSize,
+    this.shiftInsideViewport,
+  );
   final Offset anchor;
   final Size? placementSize;
+  final bool shiftInsideViewport;
 
   static const _margin = 8.0;
 
@@ -270,13 +280,18 @@ class _RaftContextMenuLayout extends SingleChildLayoutDelegate {
   @override
   Offset getPositionForChild(Size size, Size childSize) {
     final placement = placementSize ?? childSize;
-    double axis(double point, double estimate, double viewport) =>
-        raftPlaceOverlayAxis(
-          anchor: point,
-          size: math.min(estimate, math.max(0, viewport - _margin * 2)),
-          viewportSize: viewport,
-          padding: _margin,
-        );
+    double axis(double point, double estimate, double viewport) {
+      final extent = math.min(estimate, math.max(0.0, viewport - _margin * 2));
+      return shiftInsideViewport
+          ? point.clamp(_margin, math.max(_margin, viewport - extent - _margin))
+          : raftPlaceOverlayAxis(
+              anchor: point,
+              size: extent,
+              viewportSize: viewport,
+              padding: _margin,
+            );
+    }
+
     return Offset(
       axis(anchor.dx, placement.width, size.width),
       axis(anchor.dy, placement.height, size.height),
@@ -285,7 +300,9 @@ class _RaftContextMenuLayout extends SingleChildLayoutDelegate {
 
   @override
   bool shouldRelayout(_RaftContextMenuLayout old) =>
-      old.anchor != anchor || old.placementSize != placementSize;
+      old.anchor != anchor ||
+      old.placementSize != placementSize ||
+      old.shiftInsideViewport != shiftInsideViewport;
 }
 
 /// Convenience: a lucide icon for a menu row, 16px (MenuItem.tsx v1.24).

@@ -85,4 +85,13 @@ const membersV124Surfaces = <CloseSurface>[
     desktop: {Affordance.esc, Affordance.scrim, _systemBack},
     files: ['lib/features/members_usage_filter.dart'],
   ),
+  CloseSurface(
+    'members-create-agent-options',
+    kind: SurfaceKind.popup,
+    web: 'features/members/MembersPage.tsx, MembersCreateAgentButton',
+    phone: {Affordance.esc, Affordance.scrim, _systemBack},
+    fold: {Affordance.esc, Affordance.scrim, _systemBack},
+    desktop: {Affordance.esc, Affordance.scrim, _systemBack},
+    files: ['lib/features/members_page.dart'],
+  ),
 ];

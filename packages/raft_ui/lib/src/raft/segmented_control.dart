@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 // bold); the others are `foreground-muted` text that takes the `fill-pressed` wash on hover. An item holds an optional
 // 16px icon, a label and a mono count. A disabled group keeps the sticker and greys the ink.
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter/services.dart';
 
 import '../control_typography.dart';
@@ -320,11 +321,13 @@ class RaftSegmentedControl<T> extends StatefulWidget {
     this.shrinkFrame = false,
     this.expand = false,
     this.iconsOnly = false,
+    this.inFitToolbar = false,
   });
 
   /// The fit toolbar's compact form uses square segments and keeps their
   /// labels accessible to assistive technology.
   final bool iconsOnly;
+  final bool inFitToolbar;
 
   /// `className="w-full *:flex-1"`: the track fills its row, the segments share it equally.
   final bool expand;
@@ -465,6 +468,20 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
   );
 
   Widget _group(BuildContext context) {
+    if (widget.inFitToolbar) {
+      final desktop = RaftTokens.of(context).desktop;
+      return SizedBox(
+        height: desktop
+            ? RaftDesktopMetrics.barButtonSize
+            : widget.visualHeight,
+        child: OverflowBox(
+          minHeight: 0,
+          maxHeight: double.infinity,
+          fit: OverflowBoxFit.deferToChild,
+          child: _track(),
+        ),
+      );
+    }
     // raft-ui `SegmentedControl` is `inline-flex w-fit`: the track hugs its items instead of stretching in a column.
     if (widget.expand) return _track();
     return Align(

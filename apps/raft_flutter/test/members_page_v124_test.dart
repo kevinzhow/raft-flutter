@@ -204,9 +204,10 @@ void main() {
       find.byKey(const ValueKey('members-usage-filter-option-runtime:claude')),
       findsNothing,
     );
-    await tester.tap(agentChoice);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await frames(tester);
     expect(picker, findsOneWidget);
+    expect(find.text('Clear').hitTestable(), findsOneWidget);
     expect(tester.widget<Text>(headline).data, '220');
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await frames(tester);

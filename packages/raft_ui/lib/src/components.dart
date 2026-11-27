@@ -1050,6 +1050,7 @@ class RaftNavItem extends StatelessWidget {
         conversation != null &&
         conversationKind != RaftConversationNavKind.directory &&
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
+    final directoryRow = conversationKind == RaftConversationNavKind.directory;
     final leading =
         this.leading ??
         (glyph != null
@@ -1089,22 +1090,32 @@ class RaftNavItem extends StatelessWidget {
                 ? (DefaultTextStyle.of(context).style.color)
                 : _titleColor(context, t),
           );
-      final text = RaftSidebarText(label, style: style);
+      final text = directoryRow
+          ? RaftNameDescriptionRow(
+              hasTag: tag != null,
+              children: [
+                _title(t, t.scale(RaftTypeScale.body, weight: FontWeight.w600)),
+                ?tag,
+              ],
+            )
+          : RaftSidebarText(label, style: style);
       if (description == null) return text;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           text,
-          const SizedBox(height: 2),
+          if (!directoryRow) const SizedBox(height: 2),
           RaftSidebarText(
             description,
-            style: RaftTypography.heading(
-              t,
-              size: 12,
-              line: 15,
-              weight: FontWeight.w500,
-            ).copyWith(color: t.colors['foreground-muted']),
+            style: directoryRow
+                ? t.scale(RaftTypeScale.footnote, color: t.ui.foregroundMuted)
+                : RaftTypography.heading(
+                    t,
+                    size: 12,
+                    line: 15,
+                    weight: FontWeight.w500,
+                  ).copyWith(color: t.colors['foreground-muted']),
           ),
         ],
       );
@@ -1438,8 +1449,10 @@ class RaftNavItem extends StatelessWidget {
             )
           : wrap
           ? EdgeInsets.symmetric(
-              horizontal: phoneConversation ? RaftSpace.x3 : 6,
-              vertical: 6,
+              horizontal: phoneConversation || directoryRow
+                  ? RaftSpace.x3
+                  : RaftSpace.x1_5,
+              vertical: directoryRow ? RaftSpace.x3 : RaftSpace.x1_5,
             )
           : null,
       variant: selected ? RaftControlVariant.surface : RaftControlVariant.ghost,

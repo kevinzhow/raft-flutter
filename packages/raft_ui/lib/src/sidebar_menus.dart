@@ -28,6 +28,7 @@ class RaftSidebarMenuItem extends RaftSidebarMenuEntry {
   const RaftSidebarMenuItem({
     required this.label,
     this.glyph,
+    this.leading,
     this.onPressed,
     this.checked = false,
     this.submenu = false,
@@ -41,6 +42,7 @@ class RaftSidebarMenuItem extends RaftSidebarMenuEntry {
 
   /// 14px lucide icon before the label (`icon={<Plus size={14} />}`).
   final RaftGlyph? glyph;
+  final Widget? leading;
   final VoidCallback? onPressed;
 
   /// Trailing `<Check size={14} />` of the checked radio / checkbox rows.
@@ -315,9 +317,11 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
                           tokens: resolver,
                         ).item,
                         tokens: resolver,
-                        leading: entry.glyph == null
-                            ? null
-                            : RaftIcon(entry.glyph!, size: 16),
+                        leading:
+                            entry.leading ??
+                            (entry.glyph == null
+                                ? null
+                                : RaftIcon(entry.glyph!, size: 16)),
                       ),
                     ),
                   )

@@ -42,8 +42,26 @@ void main() {
     'invite-link-update': (tester, size) => _inviteLink(tester, size, 'update'),
     'invite-link-revoke': (tester, size) => _inviteLink(tester, size, 'revoke'),
     'members-usage-filter': _usageFilter,
+    'members-create-agent-options': _creationOptions,
   };
   registerCloseTests(membersV124Surfaces, harnesses);
+}
+
+Future<SurfaceProbe> _creationOptions(WidgetTester tester, Size size) async {
+  await mountWorkspace(
+    tester,
+    size,
+    platform: closePlatform(size),
+    section: 'members',
+  );
+  const key = ValueKey('members-add-agent-options');
+  await tester.tap(find.byKey(key));
+  await frames(tester);
+  final option = find.text('Connect an external agent').hitTestable();
+  return SurfaceProbe(
+    isOpen: () => option.evaluate().isNotEmpty,
+    scrim: Offset(size.width - 10, size.height - 10),
+  );
 }
 
 Future<SurfaceProbe> _inviteLink(

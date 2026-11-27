@@ -159,6 +159,7 @@ in `apps/raft_flutter`.
 | `invite-link-update` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/InviteHumanDialog.tsx, update ConfirmDialog | ok |  |
 | `invite-link-revoke` | dialog | x esc sysback | x esc sysback | x esc sysback | components/member/InviteHumanDialog.tsx, revoke ConfirmDialog | ok |  |
 | `members-usage-filter` | popup | - (The Members Usage view is available at desktop widths.) | esc scrim sysback | esc scrim sysback | features/members/MembersAgentUsageFilter.tsx | ok |  |
+| `members-create-agent-options` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | features/members/MembersPage.tsx, MembersCreateAgentButton | ok |  |
 | `drafts-page` | page | back sysback | - (this is a root section; leave through navigation or history) | - (this is a root section; leave through navigation or history) | DraftsPanel.tsx: mobile Back; desktop uses sidebar and history | ok |  |
 | `add-external-member-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | AddExternalMemberDialog.tsx uses DialogCard with X and Escape | ok |  |
 | `external-invite-withdraw-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ExternalInviteRows.tsx uses ConfirmDialog with X and Escape | ok |  |

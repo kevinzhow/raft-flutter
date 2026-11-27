@@ -198,6 +198,7 @@ class _MembersPageState extends State<MembersPage>
               RaftFitChild(
                 child: RaftSegmentedControl(
                   key: const ValueKey('members-tabs'),
+                  inFitToolbar: true,
                   value: scope,
                   items: scopeOptions,
                   onChanged: (value) => setState(() => _scope = value),
@@ -252,6 +253,7 @@ class _MembersPageState extends State<MembersPage>
                 child: RaftSegmentedControl<bool>(
                   label: raftText(context, 'Agents view'),
                   iconsOnly: true,
+                  inFitToolbar: true,
                   value: showUsage,
                   items: [
                     RaftSegmentedOption(
@@ -512,10 +514,16 @@ class _MembersPageState extends State<MembersPage>
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: RaftSpace.x5),
-                child: RaftSkeleton(
-                  width: 64,
-                  variant: RaftSkeletonVariant.line,
-                  fromRecipe: true,
+                child: SizedBox(
+                  height: RaftSpace.x4 + RaftSpace.half,
+                  child: Center(
+                    widthFactor: 1,
+                    child: RaftSkeleton(
+                      width: 64,
+                      variant: RaftSkeletonVariant.line,
+                      fromRecipe: true,
+                    ),
+                  ),
                 ),
               ),
               Padding(
@@ -543,23 +551,27 @@ class _MembersPageState extends State<MembersPage>
       for (final (heading, entries) in groups) ...[
         if (heading.isNotEmpty)
           (_) => Padding(
-            padding: const EdgeInsets.fromLTRB(
-              RaftSpace.x5,
-              RaftSpace.x3,
-              RaftSpace.x5,
-              RaftSpace.x2,
-            ),
-            child: RaftSectionEyebrow('$heading  ${entries.length}'),
+            padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
+                .copyWith(
+                  top: layout == MembersEntryLayout.cards
+                      ? RaftSpace.x4
+                      : RaftSpace.x3,
+                  bottom: RaftSpace.x2,
+                ),
+            child: RaftSectionHeader(label: heading, count: entries.length),
           ),
         if (layout == MembersEntryLayout.cards)
           for (var start = 0; start < entries.length; start += columns)
             _tileBand(entries, start, columns)
         else
           for (final entry in entries)
-            (_) => widget.buildEntry(
-              entry,
-              layout,
-              computers[entry.record['machineId']]?['name'] as String?,
+            (_) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x2),
+              child: widget.buildEntry(
+                entry,
+                layout,
+                computers[entry.record['machineId']]?['name'] as String?,
+              ),
             ),
       ],
     ];
@@ -641,8 +653,9 @@ class _MembersPageState extends State<MembersPage>
     int columns,
   ) =>
       (_) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5)
-            .copyWith(bottom: RaftSpace.x3),
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x5,
+        ).copyWith(bottom: start + columns < entries.length ? RaftSpace.x3 : 0),
         child: RaftGapRow(
           gap: 12,
           children: [

@@ -290,12 +290,14 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
               : RaftAvatarContentKind.human,
           uploadedUrl: avatar.uploadedUrl,
           pixelKey: avatar.pixelKey,
-          fallback: RaftMountedAvatarFallback(
-            avatarContext: RaftMountedAvatarContext.sidebarList,
-            identity: agent
-                ? RaftMountedAvatarIdentity.agent
-                : RaftMountedAvatarIdentity.human,
-          ),
+          fallback: layout == MembersEntryLayout.list
+              ? RaftMountedAvatarFallback(
+                  avatarContext: RaftMountedAvatarContext.sidebarList,
+                  identity: agent
+                      ? RaftMountedAvatarIdentity.agent
+                      : RaftMountedAvatarIdentity.human,
+                )
+              : null,
         ),
       ),
       onOpen: () {

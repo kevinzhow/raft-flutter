@@ -446,8 +446,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/combobox_panel.dart",
-              "bytes": 26020,
-              "sha256": "6f9e898f1184301cd51ecf35658bb9abfc970b4a1d60863f29ab8e42153d0f94"
+              "bytes": 28226,
+              "sha256": "0695bb3736d6b11f607abbd3f5129e142aa57c3173a5592b6225ebecaf0087ac"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."

@@ -211,17 +211,48 @@ class MemberDirectoryEntry extends StatelessWidget {
               RaftGapRow(
                 gap: 8,
                 children: [
-                  Flexible(child: RaftListRowTitle(entry.name)),
+                  Flexible(
+                    child: layout == MembersEntryLayout.cards
+                        ? RaftCssText(
+                            entry.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: tokens.scale(
+                              RaftTypeScale.body,
+                              weight: FontWeight.w600,
+                            ),
+                          )
+                        : RaftListRowTitle(entry.name),
+                  ),
                   if (self)
                     Text(
                       raftText(context, '(you)'),
-                      style: RaftPanelText.caption(tokens),
+                      style: tokens.scale(
+                        RaftTypeScale.body,
+                        color: tokens.ui.foregroundHint,
+                      ),
                     ),
                   if (role != null)
-                    Text(role, style: RaftPanelText.caption(tokens)),
+                    Text(
+                      role,
+                      style: tokens.scale(
+                        RaftTypeScale.caption,
+                        weight: FontWeight.w500,
+                        color: tokens.ui.foregroundMuted,
+                      ),
+                    ),
                 ],
               ),
-              if (description != null) RaftListRowSubtitle(description),
+              if (description != null)
+                if (layout == MembersEntryLayout.cards)
+                  RaftCssText(
+                    description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.scale(RaftTypeScale.footnote),
+                  )
+                else
+                  RaftListRowSubtitle(description),
               if (folded)
                 RaftListRowMeta(
                   facts.skip(1).where((fact) => fact != '—').join(' · '),

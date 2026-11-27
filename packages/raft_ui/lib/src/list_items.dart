@@ -829,7 +829,6 @@ class RaftSelectionPopover extends StatelessWidget {
     this.clearLabel = 'Clear',
     this.searchController,
     this.searchPlaceholder = 'Search',
-    this.searchIcon = true,
     this.onSearchChanged,
     this.searchFocusNode,
     this.emptyLabel = 'No options',
@@ -844,7 +843,6 @@ class RaftSelectionPopover extends StatelessWidget {
   /// Shows the Clear action when non-null (`showClear && onClear`).
   final VoidCallback? onClear;
   final bool showHeader;
-  final bool searchIcon;
   final String clearLabel, searchPlaceholder, emptyLabel;
 
   /// Searchable when non-null.
@@ -941,7 +939,6 @@ class RaftSelectionPopover extends StatelessWidget {
             controller: searchController!,
             focusNode: searchFocusNode,
             placeholder: searchPlaceholder,
-            showIcon: searchIcon,
             onChanged: onSearchChanged,
           ),
         RaftRecipeBox(
@@ -1422,14 +1419,12 @@ class _RaftSearchRow extends StatefulWidget {
   const _RaftSearchRow({
     required this.controller,
     required this.placeholder,
-    this.showIcon = true,
     this.focusNode,
     this.onChanged,
   });
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String placeholder;
-  final bool showIcon;
   final ValueChanged<String>? onChanged;
   @override
   State<_RaftSearchRow> createState() => _RaftSearchRowState();
@@ -1488,16 +1483,15 @@ class _RaftSearchRowState extends State<_RaftSearchRow> {
       child: Row(
         spacing: slots.search.columnGap ?? 0,
         children: [
-          if (widget.showIcon)
-            RaftRecipeBox(
-              style: slots.searchIcon,
-              tokens: rt,
-              child: RaftIcon(
-                RaftGlyph.search,
-                size: slots.searchIcon.width!,
-                color: hint,
-              ),
+          RaftRecipeBox(
+            style: slots.searchIcon,
+            tokens: rt,
+            child: RaftIcon(
+              RaftGlyph.search,
+              size: slots.searchIcon.width!,
+              color: hint,
             ),
+          ),
           Expanded(
             child: RaftBareInput(
               controller: widget.controller,
