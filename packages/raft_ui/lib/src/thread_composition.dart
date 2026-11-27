@@ -1,7 +1,6 @@
 import 'text_selection_toolbar.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'adaptive_workspace.dart'
@@ -698,9 +697,10 @@ class RaftThreadTimelineTopSliver extends StatelessWidget {
                       decoration: BoxDecoration(
                         border: Border(bottom: recipe.summaryBorder),
                       ),
-                      child: _ThreadReplyCount(
-                        label: replyCountLabel,
+                      child: Text(
+                        replyCountLabel,
                         style: recipe.replyCount,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
@@ -711,72 +711,6 @@ class RaftThreadTimelineTopSliver extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ThreadReplyCount extends StatefulWidget {
-  const _ThreadReplyCount({required this.label, required this.style});
-
-  final String label;
-  final TextStyle style;
-
-  @override
-  State<_ThreadReplyCount> createState() => _ThreadReplyCountState();
-}
-
-class _ThreadReplyCountState extends State<_ThreadReplyCount> {
-  late String _label = widget.label;
-  ScrollPosition? _position;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final position = Scrollable.maybeOf(context)?.position;
-    if (_position != position) {
-      _position?.removeListener(_scroll);
-      _position = position?..addListener(_scroll);
-      _label = widget.label;
-    }
-  }
-
-  bool get _nearVisible {
-    final position = _position;
-    final paragraph = context.findRenderObject();
-    if (position == null ||
-        !position.hasPixels ||
-        !position.hasViewportDimension ||
-        paragraph is! RenderBox ||
-        !paragraph.attached ||
-        !paragraph.hasSize) {
-      return true;
-    }
-    final viewport = RenderAbstractViewport.maybeOf(paragraph);
-    if (viewport == null) return true;
-    final start = viewport.getOffsetToReveal(paragraph, 0).offset;
-    return position.pixels <
-        start + paragraph.size.height + position.viewportDimension;
-  }
-
-  void _scroll() {
-    if (_label != widget.label && _nearVisible) {
-      setState(() => _label = widget.label);
-    }
-  }
-
-  @override
-  void didUpdateWidget(_ThreadReplyCount oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (_label != widget.label && _nearVisible) _label = widget.label;
-  }
-
-  @override
-  void dispose() {
-    _position?.removeListener(_scroll);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) =>
-      Text(_label, style: widget.style, textAlign: TextAlign.center);
 }
 
 /// Progress/read-cutoff copy only: pagination belongs to the list sentinel.
