@@ -110,13 +110,18 @@ final bannedApis = <BannedApi>[
     correction:
         'Open it beside the list (the detail slot or side column), or, where '
         "Web is modal, add '// ignore: raft_lints/$windowCoverRule -- "
-        "web-modal: <web path>:<line>' naming the Web modal.",
+        "web-modal: <web path>:<line>' naming the Web modal (web-page: for a "
+        'page Web also shows full window).',
     refs: const [
       ApiRef('package:raft_ui/', 'RaftFullBleedDialogRoute'),
       ApiRef('package:flutter/', 'MaterialPageRoute'),
       ApiRef('package:flutter/', 'PageRouteBuilder'),
     ],
-    ignoreReason: RegExp(r'^web-modal:\s*[^\s:]+\.\w+:\d+'),
+    // `web-modal:` / `web-page:` cite where Web also covers the window (a
+    // modal, or a page of its own); `widget-preview` is a preview harness.
+    ignoreReason: RegExp(
+      r'^(?:(?:web-modal|web-page):\s*[^\s:]+\.\w+:\d+|widget-preview\b)',
+    ),
   ),
   BannedApi(
     rule: viewDisplayRule,
