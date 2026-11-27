@@ -13,14 +13,13 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/feature_flag_client_facts.dart';
 import '../data/freshness.dart';
+import '../data/raft_location.dart';
 import '../data/second_factor_recovery_notice.dart';
 import '../data/system_notification_projection.dart';
 import '../data/system_notification_store.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import '../data/workspace_navigation.dart';
-import '../platform/system_bars.dart';
-import 'fleet_views.dart';
 import 'account_security_recovery.dart';
 import 'app_permission_updates.dart';
 import 'joint_invite_errors.dart';
@@ -645,98 +644,50 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       if (current(captured)) widget.onFeedback!();
       return;
     }
-    if (n.destination != SystemNoticeDestination.feedback &&
-        !w.can('viewMachines')) {
-      return;
-    }
-    Map<String, dynamic>? row;
-    if (n.destination == SystemNoticeDestination.computer) {
-      for (final machine in store.machines) {
-        if (machine['id'] == n.targetId) row = machine;
-      }
+    if (n.destination != SystemNoticeDestination.feedback) {
+      if (!w.can('viewMachines')) return;
+      final computer = n.destination == SystemNoticeDestination.computer;
+      final id = computer && store.machines.any((m) => m['id'] == n.targetId)
+          ? n.targetId
+          : null;
       // Server-backed entries name a Computer the directory may not hold yet
       // (or no longer): they open the list instead of doing nothing.
-      if (row == null && n.incidentId == null) return;
+      if (computer && id == null && n.incidentId == null) return;
+      close();
+      if (!current(captured)) return;
+      // Web nav.toComputer / nav.toComputers move the main area: the
+      // Computer beside the rack on a wide window, its own page on a phone.
+      w.navigation.navigate(
+        RaftLocation.at(
+          serverSlug: w.location.serverSlug,
+          route: id != null ? RaftRoute.computer : RaftRoute.computers,
+          entityId: id,
+          query: {
+            if (id == null && n.incidentId == null) 'filter': 'attention',
+          },
+        ),
+      );
+      w.closeThread(navigate: false);
+      w.notifyListeners();
+      return;
     }
     close();
     if (!current(captured)) return;
-    Route<void>? agentRoute;
-    Future<void> openAgent(BuildContext computerContext, String id) async {
-      if (!current(captured) || !w.can('viewAgents') || agentRoute != null) {
-        return;
-      }
-      final navigator = Navigator.of(computerContext);
-      final detail = MaterialPageRoute<void>(
-        builder: (_) => RaftPageFrame(
-          child: FleetDetail(
-            controller: w,
-            computers: false,
-            initial: w.services.entityDirectory.agent(id) ?? {'id': id},
-            backAlways: true,
-          ),
-        ),
-      );
-      agentRoute = detail;
-      try {
-        await navigator.push(detail);
-      } finally {
-        agentRoute = null;
-      }
-    }
-
     final route = MaterialPageRoute<void>(
-      builder: (context) {
-        final computerOwnsHeader =
-            row != null &&
-            MediaQuery.sizeOf(context).width <
-                RaftLayoutMetrics.desktopBreakpoint;
-        final feedback = n.destination == SystemNoticeDestination.feedback;
-        final body = feedback
-            ? SourceFeedbackView(
-                controller: w,
-                onUnreadChanged: (count) {
-                  if (current(captured)) {
-                    store.reconcileFeedback(captured, count);
-                  }
-                },
-              )
-            : row != null
-            ? FleetDetail(
-                controller: w,
-                computers: true,
-                initial: row,
-                onOpenAgent: w.can('viewAgents')
-                    ? (id) => unawaited(openAgent(context, id))
-                    : null,
-              )
-            : FleetView(
-                controller: w,
-                computers: true,
-                attentionOnly: n.incidentId == null,
-              );
-        return Scaffold(
-          appBar: computerOwnsHeader
-              ? null
-              : raftPageAppBar(
-                  context,
-                  title: raftText(context, feedback ? 'Feedback' : 'Computers'),
-                ),
-          body: computerOwnsHeader
-              ? RaftSystemBarSurface(
-                  statusBarFallback: RaftTokens.of(context).panel,
-                  child: SafeArea(bottom: false, child: body),
-                )
-              : body,
-        );
-      },
+      builder: (context) => Scaffold(
+        appBar: raftPageAppBar(context, title: raftText(context, 'Feedback')),
+        body: SourceFeedbackView(
+          controller: w,
+          onUnreadChanged: (count) {
+            if (current(captured)) store.reconcileFeedback(captured, count);
+          },
+        ),
+      ),
     );
     void revoked() {
-      if (current(captured)) return;
-      final agent = agentRoute;
-      if (agent != null && agent.isActive) {
-        agent.navigator?.removeRoute(agent);
+      if (!current(captured) && route.isActive) {
+        route.navigator?.removeRoute(route);
       }
-      if (route.isActive) route.navigator?.removeRoute(route);
     }
 
     w.addListener(revoked);
