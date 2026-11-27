@@ -351,10 +351,15 @@ Widget _failedGallery(ParityContext ctx) {
   return Align(
     alignment: Alignment.topLeft,
     child: ctx.target(
-      AttachmentView(
-        controller: workspace,
-        metadata: _map(_fx(ctx)['failedThumbnail']),
-        files: _BrokenThumbnailFiles(),
+      Builder(
+        builder: (context) => ColoredBox(
+          color: RaftTokens.of(context).ui.layerCanvas,
+          child: AttachmentView(
+            controller: workspace,
+            metadata: _map(_fx(ctx)['failedThumbnail']),
+            files: _BrokenThumbnailFiles(),
+          ),
+        ),
       ),
     ),
   );
