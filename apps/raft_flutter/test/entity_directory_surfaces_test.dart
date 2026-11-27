@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/desktop_directory_view.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
+import 'package:raft_flutter/features/members_page_entries.dart';
 import 'package:raft_flutter/features/server_setup_gate.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -41,6 +42,18 @@ class _Client extends RaftClient {
 class _Workspace extends WorkspaceController {
   _Workspace(super.client);
   final paths = <String>[];
+  @override
+  Future<dynamic> command(String method, String path, {dynamic data}) async {
+    if (method == 'POST' && path == '/feature-flags/evaluate') {
+      return {
+        'evaluations': [
+          {'key': 'agent_usage_v0', 'enabled': false},
+        ],
+      };
+    }
+    return super.command(method, path, data: data);
+  }
+
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
     paths.add(path);
@@ -173,7 +186,9 @@ void main() {
           computers: computers,
           onSelected: (_) {},
         );
-        final rows = find.byType(computers ? RaftComputerRow : RaftNavItem);
+        final rows = find.byType(
+          computers ? RaftComputerRow : MemberDirectoryEntry,
+        );
         for (var visit = 0; visit < 2; visit++) {
           await t.pumpWidget(host(view()));
           // First frame: final rows, no loading shell, no request.

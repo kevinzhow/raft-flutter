@@ -25,6 +25,7 @@ class _Client extends RaftClient {
       return {
         'evaluations': [
           {'key': 'bulk_change_model_web_v0', 'enabled': false},
+          {'key': 'agent_usage_v0', 'enabled': false},
         ],
       };
     }
@@ -42,6 +43,14 @@ class _Workspace extends WorkspaceController {
   _Workspace(super.client);
   bool hold = false;
   final pending = <String, List<Completer<dynamic>>>{};
+  @override
+  Future<dynamic> command(String method, String path, {dynamic data}) {
+    if (method == 'POST' && path == '/feature-flags/evaluate') {
+      return client.post(path, data: data);
+    }
+    return super.command(method, path, data: data);
+  }
+
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
     if (hold) {

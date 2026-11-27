@@ -182,14 +182,11 @@ void main() {
             const ValueKey('desktop-directory-agent-agent'),
           );
           final held = empty ? null : t.element(row);
-          final position = t
-              .state<ScrollableState>(
-                find.descendant(
-                  of: find.byKey(const Key('desktop-directory-list')),
-                  matching: find.byType(Scrollable),
-                ),
-              )
-              .position;
+          final scrollable = find.descendant(
+            of: find.byKey(const PageStorageKey('desktop-directory-list')),
+            matching: find.byType(Scrollable),
+          );
+          final position = t.state<ScrollableState>(scrollable).position;
           client.hold = Completer<void>();
           client.empty = false;
           client.name = 'Updated';
@@ -205,17 +202,7 @@ void main() {
           client.hold = null;
           expect(find.text('Updated agent'), findsOneWidget);
           expect(find.text('Updated human'), findsOneWidget);
-          expect(
-            t
-                .state<ScrollableState>(
-                  find.descendant(
-                    of: find.byKey(const Key('desktop-directory-list')),
-                    matching: find.byType(Scrollable),
-                  ),
-                )
-                .position,
-            same(position),
-          );
+          expect(t.state<ScrollableState>(scrollable).position, same(position));
           client.fail = true;
           await pull(t);
           await t.pumpAndSettle();

@@ -54,6 +54,7 @@ void main() {
       testWidgets(
         'touch directory ${dark ? 'dark' : 'light'}/$width retains Source avatar, row and selection',
         (t) async {
+          final compact = width < 768;
           t.view.physicalSize = Size(width, 844);
           t.view.devicePixelRatio = 1;
           addTearDown(t.view.reset);
@@ -73,7 +74,7 @@ void main() {
               home: Scaffold(
                 body: DesktopDirectoryView(
                   controller: w,
-                  mobileRoot: width < 768,
+                  mobileRoot: compact,
                   onSelected: (value) => selected = value,
                 ),
               ),
@@ -87,20 +88,26 @@ void main() {
             of: row,
             matching: find.byType(RaftAvatar),
           );
-          // Sidebar.tsx AvatarSlot(sidebar-list) is 19px in every theme.
-          expect(t.getSize(avatar), const Size(19, 19));
+          expect(t.getSize(avatar), Size.square(compact ? 19 : 35));
           expect(
             find.descendant(of: row, matching: find.text('Shared Source row')),
             findsOneWidget,
           );
-          final control = find.descendant(
-            of: row,
-            matching: find.byType(RaftControl),
-          );
-          // SidebarItem uses the phone and wide touch heights independently
-          // of the row's trailing margin.
-          expect(t.getSize(control).height, width < 768 ? 44 : 38);
-          expect(t.getSize(row).height - t.getSize(control).height, 2);
+          if (compact) {
+            final control = find.descendant(
+              of: row,
+              matching: find.byType(RaftControl),
+            );
+            expect(t.getSize(control).height, 62);
+            expect(t.getSize(row).height - t.getSize(control).height, 2);
+          } else {
+            final card = find.descendant(
+              of: row,
+              matching: find.byType(RaftCard),
+            );
+            expect(t.getSize(card).height, greaterThanOrEqualTo(56));
+          }
+          expect(row.hitTestable(), findsOneWidget);
           await t.tap(row);
           expect(selected!.kind, DesktopContentKind.agent);
           expect(selected!.id, 'agent');
