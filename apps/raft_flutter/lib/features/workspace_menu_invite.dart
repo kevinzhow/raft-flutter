@@ -8,18 +8,10 @@ import '../data/raft_location.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
-import '../data/feature_flag_client_facts.dart';
 import 'management_support.dart'
-    show
-        cachedServerFlag,
-        pageIdentity,
-        readPageSnapshot,
-        rememberServerFlag,
-        writePageSnapshot;
+    show pageIdentity, readPageSnapshot, writePageSnapshot;
 
-/// InviteHumanDialog.tsx: By email (one row per invitee, per-row role when
-/// guest invites are on) and By link (the server's join link with its limits).
-/// Billing seat-limit gating is a separate port.
+/// Server membership invites by email or join link.
 Future<bool> showWorkspaceMenuInvite(
   BuildContext context,
   WorkspaceController workspace,
@@ -66,14 +58,9 @@ class _InviteDialog extends StatefulWidget {
 
 class _InviteDialogState extends State<_InviteDialog> {
   WorkspaceController get w => widget.workspace;
-  static const _guestFlag = 'server_guest_v0';
   static const _linkKey = 'invite-dialog:link';
   static const _billingKey = 'invite-dialog:billing';
 
-  // The last accepted guest gate, seat summary and join link (this session,
-  // in memory; the flag also from the device) paint at the first frame and
-  // are revalidated in place, so the dialog neither waits nor reflows.
-  late bool guest = cachedServerFlag(w, _guestFlag) ?? false;
   bool copied = false, busy = false;
   late Map<String, dynamic>? link = _cachedLink;
   late bool loading = link == null;
@@ -90,7 +77,6 @@ class _InviteDialogState extends State<_InviteDialog> {
   @override
   void initState() {
     super.initState();
-    unawaited(loadGuestFlag());
     unawaited(loadLink());
     unawaited(loadBilling());
   }
@@ -142,29 +128,6 @@ class _InviteDialogState extends State<_InviteDialog> {
   void dispose() {
     copiedTimer?.cancel();
     super.dispose();
-  }
-
-  // useServerFeatureFlag(SERVER_GUEST_FEATURE_FLAG_KEY): a client read of a
-  // server-owned gate; it decides what to offer, never what is permitted.
-  Future<void> loadGuestFlag() async {
-    final identity = pageIdentity(w);
-    try {
-      final result = await w.command(
-        'POST',
-        '/feature-flags/evaluate',
-        data: featureFlagEvaluateBody(
-          keys: ['server_guest_v0'],
-          serverId: widget.serverId,
-        ),
-      );
-      final on =
-          result is Map &&
-          (result['evaluations'] as List? ?? []).whereType<Map>().any(
-            (f) => f['key'] == 'server_guest_v0' && f['enabled'] == true,
-          );
-      rememberServerFlag(w, _guestFlag, on, identity);
-      if (mounted) setState(() => guest = on);
-    } catch (_) {}
   }
 
   /// InviteHumanDialog `setError(err.response?.data?.error ||
@@ -282,8 +245,8 @@ class _InviteDialogState extends State<_InviteDialog> {
     }
   }
 
-  Future<void> send(List<(String, String)> invites) async {
-    for (final (email, _) in invites) {
+  Future<void> send(List<String> invites) async {
+    for (final email in invites) {
       final error = sourceInviteEmailError(email);
       if (error != null) throw RaftUserError(error);
     }
@@ -293,10 +256,10 @@ class _InviteDialogState extends State<_InviteDialog> {
     // A failed invite rethrows as caught: the dialog shows the server's text
     // or `member.invite.failedSend` through the error scope.
     await Future.wait([
-      for (final (email, role) in invites)
+      for (final email in invites)
         w.client.post(
           '/servers/${widget.serverId}/invites',
-          data: {'email': email, 'role': role},
+          data: {'email': email, 'role': 'member'},
         ),
     ]);
     if (mounted) Navigator.of(context).pop(true);
@@ -306,7 +269,6 @@ class _InviteDialogState extends State<_InviteDialog> {
   Widget build(BuildContext context) => RaftInviteHumanDialog(
     onClose: () => Navigator.of(context).pop(false),
     onSend: send,
-    canOfferGuest: guest,
     seatLimitMessage: seatLimitMessage,
     onViewBilling: () {
       Navigator.of(context).pop(false);

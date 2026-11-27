@@ -21,12 +21,11 @@ import 'recipes/button_variants.g.dart';
 import 'select_field.dart';
 import 'theme.dart';
 
-/// One invite row: the typed [email] and its [role] (`member` or `guest`).
 class RaftInvitee {
-  RaftInvitee({this.email = '', this.role = 'member'}) : id = _next++;
+  RaftInvitee({this.email = ''}) : id = _next++;
   static int _next = 0;
   final int id;
-  String email, role;
+  String email;
 }
 
 /// State of the join link the By link tab shows.
@@ -50,7 +49,6 @@ class RaftInviteHumanDialog extends StatefulWidget {
     super.key,
     required this.onClose,
     required this.onSend,
-    this.canOfferGuest = false,
     this.link = const RaftInviteLink(),
     this.onCopyLink,
     this.onApplyLink,
@@ -60,10 +58,7 @@ class RaftInviteHumanDialog extends StatefulWidget {
     this.onViewBilling,
   });
   final VoidCallback onClose;
-  final bool canOfferGuest;
-
-  /// Sends `(email, role)` for every filled row; throws to show the error.
-  final Future<void> Function(List<(String, String)> invites) onSend;
+  final Future<void> Function(List<String> invites) onSend;
   final RaftInviteLink link;
   final VoidCallback? onCopyLink, onRevokeLink;
 
@@ -113,7 +108,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
   Future<void> send() async {
     final targets = [
       for (final i in invitees)
-        if (i.email.trim().isNotEmpty) (i.email.trim(), i.role),
+        if (i.email.trim().isNotEmpty) i.email.trim(),
     ];
     if (targets.isEmpty) {
       setState(() {
@@ -146,12 +141,10 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    // Guest invitations consume no paid seat: only a filled row asking for a
-    // seat-consuming role trips the email path (`emailInviteSeatLimitReached`).
     final seatReached =
         widget.seatLimitMessage != null &&
         tab == 'email' &&
-        invitees.any((i) => i.email.trim().isNotEmpty && i.role != 'guest');
+        invitees.any((i) => i.email.trim().isNotEmpty);
     final shownError =
         error ??
         (emailRequired && invitees.every((i) => i.email.trim().isEmpty)
@@ -285,29 +278,6 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                     placeholder: 'name@company.com',
                   ),
                 ),
-                if (widget.canOfferGuest) ...[
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 112,
-                    child: RaftSelectField<String>(
-                      value: invitee.role,
-                      height: 36, // chrome="field": the Input's box
-                      label: raftText(context, 'Role'),
-                      items: [
-                        RaftSelectItem(
-                          value: 'member',
-                          label: raftText(context, 'Member'),
-                        ),
-                        RaftSelectItem(
-                          value: 'guest',
-                          label: raftText(context, 'Guest'),
-                        ),
-                      ],
-                      onChanged: (v) =>
-                          setState(() => invitee.role = v ?? 'member'),
-                    ),
-                  ),
-                ],
                 if (invitees.length > 1) ...[
                   const SizedBox(width: 8),
                   RaftRecipeButton(
