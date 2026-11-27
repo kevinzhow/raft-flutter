@@ -81,7 +81,7 @@ class ChannelExternalInvites extends ChangeNotifier {
 
   /// The page identity and manage right the state below belongs to.
   (String, bool)? _scope;
-  Object? _shown;
+  (bool, bool, String?)? _shown;
   int _epoch = 0, _readVersion = 0;
   bool _disposed = false, _enabled = false, _failed = false;
   bool _atLimit = false, _opening = false;
@@ -123,7 +123,9 @@ class ChannelExternalInvites extends ChangeNotifier {
     }
     final shown = (_canInvite, _canManage, _workspace.server?.name);
     if (restart || shown != _shown) {
+      final managed = _shown?.$2 ?? false;
       _shown = shown;
+      if (!restart && !managed && _canManage) unawaited(_load());
       _changed();
     }
   }
