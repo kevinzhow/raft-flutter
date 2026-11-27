@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
+import 'package:raft_flutter/features/notification_level_menu.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'message_presentation_test.dart' show MessageAdapter, fixture;
@@ -76,7 +77,95 @@ Future<(WorkspaceController, MessageAdapter, RaftChannel)> _setUp(
   return (w, api, channel);
 }
 
+Widget _details(WorkspaceController w, RaftChannel channel) => MaterialApp(
+  theme: raftTheme(),
+  home: Scaffold(
+    body: ChannelSettings(
+      controller: w,
+      channel: channel,
+      isPanel: true,
+      page: true,
+      details: true,
+      onClose: () {},
+      onMembers: () {},
+    ),
+  ),
+);
+
+bool _stored(WorkspaceController w, String key) =>
+    w.channels.singleWhere((c) => c.id == 'c1').json[key] == true;
+
 void main() {
+  // The preference read failed, so the page knows only the channel row's
+  // value. A failed write must put that value back, on screen and in the
+  // channel list.
+  testWidgets(
+    'details: a failed collapse write after a failed read keeps the old value',
+    (t) async {
+      final (w, api, channel) = await _setUp(t);
+      api.routes['PATCH /channels/c1/message-display-settings'] = _dropped;
+      await t.pumpWidget(_details(w, channel));
+      await t.pumpAndSettle();
+
+      final collapse = find.byKey(
+        const ValueKey('channel-settings-collapse-switch'),
+      );
+      await t.ensureVisible(collapse);
+      expect(t.widget<RaftSwitch>(collapse).value, isTrue);
+      await t.tap(collapse);
+      await t.pumpAndSettle();
+
+      expect(
+        api.calls.where(
+          (c) =>
+              c.method == 'PATCH' &&
+              c.path == '/channels/c1/message-display-settings',
+        ),
+        hasLength(1),
+      );
+      expect(t.widget<RaftSwitch>(collapse).value, isTrue);
+      expect(_stored(w, 'collapseLongMessages'), isTrue);
+      await t.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'details: a failed mute write after a failed read keeps the old value',
+    (t) async {
+      final (w, api, _) = await _setUp(t);
+      final channel = RaftChannel({
+        ...w.channels.single.json,
+        'activityMuted': false,
+      });
+      w.channels = [channel];
+      api.routes['PATCH /channels/c1/notification-settings'] = _dropped;
+      await t.pumpWidget(_details(w, channel));
+      await t.pumpAndSettle();
+
+      RaftSettingsSelect<NotificationLevelChoice> select() =>
+          t.widget<RaftSettingsSelect<NotificationLevelChoice>>(
+            find.byKey(
+              const ValueKey('channel-settings-notification-level-select'),
+            ),
+          );
+      expect(select().value, isNot(NotificationLevelChoice.mute));
+      select().onChanged!(NotificationLevelChoice.mute);
+      await t.pumpAndSettle();
+
+      expect(
+        api.calls.where(
+          (c) =>
+              c.method == 'PATCH' &&
+              c.path == '/channels/c1/notification-settings',
+        ),
+        hasLength(1),
+      );
+      expect(select().value, isNot(NotificationLevelChoice.mute));
+      expect(_stored(w, 'activityMuted'), isFalse);
+      await t.pumpWidget(const SizedBox());
+    },
+  );
+
   testWidgets(
     'details: failed preference reads keep their controls and name the read',
     (t) async {
