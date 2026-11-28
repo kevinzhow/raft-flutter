@@ -113,6 +113,9 @@ extension on RaftSelectionShortcutBar {
     Widget item(Key key, String label, RaftGlyph glyph, VoidCallback onTap) =>
         RaftInteractive(
           key: key,
+          // A press must not take focus: the selection's region would blur,
+          // drop the selection and close this pair before the release.
+          focusOnPointer: false,
           onPressed: onTap,
           semanticLabel: label,
           builder: (_, state) {
