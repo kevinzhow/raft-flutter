@@ -151,4 +151,84 @@ void main() {
       );
     },
   );
+  // #383: `?artifact=` beside a page (the shell's column, Web
+  // ShellArtifactHost) is not a new destination, so it keeps the revision and
+  // the conversation under it current. On Activity or Search with no `open=`
+  // it is the list slot's own target (ArtifactContentSlot): a new content
+  // intent, which retires every ticket reserved before it.
+  group('Artifact address and the navigation revision', () {
+    const a1 = {'artifact': 'a1'};
+    const a2 = {'artifact': 'a2', 'version': '2', 'review': 'r1'};
+    const none = {'artifact': null, 'version': null, 'review': null};
+
+    for (final page in [
+      '/s/demo/activity?open=thread:t1&thread=c1:p1',
+      '/s/demo/search?q=plan&open=thread:t1&thread=c1:p1',
+      '/s/demo/tasks?open=task:task-1&task=c1:task:task-1',
+      '/s/demo/activity?open=task:task-1&task=c1:task:task-1',
+      '/s/demo/saved',
+    ]) {
+      test('beside $page the shell column keeps the revision', () {
+        final n = navigation(page);
+        final revision = n.revision;
+        for (final step in [a1, a2, none]) {
+          n.navigate(
+            n.location.withQuery(step),
+            kind: RaftNavigationKind.replace,
+          );
+          expect(n.revision, revision, reason: '${n.location}');
+        }
+        n.navigate(n.location.withQuery(a1));
+        n.navigate(n.location.withQuery(a2));
+        expect(n.location.query('artifact'), 'a2');
+        n.back();
+        expect(n.location.query('artifact'), 'a1');
+        n.back();
+        expect(n.location.query('artifact'), isNull);
+        expect(n.forward(), isTrue);
+        expect(n.location.query('artifact'), 'a1');
+        expect(n.revision, revision);
+        expect(n.location.content?.kind, isNot(RaftContentKind.artifact));
+      });
+    }
+
+    for (final list in ['/s/demo/activity', '/s/demo/search?q=plan']) {
+      for (final (name, from, to) in [
+        ('opens', none, a1),
+        ('switches', a1, a2),
+        ('closes', a1, none),
+      ]) {
+        for (final kind in [
+          RaftNavigationKind.replace,
+          RaftNavigationKind.push,
+        ]) {
+          test('$list: the list slot ${kind.name} that $name its Artifact '
+              'retires reserved tickets', () {
+            final n = navigation(list);
+            n.navigate(
+              n.location.withQuery(from),
+              kind: RaftNavigationKind.replace,
+            );
+            final ticket = n.reserve();
+            n.navigate(n.location.withQuery(to), kind: kind);
+            expect(n.revision, isNot(ticket), reason: '${n.location}');
+          });
+        }
+      }
+
+      test('$list: Back and Forward over the list slot\'s Artifact retire '
+          'reserved tickets', () {
+        final n = navigation(list);
+        n.navigate(n.location.withQuery(a1));
+        expect(n.location.content?.kind, RaftContentKind.artifact);
+        var ticket = n.reserve();
+        n.back();
+        expect(n.location.query('artifact'), isNull);
+        expect(n.revision, isNot(ticket), reason: 'Back');
+        ticket = n.reserve();
+        expect(n.forward(), isTrue);
+        expect(n.revision, isNot(ticket), reason: 'Forward');
+      });
+    }
+  });
 }
