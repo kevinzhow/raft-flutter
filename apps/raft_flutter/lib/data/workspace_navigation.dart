@@ -97,11 +97,15 @@ class WorkspaceNavigation {
     'agentTab': null,
   };
 
-  /// An Artifact's address (`artifact=`, `version=`, `review=`) names what
-  /// stands beside the page, not a new destination: opening, retargeting or
-  /// closing it keeps the conversation it was opened from current.
+  /// The shell column's Artifact address (`artifact=`, `version=`,
+  /// `review=`) names what stands beside the page, not a new destination:
+  /// opening, retargeting or closing it keeps the conversation it was opened
+  /// from current. On a list with no `open=` the same address is the list
+  /// slot's own content ([RaftContentKind.artifact]), a new destination.
   static bool artifactOnlyTransition(RaftLocation from, RaftLocation to) =>
       from.uri != to.uri &&
+      from.content?.kind != RaftContentKind.artifact &&
+      to.content?.kind != RaftContentKind.artifact &&
       from.withQuery(artifactSlotRemoval).uri ==
           to.withQuery(artifactSlotRemoval).uri;
 
