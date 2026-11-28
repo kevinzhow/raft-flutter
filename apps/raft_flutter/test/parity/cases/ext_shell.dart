@@ -60,10 +60,7 @@ WorkspaceController shellWorkspace(
   final preset = _preset(ctx);
   final base = ParityThreadFixture(ctx.fixtureData);
   final viewerRole = preset['viewerRole'] as String?;
-  final serverRecord = {
-    ...base.serverRecord,
-    'role': ?viewerRole,
-  };
+  final serverRecord = {...base.serverRecord, 'role': ?viewerRole};
   final cindy = base.agent('cindy');
   final productUx = base.agent('productUx');
   final designer = base.human('designer');
