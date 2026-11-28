@@ -153,8 +153,13 @@ void main() {
     await frames(tester);
     expect(find.text('Could not load usage'), findsNothing);
     final toolbar = find.byType(RaftFitToolbar);
+    final filter = find.byKey(const ValueKey('members-usage-filter'));
+    expect(find.descendant(of: toolbar, matching: filter), findsOneWidget);
+    expect(
+      tester.getTopLeft(filter).dy,
+      greaterThanOrEqualTo(tester.getBottomLeft(view).dy),
+    );
     for (final key in [
-      'members-usage-filter',
       'agent-usage-period',
       'members-view-usage',
       'desktop-directory-add-agent',
@@ -196,7 +201,7 @@ void main() {
       api.calls.where((call) => call.path == '/servers/s1/agent-usage'),
       hasLength(2),
     );
-    await tester.tap(find.byKey(const ValueKey('members-usage-filter')));
+    await tester.tap(filter);
     await frames(tester);
     final picker = find.byKey(const ValueKey('members-usage-filter-menu'));
     final search = find.descendant(
