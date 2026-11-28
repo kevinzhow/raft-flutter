@@ -165,7 +165,13 @@ class Ctx {
   Finder row(String id) => find.byKey(ValueKey('message-$id'));
 }
 
-Future<Ctx> mount(WidgetTester t, TapHost host) async {
+/// [builder] wraps the app's pages like `MaterialApp.builder` (window
+/// commands).
+Future<Ctx> mount(
+  WidgetTester t,
+  TapHost host, {
+  TransitionBuilder? builder,
+}) async {
   t.view.physicalSize = Size(host.width, host.width < 768 ? 844 : 900);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
@@ -250,6 +256,7 @@ Future<Ctx> mount(WidgetTester t, TapHost host) async {
         platform: host.touch ? TargetPlatform.android : TargetPlatform.macOS,
       ),
       navigatorObservers: [observer],
+      builder: builder,
       home: withAppServices(
         WorkspaceView(
           controller: w,
