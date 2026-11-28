@@ -6,6 +6,21 @@ import 'recipes/banner.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'theme.dart';
 
+Color raftBannerFill(Color fill, Color surface, {required bool browserBlend}) {
+  if (!browserBlend) {
+    return raftChromeBlend(fill, surface);
+  }
+  final alpha = (fill.a * 255).round();
+  int channel(double source, double backdrop) =>
+      (source * alpha).round() + (backdrop * (255 - alpha)).round();
+  return Color.fromARGB(
+    255,
+    channel(fill.r, surface.r),
+    channel(fill.g, surface.g),
+    channel(fill.b, surface.b),
+  );
+}
+
 RaftBannerRecipeStyle raftBannerSlots(
   RaftTokens t,
   RaftBannerRecipeStyle source,
@@ -13,6 +28,7 @@ RaftBannerRecipeStyle raftBannerSlots(
   RaftBannerRecipeStatus status, {
   bool hasButton = false,
   Color? surface,
+  bool browserFillBlend = false,
 }) {
   final foreground = t.colors['foreground-banner-body'] ?? t.muted;
   final desc = {
@@ -113,7 +129,7 @@ RaftBannerRecipeStyle raftBannerSlots(
   );
   if (ring > 0) {
     final blendedFill = fill.a < 1 && surface != null && surface.a == 1
-        ? raftChromeBlend(fill, surface)
+        ? raftBannerFill(fill, surface, browserBlend: browserFillBlend)
         : fill;
     final ringColor = color.a > 0 && color.a < 1 && blendedFill.a == 1
         ? raftChromeBlend(color, blendedFill)

@@ -68,6 +68,7 @@ type ParityExtShPreset = {
   sortModes: Record<string, "manual" | "recent" | "az">;
   selected: string | null;
   loading: boolean;
+  viewerRole?: "member";
 };
 
 type ParityExtShServer = { id: string; name: string; slug: string };
@@ -145,9 +146,16 @@ function parityExtShPrimeStores(p: ParityExtShProps) {
   });
   const current = useServerStore.getState().sidebarOrder;
   const currentServer = useServerStore.getState().current;
+  const viewerRole = preset.viewerRole;
+  const serverForViewer = currentServer && viewerRole ? { ...currentServer, role: viewerRole } : currentServer;
   useServerStore.setState({
+    current: serverForViewer,
+    ...(viewerRole ? {
+      members: useServerStore.getState().members.map((member) =>
+        member.userId === fxOwner.id ? { ...member, role: viewerRole } : member),
+    } : {}),
     servers: (parityExtShFixture.servers as ParityExtShServer[]).map((server) => ({
-      ...(currentServer as never as Record<string, unknown>),
+      ...(serverForViewer as never as Record<string, unknown>),
       id: server.id,
       name: server.name,
       slug: server.slug,

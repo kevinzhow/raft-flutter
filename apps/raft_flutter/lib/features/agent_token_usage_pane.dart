@@ -425,13 +425,16 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           semanticLabel: label,
           onChanged: (value) => setState(() => _includeCache = value),
         ),
-        RaftCssText(
-          label,
-          style: tokens.scale(
-            RaftTypeScale.caption,
-            color: tokens.ui.foregroundMuted,
+        if (tokens.desktop && widget.toolbar == null)
+          Text(label, style: RaftPanelText.caption(tokens))
+        else
+          RaftCssText(
+            label,
+            style: tokens.scale(
+              RaftTypeScale.caption,
+              color: tokens.ui.foregroundMuted,
+            ),
           ),
-        ),
       ],
     );
   }

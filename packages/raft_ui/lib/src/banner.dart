@@ -18,7 +18,6 @@ import 'recipes/recipe_runtime.dart' show RaftSlotStyle, RaftTokenResolver;
 import 'theme.dart';
 import 'space.dart';
 import 'surface_background_scope.dart';
-import 'raft/ui_tokens.dart' show raftChromeBlend;
 
 export 'recipes/banner.g.dart'
     show RaftBannerRecipeStatus, RaftBannerRecipeSize;
@@ -51,6 +50,7 @@ class RaftBanner extends StatelessWidget {
     this.linkAction,
     this.linkSeparator = ' ',
     this.backgroundColor,
+    this.browserFillBlend = false,
     this.foregroundColor,
     this.actionForeground,
     this.onClose,
@@ -78,6 +78,7 @@ class RaftBanner extends StatelessWidget {
   /// tint, say); null keeps the recipe. [actionForeground] colours the
   /// [linkAction].
   final Color? backgroundColor, foregroundColor, actionForeground;
+  final bool browserFillBlend;
 
   /// An inline underlined link after the description copy, 4px (`ml-1`) from
   /// it: Web HistoryLimitBanner's `<button className="ml-1 underline">`.
@@ -164,13 +165,15 @@ class RaftBanner extends StatelessWidget {
       ),
       tokens: tokens,
     );
+    final surface = RaftSurfaceBackgroundScope.of(context);
     final recipe = raftBannerSlots(
       t,
       source,
       size,
       status,
       hasButton: hasAction || (raft && onClose != null),
-      surface: RaftSurfaceBackgroundScope.of(context),
+      surface: surface,
+      browserFillBlend: browserFillBlend,
     );
     // raft-ui 0.7 `banner`: `BannerAction` is `col-start-(--banner-text-col)
     // mt-2 flex flex-wrap gap-2`, a row under the copy; the description keeps
@@ -194,10 +197,9 @@ class RaftBanner extends StatelessWidget {
     final fill =
         backgroundColor ??
         recipe.root.backgroundColor?.resolve(tokens, currentColor: base.color);
-    final surface = RaftSurfaceBackgroundScope.of(context);
     final background =
         raft && fill != null && fill.a < 1 && surface != null && surface.a == 1
-        ? raftChromeBlend(fill, surface)
+        ? raftBannerFill(fill, surface, browserBlend: browserFillBlend)
         : backgroundColor;
     // raft-ui `Banner`: `role = destructive ? "alert" : "status"`.
     final role = !live

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -52,6 +53,7 @@ class MembersUsageTable extends StatefulWidget {
 }
 
 class _MembersUsageTableState extends State<MembersUsageTable> {
+  static const _avatarWidth = 35.0;
   static const _statusWidth = 90.0;
   static const _modelWidth = 176.0;
   static const _trendWidth = 84.0;
@@ -185,17 +187,31 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
       builder: (context, bounds) {
         final width = bounds.crossAxisExtent - 2 * RaftSpace.x5;
         final wide = bounds.crossAxisExtent >= 1040;
-        final showStatus = width >= 360;
+        final allowClippedTracks = !RaftScaled.grows(context);
+        final showStatus = allowClippedTracks || width >= 360;
+        final showSummary = allowClippedTracks || width >= 470;
         final columns = [
-          MembersUsageColumn.agent,
-          if (width >= 240) MembersUsageColumn.tokens,
-          if (width >= 470) MembersUsageColumn.share,
+          if (allowClippedTracks || width >= 240) MembersUsageColumn.tokens,
+          if (showSummary) MembersUsageColumn.share,
           if (bounds.crossAxisExtent >= 760) ...[
             MembersUsageColumn.perTurn,
             MembersUsageColumn.context,
           ],
-          if (width >= 470) MembersUsageColumn.change,
+          if (showSummary) MembersUsageColumn.change,
         ];
+        final minimumHeadingWidth =
+            _statusWidth +
+            columns.fold(0.0, (sum, column) => sum + column.width) +
+            (columns.length + 1) * RaftSpace.x3 +
+            (wide ? _modelWidth + _trendWidth + 2 * RaftSpace.x3 : 0);
+        final minimumRowWidth =
+            minimumHeadingWidth + _avatarWidth + RaftSpace.x3;
+        final headingIsClipped =
+            allowClippedTracks &&
+            width - RaftSpace.x4 - 2 * RaftSpace.hairline < minimumHeadingWidth;
+        final rowIsClipped =
+            allowClippedTracks &&
+            width - 2 * (RaftSpace.x4 + RaftSpace.hairline) < minimumRowWidth;
         final headingStyle = tokens.scale(
           RaftTypeScale.footnote,
           color: tokens.ui.foregroundHint,
@@ -212,18 +228,28 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
         );
         List<Widget> tracks({
           required Widget identity,
+          Widget? avatar,
           required Widget status,
           required Widget model,
           required Widget Function(MembersUsageColumn) figure,
           required Widget trend,
         }) => [
+          ?avatar,
           Expanded(child: identity),
           if (showStatus) SizedBox(width: _statusWidth, child: status),
           if (wide) SizedBox(width: _modelWidth, child: model),
-          for (final column in columns.skip(1))
+          for (final column in columns)
             SizedBox(width: column.width, child: figure(column)),
           if (wide) SizedBox(width: _trendWidth, child: trend),
         ];
+        Widget fitTracks(double trackWidth, List<Widget> children) =>
+            OverflowBox(
+              alignment: AlignmentDirectional.centerStart,
+              minWidth: trackWidth,
+              maxWidth: trackWidth,
+              fit: OverflowBoxFit.deferToChild,
+              child: Row(spacing: RaftSpace.x3, children: children),
+            );
         Widget sortArrow(MembersUsageColumn column) => SizedBox.square(
           dimension: RaftMetrics.iconXs,
           child: _sort == column
@@ -270,6 +296,20 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
             ],
           ),
         );
+        final headings = tracks(
+          identity: headingIsClipped
+              ? const SizedBox.shrink()
+              : sortHeading(MembersUsageColumn.agent),
+          status: fixedLabel(raftText(context, 'Status'), _statusWidth),
+          model: fixedLabel(raftText(context, 'Model'), _modelWidth),
+          figure: sortHeading,
+          trend: fixedLabel(
+            icuText(context, '{count, plural, one {# day} other {# days}}', {
+              'count': widget.period.days,
+            }),
+            _trendWidth,
+          ),
+        );
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5),
           sliver: SliverMainAxisGroup(
@@ -282,29 +322,9 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                     right: RaftSpace.x4 + RaftSpace.hairline,
                     bottom: RaftSpace.x2,
                   ),
-                  child: Row(
-                    spacing: RaftSpace.x3,
-                    children: tracks(
-                      identity: sortHeading(MembersUsageColumn.agent),
-                      status: fixedLabel(
-                        raftText(context, 'Status'),
-                        _statusWidth,
-                      ),
-                      model: fixedLabel(
-                        raftText(context, 'Model'),
-                        _modelWidth,
-                      ),
-                      figure: sortHeading,
-                      trend: fixedLabel(
-                        icuText(
-                          context,
-                          '{count, plural, one {# day} other {# days}}',
-                          {'count': widget.period.days},
-                        ),
-                        _trendWidth,
-                      ),
-                    ),
-                  ),
+                  child: headingIsClipped
+                      ? fitTracks(minimumHeadingWidth, headings)
+                      : Row(spacing: RaftSpace.x3, children: headings),
                 ),
               ),
               for (final (heading, rows) in _groups) ...[
@@ -337,107 +357,122 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                       final model = modelName == null
                           ? '—'
                           : runtimeModelLabel(runtime ?? '', modelName);
+                      final avatar = usageAgentAvatar(
+                        agent,
+                        widget.origin,
+                        _avatarWidth,
+                        badge: RaftStatusDot(
+                          activity: tone,
+                          size: RaftStatusDotSize.sm,
+                        ),
+                      );
+                      final title = RaftListRowTitle(agent.name);
+                      final body = RaftListRowBody(
+                        children: [
+                          if (rowIsClipped)
+                            OverflowBox(
+                              fit: OverflowBoxFit.deferToChild,
+                              alignment: AlignmentDirectional.centerStart,
+                              minWidth: 0,
+                              maxWidth: width,
+                              child: title,
+                            )
+                          else
+                            title,
+                          if (description != null && description.isNotEmpty)
+                            RaftListRowSubtitle(description),
+                          if (!wide && modelName != null)
+                            RaftListRowMeta(
+                              runtime == null
+                                  ? model
+                                  : '$model · ${runtimeDisplayNameOf(runtime)}',
+                            ),
+                          if (!figures.supported || figures.empty)
+                            RaftListRowMeta(raftText(context, 'No usage yet')),
+                        ],
+                      );
+                      final cells = tracks(
+                        avatar: rowIsClipped ? avatar : null,
+                        identity: rowIsClipped
+                            ? body
+                            : Row(
+                                spacing: RaftSpace.x3,
+                                children: [
+                                  avatar,
+                                  Expanded(child: body),
+                                ],
+                              ),
+                        status: Row(
+                          spacing: RaftSpace.x2,
+                          children: [
+                            RaftStatusDot(
+                              activity: tone,
+                              size: RaftStatusDotSize.sm,
+                            ),
+                            Expanded(
+                              child: RaftCssText(
+                                raftText(
+                                  context,
+                                  ambient.heldText ?? statusLabel,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: tokens.scale(
+                                  RaftTypeScale.caption,
+                                  color: tokens.ui.foregroundMuted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        model: RaftListRowMeta(model),
+                        figure: (column) => Semantics(
+                          label: raftText(context, column.label),
+                          child: Row(
+                            spacing: RaftSpace.x1,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if ((column == MembersUsageColumn.change
+                                      ? _value(figures, column)
+                                      : null)
+                                  case final num change)
+                                RaftIcon(
+                                  change < 0
+                                      ? RaftGlyph.arrowDownRight
+                                      : RaftGlyph.arrowUpRight,
+                                  size: 12,
+                                ),
+                              Flexible(
+                                child: column == MembersUsageColumn.tokens
+                                    ? RaftCssText(
+                                        display(figures, column),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: tokens.scale(
+                                          RaftTypeScale.monoMeta,
+                                          mono: true,
+                                          color: tokens.ui.foreground,
+                                        ),
+                                      )
+                                    : RaftListRowMeta(display(figures, column)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        trend: wide
+                            ? _trend(figures, tokens)
+                            : const SizedBox.shrink(),
+                      );
                       return RaftListRow(
                         key: ValueKey('members-usage-agent-${agent.target.id}'),
                         onPressed: () => widget.onOpen(agent.target.id),
-                        children: tracks(
-                          identity: Row(
-                            spacing: RaftSpace.x3,
-                            children: [
-                              usageAgentAvatar(
-                                agent,
-                                widget.origin,
-                                35,
-                                badge: RaftStatusDot(
-                                  activity: tone,
-                                  size: RaftStatusDotSize.sm,
+                        children: rowIsClipped
+                            ? [
+                                Expanded(
+                                  child: fitTracks(minimumRowWidth, cells),
                                 ),
-                              ),
-                              Expanded(
-                                child: RaftListRowBody(
-                                  children: [
-                                    RaftListRowTitle(agent.name),
-                                    if (description != null &&
-                                        description.isNotEmpty)
-                                      RaftListRowSubtitle(description),
-                                    if (!wide && modelName != null)
-                                      RaftListRowMeta(
-                                        runtime == null
-                                            ? model
-                                            : '$model · ${runtimeDisplayNameOf(runtime)}',
-                                      ),
-                                    if (!figures.supported || figures.empty)
-                                      RaftListRowMeta(
-                                        raftText(context, 'No usage yet'),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          status: Row(
-                            spacing: RaftSpace.x2,
-                            children: [
-                              RaftStatusDot(
-                                activity: tone,
-                                size: RaftStatusDotSize.sm,
-                              ),
-                              Expanded(
-                                child: RaftCssText(
-                                  raftText(
-                                    context,
-                                    ambient.heldText ?? statusLabel,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: tokens.scale(
-                                    RaftTypeScale.caption,
-                                    color: tokens.ui.foregroundMuted,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          model: RaftListRowMeta(model),
-                          figure: (column) => Semantics(
-                            label: raftText(context, column.label),
-                            child: Row(
-                              spacing: RaftSpace.x1,
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                if ((column == MembersUsageColumn.change
-                                        ? _value(figures, column)
-                                        : null)
-                                    case final num change)
-                                  RaftIcon(
-                                    change < 0
-                                        ? RaftGlyph.arrowDownRight
-                                        : RaftGlyph.arrowUpRight,
-                                    size: 12,
-                                  ),
-                                Flexible(
-                                  child: column == MembersUsageColumn.tokens
-                                      ? RaftCssText(
-                                          display(figures, column),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: tokens.scale(
-                                            RaftTypeScale.monoMeta,
-                                            mono: true,
-                                            color: tokens.ui.foreground,
-                                          ),
-                                        )
-                                      : RaftListRowMeta(
-                                          display(figures, column),
-                                        ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          trend: wide
-                              ? _trend(figures, tokens)
-                              : const SizedBox.shrink(),
-                        ),
+                              ]
+                            : cells,
                       );
                     },
                   ),

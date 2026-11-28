@@ -358,6 +358,14 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     bool form = false,
   }) => _scopedRoute<V>(builder, raft: false, form: form);
 
+  Future<V?> scopedConfirmation<V>(Widget Function(BuildContext) builder) =>
+      _scopedRoute<V>(
+        builder,
+        raft: false,
+        form: false,
+        browserBackdropBlend: RaftTokens.of(context).ui.layerCanvas.a == 1,
+      );
+
   /// [scopedDialog] on the Web `Modal` layer ([showRaftModal]) for product
   /// dialogs that paint their own backdrop.
   ///
@@ -384,6 +392,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     bool formDismissible = true,
     bool formScrollbar = true,
     double dialogMaxWidth = 560,
+    bool browserBackdropBlend = false,
   }) async {
     final sourceAuthority = _operationAuthority ?? authority;
     if (!mounted || sourceAuthority != authority) return null;
@@ -431,6 +440,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
               context: context,
               // Web `DialogCard` / `ConfirmDialog`: no scrim close.
               barrierDismissible: false,
+              browserBackdropBlend: browserBackdropBlend,
               builder: scoped,
             ));
     } finally {

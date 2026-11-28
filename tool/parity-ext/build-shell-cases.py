@@ -105,6 +105,7 @@ PRESETS = {
 PRESETS = {name: {**BASE, **override} for name, override in PRESETS.items()}
 # phone home with custom sections and no conversation open (build-list-pages.py section dialogs)
 PRESETS['mobile-custom'] = {**PRESETS['custom'], 'selected': None}
+PRESETS['profile-reader'] = {**PRESETS['default'], 'viewerRole': 'member'}
 
 SERVERS = [
     {'id': SERVER, 'name': 'Visual Server', 'slug': 'visual'},
@@ -235,6 +236,12 @@ fixture = {
             },
             f'GET /servers/{SERVER}/machines/shell-rack/workspaces': [],
         },
+    },
+}
+fixture['routeSets']['row-profile-reader'] = {
+    **fixture['routeSets']['row'],
+    f'GET /servers/{SERVER}/members/visual-human-designer/profile': {
+        **ROW_MEMBER, 'membershipStatus': 'active',
     },
 }
 (here / 'fixtures' / 'shell.json').write_text(json.dumps(fixture, indent=1, ensure_ascii=False) + '\n')
@@ -507,8 +514,9 @@ if (raft_source() / 'packages/web/src/store/channelAccessLoss.ts').is_file():
         'extFixture': 'shell', 'routeSet': 'row', 'shell': 'browser',
     }
     SPECS.extend([
-        spec('desktop', 'row.profile-expanded', region=profile_expanded,
-             viewport={'width': 1600, 'height': 900, 'density': 1}, props=row_props,
+        spec('desktop', 'row.profile-expanded', preset='profile-reader', region=profile_expanded,
+             viewport={'width': 1600, 'height': 900, 'density': 1},
+             props={**row_props, 'routeSet': 'row-profile-reader'},
              interactions=[click(tid('row-expand-profile'))],
              android=[tap('channel-profile-expand', scroll=False)],
              title='Conversation profile expanded', themes=current_themes, hint=shell_hint),

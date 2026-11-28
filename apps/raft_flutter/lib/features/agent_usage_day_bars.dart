@@ -73,6 +73,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
   static const _slotFill = .56;
   static const _denseSlotFill = .62;
   static const _stackHeight = 84.0;
+  static const _readoutMinHeight = 18.0;
   static const _segmentGap = RaftSpace.half;
   static const _segmentRadius = 3.0;
   static const _segmentStroke = RaftSpace.hairline * 1.5;
@@ -220,11 +221,18 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
       children: [
         Semantics(
           liveRegion: true,
-          child: RaftCssText(
-            readout,
-            style: mono,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: _readoutMinHeight),
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              heightFactor: 1,
+              child: RaftCssText(
+                readout,
+                style: mono,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
         ),
         Semantics(

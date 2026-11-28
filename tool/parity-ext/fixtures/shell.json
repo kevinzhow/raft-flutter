@@ -576,6 +576,63 @@
    "sortModes": {},
    "selected": null,
    "loading": false
+  },
+  "profile-reader": {
+   "channels": [
+    "shell-general",
+    "shell-design",
+    "shell-engineering",
+    "shell-leadership",
+    "shell-random",
+    "shell-support",
+    "shell-ideas",
+    "shell-long"
+   ],
+   "joint": [
+    "shell-partner"
+   ],
+   "dms": [
+    "shell-dm-designer",
+    "shell-dm-cindy",
+    "shell-dm-product",
+    "shell-dm-jiacheng"
+   ],
+   "unread": {
+    "shell-general": 12,
+    "shell-random": 4,
+    "shell-support": 2,
+    "shell-dm-cindy": 2,
+    "shell-dm-jiacheng": 105
+   },
+   "drafts": {
+    "shell-engineering": "Looking at the build",
+    "shell-dm-product": "Can you check"
+   },
+   "mentions": [
+    "shell-support"
+   ],
+   "pinned": [
+    {
+     "kind": "channel",
+     "id": "shell-engineering"
+    },
+    {
+     "kind": "agent",
+     "id": "agent-cindy"
+    }
+   ],
+   "customSections": [],
+   "sectionOrder": [
+    "system:pinned",
+    "system:joint",
+    "system:channels",
+    "system:dms"
+   ],
+   "placements": [],
+   "sortModes": {},
+   "selected": "shell-design",
+   "loading": false,
+   "viewerRole": "member"
   }
  },
  "primitives": {
@@ -1271,6 +1328,250 @@
     "latestComputerVersion": "0.0.50"
    },
    "GET /servers/visual-server/machines/shell-rack/workspaces": []
+  },
+  "row-profile-reader": {
+   "GET /channels": [
+    {
+     "id": "shell-general",
+     "serverId": "visual-server",
+     "name": "general",
+     "description": "Company-wide announcements",
+     "type": "channel",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true
+    },
+    {
+     "id": "shell-design",
+     "serverId": "visual-server",
+     "name": "design",
+     "description": "Product and UI decisions",
+     "type": "channel",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true
+    },
+    {
+     "id": "shell-engineering",
+     "serverId": "visual-server",
+     "name": "engineering",
+     "description": "Build and release",
+     "type": "channel",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true
+    },
+    {
+     "id": "shell-leadership",
+     "serverId": "visual-server",
+     "name": "leadership",
+     "description": "Planning",
+     "type": "private",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true
+    },
+    {
+     "id": "shell-random",
+     "serverId": "visual-server",
+     "name": "random",
+     "description": "Off-topic",
+     "type": "channel",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true,
+     "activityMuted": true
+    },
+    {
+     "id": "shell-support",
+     "serverId": "visual-server",
+     "name": "support",
+     "description": "Customer questions",
+     "type": "channel",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true
+    },
+    {
+     "id": "shell-ideas",
+     "serverId": "visual-server",
+     "name": "ideas",
+     "description": "Things to try",
+     "type": "channel",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": false
+    },
+    {
+     "id": "shell-long",
+     "serverId": "visual-server",
+     "name": "release-candidate-validation-and-regression-tracking",
+     "description": "Long name",
+     "type": "channel",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true
+    },
+    {
+     "id": "shell-partner",
+     "serverId": "visual-server",
+     "name": "partner-sync",
+     "description": "Shared with Acme",
+     "type": "joint",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true,
+     "jointRole": "host",
+     "jointPeerStatus": "active",
+     "jointPeerServerName": "Acme"
+    }
+   ],
+   "GET /channels/dm": [
+    {
+     "id": "shell-dm-designer",
+     "serverId": "visual-server",
+     "name": "dm-visual-human-designer",
+     "description": null,
+     "type": "dm",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true,
+     "peerId": "visual-human-designer",
+     "peerType": "user",
+     "peerName": "designer",
+     "peerDisplayName": "Designer",
+     "peerDescription": null
+    },
+    {
+     "id": "shell-dm-cindy",
+     "serverId": "visual-server",
+     "name": "dm-agent-cindy",
+     "description": null,
+     "type": "dm",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true,
+     "peerId": "agent-cindy",
+     "peerType": "agent",
+     "peerName": "Cindy",
+     "peerDisplayName": "Cindy",
+     "peerDescription": "Keeps visual testing release notes aligned."
+    },
+    {
+     "id": "shell-dm-product",
+     "serverId": "visual-server",
+     "name": "dm-agent-product-ux",
+     "description": null,
+     "type": "dm",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true,
+     "peerId": "agent-product-ux",
+     "peerType": "agent",
+     "peerName": "Product-UX-Designer",
+     "peerDisplayName": "Product UX Designer",
+     "peerDescription": "Turns product feedback, screenshots, and release notes into actionable UX specs."
+    },
+    {
+     "id": "shell-dm-jiacheng",
+     "serverId": "visual-server",
+     "name": "dm-visual-human-jiacheng",
+     "description": null,
+     "type": "dm",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true,
+     "peerId": "visual-human-jiacheng",
+     "peerType": "user",
+     "peerName": "jiacheng",
+     "peerDisplayName": "Jiacheng",
+     "peerDescription": null
+    }
+   ],
+   "GET /channels/shell-design": {
+    "id": "shell-design",
+    "serverId": "visual-server",
+    "name": "design",
+    "description": "Product and UI decisions",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   "GET /channels/shell-design/threads/shell-parent": {
+    "threadChannelId": "shell-thread"
+   },
+   "GET /channels/shell-thread": {
+    "id": "shell-thread",
+    "serverId": "visual-server",
+    "name": "visual-review",
+    "description": null,
+    "type": "thread",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   "GET /messages/channel/shell-design": {
+    "messages": [
+     {
+      "id": "shell-parent",
+      "channelId": "shell-design",
+      "serverId": "visual-server",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "Designer",
+      "content": "The visual review is ready.",
+      "createdAt": "2026-06-19T12:00:00.000Z",
+      "seq": 1,
+      "threadId": "shell-thread"
+     }
+    ],
+    "hasMore": false,
+    "threadSummariesByParentMessageId": {
+     "shell-parent": {
+      "threadChannelId": "shell-thread",
+      "replyCount": 1
+     }
+    }
+   },
+   "GET /messages/context/shell-parent": {
+    "messages": [
+     {
+      "id": "shell-parent",
+      "channelId": "shell-design",
+      "serverId": "visual-server",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "Designer",
+      "content": "The visual review is ready.",
+      "createdAt": "2026-06-19T12:00:00.000Z",
+      "seq": 1,
+      "threadId": "shell-thread"
+     }
+    ],
+    "targetMessageId": "shell-parent",
+    "hasOlder": false,
+    "hasNewer": false
+   },
+   "GET /messages/channel/shell-thread": {
+    "messages": [
+     {
+      "id": "shell-reply",
+      "channelId": "shell-thread",
+      "serverId": "visual-server",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "Designer",
+      "content": "I checked the desktop and phone captures.",
+      "createdAt": "2026-06-19T12:01:00.000Z",
+      "seq": 2,
+      "threadId": null
+     }
+    ],
+    "hasMore": false
+   },
+   "GET /tasks/channel/shell-design": [],
+   "GET /servers/visual-server/members/visual-human-designer/profile": {
+    "id": "visual-human-designer",
+    "userId": "visual-human-designer",
+    "serverId": "visual-server",
+    "name": "designer",
+    "displayName": "Designer",
+    "description": "Reviews the visual fixtures.",
+    "role": "member",
+    "avatarUrl": null,
+    "joinedAt": "2026-06-18T00:00:00.000Z",
+    "membershipStatus": "active"
+   },
+   "PATCH /servers/visual-server/sidebar-order": {}
   }
  }
 }

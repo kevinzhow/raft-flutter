@@ -233,6 +233,7 @@ class _InviteDialogState extends State<_InviteDialog> {
       context: context,
       barrierDismissible: false,
       overModal: true,
+      browserBackdropBlend: RaftTokens.of(context).ui.layerCanvas.a == 1,
       builder: (context) => RaftConfirmDialog(
         surfaceKey: ValueKey(
           updating ? 'invite-link-update-dialog' : 'invite-link-revoke-dialog',

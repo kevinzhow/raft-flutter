@@ -39,7 +39,9 @@ WorkspaceController _workspace(ParityContext ctx) {
   final routeSet = ctx.props['routeSet'];
   final routes = ctx.props['extKind'] == 'framework'
       ? (ctx.fixtures['ext:framework'] as Map)['routes'] as Map
-      : routeSet == 'row' || routeSet == 'rack'
+      : routeSet == 'row' ||
+            routeSet == 'row-profile-reader' ||
+            routeSet == 'rack'
       ? (_fx(ctx)['routeSets'] as Map)[routeSet] as Map
       : const {};
   return shellWorkspace(ctx, routes: Map<String, dynamic>.from(routes));
@@ -57,6 +59,11 @@ WorkspaceController shellWorkspace(
   final fx = _fx(ctx);
   final preset = _preset(ctx);
   final base = ParityThreadFixture(ctx.fixtureData);
+  final viewerRole = preset['viewerRole'] as String?;
+  final serverRecord = {
+    ...base.serverRecord,
+    if (viewerRole != null) 'role': viewerRole,
+  };
   final cindy = base.agent('cindy');
   final productUx = base.agent('productUx');
   final designer = base.human('designer');
@@ -110,14 +117,19 @@ WorkspaceController shellWorkspace(
       'GET /servers': [
         for (final server in fx['servers'] as List)
           {
-            ...base.serverRecord,
+            ...serverRecord,
             'id': (server as Map)['id'],
             'name': server['name'],
             'slug': server['slug'],
           },
       ],
       'GET /servers/visual-server/members': [
-        ...base.serverMembers,
+        for (final member in base.serverMembers)
+          {
+            ...member,
+            if (viewerRole != null && member['userId'] == base.authUser['id'])
+              'role': viewerRole,
+          },
         {
           'id': designer['id'],
           'userId': designer['id'],
@@ -139,7 +151,7 @@ WorkspaceController shellWorkspace(
   };
   RaftChannel channel(String id) => RaftChannel(all[id]!);
   final w = WorkspaceController(client)
-    ..server = RaftRecord(base.serverRecord)
+    ..server = RaftRecord(serverRecord)
     ..channels = [
       for (final id in [
         ...preset['channels'] as List,
@@ -151,7 +163,7 @@ WorkspaceController shellWorkspace(
     ..servers = [
       for (final server in fx['servers'] as List)
         RaftRecord({
-          ...base.serverRecord,
+          ...serverRecord,
           'id': (server as Map)['id'],
           'name': server['name'],
           'slug': server['slug'],

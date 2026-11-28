@@ -58,7 +58,10 @@ void main() {
   });
 
   testWidgets('warning uses the warning colour, otherwise info', (t) async {
-    Color color() => t.widget<ColoredBox>(fill).color;
+    Color? color() => t
+        .widget<RaftRecipeBox>(fill)
+        .decorationOverride!(const BoxDecoration())
+        .color;
     await t.pumpWidget(
       _host(const RaftMeter(label: 'L', used: 1, max: 2, valueText: 'v')),
     );

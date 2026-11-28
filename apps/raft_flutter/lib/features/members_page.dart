@@ -218,7 +218,7 @@ class _MembersPageState extends State<MembersPage>
           onChanged: (value) => setState(() => _query = value.trim()),
         ),
         if (usageFilter != null)
-          RaftFitGroup(wrapOrder: 80, scroll: true, items: [usageFilter]),
+          RaftFitGroup(wrapOrder: 30, scroll: true, items: [usageFilter]),
         RaftFitGroup(
           firstLine: showUsage,
           moreOrder: 60,

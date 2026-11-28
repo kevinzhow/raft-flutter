@@ -32,6 +32,7 @@ import 'recipes/recipes.g.dart';
 import 'recipes/token_binding.dart';
 import 'settings_layout.dart';
 import 'sized_image.dart';
+import 'surface_background_scope.dart';
 import 'theme.dart' hide RaftFieldRecipe;
 import 'agent_profile.dart' show RaftAvatarSlot, RaftAvatarSlotContext;
 import 'token_geometry.dart';
@@ -606,7 +607,9 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
         backgroundColor: background,
         descriptionBuilder: (style) => DefaultTextStyle.merge(
           style: style,
-          child: content ?? RaftCssText(raftText(context, message ?? '')),
+          child: content == null
+              ? RaftCssText(raftText(context, message ?? ''))
+              : RaftSurfaceBackgroundScope(color: background, child: content),
         ),
       );
     }

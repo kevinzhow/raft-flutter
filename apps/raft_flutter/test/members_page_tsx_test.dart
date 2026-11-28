@@ -46,14 +46,41 @@ void main() {
       'from': request.queryParameters['from'],
       'to': request.queryParameters['to'],
       'as_of': "${request.queryParameters['to']}T12:00:00Z",
-      'agents': [],
-      'rows': [],
+      'agents': [
+        {'agent_id': 'agent', 'usage_reported': true},
+      ],
+      'rows': [
+        {
+          'agent_id': 'agent',
+          'day': request.queryParameters['to'],
+          'runtime': 'codex',
+          'input_new': 900,
+        },
+      ],
     };
     await mountDirectory(tester, api, workspace);
     await tester.tap(find.byKey(const ValueKey('members-tab-agent')));
     await frames(tester);
     await tester.tap(find.byKey(const ValueKey('members-view-usage')));
     await frames(tester);
+    tester.view.physicalSize = const Size(405, 856);
+    await frames(tester);
+    final search = find.byKey(const ValueKey('members-search'));
+    final filter = find.byKey(const ValueKey('members-usage-filter'));
+    expect(search, findsOneWidget);
+    expect(filter, findsOneWidget);
+    expect(
+      tester.getTopLeft(filter).dy,
+      greaterThan(tester.getBottomLeft(search).dy),
+    );
+    expect(
+      find.byKey(const ValueKey('members-usage-sort-share')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('members-usage-sort-change')),
+      findsOneWidget,
+    );
     tester.view.physicalSize = const Size(390, 844);
     await frames(tester);
     expect(find.byKey(const ValueKey('agent-usage-period')), findsNothing);

@@ -116,11 +116,15 @@ class RaftMeter extends StatelessWidget {
                 alignment: AlignmentDirectional.centerStart,
                 child: FractionallySizedBox(
                   widthFactor: _fraction,
-                  child: SizedBox(
+                  child: RaftRecipeBox(
+                    key: const ValueKey('meter-indicator'),
+                    style: r.indicator,
+                    tokens: tokens,
                     height: trackHeight,
-                    child: ColoredBox(
-                      key: const ValueKey('meter-indicator'),
+                    applyText: false,
+                    decorationOverride: (decoration) => decoration.copyWith(
                       color: indicator,
+                      borderRadius: r.track.borderRadius,
                     ),
                   ),
                 ),

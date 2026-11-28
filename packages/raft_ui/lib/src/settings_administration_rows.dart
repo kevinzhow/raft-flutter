@@ -667,6 +667,7 @@ class RaftOwnComputersTransferNote extends StatelessWidget {
     child: RaftBanner(
       key: const ValueKey('owner-transfer-computers'),
       status: RaftBannerRecipeStatus.info,
+      browserFillBlend: true,
       live: false,
       glyph: RaftGlyph.info,
       description: message,

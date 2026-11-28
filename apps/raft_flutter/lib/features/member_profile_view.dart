@@ -227,7 +227,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     final server = w.server!.id, id = widget.userId;
     final source = authority;
     final name = humanDisplayName(profile);
-    final removed = await scopedDialog<bool>(
+    final removed = await scopedConfirmation<bool>(
       (_) => RemoveMemberDialog(
         workspace: w,
         serverId: server,
@@ -257,7 +257,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
   Future<void> promote() async {
     final server = w.server!, id = widget.userId, source = authority;
     final name = humanDisplayName(profile);
-    await scopedDialog<bool>(
+    await scopedConfirmation<bool>(
       (dialogContext) => RaftConfirmDialog(
         surfaceKey: const ValueKey('human-promote-guest-dialog'),
         confirmKey: const ValueKey('human-promote-guest-confirm'),
@@ -460,7 +460,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
 
     try {
       if (selfDemotion || grant) {
-        final accepted = await scopedDialog<bool>(
+        final accepted = await scopedConfirmation<bool>(
           (context) => memberRoleConfirmation(
             context,
             change: change,

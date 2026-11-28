@@ -1245,6 +1245,12 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
     // sticker row (`px-5 py-2`, `gap-0.5`, h-8 tabs); the pre-theme looks keep
     // the underline row (panelTabs.style).
     final sticker = t.option('panelTabs.style', or: 'sticker') == 'sticker';
+    final desktopSticker = sticker && t.desktop;
+    final stripHeight = desktopSticker
+        ? RaftDesktopMetrics.headerHeight - RaftSpace.hairline
+        : sticker
+        ? 48.0
+        : 47.0;
     final narrowStrip =
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     return Container(
@@ -1259,15 +1265,23 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
             controller: scroll,
             scrollDirection: Axis.horizontal,
             child: Container(
-              height: grows ? null : (sticker ? 48 : 47),
+              height: grows ? null : stripHeight,
               constraints: grows
-                  ? BoxConstraints(minHeight: sticker ? 48 : 47)
+                  ? BoxConstraints(minHeight: stripHeight)
                   : null,
               padding: sticker
-                  ? EdgeInsets.symmetric(
-                      horizontal: narrowStrip ? 16 : 20,
-                      vertical: 8,
-                    )
+                  ? desktopSticker
+                        ? EdgeInsets.symmetric(
+                            horizontal: RaftDesktopMetrics.pageInset,
+                            vertical:
+                                (stripHeight -
+                                    RaftDesktopMetrics.controlHeight) /
+                                2,
+                          )
+                        : EdgeInsets.symmetric(
+                            horizontal: narrowStrip ? 16 : 20,
+                            vertical: 8,
+                          )
                   : const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
@@ -1288,6 +1302,8 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
 
   Widget _tab(RaftPanelTab<T> tab) {
     final grows = RaftScaled.grows(context);
+    final t = RaftTokens.of(context);
+    final sticker = t.option('panelTabs.style', or: 'sticker') == 'sticker';
     final active = tab.id == widget.value;
     return KeyedSubtree(
       key: keys.putIfAbsent(tab.id, GlobalKey.new),
@@ -1300,16 +1316,14 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
           label: tab.label,
           glyph: tab.glyph,
           icon: tab.iconBuilder,
-          variant:
-              RaftTokens.of(context).option('panelTabs.style', or: 'sticker') ==
-                  'sticker'
+          variant: sticker
               ? RaftTabsVariant.standard
               : RaftTabsVariant.underline,
           selected: active,
-          height:
-              RaftTokens.of(context).option('panelTabs.style', or: 'sticker') ==
-                  'sticker'
-              ? 32
+          height: sticker
+              ? t.desktop
+                    ? RaftDesktopMetrics.controlHeight
+                    : 32
               : 47,
           growsWithText: grows,
           onPressed: () => widget.onChanged(tab.id),

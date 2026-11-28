@@ -237,6 +237,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
               RaftBanner(
                 key: const ValueKey('invite-agent-reach-hint'),
                 status: RaftBannerRecipeStatus.info,
+                browserFillBlend: true,
                 glyph: RaftGlyph.info,
                 description: raftText(
                   context,
