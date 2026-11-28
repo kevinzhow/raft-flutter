@@ -56779,7 +56779,6 @@
       "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState/METHOD:build/FUNCTION:recipeTrigger": {
         "role": "entry_composition",
         "familyRefs": [
-          "badge",
           "menu"
         ],
         "owner": "WP-MEMBERS-VIS",
