@@ -207,9 +207,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       final emptyDetail =
           noFigures != null && (!noFigures.supported || noFigures.empty);
       final (range, periodEntries) = _rangeControls(context, report);
-      final detailInset =
-          raftBreakpointWidth(context) >= RaftLayoutMetrics.desktopBreakpoint &&
-              RaftInteraction.of(context).pointer
+      final detailInset = RaftTokens.of(context).desktop
           ? RaftDesktopMetrics.pageInset
           : RaftSpace.x5;
       final scroll = CustomScrollView(
@@ -257,6 +255,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
               ..._sections(
                 context,
                 report,
+                detailInset: detailInset,
                 agentId: single,
                 filteredAgent: widget.agentId == null && single != null
                     ? listed
@@ -268,9 +267,12 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
               )
             else if (!ready)
               if (report == null)
-                const RaftPanelSection(
+                RaftPanelSection(
                   topBorder: false,
-                  children: [
+                  horizontal: widget.toolbar == null
+                      ? detailInset
+                      : RaftSpace.x5,
+                  children: const [
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: RaftSkeleton(
@@ -410,22 +412,29 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
     );
   }
 
-  Widget _cacheReadSwitch(BuildContext context) => RaftGapRow(
-    shrinkWrap: true,
-    gap: 8,
-    children: [
-      RaftSwitch(
-        key: const ValueKey('agent-usage-cache-reads'),
-        value: _includeCache,
-        semanticLabel: raftText(context, 'Cache reads'),
-        onChanged: (value) => setState(() => _includeCache = value),
-      ),
-      Text(
-        raftText(context, 'Cache reads'),
-        style: RaftPanelText.caption(RaftTokens.of(context)),
-      ),
-    ],
-  );
+  Widget _cacheReadSwitch(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final label = raftText(context, 'Cache reads');
+    return RaftGapRow(
+      shrinkWrap: true,
+      gap: 8,
+      children: [
+        RaftSwitch(
+          key: const ValueKey('agent-usage-cache-reads'),
+          value: _includeCache,
+          semanticLabel: label,
+          onChanged: (value) => setState(() => _includeCache = value),
+        ),
+        RaftCssText(
+          label,
+          style: tokens.scale(
+            RaftTypeScale.caption,
+            color: tokens.ui.foregroundMuted,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _emptyState(BuildContext context, bool supported) => RaftEmptyState(
     title: supported
@@ -448,6 +457,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
   List<Widget> _sections(
     BuildContext context,
     AgentUsageReport report, {
+    required double detailInset,
     required String? agentId,
     required MemberPageEntry? filteredAgent,
     required Set<String> listedIds,
@@ -599,7 +609,8 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
       bool topBorder = true,
     }) => RaftPanelSection(
       topBorder: topBorder,
-      horizontal: filteredAgent == null ? RaftSpace.x5 : RaftSpace.x4,
+      horizontal: filteredAgent == null ? detailInset : RaftSpace.x4,
+      hairline: true,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -613,6 +624,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                         'day': dayName(_selectedDay!),
                         'heading': raftText(context, title),
                       }),
+                cssBaseline: true,
               ),
             ),
             ?aside,

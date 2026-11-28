@@ -161,12 +161,14 @@ function ParityExtMpView({ props }: { props: ParityExtMpProps }) {
   if (props.extKind === "invite") return <ParityExtMpInvite props={props} caseId={caseId} />;
   if (props.extKind === "report") return <ParityExtMpReport props={props} caseId={caseId} />;
   useMemo(() => parityExtMpPrimeStores(props), [props]);
+  const directoryWidth = Number(props.params.get("directoryWidth"));
   // The real shell (desktop: rail + Sidebar + panel frame; phone: the mobile page) on the case route.
   return (
     <main className="min-h-screen bg-white p-0 font-display text-black">
       <div
         data-visual-case={caseId}
-        style={{ width: window.innerWidth, height: window.innerHeight, overflow: "hidden", display: "flex", flexDirection: "column" }}
+        style={{ width: directoryWidth ? directoryWidth + 49 : window.innerWidth, height: window.innerHeight,
+          overflow: "hidden", display: "flex", flexDirection: "column" }}
       >
         <Routes>
           <Route path="/s/:serverSlug/*" element={<MainLayout />} />

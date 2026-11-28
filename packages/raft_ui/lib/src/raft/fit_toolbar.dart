@@ -328,9 +328,16 @@ class RaftFitSelect<T> extends RaftFitPicker {
 /// `FitToolbarMore`: a ghost ellipsis button, shown only while some item took
 /// `more`; its menu lists each such item's `moreItem` in order.
 class RaftFitMore extends RaftFitItem {
-  const RaftFitMore({this.key, this.label = 'More'});
+  const RaftFitMore({
+    this.key,
+    this.label = 'More',
+    this.kind = RaftMenuKind.dropdown,
+    this.width = 192,
+  });
   final Key? key;
   final String label;
+  final RaftMenuKind kind;
+  final double width;
 
   @override
   bool get isMore => true;
@@ -355,6 +362,8 @@ class RaftFitMore extends RaftFitItem {
     return RaftDropdownMenu(
       key: key,
       label: label,
+      kind: kind,
+      width: width,
       entries: moreEntries,
       align: RaftDropdownAlign.end,
       triggerBuilder: (context, focusNode, press) => trigger(focusNode, press),

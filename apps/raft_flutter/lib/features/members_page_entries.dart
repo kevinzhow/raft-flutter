@@ -120,7 +120,10 @@ class MembersAgentColumns extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: RaftPanelText.caption(tokens),
+              style: tokens.scale(
+                RaftTypeScale.caption,
+                color: tokens.ui.foregroundMuted,
+              ),
             )
           : RaftListRowMeta(label);
       return dot == null
@@ -292,7 +295,10 @@ class MemberDirectoryEntry extends StatelessWidget {
                     description,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: tokens.scale(RaftTypeScale.footnote),
+                    style: tokens.scale(
+                      RaftTypeScale.footnote,
+                      color: tokens.ui.foreground,
+                    ),
                   )
                 else
                   RaftListRowSubtitle(description),

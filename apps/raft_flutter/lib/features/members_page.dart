@@ -223,7 +223,8 @@ class _MembersPageState extends State<MembersPage>
           firstLine: showUsage,
           moreOrder: 60,
           moreItem: [
-            if (canSwitch)
+            if (canSwitch) ...[
+              RaftMenuEntry.heading(raftText(context, 'View as')),
               for (final (label, value) in [
                 ('Details', false),
                 ('Usage', true),
@@ -233,18 +234,23 @@ class _MembersPageState extends State<MembersPage>
                   checked: showUsage == value,
                   onPressed: () => setState(() => _usage = value),
                 ),
-            if (usagePeriods.isNotEmpty) ...[
               const RaftMenuEntry.separator(),
+            ],
+            if (usagePeriods.isNotEmpty) ...[
+              RaftMenuEntry.heading(raftText(context, 'Time range')),
               ...usagePeriods,
               const RaftMenuEntry.separator(),
             ],
-            if (scope == _Scope.agent)
+            if (scope == _Scope.agent) ...[
+              RaftMenuEntry.heading(raftText(context, 'Group')),
               for (final choice in groupChoices)
                 RaftMenuEntry(
                   label: choice.label,
                   checked: grouping == choice.value,
                   onPressed: () => _setGrouping(choice.value),
                 ),
+              if (widget.onInvite != null) const RaftMenuEntry.separator(),
+            ],
             if (widget.onInvite != null)
               RaftMenuEntry(
                 label: raftText(context, 'Invite human'),
@@ -304,7 +310,11 @@ class _MembersPageState extends State<MembersPage>
         RaftFitGroup(
           firstLine: true,
           items: [
-            const RaftFitMore(key: ValueKey('members-toolbar-more')),
+            const RaftFitMore(
+              key: ValueKey('members-toolbar-more'),
+              kind: RaftMenuKind.dropdownMenu,
+              width: 240,
+            ),
             if (widget.onCreate != null && widget.onConnect != null)
               RaftFitSplitButton(
                 mainKey: const ValueKey('desktop-directory-add-agent'),

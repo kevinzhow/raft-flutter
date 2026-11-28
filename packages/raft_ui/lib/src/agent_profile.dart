@@ -3542,7 +3542,10 @@ class RaftRoleField extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        editor ?? RaftInlineBadge(badge: badge, bodyLine: true),
+        if (editor case final editor?)
+          Align(alignment: AlignmentDirectional.centerStart, child: editor)
+        else
+          RaftInlineBadge(badge: badge, bodyLine: true),
       ],
     );
   }

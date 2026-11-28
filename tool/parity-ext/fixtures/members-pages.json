@@ -929,6 +929,70 @@
      }
     }
    }
+  ],
+  "thinking": [
+   {
+    "id": "agent-product-ux",
+    "serverId": "visual-server",
+    "name": "Product-UX-Designer",
+    "displayName": "Product UX Designer",
+    "avatarUrl": "pixel:robot",
+    "description": "Turns product feedback, screenshots, and release notes into actionable UX specs.",
+    "status": "active",
+    "serverRole": "member",
+    "model": "gpt-5-codex",
+    "runtime": "codex",
+    "reasoningEffort": "medium",
+    "executionMode": "byoc",
+    "envVars": {
+     "RAFT_PROFILE": "product-ux",
+     "SLOCK_VISUAL_PROVIDER": "react"
+    },
+    "machineId": "computer-mbp",
+    "sessionId": "session-agent-product-ux",
+    "runtimeProfile": {
+     "migrationStatus": "stable",
+     "current": {
+      "daemonVersion": "0.65.0",
+      "machineId": "computer-mbp",
+      "machineName": "Jiachengs-MacBook-Pro",
+      "runtime": "codex",
+      "model": "gpt-5-codex",
+      "reasoningEffort": "medium",
+      "executionMode": "byoc",
+      "workspaceRef": {
+       "label": "AndroidStudioProjects/Slock",
+       "path": "/Users/artin/AndroidStudioProjects/Slock",
+       "reachable": true
+      },
+      "observedAt": "2026-06-19T12:28:00.000Z"
+     }
+    },
+    "creatorType": "user",
+    "creatorId": "visual-user",
+    "creator": {
+     "type": "human",
+     "id": "visual-user",
+     "name": "artin",
+     "displayName": "artin",
+     "avatarUrl": null,
+     "gravatarHash": ""
+    },
+    "createdAgents": [
+     {
+      "id": "agent-visual-qa",
+      "name": "visual-qa",
+      "displayName": "Visual QA",
+      "avatarUrl": null,
+      "runtime": "codex",
+      "status": "inactive"
+     }
+    ],
+    "deletedAt": null,
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "activity": "thinking",
+    "activityDetail": "Capturing deterministic Activity tab state"
+   }
   ]
  },
  "humans": [
@@ -3295,6 +3359,72 @@
     }
    ]
   },
+  "roster-thinking": {
+   "GET /agents": [
+    {
+     "id": "agent-product-ux",
+     "serverId": "visual-server",
+     "name": "Product-UX-Designer",
+     "displayName": "Product UX Designer",
+     "avatarUrl": "pixel:robot",
+     "description": "Turns product feedback, screenshots, and release notes into actionable UX specs.",
+     "status": "active",
+     "serverRole": "member",
+     "model": "gpt-5-codex",
+     "runtime": "codex",
+     "reasoningEffort": "medium",
+     "executionMode": "byoc",
+     "envVars": {
+      "RAFT_PROFILE": "product-ux",
+      "SLOCK_VISUAL_PROVIDER": "react"
+     },
+     "machineId": "computer-mbp",
+     "sessionId": "session-agent-product-ux",
+     "runtimeProfile": {
+      "migrationStatus": "stable",
+      "current": {
+       "daemonVersion": "0.65.0",
+       "machineId": "computer-mbp",
+       "machineName": "Jiachengs-MacBook-Pro",
+       "runtime": "codex",
+       "model": "gpt-5-codex",
+       "reasoningEffort": "medium",
+       "executionMode": "byoc",
+       "workspaceRef": {
+        "label": "AndroidStudioProjects/Slock",
+        "path": "/Users/artin/AndroidStudioProjects/Slock",
+        "reachable": true
+       },
+       "observedAt": "2026-06-19T12:28:00.000Z"
+      }
+     },
+     "creatorType": "user",
+     "creatorId": "visual-user",
+     "creator": {
+      "type": "human",
+      "id": "visual-user",
+      "name": "artin",
+      "displayName": "artin",
+      "avatarUrl": null,
+      "gravatarHash": ""
+     },
+     "createdAgents": [
+      {
+       "id": "agent-visual-qa",
+       "name": "visual-qa",
+       "displayName": "Visual QA",
+       "avatarUrl": null,
+       "runtime": "codex",
+       "status": "inactive"
+      }
+     ],
+     "deletedAt": null,
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "activity": "thinking",
+     "activityDetail": "Capturing deterministic Activity tab state"
+    }
+   ]
+  },
   "external-connected": {
    "GET /agents": [
     {
@@ -5167,6 +5297,17 @@
      "universalSeats": 0
     }
    }
+  },
+  "invite-link-status": {
+   "GET /servers/visual-server/join-links": [
+    {
+     "id": "join-link-1",
+     "token": "visual-join-token",
+     "maxUses": 10,
+     "expiresAt": "2026-06-25T12:00:00.000Z",
+     "useCount": 3
+    }
+   ]
   },
   "agent-usage-ready": {
    "POST /feature-flags/evaluate": {

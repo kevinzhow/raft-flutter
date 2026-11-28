@@ -13,9 +13,11 @@ import 'mounted_task_chip.dart';
 import 'task_status_badge.dart';
 import 'design_primitives.dart';
 import 'recipe_surface.dart';
+import 'raft/badge.dart';
 import 'raft/ui_tokens.dart';
 import 'panel_layout.dart' show RaftCssText, raftCssBaseline;
 import 'space.dart';
+import 'surface_background_scope.dart';
 import 'tap_slop.dart' show raftTapSlopVisualBoundsOnly;
 import '../recipes.dart';
 import 'text_scaling.dart' show RaftScaled;
@@ -50,6 +52,7 @@ class RaftInlineBadgeEditor extends StatefulWidget {
     required this.onSelect,
     this.background,
     this.foreground,
+    this.badgeVariant,
     this.taskStatus,
     this.open,
     this.onOpenChanged,
@@ -81,6 +84,7 @@ class RaftInlineBadgeEditor extends StatefulWidget {
   /// Resolved `badgeClassName` background/foreground (theme dependent). Not
   /// used with [taskStatus], whose colours come from the `task-status-*` tokens.
   final Color? background, foreground;
+  final RaftBadgeRecipeVariant? badgeVariant;
 
   /// Web `badgeStatus`: the trigger is raft-ui's `TaskStatusBadge` for this
   /// status (icon + label + pencil on the task-status tokens) instead of the
@@ -173,6 +177,9 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
     // font-bold theme-brutal:text-black`.
     final badge = RaftBadgeRecipe.resolve(
       appearance: RaftBadgeRecipeAppearance.soft,
+      states: widget.badgeVariant == null
+          ? RaftRecipeStates.none
+          : t.recipeStates(responsive: true),
       tokens: rt,
     ).root;
     // `rounded-full` resolves to a float-max radius; a finite one paints the
@@ -289,6 +296,41 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
       }
     }
 
+    Widget recipeTrigger(
+      RaftInteractionState state,
+      RaftBadgeRecipeVariant variant,
+    ) {
+      const appearance = RaftBadgeRecipeAppearance.soft;
+      final colors = RaftBadgeColors.resolve(
+        t.ui,
+        appearance,
+        variant,
+        hovered: state.hovered || state.pressed,
+        disabled: !widget.enabled,
+        surface: RaftSurfaceBackgroundScope.of(context),
+      );
+      return Padding(
+        padding: const EdgeInsets.only(top: RaftSpace.half),
+        child: CustomPaint(
+          foregroundPainter: state.focusVisible
+              ? _BadgeFocusOutline(t.semantic.lineStrong, badgeRadius)
+              : null,
+          child: RaftBadge(
+            label: widget.label,
+            appearance: appearance,
+            variant: variant,
+            disabled: !widget.enabled,
+            fill: colors.fill,
+            trailing: RaftIcon(
+              RaftGlyph.chevronDown,
+              size: 12,
+              color: colors.foreground,
+            ),
+          ),
+        ),
+      );
+    }
+
     Widget trigger(RaftInteractionState state) => Padding(
       padding: EdgeInsets.only(
         top: person ? personHitInset : 2,
@@ -353,8 +395,9 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
     final movement = Scrollable.maybeOf(context)?.position;
     assert(
       widget.taskStatus != null ||
+          widget.badgeVariant != null ||
           (widget.background != null && widget.foreground != null),
-      'a badge editor needs taskStatus or background and foreground',
+      'A badge editor needs a task status, a badge variant, or both colors.',
     );
     return OverlayPortal(
       controller: portal,
@@ -462,10 +505,14 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
                   : null,
               builder: (context, state) => ExcludeSemantics(
                 child: Opacity(
-                  opacity: widget.enabled ? 1 : .6,
-                  child: widget.taskStatus == null
-                      ? trigger(state)
-                      : statusTrigger(state, widget.taskStatus!),
+                  opacity: widget.enabled || widget.badgeVariant != null
+                      ? 1
+                      : .6,
+                  child: switch ((widget.taskStatus, widget.badgeVariant)) {
+                    (final status?, _) => statusTrigger(state, status),
+                    (_, final variant?) => recipeTrigger(state, variant),
+                    _ => trigger(state),
+                  },
                 ),
               ),
             ),

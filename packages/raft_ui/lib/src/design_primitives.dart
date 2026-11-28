@@ -1918,10 +1918,12 @@ class RaftMenuEntry {
     this.submenuSide = RaftDropdownSide.right,
     this.openSubmenuOnHover = false,
     this.description,
-  });
-  const RaftMenuEntry.separator()
-    : label = null,
-      glyph = null,
+  }) : isHeading = false;
+  const RaftMenuEntry.separator() : this._nonAction(null);
+  const RaftMenuEntry.heading(String label)
+    : this._nonAction(label, isHeading: true);
+  const RaftMenuEntry._nonAction(this.label, {this.isHeading = false})
+    : glyph = null,
       leading = null,
       trailing = null,
       onPressed = null,
@@ -1931,6 +1933,7 @@ class RaftMenuEntry {
       openSubmenuOnHover = false,
       description = null;
   final String? label;
+  final bool isHeading;
   final RaftGlyph? glyph;
   final Widget? leading, trailing;
   final VoidCallback? onPressed;
@@ -2340,6 +2343,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
         compositeOnSurface: widget.kind == RaftMenuKind.dropdownMenu,
       );
     }
+    if (entry.isHeading) return RaftDropdownMenuLabel(label: label);
     if (entry.submenu.isEmpty) {
       return RaftMenuItem(
         kind: widget.kind,

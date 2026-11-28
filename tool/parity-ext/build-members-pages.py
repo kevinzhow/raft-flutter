@@ -60,6 +60,11 @@ FAST['runtimeConfig'] = {'version': 1, 'runtime': 'codex', 'model': {'kind': 'pr
 FIXTURE['rosters']['fast'] = FIXTURE['rosters']['default'] + [FAST]
 ROUTE_SETS['roster-fast'] = {'GET /agents': FIXTURE['rosters']['fast']}
 ROUTES[f'GET /agents/{FAST["id"]}'] = FAST
+FIXTURE['rosters']['thinking'] = [
+    {**row, 'activity': 'thinking'}
+    for row in FIXTURE['rosters']['default'] if row['id'] == AGENT_ID
+]
+ROUTE_SETS['roster-thinking'] = {'GET /agents': FIXTURE['rosters']['thinking']}
 ROUTES[f'GET /agents/{EXTERNAL["id"]}/credentials'] = {
     'agentId': EXTERNAL['id'],
     'credentials': [{'id': 'cred-1234abcd', 'maskedToken': 'sk_agent_ab12***9f3e', 'name': None,
@@ -121,6 +126,12 @@ BILLING_SEAT_LIMIT = {'plan': 'free', 'displayName': 'Free', 'serverPlan': 'free
                       'capacity': {'maxHumans': 2, 'maxAgents': 2, 'maxUniversalSeats': -1},
                       'usage': {'humans': 2, 'agents': 2, 'universalSeats': 0}}
 ROUTE_SETS['invite-seat-limit'] = {'GET /billing/subscription': BILLING_SEAT_LIMIT}
+ROUTE_SETS['invite-link-status'] = {
+    f'GET /servers/{SID}/join-links': [
+        {**ROUTES[f'GET /servers/{SID}/join-links'][0],
+         'maxUses': 10, 'useCount': 3, 'expiresAt': '2026-06-25T12:00:00.000Z'},
+    ],
+}
 
 USAGE_ROUTE = f'GET /servers/{SID}/agent-usage'
 USAGE_REPORT = {
@@ -278,6 +289,9 @@ for platform in ('desktop', 'phone'):
     add(platform, 'window.members', 'Members page, whole window', 'main', selector=VIEW, android_key=None, hint=LIST_HINT,
         props={'route': '/members'})
     if not phone:
+        add(platform, 'directory.thinking', 'Members › active agent count includes thinking', 'main', selector=VIEW,
+            android_key=None, hint=LIST_HINT, props={'route': '/members', 'roster': 'thinking'},
+            route_set='roster-thinking')
         add(platform, 'directory.humans', 'Members › Humans cards', 'main', selector=VIEW,
             android_key=None, hint=LIST_HINT, props={'route': '/members'},
             interactions=[click('[data-testid="members-tab-humans"]')],
@@ -286,6 +300,11 @@ for platform in ('desktop', 'phone'):
             android_key=None, hint=LIST_HINT, props={'route': '/members'},
             interactions=[click('[data-testid="members-tab-agents"]')],
             android_interactions=[tap('members-tab-agent')])
+        add(platform, 'directory.by-computer', 'Members › Agents grouped by computer', 'main', selector=VIEW,
+            android_key=None, hint=LIST_HINT, props={'route': '/members'},
+            interactions=[click('[data-testid="members-tab-agents"]'), click('[data-testid="members-group-select"]'),
+                          click('role=option[name="By computer"]')],
+            android_interactions=[tap('members-tab-agent'), tap('members-group-select'), tap_text('By computer')])
         add(platform, 'directory.usage', 'Members › Agents usage', 'main', selector=VIEW,
             android_key=None, hint=LIST_HINT, props={'route': '/members'}, route_set='agent-usage-ready',
             interactions=[click('[data-testid="members-tab-agents"]'), click('[data-testid="members-view-usage"]')],
@@ -295,6 +314,15 @@ for platform in ('desktop', 'phone'):
             interactions=[click('[data-testid="members-tab-agents"]'), click('[data-testid="members-view-usage"]'),
                           click('[data-testid="members-usage-filter"]')],
             android_interactions=[tap('members-tab-agent'), tap('members-view-usage'), tap('members-usage-filter')])
+        add(platform, 'directory.usage-more', 'Members › Usage periods in the collapsed toolbar', 'main',
+            selector='[data-testid="members-page"]', android_key='members-usage-more-directory', hint=LIST_HINT,
+            props={'route': '/members', 'directoryWidth': '405'}, route_set='agent-usage-ready',
+            interactions=[click('[data-testid="members-scope-select"]'),
+                          click('[data-testid="members-scope-select-agents"]'),
+                          click('[data-testid="members-more"]'), click('[data-testid="members-more-view-usage"]'),
+                          click('[data-testid="members-more"]'), wait(250)],
+            android_interactions=[tap('members-scope-select'), tap_text('Agents'), tap('members-toolbar-more'),
+                                  tap_text('Usage'), tap('members-toolbar-more')])
     add(platform, 'directory.agent-menu', 'Members agent menu', 'main', selector=VIEW,
         android_key=None, hint=LIST_HINT, props={'route': '/members'},
         interactions=[{'type': 'rightclick', 'target': f'[data-member-entry-id="{AGENT_ID}"]'}],
@@ -474,6 +502,10 @@ for platform in ('desktop', 'phone'):
         hint=INVITE_HINT, props={**common, 'guest': 'false'},
         interactions=[click('[data-testid="invite-tab-link"]'), wait(300)],
         android_interactions=[tap('invite-tab-link')], viewport=invite_viewport)
+    add(platform, 'invite.link-status', 'Invite human dialog: link use count and expiry', 'invite',
+        selector=VIEW, android_key=None, hint=INVITE_HINT, props={**common, 'guest': 'false'},
+        interactions=[click('[data-testid="invite-tab-link"]'), wait(300)],
+        android_interactions=[tap('invite-tab-link')], route_set='invite-link-status', viewport=invite_viewport)
     add(platform, 'invite.revoke-confirm', 'Invite human dialog: revoke link confirmation', 'invite', selector=VIEW,
         android_key=None, hint=INVITE_HINT, props={**common, 'guest': 'false'},
         interactions=[click('[data-testid="invite-tab-link"]'), click('[data-testid="invite-link-revoke"]')],

@@ -18,6 +18,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/workspace_entity_directory.dart';
+import 'package:raft_flutter/features/desktop_directory_view.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_flutter/features/workspace_menu_invite.dart';
@@ -148,21 +149,44 @@ class _ShellState extends State<_Shell> {
   }
 
   @override
-  Widget build(BuildContext context) => withAppServices(
-    RaftInteractionScope(
-      interaction: widget.ctx.props['touchInput'] == 'true'
-          ? RaftInteraction.touchMode
-          : RaftInteraction.of(context),
-      child: WorkspaceView(
-        controller: w,
-        appearance: RaftAppearance(
-          mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
-        ),
-        onAppearance: (_) async {},
-        onLogout: () async {},
+  Widget build(BuildContext context) {
+    final directoryWidth = double.tryParse(
+      '${widget.ctx.props['directoryWidth']}',
+    );
+    return withAppServices(
+      RaftInteractionScope(
+        interaction: widget.ctx.props['touchInput'] == 'true'
+            ? RaftInteraction.touchMode
+            : RaftInteraction.of(context),
+        child: directoryWidth == null
+            ? WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(
+                  mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+                ),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              )
+            : Align(
+                alignment: AlignmentDirectional.topStart,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 44),
+                  child: SizedBox(
+                    key: const ValueKey('members-usage-more-directory'),
+                    width: directoryWidth,
+                    child: Material(
+                      color: RaftTokens.of(context).canvas,
+                      child: DesktopDirectoryView(
+                        controller: w,
+                        onSelected: (_) {},
+                      ),
+                    ),
+                  ),
+                ),
+              ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// The phone route page the app builds for `/human/<id>` and `/agent/<id>`

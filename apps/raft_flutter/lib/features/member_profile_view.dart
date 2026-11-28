@@ -502,7 +502,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     }
   }
 
-  Widget _roleEditor(BuildContext context, RaftTokens t, List<String> roles) {
+  Widget _roleEditor(BuildContext context, List<String> roles) {
     final role = profile['role'] as String;
     return RaftInlineBadgeEditor(
       label: memberRoleLabel(context, role),
@@ -516,26 +516,13 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       onOpenChanged: (open) {
         if (!open && mounted) setState(() => editingRole = false);
       },
-      background: roleColor(t, role),
-      foreground: roleInk(t, role),
+      badgeVariant: _roleVariant(role),
     );
   }
 
-  /// HumanDetailPanel.tsx ROLE_CONFIG brutal backgrounds (`theme-brutal:bg-*`)
-  /// and elegant soft tokens.
-  Color roleInk(RaftTokens t, String role) => switch (role) {
-    'owner' => t.colors['warning-strong']!,
-    'admin' => t.colors['accent-strong']!,
-    'guest' => t.colors['info-strong']!,
-    _ => t.colors['foreground-strong']!,
-  };
-
-  Color roleColor(RaftTokens t, String role) => switch (role) {
-    'owner' => t.colors['warning-soft']!,
-    'admin' => t.colors['accent-soft']!,
-    'guest' => t.colors['info-soft']!,
-    _ => t.colors['fill-muted']!,
-  };
+  RaftBadgeRecipeVariant _roleVariant(String role) => role == 'guest'
+      ? RaftBadgeRecipeVariant.information
+      : RaftBadgeRecipeVariant.default_;
 
   /// Live agent activity (`agent:activity`) else the summary's status: the
   /// created-agent row's StatusDot (`computeAgentDisplayState`).
@@ -816,6 +803,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     );
     final canPromote =
         canRole && !self && role == 'guest' && roles.contains('member');
+    final inset = t.desktop ? RaftDesktopMetrics.pageInset : RaftSpace.x5;
     return [
       if (source != null)
         RaftPanelSection(
@@ -887,6 +875,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       if (detailSettled || profile['description'] is String)
         RaftPanelSection(
           hairline: true,
+          horizontal: inset,
           children: [
             RaftDescriptionBlock(
               text: '${profile['description'] ?? ''}',
@@ -899,6 +888,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       if (!summaryOnly)
         RaftPanelSection(
           hairline: true,
+          horizontal: inset,
           children: [
             RaftSectionEyebrow(raftText(context, 'Info'), cssBaseline: true),
             if (departure != null)
@@ -907,20 +897,15 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
               RaftRoleField(
                 label: raftText(context, 'Role'),
                 badge: RaftRecipeBadge(
-                  raftText(
-                    context,
-                    '${role[0].toUpperCase()}${role.substring(1)}',
-                  ),
-                  variant: role == 'guest'
-                      ? RaftBadgeRecipeVariant.information
-                      : RaftBadgeRecipeVariant.default_,
+                  memberRoleLabel(context, role),
+                  variant: _roleVariant(role),
                 ),
                 editKey: const ValueKey('member-edit-role'),
                 helpKey: const ValueKey('member-role-help'),
                 onHelp: () => showRaftRolePermissionHelp(context, agent: false),
                 onEdit: canRole && !roleSaving ? editRole : null,
                 editor: canRole && editingRole
-                    ? _roleEditor(context, t, roles)
+                    ? _roleEditor(context, roles)
                     : null,
               ),
             if (roleError != null)
@@ -956,6 +941,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       if (detailSettled && !summaryOnly)
         RaftPanelSection(
           hairline: true,
+          horizontal: inset,
           children: [
             RaftSectionHeader(
               label: raftText(context, 'Created agents'),
@@ -968,27 +954,35 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                 style: RaftPanelText.emptySection(t),
               )
             else
-              RaftGapColumn(
+              RaftListRowGroup(
                 children: [
                   for (final a in created)
-                    RaftAvatarListRow(
+                    RaftListRow(
                       key: ValueKey('created-agent-${a['id']}'),
-                      onTap: a['id'] is String
+                      interactive: a['id'] is String,
+                      onPressed: a['id'] is String
                           ? () => openAgent(a['id'] as String)
                           : null,
-                      avatar: RaftAvatarSlot(
-                        name: humanDisplayName(a),
-                        avatarUrl: a['avatarUrl'] as String?,
-                        slot: RaftAvatarSlotContext.surfaceList,
-                      ),
-                      name: humanDisplayName(a),
-                      // CreatedAgentRow.tsx:47: the server's answer.
-                      subtitle: runtimeLabelWithStatus(
-                        context,
-                        '${a['runtime'] ?? ''}',
-                        deprecated: deprecatedHere('${a['runtime'] ?? ''}'),
-                      ),
-                      rightContent: [
+                      children: [
+                        RaftAvatarSlot(
+                          name: humanDisplayName(a),
+                          avatarUrl: a['avatarUrl'] as String?,
+                          slot: RaftAvatarSlotContext.listRow,
+                        ),
+                        RaftListRowBody(
+                          children: [
+                            RaftListRowTitle(humanDisplayName(a)),
+                            RaftListRowMeta(
+                              runtimeLabelWithStatus(
+                                context,
+                                '${a['runtime'] ?? ''}',
+                                deprecated: deprecatedHere(
+                                  '${a['runtime'] ?? ''}',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                         RaftActivityDot(
                           color: raftActivityDotColor(t, _createdActivity(a)),
                         ),
@@ -1001,30 +995,39 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       if (canRemove || canPromote)
         RaftPanelSection(
           hairline: true,
+          horizontal: inset,
           children: [
             RaftSectionEyebrow(raftText(context, 'Actions'), cssBaseline: true),
-            if (canPromote)
-              RaftButton(
-                key: const ValueKey('human-promote-guest'),
-                label: 'Promote to server member',
-                glyph: RaftGlyph.userPlus,
-                uiVariant: RaftButtonVariant.standard,
-                uiSize: RaftButtonSize.lg,
-                iconInlineStart: false,
-                expand: true,
-                onPressed: promote,
-              ),
-            if (canRemove)
-              RaftButton(
-                key: const ValueKey('member-remove'),
-                label: raftText(context, 'Remove member'),
-                glyph: RaftGlyph.trash2,
-                uiVariant: RaftButtonVariant.danger,
-                uiSize: RaftButtonSize.lg,
-                iconInlineStart: false,
-                expand: true,
-                onPressed: busy ? null : remove,
-              ),
+            RaftGapColumn(
+              children: [
+                if (canPromote)
+                  RaftButton(
+                    key: const ValueKey('human-promote-guest'),
+                    label: 'Promote to server member',
+                    glyph: RaftGlyph.userPlus,
+                    uiVariant: RaftButtonVariant.standard,
+                    uiSize: RaftButtonSize.lg,
+                    iconInlineStart: false,
+                    expand: true,
+                    surfaceBuilder: (_, child) =>
+                        RaftCssPixelSnap(child: child),
+                    onPressed: promote,
+                  ),
+                if (canRemove)
+                  RaftButton(
+                    key: const ValueKey('member-remove'),
+                    label: raftText(context, 'Remove member'),
+                    glyph: RaftGlyph.trash2,
+                    uiVariant: RaftButtonVariant.danger,
+                    uiSize: RaftButtonSize.lg,
+                    iconInlineStart: false,
+                    expand: true,
+                    surfaceBuilder: (_, child) =>
+                        RaftCssPixelSnap(child: child),
+                    onPressed: busy ? null : remove,
+                  ),
+              ],
+            ),
           ],
         ),
     ];

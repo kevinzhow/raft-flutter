@@ -188,7 +188,10 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
             'figures': current.noData ? '—' : values,
           });
     final last = days.length - 1;
-    final style = RaftPanelText.caption(tokens);
+    final style = tokens.scale(
+      RaftTypeScale.caption,
+      color: tokens.ui.foregroundMuted,
+    );
     final scaler = MediaQuery.textScalerOf(context);
     final captionHeight = math.max(
       _captionMinHeight,
@@ -204,6 +207,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
     final label = style.copyWith(
       fontSize: _weekdayFontSize,
       height: _labelLineHeight,
+      fontWeight: FontWeight.w400,
     );
     final dateLabel = mono.copyWith(
       fontSize: _dateFontSize,
@@ -216,7 +220,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
       children: [
         Semantics(
           liveRegion: true,
-          child: Text(
+          child: RaftCssText(
             readout,
             style: mono,
             maxLines: 1,
@@ -414,11 +418,11 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
                 spacing: RaftSpace.x1_5,
                 children: [
                   AgentUsageSwatch(kind),
-                  Text(raftText(context, kind.label), style: style),
+                  RaftCssText(raftText(context, kind.label), style: style),
                 ],
               ),
             if (days.any((day) => day.partial))
-              Text(
+              RaftCssText(
                 raftText(context, '* Partial day'),
                 style: style.copyWith(color: tokens.ui.foregroundHint),
               ),
