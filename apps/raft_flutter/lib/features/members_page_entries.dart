@@ -185,7 +185,6 @@ class MemberDirectoryEntry extends StatelessWidget {
     this.facts = const [],
     this.statusDot,
     this.computerDot,
-    this.activity,
     this.runtimeLine = false,
   });
 
@@ -199,7 +198,6 @@ class MemberDirectoryEntry extends StatelessWidget {
   final bool runtimeLine;
   final List<String> facts;
   final RaftStatusDot? statusDot, computerDot;
-  final ValueListenable<String?>? activity;
 
   @override
   Widget build(BuildContext context) {

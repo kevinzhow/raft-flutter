@@ -13,7 +13,6 @@ import 'agent_avatar_projection.dart';
 import 'agent_metadata_projection.dart' show agentRowAmbientDisplay;
 import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_runtime_models.dart' show runtimeModelLabel;
-import 'chat_agent_presentation.dart';
 import 'computer_detail_view.dart'
     show computerAvailableVersion, computerDiskLow, computerRowStatus;
 import 'create_external_agent_dialog.dart';
@@ -34,15 +33,12 @@ class DesktopDirectoryView extends StatefulWidget {
     required this.controller,
     required this.onSelected,
     this.onOpenDm,
-    this.activities,
     this.computers = false,
     this.mobileRoot = false,
     this.selected,
   });
   final WorkspaceController controller;
 
-  /// What each working agent is doing, shown in place of its description.
-  final ChatAgentPresentation? activities;
   final bool computers, mobileRoot;
   final DesktopContentTarget? selected;
   final ValueChanged<DesktopContentTarget> onSelected;
@@ -277,7 +273,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       selected: selected,
       menuOpen: _menuTarget?.kind == kind && _menuTarget?.id == id,
       onMenu: mayMessage ? (at) => openMenu(at, target, value) : null,
-      activity: agent ? widget.activities?.rowText(id) : null,
       runtimeLine: runtimeLine,
       statusDot: agent ? RaftStatusDot(activity: tone) : null,
       computerDot: machine == null

@@ -1447,7 +1447,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
           ? DesktopDirectoryView(
               key: ValueKey('directory-$mobileAuthority'),
               controller: w,
-              activities: liveActivities,
               mobileRoot: !wide,
               selected: desktopNavigation.directorySelection,
               onSelected: selectDesktopDirectoryTarget,
@@ -1468,7 +1467,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 ? DesktopDirectoryView(
                     key: ValueKey('directory-$mobileAuthority-$route'),
                     controller: w,
-                    activities: liveActivities,
                     selected: desktopNavigation.target,
                     onSelected: selectDesktopDirectoryTarget,
                     onOpenDm: messageDesktopProfile,

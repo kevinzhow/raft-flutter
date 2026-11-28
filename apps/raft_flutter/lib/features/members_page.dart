@@ -704,30 +704,33 @@ class _MembersPageState extends State<MembersPage>
     List<MemberPageEntry> entries,
     int start,
     int columns,
-  ) =>
-      (_) => Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: RaftSpace.x5,
-        ).copyWith(bottom: start + columns < entries.length ? RaftSpace.x3 : 0),
-        child: IntrinsicHeight(
-          child: Row(
-            spacing: RaftSpace.x3,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var offset = 0; offset < columns; offset++)
-                Expanded(
-                  child: start + offset < entries.length
-                      ? widget.buildEntry(
-                          entries[start + offset],
-                          MembersEntryLayout.cards,
-                          null,
-                        )
-                      : const SizedBox.shrink(),
-                ),
-            ],
+  ) => (_) {
+    final stretch = columns > 2;
+    final row = Row(
+      spacing: RaftSpace.x3,
+      crossAxisAlignment: stretch
+          ? CrossAxisAlignment.stretch
+          : CrossAxisAlignment.center,
+      children: [
+        for (var offset = 0; offset < columns; offset++)
+          Expanded(
+            child: start + offset < entries.length
+                ? widget.buildEntry(
+                    entries[start + offset],
+                    MembersEntryLayout.cards,
+                    null,
+                  )
+                : const SizedBox.shrink(),
           ),
-        ),
-      );
+      ],
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: RaftSpace.x5,
+      ).copyWith(bottom: start + columns < entries.length ? RaftSpace.x3 : 0),
+      child: stretch ? IntrinsicHeight(child: row) : row,
+    );
+  };
 
   List<(String, List<MemberPageEntry>)> _agentGroups(
     BuildContext context,
