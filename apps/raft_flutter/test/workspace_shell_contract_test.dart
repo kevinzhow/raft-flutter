@@ -297,15 +297,17 @@ void main() {
           of: row,
           matching: find.byType(RaftControl),
         );
-        const controlHeight = 34.0;
-        const rowGap = 2.0;
-        expect(t.getSize(control).height, controlHeight);
-        expect(t.getSize(row).height, controlHeight + rowGap);
-        expect(t.getRect(control).top, t.getRect(row).top + 1);
+        final sidebar = t.getRect(find.byKey(const Key('workspace-sidebar')));
+        final rowBounds = t.getRect(row);
+        expect(rowBounds.left, sidebar.left);
+        expect(rowBounds.right, sidebar.right);
+        expect(rowBounds.height, 34);
+        expect(t.getRect(control), rowBounds);
         final title = t.widget<Text>(
           find.descendant(of: row, matching: find.text('Cindy')),
         );
-        expect(title.style!.fontSize, 15);
+        expect(title.style!.fontSize, 14);
+        expect(title.style!.height, 22 / 14);
         expect(title.style!.fontWeight, FontWeight.w700);
         expect(
           title.style!.color,
