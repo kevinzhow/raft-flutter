@@ -52,9 +52,7 @@ Future<void> followHistoryEntry(
       revision = w.navigationRevision;
   if (next.thread == null) w.closeThread(navigate: false);
   w.notifyListeners();
-  final conversation = {RaftRoute.channel, RaftRoute.dm}.contains(next.route)
-      ? next.entityId
-      : null;
+  final conversation = _conversationOf(next);
   if (conversation != null &&
       (w.channel?.id != conversation || next.messageId != previous.messageId)) {
     // A thread permalink's msg belongs to the reply window. Restore the
@@ -71,6 +69,19 @@ Future<void> followHistoryEntry(
     }
   }
   await _openThreadFor(w, next);
+}
+
+/// The conversation [location] shows: its own route's, or the channel or DM
+/// in Activity's or Search's content slot (`?open=channel:`).
+String? _conversationOf(RaftLocation location) {
+  if ({RaftRoute.channel, RaftRoute.dm}.contains(location.route)) {
+    return location.entityId;
+  }
+  final content = location.content;
+  return {RaftRoute.activity, RaftRoute.search}.contains(location.route) &&
+          {RaftContentKind.channel, RaftContentKind.dm}.contains(content?.kind)
+      ? content!.id
+      : null;
 }
 
 /// The routes that show the thread their address names: beside the chat
@@ -150,9 +161,7 @@ void restoreAcceptedConversation(
   RaftLocation target, {
   required bool routeChanged,
 }) {
-  final conversation = {RaftRoute.channel, RaftRoute.dm}.contains(target.route)
-      ? target.entityId
-      : null;
+  final conversation = _conversationOf(target);
   if (conversation != null && (routeChanged || w.channel?.id != conversation)) {
     unawaited(
       w.resolveConversationChannel(
