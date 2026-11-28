@@ -62,7 +62,7 @@ WorkspaceController shellWorkspace(
   final viewerRole = preset['viewerRole'] as String?;
   final serverRecord = {
     ...base.serverRecord,
-    if (viewerRole != null) 'role': viewerRole,
+    'role': ?viewerRole,
   };
   final cindy = base.agent('cindy');
   final productUx = base.agent('productUx');

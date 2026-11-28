@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' show RawScrollbar;
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
