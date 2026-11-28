@@ -37,31 +37,44 @@ Future<void> visitWorkspaceHistory(
   final next = w.location;
   if (next.thread == null) w.closeThread(navigate: false);
   w.notifyListeners();
-  if ({RaftRoute.channel, RaftRoute.dm}.contains(next.route)) {
-    if (w.channel?.id != next.entityId ||
-        next.messageId != previous.messageId) {
-      // A thread permalink's msg belongs to the reply window. Restore the
-      // channel's accepted window, then hydrate the independent thread below.
-      await w.jumpToMessage(
-        next.entityId!,
-        next.thread == null ? next.messageId : null,
-        navigate: false,
-      );
-    }
-    if (w.navigationAuthority != authority || w.location.uri != next.uri) {
-      return;
-    }
-    final thread = next.thread;
-    if (thread != null) {
-      await w.openThreadIdentity(
-        parentChannelId: thread.channelId,
-        parentMessageId: thread.itemId,
-        focusedMessageId: next.threadFocusedMessageId,
-        navigate: false,
-      );
-    }
+  if ({RaftRoute.channel, RaftRoute.dm}.contains(next.route) &&
+      (w.channel?.id != next.entityId ||
+          next.messageId != previous.messageId)) {
+    // A thread permalink's msg belongs to the reply window. Restore the
+    // channel's accepted window, then hydrate the independent thread below.
+    await w.jumpToMessage(
+      next.entityId!,
+      next.thread == null ? next.messageId : null,
+      navigate: false,
+    );
+  }
+  if (w.navigationAuthority != authority || w.location.uri != next.uri) {
+    return;
+  }
+  if (next.thread != null && _threadRoutes.contains(next.route)) {
+    await _openThread(w, next);
   }
 }
+
+/// The routes that show the thread their address names: beside the chat
+/// (`?thread=`), and in the content slot of Activity and Search
+/// (`?open=thread:`, or beside a channel there). The thread shown is the
+/// address's, so the thread open must be too, or its composer has no parent.
+const _threadRoutes = {
+  RaftRoute.channel,
+  RaftRoute.dm,
+  RaftRoute.activity,
+  RaftRoute.search,
+};
+
+Future<void> _openThread(WorkspaceController w, RaftLocation location) =>
+    w.openThreadIdentity(
+      parentChannelId: location.thread!.channelId,
+      parentMessageId: location.thread!.itemId,
+      focusedMessageId: location.threadFocusedMessageId,
+      initialThreadChannelId: location.knownThreadChannelId,
+      navigate: false,
+    );
 
 /// After selecting the workspace, send explicit message links through content
 /// authorization and restore other routes from the accepted workspace URI.
@@ -98,16 +111,17 @@ void restoreAcceptedLocation(
 /// (a remembered surface, a cold link). The accepted route wins over a
 /// different cached selection: resolve without blocking the cached first frame
 /// or rewriting that route. A thread it names is already on screen (the
-/// phone's page, the wide panel); a cold start after iOS reclaimed the app has
-/// no thread open, so read it, or the page stays "No replies yet".
+/// phone's page, the wide panel, Activity's or Search's content slot); a cold
+/// start or a restore has no thread open, so read it, or the page stays "No
+/// replies yet" and its composer has no parent (#384).
 void restoreAcceptedConversation(
   WorkspaceController w,
   RaftLocation target, {
   required bool routeChanged,
 }) {
-  if (!{RaftRoute.channel, RaftRoute.dm}.contains(target.route)) return;
   final thread = target.thread;
-  if (routeChanged || w.channel?.id != target.entityId) {
+  if ({RaftRoute.channel, RaftRoute.dm}.contains(target.route) &&
+      (routeChanged || w.channel?.id != target.entityId)) {
     unawaited(
       w.resolveConversationChannel(
         target.entityId!,
@@ -115,18 +129,12 @@ void restoreAcceptedConversation(
       ),
     );
   }
-  if (thread == null || w.threadIdentity?.parentMessageId == thread.itemId) {
+  if (thread == null ||
+      !_threadRoutes.contains(target.route) ||
+      w.threadIdentity?.parentMessageId == thread.itemId) {
     return;
   }
-  unawaited(
-    w.openThreadIdentity(
-      parentChannelId: thread.channelId,
-      parentMessageId: thread.itemId,
-      focusedMessageId: target.threadFocusedMessageId,
-      initialThreadChannelId: target.knownThreadChannelId,
-      navigate: false,
-    ),
-  );
+  unawaited(_openThread(w, target));
 }
 
 VoidCallback? _historyStep(
