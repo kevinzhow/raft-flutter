@@ -3,18 +3,22 @@
 // tap, focus and typed text, in every place an Artifact opens in: beside the
 // channel, covering it on a medium window, a phone's page, stacked over a
 // side thread, the shell's column beside a thread opened in Activity, and
-// over a task dialog's card.
+// over a task dialog's card. Also after switching to a second Artifact, and
+// after closing one a Raft link put in the page's address.
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/tap_target_registry.dart';
+import 'package:raft_flutter/features/artifacts/artifact_models.dart'
+    show artifactLinkId;
 import 'package:raft_flutter/features/artifacts/artifact_session.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'artifact_dialog_cover_test.dart' show frame, mountTaskDialog;
 import 'shell_artifact_place_test.dart'
     show artifactLink, card, mountArtifactThread, serveArtifact, viewer;
+import 'support/artifact_fake_client.dart';
 import 'tap_target_matrix_test.dart'
     show Ctx, channelMessages, mount, msg, threadReplies;
 import 'task_surface_test.dart' show flush;
@@ -122,6 +126,32 @@ final _places = <_Place>[
   ),
 ];
 
+/// Every one of the [composers] on screen takes a tap of [kind], focus and
+/// typed text.
+Future<void> _composersTakeText(
+  WidgetTester t,
+  int composers,
+  PointerDeviceKind kind,
+) async {
+  final shown = _editors.hitTestable();
+  expect(
+    shown,
+    findsNWidgets(composers),
+    reason: 'every composer on screen before takes pointers again',
+  );
+  for (var i = 0; i < composers; i++) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await t.pump();
+    await t.tap(shown.at(i), kind: kind);
+    await t.pumpAndSettle();
+    final editor = t.widget<EditableText>(shown.at(i));
+    expect(editor.focusNode.hasFocus, isTrue, reason: 'composer $i');
+    t.testTextInput.enterText('reply $i');
+    await t.pump();
+    expect(t.widget<EditableText>(shown.at(i)).controller.text, 'reply $i');
+  }
+}
+
 void main() {
   for (final place in _places) {
     for (final close in place.closes) {
@@ -157,29 +187,118 @@ void main() {
         await t.pumpAndSettle();
         expect(viewer, findsNothing);
 
-        final shown = _editors.hitTestable();
-        expect(
-          shown,
-          findsNWidgets(composers),
-          reason: 'every composer on screen before takes pointers again',
-        );
-        for (var i = 0; i < composers; i++) {
-          FocusManager.instance.primaryFocus?.unfocus();
-          await t.pump();
-          await t.tap(shown.at(i), kind: kind);
-          await t.pumpAndSettle();
-          final editor = t.widget<EditableText>(shown.at(i));
-          expect(editor.focusNode.hasFocus, isTrue, reason: 'composer $i');
-          t.testTextInput.enterText('reply $i');
-          await t.pump();
-          expect(
-            t.widget<EditableText>(shown.at(i)).controller.text,
-            'reply $i',
-          );
-        }
+        await _composersTakeText(t, composers, kind);
         await t.pumpWidget(const SizedBox());
         await t.pump(const Duration(seconds: 5));
       });
     }
   }
+  testWidgets("the shell's column beside an Activity thread: Artifact A, then "
+      'B, then × leaves the composer taking text', (t) async {
+    final c = await _mountTwoArtifacts(t);
+    final cards = card.hitTestable();
+    expect(cards, findsNWidgets(2));
+
+    await t.tap(cards.first, kind: PointerDeviceKind.mouse);
+    await flush(t);
+    await t.pumpAndSettle();
+    expect(c.w.location.query('artifact'), artifactShort);
+    await t.tap(card.hitTestable().last, kind: PointerDeviceKind.mouse);
+    await flush(t);
+    await t.pumpAndSettle();
+    expect(c.w.location.query('artifact'), artifactLinkId(_secondId));
+    expect(viewer, findsOneWidget);
+
+    await t.tap(
+      find.byKey(const ValueKey('artifact-viewer-close')),
+      kind: PointerDeviceKind.mouse,
+    );
+    await flush(t);
+    await t.pumpAndSettle();
+    expect(viewer, findsNothing);
+    await _composersTakeText(t, 1, PointerDeviceKind.mouse);
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 5));
+  });
+
+  for (final close in [_Close.button, _Close.back]) {
+    testWidgets('a link to an Artifact arriving beside an Activity thread: '
+        'after ${close.name} the composer takes text', (t) async {
+      final c = await mountArtifactThread(t);
+      // A Raft link in the app pushes its location (Web navigate).
+      c.w.navigation.navigate(
+        c.w.location.withQuery({'artifact': artifactShort}),
+      );
+      c.w.notifyListeners();
+      await flush(t);
+      await t.pumpAndSettle();
+      expect(viewer, findsOneWidget);
+
+      if (close == _Close.button) {
+        await t.tap(
+          find.byKey(const ValueKey('artifact-viewer-close')),
+          kind: PointerDeviceKind.mouse,
+        );
+      } else {
+        await t.binding.handlePopRoute();
+      }
+      await flush(t);
+      await t.pumpAndSettle();
+      expect(viewer, findsNothing);
+      expect(c.w.location.query('open'), 'thread:t1');
+      await _composersTakeText(t, 1, PointerDeviceKind.mouse);
+      await t.pumpWidget(const SizedBox());
+      await t.pump(const Duration(seconds: 5));
+    });
+  }
+}
+
+const _secondUuid = '0b9e6a3c-2f4d-4c8e-9a71-5d2b3c4e5f60';
+const _secondId = 'pt_$_secondUuid';
+
+/// The matrix's Activity thread at 1280, its replies linking the fixture
+/// Artifact and a second one.
+Future<Ctx> _mountTwoArtifacts(WidgetTester t) async {
+  Map<String, dynamic> reply(String id, int seq, String text) => msg(
+    id,
+    't1',
+    seq,
+    text,
+    extra: {'senderName': 'Cindy', 'senderId': 'cindy'},
+  );
+  threadReplies['messages'] = [
+    reply('r1', 1, 'The plan: $artifactLink'),
+    reply(
+      'r2',
+      2,
+      'The budget: https://a-pt-$_secondUuid.raftusercontent.com/',
+    ),
+  ];
+  final c = await mount(t, _host('activity-thread-1280'));
+  serveArtifact(c);
+  Map<String, Object?> summary(String id, String title) => {
+    'ref': {'id': id},
+    'ok': true,
+    'summary': artifactCardJson(id: id, kind: 'text', title: title),
+  };
+  c.api.routes['POST /objects/summaries'] = (_) => {
+    'kind': 'artifact',
+    'summaries': [
+      summary(artifactId, 'Launch plan'),
+      summary(_secondId, 'Budget'),
+    ],
+  };
+  c.api.routes['GET /artifacts/$_secondId'] = (_) => artifactViewerJson(
+    card: artifactCardJson(id: _secondId, kind: 'text', title: 'Budget'),
+    files: [
+      {'path': 'budget.txt', 'kind': 'text', 'entry': true},
+    ],
+    frame: false,
+  );
+  c.api.routes['GET /artifacts/$_secondId/files/budget.txt?version=1'] = (_) =>
+      'The budget';
+  ArtifactSession.of(c.w).debugSetEnabled(true);
+  await flush(t);
+  await t.pumpAndSettle();
+  return c;
 }
