@@ -3,20 +3,25 @@
 // Artifact the address only stands beside keep the open thread (#383): no new
 // reads, the draft and the composer stay. A Back whose channel is still
 // loading opens the thread once, whatever else moves the address meanwhile.
+// Activity, a thread, a task opened from the list beside it, then System Back
+// or Escape: the thread takes text again.
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/tap_target_registry.dart';
 import 'package:raft_flutter/features/artifacts/artifact_session.dart';
+import 'package:raft_flutter/features/task_content_slot.dart';
+import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/workspace_history_controls.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'shell_artifact_place_test.dart' show serveArtifact, viewer;
 import 'support/artifact_fake_client.dart' show artifactShort;
 import 'tap_target_matrix_test.dart' show Ctx, channelPage, mount;
-import 'task_surface_test.dart' show flush;
+import 'task_surface_test.dart' show flush, modernTask;
 
 const _replies = 'GET /messages/channel/t1',
     _parent = 'GET /messages/context/parent',
@@ -50,7 +55,11 @@ Finder _threadEditor(Ctx c) => find
 
 Future<void> _type(WidgetTester t, Ctx c, String text) async {
   final editor = _threadEditor(c);
-  expect(editor, findsOneWidget, reason: "the thread's composer takes pointers");
+  expect(
+    editor,
+    findsOneWidget,
+    reason: "the thread's composer takes pointers",
+  );
   await t.tap(editor, kind: _kind(c));
   await t.pumpAndSettle();
   expect(t.widget<EditableText>(editor).focusNode.hasFocus, isTrue);
@@ -111,7 +120,11 @@ void main() {
       await _step(c, forward: false);
       expect(c.w.location.query('artifact'), isNull);
 
-      expect(c.w.messageDomain.threadGeneration, generation, reason: 'the same thread visit');
+      expect(
+        c.w.messageDomain.threadGeneration,
+        generation,
+        reason: 'the same thread visit',
+      );
       expect(_calls(c, _replies), replies, reason: 'no second replies read');
       expect(_calls(c, _parent), parent, reason: 'no second parent read');
       expect(_draft(c), 'draft', reason: 'the draft stays in the composer');
@@ -187,4 +200,45 @@ void main() {
     });
   });
 
+  // A wide window shows the list beside the thread, so a task opens from it
+  // in the list's slot. (A phone's thread is a page over the list.)
+  for (final width in [1280.0, 816.0]) {
+    for (final back in ['System Back', 'Escape']) {
+      testWidgets('Activity thread at $width, a task opened from the list, '
+          'then $back: the thread takes text', (t) async {
+        final c = await mount(t, _host('activity-thread-${width.toInt()}'));
+        final thread = c.w.location;
+        expect(thread.query('thread'), 'c1:parent');
+        await _type(t, c, 'draft');
+        expect(
+          openTaskFromList(c.w, {
+            'kind': 'task',
+            'taskId': modernTask['id'],
+            'parentChannelId': 'c1',
+          }, wide: true),
+          isTrue,
+        );
+        await _settle(t);
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
+
+        switch (back) {
+          case 'System Back':
+            await t.binding.handlePopRoute();
+          default:
+            // The shell's Escape: focus is not in the task (the task's own
+            // Escape closes its slot, and a field's is the field's).
+            FocusManager.instance.primaryFocus?.unfocus();
+            await t.pump();
+            await t.sendKeyEvent(LogicalKeyboardKey.escape);
+        }
+        await _settle(t);
+        expect(find.byType(SourceTaskSurface), findsNothing);
+        expect(c.w.location.query('thread'), thread.query('thread'));
+        expect(c.w.threadIdentity?.parentMessageId, 'parent');
+        expect(_draft(c), 'draft', reason: 'the draft is back');
+        await _type(t, c, 'draft and more');
+        await _end(t);
+      });
+    }
+  }
 }
