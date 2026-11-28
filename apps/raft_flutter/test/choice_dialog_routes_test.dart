@@ -361,14 +361,20 @@ void main() {
           ...workspace.server!.json,
           'role': 'guest',
         });
+        workspace.channels = [
+          RaftChannel({...workspace.channels.single.json, 'canPost': false}),
+        ];
         workspace.notifyListeners();
         await tester.pumpAndSettle();
-        await pending;
         expect(find.text('Ada · user'), findsNothing);
+        await pending;
         expect(client.mutations, hasLength(1));
         final reads = workspace.membersReads;
-        await owner.assignTask(_task);
+        pending = owner.assignTask(_task);
+        await tester.pumpAndSettle();
+        expect(find.byType(RaftDialogSurface), findsNothing);
         expect(workspace.membersReads, reads);
+        await pending;
         expect(client.mutations, hasLength(1));
       } finally {
         await retire(tester);
