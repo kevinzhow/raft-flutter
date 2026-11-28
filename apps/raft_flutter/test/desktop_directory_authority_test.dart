@@ -98,7 +98,7 @@ void main() {
               of: row,
               matching: find.byType(RaftControl),
             );
-            expect(t.getSize(control).height, 62);
+            expect(t.getSize(control).height, 60);
             expect(t.getSize(row).height - t.getSize(control).height, 2);
           } else {
             final card = find.descendant(
