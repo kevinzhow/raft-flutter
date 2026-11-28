@@ -54,7 +54,11 @@ function parityExtCsPrimeStores(props: ParityExtCsProps) {
   useMessageStore.setState({ currentChannelId: props.channel, currentUserId: fxOwner.id });
   // The viewer's server role drives useServerPermissions (capabilities.*).
   useServerStore.setState((state) => ({
-    current: state.current ? { ...state.current, role: props.role } : state.current,
+    current: state.current ? {
+      ...state.current,
+      role: props.role,
+      ...(props.extCase.includes(".permissions-") ? { publicPageLive: true } : {}),
+    } : state.current,
     members: visualMembers.map((member) => (member.userId === visualUser.id ? { ...member, role: props.role } : member)),
   }));
   // Pin switch state (ChannelPreferencesSection reads sidebarOrder.pinned).

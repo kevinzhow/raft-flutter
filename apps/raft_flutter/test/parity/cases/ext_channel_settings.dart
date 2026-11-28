@@ -19,6 +19,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
@@ -108,7 +109,12 @@ WorkspaceController _workspace(ParityContext ctx) {
       RaftChannel(Map<String, dynamic>.from(c as Map)),
   ];
   final w = WorkspaceController(client)
-    ..server = RaftRecord({...base.serverRecord, 'role': role})
+    ..server = RaftRecord({
+      ...base.serverRecord,
+      'role': role,
+      if ('${ctx.props['extCase']}'.contains('.permissions-'))
+        'publicPageLive': true,
+    })
     ..channels = channels
     ..dms = dms;
   w.messageDomain.ledger.switchServer('visual-server');
@@ -171,6 +177,23 @@ final ParityCase _case = ParityCase(
       'the product ChannelSettings drawer.',
   settle: const Duration(milliseconds: 900),
   build: (ctx) => _Host(ctx: ctx),
+  interact: (_, ctx) async {
+    if (!ctx.id.contains('.permissions-')) return;
+    ctx.captureEvidence['permissionRows'] = [
+      for (final key in const [
+        'channel-details-edit',
+        'channel-overflow-members-add-tile',
+        'channel-settings-visibility-action',
+        'channel-settings-visitor-visible-switch',
+        'channel-settings-joint-invite-form',
+        'channel-settings-archive-action',
+        'channel-overflow-leave',
+        'channel-overflow-stop-agents',
+        'channel-settings-delete-action',
+      ])
+        if (find.byKey(ValueKey(key)).hitTestable().evaluate().isNotEmpty) key,
+    ];
+  },
 );
 
 /// Every extension channel-settings case in the manifest being run, keyed by

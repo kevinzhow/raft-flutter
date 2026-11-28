@@ -198,6 +198,7 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
     ThreadAgentFollower agent,
     RaftMountedAvatarContext context, {
     RaftAvatarPresence? presence,
+    double? extent,
   }) => ChannelCandidateAvatar(
     candidate: ChannelMemberCandidate(
       kind: 'agent',
@@ -212,6 +213,7 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
     avatarContext: context,
     origin: w.client.origin,
     presence: presence,
+    extent: extent,
   );
 
   /// Web `AgentActivityInfo`: `formatAgentDisplayStateText` of the agent's
@@ -296,6 +298,7 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
                   agent,
                   RaftMountedAvatarContext.membersRow,
                   presence: presence,
+                  extent: 35,
                 ),
                 secondary: text,
                 peerLabel: !agent.isCurrentServer && server != null

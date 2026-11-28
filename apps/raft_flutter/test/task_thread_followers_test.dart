@@ -58,6 +58,7 @@ void main() {
       owner.openDiscussion(conversationId: channel);
       var closed = false;
       sizeWindow(tester, size);
+      final semantics = tester.ensureSemantics();
       try {
         await tester.pumpWidget(
           MaterialApp(
@@ -79,9 +80,23 @@ void main() {
         await tester.tap(trigger);
         await followers.settle(tester);
         final button = find.byKey(const Key('thread-follower-remove'));
-        final remove = tester.widget<RaftIconButton>(button);
-        expect(remove.onPressed, isNull);
-        expect(remove.tooltip, contains('host server'));
+        if (platform == TargetPlatform.linux && size.width == 1280) {
+          final popup = tester.getRect(
+            find.byKey(const Key('thread-followers-popover')),
+          );
+          final anchor = tester.getRect(trigger);
+          final actions = tester.getRect(
+            find.byKey(const Key('task-overflow-trigger')),
+          );
+          expect(popup.size, const Size(288, 124));
+          expect(popup.right, closeTo(anchor.right, .5));
+          expect(popup.top - anchor.bottom, closeTo(6, .5));
+          expect(actions.left - anchor.right, 4);
+        }
+        const denial =
+            "Only the host server's admins and this channel's admins can remove agents from other servers.";
+        expect(find.bySemanticsLabel(denial), findsOneWidget);
+        expect(tester.widget<RaftButton>(button).onPressed, isNull);
         if (platform == TargetPlatform.linux) {
           final pointer = await tester.createGesture(
             kind: PointerDeviceKind.mouse,
@@ -92,7 +107,7 @@ void main() {
           await pointer.moveBy(const Offset(1, 0));
           await tester.pump(const Duration(seconds: 1));
           await tester.pump(const Duration(milliseconds: 200));
-          expect(find.text(remove.tooltip!), findsOneWidget);
+          expect(find.text(denial), findsNothing);
           await pointer.removePointer();
         }
         await tester.tap(button);
@@ -119,6 +134,7 @@ void main() {
         expect(trigger, findsOneWidget);
         expect(closed, isFalse);
       } finally {
+        semantics.dispose();
         await tester.pumpWidget(const SizedBox.shrink());
         owner.dispose();
         workspace.dispose();

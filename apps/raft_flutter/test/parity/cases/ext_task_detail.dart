@@ -18,6 +18,7 @@
 // Web answers through page.route; `GET /tasks/server` honours `status` like the
 // server (one summary page per lane).
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -259,6 +260,20 @@ final ParityCase _case = ParityCase(
       'detail cases open the task route.',
   settle: const Duration(milliseconds: 1500),
   build: _build,
+  interact: (tester, ctx) async {
+    if (!ctx.id.contains('.followers')) return;
+    for (final key in const [
+      'thread-followers-header-trigger',
+      'thread-followers-popover',
+      'thread-follower-remove',
+      'profile-panel',
+    ]) {
+      final target = find.byKey(ValueKey(key));
+      if (target.evaluate().isEmpty) continue;
+      final rect = tester.getRect(target.first);
+      ctx.captureEvidence[key] = [rect.left, rect.top, rect.width, rect.height];
+    }
+  },
 );
 
 const _pageStates = ['board', 'expanded'];

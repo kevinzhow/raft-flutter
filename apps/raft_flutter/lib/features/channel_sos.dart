@@ -17,8 +17,7 @@ Future<void> showChannelSos(
   List<String>? retryAgentIds;
   // The server, account or permission changed under the open dialog: send
   // nothing (Web has no such state; its dialog is unmounted instead).
-  bool refused() =>
-      identity != pageIdentity(w) || !w.can('controlAgentRuntime');
+  bool refused() => identity != pageIdentity(w) || !w.can('stopAgents');
   await showRaftDialog<void>(
     context: context,
     barrierDismissible: false,

@@ -87,6 +87,16 @@ Widget _build(ParityContext ctx) {
 Future<void> _checkState(WidgetTester tester, ParityContext ctx) async {
   if (ctx.props['state'] == 'guest-create') {
     expect(find.byKey(const ValueKey('create-task-message')), findsOneWidget);
+    final surfaces = find.byType(RaftDialogSurface);
+    if (surfaces.evaluate().length == 1) {
+      final rect = tester.getRect(surfaces);
+      ctx.captureEvidence['dialogBounds'] = [
+        rect.left,
+        rect.top,
+        rect.width,
+        rect.height,
+      ];
+    }
     return;
   }
   if (ctx.props['platform'] == 'desktop') {

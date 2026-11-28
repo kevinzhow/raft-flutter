@@ -66,10 +66,10 @@ Future<void> _settle(WidgetTester tester, bool Function() done) async {
 }
 
 void main() {
-  testWidgets('member stops all agents, then resumes them with guidance', (
+  testWidgets('owner stops all agents, then resumes them with guidance', (
     tester,
   ) async {
-    final (w, api) = (await tester.runAsync(() => fixture('member')))!;
+    final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
     addTearDown(w.dispose);
     _routes(api);
     final stop = Completer<Object?>();
@@ -154,7 +154,7 @@ void main() {
     );
     // Permission lost while the dialog is open: nothing is sent and, again,
     // nothing is said.
-    w.server = RaftRecord({'id': 's1', 'role': 'guest'});
+    w.server = RaftRecord({'id': 's1', 'role': 'member'});
     w.notifyListeners();
     await tester.tap(find.byKey(const ValueKey('sos-stop')));
     await _settle(tester, () => false);
@@ -186,7 +186,7 @@ void main() {
     final closes = label == 'legacy failure' || label == 'missing response';
     testWidgets('$label resume follows Web', (tester) async {
       const feedback = 'sos-resume-shortfall';
-      final (w, api) = (await tester.runAsync(() => fixture('member')))!;
+      final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       _routes(api);
       api.routes['GET /channels/c1/members'] = (_) => {
@@ -297,6 +297,7 @@ void main() {
 
   for (final (name, role, json) in [
     ('guest', 'guest', <String, dynamic>{'joined': true}),
+    ('joined member', 'member', <String, dynamic>{'joined': true}),
     ('not joined', 'member', <String, dynamic>{'joined': false}),
     (
       'archived',
@@ -334,7 +335,7 @@ void main() {
     });
   }
 
-  for (final role in ['owner', 'admin', 'member']) {
+  for (final role in ['owner', 'admin']) {
     testWidgets('$role in a joined channel is offered Stop Agents', (
       tester,
     ) async {

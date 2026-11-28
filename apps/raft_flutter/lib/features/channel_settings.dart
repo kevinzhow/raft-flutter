@@ -835,7 +835,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       (p) => p is Map && p['kind'] == 'channel' && p['id'] == c.id,
     );
     final info = !dm && canEdit;
-    // Web ChatPanel `onStopAllAgents={joined && canManageAgents}` inside the
+    // Web ChatPanel `onStopAllAgents={joined && capabilities.stopAgents}` inside the
     // settings sheet (`joined && (canManageChannels || canLeaveChannel)`),
     // hidden for archived channels (EditChannelDialog `!isArchived`).
     final showStopAgents =
@@ -844,7 +844,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         c.joined &&
         !archived &&
         (canEdit || !all) &&
-        w.can('controlAgentRuntime');
+        w.can('stopAgents');
     final shownError = [?error, ...readNotices(context)].join('\n');
     return RaftChannelSettingsSheet(
       channelName: c.name,
@@ -1823,8 +1823,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             c.hasExternalRelation != true);
     final archiveRow = !all && cap('archiveChannels');
     final deleteRow = !all && cap('deleteChannels') && showManage;
-    final showStopAgents =
-        settingsPresent && !archived && w.can('controlAgentRuntime');
+    final showStopAgents = settingsPresent && !archived && w.can('stopAgents');
     final private = c.type == 'private';
     final pinned = (sidebar['pinned'] as List? ?? []).any(
       (p) => p is Map && p['kind'] == 'channel' && p['id'] == c.id,

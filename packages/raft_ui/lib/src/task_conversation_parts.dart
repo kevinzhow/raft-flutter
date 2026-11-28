@@ -296,12 +296,12 @@ class RaftTaskConversationBar extends StatelessWidget {
                   ),
           ),
           if (detailsToggle case final toggle?) toggle,
-          if (followers != null) followers,
           if (desktopBar)
             Row(
               mainAxisSize: MainAxisSize.min,
               spacing: RaftSpace.x1,
               children: [
+                if (followers != null) followers,
                 for (final action in actions)
                   SizedBox.square(
                     dimension: RaftDesktopMetrics.barButtonSize,
@@ -309,8 +309,10 @@ class RaftTaskConversationBar extends StatelessWidget {
                   ),
               ],
             )
-          else
+          else ...[
+            if (followers != null) followers,
             ...actions,
+          ],
         ],
       ),
     );

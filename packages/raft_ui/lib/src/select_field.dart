@@ -58,6 +58,7 @@ class RaftSelectItem<T> {
     this.enabled = true,
     this.cssText = false,
     this.labelKey,
+    this.leading,
     this.group,
     this.description,
     this.badge,
@@ -78,6 +79,7 @@ class RaftSelectItem<T> {
     this.labelKey,
   }) : enabled = true,
        cssText = false,
+       leading = null,
        group = null,
        description = null,
        badge = null,
@@ -102,6 +104,7 @@ class RaftSelectItem<T> {
 
   /// Key of the label text (tests find a choice by it, in the trigger and in the list).
   final Key? labelKey;
+  final Widget? leading;
 
   /// Heading of the group this row belongs to. Contiguous rows with the same group share one heading; a
   /// hairline separates groups. Null rows list without a heading.
@@ -156,10 +159,21 @@ class RaftSelectItem<T> {
   }
 
   /// The label widget the closed trigger shows: name, badge and every suffix.
-  Widget get child => _build(false);
+  Widget get child => _withLeading(_build(false));
 
   /// The label widget the list shows.
-  Widget get listChild => _build(true);
+  Widget get listChild => _withLeading(_build(true));
+
+  Widget _withLeading(Widget label) => leading == null
+      ? label
+      : Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 8,
+          children: [
+            leading!,
+            Flexible(child: label),
+          ],
+        );
 
   /// The label as announced: name, badge and suffix in the closed field.
   String get semanticLabel =>

@@ -1,4 +1,5 @@
 import 'overlays/dialog.dart' show RaftDialog;
+import 'public_page_mark.dart' show RaftExternalChannelMark;
 // Channel creation form and shared Web MemberChoiceList presentation.
 import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption;
@@ -184,7 +185,8 @@ class RaftCreateChannelDialogView extends StatelessWidget {
                       if (externalAvailable)
                         RaftSegmentedOption(
                           value: 'external',
-                          glyph: RaftGlyph.globe,
+                          iconBuilder: (size, color) =>
+                              RaftExternalChannelMark(size: size, color: color),
                           label: 'External',
                           enabled: externalReady,
                         ),

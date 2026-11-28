@@ -292,6 +292,46 @@ for platform in ['desktop', 'mobile']:
     add(platform, 'confirm-delete', 'delete confirmation', C['owner'], target=CONFIRM,
         extra=delete, extra_android=delete_a)
 
+for role in ('owner', 'admin', 'member', 'guest'):
+    manages = role in ('owner', 'admin')
+    for kind in ('regular', 'private', 'joint'):
+        state = f'permissions-{role}-{kind}'
+        ctype = 'channel' if kind == 'regular' else kind
+        caps = capabilities(role, joined=True, name='release', ctype=ctype, archived=False)
+        caps.update(
+            manageVisitorAccess=manages and kind == 'regular',
+            manageGuestAccess=manages and kind != 'joint',
+            federateChannels=manages and kind == 'joint',
+            addChannelMembers=role != 'guest',
+        )
+        joint = next(row for row in channels if row['id'] == C['joint'])
+        extra = {
+            field: value for field, value in joint.items() if field.startswith('joint')
+        } if kind == 'joint' else {}
+        if manages and kind == 'joint':
+            caps['changeChannelVisibility'] = False
+        cid = channel(
+            f'channel-cs-{state}', name='release', description=None,
+            role=role, ctype=ctype, channelCapabilities=caps,
+            hasExternalRelation=False, **extra,
+        )
+        for platform in ('desktop', 'mobile'):
+            add(
+                platform, state, f'{role}, {kind} channel', cid, role=role, guest=True,
+                height=900 if platform == 'desktop' else None,
+                target=('[data-testid="channel-details"]', 'channel-details'),
+            )
+            if manages or kind == 'joint':
+                add(
+                    platform, f'{state}-actions', f'{role}, {kind} channel, actions',
+                    cid, role=role, guest=True, height=900 if platform == 'desktop' else None,
+                    target=('[data-testid="channel-details"]', 'channel-details'),
+                    extra=[{'type': 'scroll', 'target': '[data-testid="channel-details"] [data-slot="scroll-area"]',
+                            'y': 1600}],
+                    extra_android=[{'type': 'scroll', 'key': 'channel-details', 'dy': 600},
+                                   {'type': 'wait', 'ms': 400}],
+                )
+
 add('desktop', 'owner-newline', 'description with an authored newline', C['newline'])
 add('desktop', 'owner-nodesc', 'no description', C['nodesc'])
 add('desktop', 'joint', 'joint channel (connected servers, invitation, Disconnect)', C['joint'], height=1500)

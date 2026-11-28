@@ -1,10 +1,8 @@
 import 'overlays/dialog.dart' show RaftDialog;
 // Presentation of the Web CreateJointChannelDialog
-// (packages/web/src/components/channel/CreateJointChannelDialog.tsx): DialogCard
-// `max-w-lg` with a GitBranch title icon, the free-allowance info Banner,
-// Name / Description, the "Invite servers" Card of per-server invite cards
-// (SlugInput + invited people), the current-server member picker and
-// Cancel / Create Joint Channel. The app adapter owns state and the create command.
+// (packages/web/src/components/channel/CreateJointChannelDialog.tsx):
+// the adaptive form with per-server invite cards and the current-server
+// member picker. The app adapter owns state and the create command.
 import 'card.dart' show RaftCard;
 
 import 'package:flutter/material.dart';
@@ -17,6 +15,8 @@ import 'dialog_card.dart';
 import 'form_controls.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'raft/button.dart';
+import 'interaction.dart';
 import 'recipes/button_variants.g.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';
@@ -52,7 +52,6 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
     required this.onToggle,
     required this.onClose,
     required this.onSubmit,
-    this.freeAllowance = false,
     this.error,
     this.onViewBilling,
     this.notice,
@@ -67,7 +66,7 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
   final VoidCallback onAddServer, onClose, onSubmit, onInviteChanged;
   final ValueChanged<String> onRemoveServer;
   final List<RaftPickerItem> agents, humans;
-  final bool hasCandidates, freeAllowance, submitting;
+  final bool hasCandidates, submitting;
   final bool Function(String key) isSelected;
   final ValueChanged<String> onToggle;
   final String? error;
@@ -85,7 +84,13 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    const gap = SizedBox(height: 16); // space-y-4
+    final gap = SizedBox(
+      height:
+          RaftInteraction.of(context).pointer &&
+              MediaQuery.sizeOf(context).width >= 768
+          ? 12
+          : 16,
+    );
     final canAdd = drafts.length < maxServers - 1;
     final eyebrow = raftCssTextStyle(
       family: t.headingFont,
@@ -93,55 +98,42 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
       weight: FontWeight.w700,
       color: t.colors['foreground-muted'],
     );
-    // Web `flex justify-end gap-3`; on a phone-width dialog the two buttons
-    // wrap instead of overflowing (same layout whenever they fit).
     Widget actionButtons() => Wrap(
       alignment: WrapAlignment.end,
       spacing: 12,
       runSpacing: 8,
       children: [
-        RaftRecipeButton(
+        RaftButton(
           label: 'Cancel',
-          variant: RaftButtonRecipeVariant.outline,
-          size: RaftButtonRecipeSize.sm,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          textStep: RaftTextSteps.sm,
-          disabled: submitting,
-          onPressed: raftExplicitClose(context, onClose),
+          uiVariant: RaftButtonVariant.ghost,
+          uiSize: RaftButtonSize.lg,
+          onPressed: submitting ? null : raftExplicitClose(context, onClose),
         ),
-        RaftRecipeButton(
+        RaftButton(
           key: const ValueKey('joint-create-submit'),
-          label: submitting ? 'Creating…' : 'Create joint channel',
-          variant: RaftButtonRecipeVariant.accent,
-          size: RaftButtonRecipeSize.sm,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          textStep: RaftTextSteps.sm,
-          disabled: submitting,
-          onPressed: onSubmit,
+          label: submitting ? 'Creating…' : 'Create',
+          uiVariant: RaftButtonVariant.primary,
+          uiSize: RaftButtonSize.lg,
+          onPressed: submitting ? null : onSubmit,
         ),
       ],
     );
     return RaftModalBackdrop(
       child: RaftDialog.card(
         title: 'Create joint channel',
-        titleGlyph: RaftGlyph.gitBranch,
         maxWidth: 512, // max-w-lg
         onClose: onClose,
+        sheetCommit: RaftButton(
+          key: const ValueKey('joint-create-submit'),
+          label: submitting ? 'Creating…' : 'Create',
+          uiVariant: RaftButtonVariant.primary,
+          uiSize: RaftButtonSize.md,
+          onPressed: submitting ? null : onSubmit,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (freeAllowance) ...[
-              RaftBanner(
-                status: RaftBannerRecipeStatus.info,
-                description: raftText(
-                  context,
-                  'Free servers can create and join Joint Channels. Each Joint Channel can have up to 30 servers, at most 2 of them free.',
-                ),
-                descriptionWeight: FontWeight.w700,
-              ),
-              gap,
-            ],
             if (error != null) ...[
               onViewBilling == null
                   ? RaftErrorBanner(
@@ -183,83 +175,80 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
               ),
             ),
             gap,
-            RaftCard(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          spacing: 8,
-                          children: [
-                            RaftIcon(
-                              RaftGlyph.gitBranch,
-                              size: 14,
-                              color: eyebrow.color,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        spacing: 8,
+                        children: [
+                          RaftIcon(
+                            RaftGlyph.gitBranch,
+                            size: 14,
+                            color: eyebrow.color,
+                          ),
+                          Flexible(
+                            child: Text(
+                              raftText(context, 'Invite servers'),
+                              style: eyebrow,
                             ),
-                            Flexible(
-                              child: Text(
-                                raftText(context, 'Invite servers'),
-                                style: eyebrow,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12), // gap-3
-                      RaftRecipeButton(
-                        key: const ValueKey('joint-add-server'),
-                        label: 'Add Server',
-                        glyph: RaftGlyph.plus,
-                        glyphSize: 14,
-                        gap: 4,
-                        variant: RaftButtonRecipeVariant.outline,
-                        size: RaftButtonRecipeSize.sm,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        textStep: RaftTextSteps.xs,
-                        disabled: submitting || !canAdd,
-                        onPressed: onAddServer,
+                    ),
+                    const SizedBox(width: 12), // gap-3
+                    RaftRecipeButton(
+                      key: const ValueKey('joint-add-server'),
+                      label: 'Add Server',
+                      glyph: RaftGlyph.plus,
+                      glyphSize: 14,
+                      gap: 4,
+                      variant: RaftButtonRecipeVariant.outline,
+                      size: RaftButtonRecipeSize.sm,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                    ],
+                      textStep: RaftTextSteps.xs,
+                      disabled: submitting || !canAdd,
+                      onPressed: onAddServer,
+                    ),
+                  ],
+                ),
+                if (!canAdd) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    raftFormat(
+                      context,
+                      'Joint channels support a maximum of {max} servers, including this server.',
+                      {'max': maxServers},
+                    ),
+                    key: const ValueKey('create-joint-max-servers-hint'),
+                    style: raftCssTextStyle(
+                      family: t.headingFont,
+                      step: RaftTextSteps.xs,
+                      weight: FontWeight.w700,
+                      color: eyebrow.color,
+                    ),
                   ),
-                  if (!canAdd) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      raftFormat(
-                        context,
-                        'Joint channels support a maximum of {max} servers, including this server.',
-                        {'max': maxServers},
-                      ),
-                      key: const ValueKey('create-joint-max-servers-hint'),
-                      style: raftCssTextStyle(
-                        family: t.headingFont,
-                        step: RaftTextSteps.xs,
-                        weight: FontWeight.w700,
-                        color: eyebrow.color,
-                      ),
-                    ),
-                  ],
-                  for (final (index, draft) in drafts.indexed) ...[
-                    const SizedBox(height: 12), // space-y-3
-                    _InviteCard(
-                      key: ValueKey('joint-invite-${draft.id}'),
-                      index: index,
-                      draft: draft,
-                      removable: drafts.length > 1,
-                      submitting: submitting,
-                      eyebrow: eyebrow,
-                      onRemove: () => onRemoveServer(draft.id),
-                      onChanged: onInviteChanged,
-                      notice: inviteNotice?.call(draft),
-                    ),
-                  ],
                 ],
-              ),
+                for (final (index, draft) in drafts.indexed) ...[
+                  const SizedBox(height: 12), // space-y-3
+                  _InviteCard(
+                    key: ValueKey('joint-invite-${draft.id}'),
+                    index: index,
+                    draft: draft,
+                    removable: drafts.length > 1,
+                    submitting: submitting,
+                    eyebrow: eyebrow,
+                    onRemove: () => onRemoveServer(draft.id),
+                    onChanged: onInviteChanged,
+                    notice: inviteNotice?.call(draft),
+                  ),
+                ],
+              ],
             ),
             gap,
             RaftProductFormField(

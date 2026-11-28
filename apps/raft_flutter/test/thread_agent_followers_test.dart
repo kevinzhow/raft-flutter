@@ -185,14 +185,15 @@ void main() {
     await tester.tap(find.byKey(const Key('thread-followers-header-trigger')));
     await tester.pumpAndSettle();
     expect(find.text('Acme'), findsOneWidget);
-    final remove = tester.widget<RaftIconButton>(
+    final remove = tester.widget<RaftButton>(
       find.byKey(const Key('thread-follower-remove')),
     );
     expect(remove.onPressed, isNull);
     expect(
-      remove.tooltip,
+      remove.semanticLabel,
       "Only the host server's admins and this channel's admins can remove agents from other servers.",
     );
+    expect(remove.tooltip, isNull);
     await tester.pumpWidget(const SizedBox());
   });
 

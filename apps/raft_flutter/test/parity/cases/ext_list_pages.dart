@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/runtime_account_usage.dart';
+import 'package:raft_flutter/data/feature_flag_client_facts.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/system_notification_projection.dart';
@@ -24,11 +25,13 @@ import 'package:raft_flutter/data/workspace_entity_directory.dart';
 import 'package:raft_flutter/features/activity_rollout_flags.dart';
 import 'package:raft_flutter/features/add_computer_dialog.dart';
 import 'package:raft_flutter/features/add_members_dialog.dart';
+import 'package:raft_flutter/features/announcement_cta.dart';
 import 'package:raft_flutter/features/create_joint_channel_dialog.dart';
 import 'package:raft_flutter/features/computer_detail_view.dart';
 import 'package:raft_flutter/features/create_channel_dialog.dart';
 import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
+import 'package:raft_flutter/features/management_support.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -494,44 +497,20 @@ class _JointDialogHost extends StatefulWidget {
 }
 
 class _JointDialogHostState extends State<_JointDialogHost> {
-  List<Map<String, dynamic>>? agents, users;
   @override
   void initState() {
     super.initState();
-    final w = widget.controller;
-    Future.wait([
-      w.query('/agents'),
-      w.query('/servers/${w.server!.id}/members'),
-    ]).then((values) {
-      if (!mounted) return;
-      List<Map<String, dynamic>> rows(dynamic v) => [
-        for (final row in (v as List? ?? const []).whereType<Map>())
-          Map<String, dynamic>.from(row),
-      ];
-      setState(() {
-        agents = [
-          for (final a in rows(values[0]))
-            if (a['deletedAt'] == null) a,
-        ];
-        users = [
-          for (final u in rows(values[1]))
-            if ((u['userId'] ?? u['id']) != w.client.user?.id) u,
-        ];
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(
+          CreateJointChannelDialog.show(context, controller: widget.controller),
+        );
+      }
     });
   }
 
   @override
-  Widget build(BuildContext context) => agents == null
-      ? const SizedBox.shrink()
-      : CreateJointChannelDialog(
-          agents: agents!,
-          users: users!,
-          freePlan: true,
-          origin: widget.controller.client.origin,
-          onCreate: (_) async => <String, dynamic>{},
-          onUnarchive: (_) async => <String, dynamic>{},
-        );
+  Widget build(BuildContext context) => const SizedBox.expand();
 }
 
 Widget _panel(ParityContext ctx) {
@@ -696,6 +675,22 @@ Future<void> _interact(WidgetTester t, ParityContext ctx) async {
     case final k when k.startsWith('create-channel.'):
       final host = t.element(find.byKey(const ValueKey('create-channel-host')));
       final w = _workspace(ctx, 'chat');
+      if (ctx.props['externalIntent'] == 'true') {
+        rememberServerFlag(
+          w,
+          RaftFeatureFlags.externalChannels,
+          true,
+          pageIdentity(w),
+        );
+        openAnnouncementInternalLink(
+          host,
+          w,
+          '?dialog=create-joint-channel',
+          openExternal: (_) {},
+        );
+        await t.pumpAndSettle();
+        break;
+      }
       unawaited(
         showRaftForm<void>(
           host,
@@ -703,14 +698,10 @@ Future<void> _interact(WidgetTester t, ParityContext ctx) async {
             controller: w,
             prefilledName: ctx.props['name'] as String?,
             prefilledDescription: ctx.props['description'] as String?,
-            prefilledVisibility: ctx.props['externalIntent'] == 'true'
-                ? 'external'
-                : 'public',
           ),
         ),
       );
       await t.pumpAndSettle();
-      if (ctx.props['externalIntent'] == 'true') break;
       final submit = find.widgetWithText(
         RaftButton,
         k.startsWith('create-channel.phone') ? 'Create' : 'Create Channel',

@@ -547,6 +547,17 @@ def build_channel_cases(manifest):
     if not src.is_file():
         return []
     CH_FIXTURE = copy.deepcopy(json.loads(src.read_text()))
+    permission_channels = {
+        row['id'] for row in CH_FIXTURE['channels']
+        if row['id'].startswith('channel-cs-permissions-')
+    }
+    CH_FIXTURE['channels'] = [
+        row for row in CH_FIXTURE['channels'] if row['id'] not in permission_channels
+    ]
+    CH_FIXTURE['routes'] = {
+        path: answer for path, answer in CH_FIXTURE['routes'].items()
+        if permission_channels.isdisjoint(path.split('/'))
+    }
     members_route = f'GET /channels/{[c for c in CH_FIXTURE["channels"]][0]["id"]}/members'
     owner_cid = CH_FIXTURE['channels'][0]['id']
     role_members = copy.deepcopy(CH_FIXTURE['routes'][f'GET /channels/{owner_cid}/members'])

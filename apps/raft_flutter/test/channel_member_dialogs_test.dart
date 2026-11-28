@@ -217,7 +217,6 @@ void main() {
   group('CreateJointChannelDialog', () {
     Future<void> openJoint(
       WidgetTester t, {
-      bool free = true,
       Future<Map<String, dynamic>> Function(Map<String, dynamic>)? create,
       Future<Map<String, dynamic>> Function(String)? unarchive,
       VoidCallback? billing,
@@ -230,51 +229,42 @@ void main() {
         users: const [
           {'userId': 'u1', 'name': 'bob', 'displayName': 'Bob'},
         ],
-        freePlan: free,
         onCreate: create ?? (_) async => {'id': 'new'},
         onUnarchive: unarchive ?? (_) async => {'id': 'old'},
         onViewBilling: billing,
       ),
     );
 
-    testWidgets(
-      'free plan banner, one invite card, Add server grows to the cap',
-      (t) async {
-        await openJoint(t);
-        expect(find.text('Create joint channel'), findsNWidgets(2));
-        expect(
-          find.textContaining(
-            'Free servers can create and join Joint Channels',
-          ),
-          findsOneWidget,
-        );
-        expect(find.text('Server invite 1'), findsOneWidget);
-        // A single draft cannot be removed.
-        expect(
-          find.byKey(const ValueKey('joint-remove-invite-1')),
-          findsNothing,
-        );
-        final add = find.byKey(const ValueKey('joint-add-server'));
-        await t.ensureVisible(add);
-        await t.tap(add);
-        await t.pump();
-        expect(find.text('Server invite 2'), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('joint-remove-invite-2')),
-          findsOneWidget,
-        );
-        await t.ensureVisible(
-          find.byKey(const ValueKey('joint-remove-invite-2')),
-        );
-        await t.tap(find.byKey(const ValueKey('joint-remove-invite-2')));
-        await t.pump();
-        expect(find.text('Server invite 2'), findsNothing);
-        // No banner on a paid plan.
-      },
-    );
+    testWidgets('one invite card and Add server grows to the cap', (t) async {
+      await openJoint(t);
+      expect(find.text('Create joint channel'), findsOneWidget);
+      expect(
+        find.textContaining('Free servers can create and join Joint Channels'),
+        findsNothing,
+      );
+      expect(find.text('Server invite 1'), findsOneWidget);
+      // A single draft cannot be removed.
+      expect(find.byKey(const ValueKey('joint-remove-invite-1')), findsNothing);
+      final add = find.byKey(const ValueKey('joint-add-server'));
+      await t.ensureVisible(add);
+      await t.tap(add);
+      await t.pump();
+      expect(find.text('Server invite 2'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('joint-remove-invite-2')),
+        findsOneWidget,
+      );
+      await t.ensureVisible(
+        find.byKey(const ValueKey('joint-remove-invite-2')),
+      );
+      await t.tap(find.byKey(const ValueKey('joint-remove-invite-2')));
+      await t.pump();
+      expect(find.text('Server invite 2'), findsNothing);
+      // No banner on a paid plan.
+    });
 
     testWidgets('paid plan has no free allowance banner', (t) async {
-      await openJoint(t, free: false);
+      await openJoint(t);
       expect(
         find.textContaining('Free servers can create and join Joint Channels'),
         findsNothing,

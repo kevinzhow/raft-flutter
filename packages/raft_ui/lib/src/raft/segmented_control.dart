@@ -28,6 +28,7 @@ class RaftSegmentedItem extends StatelessWidget {
     super.key,
     required this.label,
     this.glyph,
+    this.iconBuilder,
     this.count,
     this.labelSuffix,
     this.checked = false,
@@ -40,6 +41,7 @@ class RaftSegmentedItem extends StatelessWidget {
 
   final String label;
   final RaftGlyph? glyph;
+  final Widget Function(double size, Color color)? iconBuilder;
 
   /// `SegmentedControlCount`: Space Mono 12.
   final String? count;
@@ -124,7 +126,10 @@ class RaftSegmentedItem extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: gap,
         children: [
-          if (glyph != null) RaftIcon(glyph!, size: svg!.width!, color: ink),
+          if (iconBuilder case final icon?)
+            icon(svg!.width!, ink)
+          else if (glyph != null)
+            RaftIcon(glyph!, size: svg!.width!, color: ink),
           if (!iconsOnly)
             Flexible(
               child: Text(
@@ -282,6 +287,7 @@ class RaftSegmentedOption<T> {
     required this.value,
     required this.label,
     this.glyph,
+    this.iconBuilder,
     this.tooltip,
     this.count,
     this.enabled = true,
@@ -298,6 +304,7 @@ class RaftSegmentedOption<T> {
   /// the label (`gap-1.5`), e.g. BillingIntervalSegmentedControl's "Save 12%".
   final String? labelSuffix;
   final RaftGlyph? glyph;
+  final Widget Function(double size, Color color)? iconBuilder;
   final String? tooltip;
 
   /// `SegmentedControlCount` (buttons style).
@@ -456,6 +463,7 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
           focusNode: _node(i)..skipTraversal = i != _stop,
           label: item.label,
           glyph: item.glyph,
+          iconBuilder: item.iconBuilder,
           count: item.count,
           labelSuffix: item.labelSuffix,
           tooltip: item.tooltip,

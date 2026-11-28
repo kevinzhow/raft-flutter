@@ -170,8 +170,14 @@ Rect _window(ParityContext ctx) {
     return Rect.fromLTWH(0, top, ctx.width, h);
   }
   final rail = 56.0;
+  final shellHeader = ctx.id.startsWith('components.conversation.followers.')
+      ? RaftLayoutMetrics.shellHeaderHeight(
+          RaftTokens.theme(dark: ctx.dark).withDesktop(ctx.width),
+          ctx.height,
+        )
+      : 0.0;
   return switch (ctx.props['surface']) {
-    'thread' => Rect.fromLTWH(ctx.width - 400, top, 400, h),
+    'thread' => Rect.fromLTWH(ctx.width - 400, top + shellHeader, 400, h),
     _ => Rect.fromLTWH(rail + 240, top, ctx.width - rail - 240, h),
   };
 }

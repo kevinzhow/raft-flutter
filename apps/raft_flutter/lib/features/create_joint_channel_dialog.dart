@@ -29,7 +29,6 @@ class CreateJointChannelDialog extends StatefulWidget {
     required this.users,
     required this.onCreate,
     required this.onUnarchive,
-    this.freePlan = false,
     this.origin,
     this.onViewBilling,
     this.currentServerSlug,
@@ -55,7 +54,6 @@ class CreateJointChannelDialog extends StatefulWidget {
 
   /// POST /channels/:id/unarchive for the archived-name collision.
   final Future<Map<String, dynamic>> Function(String channelId) onUnarchive;
-  final bool freePlan;
   final String? origin;
   final VoidCallback? onViewBilling;
 
@@ -113,7 +111,6 @@ class CreateJointChannelDialog extends StatefulWidget {
       builder: (_) => CreateJointChannelDialog(
         agents: agents,
         users: users,
-        freePlan: (w.server?.string('plan') ?? 'free') == 'free',
         origin: w.client.origin,
         currentServerSlug: w.server?.string('slug'),
         currentServerName: w.server?.name ?? '',
@@ -402,7 +399,6 @@ class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
       search: search,
       drafts: drafts,
       maxServers: maxJointChannelServers,
-      freeAllowance: widget.freePlan,
       onAddServer: addServer,
       onRemoveServer: removeServer,
       onInviteChanged: clearSubmitError,

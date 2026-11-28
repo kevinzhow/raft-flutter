@@ -2,21 +2,25 @@
 // variant: the "N agents following" trigger and its popover with the follower
 // rows (remove / retry / loading / empty). The app adapter owns the roster,
 // removal, undo and profile opening.
-import 'hover_region.dart';
-
 import 'package:flutter/material.dart';
 
 import 'anchored_popup.dart';
-import 'design_primitives.dart';
 import 'dialog_card.dart';
 import 'dismiss_scope.dart';
+import 'hover_region.dart';
 import 'indicators.dart';
 import 'icons.dart';
+import 'interaction.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
 import 'popover_surface.dart';
+import 'raft/button.dart';
+import 'raft/ui_tokens.dart';
+import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
+import 'recipes/popover.g.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftDesktopMetrics;
 
 /// One follower row: `ChannelMemberRow type="agent"` (avatar with its activity
 /// badge, name with an optional peer-server badge, mono activity line) and the
@@ -38,15 +42,14 @@ class RaftFollowerRow {
   final String id, label;
   final Widget avatar;
 
-  /// `AgentActivityInfo`: `truncate font-mono text-xs text-foreground-muted`.
+  /// The caption supplied by `AgentActivityInfo`.
   final String secondary;
 
   /// `JointPeerBadge` label of a follower that lives on another server.
   final String? peerLabel;
   final VoidCallback? onOpen;
 
-  /// Tooltip / semantics of the remove button; null hides the button (the
-  /// viewer cannot manage followers).
+  /// Accessible name of the remove button. A null label hides the action.
   final String? removeLabel;
   final bool canRemove, removing;
   final VoidCallback? onRemove;
@@ -125,17 +128,19 @@ class _RaftThreadFollowersState extends State<RaftThreadFollowers> {
       if (!shown && portal.isShowing) portal.hide();
     });
     if (!widget.visible) return const SizedBox.shrink();
-    final trigger = RaftRecipeButton(
+    final pointer = RaftInteraction.of(context).pointer;
+    final trigger = RaftButton(
       key: const Key('thread-followers-header-trigger'),
-      variant: RaftButtonRecipeVariant.outline,
-      size: RaftButtonRecipeSize.sm,
+      uiVariant: RaftButtonVariant.ghost,
+      uiSize: RaftButtonSize.md,
+      physicalHeight: pointer ? RaftDesktopMetrics.barButtonSize : null,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      gap: 4,
+      semanticLabel: widget.triggerLabel,
       tooltip: widget.triggerLabel,
       onPressed: toggle,
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        spacing: 4,
+        spacing: 6,
         children: [
           if (widget.error)
             const RaftIcon(RaftGlyph.circleAlert, size: 14)
@@ -151,12 +156,7 @@ class _RaftThreadFollowersState extends State<RaftThreadFollowers> {
           if (!widget.error)
             Text(
               '${widget.count}',
-              style: TextStyle(
-                fontFamily: t.headingFont,
-                fontSize: 12,
-                height: 16 / 12,
-                fontWeight: FontWeight.w700,
-              ),
+              style: t.scale(t.typeSlot('mono-meta'), mono: true),
             ),
         ],
       ),
@@ -179,6 +179,7 @@ class _RaftThreadFollowersState extends State<RaftThreadFollowers> {
                     anchorKey: anchor,
                     alignRight: true,
                     gap: 6,
+                    snapToDevicePixels: true,
                     child: TapRegion(
                       groupId: group,
                       child: SizedBox(
@@ -207,14 +208,13 @@ class _RaftThreadFollowersState extends State<RaftThreadFollowers> {
   }
 }
 
-/// `flex -space-x-1` of the compact avatars.
 class _AvatarStack extends StatelessWidget {
   const _AvatarStack({required this.avatars, required this.size});
   final List<Widget> avatars;
   final double size;
   @override
   Widget build(BuildContext context) {
-    const overlap = 4.0;
+    const overlap = 5.0;
     if (avatars.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       width: avatars.length * size - (avatars.length - 1) * overlap,
@@ -305,49 +305,41 @@ class _Popover extends StatelessWidget {
         ],
       ),
     };
+    final popover = RaftPopoverRecipe.resolve(
+      tokens: t.recipeTokens,
+      states: t.recipeStates(),
+    ).content;
     return RaftPopoverSurface(
+      surfaceStyle: popover,
+      padding: EdgeInsets.zero,
       child: Material(
         type: MaterialType.transparency,
-        child: DecoratedBox(
-          decoration: BoxDecoration(color: t.popover),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: t.panel,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: t.colors['line-muted']!,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  raftText(context, 'Following agents'),
-                  style: TextStyle(
-                    fontFamily: t.headingFont,
-                    fontSize: 14,
-                    height: 20 / 14,
-                    fontWeight: FontWeight.w700,
-                    color: t.strong,
-                  ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              constraints: const BoxConstraints(minHeight: 44),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: t.colors['line-seam']!),
                 ),
               ),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 288),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(8),
-                  child: content,
-                ),
+              child: Text(
+                raftText(context, 'Following agents'),
+                style: t.scale(t.typeSlot('headline')),
               ),
-            ],
-          ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 288),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(8),
+                child: content,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -370,16 +362,27 @@ class _FollowerRowState extends State<_FollowerRow> {
     final t = RaftTokens.of(context);
     final r = widget.row;
     final remove = r.removeLabel;
+    final viewport = MediaQuery.sizeOf(context);
+    final short = viewport.height <= 600;
+    final compactTouch =
+        viewport.width >= 768 && RaftInteraction.of(context).touch;
+    final canPress = r.canRemove && !r.removing;
     return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
       child: Container(
         key: Key('thread-follower-row-${r.id}'),
-        color: hovered ? t.colors['fill-muted'] : null,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        color: hovered ? t.colors['fill-subtle'] : null,
+        constraints: BoxConstraints(
+          minHeight: short
+              ? 0
+              : compactTouch
+              ? 56
+              : 64,
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: short ? 6 : 10),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 8,
+          spacing: 12,
           children: [
             Expanded(
               child: GestureDetector(
@@ -391,16 +394,13 @@ class _FollowerRowState extends State<_FollowerRow> {
                         r.onOpen!();
                       },
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 8,
+                  spacing: 12,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: r.avatar,
-                    ),
+                    r.avatar,
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
                             spacing: 6,
@@ -410,12 +410,9 @@ class _FollowerRowState extends State<_FollowerRow> {
                                   r.label,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontFamily: t.headingFont,
-                                    fontSize: 14,
-                                    height: 20 / 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: t.strong,
+                                  style: t.scale(
+                                    t.typeSlot('subhead'),
+                                    weight: FontWeight.w600,
                                   ),
                                 ),
                               ),
@@ -434,11 +431,9 @@ class _FollowerRowState extends State<_FollowerRow> {
                             r.secondary,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: t.monoFont,
-                              fontSize: 12,
-                              height: 16 / 12,
-                              color: t.muted,
+                            style: t.scale(
+                              t.typeSlot('caption'),
+                              color: t.ui.foregroundHint,
                             ),
                           ),
                         ],
@@ -449,16 +444,14 @@ class _FollowerRowState extends State<_FollowerRow> {
               ),
             ),
             if (remove != null)
-              Opacity(
-                opacity: r.canRemove ? 1 : .45,
-                child: RaftIconButton(
-                  key: const Key('thread-follower-remove'),
-                  glyph: RaftGlyph.x,
-                  tooltip: remove,
-                  visualSize: 28,
-                  minimumTargetSize: 28,
-                  onPressed: r.canRemove && !r.removing ? r.onRemove : null,
-                ),
+              RaftButton(
+                key: const Key('thread-follower-remove'),
+                glyph: RaftGlyph.x,
+                uiVariant: RaftButtonVariant.ghost,
+                uiSize: RaftButtonSize.iconMd,
+                tooltip: canPress ? remove : null,
+                semanticLabel: remove,
+                onPressed: canPress ? r.onRemove : null,
               ),
           ],
         ),

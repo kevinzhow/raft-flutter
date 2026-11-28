@@ -12,20 +12,25 @@ import 'package:flutter/services.dart';
 
 import 'form_presentation.dart';
 
+import 'design_primitives.dart' show RaftLayoutMetrics;
 import 'dialog_card.dart';
 import 'icons.dart';
 import 'error_presentation.dart';
+import 'interaction.dart';
 import 'localization.dart';
+import 'mounted_task_chip.dart';
 import 'raft/button.dart';
 import 'raft/css_box.dart' show raftControlBorderPx;
 import 'form_controls.dart' show RaftField, RaftTextarea;
 import 'raft/ui_tokens.dart';
 import 'select_field.dart';
 import 'task.dart' show raftTaskStatusLabel;
+import 'task_status_badge.dart' show raftTaskStatusOf;
 import 'tokens/tokens.dart' show RaftRadius, RaftTypeScale;
 import 'recipes/button_variants.g.dart';
 import 'space.dart';
 import 'theme.dart';
+import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 
 class RaftCreateTaskDialogView extends StatelessWidget {
   const RaftCreateTaskDialogView({
@@ -326,6 +331,20 @@ class RaftCreateTaskStatusField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = raftText(context, 'Status');
+    final tokens = RaftTokens.of(context);
+    Widget icon(String value) {
+      final status = raftTaskStatusOf(value);
+      return SizedBox.square(
+        dimension: 16,
+        child: Center(
+          child: RaftMessageTaskStatusIcon(
+            status: status,
+            color: RaftMessageTaskChipRecipe(tokens, status).iconForeground,
+          ),
+        ),
+      );
+    }
+
     return RaftField(
       key: const ValueKey('create-task-status-field'),
       label: label,
@@ -340,6 +359,7 @@ class RaftCreateTaskStatusField extends StatelessWidget {
               value: value,
               label: raftText(context, raftTaskStatusLabel(value)),
               labelKey: ValueKey('create-task-status-$value'),
+              leading: icon(value),
             ),
         ],
         onChanged: onChanged == null
@@ -388,7 +408,12 @@ class RaftCreateTaskMessageDialogView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const gap = SizedBox(height: 16);
+    final formGap =
+        RaftInteraction.of(context).pointer &&
+            raftBreakpointWidth(context) >= RaftLayoutMetrics.desktopBreakpoint
+        ? 12.0
+        : 16.0;
+    final gap = SizedBox(height: formGap);
     final t = RaftTokens.of(context);
     final placeholder = raftText(context, 'What needs to be done?');
     return RaftModalBackdrop(
@@ -396,6 +421,7 @@ class RaftCreateTaskMessageDialogView extends StatelessWidget {
         key: const ValueKey('create-task-message-dialog'),
         title: 'Create task',
         onClose: onClose,
+        footerGap: formGap,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -481,7 +507,7 @@ class RaftCreateTaskMessageDialogView extends StatelessWidget {
             RaftButton(
               key: const ValueKey('create-task-submit'),
               label: submitting ? 'Sending...' : 'Send and create task',
-              uiVariant: RaftButtonVariant.accent,
+              uiVariant: RaftButtonVariant.primary,
               uiSize: RaftButtonSize.lg,
               disabled: submitting || !canSubmit,
               onPressed: onSubmit,

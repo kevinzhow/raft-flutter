@@ -426,7 +426,6 @@ void main() {
         (_) => CreateJointChannelDialog(
           agents: const [],
           users: const [],
-          freePlan: false,
           onCreate: (_) async => {'id': 'new'},
           onUnarchive: (_) async => {'id': 'old'},
         ),

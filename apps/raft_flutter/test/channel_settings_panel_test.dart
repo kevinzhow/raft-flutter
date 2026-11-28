@@ -218,11 +218,11 @@ void main() {
     expect(find.byType(RaftChannelInfoForm), findsNothing);
     expect(find.text('Info'), findsNothing);
     expect(_id('channel-overflow-leave'), findsOneWidget);
-    expect(_id('channel-overflow-stop-agents'), findsOneWidget);
     for (final id in [
       'channel-settings-visibility-action',
       'channel-settings-archive-action',
       'channel-settings-delete-action',
+      'channel-overflow-stop-agents',
     ]) {
       expect(_id(id), findsNothing, reason: id);
     }

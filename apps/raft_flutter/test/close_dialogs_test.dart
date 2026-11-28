@@ -498,6 +498,7 @@ void registerCloseDialogTests(TestPart part) {
       CreateJointChannelDialog,
       (context, w) =>
           unawaited(CreateJointChannelDialog.show(context, controller: w)),
+      dragTarget: find.byKey(const ValueKey('raft-form-sheet-head')),
     ),
     'unsaved-changes-prompt': unsavedPrompt,
     'announcement-modal': (t, size) async {
