@@ -3439,6 +3439,7 @@ const ptBrDisplayCatalog = <String, String>{
   "Remove {name} from Add List": "Remover {name} da lista de membros a adicionar",
   "Remove": "Remover",
   "Removed {account} from {agent}": "{account} removida de {agent}",
+  "Removed {agent} from this task's followers.": "{agent} não segue mais esta tarefa.",
   "Removed {agent} from this thread's followers.": "{agent} não segue mais esta thread.",
   "Removed": "Removido",
   "Removes the App, its connections and their sign-ins. Agents lose its tools.": "Remove o app, as conexões dele e os respectivos logins. Os agentes perdem acesso às ferramentas do app.",

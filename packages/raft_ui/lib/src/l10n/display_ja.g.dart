@@ -3456,6 +3456,7 @@ const jaDisplayCatalog = <String, String>{
   "Remove {file}": "{file} を削除",
   "Remove {name} from Add List": "{name} を追加リストから削除",
   "Removed {account} from {agent}": "{agent} から {account} を外しました",
+  "Removed {agent} from this task's followers.": "{agent} をこのタスクのフォロワーから削除しました。",
   "Removed {agent} from this thread's followers.": "{agent} をこのスレッドのフォロワーから削除しました。",
   "Removed": "削除済み",
   "Removes the App, its connections and their sign-ins. Agents lose its tools.": "アプリと、その接続およびログイン情報を削除します。エージェントはこのアプリのツールを使用できなくなります。",

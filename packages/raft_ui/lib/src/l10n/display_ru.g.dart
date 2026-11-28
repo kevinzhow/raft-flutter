@@ -3386,6 +3386,7 @@ const ruDisplayCatalog = <String, String>{
   "Remove {file}": "Удалить файл {file}",
   "Remove {name} from Add List": "Убрать из списка добавления: {name}",
   "Removed {account} from {agent}": "Аккаунт {account} отвязан от агента {agent}",
+  "Removed {agent} from this task's followers.": "Агент {agent} удалён из подписчиков задачи.",
   "Removed {agent} from this thread's followers.": "Агент {agent} удалён из подписчиков ветки.",
   "Removes the App, its connections and their sign-ins. Agents lose its tools.": "Удаляет приложение, его подключения и выполненные в них входы. Агенты потеряют доступ к его инструментам.",
   "Removing this app revokes its existing Login with Raft access for this server.": "Удаление приложения отзывает доступ, полученный им на этом сервере при входе через Raft.",

@@ -3433,6 +3433,7 @@ const koDisplayCatalog = <String, String>{
   "Remove {file}": "{file} 제거",
   "Remove {name} from Add List": "추가 목록에서 {name} 제거",
   "Removed {account} from {agent}": "{agent}에서 {account}을(를) 제거했어요",
+  "Removed {agent} from this task's followers.": "{agent}을(를) 이 작업의 팔로워에서 제거했어요.",
   "Removed {agent} from this thread's followers.": "{agent}을(를) 이 스레드의 팔로워에서 제거했어요.",
   "Removed": "제거됨",
   "Removes the App, its connections and their sign-ins. Agents lose its tools.": "앱과 연결, 연결의 로그인 정보를 모두 삭제해요. 에이전트는 이 앱의 도구를 더 이상 쓸 수 없어요.",

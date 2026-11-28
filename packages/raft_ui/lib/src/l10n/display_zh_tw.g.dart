@@ -3455,6 +3455,7 @@ const zhTwDisplayCatalog = <String, String>{
   "Remove {name} from Add List": "從新增清單中移除 {name}",
   "Remove": "移除",
   "Removed {account} from {agent}": "已從 {agent} 移除 {account}",
+  "Removed {agent} from this task's followers.": "已將 {agent} 從此任務的追蹤者中移除。",
   "Removed {agent} from this thread's followers.": "已將 {agent} 從此討論串的追蹤者中移除。",
   "Removed": "已移除",
   "Removes the App, its connections and their sign-ins. Agents lose its tools.": "移除這個應用程式及其連線與登入資訊，Agent 將無法再使用它的工具。",

@@ -3442,6 +3442,7 @@ const esDisplayCatalog = <String, String>{
   "Remove {name} from Add List": "Quitar a {name} de la lista para agregar",
   "Remove": "Quitar",
   "Removed {account} from {agent}": "Se quitó {account} de {agent}",
+  "Removed {agent} from this task's followers.": "Se quitó a {agent} de los seguidores de esta tarea.",
   "Removed {agent} from this thread's followers.": "Se quitó a {agent} de los seguidores de este hilo.",
   "Removed": "Eliminado",
   "Removes the App, its connections and their sign-ins. Agents lose its tools.": "Elimina la app, sus conexiones y sus inicios de sesión. Los agentes perderán las herramientas de la app.",
