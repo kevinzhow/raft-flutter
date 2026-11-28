@@ -1,4 +1,4 @@
-// Source: Web v1.24 task/taskHandoffNotice.ts + TaskHandoffCard.tsx.
+// Source: packages/web/src/components/task/{taskHandoffNotice.ts,TaskHandoffCard.tsx}.
 // A task handed to someone with a reason is an assignment line whose
 // `actionMetadata` is `{kind: task-assignment, actor, assignee, reason}`; the
 // conversation draws it as a card (the line's text stays the record).

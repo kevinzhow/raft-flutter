@@ -17,12 +17,8 @@ Numbers are the items of the v1.21.23 plan, section 3.
 | # | Question | What the answer needs | Rows it settles |
 | --- | --- | --- | --- |
 | 3 | Native push (FCM / APNs) | The server needs a native push channel first; until then record it as a server-capability gap and do not schedule it. Since Web v1.24 the gap includes delayed phone alerts: with "Phone alerts" at 1, 2, 5 or 10 minutes the server holds a phone's alert and later sends it through FCM / APNs only (`mobileDeferral.ts`), so this app, which posts the socket's `notification:push` itself, never gets a held alert; with the default ("Only when I'm not active on a computer") and "Always" it alerts as Web's apps do (WP-NOTIF, coordinator decision 2026-11-14: record it, do not build native push) | `ui:notifications.push-subscription`, `ui:notifications.web-push-controls`, `ui:notifications.content-settings` |
-| 5 | Web removed the Activity Done, Saved and DMs views (flag `activity_sidebar_inbox_v0`) | Closed 2026-11-17 (WP-INBOX, Kevin 2654e77c): removed in the app too; Activity's Saved is now Web's saved scope | `BP-READ-080` (aligned), `BP-READ-038` note |
 | 6 | Open Raft https links in the app | The platform owner must host `assetlinks.json` and `apple-app-site-association` on the Raft domain; the app side is built and switched off (`RAFT_APP_LINKS`) | `ui:global-ui.routes-external-https-links` |
-| 7 | Product analytics (`POST /product-events/batch`) and the "Share usage data" switch | Record as an intended difference and remove the switch (recommended: today it does nothing), or decide to send events (a separate privacy decision) | `RAW analytics/track.ts`, `ui:global-ui.product-analytics-events` |
-| 8 | The desktop download options, cookie consent and public visit counts, palette audit page, and sidebar drag-and-drop probe are Web-only. Flutter includes desktop Back, Forward and a History menu and retains native multi-window support. | One "yes" | `ui:global-ui.back-forward`, `ui:global-ui.desktop-server-windows` and the rows of the other items |
 | BP | Twelve behaviour rows without a recorded owner decision | A "confirm" that records them as intended differences or not applicable, with the date | `BP-READ-003`, `004`, `053`, `069`, `071`, `072`, `076`, `BP-RT-007`, `016`, `017`, `052`, `053` |
-| Invite | The private-app invite page (`/integration-invites/:token`) is a browser page for admins; record it as an intended difference like the other browser-hosted pages (recommended)? | A yes or no | `GET /integration-invites/:id`, `POST /integration-invites/:id/install`, `ui:global-ui.routes-integration-invite`, `ui:integrations.integration-invite-page` |
 
 Open differences that are only listed for review (not questions): the "open differences" sections for the public page,
 RaftBench, attachments and navigation further down. Two further differences wait on shell work, not on an owner answer:
@@ -37,7 +33,6 @@ the desktop (`ui:server.public-page-live-globe`).
 | 2026-10-24 | Default appearance is Web's "Raft" look; Elegant and Brutal stay as selectable themes (plan item 1). The theme was merged when no case scored below the previous client; remaining low-similarity pages are being fixed against the official 96% pass bar (task #228) | Kevin, `18e37fbf` (plan approved), `367b04d0` (merge, continue the low pages) | PR #424 (integration `24d0c88e`); release v1.21.23+1 |
 | 2026-10-24 | Build the cloud (hosted) agent family, verified against a local antiproton server (plan item 2) | Kevin, `0b62aedd` | the cloud-agent rows are ✅ in `capability-parity.json` (`POST /agents` note, `GET /agents/:id/hosted-runtime`) |
 | 2026-10-23 | Build RaftBench in full (plan item 4; the plan had suggested ➖) | Kevin, `b9c81968` | section "RaftBench vs Web v1.21.23" below; RaftBench rows ✅ |
-| 2026-10-23 | Live sequence jumps keep no gap fetch (intended difference). **Withdrawn 2026-11-13**: the app follows Web v1.24 `liveGapFill.ts` (Kevin, `2654e77c`, WP-LIVE) | Kevin, `9c047186`; `2654e77c` | section "Live sequence jumps fill the hole behind them"; `BP-READ-021`, `BP-RT-030` |
 | 2026-10-21 | No floating Share / Download icons on attachment cards | Kevin, PR #295 | section "Attachment cards"; `ui:files.attachment-card-download` ➖ |
 | 2026-10-17 | Video cards are posters on every platform | Kevin | section "Video cards"; `ui:files.video-audio-preview` ➖ |
 | 2026-10-17 | Forms are bottom sheets below 768 px and dialogs from 768 px (`RaftPresentationPolicy.form`) | product owner, commit `49315d69` | `docs/close-affordances.md` (the "approved" rows of the dialog family); not a capability row |
@@ -410,9 +405,13 @@ tool/parity summary                   # recompute build/parity/summary.json from
 Environment overrides: `PARITY_RAFT_SOURCE` (raft-source checkout; default: the checkout of the commit pinned in
 `docs/source-reference.json`, see [The raft-source checkout](parity-and-alignment.md#the-raft-source-checkout)),
 `PARITY_OUT` (default `build/parity`), `PARITY_TOOLCHAIN_PATHS` (file listing
-the Node 24 / pnpm 10 binaries), `PARITY_REPORTS_ROOT`, `PARITY_BASE_URL`,
+the Node 24 and pnpm 12.15 binaries for Web v1.24), `PARITY_REPORTS_ROOT`, `PARITY_BASE_URL`,
 `PARITY_WEB_PORT` (Vite port for the React provider, default 4391),
 `PARITY_SHARDS` (parallel `flutter test` processes, default 4).
+
+The nightly job uses the checkout prepared from the repository's pin.
+Run `tool/raft-source prepare` on the nightly host and unset `PARITY_RAFT_SOURCE`
+in the scheduled job so future releases follow `docs/source-reference.json`.
 
 Published report: <http://100.109.192.23:18931/raft_flutter_parity/latest/>
 (each run is kept under `raft_flutter_parity/<UTC timestamp>/`).
@@ -2188,13 +2187,35 @@ Settings › Account (Passkeys, Two-step verification), "Verify it's you", the s
 * **The last way used is not remembered.** Web opens the second step and Verify it's you on the method this browser used last (`rememberSecondFactorMethod`, local storage); here they open on the authenticator code, then the backup code.
 * **Turn on, its password step and the backup codes are three dialogs in a row**, not one dialog that changes its content; each has Web's title, body and buttons.
 
+## Web v1.24 owner decisions
+
+Kevin `2654e77c` closed Activity decision 5. The app follows Web's Pinned and
+Artifacts filters and Saved scope. The standalone Done, Saved and DMs views
+were removed (`BP-READ-080`, `BP-READ-038`). Live gap fill follows Web
+`liveGapFill.ts` (`BP-READ-021`, `BP-RT-030`).
+
+- **R09. Desktop multi-window stays in Flutter** (Kevin `2654e77c`).
+
+The capability register records the following scope decisions as ➖ on 2026-11-29
+(Kevin `2654e77c`).
+
+- Enterprise SSO stays out of scope. The app shows the server's `SSO_REQUIRED` guidance.
+- Passkey login and registration stay out of scope. Existing passkeys can be viewed, renamed and deleted.
+- Paid actions open Web billing on all platforms. The app shows subscription and usage status.
+- This Device and local Raft Computer depend on the Electron bridge.
+- Desktop download options, cookie consent, public visit counts, the palette audit page and the sidebar drag-and-drop probe are Web-only. Flutter has its own update discovery, and desktop Back, Forward and History.
+- Product analytics event collection stays on Web.
+
+Kevin `2654e77c` originally scoped out the private-app invite page.
+Flutter later added account-bound review and installation (`a6962d0bc`).
+The capability register keeps its partial status for OS HTTPS handling and visual acceptance.
+
 ## Public server page vs Web v1.21.23 (cindy/w23-pub): open differences
 
 Not owner decisions yet; each is listed so a reviewer can accept or send it back. Where a bullet is also an item of "Open owner decisions" at the top, that item is the open question.
 
 * Signed-out visitors get no Appearance tab on the public page (Web v1.21.23 shows it to everyone). The app follows the device theme while signed out and the appearance setting lives in the app root; the tab waits for the appearance rework.
 * Signed-out Language & Region shows the display language of the device and offers no other (Web keeps a local display language). Translation mode, target, default view, timezone and time format are saved on the device like Web.
-* No cookie banner, visitor id or public visit counts (`POST /public-visits/:slug`): Web-only browser statistics (plan decision 8, open).
 * The Chinese community page opens from the Help menu only; Web's redirect of a direct `/s/community-cn` link and the `community_cn_qr_page_view` event are not ported. The page has a Back control (a browser page has the browser's).
 * A native window has no per-page title: Web sets the document title of the Chinese community page; the app title bar keeps the app name.
 * The globe after the server name shows in the phone server selector only; the desktop top bar that carries it in Web is the shell package.
@@ -2213,18 +2234,6 @@ it as an intentional difference). What still differs, for a reviewer to accept o
 * The brand colour of the progress bars is the primary-400 token until the raft-ui 0.7.0 token set lands; the text scale (title / headline / callout / footnote / caption) is Web's 0.7.0 scale written out in `raftbench_parts.dart`.
 * A failed dashboard read or save is the one generic message, like Web; the server's `raftbench_*` code is not shown. The hosted-agent model line polls every 60 seconds like Web.
 * Sparkles and Wallet glyphs are vendored by hand (`FLUTTER_ADDED` in `tool/gen-glyphs`) because a full `--import-sources` needs the raft-ui 0.7.0 pin.
-
-## Live sequence jumps fill the hole behind them (Web v1.24, owner decision 2026-11-13)
-
-The 2026-10-23 intended difference ("live sequence jumps do not trigger a gap
-fetch", Kevin `9c047186`) is withdrawn: Kevin `2654e77c` (2026-11-13) asked to
-follow Web v1.24 `liveGapFill.ts`. A live `message:new` in the open channel
-whose `seq` is past the window tail is shown at once; the hole behind it is
-read in the background with `GET /messages/sync` from the tail, retried after
-1, 2, 4, 8 and 16 s, and a heartbeat re-reads a scope that still owes a fill
-(BP-READ-021, BP-RT-030; `packages/raft_sync/lib/src/live_gap_fill.dart`,
-`apps/raft_flutter/lib/data/message_gap_sync.dart`). Not ported yet: Web does
-not auto-read a live row while its hole is unconfirmed (WP-READ).
 
 ## Attachments and large files vs Web v1.21.23 (cindy/w23-files): differences
 

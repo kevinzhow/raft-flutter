@@ -4,7 +4,7 @@
 
 ## 当前证据
 
-> 以下“当前证据”是 2026-10-08 的历史快照（26f77ef、Web 1.17.5、raft-ui 0.5.27）。客户端正在对齐 Web v1.21.12（raft-ui 0.5.52）；当前固定的上游版本以 `docs/upstream-sync.md` 为准。
+> 以下“当前证据”是 2026-10-08 的历史快照（26f77ef、Web 1.17.5、raft-ui 0.5.27）。当前上游基准为 Web v1.24.0（raft-ui 0.95.3），见 `docs/upstream-sync.json` 和 `docs/source-reference.json`。
 
 - raft-source main 快照 26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6；Web 1.17.5，使用 raft-ui 0.5.27、Socket.IO 4.8.3、Zustand、React Markdown、Mermaid、FlexLayout。
 - 真正的基础设计系统在独立 npm 包 raft-ui，不只在 Web CSS。下载并检查了版本匹配的包，包元数据标记 MIT，包含 foundation.css、fonts.css、React 组件声明和行为。产品 Web 还覆写部分 tokens；ui-inventory 导入真实产品组件，但例子包含历史硬编码，不能把全部例子自动视为最新规范。
