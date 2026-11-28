@@ -15,7 +15,8 @@ import 'artifacts/artifact_models.dart' show parseArtifactId;
 import 'desktop_navigation_policy.dart';
 
 /// What has no list opens beside the main area instead (the shell's column).
-export 'artifacts/shell_artifact_column.dart' show ShellArtifactColumn;
+export 'artifacts/shell_artifact_column.dart'
+    show ShellArtifactColumn, closeShellArtifact, shellArtifactTarget;
 
 /// Marks a list that has a detail slot (Activity, Search).
 class ListDetailHost extends InheritedWidget {
