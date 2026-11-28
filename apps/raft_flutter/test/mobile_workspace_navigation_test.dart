@@ -712,14 +712,13 @@ void main() {
       // Search and Activity are bottom-bar tabs (v1.24): Home lists neither.
       expect(find.byKey(const Key('nav-search')), findsNothing);
       expect(find.byKey(const Key('nav-activity')), findsNothing);
-      final sidebar = tester.widget<CustomScrollView>(
+      final sidebar = tester.getRect(
         find.byKey(const Key('workspace-sidebar')),
       );
-      expect(
-        (sidebar.slivers.first as SliverPadding).padding,
-        const EdgeInsetsDirectional.all(8),
-      );
       final channelRow = find.byKey(const ValueKey('sidebar-channel-c'));
+      final channelBounds = tester.getRect(channelRow);
+      expect(channelBounds.left - sidebar.left, 8);
+      expect(sidebar.right - channelBounds.right, 8);
       expect(
         tester.widget<RaftNavItem>(channelRow).conversationKind,
         RaftConversationNavKind.channel,
@@ -731,6 +730,10 @@ void main() {
       expect(tester.widget<RaftIcon>(channelGlyph).size, 16);
       expect(tester.widget<RaftIcon>(channelGlyph).strokeWidth, 2);
       final dmRow = find.byKey(const ValueKey('sidebar-channel-dm'));
+      final dmBounds = tester.getRect(dmRow);
+      expect(dmBounds.left, sidebar.left);
+      expect(dmBounds.right, sidebar.right);
+      expect(dmBounds.height, 44);
       expect(
         tester.widget<RaftNavItem>(dmRow).conversationKind,
         RaftConversationNavKind.directMessage,
