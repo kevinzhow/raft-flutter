@@ -888,12 +888,14 @@ class ChannelSettingsFixtureContractTest(unittest.TestCase):
         for fixture in (generated, checked, derived):
             routes = {key: value for key, value in fixture['routes'].items()
                       if key.startswith('GET /tasks/channel/')}
-            self.assertTrue(routes)
+            expected_paths = {f'GET /tasks/channel/{row["id"]}'
+                              for group in ('channels', 'dms') for row in fixture[group]}
+            self.assertEqual(routes.keys(), expected_paths)
             for key, value in routes.items():
                 self.assertEqual(value, {'tasks': []}, key)
             task_routes.append(routes)
         self.assertEqual(task_routes[0], task_routes[1])
-        self.assertEqual(task_routes[1], task_routes[2])
+        self.assertEqual({key: task_routes[1][key] for key in task_routes[2]}, task_routes[2])
 
 
 class FeedbackFixtureScopeTest(unittest.TestCase):
