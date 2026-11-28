@@ -295,6 +295,12 @@ void registerFormWindowTests(TestPart part) {
 
   final sheet = find.byType(BottomSheet);
   final dialog = find.byType(RaftDialogFrame);
+  const headerCommitLabels = {
+    'create channel': 'Create',
+    'create joint channel': 'Create',
+    'invite human': 'Invite',
+    'report issue': 'Report',
+  };
 
   for (final form in _forms) {
     part.group(form.id, () {
@@ -304,11 +310,6 @@ void registerFormWindowTests(TestPart part) {
         expect(find.byType(RaftSheet), findsOneWidget);
         expect(dialog, findsNothing);
         final handle = find.byKey(const ValueKey('raft-sheet-handle'));
-        const headerCommitLabels = {
-          'create channel': 'Create',
-          'invite human': 'Invite',
-          'report issue': 'Report',
-        };
         final headerCommitLabel = headerCommitLabels[form.id];
         if (headerCommitLabel != null) {
           final head = find.descendant(
@@ -500,7 +501,7 @@ void registerFormWindowTests(TestPart part) {
         switch (how) {
           case 'drag':
             await t.fling(
-              form.id == 'create channel'
+              headerCommitLabels.containsKey(form.id)
                   ? _key('raft-form-sheet-head')
                   : handle,
               const Offset(0, 700),

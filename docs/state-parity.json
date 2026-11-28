@@ -5930,6 +5930,15 @@
         "owner": "WP-GAPS-1",
         "reason": "SDK Widget Preview for the unavailable image thumbnail."
       },
+      "apps/raft_flutter/lib/features/account_onboarding.dart#method:_OnboardingState.didUpdateWidget": {"role": "entry_composition", "familyRefs": [], "owner": "WP-GAPS-3", "reason": "Updates the email verification flow when the route changes."},
+      "apps/raft_flutter/lib/features/joint_channel_link_intent.dart#function:openJointChannelLinkIntent": {"role": "entry_composition", "familyRefs": ["dialog"], "owner": "WP-GAPS-3", "reason": "Opens the flagged channel creation form after checking server authority."},
+      "apps/raft_flutter/lib/features/task_followers_actions.dart#class:TaskFollowersActions": {"role": "entry_composition", "familyRefs": ["popover", "menu"], "owner": "WP-GAPS-3", "reason": "Connects the shared follower roster to the task header."},
+      "apps/raft_flutter/lib/features/task_followers_actions.dart#class:_TaskFollowersActionsState": {"role": "entry_composition", "familyRefs": ["popover", "menu"], "owner": "WP-GAPS-3"},
+      "apps/raft_flutter/lib/features/task_followers_actions.dart#method:TaskFollowersActions.createState": {"role": "entry_composition", "familyRefs": [], "owner": "WP-GAPS-3"},
+      "apps/raft_flutter/lib/features/task_followers_actions.dart#method:_TaskFollowersActionsState.build": {"role": "entry_composition", "familyRefs": ["popover", "menu"], "owner": "WP-GAPS-3", "reason": "Exposes the roster from the visible header or Task actions menu."},
+      "packages/raft_ui/lib/src/create_task_view.dart#local-function:CLASS:RaftCreateTaskStatusField/METHOD:build/FUNCTION:icon": {"role": "entry_composition", "familyRefs": ["select"], "owner": "WP-GAPS-3", "reason": "Places the shared status painter in the Select icon slot."},
+      "packages/raft_ui/lib/src/select_field.dart#method:RaftSelectItem._withLeading": {"role": "entry_composition", "familyRefs": ["select"], "owner": "WP-GAPS-3", "reason": "Composes the optional icon and label in the Select trigger and list."},
+      "packages/raft_ui/lib/src/task_conversation_parts.dart#method:RaftTaskConversationBar.buildHeader": {"role": "entry_composition", "familyRefs": ["button", "menu"], "owner": "WP-GAPS-3", "reason": "Groups the task header actions and their shared follower anchor."},
       "apps/raft_flutter/lib/features/agent_apps_view.dart#method:_AgentAppsState._configureMcp": {
         "role": "entry_composition",
         "familyRefs": [

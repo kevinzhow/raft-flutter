@@ -515,8 +515,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/select_field.dart",
-              "bytes": 20502,
-              "sha256": "254b63085a2e9ec82df7159f74b1e2ebda13dea214ba8736c884eef23afb660b"
+              "bytes": 20847,
+              "sha256": "5de54f638e51c3f8b3c74bfcbc0f1f9ba0522dd9a763bdb9adedcc76dc2d521c"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
