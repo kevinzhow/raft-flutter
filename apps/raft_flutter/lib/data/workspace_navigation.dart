@@ -97,6 +97,14 @@ class WorkspaceNavigation {
     'agentTab': null,
   };
 
+  /// An Artifact's address (`artifact=`, `version=`, `review=`) names what
+  /// stands beside the page, not a new destination: opening, retargeting or
+  /// closing it keeps the conversation it was opened from current.
+  static bool artifactOnlyTransition(RaftLocation from, RaftLocation to) =>
+      from.uri != to.uri &&
+      from.withQuery(artifactSlotRemoval).uri ==
+          to.withQuery(artifactSlotRemoval).uri;
+
   /// Navigate the profile slot without bumping the window revision.
   void navigateProfile(RaftLocation next) {
     final keep = profileOnlyTransition(location, next);
@@ -145,7 +153,7 @@ class WorkspaceNavigation {
       _index = _entries.length - 1;
     }
     _location = next;
-    ++_revision;
+    if (!artifactOnlyTransition(previous, next)) ++_revision;
     if (previous.query('task') != next.query('task') ||
         previous.taskFocusedMessageId != next.taskFocusedMessageId ||
         previous.taskFocusedConversationId != next.taskFocusedConversationId ||
@@ -318,7 +326,8 @@ class WorkspaceNavigation {
     _index = index;
     _location = _entries[index];
     if (!taskOnlyTransition(previous, _location) &&
-        !profileOnlyTransition(previous, _location)) {
+        !profileOnlyTransition(previous, _location) &&
+        !artifactOnlyTransition(previous, _location)) {
       ++_revision;
     }
     ++_taskRevision;
