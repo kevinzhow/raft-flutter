@@ -20,7 +20,8 @@ import 'computers_rack/computers_rack_page.dart';
 import 'workspace_host_scope.dart';
 import 'stale_counts_notice.dart';
 import 'workspace_browser_header.dart';
-import 'workspace_history_controls.dart' show handleWorkspaceHistoryShortcut;
+import 'workspace_history_controls.dart'
+    show followHistoryEntry, handleWorkspaceHistoryShortcut;
 import 'notification_activation_workspace.dart';
 import '../data/user_error.dart';
 import 'local_error_diagnostics.dart';

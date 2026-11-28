@@ -37,12 +37,9 @@ extension _WorkspacePanelDismissal on _WorkspaceViewState {
       return;
     }
     if (w.location.task != null || w.location.legacyTask != null) {
-      if (wide) {
-        w.navigation.back();
-      } else {
-        backMobilePage(w.navigation);
-      }
-      w.notifyListeners();
+      final previous = w.location;
+      wide ? w.navigation.back() : backMobilePage(w.navigation);
+      unawaited(followHistoryEntry(w, previous));
       return;
     }
     if (threadSelection.dismiss() || mainSelection.dismiss()) return;
@@ -81,18 +78,10 @@ extension _WorkspacePanelDismissal on _WorkspaceViewState {
       if (fromEscape) return;
     }
     final previous = w.location;
-    final next = wide ? w.navigation.back() : backMobilePage(w.navigation);
+    wide ? w.navigation.back() : backMobilePage(w.navigation);
     pendingDesktopSelection = false;
-    if (next.thread == null) w.closeThread(navigate: false);
     mobileSettingsRevision++;
-    w.notifyListeners();
-    if ({RaftRoute.channel, RaftRoute.dm}.contains(next.route) &&
-        (w.channel?.id != next.entityId ||
-            next.messageId != null && next.messageId != previous.messageId)) {
-      unawaited(
-        w.jumpToMessage(next.entityId!, next.messageId, navigate: false),
-      );
-    }
+    unawaited(followHistoryEntry(w, previous));
     refreshPanelDismissal();
   }
 

@@ -22,6 +22,7 @@ import 'task_surface_controller.dart';
 import 'task_v2_mode.dart';
 import 'task_view_in_thread.dart';
 import 'mobile_workspace_pages.dart';
+import 'workspace_history_controls.dart' show followHistoryEntry;
 
 export 'task_content_slot.dart' show TaskContentSlot, taskOpenLocation;
 
@@ -291,12 +292,11 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
 
   void back() {
     if (identity != currentIdentity) return;
-    if (RaftAdaptiveWorkspace.compactOf(context)) {
-      backMobilePage(w.navigation);
-    } else {
-      w.navigation.back();
-    }
-    w.notifyListeners();
+    final previous = w.location;
+    RaftAdaptiveWorkspace.compactOf(context)
+        ? backMobilePage(w.navigation)
+        : w.navigation.back();
+    unawaited(followHistoryEntry(w, previous));
   }
 
   @override
