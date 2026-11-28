@@ -154,14 +154,12 @@ class MembersAgentColumns extends StatelessWidget {
                     ? name ?? const SizedBox.shrink()
                     : subtitle ?? name ?? const SizedBox.shrink(),
               ),
-              for (final (index, width) in const [
-                102.0,
-                104.0,
-                176.0,
-                136.0,
-              ].indexed)
+              for (final (index, _) in labels.indexed)
                 if (index == 0 || expanded)
-                  SizedBox(width: width, child: cell(index)),
+                  SizedBox(
+                    width: const [102.0, 104.0, 176.0, 136.0][index],
+                    child: cell(index),
+                  ),
             ],
           );
         },

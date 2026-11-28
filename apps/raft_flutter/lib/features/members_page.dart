@@ -72,8 +72,9 @@ class MembersPage extends StatefulWidget {
   final Widget Function(
     MemberPageEntry entry,
     MembersEntryLayout layout,
-    String? computerName,
-  )
+    String? computerName, {
+    bool showComputer,
+  })
   buildEntry;
 
   @override
@@ -88,6 +89,9 @@ class _MembersPageState extends State<MembersPage>
   String _query = '';
   late List<MemberPageEntry> humans, agents;
   late Map<Object?, Map<String, dynamic>> computers;
+  _Grouping get grouping => !widget.showHumans && _grouping == _Grouping.creator
+      ? _Grouping.computer
+      : _grouping;
 
   @override
   WorkspaceController get usageWorkspace => widget.workspace;
@@ -158,6 +162,7 @@ class _MembersPageState extends State<MembersPage>
     double segmentHeight,
     RaftFitItem? usageFilter,
     Widget? usageRange,
+    List<RaftMenuEntry> usagePeriods,
   ) {
     final scopeOptions = [
       for (final value in scopes)
@@ -174,9 +179,6 @@ class _MembersPageState extends State<MembersPage>
           RaftSelectItem(value: value, label: raftText(context, value.label)),
     ];
     final canSwitch = scope == _Scope.agent && usageEnabled;
-    final grouping = !widget.showHumans && _grouping == _Grouping.creator
-        ? _Grouping.computer
-        : _grouping;
     final search = raftText(context, 'Search members');
     return RaftFitToolbar(
       wrap: showUsage,
@@ -231,6 +233,11 @@ class _MembersPageState extends State<MembersPage>
                   checked: showUsage == value,
                   onPressed: () => setState(() => _usage = value),
                 ),
+            if (usagePeriods.isNotEmpty) ...[
+              const RaftMenuEntry.separator(),
+              ...usagePeriods,
+              const RaftMenuEntry.separator(),
+            ],
             if (scope == _Scope.agent)
               for (final choice in groupChoices)
                 RaftMenuEntry(
@@ -368,7 +375,11 @@ class _MembersPageState extends State<MembersPage>
           : scope == _Scope.agent
           ? MembersEntryLayout.table
           : MembersEntryLayout.cards;
-      Widget controls(RaftFitItem? usageFilter, Widget? usageRange) => Column(
+      Widget controls(
+        RaftFitItem? usageFilter,
+        Widget? usageRange,
+        List<RaftMenuEntry> usagePeriods,
+      ) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
@@ -391,6 +402,7 @@ class _MembersPageState extends State<MembersPage>
                 desktopToolbar ? RaftDesktopMetrics.controlHeight : 32,
                 usageFilter,
                 usageRange,
+                usagePeriods,
               ),
             ),
           ),
@@ -431,9 +443,11 @@ class _MembersPageState extends State<MembersPage>
                         'working': agents
                             .where(
                               (entry) =>
-                                  agentRowAmbientDisplay(entry.record)
-                                      .activity ==
-                                  'working',
+                                  switch (agentRowAmbientDisplay(entry.record)
+                                      .activity) {
+                                    'working' || 'thinking' => true,
+                                    _ => false,
+                                  },
                             )
                             .length,
                       },
@@ -445,7 +459,7 @@ class _MembersPageState extends State<MembersPage>
                     ),
                   ),
           ),
-          if (!showUsage) controls(null, null),
+          if (!showUsage) controls(null, null, const []),
           Expanded(
             child: showUsage
                 ? AgentTokenUsagePane(
@@ -581,56 +595,62 @@ class _MembersPageState extends State<MembersPage>
   Widget _agentTable(
     BuildContext context,
     List<(String, List<MemberPageEntry>)> groups,
-  ) => RaftPullToRefresh(
-    enabled: RaftInteraction.of(context).touch,
-    onRefresh: widget.onRefresh,
-    child: CustomScrollView(
-      key: const PageStorageKey('desktop-directory-list'),
-      physics: RaftInteraction.of(context).touch
-          ? const AlwaysScrollableScrollPhysics()
-          : null,
-      slivers: [
-        for (final (heading, entries) in groups) ...[
-          SliverToBoxAdapter(
-            child: MembersAgentColumns(
-              name: heading.isEmpty
-                  ? null
-                  : RaftSectionEyebrow('$heading  ${entries.length}'),
-              labels: [
-                raftText(context, 'Status'),
-                raftText(context, 'Runtime'),
-                raftText(context, 'Model'),
-                raftText(context, 'Computer'),
-              ],
-              header: true,
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5),
-            sliver: RaftListRowGroup.sliver(
-              sliver: SliverList.builder(
-                itemCount: entries.length,
-                itemBuilder: (context, index) {
-                  final entry = entries[index];
-                  return widget.buildEntry(
-                    entry,
-                    MembersEntryLayout.table,
-                    computers[entry.record['machineId']]?['name'] as String?,
-                  );
-                },
+  ) {
+    final showComputer = grouping != _Grouping.computer;
+    return RaftPullToRefresh(
+      enabled: RaftInteraction.of(context).touch,
+      onRefresh: widget.onRefresh,
+      child: CustomScrollView(
+        key: const PageStorageKey('desktop-directory-list'),
+        physics: RaftInteraction.of(context).touch
+            ? const AlwaysScrollableScrollPhysics()
+            : null,
+        slivers: [
+          for (final (index, (heading, entries)) in groups.indexed) ...[
+            SliverToBoxAdapter(
+              child: MembersAgentColumns(
+                name: heading.isEmpty
+                    ? null
+                    : RaftSectionEyebrow('$heading  ${entries.length}'),
+                labels: index == 0
+                    ? [
+                        raftText(context, 'Status'),
+                        raftText(context, 'Runtime'),
+                        raftText(context, 'Model'),
+                        if (showComputer) raftText(context, 'Computer'),
+                      ]
+                    : const [],
+                header: true,
               ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5),
+              sliver: RaftListRowGroup.sliver(
+                sliver: SliverList.builder(
+                  itemCount: entries.length,
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    return widget.buildEntry(
+                      entry,
+                      MembersEntryLayout.table,
+                      computers[entry.record['machineId']]?['name'] as String?,
+                      showComputer: showComputer,
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+          SliverPadding(
+            padding: raftScrollPadding(
+              context,
+              const EdgeInsets.only(bottom: RaftSpace.x5),
             ),
           ),
         ],
-        SliverPadding(
-          padding: raftScrollPadding(
-            context,
-            const EdgeInsets.only(bottom: RaftSpace.x5),
-          ),
-        ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 
   WidgetBuilder _tileBand(
     List<MemberPageEntry> entries,
@@ -662,9 +682,6 @@ class _MembersPageState extends State<MembersPage>
     BuildContext context,
     List<MemberPageEntry> entries,
   ) {
-    final grouping = !widget.showHumans && _grouping == _Grouping.creator
-        ? _Grouping.computer
-        : _grouping;
     if (entries.isEmpty) return [];
     if (grouping == _Grouping.none) return [('', entries)];
     final groups = <Object?, (int, String, List<MemberPageEntry>)>{};

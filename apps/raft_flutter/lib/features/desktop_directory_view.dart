@@ -227,8 +227,9 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   Widget row(
     MemberPageEntry entry,
     MembersEntryLayout layout,
-    String? computer,
-  ) {
+    String? computer, {
+    bool showComputer = true,
+  }) {
     final target = entry.target;
     final kind = target.kind, id = target.id;
     final value = entry.record;
@@ -299,7 +300,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
           ),
           runtime == null ? '—' : runtimeLabelWithStatus(context, runtime),
           model == null ? '—' : runtimeModelLabel(runtime ?? '', model),
-          computer ?? '—',
+          if (showComputer) computer ?? '—',
         ],
       ],
       avatar: RaftAvatar(

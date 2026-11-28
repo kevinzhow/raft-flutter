@@ -478,7 +478,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Remove {name} from {server}. They will lose access to the server.":
       "将{name}从{server}移除。他们将失去对该服务器的访问权限。",
   "Make {name} a {role} in {server}.": "将{name}设为{server}的{role}。",
-  "Expires {date}": "到期时间：{date}",
+  "Expires {date}": "{date} 到期",
   "Invitation link · {used}/{maximum} uses": "邀请链接 · 已使用 {used}/{maximum} 次",
   "{field}: update the client to edit this field.": "{field}：请更新客户端以编辑此字段。",
   "Change Profile Image": "更改头像",

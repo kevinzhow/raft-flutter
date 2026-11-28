@@ -116,7 +116,12 @@ class AgentTokenUsagePane extends StatefulWidget {
   final DateTime Function()? clock;
   final VoidCallback? onOpenComputer;
   final ValueChanged<String>? onOpenAgent;
-  final Widget Function(RaftFitItem? filter, Widget range)? toolbar;
+  final Widget Function(
+    RaftFitItem? filter,
+    Widget range,
+    List<RaftMenuEntry> periods,
+  )?
+  toolbar;
 
   @override
   State<AgentTokenUsagePane> createState() => _AgentTokenUsagePaneState();
@@ -201,7 +206,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           : report.figures(_period, agentId: widget.agentId);
       final emptyDetail =
           noFigures != null && (!noFigures.supported || noFigures.empty);
-      final range = _rangeControl(context, report);
+      final (range, periodEntries) = _rangeControls(context, report);
       final detailInset =
           raftBreakpointWidth(context) >= RaftLayoutMetrics.desktopBreakpoint &&
               RaftInteraction.of(context).pointer
@@ -335,6 +340,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
                           onClear: () => setState(_filters.clear),
                         ),
                   range,
+                  periodEntries,
                 ),
                 Expanded(child: scroll),
               ],
@@ -342,47 +348,67 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
     },
   );
 
-  Widget _rangeControl(BuildContext context, AgentUsageReport? report) =>
+  (Widget, List<RaftMenuEntry>) _rangeControls(
+    BuildContext context,
+    AgentUsageReport? report,
+  ) {
+    final today = report?.to ?? agentUsageDay((widget.clock ?? DateTime.now)());
+    final selection = switch (_selectedDay) {
+      null => _period.days,
+      final day when day == today => 0,
+      _ => -1,
+    };
+    final presets = [
+      RaftSelectItem(value: 0, label: raftText(context, 'Today')),
+      for (final period in AgentUsagePeriod.values)
+        RaftSelectItem(
+          value: period.days,
+          label: icuText(context, _days, {'count': period.days}),
+        ),
+    ];
+    void choose(int? value) {
+      if (value == null || value == -1) return;
+      final period = AgentUsagePeriod.values
+          .where((period) => period.days == value)
+          .firstOrNull;
+      setState(() {
+        _selectedDay = value == 0 ? today : null;
+        if (period == null || period == _period) return;
+        _period = period;
+        _load();
+      });
+    }
+
+    return (
       SizedBox(
         width: _periodControlWidth,
         child: RaftSelectField<int>(
           key: const ValueKey('agent-usage-period'),
           label: raftText(context, 'Time range'),
-          value: _selectedDay == report?.to && _selectedDay != null
-              ? 0
-              : _selectedDay != null
-              ? -1
-              : _period.days,
+          value: selection,
           items: [
-            if (_selectedDay case final picked? when picked != report?.to)
+            if (_selectedDay case final picked? when picked != today)
               RaftSelectItem(
                 value: -1,
                 label: DateFormat.MEd(
                   Localizations.localeOf(context).toLanguageTag(),
                 ).format(DateTime.parse(picked)),
               ),
-            if (report != null)
-              RaftSelectItem(value: 0, label: raftText(context, 'Today')),
-            for (final period in AgentUsagePeriod.values)
-              RaftSelectItem(
-                value: period.days,
-                label: icuText(context, _days, {'count': period.days}),
-              ),
+            ...presets,
           ],
-          onChanged: (value) {
-            if (value == null || value == -1) return;
-            final period = AgentUsagePeriod.values
-                .where((period) => period.days == value)
-                .firstOrNull;
-            setState(() {
-              _selectedDay = value == 0 ? report?.to : null;
-              if (period == null || period == _period) return;
-              _period = period;
-              _load();
-            });
-          },
+          onChanged: choose,
         ),
-      );
+      ),
+      [
+        for (final option in presets)
+          RaftMenuEntry(
+            label: option.label,
+            checked: option.value == selection,
+            onPressed: () => choose(option.value),
+          ),
+      ],
+    );
+  }
 
   Widget _cacheReadSwitch(BuildContext context) => RaftGapRow(
     shrinkWrap: true,

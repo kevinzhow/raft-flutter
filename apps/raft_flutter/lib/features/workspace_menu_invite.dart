@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_location.dart';
@@ -182,6 +183,25 @@ class _InviteDialogState extends State<_InviteDialog> {
     if (token == null) return null;
     final origin = ContentLinks.originFor(w.client.origin).origin;
     return '$origin/join/$token';
+  }
+
+  String? get usedLabel {
+    final max = link?['maxUses'];
+    if (max == null) return null;
+    return raftFormat(context, 'Used {used}/{max}', {
+      'used': link?['useCount'] ?? 0,
+      'max': max,
+    });
+  }
+
+  String? get expiresOn {
+    final raw = link?['expiresAt'];
+    final date = raw is String ? DateTime.tryParse(raw) : null;
+    if (date == null) return null;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return raftFormat(context, 'Expires {date}', {
+      'date': DateFormat.yMd(locale).format(date.toLocal()),
+    });
   }
 
   Future<void> copy() async {
@@ -371,6 +391,8 @@ class _InviteDialogState extends State<_InviteDialog> {
       url: url,
       copied: copied,
       hasLink: link != null,
+      usedLabel: usedLabel,
+      expiresOn: expiresOn,
       maxUses: switch (linkLimits?['maxUses']) {
         final int limit => limit,
         _ => null,
