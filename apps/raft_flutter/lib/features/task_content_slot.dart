@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/phone_stack.dart' show artifactSlotRemoval;
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_controller.dart';
@@ -396,6 +397,7 @@ RaftLocation taskSlotLocation(RaftLocation at, Map<String, dynamic> row) =>
       'thread': null,
       'profile': null,
       'legacyTask': null,
+      ...artifactSlotRemoval,
     });
 
 /// Whether opening [next] from [previous] replaces the entry (another task in
@@ -424,7 +426,12 @@ bool openTaskFromList(
   final at = w.location;
   final base = wide && taskSlotRoutes.contains(at.route)
       ? taskSlotLocation(at, {'id': taskId})
-      : at.withQuery({'thread': null, 'profile': null, 'legacyTask': null});
+      : at.withQuery({
+          'thread': null,
+          'profile': null,
+          'legacyTask': null,
+          ...artifactSlotRemoval,
+        });
   w.closeThread(navigate: false);
   w.navigation.navigateTask(
     base.withTaskConversation(

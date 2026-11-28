@@ -11,6 +11,8 @@ import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/workspace_navigation.dart';
 import 'package:raft_flutter/features/artifacts/artifact_session.dart';
+import 'package:raft_flutter/features/mobile_workspace_pages.dart'
+    show backMobilePage;
 import 'package:raft_flutter/features/task_content_slot.dart';
 
 import 'support/artifact_fake_client.dart' show artifactShort;
@@ -143,8 +145,11 @@ void main() {
     expect(openTaskFromList(w, row, wide: false), isTrue);
     _noArtifact(w.location);
     expect(w.location.task, isNotNull);
-    w.navigation.back();
+    // The phone's Back (the page stack the location derives).
+    w.navigation.mobileTabs = const {'chat', 'activity', 'tasks'};
+    backMobilePage(w.navigation);
     _noArtifact(w.location);
+    expect(w.location.task, isNull);
   });
 
   group('cold start Back', () {

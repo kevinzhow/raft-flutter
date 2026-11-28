@@ -23,6 +23,8 @@ Map<String, String?> taskSlotRemoval(RaftLocation location) => {
   if (location.content?.kind == RaftContentKind.task) ...{
     'open': null,
     'msg': null,
+    // An Artifact shown beside the task closes with it.
+    ...artifactSlotRemoval,
   },
 };
 
