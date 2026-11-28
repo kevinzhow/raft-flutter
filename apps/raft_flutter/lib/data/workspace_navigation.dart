@@ -294,6 +294,7 @@ class WorkspaceNavigation {
           ? location.withQuery({
               'open': null,
               'msg': null,
+              ...artifactSlotRemoval,
               if (location.content!.kind == RaftContentKind.thread)
                 'thread': null,
             })
