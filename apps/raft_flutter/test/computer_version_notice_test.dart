@@ -116,6 +116,20 @@ void main() {
 
   final notice = find.byKey(const ValueKey('computer-version-notice'));
 
+  testWidgets('Computer detail shows the platform and required update', (
+    t,
+  ) async {
+    await mount(t, {...machine(), 'os': 'darwin arm64'});
+    expect(find.text('Online'), findsOneWidget);
+    expect(find.text('macOS'), findsOneWidget);
+    expect(find.text('macOS arm64'), findsOneWidget);
+    expect(
+      find.textContaining('Update required', findRichText: true),
+      findsOneWidget,
+    );
+    await leave(t);
+  });
+
   group('computerVersionTier', () {
     test('judges the server gate; a server without one gets the floor', () {
       expect(

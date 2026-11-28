@@ -186,6 +186,7 @@ class MemberDirectoryEntry extends StatelessWidget {
     this.statusDot,
     this.computerDot,
     this.activity,
+    this.runtimeLine = false,
   });
 
   final MembersEntryLayout layout;
@@ -195,6 +196,7 @@ class MemberDirectoryEntry extends StatelessWidget {
   final ValueChanged<Offset>? onMenu;
   final VoidCallback? onMessage;
   final bool selected, self, menuOpen;
+  final bool runtimeLine;
   final List<String> facts;
   final RaftStatusDot? statusDot, computerDot;
   final ValueListenable<String?>? activity;
@@ -213,6 +215,17 @@ class MemberDirectoryEntry extends StatelessWidget {
         ? rawDescription
         : null;
     if (layout == MembersEntryLayout.list) {
+      final subtitle =
+          runtimeLine && entry.target.kind == DesktopContentKind.agent
+          ? facts.skip(1).where((fact) => fact != '—').join(' · ')
+          : switch (entry.record) {
+              {
+                'role': 'guest',
+                'guestChannel': {'name': final String channel},
+              } =>
+                '#$channel',
+              _ => description,
+            };
       return RaftNavItem(
         label: entry.name,
         labelSuffix: self ? raftText(context, '(you)') : null,
@@ -234,9 +247,9 @@ class MemberDirectoryEntry extends StatelessWidget {
         onDoubleClick: onMessage,
         onTap: onOpen,
         leading: avatar,
-        activityText: activity,
-        description: description,
-        wrap: description != null,
+        description: subtitle == '' ? null : subtitle,
+        descriptionMono: runtimeLine,
+        wrap: subtitle?.isNotEmpty == true,
       );
     }
     final label = raftFormat(context, "Open {name}'s profile", {
@@ -270,10 +283,17 @@ class MemberDirectoryEntry extends StatelessWidget {
                   if (self)
                     RaftCssText(
                       raftText(context, '(you)'),
-                      style: tokens.scale(
-                        RaftTypeScale.body,
-                        color: tokens.ui.foregroundHint,
-                      ),
+                      style: layout == MembersEntryLayout.cards
+                          ? RaftTypography.body(
+                              tokens,
+                              size: RaftTypeScale.body.fontSize,
+                              line: RaftTypeScale.body.lineHeight,
+                              color: tokens.ui.foregroundHint,
+                            )
+                          : tokens.scale(
+                              RaftTypeScale.body,
+                              color: tokens.ui.foregroundHint,
+                            ),
                     ),
                   if (role != null)
                     RaftCssText(

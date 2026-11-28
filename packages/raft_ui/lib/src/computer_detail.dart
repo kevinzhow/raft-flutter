@@ -177,6 +177,7 @@ class RaftComputerDetailData {
     this.description,
     this.hostname,
     this.os,
+    this.platformLine,
     this.windows = false,
     this.computerVersion,
     this.versionKind = RaftComputerVersionKind.unknown,
@@ -232,7 +233,8 @@ class RaftComputerDetailData {
   /// The last web upgrade the server settled as failed / no response, while
   /// the Computer is still below its target (offline recovery card).
   final RaftComputerUpgradeOutcome requestOutcome;
-  final String? description, hostname, os, computerVersion, availableVersion;
+  final String? description, hostname, os, platformLine, computerVersion;
+  final String? availableVersion;
   final String? diskLowTitle;
   final bool online, isComputer, windows, canManage;
   final RaftComputerVersionKind versionKind;
@@ -912,29 +914,27 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                         horizontal: 20,
                         vertical: 16,
                       ),
-                      child: _gapColumn(24, [
-                        if (!isComputer && manage) ?_migrateBlock(t),
-                        if (!isComputer && !manage && !online)
-                          _connectionAdminOnly(t),
-                        if (isComputer &&
-                            !online &&
-                            d.upgradeLink ==
-                                RaftComputerUpgradeLink.reconnecting)
-                          _reconnectingCard(t, manage)
-                        else if (isComputer && !online)
-                          _recoveryCard(t, manage),
-                        _agentsSection(t, manage),
+                      child: _gapColumn(RaftSpace.x2, [
+                        _gapColumn(RaftSpace.x6, [
+                          if (!isComputer && manage) ?_migrateBlock(t),
+                          if (!isComputer && !manage && !online)
+                            _connectionAdminOnly(t),
+                          if (isComputer &&
+                              !online &&
+                              d.upgradeLink ==
+                                  RaftComputerUpgradeLink.reconnecting)
+                            _reconnectingCard(t, manage)
+                          else if (isComputer && !online)
+                            _recoveryCard(t, manage),
+                          _agentsSection(t, manage),
+                        ]),
                         if (online)
-                          // `mt-2` collapses into `space-y-6` (24px).
-                          Padding(
-                            padding: EdgeInsets.zero,
-                            child: _rule(
-                              t,
-                              top: true,
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 16),
-                                child: _workspacesSection(t, manage),
-                              ),
+                          _rule(
+                            t,
+                            top: true,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: _workspacesSection(t, manage),
                             ),
                           ),
                         if (manage) _actionsSection(t),
@@ -961,19 +961,21 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       color: t.colors['layer-canvas-muted'],
       child: RaftPanelHeaderBar(
         title: '${d.name}',
+        barHeight: widget.onClose != null
+            ? null
+            : MediaQuery.sizeOf(context).height <= 600
+            ? RaftMetrics.compactPanelHeader
+            : RaftMetrics.panelHeader,
         useHostChrome: true,
         iconAlwaysVisible: true,
         onBack: widget.onBack,
         backKey: widget.backKey,
         actions: [
           if (widget.onClose case final close?)
-            RaftButton(
+            RaftPanelAction(
               key: const ValueKey('machine-panel-close'),
               glyph: RaftGlyph.x,
               tooltip: raftText(context, 'Close'),
-              semanticLabel: raftText(context, 'Close'),
-              tone: RaftButtonRecipeVariant.ghost,
-              size: RaftButtonRecipeSize.iconMd,
               onPressed: close,
             ),
         ],
@@ -1006,10 +1008,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const RaftIconTile(
-              glyph: RaftGlyph.monitor,
-              size: RaftIconTileSize.lg,
-            ),
+            RaftIconTile(glyph: d.deviceGlyph, size: RaftIconTileSize.lg),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -1026,7 +1025,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                     label: raftText(
                       context,
                       online
-                          ? 'Connected'
+                          ? 'Online'
                           : upgrading
                           ? 'Updating…'
                           : 'Offline',
@@ -1041,17 +1040,18 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                     },
                     leading: RaftStatus(variant: tone),
                   ),
-                  if ((d.hostname ?? '').isNotEmpty)
-                    Text(
-                      d.hostname!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: t.scale(
-                        RaftTypeScale.monoMeta,
-                        mono: true,
-                        color: t.ui.foregroundHint,
+                  for (final fact in [d.hostname, d.platformLine].nonNulls)
+                    if (fact.isNotEmpty)
+                      RaftCssText(
+                        fact,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: t.scale(
+                          RaftTypeScale.monoMeta,
+                          mono: true,
+                          color: t.ui.foregroundHint,
+                        ),
                       ),
-                    ),
                 ],
               ),
             ),
@@ -1078,13 +1078,14 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       Flexible(child: RaftSectionEyebrow(label)),
       if (canEdit) ...[
         const SizedBox(width: 8),
-        KeyedSubtree(
+        RaftButton(
           key: key,
-          child: RaftInlineIconButton(
-            glyph: RaftGlyph.pencil,
-            tooltip: tooltip,
-            onPressed: onEdit,
-          ),
+          glyph: RaftGlyph.pencil,
+          glyphSize: 14,
+          tooltip: tooltip,
+          uiVariant: RaftButtonVariant.ghost,
+          uiSize: RaftButtonSize.iconMd,
+          onPressed: onEdit,
         ),
       ],
     ],
@@ -1123,7 +1124,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       _editableEyebrow(
         'Name',
         canEdit: manage && !editingName,
-        tooltip: 'Edit Computer Name',
+        tooltip: 'Edit computer name',
         key: const ValueKey('computer-edit-name'),
         onEdit: () => setState(() {
           nameField.text = '${d.name}';
@@ -1175,7 +1176,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       _editableEyebrow(
         'Description',
         canEdit: manage && !editingDescription,
-        tooltip: 'Edit Computer Description',
+        tooltip: 'Edit computer description',
         key: const ValueKey('computer-edit-description'),
         onEdit: () => setState(() {
           descriptionField.text = description;
@@ -1236,9 +1237,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         RaftCssText(
           description.isEmpty ? 'No description' : description,
           style: description.isEmpty
-              ? ink
-                    .body(14, 22.75, color: ink.muted(.4))
-                    .copyWith(fontStyle: FontStyle.italic)
+              ? ink.body(14, 20, color: t.ui.foregroundHint)
               : ink.body(14, 22.75, color: ink.strong),
         ),
     ]);
@@ -1252,8 +1251,17 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
 
     Widget versionValue() {
       if (version is String && version.isNotEmpty) {
-        final outdated = d.versionKind == RaftComputerVersionKind.outdated;
-        return Text.rich(
+        final requiredUpdate = d.versionNotice != null;
+        final outdated =
+            requiredUpdate || d.versionKind == RaftComputerVersionKind.outdated;
+        final status = requiredUpdate
+            ? 'Update required'
+            : outdated
+            ? 'Update available'
+            : d.versionKind == RaftComputerVersionKind.current
+            ? 'Up to date'
+            : null;
+        final value = Text.rich(
           TextSpan(
             children: [
               TextSpan(
@@ -1265,19 +1273,14 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                   w: outdated ? FontWeight.w700 : null,
                 ),
               ),
-              if (d.versionKind == RaftComputerVersionKind.current)
+              if (status != null)
                 TextSpan(
-                  text: ' · Up to date',
-                  style: ink.body(12, 16, color: ink.muted(.6)),
-                ),
-              if (d.versionKind == RaftComputerVersionKind.outdated)
-                TextSpan(
-                  text: ' · v${d.availableVersion} available',
+                  text: ' · ${raftText(context, status)}',
                   style: ink.body(
                     12,
                     16,
-                    color: ink.orange,
-                    w: FontWeight.w700,
+                    color: outdated ? ink.orange : t.ui.foregroundHint,
+                    w: outdated ? FontWeight.w700 : null,
                   ),
                 ),
               // Online, the link sits beside the upgrade button instead.
@@ -1291,12 +1294,24 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
             ],
           ),
         );
+        if (d.availableVersion case final target?
+            when !requiredUpdate && outdated) {
+          return RaftTooltip(
+            message: raftFormat(context, 'Update available: v{version}', {
+              'version': target,
+            }),
+            child: value,
+          );
+        }
+        return value;
       }
       return RaftCssText(
-        online ? 'Reading version…' : '—',
-        style: ink
-            .body(14, 20, color: ink.muted(.4))
-            .copyWith(fontStyle: FontStyle.italic),
+        !online
+            ? '—'
+            : d.versionNotice != null
+            ? 'Version not reported'
+            : 'Reading version…',
+        style: ink.body(14, 20, color: t.ui.foregroundHint),
       );
     }
 
@@ -1352,16 +1367,10 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           spacing: 32,
           runSpacing: 12,
           children: [
-            // `valueClassName="tabular-nums theme-brutal:font-mono"`.
-            RaftKeyValueRow.child(
+            RaftKeyValueRow(
               label: 'Created',
-              mono: false,
-              child: DefaultTextStyle.merge(
-                style: const TextStyle(
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
-                child: RaftCssText(d.createdLabel),
-              ),
+              mono: true,
+              value: d.createdLabel,
             ),
             if (isComputer)
               RaftKeyValueRow.child(
@@ -1398,9 +1407,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                       )
                     : RaftCssText(
                         'No creator',
-                        style: ink
-                            .body(14, 20, color: ink.muted(.4))
-                            .copyWith(fontStyle: FontStyle.italic),
+                        style: ink.body(14, 20, color: t.ui.foregroundHint),
                       ),
               ),
             // Web ComputerOwnerField: after Creator, for every machine row.
@@ -1767,10 +1774,11 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
             ),
         ],
         if (manage && !selectionMode) ...[
-          _smallButton(
-            'Create Agent',
+          RaftButton(
+            label: 'Create agent',
             glyph: RaftGlyph.plus,
-            variant: RaftButtonRecipeVariant.accent,
+            uiVariant: RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.md,
             onPressed: widget.actions.createAgent ?? () {},
           ),
         ],
@@ -2063,16 +2071,12 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         if (!scanned && !scanning)
           RaftCssText(
             'Click Scan to check for workspace directories on this computer.',
-            style: ink
-                .body(12, 16, color: ink.muted(.4))
-                .copyWith(fontStyle: FontStyle.italic),
+            style: ink.body(13, 18, color: t.ui.foregroundMuted),
           ),
         if (scanned && workspaces.isEmpty)
           RaftCssText(
             'No workspace directories yet',
-            style: ink
-                .body(12, 16, color: ink.muted(.4))
-                .copyWith(fontStyle: FontStyle.italic),
+            style: ink.body(13, 18, color: t.ui.foregroundHint),
           ),
         if (scanned && orphan > 0)
           Padding(

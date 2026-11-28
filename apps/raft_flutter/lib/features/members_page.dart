@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart' show RawScrollbar;
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -74,6 +75,7 @@ class MembersPage extends StatefulWidget {
     MembersEntryLayout layout,
     String? computerName, {
     bool showComputer,
+    bool runtimeLine,
   })
   buildEntry;
 
@@ -87,6 +89,7 @@ class _MembersPageState extends State<MembersPage>
   _Grouping _grouping = _Grouping.read();
   bool _usage = false;
   String _query = '';
+  final _rosterScroll = ScrollController();
   late List<MemberPageEntry> humans, agents;
   late Map<Object?, Map<String, dynamic>> computers;
   _Grouping get grouping => !widget.showHumans && _grouping == _Grouping.creator
@@ -110,6 +113,12 @@ class _MembersPageState extends State<MembersPage>
   void initState() {
     super.initState();
     _project();
+  }
+
+  @override
+  void dispose() {
+    _rosterScroll.dispose();
+    super.dispose();
   }
 
   @override
@@ -436,6 +445,7 @@ class _MembersPageState extends State<MembersPage>
         children: [
           RaftPanelHeaderBar(
             title: raftText(context, 'Members'),
+            columnMargin: widget.mobile ? RaftSpace.x5 : null,
             backKey: pushedServerPageBackKey,
             onBack: widget.onBack,
             titleSuffix:
@@ -571,34 +581,62 @@ class _MembersPageState extends State<MembersPage>
           for (var start = 0; start < entries.length; start += columns)
             _tileBand(entries, start, columns)
         else
-          for (final entry in entries)
+          for (final (index, entry) in entries.indexed)
             (_) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x2),
+              padding: EdgeInsets.fromLTRB(
+                RaftSpace.x2,
+                index == 0
+                    ? RaftSpace.hairline
+                    : RaftLayoutMetrics.sidebarRowGap,
+                RaftSpace.x2,
+                0,
+              ),
               child: widget.buildEntry(
                 entry,
                 layout,
                 computers[entry.record['machineId']]?['name'] as String?,
+                showComputer: grouping != _Grouping.computer,
+                runtimeLine: scope == _Scope.agent,
               ),
             ),
         if (layout == MembersEntryLayout.list)
           (_) => const SizedBox(height: RaftSpace.x2),
       ],
     ];
-    return RaftPullToRefresh(
-      enabled: RaftInteraction.of(context).touch,
-      onRefresh: widget.onRefresh,
-      child: ListView.builder(
-        key: const PageStorageKey('desktop-directory-list'),
-        physics: RaftInteraction.of(context).touch
-            ? const AlwaysScrollableScrollPhysics()
-            : null,
-        padding: raftScrollPadding(
-          context,
-          const EdgeInsets.only(bottom: RaftSpace.x5),
-        ),
-        itemCount: items.length,
-        itemBuilder: (context, index) => items[index](context),
+    final touch = RaftInteraction.of(context).touch;
+    Widget list = ListView.builder(
+      key: const PageStorageKey('desktop-directory-list'),
+      controller: layout == MembersEntryLayout.list ? _rosterScroll : null,
+      physics: touch ? const AlwaysScrollableScrollPhysics() : null,
+      padding: raftScrollPadding(
+        context,
+        const EdgeInsets.only(bottom: RaftSpace.x5),
       ),
+      itemCount: items.length,
+      itemBuilder: (context, index) => items[index](context),
+    );
+    if (layout == MembersEntryLayout.list) {
+      list = RawScrollbar(
+        controller: _rosterScroll,
+        interactive: !touch,
+        thumbColor: RaftTokens.of(context).ui.foreground.withValues(alpha: .42),
+        thickness: 7,
+        crossAxisMargin: 3,
+        mainAxisMargin: 3,
+        minThumbLength: 24,
+        radius: const Radius.circular(5),
+        timeToFade: const Duration(milliseconds: 600),
+        fadeDuration: const Duration(milliseconds: 400),
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: list,
+        ),
+      );
+    }
+    return RaftPullToRefresh(
+      enabled: touch,
+      onRefresh: widget.onRefresh,
+      child: list,
     );
   }
 
@@ -671,20 +709,23 @@ class _MembersPageState extends State<MembersPage>
         padding: const EdgeInsets.symmetric(
           horizontal: RaftSpace.x5,
         ).copyWith(bottom: start + columns < entries.length ? RaftSpace.x3 : 0),
-        child: RaftGapRow(
-          gap: 12,
-          children: [
-            for (var offset = 0; offset < columns; offset++)
-              Expanded(
-                child: start + offset < entries.length
-                    ? widget.buildEntry(
-                        entries[start + offset],
-                        MembersEntryLayout.cards,
-                        null,
-                      )
-                    : const SizedBox.shrink(),
-              ),
-          ],
+        child: IntrinsicHeight(
+          child: Row(
+            spacing: RaftSpace.x3,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var offset = 0; offset < columns; offset++)
+                Expanded(
+                  child: start + offset < entries.length
+                      ? widget.buildEntry(
+                          entries[start + offset],
+                          MembersEntryLayout.cards,
+                          null,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+            ],
+          ),
         ),
       );
 

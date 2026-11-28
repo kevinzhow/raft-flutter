@@ -105,6 +105,9 @@ WorkspaceController shellWorkspace(
   };
   final client = ParityFakeClient(
     user: base.authUser,
+    origin: ctx.props['routeSet'] == 'rack'
+        ? 'https://api.raft.build'
+        : 'https://parity-fixture.invalid',
     routes: {
       'GET /agents': [agentWire(cindy), agentWire(productUx)],
       'GET /servers/visual-server/sidebar-order': order,

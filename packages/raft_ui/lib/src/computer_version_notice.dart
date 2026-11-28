@@ -117,16 +117,16 @@ class RaftComputerVersionNotice extends StatelessWidget {
       key: const ValueKey('computer-version-notice'),
       live: false,
       title: title,
-      titleGap: 4,
       description: body,
-      size: RaftBannerRecipeSize.sm,
+      glyph: RaftGlyph.triangleAlert,
       action: showUpgrade
-          ? RaftAgentDialogButton(
+          ? RaftButton(
               key: const ValueKey('computer-version-notice-upgrade'),
               label: raftFormat(context, 'Upgrade to v{version}', {
                 'version': target,
               }),
-              size: RaftButtonRecipeSize.md,
+              uiSize: RaftButtonSize.md,
+              uiVariant: RaftButtonVariant.standard,
               onPressed: onUpgrade,
             )
           : null,
@@ -172,15 +172,12 @@ class RaftComputerVersionNotice extends StatelessWidget {
                   ],
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: RaftUnderlineTextButton(
+                    child: RaftTextLink(
                       key: const ValueKey('computer-version-notice-docs'),
                       label: raftText(context, 'Install guide'),
-                      style: RaftTypography.body(
-                        t,
-                        size: 14,
-                        line: 20,
-                        weight: FontWeight.w700,
-                      ),
+                      variant: RaftTextLinkVariant.strong,
+                      scale: RaftTypeScale.callout,
+                      external: true,
                       onPressed: onOpenInstallGuide,
                     ),
                   ),

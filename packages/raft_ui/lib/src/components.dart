@@ -845,6 +845,7 @@ class RaftNavItem extends StatelessWidget {
     this.trailing,
     this.leading,
     this.description,
+    this.descriptionMono = false,
     this.labelSuffix,
     this.tag,
     this.role = RaftNavItemRole.generic,
@@ -883,6 +884,7 @@ class RaftNavItem extends StatelessWidget {
   final int unread;
   final Widget? trailing, leading;
   final String? description, labelSuffix;
+  final bool descriptionMono;
 
   /// Chip between the label and the description (a Guest `RaftSidebarTag`).
   final Widget? tag;
@@ -1134,7 +1136,13 @@ class RaftNavItem extends StatelessWidget {
                 ? TextOverflow.ellipsis
                 : null,
             style: rosterRow
-                ? t.scale(RaftTypeScale.footnote, color: t.ui.foregroundMuted)
+                ? t.scale(
+                    descriptionMono
+                        ? RaftTypeScale.monoMeta
+                        : RaftTypeScale.footnote,
+                    mono: descriptionMono,
+                    color: t.ui.foregroundMuted,
+                  )
                 : RaftTypography.heading(
                     t,
                     size: 12,
@@ -1467,7 +1475,7 @@ class RaftNavItem extends StatelessWidget {
                   viewportHeight:
                       viewportHeight ?? MediaQuery.sizeOf(context).height,
                 ) -
-                (wrap ? 2 : 0)
+                (wrap || rosterRow ? 2 : 0)
           : null,
       kind: RaftControlKind.sidebar,
       visualWidth: paintWidth,
@@ -1477,7 +1485,7 @@ class RaftNavItem extends StatelessWidget {
                   viewportHeight:
                       viewportHeight ?? MediaQuery.sizeOf(context).height,
                 ) -
-                (wrap ? 2 : 0)
+                (wrap || rosterRow ? 2 : 0)
           : 32,
       flexibleHeight: wrap,
       padding: fullWidthCell
@@ -1490,9 +1498,7 @@ class RaftNavItem extends StatelessWidget {
               horizontal: phoneConversation || rosterRow
                   ? RaftSpace.x3
                   : RaftSpace.x1_5,
-              vertical: rosterRow && wrap
-                  ? RaftSpace.x2 + RaftSpace.hairline
-                  : RaftSpace.x1_5,
+              vertical: rosterRow && wrap ? RaftSpace.x2 : RaftSpace.x1_5,
             )
           : null,
       variant: selected ? RaftControlVariant.surface : RaftControlVariant.ghost,

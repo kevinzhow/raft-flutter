@@ -29,7 +29,9 @@ import 'computer_upgrade_hint.dart';
 import 'computer_runtime_chip_groups.dart';
 import 'computer_runtime_detection.dart';
 import 'computer_version_tier.dart';
-import 'computers_rack/computers_rack_view.dart' show rackDeviceGlyph;
+import 'computers_rack/computers_rack_model.dart' show hostProviderLabels;
+import 'computers_rack/computers_rack_view.dart'
+    show rackDeviceGlyph, rackOsName;
 import 'computer_setup_commands.dart';
 import 'model_label_catalog.dart';
 import 'computer_upgrade_outcome.dart';
@@ -43,6 +45,7 @@ import '../data/runtime_account_usage.dart';
 // ------------------------------------------------------------------ model
 
 final _semver = RegExp(r'^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$');
+final _platformWhitespace = RegExp(r'\s+');
 
 /// shared compareComputerVersions / isComputerSemver.
 bool isComputerSemver(String? v) => v != null && _semver.hasMatch(v);
@@ -112,6 +115,21 @@ ComputerVersionFact computerVersionFact(Map m, String? latest) {
     return const ComputerVersionCannotCheck();
   }
   return ComputerVersionOutdated(l);
+}
+
+String? _computerPlatformName(String? os) {
+  final reported = os?.trim() ?? '';
+  if (reported.isEmpty) return null;
+  final parts = reported.split(_platformWhitespace);
+  final platform = parts.first.toLowerCase();
+  final name = switch (platform) {
+    'macos' => 'macOS',
+    _ when platform.startsWith('darwin') => 'macOS',
+    _ when platform.startsWith('win') => 'Windows',
+    _ when platform.startsWith('linux') => 'Linux',
+    _ => null,
+  };
+  return name == null ? reported : [name, ...parts.skip(1)].join(' ');
 }
 
 /// getComputerAvailableVersion: the `→ vX` a list row points at.
@@ -695,7 +713,11 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel>
       name: '${m['name'] ?? ''}',
       description: m['description'] as String?,
       hostname: m['hostname'] as String?,
-      os: m['os'] as String?,
+      os: _computerPlatformName(m['os'] as String?),
+      platformLine: [
+        rackOsName(m),
+        hostProviderLabels[m['hostProvider']],
+      ].nonNulls.join(' · '),
       online: online,
       isComputer: isComputer,
       windows: windows,

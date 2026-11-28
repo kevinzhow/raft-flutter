@@ -639,11 +639,13 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.useHostChrome = false,
     this.handlesHostMoves = false,
     this.itemGap,
+    this.barHeight,
   });
 
   final bool useHostChrome;
   final bool handlesHostMoves;
   final double? itemGap;
+  final double? barHeight;
 
   /// Use the v1.24 fine-pointer column margin and bar-button overhang.
   final bool desktopBar;
@@ -717,10 +719,12 @@ class RaftPanelHeaderBar extends StatelessWidget {
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     final grows = RaftScaled.grows(context);
     final inline = !grows && (inlineMeta || !narrow);
-    final height = RaftLayoutMetrics.shellHeaderHeight(
-      t,
-      MediaQuery.sizeOf(context).height,
-    );
+    final height =
+        barHeight ??
+        RaftLayoutMetrics.shellHeaderHeight(
+          t,
+          MediaQuery.sizeOf(context).height,
+        );
     final gap = itemGap ?? (narrow ? 8.0 : 12.0);
     final titleStyle = t.scale(t.typeSlot('headline'));
     final metaStyle = inlineMeta || profileHandle
@@ -969,13 +973,11 @@ class RaftPanelHeaderBar extends StatelessWidget {
                 leftPadding: leftPadding,
                 columnMargin: columnMargin,
               ));
+    final height = barHeight ?? s.header.height;
     final header = Container(
-      height: grows ? null : s.header.height,
+      height: grows ? null : height,
       constraints: BoxConstraints(
-        minHeight: math.max(
-          s.header.minHeight ?? 0,
-          grows ? s.header.height ?? 0 : 0,
-        ),
+        minHeight: math.max(s.header.minHeight ?? 0, grows ? height ?? 0 : 0),
       ),
       padding: grows
           ? barPadding.copyWith(

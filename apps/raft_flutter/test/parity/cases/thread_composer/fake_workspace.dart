@@ -10,11 +10,11 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
 class ParityFakeClient extends RaftClient {
-  ParityFakeClient({required Map<String, dynamic> user, required this.routes})
-    : super(
-        origin: 'https://parity-fixture.invalid',
-        sessionStore: MemorySessionStore(),
-      ) {
+  ParityFakeClient({
+    required Map<String, dynamic> user,
+    required this.routes,
+    super.origin = 'https://parity-fixture.invalid',
+  }) : super(sessionStore: MemorySessionStore()) {
     this.user = RaftRecord(user);
     selectServer('visual-server');
   }

@@ -229,6 +229,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     MembersEntryLayout layout,
     String? computer, {
     bool showComputer = true,
+    bool runtimeLine = false,
   }) {
     final target = entry.target;
     final kind = target.kind, id = target.id;
@@ -277,6 +278,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       menuOpen: _menuTarget?.kind == kind && _menuTarget?.id == id,
       onMenu: mayMessage ? (at) => openMenu(at, target, value) : null,
       activity: agent ? widget.activities?.rowText(id) : null,
+      runtimeLine: runtimeLine,
       statusDot: agent ? RaftStatusDot(activity: tone) : null,
       computerDot: machine == null
           ? null
