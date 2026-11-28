@@ -56,7 +56,10 @@ Widget _build(ParityContext ctx) {
   routes['GET /servers/visual-server/members'] = base.serverMembers;
   final client = _TasksClient(user: base.authUser, routes: routes);
   final workspace = WorkspaceController(client)
-    ..server = RaftRecord(base.serverRecord)
+    ..server = RaftRecord({
+      ...base.serverRecord,
+      if (ctx.props['state'] == 'guest-create') 'role': 'guest',
+    })
     ..section = 'tasks'
     ..channels = [
       RaftChannel(Map<String, dynamic>.from(fixture['channel'] as Map)),
@@ -82,6 +85,10 @@ Widget _build(ParityContext ctx) {
 }
 
 Future<void> _checkState(WidgetTester tester, ParityContext ctx) async {
+  if (ctx.props['state'] == 'guest-create') {
+    expect(find.byKey(const ValueKey('create-task-message')), findsOneWidget);
+    return;
+  }
   if (ctx.props['platform'] == 'desktop') {
     await tester.sendEventToBinding(
       PointerHoverEvent(
@@ -211,9 +218,13 @@ final Map<String, ParityCase> extTasksV124Cases = {
         'detail-switch',
         'detail-close',
         'detail-focus',
+        'guest-create',
       ],
     ),
-    ('phone', ['list-mine', 'list-all', 'detail-open', 'detail-close']),
+    (
+      'phone',
+      ['list-mine', 'list-all', 'detail-open', 'detail-close', 'guest-create'],
+    ),
   ])
     for (final state in states)
       for (final theme in ['brutal', 'elegant-dark'])

@@ -66,7 +66,11 @@ function ParityExtAuthView({ p }: { p: NonNullable<ReturnType<typeof parityExtAu
   } else if (p.view === "reset") {
     page = <ParityExtAuthResetPage token="parity-reset-token" onBack={() => undefined} />;
   } else if (p.view === "verify") {
-    page = <ParityExtAuthVerifyPage />;
+    const fromLink = p.raw.includes(".verify.link-pending.");
+    page = <ParityExtAuthVerifyPage
+      initialToken={fromLink ? "parity-verify-token" : undefined}
+      initialReturnTo={fromLink ? "/artifacts/release-checklist?revision=1" : undefined}
+    />;
   } else if (p.view === "server-selector") {
     page = <ParityExtAuthServerSelector onSelect={() => undefined} />;
   } else if (p.view === "computer-step") {

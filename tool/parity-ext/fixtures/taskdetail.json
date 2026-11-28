@@ -1020,6 +1020,51 @@
    },
    "replies": [],
    "history": []
+  },
+  "followers": {
+   "key": "empty",
+   "task": {
+    "id": "task-followers",
+    "messageId": "msg-td-41",
+    "threadChannelId": "thread-td-41",
+    "channelId": "channel-design",
+    "channelName": "design",
+    "channelType": "channel",
+    "taskNumber": 42,
+    "title": "Review the release checklist",
+    "status": "in_progress",
+    "claimedByType": "agent",
+    "claimedById": "agent-cindy",
+    "claimedByName": "Cindy",
+    "claimedAt": "2026-06-24T09:30:00.000Z",
+    "completedAt": null,
+    "createdById": "visual-user",
+    "createdByType": "user",
+    "createdByName": "artin",
+    "createdAt": "2026-06-24T08:00:00.000Z",
+    "updatedAt": "2026-06-24T10:00:00.000Z",
+    "source": "message",
+    "revision": 1,
+    "conversationAnchored": true,
+    "conversationChannelId": "task-followers-conversation",
+    "sourceMessageId": null,
+    "hostMessageId": null
+   },
+   "parent": {
+    "id": "msg-td-30",
+    "seq": 1,
+    "channelId": "channel-design",
+    "messageType": "chat",
+    "senderType": "user",
+    "senderId": "visual-user",
+    "senderName": "artin",
+    "content": "Wire the Tasks board to the new status lanes",
+    "createdAt": "2026-06-24T08:00:00.000Z",
+    "threadId": "thread-td-30",
+    "reactions": []
+   },
+   "replies": [],
+   "history": []
   }
  },
  "members": {
@@ -1111,6 +1156,24 @@
     "joined": true
    }
   ],
+  "GET /channels/channel-design": {
+   "id": "channel-design",
+   "serverId": "visual-server",
+   "name": "design",
+   "description": "Product and UI decisions",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/channel-android": {
+   "id": "channel-android",
+   "serverId": "visual-server",
+   "name": "android-artifacts",
+   "description": "Builds and screenshots",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
   "GET /channels/dm": [],
   "GET /channels/channel-design/members": {
    "humans": [
@@ -2493,6 +2556,159 @@
    "GET /messages/channel/thread-td-40": {
     "messages": [],
     "hasMore": false
+   }
+  },
+  "td-followers": {
+   "GET /tasks/channel/channel-design": {
+    "tasks": [
+     {
+      "id": "task-followers",
+      "messageId": "msg-td-41",
+      "threadChannelId": "thread-td-41",
+      "channelId": "channel-design",
+      "channelName": "design",
+      "channelType": "channel",
+      "taskNumber": 42,
+      "title": "Review the release checklist",
+      "status": "in_progress",
+      "claimedByType": "agent",
+      "claimedById": "agent-cindy",
+      "claimedByName": "Cindy",
+      "claimedAt": "2026-06-24T09:30:00.000Z",
+      "completedAt": null,
+      "createdById": "visual-user",
+      "createdByType": "user",
+      "createdByName": "artin",
+      "createdAt": "2026-06-24T08:00:00.000Z",
+      "updatedAt": "2026-06-24T10:00:00.000Z",
+      "source": "message",
+      "revision": 1,
+      "conversationAnchored": true,
+      "conversationChannelId": "task-followers-conversation",
+      "sourceMessageId": null,
+      "hostMessageId": null
+     }
+    ]
+   },
+   "GET /tasks/task-followers/history": {
+    "events": []
+   },
+   "GET /channels/channel-design/threads/msg-td-41": {
+    "threadChannelId": "thread-td-41"
+   },
+   "GET /messages/context/msg-td-41": {
+    "messages": [
+     {
+      "id": "msg-td-30",
+      "seq": 1,
+      "channelId": "channel-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "content": "Wire the Tasks board to the new status lanes",
+      "createdAt": "2026-06-24T08:00:00.000Z",
+      "threadId": "thread-td-30",
+      "reactions": []
+     }
+    ],
+    "targetMessageId": "msg-td-41"
+   },
+   "GET /messages/channel/thread-td-41": {
+    "messages": [],
+    "hasMore": false
+   },
+   "GET /tasks/task-followers": {
+    "task": {
+     "id": "task-followers",
+     "messageId": "msg-td-41",
+     "threadChannelId": "thread-td-41",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 42,
+     "title": "Review the release checklist",
+     "status": "in_progress",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "claimedAt": "2026-06-24T09:30:00.000Z",
+     "completedAt": null,
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-24T08:00:00.000Z",
+     "updatedAt": "2026-06-24T10:00:00.000Z",
+     "source": "message",
+     "revision": 1,
+     "conversationAnchored": true,
+     "conversationChannelId": "task-followers-conversation",
+     "sourceMessageId": null,
+     "hostMessageId": null
+    }
+   },
+   "GET /tasks/channel/channel-design/number/42": {
+    "task": {
+     "id": "task-followers",
+     "messageId": "msg-td-41",
+     "threadChannelId": "thread-td-41",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 42,
+     "title": "Review the release checklist",
+     "status": "in_progress",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "claimedAt": "2026-06-24T09:30:00.000Z",
+     "completedAt": null,
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-24T08:00:00.000Z",
+     "updatedAt": "2026-06-24T10:00:00.000Z",
+     "source": "message",
+     "revision": 1,
+     "conversationAnchored": true,
+     "conversationChannelId": "task-followers-conversation",
+     "sourceMessageId": null,
+     "hostMessageId": null
+    }
+   },
+   "GET /messages/channel/task-followers-conversation": {
+    "messages": [],
+    "hasMore": false
+   },
+   "GET /channels/task-followers-conversation": {
+    "id": "task-followers-conversation",
+    "serverId": "visual-server",
+    "type": "task",
+    "name": "task-followers-conversation",
+    "parentChannelId": "channel-design",
+    "parentTaskId": "task-followers",
+    "joined": true
+   },
+   "GET /channels/threads/followers": {
+    "threads": [
+     {
+      "threadChannelId": "task-followers-conversation",
+      "canManage": true,
+      "agents": [
+       {
+        "id": "agent-partner-review",
+        "name": "partner-reviewer",
+        "displayName": "Partner reviewer",
+        "avatarUrl": "pixel:robot",
+        "status": "online",
+        "serverId": "visual-partner",
+        "serverName": "Partner",
+        "isCurrentServer": false,
+        "canRemove": false
+       }
+      ]
+     }
+    ]
    }
   }
  }

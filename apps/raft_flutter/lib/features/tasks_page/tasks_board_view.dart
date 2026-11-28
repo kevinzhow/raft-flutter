@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../../data/workspace_controller.dart';
@@ -55,8 +56,10 @@ bool _truthy(Object? value) => value != null && value != '' && value != false;
 
 /// Web `canEditTaskStatus`: any member who can see the task may move it,
 /// unless it is read-only (a historical joint task).
-bool canEditTaskStatus(Map<String, dynamic> task) =>
-    !_truthy(task['readOnlyReason']);
+bool canEditTaskStatus(Map<String, dynamic> task) => raftAuthorizeTaskWrite(
+  canWriteChannel: true,
+  readOnlyReason: task['readOnlyReason'],
+);
 
 /// Each status the dragged card may move to; its own column takes it back
 /// (Web `allowedDropStatuses`).

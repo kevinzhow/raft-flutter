@@ -473,3 +473,22 @@ class RaftLocation {
   @override
   int get hashCode => uri.hashCode;
 }
+
+Uri raftRemoveQueryParameters(Uri uri, Set<String> keys) {
+  if (!uri.hasQuery) return uri;
+  final remaining = uri.query
+      .split('&')
+      .where(
+        (part) =>
+            part.isNotEmpty &&
+            !keys.contains(Uri.decodeQueryComponent(part.split('=').first)),
+      )
+      .join('&');
+  if (remaining.isNotEmpty) return uri.replace(query: remaining);
+  final address = uri.toString();
+  final start = address.indexOf('?');
+  final fragment = address.indexOf('#', start);
+  return Uri.parse(
+    address.replaceRange(start, fragment < 0 ? address.length : fragment, ''),
+  );
+}

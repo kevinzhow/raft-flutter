@@ -697,10 +697,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
     final canExplain =
         !channel.archived &&
         !isAllChannel &&
-        channel.json['channelCapabilities'] is Map &&
-        (channel.json['channelCapabilities']
-                as Map)['changeChannelMemberRoles'] ==
-            true &&
+        raftCanProjectedChannel(channel, 'changeChannelMemberRoles') &&
         !self &&
         protectedServerAdmin &&
         effective != 'member';

@@ -222,6 +222,11 @@
     }
    }
   },
+  "verify-link-pending": {
+   "POST /auth/verify-email": {
+    "$pending": true
+   }
+  },
   "survey-error": {
    "PATCH /auth/me": {
     "$status": 500,

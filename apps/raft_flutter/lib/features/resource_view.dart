@@ -74,6 +74,7 @@ import 'search_sections.dart';
 import 'search_snapshot.dart';
 import 'task_content_slot.dart';
 import 'message_task_actions.dart' show TaskV2ConversationsFlag;
+import 'task_v2_mode.dart' show taskV2StatusOptions;
 import 'tasks_page/tasks_page.dart';
 import 'task_surface.dart';
 import 'task_status_request.dart';
@@ -5216,7 +5217,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                 // TasksPanel.tsx: "New Task" (Plus 12) is channel mode only;
                 // task v2's Tasks page has it too (TasksPageToolbar.tsx).
                 if ((widget.channelId != null || v2) &&
-                    w.server?.string('role') != 'guest')
+                    raftCanReadAdmittedConversation(w.server?.string('role')))
                   RaftNewTaskButton(
                     onPressed: () => createTask(sourceScope: scope),
                   ),
@@ -5328,22 +5329,24 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
 
   /// Task actions resolve the accepted task by id: a background refresh
   /// replaces row objects, never the task a drag or menu refers to.
+  bool taskWritable(Map<String, dynamic> row) => raftAuthorizeTaskWrite(
+    canWriteChannel: raftCanWriteTaskChannel(
+      w.server?.string('role'),
+      w.channelById('${row['channelId']}'),
+    ),
+    readOnlyReason: row['readOnlyReason'],
+  );
+
   bool canMoveTask(Map<String, dynamic> row, String scope, String next) {
     final current = taskById(row['id']);
-    if (!accepts(scope) ||
-        current == null ||
-        current['status'] == next ||
-        !raftTaskStatuses.contains(next) ||
-        current['readOnlyReason'] != null ||
-        w.server?.string('role') == 'guest' ||
-        !w.channels.any(
-          (c) => c.id == current['channelId'] && c.joined && !c.archived,
-        )) {
-      return false;
-    }
-    final role = w.server?.string('role');
-    return ['owner', 'admin'].contains(role) ||
-        (raftTaskTransitions[current['status']] ?? []).contains(next);
+    return accepts(scope) &&
+        current != null &&
+        current['status'] != next &&
+        taskWritable(current) &&
+        taskV2StatusOptions(
+          current,
+          TaskV2ConversationsFlag.of(w).enabled,
+        ).contains(next);
   }
 
   Widget draggableTask(Map<String, dynamic> row, String scope) {
@@ -5547,10 +5550,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         return const SizedBox.shrink();
       }
       final status = rowStatus;
-      final role = w.server?.string('role');
-      final allowed = ['owner', 'admin'].contains(role)
-          ? raftTaskStatuses
-          : [status, ...?raftTaskTransitions[status]];
+      final allowed = taskV2StatusOptions(
+        row,
+        TaskV2ConversationsFlag.of(w).enabled,
+      );
       final card = RaftTaskCard(
         key: ValueKey('task-${row['id']}'),
         title: name,
@@ -5563,12 +5566,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         legacy: row['isLegacy'] == true,
         onTap: () => taskDetails(row, sourceScope: scope),
         statusOptions: allowed,
-        onStatus:
-            role == 'guest' ||
-                row['readOnlyReason'] != null ||
-                !w.channels.any(
-                  (c) => c.id == row['channelId'] && c.joined && !c.archived,
-                )
+        onStatus: !taskWritable(row)
             ? null
             : (next) => moveTaskStatus(
                 command,
@@ -5590,10 +5588,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
 
   Future<void> createTask({String? sourceScope}) async {
     final scope = sourceScope ?? authority;
-    if (!accepts(scope) || w.server?.string('role') == 'guest') return;
+    if (!accepts(scope)) return;
     final channelId = widget.channelId;
+    final role = w.server?.string('role');
     if (channelId != null &&
-        w.channels.any((c) => c.id == channelId && c.joined && !c.archived)) {
+        raftCanWriteTaskChannel(role, w.channelById(channelId))) {
       // TasksPanel channel mode: CreateTaskDialog (title rows, no channel
       // picker or description).
       await scopedDialog<void>(
@@ -5611,8 +5610,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       );
       return;
     }
-    final available = w.channels.where((c) => c.joined && !c.archived).toList();
-    if (available.isEmpty) {
+    if (!w.channels.any((c) => raftCanWriteTaskChannel(role, c))) {
       setState(() => error = 'Join a channel before creating a task.');
       return;
     }
@@ -5636,7 +5634,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     String? sourceScope,
   }) async {
     final scope = sourceScope ?? authority;
-    if (!accepts(scope) || !w.can('assignTasks')) return;
+    if (!accepts(scope) || !taskWritable(task)) return;
     try {
       final people = await w.query('/channels/${task['channelId']}/members');
       if (!accepts(scope)) return;

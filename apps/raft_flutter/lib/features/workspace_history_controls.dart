@@ -118,6 +118,17 @@ Future<void> _openThreadFor(
   );
 }
 
+Uri? storedServerSurface(String? stored, String slug) {
+  final uri = stored == null ? null : Uri.tryParse(stored);
+  return uri != null &&
+          !uri.hasScheme &&
+          !uri.hasAuthority &&
+          uri.pathSegments.firstOrNull == 's' &&
+          uri.pathSegments.elementAtOrNull(1) == slug
+      ? uri
+      : null;
+}
+
 /// After selecting the workspace, send explicit message links through content
 /// authorization and restore other routes from the accepted workspace URI.
 void restoreAcceptedLocation(

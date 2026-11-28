@@ -10754,7 +10754,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "taskStore.updateTaskStatus: choosing 'In Progress' from any status control (board drag, card badge menu, TaskProperties status picker) on an unassigned todo task calls claimTask; the 'Claim' label has no standalone button",
-   "gate": "Any non-guest member",
+   "gate": "Write access to the task's channel, including a Guest's bound channel",
    "flutterEntry": "task_status_request.dart taskStatusRequest: todo -> in_progress on an unheld task goes to PATCH /claim from the board drop, the card status menu and the detail Status picker (Web taskStore.updateTaskStatus)",
    "flutterRefs": [
     {
@@ -10782,7 +10782,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "TasksPanel board drag-and-drop; TaskCard InlineBadgeEditor; TaskProperties Status; MessageItem context menu 'Mark as Done'/'Reopen Task'",
-   "gate": "Non-guest; read-only (joint/historical) tasks blocked; members get legal transitions only, owners/admins any status",
+   "gate": "Channel write access, including a Guest's bound channel. Historical joint tasks are read-only.",
    "flutterEntry": "resource_view.dart board DragTarget + card onStatus; task_surface_controller.dart update('status'); message_context_menu_sections.dart 'Mark as Done'/'Reopen Task'",
    "flutterRefs": [
     {
@@ -10825,8 +10825,8 @@
    "background": false,
    "status": "covered",
    "webEntry": "TasksPanel (Tasks rail tab /s/:slug/tasks for server-wide; Chat > Tasks tab for channel) channel mode > 'New Task' > CreateTaskDialog (multiple title rows)",
-   "gate": "Non-guest member of the channel",
-   "flutterEntry": "create_task_dialog.dart CreateTaskDialog via 'Create Task' (channel tab, and the Tasks page with the channel picked in the dialog; guest hidden)",
+   "gate": "Write access to the channel, including a Guest's bound channel",
+   "flutterEntry": "CreateTaskDialog from the channel tab and CreateTaskMessageDialog from the Tasks page",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/create_task_dialog.dart",
@@ -10949,7 +10949,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "TasksPanel DndContext + DroppableColumn (PointerSensor/TouchSensor long-press)",
-   "gate": "Non-guest; legal transitions for members",
+   "gate": "Channel write access with the applicable status options",
    "flutterEntry": "resource_view.dart DragTarget<_TaskDrag> columns, canMoveTask",
    "flutterRefs": [
     {
@@ -11021,7 +11021,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "TaskCard InlineBadgeEditor",
-   "gate": "Non-guest, not read-only; admins any status, members legal transitions",
+   "gate": "Channel write access and a writable task, with the applicable status options",
    "flutterEntry": "resource_view.dart RaftTaskCard statusOptions/onStatus",
    "flutterRefs": [
     {
@@ -11092,8 +11092,8 @@
    "capability": "New Task dialog: multiple title rows, Add another, remove row, batch submit button label by count",
    "background": false,
    "status": "covered",
-   "webEntry": "CreateTaskDialog (channel mode, non-guest)",
-   "gate": "Non-guest member",
+   "webEntry": "CreateTaskDialog (channel mode)",
+   "gate": "Write access to the channel, including a Guest's bound channel",
    "flutterEntry": "create_task_dialog.dart",
    "flutterRefs": [
     {
@@ -11189,7 +11189,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "TaskModalHead + TaskProperties + embedded ThreadPanel (intent task)",
-   "gate": "Any member who can open the task; guests read-only",
+   "gate": "Read access to open. Write access to a live parent channel for edits, including a Guest's bound channel.",
    "flutterEntry": "task_surface.dart SourceTaskSurface -> RaftTaskSurface (description toggle via RaftShowMoreToggle) + RaftChatView thread",
    "flutterRefs": [
     {
@@ -11224,11 +11224,11 @@
    "kind": "ui",
    "id": "ui:tasks.detail-status-picker",
    "area": "tasks",
-   "capability": "Change status from the detail Properties row (legal transitions for members, any for admins)",
+   "capability": "Change status from the detail Properties row",
    "background": false,
    "status": "covered",
    "webEntry": "TaskProperties Status InlineBadgeEditor",
-   "gate": "Non-guest, not read-only",
+   "gate": "Channel write access and a writable task",
    "flutterEntry": "RaftTaskSurface Status; controller statusOptions",
    "flutterRefs": [
     {
@@ -11459,7 +11459,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "LeftRail Tasks tab / MobileTabBar / route 'tasks' -> TasksRoute",
-   "gate": "Any member (guests read-only)",
+   "gate": "Members and Guests. Tasks reflect channel access.",
    "flutterEntry": "workspace_rail_destinations.dart Tasks entry and resource_view.dart Tasks page",
    "flutterRefs": [
     {

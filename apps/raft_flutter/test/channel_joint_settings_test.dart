@@ -222,6 +222,16 @@ void main() {
     expect(key('channel-settings-joint-section'), findsNothing);
   });
 
+  testWidgets('a joint channel requires projected management grants', (
+    t,
+  ) async {
+    await mount(t, jointChannel()..remove('channelCapabilities'));
+    expect(find.text('Acme Partners'), findsOneWidget);
+    expect(key('channel-settings-delete-action'), findsNothing);
+    expect(key('channel-settings-archive-action'), findsNothing);
+    expect(key('channel-settings-joint-invite-form'), findsNothing);
+  });
+
   testWidgets('Resend Invite shows only while this server has invites out', (
     t,
   ) async {

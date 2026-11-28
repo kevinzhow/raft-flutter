@@ -66,13 +66,8 @@ class WorkspaceServerDirectory {
     if (server != null) server = patch(server!);
   }
 
-  bool can(String capability, {RaftChannel? resource}) => raftCan(
-    server?.string('role'),
-    capability,
-    channelCapabilities: resource?.json['channelCapabilities'] is Map
-        ? Map<String, dynamic>.from(resource!.json['channelCapabilities'])
-        : null,
-  );
+  bool can(String capability, {RaftChannel? resource}) =>
+      raftCanInWorkspace(server?.string('role'), capability, channel: resource);
 
   Future<bool> loadServerDirectory({
     bool cachedFirst = false,

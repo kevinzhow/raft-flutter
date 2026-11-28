@@ -21,6 +21,7 @@ import 'server_rate_limits.dart';
 import 'proxy/transport_stub.dart'
     if (dart.library.io) 'proxy/transport_io.dart';
 import 'session_policy.dart';
+import 'verification_return_path.dart';
 
 part 'channel_read_dispatch.dart';
 part 'get_cache.dart';
@@ -1173,12 +1174,16 @@ class RaftClient {
     required bool acceptTerms,
     String legalAcceptanceSource = 'signup',
     LegalVersions legal = LegalVersions.current,
+    Uri? verificationReturnTo,
   }) async {
     if (!acceptTerms)
       throw const RaftApiException(
         'Accept the terms and privacy policy to create an account.',
       );
     final authGeneration = ++_authenticationGeneration;
+    final landing = raftVerificationReturnPath(
+      verificationReturnTo?.toString(),
+    );
     final result = await request(
       'POST',
       '/auth/register',
@@ -1190,6 +1195,7 @@ class RaftClient {
         'termsVersion': legal.termsVersion,
         'privacyVersion': legal.privacyVersion,
         'legalAcceptanceSource': legalAcceptanceSource,
+        if (landing != null) 'returnTo': landing.toString(),
       },
     );
     if (_closed || authGeneration != _authenticationGeneration)

@@ -159,8 +159,9 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     final channelId = widget.channelId ?? pickedChannel;
     final joined =
         channelId == null ||
-        widget.controller.channels.any(
-          (c) => c.id == channelId && c.joined && !c.archived,
+        raftCanWriteTaskChannel(
+          widget.controller.server?.string('role'),
+          widget.controller.channelById(channelId),
         );
     if (!mounted || !joined) {
       const message = 'Channel access changed. Reopen this form.';

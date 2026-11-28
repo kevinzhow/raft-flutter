@@ -182,12 +182,12 @@ class TaskSurfaceController extends ChangeNotifier {
 
   /// Web authorizeTaskAction `amend`: the head is editable unless the task is
   /// read-only here; the server stays the authority.
-  bool get canAmend =>
-      current &&
-      conversation &&
-      hydrated &&
-      task['readOnlyReason'] == null &&
-      parent.server?.string('role') != 'guest';
+  bool get canAmend => current && conversation && hydrated && writable;
+
+  bool get writable => raftAuthorizeTaskWrite(
+    canWriteChannel: joined,
+    readOnlyReason: task['readOnlyReason'],
+  );
 
   /// Web useCanDeleteTask: its creator, or someone holding deleteAnyTask.
   bool get canDelete =>
@@ -200,10 +200,7 @@ class TaskSurfaceController extends ChangeNotifier {
           parent.can('deleteAnyTask'));
   bool get hydrated => task['id'] is String;
   bool get joined =>
-      parentChannel != null &&
-      parentChannel!.joined &&
-      !parentChannel!.archived &&
-      parent.can('viewChannel', resource: parentChannel);
+      raftCanWriteTaskChannel(parent.server?.string('role'), parentChannel);
   bool get canViewParent =>
       parentReady &&
       parentChannel != null &&
@@ -224,18 +221,13 @@ class TaskSurfaceController extends ChangeNotifier {
       !loading &&
       !legacy &&
       error == null &&
-      parent.server?.string('role') != 'guest' &&
-      task['readOnlyReason'] == null &&
-      (joined ||
+      (writable ||
           cleanup &&
+              task['readOnlyReason'] == null &&
               !historyLoading &&
               historyError == null &&
               parent.can('deleteAnyTask'));
-  bool get canAssign =>
-      canStatus &&
-      joined &&
-      task['status'] != 'done' &&
-      parent.can('assignTasks');
+  bool get canAssign => canStatus && writable && task['status'] != 'done';
   bool get canCleanupDelete =>
       cleanup &&
       parent.can('deleteAnyTask') &&

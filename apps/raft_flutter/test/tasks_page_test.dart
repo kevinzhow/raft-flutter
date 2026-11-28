@@ -416,16 +416,6 @@ void main() {
       );
       await t.pumpWidget(const SizedBox());
     });
-
-    testWidgets('a guest has no New task', (t) async {
-      final (w, _) = (await t.runAsync(
-        () => tasksFixture(tasks: fixtureTasks(), role: 'guest'),
-      ))!;
-      addTearDown(w.dispose);
-      await mountPage(t, w, size: const Size(2600, 900));
-      expect(find.byKey(const Key('tasks-page-new-task')), findsNothing);
-      await t.pumpWidget(const SizedBox());
-    });
   });
 
   testWidgets('Escape ends the selection before the open task\'s own '

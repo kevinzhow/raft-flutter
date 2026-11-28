@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
-import 'create_joint_channel_dialog.dart';
+import 'joint_channel_link_intent.dart';
 
 /// `GET /announcements/images/:id`: public, served without credentials.
 String announcementImageUrl(String origin, String assetId) =>
@@ -25,8 +27,7 @@ String? announcementInAppPath(String origin, String href) {
 /// The Web CTA `navigate(href)` for an internal href (`/...` or `?...`).
 ///
 /// * `?dialog=create-joint-channel` is the feature-owned link intent of
-///   `JointChannelLinkIntent`: it opens the Create joint channel dialog when
-///   this server may federate channels.
+///   `JointChannelLinkIntent`.
 /// * A path inside the current server (`/s/<slug>/...`) navigates there.
 /// * Any other path belongs to a Web route the app does not host (another
 ///   server, `/servers`, ...): it opens in the browser on the Web origin.
@@ -40,8 +41,8 @@ void openAnnouncementInternalLink(
   var uri = Uri.tryParse(href);
   if (uri == null) return;
   if (href.startsWith('?')) {
-    if (uri.queryParameters['dialog'] == 'create-joint-channel') {
-      CreateJointChannelDialog.show(context, controller: w);
+    if (isJointChannelLinkIntent(uri)) {
+      unawaited(openJointChannelLinkIntent(context, w));
     }
     return;
   }
@@ -79,6 +80,9 @@ void openAnnouncementInternalLink(
         w.navigation.navigate(location);
         // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
         w.notifyListeners();
+        if (isJointChannelLinkIntent(uri)) {
+          unawaited(openJointChannelLinkIntent(context, w));
+        }
         return;
       }
     } on FormatException {

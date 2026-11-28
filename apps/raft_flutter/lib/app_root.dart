@@ -45,6 +45,8 @@ import 'features/sso_required_page.dart';
 import 'features/session_recovery_view.dart';
 import 'features/account_deletion_gate.dart';
 import 'features/account_onboarding.dart';
+import 'features/joint_channel_link_intent.dart';
+import 'features/verification_location.dart';
 import 'features/private_route_guard.dart';
 import 'platform/auth_audit_log.dart';
 import 'platform/memory_release.dart';
@@ -895,7 +897,12 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     bool accepted,
   ) => authenticate(
     base,
-    (c) => c.register(email.trim(), password, acceptTerms: accepted),
+    (c) => c.register(
+      email.trim(),
+      password,
+      acceptTerms: accepted,
+      verificationReturnTo: localVerificationLocation(requestedLocation, base),
+    ),
   );
 
   Future<void> finishOnboarding(RaftClient c) async {
@@ -1017,16 +1024,16 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       }
       if (target != null) {
         publicNonmember = null;
-        final remembered = prefs.getString('$serverMemoryKey.${target.id}');
         await chooseServer(
           target,
           location: startupServer != null
               ? Uri(pathSegments: ['', 's', target.string('slug')])
               : explicit
               ? requestedLocation
-              : remembered == null
-              ? null
-              : Uri.tryParse(remembered),
+              : storedServerSurface(
+                  prefs.getString('$serverMemoryKey.${target.id}'),
+                  target.string('slug'),
+                ),
         );
       } else if (explicit && isAutoJoinCommunitySlug(slug)) {
         showServerSelector = true;
@@ -1077,16 +1084,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     final live = serverSurfaces[server.id];
     if (live != null) return live;
     final prefs = await SharedPreferences.getInstance();
-    final stored = Uri.tryParse(
-      prefs.getString('$serverMemoryKey.${server.id}') ?? '',
+    return storedServerSurface(
+      prefs.getString('$serverMemoryKey.${server.id}'),
+      server.string('slug'),
     );
-    return stored != null &&
-            !stored.hasScheme &&
-            stored.pathSegments.length >= 2 &&
-            stored.pathSegments[0] == 's' &&
-            stored.pathSegments[1] == server.string('slug')
-        ? stored
-        : null;
   }
 
   Future<void> showAccessDenied(String slug, [bool Function()? current]) async {
@@ -1527,13 +1528,11 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         ? serverSwitchUri(w.location, selected.string('slug'))
         : Uri(path: '/s/${selected.string('slug')}');
     if (!replaceWithHome && remembered != null) {
-      final candidate = Uri.tryParse(remembered);
-      if (candidate != null &&
-          !candidate.hasScheme &&
-          !candidate.hasAuthority &&
-          candidate.pathSegments.length >= 2 &&
-          candidate.pathSegments[0] == 's' &&
-          candidate.pathSegments[1] == selected.string('slug')) {
+      final candidate = storedServerSurface(
+        remembered,
+        selected.string('slug'),
+      );
+      if (candidate != null) {
         try {
           uri = RaftLocation.fromUri(candidate).uri;
         } on ArgumentError {
@@ -1635,7 +1634,13 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         }
       }
       if (!current() || w.server?.id != selected.id) return;
-      var uri = location ?? serverSurfaces[selected.id];
+      final intent = location != null && isJointChannelLinkIntent(location);
+      var uri = intent
+          ? withoutJointChannelLinkIntent(location)
+          : location ?? serverSurfaces[selected.id];
+      if (intent && requestedLocation == location) {
+        appRouter.publish(requestedLocation = uri!, replace: true);
+      }
       // MainLayout DefaultRoute914–947 redirects a desktop server root to the
       // first actual channel with REPLACE. Mobile deliberately stays Home.
       if (resolveDesktopRoot && w.channels.isNotEmpty) {
@@ -1662,6 +1667,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (current() && !showServerSelector && w.server?.id == selected.id) {
           syncWorkspaceForeground();
+          if (intent) showJointChannelLink(appRouter.navigatorKey, w);
         }
       });
       final prefs = await SharedPreferences.getInstance();
@@ -1813,7 +1819,17 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (invite != null) return inviteHome(true);
     if (accountNeedsOnboarding(active.user)) {
       return AccountOnboardingView(
+        key: ValueKey((active, active.user?.id)),
         client: active,
+        location: requestedLocation,
+        onVerified: (landing) {
+          if (!mounted || !identical(client, active)) return;
+          requestedLocation = verificationLocationAfter(
+            requestedLocation,
+            landing,
+          );
+          appRouter.publish(requestedLocation, replace: true);
+        },
         onComplete: () => finishOnboarding(active),
         onSignOut: logout,
       );

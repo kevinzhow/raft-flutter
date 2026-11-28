@@ -13,6 +13,7 @@ import '../data/cause_notice.dart';
 import '../data/user_error.dart';
 import 'auth_view.dart' show authFailureText, authLinkToken;
 import 'human_avatar_edit_menu.dart';
+import 'verification_location.dart';
 
 bool accountNeedsProfile(RaftRecord? user) =>
     user != null &&
@@ -108,9 +109,13 @@ class AccountOnboardingView extends StatefulWidget {
     required this.onComplete,
     required this.onSignOut,
     this.showSessionFooter = true,
+    this.location,
+    this.onVerified,
   });
   final RaftClient client;
   final Future<void> Function() onComplete, onSignOut;
+  final Uri? location;
+  final ValueChanged<Uri?>? onVerified;
 
   /// OnboardingCreateShell `showSessionFooter` ("Signed in as … Log out").
   /// Web fixture previews opt out; the app always shows it.
@@ -128,6 +133,7 @@ class _OnboardingState extends State<AccountOnboardingView>
   StreamSubscription<RaftEvent>? events;
   bool busy = false, displayNameEdited = false;
   bool manualOpen = false, resending = false, verifying = false, resent = false;
+  String? lastAutomaticToken;
   // ignore: raft_lints/avoid_imperative_notice_state -- handleError/displayNameError clear when the field is edited and are recomputed on submit; notice is never raised (always null).
   String? notice, handleError, displayNameError;
 
@@ -137,6 +143,16 @@ class _OnboardingState extends State<AccountOnboardingView>
   /// the other.
   late final CauseNotice _banner = CauseNotice(scope: () => emailVerified);
   bool get emailVerified => client.user?.json['emailVerified'] == true;
+  Uri? get verificationLocation => widget.location == null
+      ? null
+      : localVerificationLocation(widget.location!, client.origin);
+  Uri? get returnTo {
+    final location = verificationLocation;
+    return location?.queryParameters.containsKey('verify') == true
+        ? raftVerificationReturnPath(location?.queryParameters['returnTo'])
+        : location;
+  }
+
   String? get error => _banner.message;
   final usernameFocus = FocusNode();
   RaftClient get client => widget.client;
@@ -158,6 +174,33 @@ class _OnboardingState extends State<AccountOnboardingView>
     displayNameEdited = displayName.text.isNotEmpty;
     usernameFocus.addListener(() {
       if (!usernameFocus.hasFocus) unawaited(usernameBlur());
+    });
+    _verifyOpenedLink();
+  }
+
+  @override
+  void didUpdateWidget(covariant AccountOnboardingView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.location != widget.location) _verifyOpenedLink();
+  }
+
+  void _verifyOpenedLink() {
+    final code = verificationLocation?.queryParameters['verify']?.trim();
+    if (emailVerified ||
+        verifying ||
+        code == null ||
+        code.isEmpty ||
+        code == lastAutomaticToken) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          !verifying &&
+          code != lastAutomaticToken &&
+          verificationLocation?.queryParameters['verify']?.trim() == code) {
+        lastAutomaticToken = code;
+        unawaited(_verify(code, returnTo));
+      }
     });
   }
 
@@ -208,7 +251,11 @@ class _OnboardingState extends State<AccountOnboardingView>
       resent = false;
     });
     try {
-      await client.post('/auth/resend-verification');
+      final landing = returnTo;
+      await client.post(
+        '/auth/resend-verification',
+        data: landing == null ? null : {'returnTo': landing.toString()},
+      );
       if (mounted) setState(() => resent = true);
     } catch (e) {
       if (mounted) {
@@ -228,7 +275,16 @@ class _OnboardingState extends State<AccountOnboardingView>
   }
 
   Future<void> verifyManual() async {
-    if (verifying || token.text.trim().isEmpty) return;
+    final input = token.text.trim();
+    if (input.isEmpty) return;
+    final link = Uri.tryParse(input);
+    final code =
+        link?.queryParameters['verify']?.trim() ?? authLinkToken(input);
+    await _verify(code, returnTo);
+  }
+
+  Future<void> _verify(String code, Uri? landing) async {
+    if (verifying || emailVerified) return;
     final generation = client.generation;
     setState(() {
       verifying = true;
@@ -236,10 +292,28 @@ class _OnboardingState extends State<AccountOnboardingView>
       resent = false;
     });
     try {
-      await verify();
-      if (client.generation == generation &&
-          !accountNeedsOnboarding(client.user)) {
-        await widget.onComplete();
+      if (code.isEmpty) {
+        throw const RaftUserError(
+          'Verification failed. The link may be expired.',
+        );
+      }
+      final answer = await client.request(
+        'POST',
+        '/auth/verify-email',
+        authorized: false,
+        data: {
+          'token': code,
+          if (landing != null) 'returnTo': landing.toString(),
+        },
+      );
+      if (!mounted || client.generation != generation) return;
+      await client.reloadUser();
+      if (mounted && client.generation == generation && emailVerified) {
+        token.clear();
+        widget.onVerified?.call(
+          raftVerificationReturnPath(answer is Map ? answer['returnTo'] : null),
+        );
+        if (!accountNeedsOnboarding(client.user)) await widget.onComplete();
       }
     } catch (e) {
       if (mounted && client.generation == generation) {
@@ -254,7 +328,10 @@ class _OnboardingState extends State<AccountOnboardingView>
         );
       }
     } finally {
-      if (mounted) setState(() => verifying = false);
+      if (mounted) {
+        setState(() => verifying = false);
+        _verifyOpenedLink();
+      }
     }
   }
 
@@ -296,23 +373,6 @@ class _OnboardingState extends State<AccountOnboardingView>
     } finally {
       if (mounted) setState(() => busy = false);
     }
-  }
-
-  Future<void> verify() async {
-    final code = authLinkToken(token.text.trim());
-    if (code.isEmpty) {
-      throw const RaftUserError(
-        'Verification failed. The link may be expired.',
-      );
-    }
-    await client.request(
-      'POST',
-      '/auth/verify-email',
-      authorized: false,
-      data: {'token': code},
-    );
-    await client.reloadUser();
-    token.clear();
   }
 
   Future<void> completeProfile() async {

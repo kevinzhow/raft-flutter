@@ -135,6 +135,9 @@ FIXTURE = {
         'GET /channels/channel-design/members': CHANNEL_ROSTER,
     },
     'routeSets': {
+        'create-external-intent': {
+            'GET /channels/external-availability': {'freeLimitReached': False},
+        },
         'search-empty': {'GET /messages/search': SEARCH_EMPTY},
         'search-pending': {'GET /messages/search': {'$pending': True}},
         'search-error': {'GET /messages/search': {'$status': 500}},
@@ -419,6 +422,13 @@ shell('dialogs.desktop-emoji-picker', 'Section emoji picker open (desktop)', 'di
 CC_HINT = SRC + 'channel/CreateChannelDialog.tsx'
 for plat, box in (('desktop', {'w': 1280, 'h': 800}), ('phone', {'w': 390, 'h': 844})):
     platform = 'mobile' if plat == 'phone' else 'desktop'
+    intent_box = {**box, 'h': 900 if plat == 'desktop' else box['h']}
+    add(f'create-channel.{plat}-external-intent', f'Create channel ({plat}): External link intent',
+        'create-channel', platform=platform, hint=SRC + 'channel/JointChannelLinkIntent.tsx',
+        props={**intent_box, 'externalIntent': 'true'}, route_set='create-external-intent',
+        viewport={**(DESKTOP if plat == 'desktop' else MOBILE),
+                  'width': intent_box['w'], 'height': intent_box['h']},
+        viewport_capture=True)
     submit = ('[data-slot="narrow-dialog-commit"] button[type="submit"]'
               if plat == 'phone' else 'form button[type="submit"]')
     base = {**box, 'name': 'android-artifacts', 'description': 'Build reports, screenshots, release blockers'}

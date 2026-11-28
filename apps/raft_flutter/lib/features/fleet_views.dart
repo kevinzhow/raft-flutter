@@ -692,6 +692,7 @@ class _FleetDetailState extends State<FleetDetail> {
   String get base =>
       widget.computers ? '/servers/$serverId/machines/$id' : '/agents/$id';
   bool get external => row['external'] == true || row['runtime'] == 'external';
+  bool get boundedInitial => isBoundedPublicAgent(widget.initial, serverId);
   bool get owned => widget.computers
       ? row['userId'] == w.client.user?.id
       : row['creatorType'] == 'user' && row['creatorId'] == w.client.user?.id;
@@ -865,7 +866,7 @@ class _FleetDetailState extends State<FleetDetail> {
   /// GET /agents/:id for detail-only fields. Computers have no detail read:
   /// the machine list row is the whole record.
   Future<void> loadDetail() async {
-    if (!current || widget.computers) return;
+    if (!current || widget.computers || boundedInitial) return;
     final ticket = ++request;
     try {
       final result = await w.query(base);
@@ -1603,7 +1604,8 @@ class _FleetDetailState extends State<FleetDetail> {
       !widget.computers &&
       (gone ||
           row['deletedAt'] != null ||
-          (w.services.entityDirectory.state(kind).loaded &&
+          (!boundedInitial &&
+              w.services.entityDirectory.state(kind).loaded &&
               directoryRow == null));
 
   /// Web ProfilePanel `computerNotFound`: the id is no computer this server

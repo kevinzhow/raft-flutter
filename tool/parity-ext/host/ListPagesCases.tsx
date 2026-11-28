@@ -166,7 +166,11 @@ function ParityExtLpShell({ props }: { props: ParityExtLpProps }) {
 
 // Create channel dialog states (official stores + prefill, states driven by the case's interactions / routes).
 function ParityExtLpCreateChannel({ props }: { props: ParityExtLpProps }) {
-  useMemo(() => primeCreateChannelStores(), []);
+  const external = props.params.get("externalIntent") === "true";
+  useMemo(() => {
+    primeCreateChannelStores();
+    if (external) setServerFeatureFlagForTests(fxServer.id, "external_channels_v1", true);
+  }, [external]);
   const { width, height } = parityExtLpBox(props);
   const named = props.params.get("name");
   return (
@@ -175,7 +179,8 @@ function ParityExtLpCreateChannel({ props }: { props: ParityExtLpProps }) {
         <CreateChannelDialog
           prefilledName={named ?? ""}
           prefilledDescription={props.params.get("description") ?? ""}
-          prefilledVisibility="public"
+          prefilledVisibility={external ? "external" : "public"}
+          inviteEntry={external ? "link" : undefined}
           onClose={() => undefined}
         />
       </div>

@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:raft_client/raft_client.dart';
 
 import '../../data/workspace_controller.dart';
 import '../task_v2_mode.dart' show directTaskConversationChannelId;
@@ -156,7 +157,10 @@ bool canApplyBatchAction(
   BatchViewer viewer,
 ) {
   if (_truthy(task['isLegacy'])) return false;
-  final writable = !_truthy(task['readOnlyReason']);
+  final writable = raftAuthorizeTaskWrite(
+    canWriteChannel: true,
+    readOnlyReason: task['readOnlyReason'],
+  );
   switch (action) {
     case BatchFollow():
       return true;

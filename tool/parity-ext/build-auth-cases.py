@@ -94,6 +94,7 @@ FIXTURE = {
             'error': 'Password reset failed. The link may be expired.'}}},
         'verify-error': {'POST /auth/verify-email': {'$status': 400, '$body': {
             'error': 'Verification failed. The link may be expired.'}}},
+        'verify-link-pending': {'POST /auth/verify-email': {'$pending': True}},
         'survey-error': {'PATCH /auth/me': {'$status': 500, '$body': {'error': 'Internal Server Error'}}},
         'handoff-pending': {'POST /servers/visual-server/setup-handoff': {'$pending': True}},
         'login-pending': {'POST /auth/login': {'$pending': True}},
@@ -199,6 +200,8 @@ SURFACES = [
                   enter('reset-confirm', 'correct horse battery'), tap('login-submit')]),
     # ---- email verification -------------------------------------------
     dict(name='verify.default', view='verify', title='Email verification'),
+    dict(name='verify.link-pending', view='verify', title='Verifying a linked return target',
+         routeSet='verify-link-pending'),
     dict(name='verify.manual', view='verify', title='Email verification manual entry',
          web=[click('button:has-text("Enter code manually")'), wait()], android=[tap('verify-manual-toggle')]),
     dict(name='verify.manual-filled', view='verify', title='Email verification code typed',

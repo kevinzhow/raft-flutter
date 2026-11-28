@@ -8,8 +8,10 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/source_time_formatter.dart';
 import '../data/user_error.dart';
+import 'chat_navigation.dart';
 import 'task_conversation_facts.dart';
 import 'task_surface_controller.dart';
+import 'task_followers_actions.dart';
 import 'task_v2_mode.dart';
 import 'icu_message.dart';
 
@@ -24,6 +26,7 @@ RaftTaskConversation taskConversation(
   required bool compact,
   required bool tasksPage,
   required VoidCallback onLeave,
+  required ChatNavigation? navigation,
 }) {
   final task = o.task;
   final w = o.parent;
@@ -72,6 +75,14 @@ RaftTaskConversation taskConversation(
       dmPeerName: dm?.json['peerName'] as String? ?? dm?.name,
     ),
     onViewInChannel: () => leaveFor(null),
+    followers: discussion == null || navigation == null
+        ? null
+        : (hasExpand, buildHeader) => TaskFollowersActions(
+            discussion: discussion,
+            navigation: navigation,
+            hasExpand: hasExpand,
+            buildHeader: buildHeader,
+          ),
     followed: o.followed,
     onFollow: o.followBusy || discussion == null
         ? null

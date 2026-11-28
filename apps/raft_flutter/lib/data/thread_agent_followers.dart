@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
+String threadFollowerProfileKey(String agentId) => 'follower-profile/$agentId';
+
 /// Current-server transport and identity needed by thread follower rosters.
 abstract interface class ThreadAgentFollowersAuthority {
   RaftClient get client;

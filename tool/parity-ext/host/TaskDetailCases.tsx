@@ -25,6 +25,7 @@ import { useThreadStore as parityExtTdThreadStore } from "../src/store/threadSto
 // the host's module graph so the first capture never races the chunk fetch
 // (the modal head would still show its Suspense skeleton).
 import "../src/components/task/TaskModalHead";
+import "../src/components/task/TaskConversationDialog";
 import "../src/features/thread/ThreadPanel";
 import parityExtTdFixture from "virtual:parity-ext/taskdetail";
 
@@ -59,8 +60,11 @@ function parityExtTdProps(): ParityExtTdProps | null {
   if (!(raw.startsWith("components.taskspage.") || raw.startsWith("components.taskdetail."))) return;
   const path = `/s/${fxServer.slug}/tasks`;
   const detail = params.get("detail");
-  const entry = detail ? (parityExtTdFixture.details as Record<string, { task: { channelId: string; messageId: string } }>)[detail] : null;
-  if (entry) params.set("task", `${entry.task.channelId}:${entry.task.messageId}`);
+  const entry = detail ? (parityExtTdFixture.details as Record<string, { task: Task }>)[detail] : null;
+  if (entry) {
+    const item = entry.task.conversationChannelId ? `task:${entry.task.id}` : entry.task.messageId;
+    params.set("task", `${entry.task.channelId}:${item}`);
+  }
   if (window.location.pathname !== path || entry) {
     window.history.replaceState(null, "", `${path}?${params.toString()}`);
   }
@@ -98,9 +102,10 @@ function parityExtTdPrimeStores(props: ParityExtTdProps) {
     // it, so the URL->store pass does not reopen it).
     parityExtTdThreadStore.setState({
       taskModal: {
-        parentMessageId: entry.task.messageId,
+        parentMessageId: entry.task.conversationChannelId ? null : entry.task.messageId,
+        taskId: entry.task.conversationChannelId ? entry.task.id : undefined,
         parentChannelId: entry.task.channelId,
-        threadChannelId: entry.task.threadChannelId,
+        threadChannelId: entry.task.conversationChannelId ?? entry.task.threadChannelId,
         serverSlug: fxServer.slug,
         focusedMessageId: null,
         loading: false,
@@ -113,14 +118,13 @@ function parityExtTdPrimeStores(props: ParityExtTdProps) {
 
 function ParityExtTdView({ props }: { props: ParityExtTdProps }) {
   useMemo(() => parityExtTdPrimeStores(props), [props]);
-  const mobile = props.platform === "mobile";
   // MainLayout's `flex-1` root stretches to the full viewport inside a flex
   // column wrapper, like the real App.tsx shell (see HomeLoadingRouteVisualCaseView).
   return (
     <main className="min-h-screen bg-white p-0 font-display text-black">
       <div
         data-visual-case={props.caseId}
-        style={{ width: mobile ? 390 : 1280, height: mobile ? 844 : 800, overflow: "hidden", display: "flex", flexDirection: "column" }}
+        style={{ width: window.innerWidth, height: window.innerHeight, overflow: "hidden", display: "flex", flexDirection: "column" }}
       >
         <Routes>
           <Route path="/s/:serverSlug/*" element={<MainLayout />} />

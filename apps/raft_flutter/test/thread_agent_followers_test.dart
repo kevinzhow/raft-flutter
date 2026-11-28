@@ -106,7 +106,7 @@ void main() {
       expect(find.text('Cindy'), findsOneWidget);
       expect(find.text('Product UX'), findsOneWidget);
       // Fallback activity line from the follower status.
-      expect(find.text('Online'), findsNWidgets(2));
+      expect(find.text('Likely online'), findsNWidgets(2));
 
       await tester.tap(find.text('Cindy'));
       await tester.pump();

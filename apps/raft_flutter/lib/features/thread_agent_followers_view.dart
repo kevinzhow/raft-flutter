@@ -30,11 +30,13 @@ class ThreadAgentFollowersView extends StatefulWidget {
     this.onOpenAgent,
     this.folded = false,
     this.openRequest = 0,
+    this.task = false,
   });
   final WorkspaceController controller;
   final String threadChannelId;
   final bool folded;
   final int openRequest;
+  final bool task;
 
   /// Opens the agent's profile (Web `openProfile("agent", id)`).
   final void Function(String agentId)? onOpenAgent;
@@ -139,9 +141,13 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
       final token = await store.remove(id, agent.id);
       if (token == null || !mounted || !current(scope, id)) return;
       toast.show(
-        raftFormat(context, "Removed {agent} from this thread's followers.", {
-          'agent': agent.label,
-        }),
+        raftFormat(
+          context,
+          widget.task
+              ? "Removed {agent} from this task's followers."
+              : "Removed {agent} from this thread's followers.",
+          {'agent': agent.label},
+        ),
         actionLabel: raftText(context, 'Undo'),
         onAction: () => unawaited(restore(id, agent, token, scope)),
       );
@@ -159,6 +165,17 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
 
   bool current(Object scope, String thread) =>
       scope == authority && thread == widget.threadChannelId;
+
+  void openAgent(ThreadAgentFollower agent) {
+    if (!agent.isCurrentServer) {
+      w.agentTabCache.put(threadFollowerProfileKey(agent.id), <String, dynamic>{
+        ...agent.json,
+        'status': followerAgentStatus(agent.status),
+        'profileProjection': 'channel_summary',
+      });
+    }
+    widget.onOpenAgent?.call(agent.id);
+  }
 
   Future<void> restore(
     String thread,
@@ -201,13 +218,9 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
   /// display state (live directory row, else the follower's status).
   (RaftAvatarPresence, String) activity(ThreadAgentFollower agent) {
     final live = w.services.entityDirectory.agent(agent.id);
-    final status = followerAgentStatus(agent.status);
-    final display = live != null
-        ? agentRowAmbientDisplay(live)
-        : resolveAgentAmbientDisplay(
-            identity: AgentPresentationIdentity(id: agent.id, status: status),
-            now: DateTime.now(),
-          );
+    final display = agentRowAmbientDisplay(
+      live ?? {'id': agent.id, 'status': followerAgentStatus(agent.status)},
+    );
     final presence = RaftAvatarPresence(
       activity: switch (display.activity) {
         'thinking' => RaftAvatarActivity.thinking,
@@ -290,7 +303,7 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
                     : null,
                 onOpen: widget.onOpenAgent == null
                     ? null
-                    : () => widget.onOpenAgent!(agent.id),
+                    : () => openAgent(agent),
                 removeLabel: roster?.canManage != true
                     ? null
                     : canRemove

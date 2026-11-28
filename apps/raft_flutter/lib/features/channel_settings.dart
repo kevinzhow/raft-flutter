@@ -1636,9 +1636,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   }
 
   bool visitorVisibleOffered(RaftChannel c) {
-    final caps = c.json['channelCapabilities'];
-    if (caps is! Map ||
-        caps['manageVisitorAccess'] != true ||
+    if (!raftCanProjectedChannel(c, 'manageVisitorAccess') ||
         c.archived ||
         (c.type != 'channel' && c.type != 'private')) {
       return false;

@@ -346,8 +346,7 @@ class ChannelJointSectionState extends State<ChannelJointSection> {
           c.string('jointRole') == 'host' &&
           recordedServers is List &&
           recordedServers.isNotEmpty &&
-          c.json['channelCapabilities'] is Map &&
-          c.json['channelCapabilities']['federateChannels'] == true;
+          w.can('federateChannels', resource: c);
       final target = _sameAdminTarget;
       final slugInvalid = _slugValidation;
       final invited = jointPeople(people.text);

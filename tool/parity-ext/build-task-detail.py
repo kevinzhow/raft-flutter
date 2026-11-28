@@ -41,6 +41,11 @@ from builders import manifest_path  # noqa: E402  (tool/parity-ext/builders.py)
 THEMES = {'brutal': 'brutal-light', 'elegant': 'elegant-light', 'elegant-dark': 'elegant-dark'}
 DESKTOP = {'width': 1280, 'height': 800, 'density': 1}
 MOBILE = {'width': 390, 'height': 844, 'density': 3}
+PROFILE_VIEWPORTS = {
+    'foldable-landscape': {'width': 841, 'height': 701, 'density': 2},
+    'foldable-portrait': {'width': 884, 'height': 1104, 'density': 2},
+    'tablet': {'width': 1180, 'height': 820, 'density': 2},
+}
 PAGE_PREFIX = 'components.taskspage.'
 DETAIL_PREFIX = 'components.taskdetail.'
 SID = 'visual-server'
@@ -241,8 +246,20 @@ fixture = {
 # Endpoints both providers answer from this fixture. Web: page.route (provider
 # spec patch `parityExtRoutes`, `routes` + the case's `routeSet`); Flutter:
 # the fixture client in cases/ext_task_detail.dart.
+followers_task = {
+    **details['replies-short']['task'],
+    'id': 'task-followers',
+    'taskNumber': 42,
+    'title': 'Review the release checklist',
+    'conversationAnchored': True,
+    'conversationChannelId': 'task-followers-conversation',
+    'sourceMessageId': None,
+    'hostMessageId': None,
+}
+details['followers'] = {**details['empty'], 'task': followers_task}
 routes = {
     'GET /channels': fixture['channels'],
+    **{f'GET /channels/{channel["id"]}': channel for channel in fixture['channels']},
     'GET /channels/dm': [],
     f'GET /channels/{CH}/members': fixture['members'],
     f'GET /channels/{CH2}/members': fixture['members'],
@@ -260,6 +277,32 @@ for key, d in details.items():
         f'GET /messages/context/{t["messageId"]}': {'messages': [d['parent']], 'targetMessageId': t['messageId']},
         f'GET /messages/channel/{t["threadChannelId"]}': {'messages': d['replies'], 'hasMore': False},
     }
+    if key == 'followers':
+        conversation = t['conversationChannelId']
+        route_sets[f'td-{key}'].update({
+            f'GET /tasks/{t["id"]}': {'task': t},
+            f'GET /tasks/channel/{CH}/number/{t["taskNumber"]}': {'task': t},
+            f'GET /messages/channel/{conversation}': {'messages': [], 'hasMore': False},
+            f'GET /channels/{conversation}': {
+                'id': conversation, 'serverId': SID, 'type': 'task', 'name': conversation,
+                'parentChannelId': CH, 'parentTaskId': t['id'], 'joined': True,
+            },
+            'GET /channels/threads/followers': {'threads': [{
+                'threadChannelId': conversation,
+                'canManage': True,
+                'agents': [{
+                    'id': 'agent-partner-review',
+                    'name': 'partner-reviewer',
+                    'displayName': 'Partner reviewer',
+                    'avatarUrl': 'pixel:robot',
+                    'status': 'online',
+                    'serverId': 'visual-partner',
+                    'serverName': 'Partner',
+                    'isCurrentServer': False,
+                    'canRemove': False,
+                }],
+            }]},
+        })
 fixture['routes'] = routes
 fixture['routeSets'] = route_sets
 
@@ -274,7 +317,7 @@ def base_case(cid, title, surface, platform, theme, props, capture, hint, androi
         'surface': surface,
         'category': f'extension/{surface}',
         'suite': 'raft-flutter-extension',
-        'viewport': DESKTOP if platform == 'desktop' else MOBILE,
+        'viewport': PROFILE_VIEWPORTS.get(platform, DESKTOP if platform == 'desktop' else MOBILE),
         'theme': theme,
         'locale': 'en',
         'variants': [{'id': 'default', 'name': 'Default', 'props': props}],
@@ -324,6 +367,15 @@ def add_detail(platform, state, key, title, *, interactions=(), android=(), note
                       f"apps/raft_flutter/test/parity/cases/ext_task_detail.dart '{platform}.{state}'")
         if notes:
             c['notes'] = notes
+        if key == 'followers':
+            props['extFixture'] = 'taskdetail'
+            if platform == 'desktop':
+                c['viewport'] = {**DESKTOP, 'height': 900}
+            else:
+                props['touchInput'] = 'true'
+                c['viewport'] = {**c['viewport'], 'touch': True}
+        if state == 'followers-profile':
+            capture['selector'] = '[data-testid="profile-panel"]'
         cases.append(c)
 
 
@@ -359,6 +411,21 @@ for platform in ['desktop', 'mobile']:
     for state, key, title, interactions in STATES:
         android = [{'type': 'tap', 'key': 'task-properties-history'}] if state == 'history-open' else []
         add_detail(platform, state, key, title, interactions=interactions, android=android)
+
+for platform in ['desktop', 'mobile', *PROFILE_VIEWPORTS]:
+    web = [{'type': 'click', 'target': '[data-testid="thread-followers-header-trigger"]'}]
+    flutter = [{'type': 'tap', 'key': 'thread-followers-header-trigger'}]
+    add_detail(platform, 'followers-profile', 'followers', 'peer Agent profile',
+               interactions=[*web, {'type': 'click', 'target': '[data-testid="thread-follower-row"]'}],
+               android=[*flutter, {'type': 'tapText', 'text': 'Partner reviewer'}])
+    if platform in ('mobile', 'desktop'):
+        add_detail(platform, 'followers', 'followers', 'agent followers', interactions=web, android=flutter)
+    if platform == 'desktop':
+        add_detail(platform, 'followers-tooltip', 'followers', 'peer removal tooltip',
+                   interactions=[*web, {'type': 'hover', 'target': '[data-testid="thread-follower-remove"]', 'force': True},
+                                 {'type': 'wait', 'ms': 900}],
+                   android=[*flutter, {'type': 'hover', 'key': 'thread-follower-remove'},
+                            {'type': 'wait', 'ms': 900}])
 
 manifest_out = manifest_path()
 manifest = json.loads(manifest_out.read_text())

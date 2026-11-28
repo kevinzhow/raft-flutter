@@ -36,14 +36,16 @@ Map<String, dynamic>? _detail(ParityContext ctx) {
   final key = ctx.props['detail'] as String?;
   return key == null
       ? null
-      : Map<String, dynamic>.from(
-          (_fx(ctx)['details'] as Map)[key] as Map,
-        );
+      : Map<String, dynamic>.from((_fx(ctx)['details'] as Map)[key] as Map);
 }
 
 /// `ParityFakeClient` + the server's per-status summary pages.
 class _TaskClient extends ParityFakeClient {
-  _TaskClient({required super.user, required super.routes, required this.board});
+  _TaskClient({
+    required super.user,
+    required super.routes,
+    required this.board,
+  });
 
   final List<dynamic> board;
 
@@ -148,8 +150,11 @@ WorkspaceController _workspace(ParityContext ctx, {List<dynamic>? board}) {
   w.messageDomain.ledger.switchServer('visual-server');
   if (detail != null) {
     final task = detail['task'] as Map;
+    final item = task['conversationChannelId'] == null
+        ? task['messageId']
+        : 'task:${task['id']}';
     w.navigation.navigateTask(
-      w.location.withQuery({'task': '${task['channelId']}:${task['messageId']}'}),
+      w.location.withQuery({'task': '${task['channelId']}:$item'}),
       kind: RaftNavigationKind.replace,
     );
   }
@@ -165,17 +170,31 @@ class _Host extends StatefulWidget {
 }
 
 class _HostState extends State<_Host> {
-  late final WorkspaceController w = _workspace(widget.ctx, board: widget.board);
+  late final WorkspaceController w = _workspace(
+    widget.ctx,
+    board: widget.board,
+  );
+
+  @override
+  void dispose() {
+    w.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => withAppServices(
-    WorkspaceView(
-      controller: w,
-      appearance: RaftAppearance(
-        mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+    RaftInteractionScope(
+      interaction: widget.ctx.props['touchInput'] == 'true'
+          ? RaftInteraction.touchMode
+          : RaftInteraction.of(context),
+      child: WorkspaceView(
+        controller: w,
+        appearance: RaftAppearance(
+          mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+        ),
+        onAppearance: (_) async {},
+        onLogout: () async {},
       ),
-      onAppearance: (_) async {},
-      onLogout: () async {},
     ),
   );
 }
@@ -257,6 +276,8 @@ const _detailStates = [
   'assigned',
   'long-title',
   'description',
+  'followers',
+  'followers-profile',
 ];
 
 /// Every extension Tasks page / task detail case, keyed by id (3 themes each).
@@ -269,5 +290,14 @@ final Map<String, ParityCase> extTaskDetailCases = {
           'components.taskspage.$platform.$state.$theme': _case,
       for (final state in _detailStates)
         'components.taskdetail.$platform.$state.$theme': _case,
+      if (platform == 'desktop')
+        'components.taskdetail.$platform.followers-tooltip.$theme': _case,
     },
+  for (final platform in const [
+    'foldable-landscape',
+    'foldable-portrait',
+    'tablet',
+  ])
+    for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
+      'components.taskdetail.$platform.followers-profile.$theme': _case,
 };

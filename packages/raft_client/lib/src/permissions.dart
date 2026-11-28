@@ -1,14 +1,14 @@
+import 'models.dart';
+
 /// Raft shared serverPermissions.ts at the pinned reference revision.
 const raftServerCapabilities = <String>{
-  'viewChannel',
   'createChannels',
   'editChannelMetadata',
   'archiveChannels',
   'deleteChannels',
   'changeChannelVisibility',
-  'manageGuestAccess',
+  'manageVisitorAccess',
   'federateChannels',
-  'viewChannelMembers',
   'joinPublicChannels',
   'addChannelMembers',
   'removeChannelMembers',
@@ -42,12 +42,11 @@ const raftServerCapabilities = <String>{
   'deleteAnyTask',
   'viewBilling',
   'manageBilling',
+  'manageSso',
 };
 const _memberCapabilities = <String>{
   'viewServerProfile',
-  'viewChannel',
   'createChannels',
-  'viewChannelMembers',
   'joinPublicChannels',
   'addChannelMembers',
   'viewMembers',
@@ -61,7 +60,7 @@ const _channelManagementCapabilities = <String>{
   'archiveChannels',
   'deleteChannels',
   'changeChannelVisibility',
-  'manageGuestAccess',
+  'manageVisitorAccess',
   'federateChannels',
   'addChannelMembers',
   'removeChannelMembers',
@@ -70,25 +69,63 @@ const _channelManagementCapabilities = <String>{
 bool raftCan(
   String? role,
   String capability, {
-  Map<String, dynamic>? channelCapabilities,
+  Map? channelCapabilities,
+  String? channelType,
 }) {
   if (!raftServerCapabilities.contains(capability)) return false;
-  if (channelCapabilities != null &&
-      _channelManagementCapabilities.contains(capability)) {
-    return channelCapabilities[capability] == true;
+  if (_channelManagementCapabilities.contains(capability)) {
+    if (channelCapabilities != null) {
+      return channelCapabilities[capability] == true;
+    }
+    if (channelType == 'joint' || channelType == 'dm') return false;
   }
   return switch (role) {
     'owner' => true,
-    'admin' => capability != 'manageBilling',
+    'admin' => capability != 'manageBilling' && capability != 'manageSso',
     'member' => _memberCapabilities.contains(capability),
-    // The shared matrix gives a guest nothing server-wide, but `viewChannel`
-    // is not a gate on Web (no Web component reads it): whether a guest may
-    // read a channel or thread is decided by the server
-    // (`canUserAccessChannel` / `canGuestReadChannel`: guest-visible, joined
-    // or guest-joinable, feature gate on) and the channel list a guest
-    // receives is already filtered to those. Gating on it locally kept guests
-    // from loading any channel or thread messages.
-    'guest' => capability == 'viewChannel',
     _ => false,
   };
 }
+
+bool raftCanReadAdmittedConversation(String? role) =>
+    const {'owner', 'admin', 'member', 'guest'}.contains(role);
+
+bool raftCanInWorkspace(
+  String? role,
+  String capability, {
+  RaftChannel? channel,
+}) {
+  if (capability == 'viewChannel') return raftCanReadAdmittedConversation(role);
+  final projection = channel?.json['channelCapabilities'];
+  return raftCan(
+    role,
+    capability,
+    channelCapabilities: projection is Map ? projection : null,
+    channelType: channel?.type,
+  );
+}
+
+bool raftCanProjectedChannel(RaftChannel channel, String capability) {
+  final projection = channel.json['channelCapabilities'];
+  return _channelManagementCapabilities.contains(capability) &&
+      projection is Map &&
+      projection[capability] == true;
+}
+
+bool raftCanWriteTaskChannel(String? role, RaftChannel? channel) =>
+    raftCanReadAdmittedConversation(role) &&
+    channel != null &&
+    channel.joined &&
+    !channel.archived &&
+    channel.json['deletedAt'] == null &&
+    channel.canPost &&
+    (role != 'guest' ||
+        channel.name != 'all' &&
+            (const {'channel', 'private'}.contains(channel.type) ||
+                channel.type == 'joint' &&
+                    channel.string('jointRole') == 'host'));
+
+bool raftAuthorizeTaskWrite({
+  required bool canWriteChannel,
+  required Object? readOnlyReason,
+}) => canWriteChannel && readOnlyReason == null;

@@ -218,17 +218,6 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
             ? SourceTimeFormat.twentyFourHour
             : null,
       );
-      final v2 = o.conversation && o.hydrated
-          ? taskConversation(
-              context,
-              o,
-              facts,
-              formatter,
-              compact: widget.compact || widget.page,
-              tasksPage: widget.tasksPage,
-              onLeave: widget.onClose,
-            )
-          : null;
       final discussion = o.discussion;
       final covered = MobileRouteGate.coveredReader(context);
       final navigation = discussion == null
@@ -243,6 +232,18 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
                   !covered(),
               onConversationOpened: widget.onClose,
             );
+      final v2 = o.conversation && o.hydrated
+          ? taskConversation(
+              context,
+              o,
+              facts,
+              formatter,
+              compact: widget.compact || widget.page,
+              tasksPage: widget.tasksPage,
+              onLeave: widget.onClose,
+              navigation: navigation,
+            )
+          : null;
       void close() {
         if (!widget.inPlace && discussion?.location.profile != null) {
           discussion!.closeProfile();

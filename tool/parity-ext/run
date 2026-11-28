@@ -148,7 +148,7 @@ SPEC_EXT_PATCHES = [
      '        if (!box) throw new Error(`Cannot move to ${interaction.target}`);\n'
      '        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps });\n'
      '      } else {\n'
-     '        await hover.hover();\n'
+     '        await hover.hover({ force: (interaction as { force?: boolean }).force });\n'
      '      }\n'
      '    } else if ((interaction.type as string) === "press" && interaction.target) {\n'
      '      await page.locator(interaction.target).first().press(String((interaction as any).key));\n'

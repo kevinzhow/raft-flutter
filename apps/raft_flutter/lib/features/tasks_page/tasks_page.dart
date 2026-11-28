@@ -525,7 +525,7 @@ class _TasksPageState extends State<TasksPage> {
     final inset = width >= raftTaskPageNarrowWidth ? surfaceInset : 16.0;
     final board = params.view == TasksPageView.board;
 
-    final canCreate = w.server?.string('role') != 'guest';
+    final canCreate = raftCanReadAdmittedConversation(w.server?.string('role'));
     final toolbarInputs = (
       tab,
       counts.tabs[TasksPageTab.mine],

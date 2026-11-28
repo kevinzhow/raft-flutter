@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/cause_notice.dart';
@@ -125,6 +126,18 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
         () => channelRequired.raise(
           raftText(context, 'Pick a channel'),
           whileTrue: () => pickedChannel == null,
+        ),
+      );
+      return;
+    }
+    if (!raftCanWriteTaskChannel(
+      w.server?.string('role'),
+      w.channelById(channelId),
+    )) {
+      setState(
+        () => error = raftText(
+          context,
+          'Your access to this channel just changed. Refresh and try again.',
         ),
       );
       return;

@@ -703,10 +703,14 @@ Future<void> _interact(WidgetTester t, ParityContext ctx) async {
             controller: w,
             prefilledName: ctx.props['name'] as String?,
             prefilledDescription: ctx.props['description'] as String?,
+            prefilledVisibility: ctx.props['externalIntent'] == 'true'
+                ? 'external'
+                : 'public',
           ),
         ),
       );
       await t.pumpAndSettle();
+      if (ctx.props['externalIntent'] == 'true') break;
       final submit = find.widgetWithText(
         RaftButton,
         k.startsWith('create-channel.phone') ? 'Create' : 'Create Channel',

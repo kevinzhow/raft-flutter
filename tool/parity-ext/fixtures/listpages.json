@@ -327,6 +327,11 @@
   }
  },
  "routeSets": {
+  "create-external-intent": {
+   "GET /channels/external-availability": {
+    "freeLimitReached": false
+   }
+  },
   "search-empty": {
    "GET /messages/search": {
     "results": [],

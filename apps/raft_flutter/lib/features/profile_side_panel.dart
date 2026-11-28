@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
+import '../data/thread_agent_followers.dart' show threadFollowerProfileKey;
 import 'agent_detail_view.dart';
 import 'external_identity.dart';
 import 'desktop_detail_host.dart';
@@ -63,7 +64,10 @@ class ProfileSidePanel extends StatelessWidget {
         controller: w,
         computers: false,
         initial:
-            w.services.entityDirectory.agent(profile.id) ?? {'id': profile.id},
+            w.services.entityDirectory.agent(profile.id) ??
+            (w.agentTabCache.peek(threadFollowerProfileKey(profile.id))
+                as Map<String, dynamic>?) ??
+            {'id': profile.id},
         initialTab: AgentDetailTab.values.firstWhere(
           (tab) => tab.name == agentTab,
           orElse: () => AgentDetailTab.profile,

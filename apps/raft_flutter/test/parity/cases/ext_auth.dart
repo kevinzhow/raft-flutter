@@ -80,6 +80,15 @@ Widget _verify(ParityContext ctx) {
     ),
     builder: (context, client) => AccountOnboardingView(
       client: client,
+      location: ctx.props['name'] == 'verify.link-pending'
+          ? Uri(
+              path: '/',
+              queryParameters: {
+                'verify': 'parity-verify-token',
+                'returnTo': '/artifacts/release-checklist?revision=1',
+              },
+            )
+          : null,
       onComplete: () async {},
       onSignOut: () async {},
     ),
@@ -322,6 +331,7 @@ final Map<String, ParityCase> _surfaces = {
     s: _case(_computerStep),
   for (final s in const [
     'verify.default',
+    'verify.link-pending',
     'verify.manual',
     'verify.manual-filled',
     'verify.resent',

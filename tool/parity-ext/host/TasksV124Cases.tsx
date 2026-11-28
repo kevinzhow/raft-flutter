@@ -20,10 +20,13 @@ function ParityExtTasksV124View({ id }: { id: string }) {
   useMemo(() => {
     primeNavigationVisualStores();
     setParityExtTasksV124Flag(fxServer.id, PARITY_EXT_TASKS_V124_FLAG, true);
+    if (id.includes(".guest-create.")) {
+      useServerStore.setState({ current: { ...fxServer, role: "guest" } as never });
+    }
     const { channel, agent } = parityExtTasksV124Fixture;
     useChannelStore.setState({ channels: [channel] as never, dmChannels: [], loading: false });
     useAgentStore.setState({ agents: [{ ...visualAgents[0], ...agent }] as never });
-  }, []);
+  }, [id]);
   return (
     <div data-visual-case={id} className="flex h-dvh flex-col overflow-hidden">
       <Routes>

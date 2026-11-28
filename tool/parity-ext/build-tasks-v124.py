@@ -138,6 +138,7 @@ def case(platform, state, suffix, theme):
     actions = {
         'list-mine': (),
         'list-all': (),
+        'guest-create': (('[data-testid="tasks-page-new-task"]', 'tasks-page-new-task'),),
         'detail-open': (OPEN,),
         'detail-switch': (OPEN, SWITCH),
         'detail-close': (OPEN, close),
@@ -166,6 +167,7 @@ def case(platform, state, suffix, theme):
             ]
     visible = (
         '[data-testid="task-modal-title"]' if opened else
+        '[data-testid="create-task-message"]' if state == 'guest-create' else
         '[data-testid="tasks-page-list-all"] [data-task-id="visual-task-15"]'
         if state == 'list-all' else '[data-task-id="visual-task-16"]'
     )
@@ -206,8 +208,8 @@ data = json.loads(manifest.read_text())
 cases = data['cases'] if isinstance(data, dict) else data
 cases[:] = [entry for entry in cases if not entry['id'].startswith(PREFIX)]
 for platform, states in {
-    'desktop': ('list-mine', 'list-all', 'detail-open', 'detail-switch', 'detail-close', 'detail-focus'),
-    'phone': ('list-mine', 'list-all', 'detail-open', 'detail-close'),
+    'desktop': ('list-mine', 'list-all', 'detail-open', 'detail-switch', 'detail-close', 'detail-focus', 'guest-create'),
+    'phone': ('list-mine', 'list-all', 'detail-open', 'detail-close', 'guest-create'),
 }.items():
     for state in states:
         for suffix, theme in (('brutal', 'brutal-light'), ('elegant-dark', 'elegant-dark')):

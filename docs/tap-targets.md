@@ -111,6 +111,11 @@ checks that it sends no install or authorization request.
 
 ### Task conversation details
 
+The task header opens Following agents from its button. Task actions carries
+the entry when the header runs out of space. Selecting a follower opens their profile inside the
+task dialog. Closing that profile, pressing Escape, or using system Back
+returns to the same task. Inline task detail uses the workspace profile host.
+
 On the Tasks route, a desktop task opens with its properties pinned above the
 conversation. Expand widens the task column while keeping the list, reading
 position, and draft. Activate the control again or press Escape in the detail

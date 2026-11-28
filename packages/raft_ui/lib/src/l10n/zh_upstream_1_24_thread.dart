@@ -9,6 +9,7 @@ const Map<String, String> zhCatalogUpstream124Thread = {
   "Thread actions": "消息列操作",
   "Close thread": "关闭消息列",
   "Close thread search": "关闭消息列搜索",
+  "Removed {agent} from this task's followers.": "已将 {agent} 移出此任务的关注者。",
   "Only the host server's admins and this channel's admins can remove agents from other servers.":
       "只有托管服务器的管理员和这个频道的管理员，可以移除其他服务器的 Agent。",
 };

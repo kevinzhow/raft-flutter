@@ -34,6 +34,7 @@ class RaftTaskConversation {
     this.createdAt,
     this.earlierDiscussion,
     this.assigneeAvatar,
+    this.followers,
   });
 
   /// `#channel:#7` (Web formatTaskConversationRef).
@@ -74,6 +75,11 @@ class RaftTaskConversation {
   final ({String label, VoidCallback onOpen})? earlierDiscussion;
 
   final Widget? assigneeAvatar;
+  final Widget Function(
+    bool hasExpand,
+    Widget Function(Widget? trigger, RaftMenuEntry? overflow) buildHeader,
+  )?
+  followers;
 }
 
 /// The bar of the task dialog: the task's ref and "Task #7" (one line on a
@@ -108,7 +114,18 @@ class RaftTaskConversationBar extends StatelessWidget {
   final Border? bottomBorder;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      conversation.followers?.call(
+        focusMode != null,
+        (trigger, overflow) => buildHeader(context, trigger, overflow),
+      ) ??
+      buildHeader(context, null, null);
+
+  Widget buildHeader(
+    BuildContext context,
+    Widget? followers,
+    RaftMenuEntry? followersMenu,
+  ) {
     final t = RaftTokens.of(context);
     final c = conversation;
     final label = raftFormat(context, 'Task #{taskNumber}', {
@@ -159,6 +176,7 @@ class RaftTaskConversationBar extends StatelessWidget {
           ),
         ),
         entries: [
+          if (followersMenu != null) followersMenu,
           if (c.onSearch != null)
             RaftMenuEntry(
               label: raftText(context, 'Search in task'),
@@ -278,6 +296,7 @@ class RaftTaskConversationBar extends StatelessWidget {
                   ),
           ),
           if (detailsToggle case final toggle?) toggle,
+          if (followers != null) followers,
           if (desktopBar)
             Row(
               mainAxisSize: MainAxisSize.min,
