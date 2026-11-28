@@ -346,14 +346,13 @@ class MemberDirectoryEntry extends StatelessWidget {
           );
     final touch = RaftInteraction.of(context).touch;
     return GestureDetector(
-      onDoubleTap: touch ? null : onMessage,
       onSecondaryTapDown: !touch && onMenu != null
           ? (event) => onMenu!(event.globalPosition)
           : null,
       onLongPressStart: touch && onMenu != null
           ? (event) => onMenu!(event.globalPosition)
           : null,
-      child: surface,
+      child: RaftMouseDoubleClick(onDoubleClick: onMessage, child: surface),
     );
   }
 }

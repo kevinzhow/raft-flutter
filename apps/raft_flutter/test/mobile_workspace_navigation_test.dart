@@ -355,7 +355,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        final list = find.byKey(const Key('desktop-directory-list'));
+        final list = find.byKey(const PageStorageKey('desktop-directory-list'));
         final scrolling = find
             .descendant(of: list, matching: find.byType(Scrollable))
             .first;
