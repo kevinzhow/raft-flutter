@@ -46,8 +46,9 @@ mixin AgentUsageFlag<T extends StatefulWidget> on State<T> {
     String server,
     String identity,
   ) async {
+    final Object? response;
     try {
-      final response = await workspace.command(
+      response = await workspace.command(
         'POST',
         '/feature-flags/evaluate',
         data: featureFlagEvaluateBody(
@@ -55,30 +56,9 @@ mixin AgentUsageFlag<T extends StatefulWidget> on State<T> {
           serverId: server,
         ),
       );
-      if (!mounted ||
-          !mayReadUsage ||
-          _requestedUsageFlag != (workspace, identity) ||
-          pageIdentity(workspace) != identity) {
-        return;
-      }
-      final evaluations = response is Map ? response['evaluations'] : null;
-      if (evaluations is! List) return;
-      for (final row in evaluations.whereType<Map>()) {
-        if (row['key'] == RaftFeatureFlags.agentUsage &&
-            row['enabled'] is bool) {
-          setState(() {
-            rememberServerFlag(
-              workspace,
-              RaftFeatureFlags.agentUsage,
-              row['enabled'] as bool,
-              identity,
-            );
-          });
-          return;
-        }
-      }
-    } on RaftApiException catch (error) {
-      if (mounted &&
+    } catch (error) {
+      if (error is RaftApiException &&
+          mounted &&
           _requestedUsageFlag == (workspace, identity) &&
           (error.status == 401 || error.status == 403)) {
         setState(() {
@@ -89,6 +69,28 @@ mixin AgentUsageFlag<T extends StatefulWidget> on State<T> {
             identity,
           );
         });
+      }
+      return;
+    }
+    if (!mounted ||
+        !mayReadUsage ||
+        _requestedUsageFlag != (workspace, identity) ||
+        pageIdentity(workspace) != identity) {
+      return;
+    }
+    final evaluations = response is Map ? response['evaluations'] : null;
+    if (evaluations is! List) return;
+    for (final row in evaluations.whereType<Map>()) {
+      if (row['key'] == RaftFeatureFlags.agentUsage && row['enabled'] is bool) {
+        setState(() {
+          rememberServerFlag(
+            workspace,
+            RaftFeatureFlags.agentUsage,
+            row['enabled'] as bool,
+            identity,
+          );
+        });
+        return;
       }
     }
   }

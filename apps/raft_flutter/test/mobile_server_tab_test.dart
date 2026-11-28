@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_flutter/features/pushed_server_page.dart';
 import 'package:raft_flutter/platform/desktop_title_bar.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -220,10 +221,7 @@ void main() {
       }
       expect(find.byKey(_bar), findsNothing, reason: page);
       expect(
-        find
-                .byKey(const Key('server-page-mobile-back'))
-                .evaluate()
-                .isNotEmpty ||
+        find.byKey(pushedServerPageBackKey).evaluate().isNotEmpty ||
             find.byKey(const Key('mobile-detail-back')).evaluate().isNotEmpty ||
             find
                 .byKey(const Key('mobile-settings-back'))
@@ -236,6 +234,8 @@ void main() {
       // Back returns to the tab root it was opened from, with its bar.
       if (page == 'apps') {
         await t.tap(find.byKey(const Key('apps-mobile-back')));
+      } else if (page == 'members') {
+        await t.tap(find.byKey(pushedServerPageBackKey).hitTestable());
       } else {
         expect(await t.binding.handlePopRoute(), isTrue);
       }

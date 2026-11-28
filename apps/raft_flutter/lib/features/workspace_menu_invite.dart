@@ -34,6 +34,7 @@ Future<bool> showWorkspaceMenuInvite(
   if (!current()) return false;
   final sent = await showRaftForm<bool>(
     context,
+    dragDismissible: false,
     builder: (_) => _InviteDialog(
       workspace: workspace,
       serverId: serverId!,

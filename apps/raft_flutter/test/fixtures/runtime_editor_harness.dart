@@ -101,6 +101,7 @@ class EditorClient extends RaftClient {
   String? configApply = 'when_idle';
   Object? patchError;
   Object? resetError;
+  bool failUsageFlagEvaluation = false;
   final stream = StreamController<RaftEvent>.broadcast(sync: true);
   @override
   Stream<RaftEvent> get events => stream.stream;
@@ -128,6 +129,16 @@ class EditorClient extends RaftClient {
     Duration? receiveTimeout,
   }) async {
     calls.add((method, path, data));
+    if (method == 'POST' && path == '/feature-flags/evaluate') {
+      if (failUsageFlagEvaluation) {
+        throw const FormatException('Invalid feature flag response');
+      }
+      return {
+        'evaluations': [
+          {'key': 'agent_usage_v0', 'enabled': false},
+        ],
+      };
+    }
     if (path == '/agents') return [agent];
     if (path == '/agents/a1' && method == 'GET') return agent;
     if (path == '/agents/a1' && method == 'PATCH') {

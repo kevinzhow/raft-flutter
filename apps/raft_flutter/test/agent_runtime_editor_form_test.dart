@@ -15,6 +15,18 @@ const _surfaces = <(String, Size, TargetPlatform)>[
 ];
 
 void main() {
+  testWidgets('a failed Usage flag read leaves the runtime editor available', (
+    t,
+  ) async {
+    await openRuntimeEditor(
+      t,
+      editorAgent(),
+      setup: (client) => client.failUsageFlagEvaluation = true,
+    );
+    expect(editorKey('runtime-editor-runtime'), findsOneWidget);
+    expect(find.text('Usage', skipOffstage: false), findsNothing);
+  });
+
   testWidgets('the Runtime select sits above the saved runtime\'s form', (
     t,
   ) async {

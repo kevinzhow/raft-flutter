@@ -13,6 +13,7 @@ import 'desktop_navigation_policy.dart';
 import 'icu_message.dart';
 import 'management_support.dart' show pageIdentity;
 import 'members_page_entries.dart';
+import 'pushed_server_page.dart' show pushedServerPageBackKey;
 
 enum _Scope {
   all('All'),
@@ -413,7 +414,7 @@ class _MembersPageState extends State<MembersPage>
         children: [
           RaftPanelHeaderBar(
             title: raftText(context, 'Members'),
-            backKey: const ValueKey('members-mobile-back'),
+            backKey: pushedServerPageBackKey,
             onBack: widget.onBack,
             titleSuffix:
                 widget.loading ||

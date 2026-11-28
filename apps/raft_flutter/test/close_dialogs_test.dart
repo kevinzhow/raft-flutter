@@ -914,6 +914,7 @@ void registerCloseDialogTests(TestPart part) {
       size,
       RaftInviteHumanDialog,
       (context, w) => unawaited(showWorkspaceMenuInvite(context, w)),
+      dragTarget: find.byKey(const ValueKey('raft-form-sheet-head')),
     ),
   };
   // Surfaces with a file of their own, so the six parts keep their deal:

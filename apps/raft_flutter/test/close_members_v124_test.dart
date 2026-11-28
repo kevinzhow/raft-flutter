@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/workspace_entity_directory.dart';
+import 'package:raft_flutter/features/pushed_server_page.dart';
 import 'package:raft_flutter/features/workspace_menu_invite.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 
@@ -24,7 +25,7 @@ void main() {
       workspace.section = 'members';
       workspace.notifyListeners();
       await frames(tester);
-      final back = find.byKey(const ValueKey('members-mobile-back'));
+      final back = find.byKey(pushedServerPageBackKey);
       return SurfaceProbe(isOpen: () => back.evaluate().isNotEmpty, back: back);
     },
     'member-promote-guest': (tester, size) => _open(

@@ -297,8 +297,8 @@ const dialogSurfaces = <CloseSurface>[
     'invite-human',
     kind: SurfaceKind.dialog,
     webOutside: WebOutside.stays,
-    web: 'InviteHumanDialog.tsx:352 DialogCard: X + Esc, no backdrop close',
-    phone: {_x, _esc, _scrim, _sys, _drag},
+    web: 'InviteHumanDialog.tsx:453 uses NarrowDialog.tsx:115-126 on phone: X + Esc, no drag or backdrop close',
+    phone: {_x, _esc, _scrim, _sys},
     fold: {_x, _esc, _scrim, _sys},
     desktop: {_x, _esc, _scrim, _sys},
     files: [
@@ -306,7 +306,7 @@ const dialogSurfaces = <CloseSurface>[
       '../../packages/raft_ui/lib/src/invite_human_dialog.dart',
     ],
     status: 'approved',
-    fix: _sheetOnPhone,
+    fix: 'Phone uses the header-only form sheet and keeps it open on a drag. Scrim presses retain the approved Flutter dismissal.',
   ),
   CloseSurface(
     'add-members',
