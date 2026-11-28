@@ -583,14 +583,12 @@ class _MembersPageState extends State<MembersPage>
         else
           for (final (index, entry) in entries.indexed)
             (_) => Padding(
-              padding: EdgeInsets.fromLTRB(
-                RaftSpace.x2,
-                index == 0
-                    ? RaftSpace.hairline
-                    : RaftLayoutMetrics.sidebarRowGap,
-                RaftSpace.x2,
-                0,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x2)
+                  .copyWith(
+                    top: index == 0
+                        ? RaftSpace.hairline
+                        : RaftLayoutMetrics.sidebarRowGap,
+                  ),
               child: widget.buildEntry(
                 entry,
                 layout,
@@ -619,14 +617,15 @@ class _MembersPageState extends State<MembersPage>
       list = RawScrollbar(
         controller: _rosterScroll,
         interactive: !touch,
-        thumbColor: RaftTokens.of(context).ui.foreground.withValues(alpha: .42),
-        thickness: 7,
-        crossAxisMargin: 3,
-        mainAxisMargin: 3,
-        minThumbLength: 24,
-        radius: const Radius.circular(5),
-        timeToFade: const Duration(milliseconds: 600),
-        fadeDuration: const Duration(milliseconds: 400),
+        thumbColor: RaftTokens.of(context).ui.foreground
+            .withValues(alpha: RaftLayoutMetrics.scrollThumbOpacity),
+        thickness: RaftLayoutMetrics.scrollThumbWidth,
+        crossAxisMargin: RaftLayoutMetrics.scrollThumbInset,
+        mainAxisMargin: RaftLayoutMetrics.scrollThumbInset,
+        minThumbLength: RaftLayoutMetrics.scrollThumbMinLength,
+        radius: const Radius.circular(RaftLayoutMetrics.scrollThumbRadius),
+        timeToFade: RaftLayoutMetrics.scrollThumbFadeDelay,
+        fadeDuration: RaftLayoutMetrics.scrollThumbFadeDuration,
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: list,

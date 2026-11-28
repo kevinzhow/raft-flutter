@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -77,6 +76,8 @@ List<MemberPageEntry> memberPageEntries(
 }
 
 class MembersAgentColumns extends StatelessWidget {
+  static const _columnWidths = [102.0, 104.0, 176.0, 136.0];
+
   const MembersAgentColumns({
     super.key,
     required this.labels,
@@ -156,10 +157,7 @@ class MembersAgentColumns extends StatelessWidget {
               ),
               for (final (index, _) in labels.indexed)
                 if (index == 0 || expanded)
-                  SizedBox(
-                    width: const [102.0, 104.0, 176.0, 136.0][index],
-                    child: cell(index),
-                  ),
+                  SizedBox(width: _columnWidths[index], child: cell(index)),
             ],
           );
         },
@@ -284,8 +282,6 @@ class MemberDirectoryEntry extends StatelessWidget {
                       style: layout == MembersEntryLayout.cards
                           ? RaftTypography.body(
                               tokens,
-                              size: RaftTypeScale.body.fontSize,
-                              line: RaftTypeScale.body.lineHeight,
                               color: tokens.ui.foregroundHint,
                             )
                           : tokens.scale(

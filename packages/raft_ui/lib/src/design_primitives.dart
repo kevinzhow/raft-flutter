@@ -113,6 +113,13 @@ abstract final class RaftLayoutMetrics {
   static const sidebarCellPadding = EdgeInsetsDirectional.symmetric(
     horizontal: sidebarCellInset,
   );
+  static const double scrollThumbWidth = 7;
+  static const double scrollThumbRadius = 5;
+  static const double scrollThumbInset = 3;
+  static const double scrollThumbMinLength = 24;
+  static const double scrollThumbOpacity = .42;
+  static const scrollThumbFadeDelay = Duration(milliseconds: 600);
+  static const scrollThumbFadeDuration = Duration(milliseconds: 400);
 
   static EdgeInsets sidebarRowSpacing(RaftTokens tokens) {
     final geometry = tokens.themeOverrides?.geometry;

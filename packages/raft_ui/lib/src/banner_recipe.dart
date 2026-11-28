@@ -10,11 +10,12 @@ Color raftBannerFill(Color fill, Color surface, {required bool browserBlend}) {
   if (!browserBlend) {
     return raftChromeBlend(fill, surface);
   }
-  final alpha = (fill.a * 255).round();
+  const maxChannel = 255;
+  final alpha = (fill.a * maxChannel).round();
   int channel(double source, double backdrop) =>
-      (source * alpha).round() + (backdrop * (255 - alpha)).round();
+      (source * alpha).round() + (backdrop * (maxChannel - alpha)).round();
   return Color.fromARGB(
-    255,
+    maxChannel,
     channel(fill.r, surface.r),
     channel(fill.g, surface.g),
     channel(fill.b, surface.b),

@@ -1302,13 +1302,14 @@ class _FitScrollGroupState extends State<_FitScrollGroup> {
                 notificationPredicate: (notice) =>
                     notice.depth == 0 && notice.metrics.axis == Axis.horizontal,
                 thickness: thumbThickness,
-                mainAxisMargin: 3,
-                crossAxisMargin: 3,
+                mainAxisMargin: RaftLayoutMetrics.scrollThumbInset,
+                crossAxisMargin: RaftLayoutMetrics.scrollThumbInset,
                 radius: const Radius.circular(thumbThickness / 2),
-                minThumbLength: 24,
-                timeToFade: const Duration(milliseconds: 600),
-                fadeDuration: const Duration(milliseconds: 400),
-                thumbColor: RaftTokens.of(context).ink.withValues(alpha: .42),
+                minThumbLength: RaftLayoutMetrics.scrollThumbMinLength,
+                timeToFade: RaftLayoutMetrics.scrollThumbFadeDelay,
+                fadeDuration: RaftLayoutMetrics.scrollThumbFadeDuration,
+                thumbColor: RaftTokens.of(context).ink
+                    .withValues(alpha: RaftLayoutMetrics.scrollThumbOpacity),
                 child: masked,
               )
             : masked,

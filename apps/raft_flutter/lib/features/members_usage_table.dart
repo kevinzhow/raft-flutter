@@ -373,7 +373,7 @@ class _MembersUsageTableState extends State<MembersUsageTable> {
                             OverflowBox(
                               fit: OverflowBoxFit.deferToChild,
                               alignment: AlignmentDirectional.centerStart,
-                              minWidth: 0,
+                              minWidth: const BoxConstraints().minWidth,
                               maxWidth: width,
                               child: title,
                             )

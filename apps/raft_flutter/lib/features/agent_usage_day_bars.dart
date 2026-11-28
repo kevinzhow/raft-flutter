@@ -208,7 +208,7 @@ class _AgentUsageDayBarsState extends State<AgentUsageDayBars> {
     final label = style.copyWith(
       fontSize: _weekdayFontSize,
       height: _labelLineHeight,
-      fontWeight: FontWeight.w400,
+      fontWeight: raftFontWeight(400),
     );
     final dateLabel = mono.copyWith(
       fontSize: _dateFontSize,
