@@ -51,8 +51,13 @@ Finder _threadEditor(Ctx c) => find
     .hitTestable();
 
 /// The workspace painted before the app accepted its address, as the app
-/// root shows it on start: Chat, with the inbox listing the thread.
-Future<Ctx> _workspace(WidgetTester t, double width) async {
+/// root shows it on start: Chat on [selected], with the inbox listing the
+/// thread.
+Future<Ctx> _workspace(
+  WidgetTester t,
+  double width, {
+  String selected = 'c1',
+}) async {
   t.view.physicalSize = Size(width, width < 768 ? 844 : 900);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
@@ -61,7 +66,7 @@ Future<Ctx> _workspace(WidgetTester t, double width) async {
     RaftChannel({'id': 'c1', 'name': 'test', 'joined': true}),
     RaftChannel({'id': 'c2', 'name': 'random', 'joined': true}),
   ];
-  w.channel = w.channels.first;
+  w.channel = w.channels.firstWhere((c) => c.id == selected);
   channelRoutes(api);
   api.routes['GET /channels/inbox'] = (_) => {
     'items': [
@@ -143,13 +148,15 @@ void main() {
       if (address == _search && width == 816) continue;
       testWidgets('a start or restore at $address, width $width: the '
           "thread's composer takes text", (t) async {
-        final c = await _workspace(t, width);
+        // The remembered Chat shows another channel than the address.
+        final c = await _workspace(t, width, selected: 'c2');
         // AppRoot after the server is selected: the remembered surface or
         // the address the app was opened at.
         restoreAcceptedLocation(c.w, Uri.parse(address));
         c.w.notifyListeners();
         await _settle(t);
         expect(c.w.location.uri.toString(), contains('thread=c1'));
+        expect(find.text('Loading channel'), findsNothing);
         await _threadComposerTakesText(t, c);
         await _end(t);
       });
@@ -281,6 +288,31 @@ void main() {
       });
     }
   }
+
+  testWidgets('Back onto Activity showing a channel beside its thread, from '
+      "another channel: the channel shows and the thread's composer takes "
+      'text', (t) async {
+    final c = await _workspace(t, 1280);
+    restoreAcceptedLocation(c.w, Uri.parse(_besideChannel));
+    c.w.notifyListeners();
+    await _settle(t);
+    final beside = c.w.navigation.index;
+    c.api.routes['GET /messages/channel/c2'] = (_) => {
+      'messages': [],
+      'hasMore': false,
+    };
+    await t.runAsync(() => c.w.selectChannel(c.w.channels[1]));
+    c.w.notifyListeners();
+    await _settle(t);
+    expect(c.w.channel?.id, 'c2');
+    unawaited(_visit(c, beside));
+    await _settle(t);
+    expect(c.w.location.query('open'), 'channel:c1');
+    expect(c.w.channel?.id, 'c1');
+    expect(find.text('Loading channel'), findsNothing);
+    await _threadComposerTakesText(t, c);
+    await _end(t);
+  });
 
   for (final width in [1280.0, 390.0]) {
     testWidgets('a link to a thread reply pushed into the app, width '
