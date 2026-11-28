@@ -333,7 +333,18 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
         builder: (context) => content(context, RaftSurfaceForm.sheet),
       ),
     );
-    Widget surface(Widget child) => RaftSheetPanel(child: child);
+    Widget surface([
+      ScrollController? controller,
+      RaftSheetPointerDrag? drag,
+    ]) => RaftSheetPanel(
+      child: RaftSheetScope(
+        scrollController: controller,
+        pointerDrag: drag,
+        child: body,
+      ),
+    );
+    final maxSize = drawerMaxSize ?? RaftSheetMetrics.largeDetent;
+    final hasFixedDetent = !dragDismissible && sheetInitialSize == maxSize;
     // The sheet rides above the keyboard: its room shrinks by the inset.
     return Padding(
       padding: EdgeInsets.only(bottom: keyboard),
@@ -345,25 +356,23 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
                       media.size.height * RaftSheetMetrics.largeDetent,
                   box.maxHeight,
                 ),
-                child: surface(
-                  RaftSheetScope(scrollController: null, child: body),
-                ),
+                child: surface(),
               ),
+            )
+          : hasFixedDetent
+          ? FractionallySizedBox(
+              alignment: Alignment.bottomCenter,
+              heightFactor: sheetInitialSize,
+              child: surface(),
             )
           : _DetentSheet(
               initialSize: sheetInitialSize,
-              maxSize: drawerMaxSize ?? RaftSheetMetrics.largeDetent,
+              maxSize: maxSize,
               closesOnDrag: dragDismissible,
               onExtent: drawerMaxSize == null
                   ? null
                   : (size) => _drawerExtent.value = size,
-              builder: (controller, drag) => surface(
-                RaftSheetScope(
-                  scrollController: controller,
-                  pointerDrag: drag,
-                  child: body,
-                ),
-              ),
+              builder: surface,
             ),
     );
   }
