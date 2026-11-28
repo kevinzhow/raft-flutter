@@ -34,26 +34,43 @@ Future<void> visitWorkspaceHistory(
   }
   final previous = w.location;
   if (!history.visit(index)) return;
-  final next = w.location;
+  await followHistoryEntry(w, previous);
+}
+
+/// After a Back or Forward moved the location away from [previous] (an
+/// observed entry, or the fallback that replaced it), show what it names:
+/// close a thread it no longer names, select the conversation it shows, then
+/// open its thread unless that thread is still open. A navigation made while
+/// the conversation loads, or another workspace, owns the rest; an Artifact
+/// address beside it is not a navigation (#383) and keeps it.
+Future<void> followHistoryEntry(
+  WorkspaceController w,
+  RaftLocation previous,
+) async {
+  final next = w.location,
+      authority = w.navigationAuthority,
+      revision = w.navigationRevision;
   if (next.thread == null) w.closeThread(navigate: false);
   w.notifyListeners();
-  if ({RaftRoute.channel, RaftRoute.dm}.contains(next.route) &&
-      (w.channel?.id != next.entityId ||
-          next.messageId != previous.messageId)) {
+  final conversation = {RaftRoute.channel, RaftRoute.dm}.contains(next.route)
+      ? next.entityId
+      : null;
+  if (conversation != null &&
+      (w.channel?.id != conversation || next.messageId != previous.messageId)) {
     // A thread permalink's msg belongs to the reply window. Restore the
     // channel's accepted window, then hydrate the independent thread below.
     await w.jumpToMessage(
-      next.entityId!,
+      conversation,
       next.thread == null ? next.messageId : null,
       navigate: false,
     );
+    if (w.navigationAuthority != authority ||
+        w.navigationRevision != revision ||
+        w.location.query('thread') != next.query('thread')) {
+      return;
+    }
   }
-  if (w.navigationAuthority != authority || w.location.uri != next.uri) {
-    return;
-  }
-  if (next.thread != null && _threadRoutes.contains(next.route)) {
-    await _openThread(w, next);
-  }
+  await _openThreadFor(w, next);
 }
 
 /// The routes that show the thread their address names: beside the chat
@@ -67,14 +84,28 @@ const _threadRoutes = {
   RaftRoute.search,
 };
 
-Future<void> _openThread(WorkspaceController w, RaftLocation location) =>
-    w.openThreadIdentity(
-      parentChannelId: location.thread!.channelId,
-      parentMessageId: location.thread!.itemId,
-      focusedMessageId: location.threadFocusedMessageId,
-      initialThreadChannelId: location.knownThreadChannelId,
-      navigate: false,
-    );
+/// Opens the thread [location] shows. One still open (its visit current: no
+/// navigation and no other thread window since) stays as it is, with its
+/// replies, parent and draft.
+Future<void> _openThreadFor(
+  WorkspaceController w,
+  RaftLocation location,
+) async {
+  final thread = location.thread, open = w.threadIdentity;
+  if (thread == null ||
+      !_threadRoutes.contains(location.route) ||
+      open?.parentChannelId == thread.channelId &&
+          open?.parentMessageId == thread.itemId) {
+    return;
+  }
+  await w.openThreadIdentity(
+    parentChannelId: thread.channelId,
+    parentMessageId: thread.itemId,
+    focusedMessageId: location.threadFocusedMessageId,
+    initialThreadChannelId: location.knownThreadChannelId,
+    navigate: false,
+  );
+}
 
 /// After selecting the workspace, send explicit message links through content
 /// authorization and restore other routes from the accepted workspace URI.
@@ -119,22 +150,18 @@ void restoreAcceptedConversation(
   RaftLocation target, {
   required bool routeChanged,
 }) {
-  final thread = target.thread;
-  if ({RaftRoute.channel, RaftRoute.dm}.contains(target.route) &&
-      (routeChanged || w.channel?.id != target.entityId)) {
+  final conversation = {RaftRoute.channel, RaftRoute.dm}.contains(target.route)
+      ? target.entityId
+      : null;
+  if (conversation != null && (routeChanged || w.channel?.id != conversation)) {
     unawaited(
       w.resolveConversationChannel(
-        target.entityId!,
-        preserveThread: thread != null,
+        conversation,
+        preserveThread: target.thread != null,
       ),
     );
   }
-  if (thread == null ||
-      !_threadRoutes.contains(target.route) ||
-      w.threadIdentity?.parentMessageId == thread.itemId) {
-    return;
-  }
-  unawaited(_openThread(w, target));
+  unawaited(_openThreadFor(w, target));
 }
 
 VoidCallback? _historyStep(
