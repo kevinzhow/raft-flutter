@@ -56776,6 +56776,15 @@
         "owner": "Tasks detail",
         "reason": "Task conversation frame builder. Canonical family and entry mapping remain unreviewed."
       },
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState/METHOD:build/FUNCTION:recipeTrigger": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "badge",
+          "menu"
+        ],
+        "owner": "WP-MEMBERS-VIS",
+        "reason": "Uses the shared badge recipe for the inline editor menu trigger."
+      },
       "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState/METHOD:build/FUNCTION:statusTrigger": {
         "role": "unresolved",
         "familyRefs": [
@@ -59729,6 +59738,14 @@
         "familyRefs": [],
         "owner": "WP-MEMBERS",
         "reason": "Paints the token usage time series and marks the partial day."
+      },
+      "apps/raft_flutter/lib/features/members_usage_table.dart#local-function:CLASS:_MembersUsageTableState/METHOD:build/FUNCTION:<anonymous>/FUNCTION:fitTracks": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "list_row"
+        ],
+        "owner": "WP-MEMBERS-VIS",
+        "reason": "Keeps Usage headings and rows aligned to the same column widths."
       },
       "apps/raft_flutter/lib/features/members_usage_table.dart#local-function:CLASS:_MembersUsageTableState/METHOD:build/FUNCTION:<anonymous>/FUNCTION:fixedLabel": {
         "role": "entry_composition",

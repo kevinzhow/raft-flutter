@@ -703,8 +703,8 @@ class _MembersPageState extends State<MembersPage>
     List<MemberPageEntry> entries,
     int start,
     int columns,
-  ) => (_) {
-    final stretch = columns > 2;
+  ) => (context) {
+    final stretch = columns > 2 && !RaftScaled.grows(context);
     final row = Row(
       spacing: RaftSpace.x3,
       crossAxisAlignment: stretch

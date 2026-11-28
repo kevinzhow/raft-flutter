@@ -206,7 +206,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
           : report.figures(_period, agentId: widget.agentId);
       final emptyDetail =
           noFigures != null && (!noFigures.supported || noFigures.empty);
-      final (range, periodEntries) = _rangeControls(context, report);
+      final (range, periodEntries) = _rangeControl(context, report);
       final detailInset = RaftTokens.of(context).desktop
           ? RaftDesktopMetrics.pageInset
           : RaftSpace.x5;
@@ -350,7 +350,7 @@ class _AgentTokenUsagePaneState extends State<AgentTokenUsagePane> {
     },
   );
 
-  (Widget, List<RaftMenuEntry>) _rangeControls(
+  (Widget, List<RaftMenuEntry>) _rangeControl(
     BuildContext context,
     AgentUsageReport? report,
   ) {
