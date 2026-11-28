@@ -6,6 +6,8 @@ import 'package:raft_flutter/data/external_agent_setup_text.dart';
 
 import 'support/external_agent_fixture.dart';
 
+const _credentialPost = 'POST /agents/ext-1/credentials';
+
 Map<String, dynamic> _seenNow([Duration ago = Duration.zero]) => {
   ...externalAgentRow,
   'lastSeenAt': DateTime.now().subtract(ago).toUtc().toIso8601String(),
@@ -142,9 +144,10 @@ void main() {
       await pumpExternal(tester, client: client);
       await tester.tap(key('external-agent-create-credential'));
       await tester.pumpAndSettle();
-      expect(client.bodies.firstWhere((b) => b.$1.startsWith('POST')).$2, {
-        'name': pageCredentialName,
-      });
+      final (_, body) = client.bodies.singleWhere(
+        (request) => request.$1 == _credentialPost,
+      );
+      expect(body, {'name': pageCredentialName});
       expect(
         find.text(
           "Shown once. Anyone with it can act as Hermes Bridge; revoke it on Hermes Bridge's page.",
@@ -192,12 +195,15 @@ void main() {
     // Cancelled: nothing was made.
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    expect(client.count('POST /agents/ext-1/credentials'), 0);
+    expect(client.count(_credentialPost), 0);
     await tester.tap(key('external-agent-create-credential'));
     await tester.pumpAndSettle();
     await tester.tap(key('external-agent-replace-confirm'));
     await tester.pumpAndSettle();
-    expect(client.bodies.firstWhere((b) => b.$1.startsWith('POST')).$2, {
+    final (_, body) = client.bodies.singleWhere(
+      (request) => request.$1 == _credentialPost,
+    );
+    expect(body, {
       'name': pageCredentialName,
       'replacesCredentialId': 'cred-page',
     });
